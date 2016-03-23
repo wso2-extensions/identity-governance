@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.wso2.carbon.identity</groupId>
-        <artifactId>identity-extension-identityMgt</artifactId>
+        <artifactId>identity-governance</artifactId>
         <version>5.0.9-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>

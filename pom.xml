@@ -27,7 +27,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.carbon.identity</groupId>
-    <artifactId>identity-extension-identityMgt</artifactId>
+    <artifactId>identity-governance</artifactId>
     <version>5.0.9-SNAPSHOT</version>
 
     <packaging>pom</packaging>
