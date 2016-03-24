@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.event.admin.ui.client;
+package org.wso2.carbon.identity.mgt.admin.ui;
 
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.ServiceClient;
@@ -44,7 +44,7 @@ public class TenantIdentityMgtClient {
             throws Exception {
         try {
             stub = new EventManagementAdminServiceStub(configContext, backendServerURL +
-                    org.wso2.carbon.identity.event.admin.ui.client.IdentityMgtAdminUIConstants.IDENTITY_MGT_ADMIN_SERVICE_URL);
+                    IdentityMgtAdminUIConstants.IDENTITY_MGT_ADMIN_SERVICE_URL);
             ServiceClient client = stub._getServiceClient();
             Options option = client.getOptions();
             option.setManageSession(true);

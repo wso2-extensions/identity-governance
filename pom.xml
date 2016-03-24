@@ -39,7 +39,16 @@
 
     <modules>
         <module>components/org.wso2.carbon.identity.mgt.admin.ui</module>
+        <module>components/org.wso2.carbon.identity.mgt</module>
         <!--<module>features/org.wso2.carbon.identity.application.authenticator.social.server.feature</module>-->
     </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.identity.event</artifactId>
+            <version>${identity.framework.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

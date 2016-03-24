@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.event.admin.ui.client;
+package org.wso2.carbon.identity.mgt.admin.ui;
 
 /**
  * Identity management admin ui related constants

@@ -16,7 +16,7 @@
 ~ under the License.
 -->
 
-<%@ page import="org.wso2.carbon.identity.event.admin.ui.client.TenantIdentityMgtClient" %>
+<%@ page import="org.wso2.carbon.identity.mgt.admin.ui.TenantIdentityMgtClient" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIUtil" %>
 <%@ page import="org.apache.axis2.context.ConfigurationContext" %>
 <%@ page import="java.util.HashMap" %>
