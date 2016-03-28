@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.mgt.admin.ui.listener;
+package org.wso2.carbon.identity.mgt.listener;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,7 +88,6 @@ public class IdentityMgtEventListener extends AbstractUserOperationEventListener
             String eventName = EventMgtConstants.Event.POST_AUTHENTICATION;
 
             HashMap<String, Object> properties = new HashMap<>();
-//            properties.put(EventMgtConstants.EventProperty.MODULE, module);
             properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
             properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
             properties.put(EventMgtConstants.EventProperty.IDENTITY_MGT_CONFIG, EventMgtConfigBuilder
@@ -105,20 +104,4 @@ public class IdentityMgtEventListener extends AbstractUserOperationEventListener
 
         return true;
     }
-
-    /**
-     * This method retrieves the configurations for the tenant ID of the user
-     */
-//    protected IdentityMgtConfig getConfiguration(int tenantId) {
-//        IdentityMgtConfig identityMgtConfig = null;
-//        try {
-//            identityMgtConfig = new IdentityMgtConfig();
-//            Properties properties = identityMgtConfig.getConfiguration(tenantId);
-//            identityMgtConfig.setConfiguration(properties);
-//        } catch (IdentityMgtException ex) {
-//            log.error("Error when retrieving configurations of tenant: " + tenantId, ex);
-//        }
-//        return identityMgtConfig;
-//        return null;
-//    }
 }

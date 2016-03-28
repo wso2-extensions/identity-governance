@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.mgt.admin.ui.internal;
+package org.wso2.carbon.identity.mgt.internal;
 
 import org.wso2.carbon.identity.event.services.EventMgtService;
 
