@@ -21,6 +21,8 @@ package org.wso2.carbon.identity.mgt.listener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
+import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.event.EventMgtConfigBuilder;
 import org.wso2.carbon.identity.event.EventMgtConstants;
 import org.wso2.carbon.identity.event.EventMgtException;
@@ -29,20 +31,29 @@ import org.wso2.carbon.identity.event.internal.EventMgtServiceDataHolder;
 import org.wso2.carbon.identity.event.services.EventMgtService;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.common.AbstractUserOperationEventListener;
 
 import java.util.HashMap;
-
 
 /**
  * This is an implementation of UserOperationEventListener. This defines
  * additional operations
  * for some of the core user management operations
  */
-public class IdentityMgtEventListener extends AbstractUserOperationEventListener {
+public class IdentityMgtEventListener extends AbstractIdentityUserOperationEventListener {
+
+
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
     EventMgtService eventMgtService = EventMgtServiceDataHolder.getInstance().getEventMgtService();
+
+    @Override
+    public int getExecutionOrderId() {
+        int orderId = getOrderId();
+        if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
+            return orderId;
+        }
+        return 95;
+    }
 
     /**
      * This method checks if the user account exist or is locked. If the account is

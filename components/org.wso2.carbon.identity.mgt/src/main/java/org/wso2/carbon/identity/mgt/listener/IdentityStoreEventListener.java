@@ -5,10 +5,12 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
+import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.model.UserIdentityClaim;
 import org.wso2.carbon.identity.mgt.store.JDBCIdentityDataStore;
 import org.wso2.carbon.identity.mgt.store.UserIdentityDataStore;
+import org.wso2.carbon.identity.mgt.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -23,7 +25,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private UserIdentityDataStore store;
 
     public IdentityStoreEventListener () {
-        store = new JDBCIdentityDataStore();
+        store = new UserStoreBasedIdentityDataStore();
+    }
+
+    @Override
+    public int getExecutionOrderId() {
+        int orderId = getOrderId();
+        if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
+            return orderId;
+        }
+        return 100;
     }
 
     /**
@@ -54,7 +65,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 //                EventMgtConfigBuilder config = EventMgtConfigBuilder.getInstance();
 //                UserIdentityDataStore identityDataStore = EventMgtConfigBuilder.getInstance().;
 
-                UserIdentityDataStore identityDataStore = new JDBCIdentityDataStore();
+                UserIdentityDataStore identityDataStore = new UserStoreBasedIdentityDataStore();
                 UserIdentityClaim identityDTO = identityDataStore.load(userName, userStoreManager);
                 if (identityDTO == null) {
                     identityDTO = new UserIdentityClaim(userName);
@@ -81,14 +92,14 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 } catch (IdentityException e) {
                     throw new UserStoreException(
                             "Error while saving user store data for user : " + userName, e);
+                }finally {
+                    // Remove thread local variable
+                    IdentityUtil.threadLocalProperties.get().remove(DO_PRE_SET_USER_CLAIM_VALUES);
                 }
             }
             return true;
-//        } catch (EventMgtException e) {
-//            throw new UserStoreException(e);
         } finally {
-            // Remove thread local variable
-            IdentityUtil.threadLocalProperties.get().remove(DO_PRE_SET_USER_CLAIM_VALUES);
+
         }
     }
 

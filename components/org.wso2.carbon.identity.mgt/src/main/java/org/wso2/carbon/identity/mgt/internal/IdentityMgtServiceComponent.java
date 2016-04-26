@@ -9,7 +9,7 @@ import org.wso2.carbon.identity.mgt.listener.IdentityStoreEventListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 
 /**
- * @scr.component name="org.wso2.carbon.identity.mgt.internal.IdentityMgtServiceComponent123"
+ * @scr.component name="org.wso2.carbon.identity.mgt.internal.IdentityMgtServiceComponent"
  * immediate="true
  * @scr.reference name="EventMgtService"
  * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
@@ -23,9 +23,9 @@ public class IdentityMgtServiceComponent {
     protected void activate(ComponentContext context) {
 
         listener = new IdentityMgtEventListener();
-        context.getBundleContext().registerService(UserOperationEventListener.class.getName(),
+        context.getBundleContext().registerService(UserOperationEventListener.class,
                         listener, null);
-        context.getBundleContext().registerService(UserOperationEventListener.class.getName(),
+        context.getBundleContext().registerService(UserOperationEventListener.class,
                 new IdentityStoreEventListener(), null);
         if (log.isDebugEnabled()) {
             log.debug("Identity Management Listener is enabled");

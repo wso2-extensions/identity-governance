@@ -96,7 +96,7 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                 }
             }
         } catch (UserStoreException e) {
-            log.error("Error while obtaining tenant ID from user store manager");
+            log.error("Error while obtaining tenant ID from user store manager", e);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
