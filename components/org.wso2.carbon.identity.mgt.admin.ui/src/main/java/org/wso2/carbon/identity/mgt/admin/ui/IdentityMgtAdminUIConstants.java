@@ -23,5 +23,5 @@ package org.wso2.carbon.identity.mgt.admin.ui;
  */
 public class IdentityMgtAdminUIConstants {
 
-    public static final String IDENTITY_MGT_ADMIN_SERVICE_URL  = "EventManagementAdminService";
+    public static final String IDENTITY_MGT_ADMIN_SERVICE_URL  = "IdentityGovernanceAdminService";
 }

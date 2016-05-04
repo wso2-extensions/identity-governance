@@ -16,7 +16,6 @@
 ~ under the License.
 -->
 
-<%@ page import="org.wso2.carbon.identity.mgt.admin.ui.TenantIdentityMgtClient" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.wso2.carbon.CarbonConstants" %>
 <%@ page import="org.apache.axis2.context.ConfigurationContext" %>
@@ -25,7 +24,9 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.apache.log4j.Logger" %>
+<%@ page import="org.wso2.carbon.identity.mgt.admin.ui.IdentityGovernanceAdminClient" %>
+<%@ page import="org.wso2.carbon.identity.governance.stub.bean.ConnectorConfig" %>
+<%@ page import="org.wso2.carbon.identity.governance.stub.bean.Property" %>
 
 
 <%
@@ -36,8 +37,9 @@
             .getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
 
     Map<String, String> configMap = new HashMap<String, String>();
-    TenantIdentityMgtClient client = new TenantIdentityMgtClient(cookie, backendServerURL, configContext);
-    configMap = client.getConfiguration();
+
+    IdentityGovernanceAdminClient client = new IdentityGovernanceAdminClient(cookie, backendServerURL, configContext);
+    ConnectorConfig[] configs = client.getConnectorList();
 
 %>
 
@@ -87,117 +89,60 @@
     }};
 %>
 
-<h2 id="role_permission_config_head22" class="active trigger">
-    <a href="#">Account Lock Configuration</a>
-</h2>
+    <%for (int j = 0; j < configs.length; j++) {%>
+    <h2 id="role_permission_config_head22" class="active trigger">
+        <a href="#"><%=configs[i].getFriendlyName()%>
+        </a>
+    </h2>
 
-<div class="toggle_container sectionSub" style="margin-bottom:10px; display: none;" id="roleConfig2">
+    <div class="toggle_container sectionSub" style="margin-bottom:10px; display: none;" id="roleConfig2">
 
-<table>
+        <table>
 
-<tr>
-    <%
-        configurations.put("tenantConfiguration" + i, configMap.get("accountLock.enable"));
+            <%
+            Property[] connectorProperties = configs[i].getProperties();
+            for(int k = 0; k < connectorProperties.length; k++) {%>
+                <tr>
+                    <td>
+                        <%=connectorProperties[k].getName()%>
+                    </td>
+                    <td colspan="2"><input type="text" name=<%=connectorProperties[k].getName()%>
+                                           id=<%=connectorProperties[k].getName()%> style="width:400px"
+                                           value="<%=connectorProperties[k].getValue()%>"/>
+                    </td>
+                </tr>
+            <%}%>
+                </table></div>
+    <%}
     %>
 
-    <td><span>Account Lock Enable</span></td>
-    <td colspan="2" name="accountLock.enable" id="accountLock.enable" style="width:410px">
-        <%
-            for (String value : values) {
-                if (value.equals(configurations.get("tenantConfiguration" + i))) {
-        %>
-        <input type="radio" name="accountLock.enable"
-               value="<%=value%>" checked="checked"><%=value%>
-        <input type="hidden" name="accountLock.enable.Original"
-               value="<%=value%>">
-        <%
-        } else {
-        %>
-        <input type="radio" name="accountLock.enable"
-               value="<%=value%>"><%=value%>
-        <%
-                }
-            }
-        %>
+<%--<h2 id="role_permission_config_head22" class="active trigger">--%>
+    <%--<a href="#">Account Lock Configuration</a>--%>
+<%--</h2>--%>
 
-    </td>
+<%--<div class="toggle_container sectionSub" style="margin-bottom:10px; display: none;" id="roleConfig2">--%>
 
+<%--<table>--%>
 
-</tr>
-
-
-
-    <tr>
-        <%
-            configurations.put("tenantConfiguration" + i, configMap.get("accountLock.On.Failure.Max.Attempts"));
-        %>
-        <td>
-            Maximum Failed Login Attempts
-        </td>
-        <td colspan="2"><input type="text" name="accountLock.On.Failure.Max.Attempts"
-                               id="accountLock.On.Failure.Max.Attempts" style="width:400px"
-                               value="<%=configurations.get("tenantConfiguration"+i)%>"/>
-        </td>
-    </tr>
-
-    <tr>
-        <%
-            configurations.put("tenantConfiguration" + i, configMap.get("accountLock.Time"));
-        %>
-        <td>
-            Account Lock Time
-        </td>
-        <td colspan="2"><input type="text" name="accountLock.Time"
-                               id="accountLock.Time" style="width:400px"
-                               value="<%=configurations.get("tenantConfiguration"+i)%>"/>
-    </tr>
 <%--<tr>--%>
     <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Account.Unlock.Enable"));--%>
+        <%--configurations.put("tenantConfiguration" + i, configMap.get("accountLock.enable"));--%>
     <%--%>--%>
 
-    <%--<td><span>Account Unlock Enable</span></td>--%>
-    <%--<td colspan="2" name="Account.Unlock.Enable" id="Account.Unlock.Enable" style="width:410px">--%>
+    <%--<td><span>Account Lock Enable</span></td>--%>
+    <%--<td colspan="2" name="accountLock.enable" id="accountLock.enable" style="width:410px">--%>
         <%--<%--%>
             <%--for (String value : values) {--%>
                 <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
         <%--%>--%>
-        <%--<input type="radio" name="Account.Unlock.Enable"--%>
+        <%--<input type="radio" name="accountLock.enable"--%>
                <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Account.Unlock.Enable.Original"--%>
+        <%--<input type="hidden" name="accountLock.enable.Original"--%>
                <%--value="<%=value%>">--%>
         <%--<%--%>
         <%--} else {--%>
         <%--%>--%>
-        <%--<input type="radio" name="Account.Unlock.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
-
-    <%--</td>--%>
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("accountLock.On.Failure.Max.Attempts"));--%>
-    <%--%>--%>
-
-    <%--<td><span>Account Max Attempt Enable</span></td>--%>
-    <%--<td colspan="2" name="Account.Max.Attempt.Enable" id="Account.Max.Attempt.Enable" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.Max.Attempt.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Account.Max.Attempt.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.Max.Attempt.Enable"--%>
+        <%--<input type="radio" name="accountLock.enable"--%>
                <%--value="<%=value%>"><%=value%>--%>
         <%--<%--%>
                 <%--}--%>
@@ -206,389 +151,473 @@
 
     <%--</td>--%>
 
-<%--</tr>--%>
-
-
-<%--<tr>--%>
-        <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Account.OneTime.Password.Enable"));--%>
-    <%--%>--%>
-
-    <%--<td><span>Account Onetime Password Enable</span></td>--%>
-
-    <%--<td colspan="2" name="Account.OneTime.Password.Enable" id="Account.OneTime.Password.Enable" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.OneTime.Password.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Account.OneTime.Password.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.OneTime.Password.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
-
-    <%--</td>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Account.Password.Reuse.Enable"));--%>
-    <%--%>--%>
-
-    <%--<td><span>Account Password Reuse Enable</span></td>--%>
-
-
-    <%--<td colspan="2" name="Account.Password.Reuse.Enable" id="Account.Password.Reuse.Enable" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.Password.Reuse.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Account.Password.Reuse.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Account.Password.Reuse.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
-
-    <%--</td>--%>
 
 <%--</tr>--%>
 
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Account.Password.Expire.Enable"));--%>
-    <%--%>--%>
 
-    <%--<td><span>Account Password Expire Enable</span></td>--%>
-
-    <%--<td colspan="2" name="Account.Password.Expire.Enable" id="Account.Password.Expire.Enable" style="width:410px">--%>
+    <%--<tr>--%>
         <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
+            <%--configurations.put("tenantConfiguration" + i, configMap.get("accountLock.On.Failure.Max.Attempts"));--%>
         <%--%>--%>
-        <%--<input type="radio" name="Account.Password.Expire.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Account.Password.Expire.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
+        <%--<td>--%>
+            <%--Maximum Failed Login Attempts--%>
+        <%--</td>--%>
+        <%--<td colspan="2"><input type="text" name="accountLock.On.Failure.Max.Attempts"--%>
+                               <%--id="accountLock.On.Failure.Max.Attempts" style="width:400px"--%>
+                               <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
+        <%--</td>--%>
+    <%--</tr>--%>
+
+    <%--<tr>--%>
         <%--<%--%>
-        <%--} else {--%>
+            <%--configurations.put("tenantConfiguration" + i, configMap.get("accountLock.Time"));--%>
         <%--%>--%>
-        <%--<input type="radio" name="Account.Password.Expire.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+        <%--<td>--%>
+            <%--Account Lock Time--%>
+        <%--</td>--%>
+        <%--<td colspan="2"><input type="text" name="accountLock.Time"--%>
+                               <%--id="accountLock.Time" style="width:400px"--%>
+                               <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
+    <%--</tr>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Account.Unlock.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--</td>--%>
+    <%--&lt;%&ndash;<td><span>Account Unlock Enable</span></td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2" name="Account.Unlock.Enable" id="Account.Unlock.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Unlock.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Account.Unlock.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Unlock.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-<%--</tr>--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("accountLock.On.Failure.Max.Attempts"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Notification.Sending.Enable"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--<span>Notification Sending Enable</span></td>--%>
+    <%--&lt;%&ndash;<td><span>Account Max Attempt Enable</span></td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2" name="Account.Max.Attempt.Enable" id="Account.Max.Attempt.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Max.Attempt.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Account.Max.Attempt.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Max.Attempt.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--<td colspan="2" name="Notification.Sending.Enable" id="Notification.Sending.Enable" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Notification.Sending.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Notification.Sending.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Notification.Sending.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
 
-    <%--</td>--%>
-
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Notification.Expire.Time"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Notification Expire Time--%>
-    <%--</td>--%>
-    <%--<td colspan="2"><input type="text" name="Notification.Expire.Time"--%>
-                           <%--id="Notification.Expire.Time" style="width:400px"--%>
-                           <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Notification.Sending.Internally.Managed"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Notification Sending Internally Managed--%>
-    <%--</td>--%>
-
-
-    <%--<td colspan="2" name="Notification.Sending.Internally.Managed" id="Notification.Sending.Internally.Managed"--%>
-        <%--style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (configurations.get("tenantConfiguration" + i).equals(value)) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Notification.Sending.Internally.Managed"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Notification.Sending.Internally.Managed.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Notification.Sending.Internally.Managed"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
-
-    <%--</td>--%>
-<%--</tr>--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
 
-<%--<tr>--%>
-        <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Enable"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Enable--%>
-    <%--</td>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Account.OneTime.Password.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td><span>Account Onetime Password Enable</span></td>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td colspan="2" name="Account.OneTime.Password.Enable" id="Account.OneTime.Password.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.OneTime.Password.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Account.OneTime.Password.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.OneTime.Password.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Account.Password.Reuse.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td><span>Account Password Reuse Enable</span></td>&ndash;%&gt;--%>
 
 
-    <%--<td colspan="2" name="Authentication.Policy.Enable" id="Authentication.Policy.Enable" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (configurations.get("tenantConfiguration" + i).equals(value)) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Enable"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Authentication.Policy.Enable.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Enable"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+    <%--&lt;%&ndash;<td colspan="2" name="Account.Password.Reuse.Enable" id="Account.Password.Reuse.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Password.Reuse.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Account.Password.Reuse.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Password.Reuse.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--</td>--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Account.Exist"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Check Account Exist--%>
-    <%--</td>--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
 
-    <%--<td colspan="2" name="Authentication.Policy.Check.Account.Exist" id="Authentication.Policy.Check.Account.Exist"--%>
-        <%--style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (configurations.get("tenantConfiguration" + i).equals(value)) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Account.Exist"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Authentication.Policy.Check.Account.Exist.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Account.Exist"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Account.Password.Expire.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--</td>--%>
-<%--</tr>--%>
+    <%--&lt;%&ndash;<td><span>Account Password Expire Enable</span></td>&ndash;%&gt;--%>
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Password.Expire"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Check Password Expire--%>
-    <%--</td>--%>
+    <%--&lt;%&ndash;<td colspan="2" name="Account.Password.Expire.Enable" id="Account.Password.Expire.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Password.Expire.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Account.Password.Expire.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Account.Password.Expire.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--<td colspan="2" name="Authentication.Policy.Check.Password.Expire" id="Authentication.Policy.Check.Password.Expire"--%>
-        <%--style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Password.Expire"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Authentication.Policy.Check.Password.Expire.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Password.Expire"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
 
-    <%--</td>--%>
-
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Password.Expire.Time"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Password Expire Time--%>
-    <%--</td>--%>
-    <%--<td colspan="2"><input type="text" name="Authentication.Policy.Password.Expire.Time"--%>
-                           <%--id="Authentication.Policy.Password.Expire.Time" style="width:400px"--%>
-                           <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
-    <%--</td>--%>
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Account.Lock.Time"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Account Lock Time--%>
-    <%--</td>--%>
-    <%--<td colspan="2"><input type="text" name="Authentication.Policy.Account.Lock.Time"--%>
-                           <%--id="Authentication.Policy.Account.Lock.Time" style="width:400px"--%>
-                           <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
-    <%--</td>--%>
-<%--</tr>--%>
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Account.Lock.On.Failure"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Account Lock On Failure--%>
-    <%--</td>--%>
-
-    <%--<td colspan="2" name="Authentication.Policy.Account.Lock.On.Failure"--%>
-        <%--id="Authentication.Policy.Account.Lock.On.Failure" style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Account.Lock.On.Failure"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Authentication.Policy.Account.Lock.On.Failure.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Account.Lock.On.Failure"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
-
-    <%--</td>--%>
-<%--</tr>--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Password.Reuse"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Authentication Policy Check Password Reuse--%>
-    <%--</td>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Notification.Sending.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<span>Notification Sending Enable</span></td>&ndash;%&gt;--%>
 
-    <%--<td colspan="2" name="Authentication.Policy.Check.Password.Reuse" id="Authentication.Policy.Check.Password.Reuse"--%>
-        <%--style="width:410px">--%>
-        <%--<%--%>
-            <%--for (String value : values) {--%>
-                <%--if (value.equals(configurations.get("tenantConfiguration" + i))) {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Password.Reuse"--%>
-               <%--value="<%=value%>" checked="checked"><%=value%>--%>
-        <%--<input type="hidden" name="Authentication.Policy.Check.Password.Reuse.Original"--%>
-               <%--value="<%=value%>">--%>
-        <%--<%--%>
-        <%--} else {--%>
-        <%--%>--%>
-        <%--<input type="radio" name="Authentication.Policy.Check.Password.Reuse"--%>
-               <%--value="<%=value%>"><%=value%>--%>
-        <%--<%--%>
-                <%--}--%>
-            <%--}--%>
-        <%--%>--%>
+    <%--&lt;%&ndash;<td colspan="2" name="Notification.Sending.Enable" id="Notification.Sending.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Notification.Sending.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Notification.Sending.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Notification.Sending.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
 
-    <%--</td>--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
 
-<%--</tr>--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Password.Expire.Frequency"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Password Expire Frequency--%>
-    <%--</td>--%>
-    <%--<td colspan="2"><input type="text" name="Password.Expire.Frequency"--%>
-                           <%--id="Password.Expire.Frequency" style="width:400px"--%>
-                           <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
-    <%--</td>--%>
-<%--</tr>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Notification.Expire.Time"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Notification Expire Time&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2"><input type="text" name="Notification.Expire.Time"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;id="Notification.Expire.Time" style="width:400px"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;value="<%=configurations.get("tenantConfiguration"+i)%>"/>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
 
-
-<%--<tr>--%>
-    <%--<%--%>
-        <%--configurations.put("tenantConfiguration" + i, configMap.get("Password.Reuse.Frequency"));--%>
-    <%--%>--%>
-    <%--<td>--%>
-        <%--Password Reuse Frequency--%>
-    <%--</td>--%>
-    <%--<td colspan="2"><input type="text" name="Password.Reuse.Frequency"--%>
-                           <%--id="Password.Reuse.Frequency" style="width:400px"--%>
-                           <%--value="<%=configurations.get("tenantConfiguration"+i)%>"/>--%>
-    <%--</td>--%>
-<%--</tr>--%>
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Notification.Sending.Internally.Managed"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Notification Sending Internally Managed&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
 
 
-</table>
-</div>
+    <%--&lt;%&ndash;<td colspan="2" name="Notification.Sending.Internally.Managed" id="Notification.Sending.Internally.Managed"&ndash;%&gt;--%>
+        <%--&lt;%&ndash;style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (configurations.get("tenantConfiguration" + i).equals(value)) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Notification.Sending.Internally.Managed"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Notification.Sending.Internally.Managed.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Notification.Sending.Internally.Managed"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Enable"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Enable&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+
+    <%--&lt;%&ndash;<td colspan="2" name="Authentication.Policy.Enable" id="Authentication.Policy.Enable" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (configurations.get("tenantConfiguration" + i).equals(value)) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Authentication.Policy.Enable.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Enable"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Account.Exist"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Check Account Exist&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+
+    <%--&lt;%&ndash;<td colspan="2" name="Authentication.Policy.Check.Account.Exist" id="Authentication.Policy.Check.Account.Exist"&ndash;%&gt;--%>
+        <%--&lt;%&ndash;style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (configurations.get("tenantConfiguration" + i).equals(value)) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Account.Exist"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Authentication.Policy.Check.Account.Exist.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Account.Exist"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Password.Expire"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Check Password Expire&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td colspan="2" name="Authentication.Policy.Check.Password.Expire" id="Authentication.Policy.Check.Password.Expire"&ndash;%&gt;--%>
+        <%--&lt;%&ndash;style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Password.Expire"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Authentication.Policy.Check.Password.Expire.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Password.Expire"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Password.Expire.Time"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Password Expire Time&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2"><input type="text" name="Authentication.Policy.Password.Expire.Time"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;id="Authentication.Policy.Password.Expire.Time" style="width:400px"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;value="<%=configurations.get("tenantConfiguration"+i)%>"/>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Account.Lock.Time"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Account Lock Time&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2"><input type="text" name="Authentication.Policy.Account.Lock.Time"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;id="Authentication.Policy.Account.Lock.Time" style="width:400px"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;value="<%=configurations.get("tenantConfiguration"+i)%>"/>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Account.Lock.On.Failure"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Account Lock On Failure&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td colspan="2" name="Authentication.Policy.Account.Lock.On.Failure"&ndash;%&gt;--%>
+        <%--&lt;%&ndash;id="Authentication.Policy.Account.Lock.On.Failure" style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Account.Lock.On.Failure"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Authentication.Policy.Account.Lock.On.Failure.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Account.Lock.On.Failure"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Authentication.Policy.Check.Password.Reuse"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Authentication Policy Check Password Reuse&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;<td colspan="2" name="Authentication.Policy.Check.Password.Reuse" id="Authentication.Policy.Check.Password.Reuse"&ndash;%&gt;--%>
+        <%--&lt;%&ndash;style="width:410px">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+            <%--&lt;%&ndash;for (String value : values) {&ndash;%&gt;--%>
+                <%--&lt;%&ndash;if (value.equals(configurations.get("tenantConfiguration" + i))) {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Password.Reuse"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>" checked="checked"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="hidden" name="Authentication.Policy.Check.Password.Reuse.Original"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>">&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;} else {&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;<input type="radio" name="Authentication.Policy.Check.Password.Reuse"&ndash;%&gt;--%>
+               <%--&lt;%&ndash;value="<%=value%>"><%=value%>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+                <%--&lt;%&ndash;}&ndash;%&gt;--%>
+            <%--&lt;%&ndash;}&ndash;%&gt;--%>
+        <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Password.Expire.Frequency"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Password Expire Frequency&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2"><input type="text" name="Password.Expire.Frequency"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;id="Password.Expire.Frequency" style="width:400px"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;value="<%=configurations.get("tenantConfiguration"+i)%>"/>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+
+<%--&lt;%&ndash;<tr>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;&lt;%&ndash;%>--%>
+        <%--&lt;%&ndash;configurations.put("tenantConfiguration" + i, configMap.get("Password.Reuse.Frequency"));&ndash;%&gt;--%>
+    <%--&lt;%&ndash;%>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td>&ndash;%&gt;--%>
+        <%--&lt;%&ndash;Password Reuse Frequency&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;<td colspan="2"><input type="text" name="Password.Reuse.Frequency"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;id="Password.Reuse.Frequency" style="width:400px"&ndash;%&gt;--%>
+                           <%--&lt;%&ndash;value="<%=configurations.get("tenantConfiguration"+i)%>"/>&ndash;%&gt;--%>
+    <%--&lt;%&ndash;</td>&ndash;%&gt;--%>
+<%--&lt;%&ndash;</tr>&ndash;%&gt;--%>
+
+
+<%--</table>--%>
+<%--</div>--%>
 
 <%--<h2 id="role_permission_config_head22" class="active trigger">--%>
     <%--<a href="#">Self-signup Configuration</a>--%>

@@ -73,10 +73,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             HashMap<String, Object> properties = new HashMap<>();
             properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
             properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-            properties.put(EventMgtConstants.EventProperty.IDENTITY_MGT_CONFIG, EventMgtConfigBuilder
-                    .getInstance());
             properties.put(EventMgtConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantId());
+            properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain());
 
             Event identityMgtEvent = new Event(eventName, properties);
 
@@ -101,10 +101,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             HashMap<String, Object> properties = new HashMap<>();
             properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
             properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-            properties.put(EventMgtConstants.EventProperty.IDENTITY_MGT_CONFIG, EventMgtConfigBuilder
-                    .getInstance());
             properties.put(EventMgtConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantId());
+            properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain());
             properties.put(EventMgtConstants.EventProperty.OPERATION_STATUS, authenticated);
             Event identityMgtEvent = new Event(eventName, properties);
 

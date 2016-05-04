@@ -16,7 +16,6 @@
 ~ under the License.
 -->
 
-<%@ page import="org.wso2.carbon.identity.mgt.admin.ui.TenantIdentityMgtClient" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIUtil" %>
 <%@ page import="org.apache.axis2.context.ConfigurationContext" %>
 <%@ page import="java.util.HashMap" %>
@@ -26,47 +25,40 @@
 <%@ page import="java.text.MessageFormat" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIMessage" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Enumeration" %>
+<%@ page import="java.util.Properties" %>
+<%@ page import="org.wso2.carbon.identity.governance.stub.bean.Property" %>
+<%@ page import="org.wso2.carbon.identity.mgt.admin.ui.IdentityGovernanceAdminClient" %>
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
-    String BUNDLE = "org.wso2.carbon.identity.event.admin.ui.i18n.Resources";
+    String BUNDLE = "org.wso2.carbon.identity.mgt.admin.ui.i18n.Resources";
     ResourceBundle resourceBundle = ResourceBundle.getBundle(BUNDLE, request.getLocale());
     String forwardTo = null;
     try {
-//        request.getParameterNames()
-        System.out.println();
+        Enumeration<String> paramNames = request.getParameterNames();
+        List<String> paramNamesList = new ArrayList<String>();
+        while (paramNames.hasMoreElements()) {
+            paramNamesList.add(paramNames.nextElement());
+        }
         String cookie = (String) session.getAttribute(ServerConstants.ADMIN_SERVICE_COOKIE);
         String backendServerURL = CarbonUIUtil.getServerURL(config.getServletContext(), session);
         ConfigurationContext configContext = (ConfigurationContext) config.getServletContext()
                 .getAttribute(CarbonConstants.CONFIGURATION_CONTEXT);
 
-        ArrayList<String> configNames = new ArrayList<String>() {{
-            add("accountLock.enable");
-            add("accountLock.Time");
-            add("accountLock.On.Failure.Max.Attempts");
-        }};
-
-
-        HashMap<String, String> configMap = new HashMap<String, String>();
-
-        for (int i = 0; i < configNames.size(); i++) {
-            String configValue = request.getParameter(configNames.get(i));
-            String configValueOriginal = request.getParameter(configNames.get(i) + ".Original");
-
-            if (configValueOriginal != null) {
-                if (!configValue.equals(configValueOriginal)) {
-                    configMap.put(configNames.get(i), configValue);
-                }
-            } else if (configValue != null){
-                configMap.put(configNames.get(i), configValue);
-            }
+        Property[] properties = new Property[paramNamesList.size()];
+        for (int i=0;i<paramNamesList.size();i++) {
+            Property prop = new Property();
+            prop.setName(paramNamesList.get(i));
+            prop.setValue(request.getParameter(paramNamesList.get(i)));
+            properties[i] = prop;
         }
 
-        TenantIdentityMgtClient client =
-                new TenantIdentityMgtClient(cookie, backendServerURL, configContext);
-        client.updateConfiguration(configMap);
+        IdentityGovernanceAdminClient client = new IdentityGovernanceAdminClient(cookie, backendServerURL,
+                configContext);
+        client.updateConfigurations(properties);
         String message = MessageFormat.format(resourceBundle.getString("success.adding.config"), null);
         CarbonUIMessage.sendCarbonUIMessage(message, CarbonUIMessage.INFO, request);
         forwardTo = "../admin/login.jsp";

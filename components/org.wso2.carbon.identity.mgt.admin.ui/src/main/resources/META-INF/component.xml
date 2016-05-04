@@ -19,11 +19,10 @@
 <component xmlns="http://products.wso2.org/carbon">
     <!-- sample menu tenantConfiguration -->
     <menus>
-
         <menu>
             <id>tenant_config_menu</id>
             <i18n-key>add.tenant.config.menu</i18n-key>
-            <i18n-bundle>org.wso2.carbon.identity.event.admin.ui.i18n.Resources</i18n-bundle>
+            <i18n-bundle>org.wso2.carbon.identity.mgt.admin.ui.i18n.Resources</i18n-bundle>
             <parent-menu>identity_menu</parent-menu>
             <link>#</link>
             <region>region1</region>
@@ -36,7 +35,7 @@
         <menu>
             <id>add_tenant_config_menu</id>
             <i18n-key>add.tenant.config</i18n-key>
-            <i18n-bundle>org.wso2.carbon.identity.event.admin.ui.i18n.Resources</i18n-bundle>
+            <i18n-bundle>org.wso2.carbon.identity.mgt.admin.ui.i18n.Resources</i18n-bundle>
             <parent-menu>tenant_config_menu</parent-menu>
             <link>../identity-tenantmgt/add_config.jsp</link>
             <region>region1</region>
