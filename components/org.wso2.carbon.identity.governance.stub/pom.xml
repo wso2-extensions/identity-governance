@@ -54,7 +54,7 @@
                                 </path>
                                 <java classname="org.apache.axis2.wsdl.WSDL2Java" fork="true">
                                     <arg
-                                            line="-uri src/main/resources/IdentityGovernanceAdminService.wsdl -u -uw -o target/generated-code -p org.wso2.carbon.identity.governance.stub -ns2p http://mgt.identity.carbon.wso2.org=org.wso2.carbon.identity.governance.stub,http://bean.mgt.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://model.common.application.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://mgt.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.xsd, http://beans.mgt.captcha.carbon.wso2.org/xsd=org.wso2.carbon.captcha.mgt.beans" />
+                                            line="-uri src/main/resources/IdentityGovernanceAdminService.wsdl -u -uw -o target/generated-code -p org.wso2.carbon.identity.governance.stub -ns2p http://governance.identity.carbon.wso2.org=org.wso2.carbon.identity.governance.stub,http://bean.governance.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://model.common.application.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://governance.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.xsd, http://beans.mgt.captcha.carbon.wso2.org/xsd=org.wso2.carbon.captcha.mgt.beans" />
                                     <classpath refid="wsdl2java.classpath" />
                                 </java>
                             </tasks>
@@ -93,7 +93,7 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
                             org.wso2.carbon.identity.governance.*; version="${carbon.identity.package.export.version}",
-                            org.wso2.carbon.identity.mgt.xsd; version="${carbon.identity.package.export.version}"
+                            org.wso2.carbon.identity.governance.xsd; version="${carbon.identity.package.export.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>

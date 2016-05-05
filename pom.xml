@@ -38,8 +38,8 @@
     <url>http://wso2.org</url>
 
     <modules>
-        <module>components/org.wso2.carbon.identity.mgt.admin.ui</module>
-        <module>components/org.wso2.carbon.identity.mgt</module>
+        <module>components/org.wso2.carbon.identity.governance.ui</module>
+        <module>components/org.wso2.carbon.identity.governance</module>
         <module>components/org.wso2.carbon.identity.governance.stub</module>
     </modules>
 
