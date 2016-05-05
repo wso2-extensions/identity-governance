@@ -27,7 +27,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.identity.mgt.admin.ui</artifactId>
+    <artifactId>org.wso2.carbon.identity.governance.ui</artifactId>
     <packaging>bundle</packaging>
     <name>WSO2 Carbon - Identity Management Admin UI</name>
 
