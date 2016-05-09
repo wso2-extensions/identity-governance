@@ -84,7 +84,7 @@
                         </Export-Package>
                         <Import-Package>
                             org.wso2.carbon.identity.governance.stub;
-                            version="${carbon.identity.package.import.version.range}"
+                            version="[1.0.0,2.0.0)"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Carbon-Component>UIBundle</Carbon-Component>

@@ -90,7 +90,7 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.*,
+                            org.wso2.carbon.identity.governance.stub.*;version="1.0.0-SNAPSHOT",
                             org.wso2.carbon.identity.governance.xsd
                         </Export-Package>
                     </instructions>
