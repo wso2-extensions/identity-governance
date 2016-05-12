@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity</groupId>
         <artifactId>identity-extension-parent</artifactId>
-        <version>5.0.9-SNAPSHOT</version>
+        <version>5.1.1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -124,12 +124,24 @@
         <module>features/org.wso2.carbon.identity.governance.ui.feature</module>
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.wso2.carbon.identity</groupId>
-            <artifactId>org.wso2.carbon.identity.event</artifactId>
-            <version>${identity.framework.version}</version>
-        </dependency>
-    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.event</artifactId>
+                <version>${identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json.wso2</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.wso2.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <properties>
+        <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
+        <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
+    </properties>
 
 </project>
