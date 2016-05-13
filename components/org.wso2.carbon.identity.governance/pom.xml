@@ -35,6 +35,10 @@
             <artifactId>org.wso2.carbon.identity.event</artifactId>
             <version>5.0.9-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.idp.mgt</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -62,7 +66,8 @@
                         </Export-Package>
                         <Import-Package>
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
-                            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}"
+                            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
+                            org.wso2.carbon.idp.mgt;version="${carbon.identity.package.import.version.range}"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>

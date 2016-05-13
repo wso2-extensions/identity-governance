@@ -34,8 +34,7 @@ import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 /**
- * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent"
- * immediate="true
+ * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
  * @scr.reference name="EventMgtService"
  * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
  * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"

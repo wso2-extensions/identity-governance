@@ -48,7 +48,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws IdentityGovernanceException {
 
         try {
-            IdpManager identityProviderManager = EventMgtServiceDataHolder.getInstance().getIdpManager();
+            IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
             IdentityProvider residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
@@ -101,7 +101,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     @Override
     public Map<String, String> getConfiguration(String tenantDomain) throws IdentityGovernanceException {
 
-        IdpManager identityProviderManager = EventMgtServiceDataHolder.getInstance().getIdpManager();
+        IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
         IdentityProvider residentIdp = null;
         try {
             residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
