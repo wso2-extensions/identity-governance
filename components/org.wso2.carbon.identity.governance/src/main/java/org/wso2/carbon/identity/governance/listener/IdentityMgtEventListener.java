@@ -30,6 +30,7 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is an implementation of UserOperationEventListener. This defines
@@ -109,6 +110,67 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantDomain());
             properties.put(EventMgtConstants.EventProperty.OPERATION_STATUS, authenticated);
+            Event identityMgtEvent = new Event(eventName, properties);
+
+            eventMgtService.handleEvent(identityMgtEvent);
+        } catch (EventMgtException e) {
+            throw new UserStoreException("Error when authenticating user", e);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean doPreSetUserClaimValues(String userName, Map<String, String> claims, String profileName, UserStoreManager userStoreManager) throws UserStoreException {
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Pre authenticator is called in IdentityMgtEventListener");
+        }
+        try {
+            String eventName = EventMgtConstants.Event.PRE_SET_USER_CLAIMS;
+
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
+            properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+            properties.put(EventMgtConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantId());
+            properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain());
+            properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
+            properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+            Event identityMgtEvent = new Event(eventName, properties);
+
+            eventMgtService.handleEvent(identityMgtEvent);
+        } catch (EventMgtException e) {
+            throw new UserStoreException("Error when authenticating user", e);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean doPostSetUserClaimValues(String userName, Map<String, String> claims, String profileName,
+                                          UserStoreManager userStoreManager) throws UserStoreException {
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Pre authenticator is called in IdentityMgtEventListener");
+        }
+        try {
+            String eventName = EventMgtConstants.Event.POST_SET_USER_CLAIMS;
+
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
+            properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+            properties.put(EventMgtConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantId());
+            properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain());
+            properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
+            properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
             Event identityMgtEvent = new Event(eventName, properties);
 
             eventMgtService.handleEvent(identityMgtEvent);
