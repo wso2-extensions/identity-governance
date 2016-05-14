@@ -97,7 +97,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             return true;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Pre authenticator is called in IdentityMgtEventListener");
+            log.debug("post authenticator is called in IdentityMgtEventListener");
         }
         try {
             String eventName = EventMgtConstants.Event.POST_AUTHENTICATION;
@@ -126,7 +126,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             return true;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Pre authenticator is called in IdentityMgtEventListener");
+            log.debug("Pre set claims is called in IdentityMgtEventListener");
         }
         try {
             String eventName = EventMgtConstants.Event.PRE_SET_USER_CLAIMS;
@@ -144,7 +144,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             eventMgtService.handleEvent(identityMgtEvent);
         } catch (EventMgtException e) {
-            throw new UserStoreException("Error when authenticating user", e);
+            throw new UserStoreException("Error when setting user claims.", e);
         }
 
         return true;
@@ -157,7 +157,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             return true;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Pre authenticator is called in IdentityMgtEventListener");
+            log.debug("Post set claims is called in IdentityMgtEventListener");
         }
         try {
             String eventName = EventMgtConstants.Event.POST_SET_USER_CLAIMS;
@@ -175,7 +175,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             eventMgtService.handleEvent(identityMgtEvent);
         } catch (EventMgtException e) {
-            throw new UserStoreException("Error when authenticating user", e);
+            throw new UserStoreException("Error when setting user claims.", e);
         }
 
         return true;
