@@ -92,14 +92,13 @@
 <div id="middle">
 
 <h2>
-    Add Configuration Details
+    Identity Governance
 </h2>
 
 <div id="workArea">
 <form id="addTenantConfigurationForm" name="addTenantConfigurationForm" action="add_config_ajaxprocessor.jsp"
       method="post">
-    <% Map<String, String> configurations = new HashMap<String, String>();
-   int i=0;
+    <%
     List<String> values = new ArrayList<String>() {{
         add("true");
         add("false");
@@ -108,16 +107,16 @@
 
     <%for (int j = 0; j < configs.length; j++) {%>
     <h2 id="role_permission_config_head22" class="active trigger">
-        <a href="#"><%=Encode.forHtmlAttribute(configs[i].getFriendlyName())%>
+        <a href="#"><%=Encode.forHtmlAttribute(configs[j].getFriendlyName())%>
         </a>
     </h2>
 
     <div class="toggle_container sectionSub" style="margin-bottom:10px; display: none;" id="roleConfig2">
 
-        <table>
+        <table class="carbonFormTable">
 
             <%
-            Property[] connectorProperties = configs[i].getProperties();
+            Property[] connectorProperties = configs[j].getProperties();
             for(int k = 0; k < connectorProperties.length; k++) {%>
                 <tr>
                     <td>
