@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${identity.governance.version}</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -83,15 +83,14 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.stub.*;version="1.0.0-SNAPSHOT",
-                            org.wso2.carbon.identity.governance.xsd
+                            org.wso2.carbon.identity.governance.stub.*;version="${identity.governance.version}",
+                            org.wso2.carbon.identity.governance.xsd;version="${identity.governance.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
