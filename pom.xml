@@ -257,7 +257,7 @@
     <properties>
         <!--Carbon Identity Governance Version-->
         <identity.governance.version>1.0.0-SNAPSHOT</identity.governance.version>
-        <identity.governance.imp.pkg.version.range>[1.0.0,2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.governance.imp.pkg.version.range>
 
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
 
