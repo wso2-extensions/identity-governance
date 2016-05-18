@@ -17,15 +17,10 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <parent>
-        <groupId>org.wso2.carbon.identity</groupId>
-        <artifactId>identity-extension-parent</artifactId>
-        <version>5.1.1-SNAPSHOT</version>
-    </parent>
-
-    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.wso2.carbon.identity</groupId>
     <artifactId>identity-governance</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <modelVersion>4.0.0</modelVersion>
 
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Identity Management Module</name>
@@ -127,21 +122,168 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.wso2.carbon.identity</groupId>
-                <artifactId>org.wso2.carbon.identity.event</artifactId>
-                <version>${identity.framework.version}</version>
+                <groupId>org.eclipse.equinox</groupId>
+                <artifactId>javax.servlet</artifactId>
+                <version>${equinox.javax.servlet.version}</version>
+            </dependency>
+
+            <!--Orbit Dependencies-->
+            <dependency>
+                <groupId>org.apache.axis2.wso2</groupId>
+                <artifactId>axis2</artifactId>
+                <version>${axis2.wso2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.axis2.wso2</groupId>
+                <artifactId>axis2-client</artifactId>
+                <version>${axis2.wso2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ws.commons.axiom.wso2</groupId>
+                <artifactId>axiom</artifactId>
+                <version>${axiom.wso2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.json.wso2</groupId>
                 <artifactId>json</artifactId>
                 <version>${json.wso2.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>${encoder.wso2.version}</version>
+            </dependency>
+
+            <!--Carbon Kernel Dependencies-->
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.logging</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.ui</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+
+            <!--Carbon Identity Framework Dependencies-->
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.base</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.event</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.idp.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+
+            <!--Carbon Identity Extension Dependencies-->
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.governance.stub</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-scr-plugin</artifactId>
+                    <version>${maven.scr.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>generate-scr-scrdescriptor</id>
+                            <goals>
+                                <goal>scr</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>${maven.bundle.plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <obrRepository>NONE</obrRepository>
+                        <instructions>
+                            <SCM-Revision>${buildNumber}</SCM-Revision>
+                        </instructions>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <preparationGoals>clean install</preparationGoals>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <inherited>true</inherited>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
     <properties>
+        <!--Carbon Identity Governance Version-->
+        <identity.governance.exp.pkg.version>1.0.0-SNAPSHOT</identity.governance.exp.pkg.version>
+        <identity.governance.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+
+        <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
+
+        <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
+        <osgi.service.component.imp.pkg.version.range>[1.2.0, 2.0.0)</osgi.service.component.imp.pkg.version.range>
+
+        <!--Orbit Version-->
+        <axis2.wso2.version>1.6.1.wso2v12</axis2.wso2.version>
+        <axiom.wso2.version>1.2.11.wso2v10</axiom.wso2.version>
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
+        <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
+
+        <!--Carbon Kernel Version-->
+        <carbon.kernel.version>4.4.5</carbon.kernel.version>
+
+        <!--Carbon Identity Framework Version-->
+        <carbon.identity.framework.version>5.5.0-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[5.0.0, 6.0.0)
+        </carbon.identity.framework.imp.pkg.version.range>
+
+        <!--Maven Plugin Version-->
+        <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
+        <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
+        <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
+        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
     </properties>
 
 </project>

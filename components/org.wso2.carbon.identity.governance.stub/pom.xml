@@ -83,15 +83,14 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.stub.*;version="1.0.0-SNAPSHOT",
-                            org.wso2.carbon.identity.governance.xsd
+                            org.wso2.carbon.identity.governance.stub.*;version="${identity.governance.exp.pkg.version}",
+                            org.wso2.carbon.identity.governance.xsd;veridentity.governance.exp.pkg.version.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
