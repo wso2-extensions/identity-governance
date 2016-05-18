@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>${identity.governance.version}</version>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -83,7 +83,7 @@
                             ${project.artifactId}
                         </Bundle-SymbolicName>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.ui.*;version="${identity.governance.version}",
+                            org.wso2.carbon.identity.governance.ui.*;version="${identity.governance.exp.pkg.version}",
                         </Export-Package>
                         <Import-Package>
                             org.wso2.carbon.identity.governance.stub;
