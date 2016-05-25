@@ -29,10 +29,11 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventMgtConstants;
 import org.wso2.carbon.identity.event.EventMgtException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.identity.recovery.bean.ResponseBean;
-import org.wso2.carbon.identity.recovery.internal.IdentityMgtServiceComponent;
-import org.wso2.carbon.identity.recovery.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -105,14 +106,14 @@ public class RecoveryManager {
         return responseBean;
     }
 
-    public UserChallengeAnswer initiateUserChallengeQuestion(User user) throws IdentityException {
+    public UserChallengeAnswer initiateUserChallengeQuestion(User user) throws IdentityException, IdentityGovernanceException {
 
         String challengeQuestionSeparator = "!";
         //TODO readFromConfig
 
         ResponseBean responseBean = verifyUser(user);
         if (!responseBean.isVerified()) {
-            return new UserChallengeAnswer(false, responseBean.getErrorCode());
+            return new UserChallengeAnswer();
         }
 
         int minNoOfQuestionsToAnswer = 2;
@@ -202,7 +203,7 @@ public class RecoveryManager {
         properties.put("CODE", code);
         properties.put("OPERATION_TYPE", type);
         Event identityMgtEvent = new Event(eventName, properties);
-        IdentityMgtServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);
+        IdentityRecoveryServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);
 
     }
 
@@ -233,7 +234,7 @@ public class RecoveryManager {
 
         try {
             int tenantId = Utils.getTenantId(user.getTenantDomain());
-            UserStoreManager userStoreManager = IdentityMgtServiceComponent.getRealmService().
+            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
 
             if (userStoreManager.isExistingUser(userId)) {
@@ -250,7 +251,7 @@ public class RecoveryManager {
                     }
                 } else if (isRecoveryPolicyAccountDisableCheck) {
                     String accountDisable = Utils.getClaimFromUserStoreManager(
-                            userId, tenantId, UserIdentityDataStore.ACCOUNT_DISABLED);
+                            userId, tenantId, "");
                     if (Boolean.parseBoolean(accountDisable)) {
                         //account is Disabled. Not allowing to recover.
                         if (log.isDebugEnabled()) {

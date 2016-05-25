@@ -19,16 +19,13 @@ package org.wso2.carbon.identity.recovery.internal;
 import org.wso2.carbon.identity.event.services.EventMgtService;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
-import java.util.ArrayList;
-import java.util.List;
+public class IdentityRecoveryServiceDataHolder {
 
-public class IdentityMgtServiceDataHolder {
-
-    private static IdentityMgtServiceDataHolder instance = new IdentityMgtServiceDataHolder();
+    private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
     private EventMgtService eventMgtService;
     private IdpManager idpManager;
 
-    public static IdentityMgtServiceDataHolder getInstance() {
+    public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
     }

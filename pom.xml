@@ -117,6 +117,7 @@
         <module>features/org.wso2.carbon.identity.governance.feature</module>
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.ui.feature</module>
+        <module>components/org.wso2.carbon.identity.recovery</module>
     </modules>
 
     <dependencyManagement>

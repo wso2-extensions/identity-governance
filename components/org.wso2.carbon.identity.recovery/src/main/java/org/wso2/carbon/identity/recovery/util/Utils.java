@@ -4,7 +4,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityException;
-import org.wso2.carbon.identity.recovery.internal.IdentityMgtServiceComponent;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -23,7 +23,7 @@ public class Utils {
     public static int getTenantId(String domain) throws IdentityException {
 
         int tenantId;
-        TenantManager tenantManager = IdentityMgtServiceComponent.getRealmService().getTenantManager();
+        TenantManager tenantManager = IdentityRecoveryServiceComponent.getRealmService().getTenantManager();
 
         if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(domain)) {
             tenantId = MultitenantConstants.SUPER_TENANT_ID;
@@ -53,7 +53,7 @@ public class Utils {
             throws IdentityException {
 
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        RealmService realmService = IdentityMgtServiceComponent.getRealmService();
+        RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
         String claimValue = "";
 
         try {
@@ -102,7 +102,7 @@ public class Utils {
         }
 
         try {
-            UserStoreManager userStoreManager = IdentityMgtServiceComponent.
+            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.
                     getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
 
             userStoreManager.updateCredentialByAdmin(userId, password);
@@ -148,7 +148,7 @@ public class Utils {
     public static void setClaimInUserStoreManager(String userName, int tenantId, String claim,
                                                   String value) throws IdentityException {
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        RealmService realmService = IdentityMgtServiceComponent.getRealmService();
+        RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
                 userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).

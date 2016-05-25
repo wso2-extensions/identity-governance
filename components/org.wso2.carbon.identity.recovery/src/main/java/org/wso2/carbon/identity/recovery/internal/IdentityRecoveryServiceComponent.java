@@ -26,27 +26,16 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
- * @scr.reference name="EventMgtService"
- * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
- * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"
  * @scr.reference name="registry.service"
  * interface="org.wso2.carbon.registry.core.service.RegistryService" cardinality="1..1"
  * policy="dynamic" bind="setRegistryService" unbind="unsetRegistryService"
- * @scr.reference name="idp.mgt.event.listener.service"
- * interface="org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector"
- * cardinality="0..n" policy="dynamic"
- * bind="setIdentityGovernanceConnector"
- * unbind="unsetIdentityGovernanceConnector"
  * @scr.reference name="realm.service"
  * interface="org.wso2.carbon.user.core.service.RealmService"cardinality="1..1"
  * policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
- * @scr.reference name="IdentityProviderManager"
- * interface="org.wso2.carbon.idp.mgt.IdpManager" cardinality="1..1"
- * policy="dynamic" bind="setIdpManager" unbind="unsetIdpManager"
  */
-public class IdentityMgtServiceComponent {
+public class IdentityRecoveryServiceComponent {
 
-    private static Log log = LogFactory.getLog(IdentityMgtServiceComponent.class);
+    private static Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);
     private static RealmService realmService;
     private static RegistryService registryService;
 
@@ -69,7 +58,7 @@ public class IdentityMgtServiceComponent {
 
     protected void setRealmService(RealmService realmService) {
         log.debug("Setting the Realm Service");
-        IdentityMgtServiceComponent.realmService = realmService;
+        IdentityRecoveryServiceComponent.realmService = realmService;
     }
 
     public static RegistryService getRegistryService() {
@@ -78,7 +67,7 @@ public class IdentityMgtServiceComponent {
 
     protected void setRegistryService(RegistryService registryService) {
         log.debug("Setting the Registry Service");
-        IdentityMgtServiceComponent.registryService = registryService;
+        IdentityRecoveryServiceComponent.registryService = registryService;
     }
 
     protected void deactivate(ComponentContext context) {
@@ -89,12 +78,12 @@ public class IdentityMgtServiceComponent {
 
     protected void unsetRealmService(RealmService realmService) {
         log.debug("UnSetting the Realm Service");
-        IdentityMgtServiceComponent.realmService = null;
+        IdentityRecoveryServiceComponent.realmService = null;
     }
 
     protected void unsetRegistryService(RegistryService registryService) {
         log.debug("UnSetting the Registry Service");
-        IdentityMgtServiceComponent.registryService = null;
+        IdentityRecoveryServiceComponent.registryService = null;
     }
 
 

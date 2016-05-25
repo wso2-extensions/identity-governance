@@ -25,8 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
-import org.wso2.carbon.identity.governance.IdentityMgtServiceException;
-import org.wso2.carbon.identity.recovery.internal.IdentityMgtServiceComponent;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -55,7 +55,7 @@ public class ChallengeQuestionManager {
         List<ChallengeQuestion> questions = new ArrayList<>();
         try {
             int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-            Registry registry = IdentityMgtServiceComponent.getRegistryService().
+            Registry registry = IdentityRecoveryServiceComponent.getRegistryService().
                     getConfigSystemRegistry(tenantId);
             if (registry.resourceExists(IdentityMgtConstants.IDENTITY_MANAGEMENT_QUESTIONS)) {
                 Collection collection = (Collection) registry.
@@ -90,7 +90,7 @@ public class ChallengeQuestionManager {
         Registry registry = null;
         try {
             int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-            registry = IdentityMgtServiceComponent.getRegistryService().getConfigSystemRegistry(tenantId);
+            registry = IdentityRecoveryServiceComponent.getRegistryService().getConfigSystemRegistry(tenantId);
 
             if (!registry.resourceExists(IdentityMgtConstants.IDENTITY_MANAGEMENT_PATH)) {
                 Collection securityQuestionResource = registry.newCollection();
@@ -174,7 +174,7 @@ public class ChallengeQuestionManager {
 
 
     public UserChallengeAnswer getUserChallengeQuestion(String userName, int tenantId,
-                                                          String challengesUri) throws IdentityMgtServiceException {
+                                                          String challengesUri) throws IdentityGovernanceException {
 
         UserChallengeAnswer userChallengeQuestion = null;
 
@@ -201,7 +201,7 @@ public class ChallengeQuestionManager {
                 }
             } else {
                 userChallengeQuestion = new UserChallengeAnswer();
-                userChallengeQuestion.setError("Challenge questions have not been answered by the user: " + userName);
+//                userChallengeQuestion.setError("Challenge questions have not been answered by the user: " + userName);
             }
 
         } catch (Exception e) {
@@ -211,8 +211,8 @@ public class ChallengeQuestionManager {
                 log.debug(errorMsg, e);
             }
             userChallengeQuestion = new UserChallengeAnswer();
-            userChallengeQuestion.setError(errorMsg);
-            throw new IdentityMgtServiceException(errorMsg, e);
+//            userChallengeQuestion.setError(errorMsg);
+            throw new IdentityGovernanceException(errorMsg, e);
         }
 
         return userChallengeQuestion;
@@ -220,7 +220,7 @@ public class ChallengeQuestionManager {
     }
 
     public String[] getUserChallengeQuestionIds(String userName, int tenantId)
-            throws IdentityMgtServiceException {
+            throws IdentityGovernanceException {
 
         if (log.isDebugEnabled()) {
             log.debug("Retrieving Challenge question ids from the user profile.");
@@ -243,7 +243,7 @@ public class ChallengeQuestionManager {
      * @param tenantId
      * @return
      */
-    public List<String> getChallengeQuestionUris(String userName, int tenantId) throws IdentityMgtServiceException {
+    public List<String> getChallengeQuestionUris(String userName, int tenantId) throws IdentityGovernanceException {
 
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
@@ -257,7 +257,7 @@ public class ChallengeQuestionManager {
             claimValue = Utils.getClaimFromUserStoreManager(userName, tenantId,
                     "http://wso2.org/claims/challengeQuestionUris");
         } catch (IdentityException e) {
-            throw new IdentityMgtServiceException("Error while getting cliams.", e);
+            throw new IdentityGovernanceException("Error while getting cliams.", e);
         }
 
         if (claimValue != null) {
@@ -285,7 +285,7 @@ public class ChallengeQuestionManager {
      * @param tenantId
      * @return
      */
-    public int getNoOfChallengeQuestions(String userName, int tenantId) throws IdentityMgtServiceException {
+    public int getNoOfChallengeQuestions(String userName, int tenantId) throws IdentityGovernanceException {
 
         List<String> questions = getChallengeQuestionUris(userName, tenantId);
         return questions.size();
