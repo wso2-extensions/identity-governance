@@ -20,23 +20,27 @@ package org.wso2.carbon.identity.recovery.store;
 
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 
 /**
  * TODO add java comments
  */
 public interface UserRecoveryDataStore {
-    public void store(UserRecoveryData recoveryDataDO) throws IdentityException;
+    public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
 
-    public void store(UserRecoveryData[] recoveryDataDOs) throws IdentityException;
+    public void store(UserRecoveryData[] recoveryDataDOs) throws IdentityRecoveryException;
 
-    public UserRecoveryData load(User user, int sequence, String code) throws
-            IdentityException;
+    public UserRecoveryData load(String code) throws
+            IdentityRecoveryException;
 
-    public UserRecoveryData invalidate(User user, int sequence, String code) throws
-            IdentityException;
+    public boolean validateCode(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
+            IdentityRecoveryException;
+
+    public UserRecoveryData invalidate(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
+            IdentityRecoveryException;
 
     public UserRecoveryData invalidate(User user) throws
-            IdentityException;
+            IdentityRecoveryException;
 
 }

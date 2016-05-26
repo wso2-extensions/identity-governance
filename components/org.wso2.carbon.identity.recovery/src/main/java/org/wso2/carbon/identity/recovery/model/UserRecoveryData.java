@@ -26,83 +26,19 @@ import org.wso2.carbon.identity.application.common.model.User;
  */
 public class UserRecoveryData {
     private User user;
-//    private enum  step;
-//    private enum scenario;
     private String secret;
-    private String expireTime;
     private String metaData;
-    private int sequence;
-    private boolean isValid;// Need to romove
 
+    private Enum recoveryScenario;
+    private Enum recoveryStep;
 
-    public UserRecoveryData() {
-    }
-
-    public UserRecoveryData(User user) {
+    public UserRecoveryData(User user, String secret, Enum recoveryScenario, Enum recoveryStep) {
         this.user = user;
-        int expireTimeInMinutes = 10;
-        //TODO read this from config
-        this.expireTime = Long.toString(System.currentTimeMillis() + (expireTimeInMinutes * 60 * 1000L));
-    }
-
-    public UserRecoveryData(User user, String secret, int sequence) {
-        this.user = user;
-        this.sequence = sequence;
         this.secret = secret;
-        //TODO read this from config
-        int expireTimeInMinutes = 10;
-        this.expireTime = Long.toString(System.currentTimeMillis() + (expireTimeInMinutes * 60 * 1000L));
+        this.recoveryScenario = recoveryScenario;
+        this.recoveryStep = recoveryStep;
     }
 
-    public UserRecoveryData(User user, String secret, int sequence, String metaData) {
-        this.user = user;
-        this.sequence = sequence;
-        this.secret = secret;
-        this.metaData = metaData;
-        //TODO read this from config
-        int expireTimeInMinutes = 10;
-        this.expireTime = Long.toString(System.currentTimeMillis() + (expireTimeInMinutes * 60 * 1000L));
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public int getSequence() {
-        return sequence;
-    }
-
-    public void setSequence(int sequence) {
-        this.sequence = sequence;
-    }
-
-    public String getSecret() {
-        return secret;
-    }
-
-    public void setSecret(String secret) {
-        this.secret = secret;
-    }
-
-    public String getExpireTime() {
-        return expireTime;
-    }
-
-    public void setExpireTime(String expireTime) {
-        this.expireTime = expireTime;
-    }
-
-    public boolean isValid() {
-        return isValid;
-    }
-
-    public void setIsValid(boolean isValid) {
-        this.isValid = isValid;
-    }
 
     public String getMetaData() {
         return metaData;
@@ -111,4 +47,22 @@ public class UserRecoveryData {
     public void setMetaData(String metaData) {
         this.metaData = metaData;
     }
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public User getUser() {
+
+        return user;
+    }
+
+    public Enum getRecoveryScenario() {
+        return recoveryScenario;
+    }
+
+    public Enum getRecoveryStep() {
+        return recoveryStep;
+    }
+
 }

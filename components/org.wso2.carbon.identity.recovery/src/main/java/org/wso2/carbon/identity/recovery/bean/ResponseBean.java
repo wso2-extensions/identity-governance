@@ -39,14 +39,15 @@ public class ResponseBean implements Serializable {
      */
     private String key;
 
-    /**
-     * Error that is received after unsuccessful verification
-     */
-    private String error;
 
-    private String errorCode;
+    public ResponseBean(User user, String key) {
+        this.user = user;
+        this.key = key;
+    }
 
-    private boolean verified;
+    public ResponseBean(User user) {
+        this.user = user;
+    }
 
     public User getUser() {
         return user;
@@ -62,29 +63,5 @@ public class ResponseBean implements Serializable {
 
     public void setKey(String key) {
         this.key = key;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
     }
 }
