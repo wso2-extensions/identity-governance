@@ -1,0 +1,30 @@
+<!--<?xml version="1.0" encoding="ISO-8859-1"?>-->
+
+<!--<HierarchicalTenancy xmlns="http://wso2.org/projects/carbon/hierarchical-tenancy.xml">-->
+
+    <!--<DataSource>-->
+        <!--<TenantHierarchyDataSource>jdbc/WSO2TMDB</TenantHierarchyDataSource>-->
+        <!--<FeatureHierarchyDataSource>jdbc/WSO2TMDB</FeatureHierarchyDataSource>-->
+    <!--</DataSource>-->
+
+    <!--<ScheduledTaskRunningTime>14:20</ScheduledTaskRunningTime>-->
+
+    <!--<PermissionStringSplitter>/</PermissionStringSplitter>-->
+
+    <!--<PermissionCache>org.wso2.carbon.user.core.rest.cache.handler.DefaultPermissionCache</PermissionCache>-->
+
+    <!--<AuthenticationHandlers>-->
+        <!--<Handler>org.wso2.carbon.user.core.rest.common.authentication.BasicAuthHandler</Handler>-->
+    <!--</AuthenticationHandlers>-->
+
+
+    <!--<AuthorizationHandlerManager>-->
+        <!--<RoleResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultRoleAuthorizationHandlerManager</RoleResourceHandlerManager>-->
+        <!--<UserResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultUserAuthorizationHandlerManager</UserResourceHandlerManager>-->
+        <!--<TenantResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultTenantAuthorizationHandlerManager</TenantResourceHandlerManager>-->
+        <!--<FeatureResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultFeatureAuthorizationHandlerManager</FeatureResourceHandlerManager>-->
+    	<!--<UserStoreResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultUserStoreAuthorizationHandlerManager</UserStoreResourceHandlerManager>-->
+        <!--<ProductResourceHandlerManager>org.wso2.carbon.user.core.rest.common.authorization.manager.DefaultProductAuthorizationHandlerManager</ProductResourceHandlerManager>-->
+    <!--</AuthorizationHandlerManager>-->
+
+<!--</HierarchicalTenancy>-->
