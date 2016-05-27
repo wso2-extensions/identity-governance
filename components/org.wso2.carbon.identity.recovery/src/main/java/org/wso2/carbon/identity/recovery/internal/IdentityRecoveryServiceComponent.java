@@ -18,20 +18,26 @@ package org.wso2.carbon.identity.recovery.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.recovery.NotificationBasedPwdRecoveryManager;
+import org.wso2.carbon.identity.recovery.QuestionBasedPwdRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
-;
 
 /**
- * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
+ * @scr.component name="org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent" immediate="true"
  * @scr.reference name="registry.service"
  * interface="org.wso2.carbon.registry.core.service.RegistryService" cardinality="1..1"
  * policy="dynamic" bind="setRegistryService" unbind="unsetRegistryService"
  * @scr.reference name="realm.service"
  * interface="org.wso2.carbon.user.core.service.RealmService"cardinality="1..1"
  * policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
+ * @scr.reference name="EventMgtService"
+ * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
+ * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -47,6 +53,11 @@ public class IdentityRecoveryServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
             }
+            BundleContext bundleContext = context.getBundleContext();
+            bundleContext.registerService(NotificationBasedPwdRecoveryManager.class.getName(),
+                    new NotificationBasedPwdRecoveryManager(), null);
+            bundleContext.registerService(QuestionBasedPwdRecoveryManager.class.getName(),
+                    new QuestionBasedPwdRecoveryManager(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -84,6 +95,14 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetRegistryService(RegistryService registryService) {
         log.debug("UnSetting the Registry Service");
         IdentityRecoveryServiceComponent.registryService = null;
+    }
+
+    protected void unsetEventMgtService(EventMgtService eventMgtService) {
+        IdentityRecoveryServiceDataHolder.getInstance().setEventMgtService(null);
+    }
+
+    protected void setEventMgtService(EventMgtService eventMgtService) {
+        IdentityRecoveryServiceDataHolder.getInstance().setEventMgtService(eventMgtService);
     }
 
 

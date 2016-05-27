@@ -52,7 +52,7 @@ public class NotificationBasedPwdRecoveryManager {
     private static final Log log = LogFactory.getLog(NotificationBasedPwdRecoveryManager.class);
 
     public ResponseBean sendRecoveryNotification(User user) throws IdentityRecoveryException {
-        boolean isNotificationInternallyManaged = false;
+        boolean isNotificationInternallyManaged = true;
         //TODO Read from configuraion
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -80,8 +80,7 @@ public class NotificationBasedPwdRecoveryManager {
         ResponseBean responseBean = new ResponseBean(user);
 
         if (isNotificationInternallyManaged) {
-            triggerNotification(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
-                    "PASSWORD_RESET", secretKey);
+            triggerNotification(user, "passwordreset", secretKey);
         } else {
             responseBean.setKey(secretKey);
         }
@@ -116,21 +115,22 @@ public class NotificationBasedPwdRecoveryManager {
         }
     }
 
-    private void triggerNotification(String userName, String type, String code) throws IdentityRecoveryException {
+    private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
 
         String eventName = EventMgtConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
-        properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
-                .getThreadLocalCarbonContext().getTenantDomain());
-        properties.put("CODE", code);
-        properties.put("OPERATION_TYPE", type);
+        properties.put(EventMgtConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(EventMgtConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        properties.put("confirmation-code", code);
+        properties.put("TEMPLATE_TYPE", type);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);
         } catch (EventMgtException e) {
-            String message = "Error while trigger notification :" + userName;
+            String message = "Error while trigger notification :" + user.getUserName();
             handleException(message, "", e);
         }
     }
