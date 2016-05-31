@@ -27,20 +27,18 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
  * TODO add java comments
  */
 public interface UserRecoveryDataStore {
-    public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
+    void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
 
-    public void store(UserRecoveryData[] recoveryDataDOs) throws IdentityRecoveryException;
-
-    public UserRecoveryData load(String code) throws
+    /*
+     * returns UserRecoveryData if the code is validated. Otherwise returns an exception.
+     */
+    UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
             IdentityRecoveryException;
 
-    public boolean validateCode(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
+    void invalidate(String code) throws
             IdentityRecoveryException;
 
-    public UserRecoveryData invalidate(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
-            IdentityRecoveryException;
-
-    public UserRecoveryData invalidate(User user) throws
+    void invalidate(User user) throws
             IdentityRecoveryException;
 
 }

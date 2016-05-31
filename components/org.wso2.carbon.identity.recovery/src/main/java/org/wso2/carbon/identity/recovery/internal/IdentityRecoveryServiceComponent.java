@@ -21,8 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.services.EventMgtService;
-import org.wso2.carbon.identity.recovery.NotificationBasedPwdRecoveryManager;
-import org.wso2.carbon.identity.recovery.QuestionBasedPwdRecoveryManager;
+import org.wso2.carbon.identity.recovery.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -54,10 +54,10 @@ public class IdentityRecoveryServiceComponent {
                 log.debug("Identity Management Listener is enabled");
             }
             BundleContext bundleContext = context.getBundleContext();
-            bundleContext.registerService(NotificationBasedPwdRecoveryManager.class.getName(),
-                    new NotificationBasedPwdRecoveryManager(), null);
-            bundleContext.registerService(QuestionBasedPwdRecoveryManager.class.getName(),
-                    new QuestionBasedPwdRecoveryManager(), null);
+            bundleContext.registerService(NotificationPasswordRecoveryManager.class.getName(),
+                    new NotificationPasswordRecoveryManager(), null);
+            bundleContext.registerService(SecurityQuestionPasswordRecoveryManager.class.getName(),
+                    new SecurityQuestionPasswordRecoveryManager(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

@@ -51,8 +51,27 @@ public class IdentityRecoveryConstants {
         public static final String ERROR_CODE_GETTING_CHALLENGE_QUESTION= "20005";
         public static final String ERROR_CODE_QUESTION_OF_USER= "20006";
         public static final String ERROR_CODE_NO_HASHING_ALGO= "20007";
+        public static final String ERROR_CODE_STORING_RECOVERY_DATA= "20008";
+        public static final String ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION= "20009";
+        public static final String ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION= "20010";
 
 
+    }
+
+    public static class SQLQueries {
+
+        public static final String STORE_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
+                + "(USER_NAME, REALM, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, META_DATA)"
+                + "VALUES (?,?,?,?,?,?,?,?)";
+
+        public static final String LOAD_RECOVERY_DATA = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND REALM = ? AND TENANT_ID = ? AND CODE = ? AND " +
+                "SCENARIO = ? AND STEP = ?";
+
+        public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
+
+        public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
+                "REALM = ? AND TENANT_ID =?";
 
     }
 }

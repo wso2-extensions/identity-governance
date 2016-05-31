@@ -136,11 +136,11 @@ public class IdentityRecoveryException extends Exception {
         }
     }
 
-    protected IdentityRecoveryException(String errorDescription) {
+    public IdentityRecoveryException(String errorDescription) {
         super(errorDescription);
     }
 
-    protected IdentityRecoveryException(String errorDescription, Throwable cause) {
+    public IdentityRecoveryException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
 
@@ -155,13 +155,13 @@ public class IdentityRecoveryException extends Exception {
         return errorInfoList;
     }
 
-    public String getCode() {
+    public String getError() {
 
         StringBuilder builder = new StringBuilder();
         for(int i = this.errorInfoList.size() - 1; i >= 0; i--) {
             ErrorInfo info = this.errorInfoList.get(i);
             builder.append('[');
-            builder.append(info.contextId);
+            builder.append(info.errorDescription);
             builder.append(':');
             builder.append(info.errorCode);
             builder.append(']');

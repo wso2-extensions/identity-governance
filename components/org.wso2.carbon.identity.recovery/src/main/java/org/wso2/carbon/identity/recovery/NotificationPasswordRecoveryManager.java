@@ -22,7 +22,6 @@ package org.wso2.carbon.identity.recovery;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -44,16 +43,18 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import java.util.HashMap;
 
 /**
- *
  * Manager class which can be used to recover passwords using a notification
  */
-public class NotificationBasedPwdRecoveryManager {
+public class NotificationPasswordRecoveryManager {
 
-    private static final Log log = LogFactory.getLog(NotificationBasedPwdRecoveryManager.class);
+    private static final Log log = LogFactory.getLog(NotificationPasswordRecoveryManager.class);
 
     public ResponseBean sendRecoveryNotification(User user) throws IdentityRecoveryException {
         boolean isNotificationInternallyManaged = true;
         //TODO Read from configuraion
+
+        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        userRecoveryDataStore.invalidate(user);
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
@@ -63,19 +64,18 @@ public class NotificationBasedPwdRecoveryManager {
             String fullUserName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(fullUserName)) {
                 String message = "User does not exist :" + fullUserName;
-                handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_INVALID_USER);
+                throw handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_INVALID_USER);
             }
 
         } catch (UserStoreException e) {
             String message = "Error while user validation :" + user.getUserName();
-            handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED);
+            throw handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED);
         }
 
         String secretKey = UUIDGenerator.generateUUID();
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.NOTIFY);
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         userRecoveryDataStore.store(recoveryDataDO);
         ResponseBean responseBean = new ResponseBean(user);
 
@@ -92,27 +92,28 @@ public class NotificationBasedPwdRecoveryManager {
     public void updatePassword(User user, String code, String password) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
-        boolean valid = userRecoveryDataStore.validateCode(user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
+        userRecoveryDataStore.load(user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                 RecoverySteps.NOTIFY, code);
+        //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-        if (valid) {
-            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-            String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            try {
-                UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-                userStoreManager.updateCredentialByAdmin(fullName, password);
-            } catch (UserStoreException e) {
-                String message = "Error while updating password :" + fullName;
-                handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
-            }
-            if (log.isDebugEnabled()) {
-                String msg = "Password is updated for  user: " + fullName;
-                log.debug(msg);
-            }
-        } else {
-            String message = "Invalid Code :" + code;
-            handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_INVALID_CODE);
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        try {
+            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
+            userStoreManager.updateCredentialByAdmin(fullName, password);
+        } catch (UserStoreException e) {
+            String message = "Error while updating password :" + fullName;
+            throw handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
         }
+
+        userRecoveryDataStore.invalidate(code);
+
+        if (log.isDebugEnabled()) {
+            String msg = "Password is updated for  user: " + fullName;
+            log.debug(msg);
+        }
+
     }
 
     private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
@@ -131,27 +132,29 @@ public class NotificationBasedPwdRecoveryManager {
             IdentityRecoveryServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);
         } catch (EventMgtException e) {
             String message = "Error while trigger notification :" + user.getUserName();
-            handleException(message, "", e);
+            throw handleException(message, "", e);
         }
     }
 
-    private void handleException(String errorDescription, String errorCode) throws
+    private IdentityRecoveryException handleException(String errorDescription, String errorCode) throws
             IdentityRecoveryException {
         IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription);
         IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.errorCode(errorCode);
         identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        throw identityRecoveryException;
+        log.error(errorDescription + "    Code :" + errorCode);
+        return identityRecoveryException;
     }
 
-    private void handleException(String errorDescription, String errorCode, Throwable e) throws IdentityRecoveryException {
+    private IdentityRecoveryException handleException(String errorDescription, String errorCode, Throwable e) throws IdentityRecoveryException {
         IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
         IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.cause(e);
         errorInfoBuilder.errorCode(errorCode);
         identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        throw identityRecoveryException;
+        log.error(errorDescription + "    Code :" + errorCode, e);
+        return identityRecoveryException;
     }
 }

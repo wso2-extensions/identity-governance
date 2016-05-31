@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.recovery.model;
 /**
  * encapsulates challenge questions data
  */
-public class UserChallengeAnswer {
+public class UserChallengeQuestion {
 
     private String question;
 
@@ -29,71 +29,52 @@ public class UserChallengeAnswer {
 
     private String answer;
 
-    private String errorCode;
-
     private String code;
 
     private String status;
 
-    private boolean verified;// Need to remove
-
-    public String getQuestionSetId() {
-        return questionSetId;
+    public UserChallengeQuestion(String question, String questionSetId, String answer, String code, String status) {
+        this.question = question;
+        this.questionSetId = questionSetId;
+        this.answer = answer;
+        this.code = code;
+        this.status = status;
     }
 
-    public void setQuestionSetId(String questionSetId) {
+    public UserChallengeQuestion(String questionSetId, String question) {
         this.questionSetId = questionSetId;
+        this.question = question;
     }
 
     public String getQuestion() {
         return question;
     }
 
-    public void setQuestion(String question) {
-        this.question = question;
+    public String getQuestionSetId() {
+        return questionSetId;
     }
 
     public String getAnswer() {
         return answer;
     }
 
-    public void setAnswer(String answer) {
-        this.answer = answer;
-    }
-
     public String getCode() {
         return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public String getStatus() {
         return status;
     }
 
+    public void setAnswer(String answer) {
+        this.answer = answer;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    public UserChallengeAnswer() {
-
     }
 }

@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
-import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
+import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
@@ -139,9 +139,9 @@ public class ChallengeQuestionManager {
      * @param user
      * @return
      */
-    public UserChallengeAnswer[] getChallengeQuestionsOfUser(User user) throws IdentityRecoveryException {
+    public UserChallengeQuestion[] getChallengeQuestionsOfUser(User user) throws IdentityRecoveryException {
 
-        List<UserChallengeAnswer> challengeQuestions = new ArrayList<>();
+        List<UserChallengeQuestion> challengeQuestions = new ArrayList<>();
 
         if (log.isDebugEnabled()) {
             log.debug("Retrieving Challenge question from the user profile.");
@@ -170,26 +170,25 @@ public class ChallengeQuestionManager {
             String[] challengeValues = challengeValue.
                     split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
-                UserChallengeAnswer userChallengeQuestion = new UserChallengeAnswer();
-                userChallengeQuestion.setQuestionSetId(challengesUri);
-                userChallengeQuestion.setQuestion(challengeValues[0].trim());
+                UserChallengeQuestion userChallengeQuestion = new UserChallengeQuestion(challengesUri,
+                        challengeValues[0].trim());
                 userChallengeQuestion.setAnswer(challengeValues[1].trim());
                 challengeQuestions.add(userChallengeQuestion);
             }
         }
 
         if (!challengeQuestions.isEmpty()) {
-            return challengeQuestions.toArray(new UserChallengeAnswer[challengeQuestions.size()]);
+            return challengeQuestions.toArray(new UserChallengeQuestion[challengeQuestions.size()]);
         } else {
-            return new UserChallengeAnswer[0];
+            return new UserChallengeQuestion[0];
         }
 
     }
 
 
-    public UserChallengeAnswer getUserChallengeQuestion(User user, String challengesUri) throws IdentityRecoveryException {
+    public UserChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws IdentityRecoveryException {
 
-        UserChallengeAnswer userChallengeQuestion = null;
+        UserChallengeQuestion userChallengeQuestion = null;
         if (log.isDebugEnabled()) {
             log.debug("Retrieving Challenge question from the user profile.");
         }
@@ -214,10 +213,7 @@ public class ChallengeQuestionManager {
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeperator);
             if (challengeValues != null && challengeValues.length == 2) {
-                userChallengeQuestion = new UserChallengeAnswer();
-                userChallengeQuestion.setQuestionSetId(challengesUri);
-                userChallengeQuestion.setQuestion(challengeValues[0].trim());
-
+                userChallengeQuestion = new UserChallengeQuestion(challengesUri, challengeValues[0].trim());
             }
         }
         return userChallengeQuestion;
@@ -304,7 +300,7 @@ public class ChallengeQuestionManager {
      * @param userChallengeQuestions
      * @throws IdentityException
      */
-    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeQuestions) throws IdentityRecoveryException {
+    public void setChallengesOfUser(User user, UserChallengeQuestion[] userChallengeQuestions) throws IdentityRecoveryException {
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
@@ -315,7 +311,7 @@ public class ChallengeQuestionManager {
             //TODO read from config
 
             if (!ArrayUtils.isEmpty(userChallengeQuestions)) {
-                for (UserChallengeAnswer userChallengeQuestion : userChallengeQuestions) {
+                for (UserChallengeQuestion userChallengeQuestion : userChallengeQuestions) {
                     if (userChallengeQuestion.getQuestionSetId() != null && userChallengeQuestion.getQuestion() != null && userChallengeQuestion.getAnswer() != null) {
                         String oldValue = Utils.
                                 getClaimFromUserStoreManager(user, userChallengeQuestion.getQuestionSetId().trim());
@@ -366,21 +362,21 @@ public class ChallengeQuestionManager {
      * @param challengeQuestions
      * @return
      */
-    public boolean verifyChallengeQuestion(User user, UserChallengeAnswer[] challengeQuestions) throws IdentityRecoveryException {
+    public boolean verifyChallengeQuestion(User user, UserChallengeQuestion[] challengeQuestions) throws IdentityRecoveryException {
 
         boolean verification = false;
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
 
-        UserChallengeAnswer[] storedQuestions = getChallengeQuestionsOfUser(user);
+        UserChallengeQuestion[] storedQuestions = getChallengeQuestionsOfUser(user);
 
-        for (UserChallengeAnswer userChallengeQuestion : challengeQuestions) {
+        for (UserChallengeQuestion userChallengeQuestion : challengeQuestions) {
             if (userChallengeQuestion.getAnswer() == null || userChallengeQuestion.getAnswer().trim().length() < 1) {
                 return false;
             }
 
-            for (UserChallengeAnswer storedQestion : storedQuestions) {
+            for (UserChallengeQuestion storedQestion : storedQuestions) {
                 if ((userChallengeQuestion.getQuestionSetId() == null || !userChallengeQuestion.getQuestionSetId().trim().equals(storedQestion
                         .getQuestionSetId())) &&
                         (userChallengeQuestion.getQuestion() == null || !userChallengeQuestion.getQuestion().
@@ -413,20 +409,20 @@ public class ChallengeQuestionManager {
         return verification;
     }
 
-    public boolean verifyUserChallengeAnswer(User user, UserChallengeAnswer userChallengeQuestion) throws IdentityRecoveryException {
+    public boolean verifyUserChallengeAnswer(User user, UserChallengeQuestion userChallengeQuestion) throws IdentityRecoveryException {
 
         boolean verification = false;
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
 
-        UserChallengeAnswer[] storedDto = getChallengeQuestionsOfUser(user);
+        UserChallengeQuestion[] storedDto = getChallengeQuestionsOfUser(user);
 
         if (userChallengeQuestion.getAnswer() == null || userChallengeQuestion.getAnswer().trim().length() < 1) {
             return false;
         }
 
-        for (UserChallengeAnswer dto : storedDto) {
+        for (UserChallengeQuestion dto : storedDto) {
 
             if (dto.getQuestionSetId().equals(userChallengeQuestion.getQuestionSetId())) {
 
