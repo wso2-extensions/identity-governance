@@ -88,6 +88,12 @@
 
 </script>
 
+<script type="text/javascript">
+    function setBooleanValueToTextBox(element) {
+        document.getElementById(element.value).value = element.checked;
+    }
+</script>
+
 <fmt:bundle basename="org.wso2.carbon.identity.event.admin.ui.i18n.Resources">
 <div id="middle">
 
@@ -117,16 +123,35 @@
 
             <%
             Property[] connectorProperties = configs[j].getProperties();
-            for(int k = 0; k < connectorProperties.length; k++) {%>
+                for (int k = 0; k < connectorProperties.length; k++) {
+                    String value = connectorProperties[k].getValue();%>
+
                 <tr>
                     <td>
-                        <%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>
+                        <%=Encode.forHtmlAttribute(connectorProperties[k].getDisplayName())%>
                     </td>
+                    <%
+                        if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+                            // assume as boolean value. But actually this must be sent from backend.
+                            // will fix for next release.
+                    %>
+                    <td>
+                        <input class="sectionCheckbox" type="checkbox"
+                               onclick="setBooleanValueToTextBox(this)"
+                                <%if (Boolean.parseBoolean(value)) {%> checked="checked" <%}%>
+                               value="<%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>"/>
+                        <input id="<%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>"
+                               name="<%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>"
+                               type="hidden" value="<%=Encode.forHtmlAttribute(value)%>"/>
+                    </td>
+                    <%
+                    } else {%>
                     <td colspan="2"><input type="text" name=<%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>
                                            id=<%=Encode.forHtmlAttribute(connectorProperties[k].getName())%>
                                            style="width:400px"
-                                           value="<%=Encode.forHtmlAttribute(connectorProperties[k].getValue())%>"/>
+                                           value="<%=Encode.forHtmlAttribute(value)%>"/>
                     </td>
+                    <%}%>
                 </tr>
             <%}%>
                 </table></div>

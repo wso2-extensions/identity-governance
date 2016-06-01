@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 
 import java.util.List;
@@ -26,9 +27,9 @@ public interface IdentityGovernanceService {
     void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws
             IdentityGovernanceException;
 
-    Map<String, String> getConfiguration(String tenantDomain) throws IdentityGovernanceException;
+    Property[] getConfiguration(String tenantDomain) throws IdentityGovernanceException;
 
-    Map<String, String> getConfiguration(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
+    Property[] getConfiguration(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
 
     List<IdentityGovernanceConnector> getConnectorList() throws IdentityGovernanceException;
 

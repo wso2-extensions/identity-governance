@@ -16,10 +16,6 @@
 
 package org.wso2.carbon.identity.governance.model;
 
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.governance.IdentityMgtConstants;
-import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,13 +26,7 @@ import java.util.Map;
  */
 public class UserIdentityClaim implements Serializable {
 
-    private String userName;private long unlockTime;
-    private long lastLogonTime;
-    private long lastFailAttemptTime;
-    private int failedAttempts;
-    private boolean accountLock;
-    private boolean passwordChangeRequired;
-    private boolean oneTimeLogin;
+    private String userName;
     private Map<String, String> userIdentityDataMap = new HashMap<>();
     private int tenantId;
 
@@ -48,66 +38,6 @@ public class UserIdentityClaim implements Serializable {
 
         this.userName = userName;
         this.userIdentityDataMap = userDataMap;
-
-        if (userDataMap.get(IdentityMgtConstants.Claim.UNLOCKING_TIME) != null) {
-            String unlockTime = userDataMap.get(IdentityMgtConstants.Claim.UNLOCKING_TIME).trim();
-            if (!unlockTime.isEmpty()) {
-                setUnlockTime(Long.parseLong(unlockTime));
-            } else {
-                setUnlockTime(0);
-            }
-        }
-        if (userDataMap.get(IdentityMgtConstants.Claim.ACCOUNT_LOCK) != null) {
-            setAccountLock(Boolean.parseBoolean(userDataMap.get(IdentityMgtConstants.Claim.ACCOUNT_LOCK)));
-        }
-
-        if (userDataMap.get(IdentityMgtConstants.Claim.FAIL_LOGIN_ATTEMPTS) != null) {
-            String failedAttempts = userDataMap.get(IdentityMgtConstants.Claim.FAIL_LOGIN_ATTEMPTS)
-                    .trim();
-            if (!failedAttempts.isEmpty()) {
-                setFailAttempts(Integer.parseInt(failedAttempts));
-            } else {
-                setFailAttempts(0);
-            }
-        }
-    }
-
-    public boolean isAccountLocked() {
-        if (unlockTime != 0 && unlockTime < System.currentTimeMillis()) {
-            return false;
-        }
-        return accountLock;
-    }
-
-    public UserIdentityClaim setAccountLock(boolean accountLock) {
-        this.accountLock = accountLock;
-        this.userIdentityDataMap.put(IdentityMgtConstants.Claim.ACCOUNT_LOCK,
-                Boolean.toString(accountLock));
-        return this;
-    }
-
-    public boolean getAccountLock() {
-        return accountLock;
-    }
-
-    public void setUnlockTime(long unlockTime) {
-        this.unlockTime = unlockTime;
-        this.userIdentityDataMap.put(IdentityMgtConstants.Claim.UNLOCKING_TIME,
-                Long.toString(unlockTime));
-    }
-
-    public long getUnlockTime() {
-        return unlockTime;
-    }
-
-    public int getFailAttempts() {
-        return failedAttempts;
-    }
-
-    public void setFailAttempts(int failAttempts) {
-        this.failedAttempts = failAttempts;
-        this.userIdentityDataMap.put(IdentityMgtConstants.Claim.FAIL_LOGIN_ATTEMPTS,
-                Integer.toString(failAttempts));
     }
 
     public String getUserName() {
@@ -145,68 +75,5 @@ public class UserIdentityClaim implements Serializable {
      */
     public void setUserIdentityDataClaim(String claim, String value) {
         userIdentityDataMap.put(claim, value);
-        if(StringUtils.isBlank(value)){
-            return;
-        } else if (UserIdentityDataStore.FAIL_LOGIN_ATTEMPTS.equalsIgnoreCase(claim)) {
-            setFailAttempts(Integer.parseInt(value));
-        } else if (UserIdentityDataStore.LAST_FAILED_LOGIN_ATTEMPT_TIME.equalsIgnoreCase(claim)) {
-            setLastFailAttemptTime(Long.parseLong(value));
-        } else if (UserIdentityDataStore.UNLOCKING_TIME.equalsIgnoreCase(claim)) {
-            setUnlockTime(Long.parseLong(value));
-        } else if (UserIdentityDataStore.ONE_TIME_PASSWORD.equalsIgnoreCase(claim)) {
-            setOneTimeLogin(Boolean.parseBoolean(value));
-        } else if (UserIdentityDataStore.PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(claim)) {
-            setPasswordChangeRequired(Boolean.parseBoolean(value));
-        } else if (UserIdentityDataStore.LAST_LOGON_TIME.equalsIgnoreCase(claim)) {
-            setLastLogonTime(Long.parseLong(value));
-        } else if (UserIdentityDataStore.ACCOUNT_LOCK.equalsIgnoreCase(claim)) {
-            setAccountLock(Boolean.parseBoolean(value));
-        }
-    }
-
-    public long getLastLogonTime() {
-        return lastLogonTime;
-    }
-
-    public void setLastLogonTime(long lastLogonTime) {
-        this.lastLogonTime = lastLogonTime;
-        this.userIdentityDataMap.put(UserIdentityDataStore.LAST_LOGON_TIME,
-                Long.toString(lastLogonTime));
-    }
-
-    public long getLastFailAttemptTime() {
-        return lastFailAttemptTime;
-    }
-
-    public void setLastFailAttemptTime(long lastFailAttemptTime) {
-        this.lastFailAttemptTime = lastFailAttemptTime;
-        this.userIdentityDataMap.put(UserIdentityDataStore.LAST_FAILED_LOGIN_ATTEMPT_TIME,
-                Long.toString(lastFailAttemptTime));
-    }
-
-    public void setFailAttempts() {
-        this.failedAttempts++;
-        this.userIdentityDataMap.put(UserIdentityDataStore.FAIL_LOGIN_ATTEMPTS,
-                Integer.toString(failedAttempts));
-    }
-
-    public boolean getOneTimeLogin() {
-        return oneTimeLogin;
-    }
-
-    public void setOneTimeLogin(boolean oneTimeLogin) {
-        this.oneTimeLogin = oneTimeLogin;
-        this.userIdentityDataMap.put(UserIdentityDataStore.ONE_TIME_PASSWORD,
-                Boolean.toString(oneTimeLogin));
-    }
-
-    public boolean getPasswordChangeRequired() {
-        return passwordChangeRequired;
-    }
-
-    public void setPasswordChangeRequired(boolean passwordChangeRequired) {
-        this.passwordChangeRequired = passwordChangeRequired;
-        this.userIdentityDataMap.put(UserIdentityDataStore.PASSWORD_CHANGE_REQUIRED,
-                Boolean.toString(passwordChangeRequired));
     }
 }

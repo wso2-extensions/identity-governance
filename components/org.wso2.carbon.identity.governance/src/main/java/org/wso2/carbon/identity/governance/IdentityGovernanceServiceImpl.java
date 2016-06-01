@@ -22,9 +22,9 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.event.EventMgtConstants;
-import org.wso2.carbon.identity.event.internal.EventMgtServiceDataHolder;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -99,7 +99,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
      * @return Configurations belong to the tenant
      */
     @Override
-    public Map<String, String> getConfiguration(String tenantDomain) throws IdentityGovernanceException {
+    public Property[] getConfiguration(String tenantDomain) throws IdentityGovernanceException {
 
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
         IdentityProvider residentIdp = null;
@@ -109,31 +109,37 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             log.error("Error while retrieving resident Idp with identity mgt properties.");
         }
         IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
-        Map<String, String> configMap = new HashMap<>();
+        Property[] configMap = new Property[identityMgtProperties.length];
+        int index = 0;
         for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
-            if (EventMgtConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY.equals(identityMgtProperty.getName())) {
+            if (IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY.equals(identityMgtProperty.getName())) {
                 continue;
             }
-            configMap.put(identityMgtProperty.getName(), identityMgtProperty.getValue());
+            Property property = new Property();
+            property.setName(identityMgtProperty.getName());
+            property.setValue(identityMgtProperty.getValue());
+            configMap[index] = property;
+            index++;
         }
         return configMap;
     }
 
     @Override
-    public Map<String, String> getConfiguration(String[] propertyNames, String tenantDomain) throws
+    public Property[] getConfiguration(String[] propertyNames, String tenantDomain) throws
             IdentityGovernanceException {
 
-        Map<String, String> requestedProperties = new HashMap<>();
-        Map<String, String> allProperties = getConfiguration(tenantDomain);
+        List<Property> requestedProperties = new ArrayList<>();
+        Property[] allProperties = getConfiguration(tenantDomain);
         for (String propertyName : propertyNames) {
-            String propertyValue = allProperties.get(propertyName);
-            if (StringUtils.isNotBlank(propertyValue)) {
-                requestedProperties.put(propertyName, allProperties.get(propertyName));
-            } else {
-                throw new IdentityGovernanceException(propertyName + " was an invalid property name.");
+            for (int i = 0; i < allProperties.length; i++) {
+                if (propertyName.equals(allProperties[i].getName())) {
+                    requestedProperties.add(allProperties[i]);
+                    break;
+                }
             }
+
         }
-        return requestedProperties;
+        return requestedProperties.toArray(new Property[requestedProperties.size()]);
 
     }
 

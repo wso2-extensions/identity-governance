@@ -22,7 +22,7 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.event.EventMgtConstants;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -51,7 +51,7 @@ public class IdentityGovernanceUtil {
             List<IdentityProviderProperty> propertyList = new ArrayList<>();
             for (IdentityProviderProperty idpProperty : idpProperties) {
                 String propertyName = idpProperty.getName();
-                if ((identityGovernanceConnector.getName() + "." + EventMgtConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
+                if ((identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
                     }
@@ -69,9 +69,9 @@ public class IdentityGovernanceUtil {
                 propertyList.add(property);
             }
             IdentityProviderProperty property = new IdentityProviderProperty();
-            property.setName(identityGovernanceConnector.getName() + "." + EventMgtConstants.PropertyConfig
+            property.setName(identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig
                     .ALREADY_WRITTEN_PROPERTY_KEY);
-            property.setValue(EventMgtConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
+            property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
             propertyList.add(property);
             residentIdp.setIdpProperties(propertyList.toArray(new IdentityProviderProperty[propertyList.size()]));
             FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
