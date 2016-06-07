@@ -50,7 +50,7 @@ public class ChallengeQuestionManager {
 
     /**
      * @return
-     * @throws IdentityException
+     * @throws IdentityRecoveryException
      */
     public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws IdentityRecoveryException {
 
@@ -87,7 +87,7 @@ public class ChallengeQuestionManager {
 
     /**
      * @param questions
-     * @throws IdentityException
+     * @throws IdentityRecoveryException
      */
     public void setChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws IdentityRecoveryException {
         Registry registry = null;
