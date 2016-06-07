@@ -26,33 +26,15 @@ import java.util.List;
 /**
  * Used for creating checked exceptions that can be handled.
  */
-public class IdentityRecoveryException extends IdentityException {
+public class IdentityRecoveryClientException extends IdentityRecoveryException {
 
-    private static final long serialVersionUID = 5697663399373749593L;
+    private static final long serialVersionUID = -8248805950312129249L;
 
-    public IdentityRecoveryException(String errorDescription) {
+    public IdentityRecoveryClientException(String errorDescription) {
         super(errorDescription);
     }
 
-    public IdentityRecoveryException(String errorDescription, Throwable cause) {
+    public IdentityRecoveryClientException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
-
-    public String getErrorDescription() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorDescription();
-        }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getMessage();
-    }
-
-    public String getErrorCode() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorCode();
-        }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode();
-
-    }
-
 }

@@ -7,11 +7,10 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.sql.*;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     @Override
@@ -27,13 +26,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
             prepStmt.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
             prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
-            prepStmt.setString(8, recoveryDataDO.getMetaData());
+            prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt.execute();
             connection.setAutoCommit(false);
             connection.commit();
         } catch (SQLException e) {
-            String errorDescription = "Error while storing user recovery data";
-            throw handleException(errorDescription, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_STORING_RECOVERY_DATA);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -62,8 +60,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
             if (resultSet.next()) {
                 UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep);
-                if (StringUtils.isNotBlank(resultSet.getString("META_DATA"))) {
-                    userRecoveryData.setMetaData(resultSet.getString("META_DATA"));
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
@@ -72,19 +70,17 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
 
                 if (System.currentTimeMillis() > expiryTime) {
-                    throw handleException("Expired Code :" + code, IdentityRecoveryConstants.ErrorCode
-                            .ERROR_CODE_EXPIRED_CODE);
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE, null);
                 }
                 return userRecoveryData;
             }
         } catch (SQLException e) {
-            String errorMsg = "Error occurred while validating code for user : " + user.getUserName();
-            throw handleException(errorMsg, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeResultSet(resultSet);
             IdentityDatabaseUtil.closeStatement(prepStmt);
         }
-        throw handleException("Invalid Code : " + code, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_INVALID_CODE);
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
     }
 
     @Override
@@ -99,8 +95,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String errorMsg = "Error occurred while invalidate code";
-            throw handleException(errorMsg, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
         }
@@ -122,31 +117,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String errorMsg = "Error occurred while invalidate code";
-            throw handleException(errorMsg, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
         }
-    }
-
-    private IdentityRecoveryException handleException(String errorDescription, String errorCode) throws
-            IdentityRecoveryException {
-        IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription);
-        IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(errorCode);
-        identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryException;
-    }
-
-    private IdentityRecoveryException handleException(String errorDescription, String errorCode, Throwable e) throws
-            IdentityRecoveryException {
-        IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-        IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(errorCode);
-        identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryException;
     }
 }

@@ -5,8 +5,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.SecurityQuestionPasswordRecoveryManager;
-import org.wso2.carbon.identity.recovery.bean.ResponseBean;
+import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
@@ -31,38 +30,40 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
         try {
             userChallengeQuestion = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestion(user);
         } catch (IdentityRecoveryException e) {
-            return handleResponse(ResponseStatus.FAILED, e.getError());
+            userChallengeQuestion = null;
+//            return handleResponse(ResponseStatus.FAILED, e.getError());
         }
         return Response.ok(userChallengeQuestion).build();
     }
 
-    @PUT
-    @Path("/initiate")
-    public Response verifyUserChallengeQuestion(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-                                                  User user, UserChallengeQuestion userChallengeQuestion) {
-
-        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
-        UserChallengeQuestion challengeQuestion;
-        try {
-            challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestion(user,
-                    userChallengeQuestion);
-        } catch (IdentityRecoveryException e) {
-            return handleResponse(ResponseStatus.FAILED, e.getError());
-        }
-        return Response.ok(challengeQuestion).build();
-    }
-
-    @PUT
-    @Path("/reset_password")
-    public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-                                             User user, String code, String password) {
-
-        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
-        try {
-            securityQuestionBasedPwdRecoveryManager.updatePassword(user, code, password);
-        } catch (IdentityRecoveryException e) {
-            return handleResponse(ResponseStatus.FAILED, e.getError());
-        }
-        return Response.ok().build();
-    }
+//    @PUT
+//    @Path("/verify")
+//    public Response verifyUserChallengeQuestion(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
+//                                                  VerifyAnswer verifyAnswer) {
+//
+//        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+//        UserChallengeQuestion challengeQuestion;
+//        try {
+//            challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestion(verifyAnswer.getUser(),
+//                    verifyAnswer.getUserChallengeAnswer());
+//        } catch (IdentityRecoveryException e) {
+//            return handleResponse(ResponseStatus.FAILED, e.getError());
+//        }
+//        return Response.ok(challengeQuestion).build();
+//    }
+//
+//    @PUT
+//    @Path("/reset_password")
+//    public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
+//                                             UserPassword userPassword) {
+//
+//        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+//        try {
+//            securityQuestionBasedPwdRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
+//                    userPassword.getPassword());
+//        } catch (IdentityRecoveryException e) {
+//            return handleResponse(ResponseStatus.FAILED, e.getError());
+//        }
+//        return Response.ok().build();
+//    }
 }

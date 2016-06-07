@@ -17,22 +17,23 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.recovery;
+package org.wso2.carbon.identity.recovery.password;
 
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
-import org.wso2.carbon.identity.recovery.model.RecoveryScenarios;
-import org.wso2.carbon.identity.recovery.model.RecoverySteps;
+import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -62,15 +63,14 @@ public class SecurityQuestionPasswordRecoveryManager {
         try {
             userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
-            String fullUserName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            if (!userStoreManager.isExistingUser(fullUserName)) {
-                String message = "User does not exist :" + fullUserName;
-                handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_INVALID_USER);
+            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                        domainQualifiedUsername);
             }
 
         } catch (UserStoreException e) {
-            String message = "Error while user validation :" + user.getUserName();
-            handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
 
         int minNoOfQuestionsToAnswer = 2;
@@ -80,8 +80,8 @@ public class SecurityQuestionPasswordRecoveryManager {
         String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
 
         if (ids == null || ids.length == 0) {
-            handleException("No answered challenge questions found , user :" + user.getUserName(),
-                    IdentityRecoveryConstants.ErrorCode.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, user.getUserName());
         }
 
 
@@ -104,7 +104,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         String secretKey = UUIDGenerator.generateUUID();
         UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .QUESTION_BASED_PWD_RECOVERY, RecoverySteps.INITIATE_CHALLENGE_QUESTION);
-        recoveryData.setMetaData(metaData);
+        recoveryData.setRemainingSetIds(metaData);
 
         userChallengeQuestion.setCode(secretKey);
 
@@ -116,23 +116,23 @@ public class SecurityQuestionPasswordRecoveryManager {
         return userChallengeQuestion;
     }
 
-    public UserChallengeQuestion validateUserChallengeQuestion(User user, UserChallengeQuestion userChallengeQuestion) throws
+    public UserChallengeQuestion validateUserChallengeQuestion(User user, UserChallengeAnswer userChallengeAnswer) throws
             IdentityRecoveryException {
         String challengeQuestionSeparator = "!";
         //TODO readFromConfig
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
-                RecoverySteps.INITIATE_CHALLENGE_QUESTION, userChallengeQuestion.getCode());
+                RecoverySteps.INITIATE_CHALLENGE_QUESTION, userChallengeAnswer.getQuestion().getCode());
 
         //if return data from load, it means the code is validated. Otherwise it returns exceptions.
         ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
-        boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeQuestion);
+        boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeAnswer);
         if (verified) {
-            userRecoveryDataStore.invalidate(userChallengeQuestion.getCode());
-            String metaData = userRecoveryData.getMetaData();
-            if (StringUtils.isNotBlank(metaData)) {
-                String[] ids = metaData.split(challengeQuestionSeparator);
+            userRecoveryDataStore.invalidate(userChallengeAnswer.getQuestion().getCode());
+            String remainingSetIds = userRecoveryData.getRemainingSetIds();
+            if (StringUtils.isNotBlank(remainingSetIds)) {
+                String[] ids = remainingSetIds.split(challengeQuestionSeparator);
                 UserChallengeQuestion challengeQuestion = challengeQuestionManager.getUserChallengeQuestion(user, ids[0]);
                 String secretKey = UUIDGenerator.generateUUID();
                 challengeQuestion.setCode(secretKey);
@@ -143,13 +143,13 @@ public class SecurityQuestionPasswordRecoveryManager {
                 if (ids.length > 1) {
                     for (int i = 1; i < ids.length; i++) {
                         if (i == 1) {
-                            metaData = ids[1];
+                            remainingSetIds = ids[1];
                         } else {
-                            metaData = metaData + challengeQuestionSeparator + ids[i];
+                            remainingSetIds = remainingSetIds + challengeQuestionSeparator + ids[i];
                         }
                     }
                     challengeQuestion.setStatus("INCOMPLETE");
-                    recoveryData.setMetaData(metaData);
+                    recoveryData.setRemainingSetIds(remainingSetIds);
 
                 } else {
                     challengeQuestion.setStatus("COMPLETE");
@@ -159,11 +159,11 @@ public class SecurityQuestionPasswordRecoveryManager {
                 return challengeQuestion;
             }
         } else {
-            throw handleException("Invalid answer", IdentityRecoveryConstants.ErrorCode
-                    .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
         }
+        throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
 
-        throw handleException("UNEXPECTED EXCEPTION", IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED);
+
     }
 
     public void updatePassword(User user, String code, String password) throws IdentityRecoveryException {
@@ -173,9 +173,8 @@ public class SecurityQuestionPasswordRecoveryManager {
                 RecoverySteps.VALIDATE_CHALLENGE_QUESTION, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-        if (StringUtils.isNotBlank(userRecoveryData.getMetaData())) {
-            handleException("Minimum no of questions has not been answered", IdentityRecoveryConstants.
-                    ErrorCode.ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION);
+        if (StringUtils.isNotBlank(userRecoveryData.getRemainingSetIds())) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION, null);
         }
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -185,8 +184,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(fullName, password);
         } catch (UserStoreException e) {
-            String message = "Error while updating password :" + fullName;
-            throw handleException(message, IdentityRecoveryConstants.ErrorCode.ERROR_CODE_UNEXPECTED, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
 
         userRecoveryDataStore.invalidate(code);
@@ -209,28 +207,5 @@ public class SecurityQuestionPasswordRecoveryManager {
             remainingQuestions.remove(random);
         }
         return (String[]) selectedQuestions.toArray(new String[selectedQuestions.size()]);
-    }
-
-
-    private IdentityRecoveryException handleException(String errorDescription, String errorCode) throws
-            IdentityRecoveryException {
-        IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription);
-        IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(errorCode);
-        identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        log.error(errorDescription + "    Code :" + errorCode);
-        return identityRecoveryException;
-    }
-
-    private IdentityRecoveryException handleException(String errorDescription, String errorCode, Throwable e) throws IdentityRecoveryException {
-        IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-        IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(errorCode);
-        identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-        log.error(errorDescription + "    Code :" + errorCode, e);
-        return identityRecoveryException;
     }
 }

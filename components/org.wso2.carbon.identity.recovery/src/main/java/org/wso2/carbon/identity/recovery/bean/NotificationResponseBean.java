@@ -25,7 +25,7 @@ import java.io.Serializable;
 /**
  * Bean that encapsulates the verification info.
  */
-public class ResponseBean implements Serializable {
+public class NotificationResponseBean implements Serializable {
 
     private static final long serialVersionUID = -2913500114444797062L;
 
@@ -40,12 +40,12 @@ public class ResponseBean implements Serializable {
     private String key;
 
 
-    public ResponseBean(User user, String key) {
+    public NotificationResponseBean(User user, String key) {
         this.user = user;
         this.key = key;
     }
 
-    public ResponseBean(User user) {
+    public NotificationResponseBean(User user) {
         this.user = user;
     }
 

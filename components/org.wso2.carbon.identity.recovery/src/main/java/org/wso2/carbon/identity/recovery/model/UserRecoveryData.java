@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 public class UserRecoveryData {
     private User user;
     private String secret;
-    private String metaData;
+    private String remainingSetIds;
 
     private Enum recoveryScenario;
     private Enum recoveryStep;
@@ -40,12 +40,12 @@ public class UserRecoveryData {
     }
 
 
-    public String getMetaData() {
-        return metaData;
+    public String getRemainingSetIds() {
+        return remainingSetIds;
     }
 
-    public void setMetaData(String metaData) {
-        this.metaData = metaData;
+    public void setRemainingSetIds(String remainingSetIds) {
+        this.remainingSetIds = remainingSetIds;
     }
 
     public String getSecret() {

@@ -27,18 +27,19 @@ public class UserChallengeQuestion {
 
     private String questionSetId;
 
-    private String answer;
-
     private String code;
 
     private String status;
 
-    public UserChallengeQuestion(String question, String questionSetId, String answer, String code, String status) {
+    public UserChallengeQuestion(String question, String questionSetId, String code, String status) {
         this.question = question;
         this.questionSetId = questionSetId;
-        this.answer = answer;
         this.code = code;
         this.status = status;
+    }
+
+    public UserChallengeQuestion() {
+        //default constructor
     }
 
     public UserChallengeQuestion(String questionSetId, String question) {
@@ -54,10 +55,6 @@ public class UserChallengeQuestion {
         return questionSetId;
     }
 
-    public String getAnswer() {
-        return answer;
-    }
-
     public String getCode() {
         return code;
     }
@@ -66,15 +63,19 @@ public class UserChallengeQuestion {
         return status;
     }
 
-    public void setAnswer(String answer) {
-        this.answer = answer;
-    }
-
     public void setCode(String code) {
         this.code = code;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public void setQuestion(String question) {
+        this.question = question;
+    }
+
+    public void setQuestionSetId(String questionSetId) {
+        this.questionSetId = questionSetId;
     }
 }

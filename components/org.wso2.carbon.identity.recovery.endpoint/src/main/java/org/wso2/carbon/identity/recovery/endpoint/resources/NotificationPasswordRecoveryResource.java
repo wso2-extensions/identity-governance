@@ -1,16 +1,15 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.resources;
 
-import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.bean.ResponseBean;
+import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.bean.UserPassword;
+import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -21,10 +20,9 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class NotificationPasswordRecoveryResource extends AbstractResource {
     private static final Log LOG = LogFactory.getLog(NotificationPasswordRecoveryResource.class);
-    Gson gson;
 
     public NotificationPasswordRecoveryResource() {
-        gson = new Gson();
+
     }
 
     @PUT
@@ -33,13 +31,21 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
                                              User user) {
 
         NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil.getNotificationBasedPwdRecoveryManager();
-        ResponseBean responseBean;
+        NotificationResponseBean notificationResponseBean;
         try {
-            responseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(user);
+            notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(user);
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while sending recovery notification ", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            return handleResponse(ResponseStatus.FAILED, e.getError());
+            LOG.error("Error while sending recovery notification ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while sending recovery notification ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
         }
-        return Response.ok(responseBean).build();
+        return Response.ok(notificationResponseBean).build();
     }
 
 
@@ -52,8 +58,16 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
         try {
             notificationPasswordRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
                     userPassword.getPassword());
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while resetting password ", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            return handleResponse(ResponseStatus.FAILED, e.getError());
+            LOG.error("Error while resetting password ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while resetting password ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
         }
         return Response.ok().build();
     }

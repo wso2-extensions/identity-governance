@@ -1,8 +1,8 @@
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.recovery.NotificationPasswordRecoveryManager;
-import org.wso2.carbon.identity.recovery.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 
 public class RecoveryUtil {
     public static NotificationPasswordRecoveryManager getNotificationBasedPwdRecoveryManager() {

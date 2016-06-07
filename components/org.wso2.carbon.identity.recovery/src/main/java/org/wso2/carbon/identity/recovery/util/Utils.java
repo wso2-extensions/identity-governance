@@ -1,19 +1,21 @@
 package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.tenant.TenantManager;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,7 +28,7 @@ public class Utils {
     public static String getClaimFromUserStoreManager(User user, String claim)
             throws UserStoreException {
 
-        String fullUserName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
         RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
         String claimValue = "";
@@ -39,7 +41,7 @@ public class Utils {
 
         if (userStoreManager != null) {
             Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(fullUserName, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
+                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
             if (claimsMap != null && !claimsMap.isEmpty()) {
                 claimValue = claimsMap.get(claim);
             }
@@ -48,41 +50,85 @@ public class Utils {
 
     }
 
+    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data)
+            throws IdentityRecoveryServerException {
 
-    /**
-     * Update Password with the user input
-     *
-     * @return true - if password was successfully reset
-     * @throws IdentityException
-     */
-//    public static boolean updatePassword(User user, String password) throws IdentityException {
-//
-//        String tenantDomain = null;
-//
-//        if (userId == null || userId.trim().length() < 1 ||
-//                password == null || password.trim().length() < 1) {
-//            String msg = "Unable to find the required information for updating password";
-//            log.error(msg);
-//            throw IdentityException.error(msg);
-//        }
-//
-//        try {
-//            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.
-//                    getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-//
-//            userStoreManager.updateCredentialByAdmin(userId, password);
-//            if (log.isDebugEnabled()) {
-//                String msg = "Password is updated for  user: " + userId;
-//                log.debug(msg);
-//            }
-//            return true;
-//        } catch (UserStoreException e) {
-//            String msg = "Error in changing the password, user name: " + userId + "  domain: " +
-//                    tenantDomain + ".";
-//            log.error(msg, e);
-//            throw IdentityException.error(msg, e);
-//        }
-//    }
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(error.getMessage(), data);
+        } else {
+            errorDescription = error.getMessage();
+        }
+        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription);
+        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
+                .ErrorInfo.ErrorInfoBuilder(errorDescription);
+        errorInfoBuilder.errorCode(error.getCode());
+        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
+        return identityRecoveryServerException;
+    }
+
+    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data, Throwable e)
+            throws IdentityRecoveryServerException {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(error.getMessage(), data);
+        } else {
+            errorDescription = error.getMessage();
+        }
+
+        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription,
+                e);
+        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
+                .ErrorInfo.ErrorInfoBuilder(errorDescription);
+        errorInfoBuilder.cause(e);
+        errorInfoBuilder.errorCode(error.getCode());
+        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
+        return identityRecoveryServerException;
+    }
+
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data)
+            throws IdentityRecoveryClientException {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(error.getMessage(), data);
+        } else {
+            errorDescription = error.getMessage();
+        }
+
+        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription);
+        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
+                .ErrorInfo.ErrorInfoBuilder(errorDescription);
+        errorInfoBuilder.errorCode(error.getCode());
+        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
+        return identityRecoveryClientException;
+    }
+
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data,
+                                                                        Throwable e)
+            throws IdentityRecoveryClientException {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(error.getMessage(), data);
+        } else {
+            errorDescription = error.getMessage();
+        }
+
+        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription,
+                e);
+        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
+                .ErrorInfo.ErrorInfoBuilder(errorDescription);
+        errorInfoBuilder.cause(e);
+        errorInfoBuilder.errorCode(error.getCode());
+        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
+        return identityRecoveryClientException;
+    }
 
     /**
      * @param value
@@ -104,9 +150,9 @@ public class Utils {
     /**
      * Set claim to user store manager
      *
-     * @param user user
-     * @param claim    claim uri
-     * @param value    claim value
+     * @param user  user
+     * @param claim claim uri
+     * @param value claim value
      * @throws IdentityException if fails
      */
     public static void setClaimInUserStoreManager(User user, String claim, String value) throws UserStoreException {

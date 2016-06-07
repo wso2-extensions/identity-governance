@@ -23,11 +23,12 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.Collection;
@@ -51,11 +52,11 @@ public class ChallengeQuestionManager {
      * @return
      * @throws IdentityException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryException {
+    public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws IdentityRecoveryException {
 
         List<ChallengeQuestion> questions = new ArrayList<>();
         try {
-            int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
             Registry registry = IdentityRecoveryServiceComponent.getRegistryService().
                     getConfigSystemRegistry(tenantId);
             if (registry.resourceExists(IdentityRecoveryConstants.IDENTITY_MANAGEMENT_QUESTIONS)) {
@@ -78,14 +79,8 @@ public class ChallengeQuestionManager {
 
             }
         } catch (RegistryException e) {
-            String errorDescription = "Registry error while get all challenge questions";
-            IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-            IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                    .ErrorInfo.ErrorInfoBuilder(errorDescription);
-            errorInfoBuilder.cause(e);
-            errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS);
-            identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
-            throw identityRecoveryException;
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
         return questions;
     }
@@ -94,10 +89,10 @@ public class ChallengeQuestionManager {
      * @param questions
      * @throws IdentityException
      */
-    public void setChallengeQuestions(ChallengeQuestion[] questions) throws IdentityException {
+    public void setChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws IdentityRecoveryException {
         Registry registry = null;
         try {
-            int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
             registry = IdentityRecoveryServiceComponent.getRegistryService().getConfigSystemRegistry(tenantId);
 
             if (!registry.resourceExists(IdentityRecoveryConstants.IDENTITY_MANAGEMENT_PATH)) {
@@ -124,13 +119,8 @@ public class ChallengeQuestionManager {
                 }
             }
         } catch (RegistryException e) {
-            String errorDescription = "Registry error while set challenge questions";
-            IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-            IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                    .ErrorInfo.ErrorInfoBuilder(errorDescription);
-            errorInfoBuilder.cause(e);
-            errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS);
-            identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
         }
 
     }
@@ -139,9 +129,9 @@ public class ChallengeQuestionManager {
      * @param user
      * @return
      */
-    public UserChallengeQuestion[] getChallengeQuestionsOfUser(User user) throws IdentityRecoveryException {
+    public UserChallengeAnswer[] getChallengeAnswersOfUser(User user) throws IdentityRecoveryException {
 
-        List<UserChallengeQuestion> challengeQuestions = new ArrayList<>();
+        List<UserChallengeAnswer> userChallengeAnswers = new ArrayList<>();
 
         if (log.isDebugEnabled()) {
             log.debug("Retrieving Challenge question from the user profile.");
@@ -150,37 +140,32 @@ public class ChallengeQuestionManager {
 
         for (int i = 0; i < challengesUris.size(); i++) {
             String challengesUri = challengesUris.get(i).trim();
-            String challengeValue = null;
+            String challengeValue;
             try {
                 challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
             } catch (UserStoreException e) {
-                String errorDescription = "Error while getting ChallengeQuestions of user :" + user.getUserName();
-                IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-                IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                        .ErrorInfo.ErrorInfoBuilder(errorDescription);
-                errorInfoBuilder.cause(e);
-                errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_GETTING_CHALLENGE_QUESTIONS);
-                identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
             }
 
             String challengeQuestionSeparator = IdentityRecoveryConstants.LINE_SEPARATOR;
             //TODO this should read from a config
 
 
-            String[] challengeValues = challengeValue.
-                    split(challengeQuestionSeparator);
+            String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
                 UserChallengeQuestion userChallengeQuestion = new UserChallengeQuestion(challengesUri,
                         challengeValues[0].trim());
-                userChallengeQuestion.setAnswer(challengeValues[1].trim());
-                challengeQuestions.add(userChallengeQuestion);
+                UserChallengeAnswer userChallengeAnswer = new UserChallengeAnswer(userChallengeQuestion,
+                        challengeValues[1].trim());
+                userChallengeAnswers.add(userChallengeAnswer);
             }
         }
 
-        if (!challengeQuestions.isEmpty()) {
-            return challengeQuestions.toArray(new UserChallengeQuestion[challengeQuestions.size()]);
+        if (!userChallengeAnswers.isEmpty()) {
+            return userChallengeAnswers.toArray(new UserChallengeAnswer[userChallengeAnswers.size()]);
         } else {
-            return new UserChallengeQuestion[0];
+            return new UserChallengeAnswer[0];
         }
 
     }
@@ -197,13 +182,8 @@ public class ChallengeQuestionManager {
         try {
             challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
         } catch (UserStoreException e) {
-            String errorDescription = "Error while getting ChallengeQuestion of user :" + user.getUserName();
-            IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-            IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                    .ErrorInfo.ErrorInfoBuilder(errorDescription);
-            errorInfoBuilder.cause(e);
-            errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_GETTING_CHALLENGE_QUESTION);
-            identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_GETTING_CHALLENGE_QUESTION, user.getUserName(),e);
         }
 
         if (challengeValue != null) {
@@ -235,7 +215,8 @@ public class ChallengeQuestionManager {
             }
             return new String[0];
         }
-        return new String[challengesUris.size()];
+        String[] urls = new String[challengesUris.size()];
+        return challengesUris.toArray(urls);
 
     }
 
@@ -254,15 +235,10 @@ public class ChallengeQuestionManager {
         String[] challengesUris;
 
         try {
-            claimValue = Utils.getClaimFromUserStoreManager(user, "http://wso2.org/claims/challengeQuestionUris");
+            claimValue = Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
         } catch (UserStoreException e) {
-            String errorDescription = "Error while getting ChallengeQuestion Uris of user :" + user.getUserName();
-            IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-            IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                    .ErrorInfo.ErrorInfoBuilder(errorDescription);
-            errorInfoBuilder.cause(e);
-            errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_GETTING_CHALLENGE_URIS);
-            identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_GETTING_CHALLENGE_URIS, user.getUserName(),e);
         }
 
         if (claimValue != null) {
@@ -285,22 +261,13 @@ public class ChallengeQuestionManager {
         return challenges;
     }
 
-    /**
-     * @param user
-     * @return
-     */
-    public int getNoOfChallengeQuestions(User user) throws IdentityRecoveryException {
-
-        List<String> questions = getChallengeQuestionUris(user);
-        return questions.size();
-    }
 
     /**
      * @param user
-     * @param userChallengeQuestions
+     * @param userChallengeAnswers
      * @throws IdentityException
      */
-    public void setChallengesOfUser(User user, UserChallengeQuestion[] userChallengeQuestions) throws IdentityRecoveryException {
+    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws IdentityRecoveryException {
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
@@ -310,27 +277,28 @@ public class ChallengeQuestionManager {
             String separator = IdentityRecoveryConstants.LINE_SEPARATOR;
             //TODO read from config
 
-            if (!ArrayUtils.isEmpty(userChallengeQuestions)) {
-                for (UserChallengeQuestion userChallengeQuestion : userChallengeQuestions) {
-                    if (userChallengeQuestion.getQuestionSetId() != null && userChallengeQuestion.getQuestion() != null && userChallengeQuestion.getAnswer() != null) {
+            if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
+                for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
+                    if (userChallengeAnswer.getQuestion().getQuestionSetId() != null && userChallengeAnswer.getQuestion().getQuestion() !=
+                            null && userChallengeAnswer.getAnswer() != null) {
                         String oldValue = Utils.
-                                getClaimFromUserStoreManager(user, userChallengeQuestion.getQuestionSetId().trim());
+                                getClaimFromUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim());
 
                         if (oldValue != null && oldValue.contains(separator)) {
                             String oldAnswer = oldValue.split(separator)[1];
-                            if (!oldAnswer.trim().equals(userChallengeQuestion.getAnswer().trim())) {
-                                String claimValue = userChallengeQuestion.getQuestion().trim() + separator +
-                                        Utils.doHash(userChallengeQuestion.getAnswer().trim().toLowerCase());
-                                Utils.setClaimInUserStoreManager(user, userChallengeQuestion.getQuestionSetId().trim(),
+                            if (!oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
+                                String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
+                                        Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                                Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
                                         claimValue);
                             }
                         } else {
-                            String claimValue = userChallengeQuestion.getQuestion().trim() + separator +
-                                    Utils.doHash(userChallengeQuestion.getAnswer().trim().toLowerCase());
-                            Utils.setClaimInUserStoreManager(user, userChallengeQuestion.getQuestionSetId().trim(),
+                            String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
+                                    Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                            Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
                                     claimValue);
                         }
-                        challengesUris.add(userChallengeQuestion.getQuestionSetId().trim());
+                        challengesUris.add(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
                     }
                 }
 
@@ -347,58 +315,50 @@ public class ChallengeQuestionManager {
 
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            String errorDescription = "No associated challenge question found for the user :" + user.getUserName();
-            IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-            IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                    .ErrorInfo.ErrorInfoBuilder(errorDescription);
-            errorInfoBuilder.cause(e);
-            errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_QUESTION_OF_USER);
-            identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_QUESTION_OF_USER, user.getUserName(),e);
         }
     }
 
     /**
      * @param user
-     * @param challengeQuestions
+     * @param userChallengeAnswers
      * @return
      */
-    public boolean verifyChallengeQuestion(User user, UserChallengeQuestion[] challengeQuestions) throws IdentityRecoveryException {
+    public boolean verifyChallengeAnswer(User user, UserChallengeAnswer[] userChallengeAnswers) throws
+            IdentityRecoveryException {
 
         boolean verification = false;
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
 
-        UserChallengeQuestion[] storedQuestions = getChallengeQuestionsOfUser(user);
+        UserChallengeAnswer[] storedAnswers = getChallengeAnswersOfUser(user);
 
-        for (UserChallengeQuestion userChallengeQuestion : challengeQuestions) {
-            if (userChallengeQuestion.getAnswer() == null || userChallengeQuestion.getAnswer().trim().length() < 1) {
+        for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
+            if (StringUtils.isBlank(userChallengeAnswer.getAnswer())) {
                 return false;
             }
 
-            for (UserChallengeQuestion storedQestion : storedQuestions) {
-                if ((userChallengeQuestion.getQuestionSetId() == null || !userChallengeQuestion.getQuestionSetId().trim().equals(storedQestion
+            for (UserChallengeAnswer storedAnswer : storedAnswers) {
+                if ((userChallengeAnswer.getQuestion().getQuestionSetId() == null || !userChallengeAnswer.getQuestion().getQuestionSetId()
+                        .trim().equals(storedAnswer.getQuestion()
                         .getQuestionSetId())) &&
-                        (userChallengeQuestion.getQuestion() == null || !userChallengeQuestion.getQuestion().
-                                trim().equals(storedQestion.getQuestion()))) {
+                        (userChallengeAnswer.getQuestion().getQuestion() == null || !userChallengeAnswer.getQuestion().getQuestion().
+                                trim().equals(storedAnswer.getQuestion()))) {
                     continue;
 
                 }
 
                 String hashedAnswer = null;
                 try {
-                    hashedAnswer = Utils.doHash(userChallengeQuestion.getAnswer().trim().toLowerCase());
+                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
                 } catch (UserStoreException e) {
-                    String errorDescription = "Error while hashing the answer when verify Challenge Question";
-                    IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-                    IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                            .ErrorInfo.ErrorInfoBuilder(errorDescription);
-                    errorInfoBuilder.cause(e);
-                    errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_NO_HASHING_ALGO);
-                    identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_NO_HASHING_ALGO, null,e);
                 }
 
-                if (hashedAnswer.equals(storedQestion.getAnswer())) {
+                if (hashedAnswer.equals(storedAnswer.getAnswer())) {
                     verification = true;
                 } else {
                     return false;
@@ -409,35 +369,31 @@ public class ChallengeQuestionManager {
         return verification;
     }
 
-    public boolean verifyUserChallengeAnswer(User user, UserChallengeQuestion userChallengeQuestion) throws IdentityRecoveryException {
+    public boolean verifyUserChallengeAnswer(User user, UserChallengeAnswer userChallengeAnswer) throws IdentityRecoveryException {
 
         boolean verification = false;
         if (log.isDebugEnabled()) {
             log.debug("Challenge Question from the user profile.");
         }
 
-        UserChallengeQuestion[] storedDto = getChallengeQuestionsOfUser(user);
+        UserChallengeAnswer[] storedDto = getChallengeAnswersOfUser(user);
 
-        if (userChallengeQuestion.getAnswer() == null || userChallengeQuestion.getAnswer().trim().length() < 1) {
+        if (StringUtils.isBlank(userChallengeAnswer.getAnswer())) {
             return false;
         }
 
-        for (UserChallengeQuestion dto : storedDto) {
+        for (UserChallengeAnswer dto : storedDto) {
 
-            if (dto.getQuestionSetId().equals(userChallengeQuestion.getQuestionSetId())) {
+            if (dto.getQuestion().getQuestionSetId().equals(userChallengeAnswer.getQuestion().getQuestionSetId())) {
 
                 String hashedAnswer = null;
                 try {
-                    hashedAnswer = Utils.doHash(userChallengeQuestion.getAnswer().trim()
+                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim()
                             .toLowerCase());
                 } catch (UserStoreException e) {
-                    String errorDescription = "Error while hashing the answer when verify User Challenge Answer";
-                    IdentityRecoveryException identityRecoveryException = new IdentityRecoveryException(errorDescription, e);
-                    IdentityRecoveryException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryException
-                            .ErrorInfo.ErrorInfoBuilder(errorDescription);
-                    errorInfoBuilder.cause(e);
-                    errorInfoBuilder.errorCode(IdentityRecoveryConstants.ErrorCode.ERROR_CODE_NO_HASHING_ALGO);
-                    identityRecoveryException.addErrorInfo(errorInfoBuilder.build());
+
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_NO_HASHING_ALGO, null,e);
                 }
                 if (hashedAnswer.equals(dto.getAnswer())) {
                     verification = true;

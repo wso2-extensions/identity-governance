@@ -13,7 +13,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.identity.recovery.api</artifactId>
+    <artifactId>org.wso2.carbon.identity.recovery.endpoint</artifactId>
     <packaging>war</packaging>
     <name>WSO2 Carbon - Identity Management Rest API</name>
     <description>WSO2 Carbon - Identity Management Rest API</description>

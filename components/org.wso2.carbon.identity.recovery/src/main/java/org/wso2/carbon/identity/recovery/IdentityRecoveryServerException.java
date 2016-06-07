@@ -18,41 +18,26 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.base.IdentityException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Used for creating checked exceptions that can be handled.
  */
-public class IdentityRecoveryException extends IdentityException {
+public class IdentityRecoveryServerException extends IdentityRecoveryException {
 
-    private static final long serialVersionUID = 5697663399373749593L;
-
-    public IdentityRecoveryException(String errorDescription) {
+    private static final long serialVersionUID = -6763234985286131368L;
+    public IdentityRecoveryServerException(String errorDescription) {
         super(errorDescription);
     }
 
-    public IdentityRecoveryException(String errorDescription, Throwable cause) {
+    public IdentityRecoveryServerException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
-
-    public String getErrorDescription() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorDescription();
-        }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getMessage();
-    }
-
-    public String getErrorCode() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorCode();
-        }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode();
-
-    }
-
 }

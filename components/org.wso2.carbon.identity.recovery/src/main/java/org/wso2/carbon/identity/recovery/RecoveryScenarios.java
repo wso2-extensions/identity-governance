@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.recovery.model;
+package org.wso2.carbon.identity.recovery;
 
 public enum RecoveryScenarios {
     NOTIFICATION_BASED_PW_RECOVERY,
