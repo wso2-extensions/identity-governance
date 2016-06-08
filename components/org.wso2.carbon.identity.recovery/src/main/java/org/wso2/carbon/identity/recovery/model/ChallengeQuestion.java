@@ -31,7 +31,7 @@ public class ChallengeQuestion {
         //default constructor
     }
 
-    public ChallengeQuestion(String question, String questionSetId) {
+    public ChallengeQuestion(String questionSetId, String question) {
         this.question = question;
         this.questionSetId = questionSetId;
     }

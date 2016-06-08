@@ -8,9 +8,10 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
+import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.endpoint.bean.UserPassword;
+import org.wso2.carbon.identity.recovery.endpoint.bean.VerifyAllAnswerRequest;
 import org.wso2.carbon.identity.recovery.endpoint.bean.VerifyAnswerRequest;
-import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
@@ -51,7 +52,7 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
     @PUT
     @Path("/verify")
     public Response verifyUserChallengeAnswer(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-                                                VerifyAnswerRequest verifyAnswerRequest) {
+                                              VerifyAnswerRequest verifyAnswerRequest) {
 
         SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
         ChallengeQuestionResponse challengeQuestion;
@@ -93,5 +94,53 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
         }
         return Response.ok().build();
+    }
+
+    @PUT
+    @Path("/initiate_all")
+    public Response initiateUserChallengeQuestionAtOnce(@HeaderParam(Constants.AUTHORIZATION_HEADER) String
+                                                                authorization, User user) {
+
+        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+        ChallengeQuestionsResponse challengeQuestionResponse;
+        try {
+            challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestionAtOnce(user);
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while initiating password recovery flow at once using security questions ", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
+        } catch (IdentityRecoveryException e) {
+            LOG.error("Error while initiating password recovery flow at once using security questions ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while initiating password recovery flow at once using security questions ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
+        }
+        return Response.ok(challengeQuestionResponse).build();
+    }
+
+
+    @PUT
+    @Path("/verify_all")
+    public Response verifyUserChallengeAnswerAtOnce(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
+                                                    VerifyAllAnswerRequest verifyAllAnswerRequest) {
+
+        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+        ChallengeQuestionResponse challengeQuestion;
+        try {
+            challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestionsAtOnce(verifyAllAnswerRequest.getUser(),
+                    verifyAllAnswerRequest.getAnswers(), verifyAllAnswerRequest.getCode());
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while verifying challenge answers in recovery flow", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
+        } catch (IdentityRecoveryException e) {
+            LOG.error("Error while verifying challenge answers in recovery flow ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while verifying challenge answers in recovery flow ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
+        }
+        return Response.ok(challengeQuestion).build();
     }
 }

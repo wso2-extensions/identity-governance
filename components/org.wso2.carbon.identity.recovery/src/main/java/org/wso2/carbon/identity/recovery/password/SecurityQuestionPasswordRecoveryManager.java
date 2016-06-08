@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
+import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -41,6 +42,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -117,6 +119,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         userRecoveryDataStore.store(recoveryData);
         return challengeQuestionResponse;
     }
+
 
     public ChallengeQuestionResponse validateUserChallengeQuestion(User user, UserChallengeAnswer
             userChallengeAnswer, String code) throws
@@ -200,6 +203,132 @@ public class SecurityQuestionPasswordRecoveryManager {
             log.debug(msg);
         }
 
+    }
+
+
+    public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
+        String challengeQuestionSeparator = "!";
+
+        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        userRecoveryDataStore.invalidate(user);
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        UserStoreManager userStoreManager;
+        try {
+            userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                        domainQualifiedUsername);
+            }
+
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
+        }
+
+        int minNoOfQuestionsToAnswer = 2;
+        //TODO readFromConfig
+
+        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+        String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
+
+        if (ids == null || ids.length == 0) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, user.getUserName());
+        }
+
+
+        if (ids.length > minNoOfQuestionsToAnswer) {
+            ids = getRandomQuestionIds(ids, minNoOfQuestionsToAnswer);
+        }
+
+        ChallengeQuestion questions[] = new ChallengeQuestion[ids.length];
+
+        String allChallengeQuestions = null;
+        for (int i = 0; i < ids.length; i++) {
+            questions[i] = challengeQuestionManager.getUserChallengeQuestion(user, ids[i]);
+            if (i == 0) {
+                allChallengeQuestions = ids[0];
+            } else {
+                allChallengeQuestions = allChallengeQuestions + challengeQuestionSeparator + ids[i];
+            }
+
+        }
+        ChallengeQuestionsResponse challengeQuestionResponse = new ChallengeQuestionsResponse(questions);
+
+        String secretKey = UUIDGenerator.generateUUID();
+        UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                .QUESTION_BASED_PWD_RECOVERY, RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION);
+        recoveryData.setRemainingSetIds(allChallengeQuestions);
+
+        challengeQuestionResponse.setCode(secretKey);
+        userRecoveryDataStore.store(recoveryData);
+        return challengeQuestionResponse;
+    }
+
+
+    public ChallengeQuestionResponse validateUserChallengeQuestionsAtOnce(User user, UserChallengeAnswer[]
+            userChallengeAnswer, String code) throws
+            IdentityRecoveryException {
+
+        String challengeQuestionSeparator = "!";
+
+        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
+                RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION, code);
+
+        //if return data from load, it means the code is validated. Otherwise it returns exceptions.
+
+        String allChallengeQuestions = userRecoveryData.getRemainingSetIds();
+
+        if (StringUtils.isNotBlank(allChallengeQuestions)) {
+            String[] requestedQuestions = allChallengeQuestions.split(challengeQuestionSeparator);
+
+            if (requestedQuestions.length != userChallengeAnswer.length) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
+            }
+            validateQuestion(requestedQuestions, userChallengeAnswer);
+            //Validate whether user answered all the requested questions
+
+        } else {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
+        }
+        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+
+        for (int i = 0; i < userChallengeAnswer.length; i++) {
+            boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeAnswer[i]);
+            if (!verified) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+            }
+        }
+
+        userRecoveryDataStore.invalidate(code);
+        ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
+        String secretKey = UUIDGenerator.generateUUID();
+        challengeQuestionResponse.setCode(secretKey);
+
+        UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                .QUESTION_BASED_PWD_RECOVERY);
+
+        recoveryData.setRecoveryStep(RecoverySteps.UPDATE_PASSWORD);
+
+        userRecoveryDataStore.store(recoveryData);
+        return challengeQuestionResponse;
+
+    }
+
+    private void validateQuestion(String[] requestedQuestions, UserChallengeAnswer[] userChallengeAnswer) throws IdentityRecoveryException {
+        List<String> userChallengeIds = new ArrayList<>();
+        for (int i = 0; i < userChallengeAnswer.length; i++) {
+            userChallengeIds.add(userChallengeAnswer[i].getQuestion().getQuestionSetId().toLowerCase());
+        }
+
+        for (int i = 0; i < requestedQuestions.length; i++) {
+            if (!userChallengeIds.contains(requestedQuestions[i].toLowerCase())) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
+            }
+        }
     }
 
 

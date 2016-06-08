@@ -59,6 +59,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_STORING_RECOVERY_DATA("20009", "Invalid answer for security question"),
         ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION("20010", "Need to answer more security questions"),
         ERROR_CODE_TRIGGER_NOTIFICATION("20011", "Error while trigger notification for user '%s.'"),
+        ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS("20011", "Need to answer to all requested security questions"),
+
         ;
 
 
