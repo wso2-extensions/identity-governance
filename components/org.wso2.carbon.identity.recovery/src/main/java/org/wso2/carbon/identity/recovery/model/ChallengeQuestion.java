@@ -27,6 +27,15 @@ public class ChallengeQuestion {
 
     private String questionSetId;
 
+    public ChallengeQuestion() {
+        //default constructor
+    }
+
+    public ChallengeQuestion(String question, String questionSetId) {
+        this.question = question;
+        this.questionSetId = questionSetId;
+    }
+
     public String getQuestionSetId() {
         return questionSetId;
     }

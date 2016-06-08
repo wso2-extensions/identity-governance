@@ -70,7 +70,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
 
                 if (System.currentTimeMillis() > expiryTime) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE, null);
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_EXPIRED_CODE, code);
                 }
                 return userRecoveryData;
             }
@@ -80,7 +81,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeResultSet(resultSet);
             IdentityDatabaseUtil.closeStatement(prepStmt);
         }
-        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
     }
 
     @Override

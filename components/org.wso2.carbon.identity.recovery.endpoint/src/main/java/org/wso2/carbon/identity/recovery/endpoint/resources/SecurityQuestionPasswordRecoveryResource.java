@@ -4,11 +4,16 @@ package org.wso2.carbon.identity.recovery.endpoint.resources;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
+import org.wso2.carbon.identity.recovery.endpoint.bean.UserPassword;
+import org.wso2.carbon.identity.recovery.endpoint.bean.VerifyAnswerRequest;
+import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -23,47 +28,70 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
     @PUT
     @Path("/initiate")
     public Response initiateUserChallengeQuestion(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-                                             User user) {
+                                                  User user) {
 
         SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
-        UserChallengeQuestion userChallengeQuestion;
+        ChallengeQuestionResponse challengeQuestionResponse;
         try {
-            userChallengeQuestion = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestion(user);
+            challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestion(user);
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while initiating password recovery flow using security questions ", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            userChallengeQuestion = null;
-//            return handleResponse(ResponseStatus.FAILED, e.getError());
+            LOG.error("Error while initiating password recovery flow using security questions ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while initiating password recovery flow using security questions ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
         }
-        return Response.ok(userChallengeQuestion).build();
+        return Response.ok(challengeQuestionResponse).build();
     }
 
-//    @PUT
-//    @Path("/verify")
-//    public Response verifyUserChallengeQuestion(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-//                                                  VerifyAnswer verifyAnswer) {
-//
-//        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
-//        UserChallengeQuestion challengeQuestion;
-//        try {
-//            challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestion(verifyAnswer.getUser(),
-//                    verifyAnswer.getUserChallengeAnswer());
-//        } catch (IdentityRecoveryException e) {
-//            return handleResponse(ResponseStatus.FAILED, e.getError());
-//        }
-//        return Response.ok(challengeQuestion).build();
-//    }
-//
-//    @PUT
-//    @Path("/reset_password")
-//    public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
-//                                             UserPassword userPassword) {
-//
-//        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
-//        try {
-//            securityQuestionBasedPwdRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
-//                    userPassword.getPassword());
-//        } catch (IdentityRecoveryException e) {
-//            return handleResponse(ResponseStatus.FAILED, e.getError());
-//        }
-//        return Response.ok().build();
-//    }
+    @PUT
+    @Path("/verify")
+    public Response verifyUserChallengeAnswer(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
+                                                VerifyAnswerRequest verifyAnswerRequest) {
+
+        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+        ChallengeQuestionResponse challengeQuestion;
+        try {
+            challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestion(verifyAnswerRequest.getUser(),
+                    verifyAnswerRequest.getAnswer(), verifyAnswerRequest.getCode());
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while verifying challenge answers in recovery flow", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
+        } catch (IdentityRecoveryException e) {
+            LOG.error("Error while verifying challenge answers in recovery flow ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while verifying challenge answers in recovery flow ", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
+        }
+        return Response.ok(challengeQuestion).build();
+    }
+
+    @PUT
+    @Path("/reset_password")
+    public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
+                                   UserPassword userPassword) {
+
+        SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
+        try {
+            securityQuestionBasedPwdRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
+                    userPassword.getPassword());
+        } catch (IdentityRecoveryClientException e) {
+            LOG.error("Client Error while  updating password in security question recovery flow", e);
+            return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
+        } catch (IdentityRecoveryException e) {
+            LOG.error("Error while updating password in security question recovery flow ", e);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, e.getErrorCode());
+        } catch (Throwable throwable) {
+            LOG.error("Unexpected Error while pdating password in security question recovery flow", throwable);
+            return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
+                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
+        }
+        return Response.ok().build();
+    }
 }

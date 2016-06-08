@@ -72,8 +72,6 @@ public class NotificationPasswordRecoveryManager {
         }
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
-        userRecoveryDataStore.invalidate(user);
-
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
@@ -89,15 +87,18 @@ public class NotificationPasswordRecoveryManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
+        userRecoveryDataStore.invalidate(user);
+
+
         String secretKey = UUIDGenerator.generateUUID();
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                .NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.NOTIFY);
+                .NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
         userRecoveryDataStore.store(recoveryDataDO);
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
         if (isNotificationInternallyManaged) {
-            triggerNotification(user, "passwordreset", secretKey);
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
@@ -123,7 +124,7 @@ public class NotificationPasswordRecoveryManager {
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         userRecoveryDataStore.load(user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
-                RecoverySteps.NOTIFY, code);
+                RecoverySteps.UPDATE_PASSWORD, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
 
@@ -154,8 +155,8 @@ public class NotificationPasswordRecoveryManager {
         properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(EventMgtConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
-        properties.put("confirmation-code", code);
-        properties.put("TEMPLATE_TYPE", type);
+        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);

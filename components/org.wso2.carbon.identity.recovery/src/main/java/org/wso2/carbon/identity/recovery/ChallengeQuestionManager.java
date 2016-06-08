@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
-import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
@@ -68,12 +67,10 @@ public class ChallengeQuestionManager {
                     String cquestion = resource.getProperty("question");
                     String questionSetId = resource.getProperty("questionSetId");
                     if (cquestion != null) {
-                        ChallengeQuestion question = new ChallengeQuestion();
-                        question.setQuestion(cquestion);
                         if (questionSetId != null) {
-                            question.setQuestionSetId(questionSetId);
+                            ChallengeQuestion question = new ChallengeQuestion(cquestion, questionSetId);
+                            questions.add(question);
                         }
-                        questions.add(question);
                     }
                 }
 
@@ -154,7 +151,7 @@ public class ChallengeQuestionManager {
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
-                UserChallengeQuestion userChallengeQuestion = new UserChallengeQuestion(challengesUri,
+                ChallengeQuestion userChallengeQuestion = new ChallengeQuestion(challengesUri,
                         challengeValues[0].trim());
                 UserChallengeAnswer userChallengeAnswer = new UserChallengeAnswer(userChallengeQuestion,
                         challengeValues[1].trim());
@@ -171,9 +168,9 @@ public class ChallengeQuestionManager {
     }
 
 
-    public UserChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws IdentityRecoveryException {
+    public ChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws IdentityRecoveryException {
 
-        UserChallengeQuestion userChallengeQuestion = null;
+        ChallengeQuestion userChallengeQuestion = null;
         if (log.isDebugEnabled()) {
             log.debug("Retrieving Challenge question from the user profile.");
         }
@@ -193,7 +190,7 @@ public class ChallengeQuestionManager {
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeperator);
             if (challengeValues != null && challengeValues.length == 2) {
-                userChallengeQuestion = new UserChallengeQuestion(challengesUri, challengeValues[0].trim());
+                userChallengeQuestion = new ChallengeQuestion(challengesUri, challengeValues[0].trim());
             }
         }
         return userChallengeQuestion;
