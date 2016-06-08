@@ -2,6 +2,6 @@ package org.wso2.carbon.identity.recovery;
 
 public enum RecoverySteps {
     NOTIFY,
-    INITIATE_CHALLENGE_QUESTION,
+    UPDATE_PASSWORD,
     VALIDATE_CHALLENGE_QUESTION
 }

@@ -1,6 +1,7 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.resources;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -25,12 +26,13 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
 
     }
 
-    @PUT
+    @POST
     @Path("/notify")
     public Response sendRecoveryNotification(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
                                              User user) {
 
-        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil.getNotificationBasedPwdRecoveryManager();
+        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
+                .getNotificationBasedPwdRecoveryManager();
         NotificationResponseBean notificationResponseBean;
         try {
             notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(user);
@@ -44,6 +46,9 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
             LOG.error("Unexpected Error while sending recovery notification ", throwable);
             return handleErrorResponse(ResponseStatus.FAILED, Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode());
+        }
+        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+            return Response.ok().build();
         }
         return Response.ok(notificationResponseBean).build();
     }

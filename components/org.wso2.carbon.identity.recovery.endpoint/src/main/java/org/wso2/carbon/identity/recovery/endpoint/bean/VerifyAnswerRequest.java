@@ -2,22 +2,26 @@ package org.wso2.carbon.identity.recovery.endpoint.bean;
 
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
-import org.wso2.carbon.identity.recovery.model.UserChallengeQuestion;
 
 import javax.xml.bind.annotation.*;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(propOrder = {
         "user",
-        "userChallengeAnswer"
+        "answer",
+        "code"
 })
-@XmlRootElement(name = "verifyAnswer")
-public class VerifyAnswer {
+@XmlRootElement(name = "verifyAnswerRequest")
+public class VerifyAnswerRequest {
     @XmlElement(required = true)
     private User user;
 
     @XmlElement(required = true)
-    private UserChallengeAnswer userChallengeAnswer;
+    private UserChallengeAnswer answer;
+
+    @XmlElement(required = true)
+    private String code;
+
 
     public User getUser() {
         return user;
@@ -27,11 +31,19 @@ public class VerifyAnswer {
         this.user = user;
     }
 
-    public UserChallengeAnswer getUserChallengeAnswer() {
-        return userChallengeAnswer;
+    public void setAnswer(UserChallengeAnswer answer) {
+        this.answer = answer;
     }
 
-    public void setUserChallengeAnswer(UserChallengeQuestion userChallengeQuestion) {
-        this.userChallengeAnswer = userChallengeAnswer;
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public UserChallengeAnswer getAnswer() {
+        return answer;
     }
 }

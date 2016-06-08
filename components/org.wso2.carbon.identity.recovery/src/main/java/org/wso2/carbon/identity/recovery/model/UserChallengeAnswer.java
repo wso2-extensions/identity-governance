@@ -23,11 +23,11 @@ package org.wso2.carbon.identity.recovery.model;
  */
 public class UserChallengeAnswer {
 
-    private UserChallengeQuestion question;
+    private ChallengeQuestion question;
 
     private String answer;
 
-    public UserChallengeAnswer(UserChallengeQuestion question, String answer) {
+    public UserChallengeAnswer(ChallengeQuestion question, String answer) {
         this.question = question;
         this.answer = answer;
     }
@@ -36,11 +36,11 @@ public class UserChallengeAnswer {
         //default constructor
     }
 
-    public UserChallengeQuestion getQuestion() {
+    public ChallengeQuestion getQuestion() {
         return question;
     }
 
-    public void setQuestion(UserChallengeQuestion question) {
+    public void setQuestion(ChallengeQuestion question) {
         this.question = question;
     }
 

@@ -26,6 +26,12 @@ public class IdentityRecoveryConstants {
     public static final String IDENTITY_MANAGEMENT_QUESTIONS = IDENTITY_MANAGEMENT_PATH + "/questionCollection";
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
+    public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
+    public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
+    public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
+    public static final String CONFIRMATION_CODE = "confirmation-code";
+
 
     private IdentityRecoveryConstants() {
     }

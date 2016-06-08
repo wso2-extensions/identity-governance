@@ -39,6 +39,12 @@ public class UserRecoveryData {
         this.recoveryStep = recoveryStep;
     }
 
+    public UserRecoveryData(User user, String secret, Enum recoveryScenario) {
+        this.user = user;
+        this.secret = secret;
+        this.recoveryScenario = recoveryScenario;
+    }
+
 
     public String getRemainingSetIds() {
         return remainingSetIds;
@@ -65,4 +71,7 @@ public class UserRecoveryData {
         return recoveryStep;
     }
 
+    public void setRecoveryStep(Enum recoveryStep) {
+        this.recoveryStep = recoveryStep;
+    }
 }
