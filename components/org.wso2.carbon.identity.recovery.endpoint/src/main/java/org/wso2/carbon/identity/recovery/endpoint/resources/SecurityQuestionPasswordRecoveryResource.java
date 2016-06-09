@@ -74,7 +74,7 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
     }
 
     @PUT
-    @Path("/reset_password")
+    @Path("/reset-password")
     public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
                                    UserPassword userPassword) {
 
@@ -97,7 +97,7 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
     }
 
     @PUT
-    @Path("/initiate_all")
+    @Path("/initiate-all")
     public Response initiateUserChallengeQuestionAtOnce(@HeaderParam(Constants.AUTHORIZATION_HEADER) String
                                                                 authorization, User user) {
 
@@ -121,7 +121,7 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
 
 
     @PUT
-    @Path("/verify_all")
+    @Path("/verify-all")
     public Response verifyUserChallengeAnswerAtOnce(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
                                                     VerifyAllAnswerRequest verifyAllAnswerRequest) {
 
