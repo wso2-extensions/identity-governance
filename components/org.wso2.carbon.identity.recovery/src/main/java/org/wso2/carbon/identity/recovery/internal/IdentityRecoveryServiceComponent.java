@@ -23,6 +23,7 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.services.EventMgtService;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -58,6 +59,8 @@ public class IdentityRecoveryServiceComponent {
                     new NotificationPasswordRecoveryManager(), null);
             bundleContext.registerService(SecurityQuestionPasswordRecoveryManager.class.getName(),
                     new SecurityQuestionPasswordRecoveryManager(), null);
+            bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
+                    new NotificationUsernameRecoveryManager(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

@@ -27,10 +27,12 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
     public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
 
 
     private IdentityRecoveryConstants() {
@@ -59,8 +61,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_STORING_RECOVERY_DATA("20009", "Invalid answer for security question"),
         ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION("20010", "Need to answer more security questions"),
         ERROR_CODE_TRIGGER_NOTIFICATION("20011", "Error while trigger notification for user '%s.'"),
-        ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS("20011", "Need to answer to all requested security questions"),
-
+        ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS("20012", "Need to answer to all requested security questions"),
+        ERROR_CODE_NO_VALID_USERNAME("20013", "No Valid username found for recovery"),
+        ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY("20014", "No fileds found for username recovery"),
+        ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY("20015", "No valid user found"),
         ;
 
 
