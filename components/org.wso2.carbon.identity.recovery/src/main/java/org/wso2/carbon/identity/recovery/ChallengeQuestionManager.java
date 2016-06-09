@@ -87,7 +87,7 @@ public class ChallengeQuestionManager {
      * @throws IdentityRecoveryException
      */
     public void setChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws IdentityRecoveryException {
-        Registry registry = null;
+        Registry registry;
         try {
             int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
             registry = IdentityRecoveryServiceComponent.getRegistryService().getConfigSystemRegistry(tenantId);

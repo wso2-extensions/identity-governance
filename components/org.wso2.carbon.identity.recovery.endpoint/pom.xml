@@ -34,7 +34,7 @@
                 <configuration>
                     <webXml>${basedir}/src/main/webapp/WEB-INF/web.xml</webXml>
                     <!--<packagingExcludes>WEB-INF/lib/*.jar</packagingExcludes>-->
-                    <warName>accountrecovery</warName>
+                    <warName>account-recovery</warName>
                 </configuration>
             </plugin>
             <plugin>

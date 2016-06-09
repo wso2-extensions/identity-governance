@@ -55,7 +55,7 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
 
 
     @PUT
-    @Path("/reset_password")
+    @Path("/reset-password")
     public Response updatePassword(@HeaderParam(Constants.AUTHORIZATION_HEADER) String authorization,
                                    UserPassword userPassword) {
 
