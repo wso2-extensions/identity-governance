@@ -8,6 +8,7 @@
         <jaxrs:serviceBeans>
             <ref bean="notificationPasswordRecoveryBean"/>
             <ref bean="securityQuestionBasedRecoveryBean"/>
+            <ref bean="notificationUsernameRecoveryResource"/>
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <ref bean="jacksonJsonProvider"/>
@@ -18,6 +19,8 @@
 
     <bean id="notificationPasswordRecoveryBean" class="org.wso2.carbon.identity.recovery.endpoint.resources.NotificationPasswordRecoveryResource"/>
     <bean id="securityQuestionBasedRecoveryBean" class="org.wso2.carbon.identity.recovery.endpoint.resources.SecurityQuestionPasswordRecoveryResource"/>
+    <bean id="notificationUsernameRecoveryResource" class="org.wso2.carbon.identity.recovery.endpoint.resources.NotificationUsernameRecoveryResource"/>
+
 
     <bean id="jacksonJsonProvider"
           class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider"/>
