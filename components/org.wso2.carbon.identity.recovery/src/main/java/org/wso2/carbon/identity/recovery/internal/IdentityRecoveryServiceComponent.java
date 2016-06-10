@@ -21,6 +21,9 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
@@ -36,6 +39,9 @@ import org.wso2.carbon.user.core.service.RealmService;
  * @scr.reference name="realm.service"
  * interface="org.wso2.carbon.user.core.service.RealmService"cardinality="1..1"
  * policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
+ * @scr.reference name="IdentityGovernanceService"
+ * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService" cardinality="1..1"
+ * policy="dynamic" bind="setIdentityGovernanceService" unbind="unsetIdentityGovernanceService"
  * @scr.reference name="EventMgtService"
  * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
  * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"
@@ -61,6 +67,9 @@ public class IdentityRecoveryServiceComponent {
                     new SecurityQuestionPasswordRecoveryManager(), null);
             bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
                     new NotificationUsernameRecoveryManager(), null);
+
+            context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new RecoveryConnectorImpl(), null);
+
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -106,6 +115,14 @@ public class IdentityRecoveryServiceComponent {
 
     protected void setEventMgtService(EventMgtService eventMgtService) {
         IdentityRecoveryServiceDataHolder.getInstance().setEventMgtService(eventMgtService);
+    }
+
+    protected void unsetIdentityGovernanceService(IdentityGovernanceService idpManager) {
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(null);
+    }
+
+    protected void setIdentityGovernanceService(IdentityGovernanceService idpManager) {
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(idpManager);
     }
 
 

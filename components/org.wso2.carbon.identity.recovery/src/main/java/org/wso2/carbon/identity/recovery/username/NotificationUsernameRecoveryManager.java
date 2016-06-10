@@ -100,8 +100,8 @@ public class NotificationUsernameRecoveryManager {
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
-        boolean isNotificationInternallyManaged = true;
-        //TODO Read from configuraion
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
 
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         String userName = getUsernameByClaims(claims, tenantId);

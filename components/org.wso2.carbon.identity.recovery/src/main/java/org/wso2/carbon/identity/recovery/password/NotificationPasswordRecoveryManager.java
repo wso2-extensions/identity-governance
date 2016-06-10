@@ -30,6 +30,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventMgtConstants;
 import org.wso2.carbon.identity.event.EventMgtException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -46,6 +48,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -55,9 +58,6 @@ public class NotificationPasswordRecoveryManager {
     private static final Log log = LogFactory.getLog(NotificationPasswordRecoveryManager.class);
 
     public NotificationResponseBean sendRecoveryNotification(User user) throws IdentityRecoveryException {
-        boolean isNotificationInternallyManaged = true;
-        //TODO Read from configuraion
-
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -70,6 +70,16 @@ public class NotificationPasswordRecoveryManager {
                     " : " + user.getUserName());
 
         }
+
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE,
+                    null);
+        }
+
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -88,7 +98,6 @@ public class NotificationPasswordRecoveryManager {
         }
 
         userRecoveryDataStore.invalidate(user);
-
 
         String secretKey = UUIDGenerator.generateUUID();
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
@@ -120,6 +129,12 @@ public class NotificationPasswordRecoveryManager {
             log.info("UpdatePassword :User store domain is not in the request. set to default for user" +
                     " : " + user.getUserName());
 
+        }
+
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();

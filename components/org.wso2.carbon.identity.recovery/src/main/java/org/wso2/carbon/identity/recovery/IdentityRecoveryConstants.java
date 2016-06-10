@@ -65,6 +65,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NO_VALID_USERNAME("20013", "No Valid username found for recovery"),
         ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY("20014", "No fileds found for username recovery"),
         ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY("20015", "No valid user found"),
+        ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS("20016", "Error loading recovery configs"),
+        ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE("20017", "Notification based recovery is not enabled"),
+        ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20017", "Security questions based recovery is not enabled"),
+
         ;
 
 
@@ -89,6 +93,16 @@ public class IdentityRecoveryConstants {
             return code + " - " + message;
         }
 
+    }
+
+    public static class ConnectorConfig {
+        public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.notification.internallyManaged";
+        public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.notification.password.enable";
+        public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.question.password.enable";
+        public static final String USERNAME_RECOVERY_ENABLE = "Recovery.notification.username.enable";
+        public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.question.password.separator";
+        public static final String QUESTION_MIN_NO_ANSWER = "Recovery.question.password.minAnswers";
+        public static final String EXPIRY_TIME = "Recovery.expiryTime";
     }
 
     public static class SQLQueries {

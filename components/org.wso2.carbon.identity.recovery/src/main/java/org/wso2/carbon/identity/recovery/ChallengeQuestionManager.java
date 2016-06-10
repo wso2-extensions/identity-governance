@@ -145,9 +145,8 @@ public class ChallengeQuestionManager {
                         .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
             }
 
-            String challengeQuestionSeparator = IdentityRecoveryConstants.LINE_SEPARATOR;
-            //TODO this should read from a config
-
+            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
@@ -185,10 +184,10 @@ public class ChallengeQuestionManager {
 
         if (challengeValue != null) {
 
-            String challengeQuestionSeperator = IdentityRecoveryConstants.LINE_SEPARATOR;
-            //TODO this should read from a config
+            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
-            String[] challengeValues = challengeValue.split(challengeQuestionSeperator);
+            String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
                 userChallengeQuestion = new ChallengeQuestion(challengesUri, challengeValues[0].trim());
             }
@@ -240,10 +239,10 @@ public class ChallengeQuestionManager {
 
         if (claimValue != null) {
 
-            String challengeQuestionSeperator = IdentityRecoveryConstants.LINE_SEPARATOR;
-            //TODO read from config
-            if (claimValue.contains(challengeQuestionSeperator)) {
-                challengesUris = claimValue.split(challengeQuestionSeperator);
+            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+            if (claimValue.contains(challengeQuestionSeparator)) {
+                challengesUris = claimValue.split(challengeQuestionSeparator);
             } else {
                 challengesUris = new String[]{claimValue.trim()};
             }
@@ -271,8 +270,8 @@ public class ChallengeQuestionManager {
         try {
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
-            String separator = IdentityRecoveryConstants.LINE_SEPARATOR;
-            //TODO read from config
+            String separator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
             if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
                 for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
