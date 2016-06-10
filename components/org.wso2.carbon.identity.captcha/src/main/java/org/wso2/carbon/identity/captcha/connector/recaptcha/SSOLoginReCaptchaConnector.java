@@ -102,7 +102,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         String securedPaths = connectorConfigs.get(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes
                 .SECURED_DESTINATIONS);
         if (!StringUtils.isBlank(securedPaths)) {
-            String currentPath = ((HttpServletRequest) servletRequest).getPathInfo();
+            String currentPath = ((HttpServletRequest) servletRequest).getRequestURI();
             if (StringUtils.isBlank(currentPath)) {
                 return false;
             }

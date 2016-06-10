@@ -69,21 +69,17 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             return false;
         }
 
-        String path = ((HttpServletRequest) servletRequest).getPathInfo();
-
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
         if (StringUtils.isBlank(path)) {
-            path = ((HttpServletRequest) servletRequest).getRequestURI();
-            if (StringUtils.isBlank(path)) {
-                return false;
-            }
+            return false;
         }
 
-        Map<String, String> connectorConfigs = null;
+        Map<String, String> connectorConfigs;
         try {
             connectorConfigs = getConnectorConfigs(servletRequest);
         } catch (Exception e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug(e);
             }
             return false;
@@ -111,10 +107,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         // reCaptcha is required for all requests.
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
-        String path = ((HttpServletRequest) servletRequest).getPathInfo();
-        if (StringUtils.isBlank(path)) {
-            path = ((HttpServletRequest) servletRequest).getRequestURI();
-        }
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
         Map<String, String> connectorConfigs;
         try {
@@ -174,6 +167,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
                 CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL
         };
     }
+
     @Override
     public Properties getDefaultPropertyValues(String s) throws IdentityGovernanceException {
 
