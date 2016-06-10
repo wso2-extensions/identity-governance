@@ -1,0 +1,136 @@
+/*
+ * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.wso2.carbon.identity.captcha.internal;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.PathBasedReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConnector;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.user.core.service.RealmService;
+
+/**
+ * @scr.component name="org.wso2.carbon.identity.captcha.internal.CaptchaComponent" immediate="true"
+ * @scr.reference name="CaptchaConnectors"
+ * interface="CaptchaConnector"
+ * cardinality="0..n" policy="dynamic"
+ * bind="setCaptchaConnector"
+ * unbind="unsetCaptchaConnector"
+ * @scr.reference name="IdentityGovernanceConnectors"
+ * interface="org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector"
+ * cardinality="0..n" policy="dynamic"
+ * bind="setIdentityGovernanceConnector"
+ * unbind="unsetIdentityGovernanceConnector"
+ * @scr.reference name="IdentityGovernanceService"
+ * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService"
+ * cardinality="1..1" policy="dynamic"
+ * bind="setIdentityGovernanceService"
+ * unbind="unsetIdentityGovernanceService"
+ * @scr.reference name="RealmService"
+ * interface="org.wso2.carbon.user.core.service.RealmService"
+ * cardinality="1..1" policy="dynamic" bind="setRealmService"
+ * unbind="unsetRealmService"
+ */
+public class CaptchaComponent {
+
+    private static Log log = LogFactory.getLog(CaptchaComponent.class);
+
+    protected void activate(ComponentContext context) {
+        try {
+            // Initialize reCaptcha
+            CaptchaUtil.buildReCaptchaFilterProperties();
+
+            // Initialize and register SSOLoginReCaptchaConnector
+            IdentityGovernanceConnector connector = new SSOLoginReCaptchaConnector();
+            ((SSOLoginReCaptchaConnector) connector).init(CaptchaDataHolder.getInstance()
+                    .getIdentityGovernanceService());
+            context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
+            CaptchaDataHolder.getInstance().addCaptchaConnector((SSOLoginReCaptchaConnector) connector);
+
+            // Initialize and register PathBasedReCaptchaConnector
+            connector = new PathBasedReCaptchaConnector();
+            ((PathBasedReCaptchaConnector) connector).init(CaptchaDataHolder.getInstance()
+                    .getIdentityGovernanceService());
+            context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
+            CaptchaDataHolder.getInstance().addCaptchaConnector((PathBasedReCaptchaConnector) connector);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Captcha Component is activated");
+            }
+        } catch (Throwable e) {
+            log.error("Failed to start CaptchaComponent", e);
+        }
+    }
+
+    protected void deactivate(ComponentContext context) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Captcha Component is de-activated");
+        }
+    }
+
+    protected void setCaptchaConnector(CaptchaConnector captchaConnector) {
+
+        CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+    }
+
+    protected void unsetCaptchaConnector(CaptchaConnector captchaConnector) {
+
+        CaptchaDataHolder.getInstance().getCaptchaConnectors().remove(captchaConnector);
+    }
+
+    protected void setIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
+
+        if (identityGovernanceConnector instanceof CaptchaConnector && CaptchaDataHolder.getInstance()
+                .getCaptchaConnectors().contains(identityGovernanceConnector)) {
+            CaptchaDataHolder.getInstance().addCaptchaConnector((CaptchaConnector) identityGovernanceConnector);
+        }
+    }
+
+    protected void unsetIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
+
+        if (identityGovernanceConnector instanceof CaptchaConnector) {
+            CaptchaDataHolder.getInstance().getCaptchaConnectors().remove(identityGovernanceConnector);
+        }
+    }
+
+    protected void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
+
+        CaptchaDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
+    }
+
+    protected void unsetIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
+
+        CaptchaDataHolder.getInstance().setIdentityGovernanceService(null);
+    }
+
+    protected void setRealmService(RealmService realmService) {
+
+        CaptchaDataHolder.getInstance().setRealmService(realmService);
+    }
+
+    protected void unsetRealmService(RealmService realmService) {
+
+        CaptchaDataHolder.getInstance().setRealmService(null);
+    }
+}
