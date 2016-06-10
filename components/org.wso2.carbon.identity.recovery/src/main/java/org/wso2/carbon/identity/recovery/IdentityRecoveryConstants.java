@@ -27,6 +27,8 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
+    public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
     public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
@@ -96,7 +98,7 @@ public class IdentityRecoveryConstants {
     }
 
     public static class ConnectorConfig {
-        public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.notification.internallyManaged";
+        public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.notification.internallyManage";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.notification.password.enable";
         public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.question.password.enable";
         public static final String USERNAME_RECOVERY_ENABLE = "Recovery.notification.username.enable";

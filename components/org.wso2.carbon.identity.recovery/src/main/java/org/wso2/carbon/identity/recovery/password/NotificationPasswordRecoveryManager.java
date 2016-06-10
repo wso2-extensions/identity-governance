@@ -78,7 +78,7 @@ public class NotificationPasswordRecoveryManager {
                     null);
         }
 
-        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
@@ -106,7 +106,7 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.store(recoveryDataDO);
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
-        if (isNotificationInternallyManaged) {
+        if (isNotificationInternallyManage) {
             triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey);
         } else {
             notificationResponseBean.setKey(secretKey);
@@ -154,6 +154,17 @@ public class NotificationPasswordRecoveryManager {
 
         userRecoveryDataStore.invalidate(code);
 
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset success notification to user :"+ user.getUserName());
+            }
+        }
+
         if (log.isDebugEnabled()) {
             String msg = "Password is updated for  user: " + fullName;
             log.debug(msg);
@@ -170,7 +181,9 @@ public class NotificationPasswordRecoveryManager {
         properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(EventMgtConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
-        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
