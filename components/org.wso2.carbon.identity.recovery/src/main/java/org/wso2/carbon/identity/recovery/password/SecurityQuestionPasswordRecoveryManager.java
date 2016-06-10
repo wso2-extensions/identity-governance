@@ -27,10 +27,14 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.EventMgtConstants;
+import org.wso2.carbon.identity.event.EventMgtException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -41,10 +45,7 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  *
@@ -68,10 +69,22 @@ public class SecurityQuestionPasswordRecoveryManager {
                     " : " + user.getUserName());
         }
 
+
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset initiating notification to user :"+ user.getUserName());
+            }
         }
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
@@ -229,6 +242,18 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         userRecoveryDataStore.invalidate(code);
 
+
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset success notification to user :" + user.getUserName());
+            }
+        }
+
         if (log.isDebugEnabled()) {
             String msg = "Password is updated for  user: " + fullName;
             log.debug(msg);
@@ -241,11 +266,36 @@ public class SecurityQuestionPasswordRecoveryManager {
         String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("initiateUserChallengeQuestionAtOnce :Tenant domain is not in the request. set to default for user : " +
+                    user.getUserName());
+        }
+
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("initiateUserChallengeQuestionAtOnce :User store domain is not in the request. set to default for user" +
+                    " : " + user.getUserName());
+        }
+
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
+
+
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset initiating notification to user :"+ user.getUserName());
+            }
+        }
+
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         userRecoveryDataStore.invalidate(user);
@@ -387,5 +437,27 @@ public class SecurityQuestionPasswordRecoveryManager {
             remainingQuestions.remove(random);
         }
         return (String[]) selectedQuestions.toArray(new String[selectedQuestions.size()]);
+    }
+
+    private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
+
+        String eventName = EventMgtConstants.Event.TRIGGER_NOTIFICATION;
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(EventMgtConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(EventMgtConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getEventMgtService().handleEvent(identityMgtEvent);
+        } catch (EventMgtException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
+                    .getUserName(), e);
+        }
     }
 }
