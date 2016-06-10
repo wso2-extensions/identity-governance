@@ -25,7 +25,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 /**
- * reCaptcha Connector.
+ * Captcha Connector.
  */
 public interface CaptchaConnector {
 
@@ -33,11 +33,13 @@ public interface CaptchaConnector {
 
     int getPriority();
 
-    boolean canHandle(ServletRequest servletRequest) throws CaptchaException;
+    boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException;
 
-    CaptchaPreValidationResponse preValidate(ServletRequest servletRequest) throws CaptchaException;
+    CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws
+            CaptchaException;
 
-    boolean verifyCaptcha(ServletRequest servletRequest) throws CaptchaException;
+    boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException;
 
-    CaptchaPostValidationResponse postValidate(ServletResponse servletResponse);
+    CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws
+            CaptchaException;
 }

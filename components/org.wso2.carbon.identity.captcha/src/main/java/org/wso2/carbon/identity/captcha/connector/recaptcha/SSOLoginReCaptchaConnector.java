@@ -72,7 +72,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     }
 
     @Override
-    public boolean canHandle(ServletRequest servletRequest) throws CaptchaException {
+    public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
             return false;
@@ -94,7 +94,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         } catch (Exception e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration
             if(log.isDebugEnabled()) {
-                log.debug(e);
+                log.debug("Unable to load connector configuration.", e);
             }
             return false;
         }
@@ -133,7 +133,8 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest) throws CaptchaException {
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
@@ -222,7 +223,8 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     }
 
     @Override
-    public CaptchaPostValidationResponse postValidate(ServletResponse servletResponse) {
+    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         CaptchaPostValidationResponse validationResponse = new CaptchaPostValidationResponse();
         String redirectURL = ((CaptchaResponseWrapper) servletResponse).getRedirectURL();
@@ -250,8 +252,12 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
     @Override
     public String getFriendlyName() {
-        return "reCaptcha for SSO Login" + (!CaptchaDataHolder.getInstance().isReCaptchaEnabled() ?
-                " (reCaptcha is not enabled)" : "");
+
+        String friendlyName = "reCaptcha for SSO Login";
+        if(!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+            friendlyName += " (reCaptcha is not enabled)";
+        }
+        return friendlyName;
     }
 
     @Override

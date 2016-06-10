@@ -30,7 +30,12 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaResponseWrapper;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -62,7 +67,7 @@ public class CaptchaFilter implements Filter {
 
             CaptchaConnector selectedCaptchaConnector = null;
             for (CaptchaConnector captchaConnector : captchaConnectors) {
-                if (captchaConnector.canHandle(servletRequest) && (selectedCaptchaConnector == null ||
+                if (captchaConnector.canHandle(servletRequest, servletResponse) && (selectedCaptchaConnector == null ||
                         captchaConnector.getPriority() > selectedCaptchaConnector.getPriority())) {
                     selectedCaptchaConnector = captchaConnector;
                 }
@@ -75,7 +80,7 @@ public class CaptchaFilter implements Filter {
 
             // Check whether captcha is required or will reach to the max failed attempts with the current attempt.
             CaptchaPreValidationResponse captchaPreValidationResponse = selectedCaptchaConnector
-                    .preValidate(servletRequest);
+                    .preValidate(servletRequest, servletResponse);
 
             if (captchaPreValidationResponse == null) {
                 // Captcha connector failed response. Default is success.
@@ -85,7 +90,7 @@ public class CaptchaFilter implements Filter {
 
             if (captchaPreValidationResponse.isCaptchaRequired()) {
                 try {
-                    boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest);
+                    boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
                         redirectToErrorPage(servletResponse, captchaPreValidationResponse.getOnFailRedirectUrl(),
@@ -124,7 +129,7 @@ public class CaptchaFilter implements Filter {
             filterChain.doFilter(servletRequest, responseWrapper);
 
             CaptchaPostValidationResponse postValidationResponse = selectedCaptchaConnector
-                    .postValidate(responseWrapper);
+                    .postValidate(servletRequest, responseWrapper);
 
             // Check whether this attempt is failed
             if (postValidationResponse == null || postValidationResponse.isSuccessfulAttempt()) {

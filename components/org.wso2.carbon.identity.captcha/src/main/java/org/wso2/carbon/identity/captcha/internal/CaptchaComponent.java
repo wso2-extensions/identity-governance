@@ -78,7 +78,7 @@ public class CaptchaComponent {
                 log.debug("Captcha Component is activated");
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            log.error("Failed to start CaptchaComponent", e);
         }
     }
 

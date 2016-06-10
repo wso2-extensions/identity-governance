@@ -45,7 +45,7 @@ import java.util.Properties;
  */
 public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector implements IdentityGovernanceConnector {
 
-    private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConnector.class);
+    private static final Log log = LogFactory.getLog(PathBasedReCaptchaConnector.class);
 
     private final String CONNECTOR_NAME = "path.based";
 
@@ -63,7 +63,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     }
 
     @Override
-    public boolean canHandle(ServletRequest servletRequest) throws CaptchaException {
+    public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
             return false;
@@ -80,7 +80,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         } catch (Exception e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration
             if (log.isDebugEnabled()) {
-                log.debug(e);
+                log.debug("Unable to load connector configuration.", e);
             }
             return false;
         }
@@ -102,7 +102,8 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest) throws CaptchaException {
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest,  ServletResponse servletResponse)
+            throws CaptchaException {
 
         // reCaptcha is required for all requests.
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
@@ -138,7 +139,8 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     }
 
     @Override
-    public CaptchaPostValidationResponse postValidate(ServletResponse servletResponse) {
+    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         //No validation at this stage.
         return null;
@@ -153,8 +155,11 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     @Override
     public String getFriendlyName() {
 
-        return "reCaptcha for Request Path" + (!CaptchaDataHolder.getInstance().isReCaptchaEnabled() ?
-                " (reCaptcha is not enabled)" : "");
+        String friendlyName = "reCaptcha for Request Path";
+        if(!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+            friendlyName += " (reCaptcha is not enabled)";
+        }
+        return friendlyName;
     }
 
     @Override

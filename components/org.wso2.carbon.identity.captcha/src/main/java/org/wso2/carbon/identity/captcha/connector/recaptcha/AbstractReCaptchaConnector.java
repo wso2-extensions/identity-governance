@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,7 @@ import java.util.List;
 public abstract class AbstractReCaptchaConnector implements CaptchaConnector {
 
     @Override
-    public boolean verifyCaptcha(ServletRequest servletRequest) throws CaptchaException {
+    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         if (((HttpServletRequest) servletRequest).getMethod().equalsIgnoreCase("GET")) {
             throw new CaptchaClientException("reCaptcha response must send in a POST request.");
