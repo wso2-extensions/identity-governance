@@ -23,6 +23,7 @@ package org.wso2.carbon.identity.recovery.password;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -55,11 +56,29 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     public ChallengeQuestionResponse initiateUserChallengeQuestion(User user) throws IdentityRecoveryException {
 
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for user : " +
+                    user.getUserName());
+        }
+
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("initiateUserChallengeQuestion :User store domain is not in the request. set to default for user" +
+                    " : " + user.getUserName());
+        }
+
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
+
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         userRecoveryDataStore.invalidate(user);
 
-        String challengeQuestionSeparator = "!";
-        //TODO readFromConfig
+        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
@@ -76,8 +95,8 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
 
-        int minNoOfQuestionsToAnswer = 2;
-        //TODO readFromConfig
+        int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
 
         ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
         String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
@@ -125,8 +144,14 @@ public class SecurityQuestionPasswordRecoveryManager {
             userChallengeAnswer, String code) throws
             IdentityRecoveryException {
 
-        String challengeQuestionSeparator = "!";
-        //TODO readFromConfig
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
+
+        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
@@ -177,6 +202,12 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     public void updatePassword(User user, String code, String password) throws IdentityRecoveryException {
 
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
+
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
                 RecoverySteps.UPDATE_PASSWORD, code);
@@ -207,7 +238,14 @@ public class SecurityQuestionPasswordRecoveryManager {
 
 
     public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
-        String challengeQuestionSeparator = "!";
+        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         userRecoveryDataStore.invalidate(user);
@@ -227,8 +265,8 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
 
-        int minNoOfQuestionsToAnswer = 2;
-        //TODO readFromConfig
+        int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
 
         ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
         String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
@@ -272,7 +310,14 @@ public class SecurityQuestionPasswordRecoveryManager {
             userChallengeAnswer, String code) throws
             IdentityRecoveryException {
 
-        String challengeQuestionSeparator = "!";
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
+        }
+
+        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,

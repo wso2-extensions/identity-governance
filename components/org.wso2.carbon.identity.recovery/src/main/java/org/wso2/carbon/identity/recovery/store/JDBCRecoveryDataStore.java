@@ -65,8 +65,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                //TODO need to read from config
-                int notificationExpiryTimeInMinutes = 3;
+                int notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
                 long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
 
                 if (System.currentTimeMillis() > expiryTime) {

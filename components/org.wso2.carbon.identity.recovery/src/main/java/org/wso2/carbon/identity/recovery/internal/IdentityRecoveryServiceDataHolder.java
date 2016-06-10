@@ -17,12 +17,14 @@
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
     private EventMgtService eventMgtService;
+    private IdentityGovernanceService identityGovernanceService;
     private IdpManager idpManager;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
@@ -44,5 +46,13 @@ public class IdentityRecoveryServiceDataHolder {
 
     public void setIdpManager(IdpManager idpManager) {
         this.idpManager = idpManager;
+    }
+
+    public IdentityGovernanceService getIdentityGovernanceService() {
+        return identityGovernanceService;
+    }
+
+    public void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
+        this.identityGovernanceService = identityGovernanceService;
     }
 }
