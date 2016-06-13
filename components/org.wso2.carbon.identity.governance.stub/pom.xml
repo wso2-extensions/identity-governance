@@ -89,8 +89,8 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.stub.*;version="${identity.governance.exp.pkg.version}",
-                            org.wso2.carbon.identity.governance.xsd;veridentity.governance.exp.pkg.version.version}"
+                            org.wso2.carbon.identity.governance.stub.*; version="${identity.governance.exp.pkg.version}",
+                            org.wso2.carbon.identity.governance.xsd; version="${identity.governance.exp.pkg.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
