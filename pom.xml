@@ -203,6 +203,21 @@
                 <artifactId>commons-logging</artifactId>
                 <version>${commons-logging.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${jackson-jaxrs-json-provider.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.synapse</groupId>
+                <artifactId>synapse-core</artifactId>
+                <version>${synapse-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-bundle</artifactId>
+                <version>${cxf-bundle.version}</version>
+            </dependency>
 
             <!--Carbon Kernel Dependencies-->
             <dependency>
@@ -247,6 +262,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity</groupId>
                 <artifactId>org.wso2.carbon.identity.governance</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.recovery</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
@@ -316,7 +336,7 @@
 
     <properties>
         <!--Carbon Identity Governance Version-->
-        <identity.governance.exp.pkg.version>1.0.0-SNAPSHOT</identity.governance.exp.pkg.version>
+        <identity.governance.exp.pkg.version>${project.version}</identity.governance.exp.pkg.version>
         <identity.governance.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.governance.imp.pkg.version.range>
 
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
@@ -364,6 +384,9 @@
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+        <jackson-jaxrs-json-provider.version>2.4.2</jackson-jaxrs-json-provider.version>
+        <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
+        <cxf-bundle.version>2.7.13</cxf-bundle.version>
     </properties>
 
 </project>
