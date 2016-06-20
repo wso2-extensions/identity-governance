@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://cxf.apache.org/bindings/soap http://cxf.apache.org/schemas/configuration/soap.xsd http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd">
+
+    <jaxrs:server id="account-recovery" address="/">
+        <jaxrs:serviceBeans>
+            <ref bean="notificationPasswordRecoveryBean"/>
+            <ref bean="securityQuestionBasedRecoveryBean"/>
+            <ref bean="notificationUsernameRecoveryResource"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:providers>
+            <ref bean="jacksonJsonProvider"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+
+
+
+    <bean id="notificationPasswordRecoveryBean" class="org.wso2.carbon.identity.recovery.endpoint.resources.NotificationPasswordRecoveryResource"/>
+    <bean id="securityQuestionBasedRecoveryBean" class="org.wso2.carbon.identity.recovery.endpoint.resources.SecurityQuestionPasswordRecoveryResource"/>
+    <bean id="notificationUsernameRecoveryResource" class="org.wso2.carbon.identity.recovery.endpoint.resources.NotificationUsernameRecoveryResource"/>
+
+
+    <bean id="jacksonJsonProvider"
+          class="com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider"/>
+
+    <!--<bean id="authenticationFilter"-->
+          <!--class="org.wso2.carbon.tenant.mgt.filter.AuthenticationFilter">-->
+    <!--</bean>-->
+</beans>
