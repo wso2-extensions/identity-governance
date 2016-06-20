@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.captcha.connector;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,40 +27,40 @@ import java.util.Map;
  */
 public class CaptchaPreValidationResponse {
 
-    private boolean captchaRequired;
+    private boolean captchaValidationRequired;
 
-    private boolean maxLimitReached;
+    private boolean maxFailedLimitReached;
 
-    private boolean enableCaptchaForDestination;
+    private boolean enableCaptchaForRequestPath;
+
+    private Map<String, String> captchaAttributes;
 
     private boolean postValidationRequired;
 
-    private Map<String, String> requestAttributes;
+    private List<String> onCaptchaFailRedirectUrls;
 
-    private String onFailRedirectUrl;
-
-    public boolean isCaptchaRequired() {
-        return captchaRequired;
+    public boolean isCaptchaValidationRequired() {
+        return captchaValidationRequired;
     }
 
-    public void setCaptchaRequired(boolean captchaRequired) {
-        this.captchaRequired = captchaRequired;
+    public void setCaptchaValidationRequired(boolean captchaValidationRequired) {
+        this.captchaValidationRequired = captchaValidationRequired;
     }
 
-    public boolean isMaxLimitReached() {
-        return maxLimitReached;
+    public boolean isMaxFailedLimitReached() {
+        return maxFailedLimitReached;
     }
 
-    public void setMaxLimitReached(boolean maxLimitReached) {
-        this.maxLimitReached = maxLimitReached;
+    public void setMaxFailedLimitReached(boolean maxFailedLimitReached) {
+        this.maxFailedLimitReached = maxFailedLimitReached;
     }
 
-    public boolean isEnableCaptchaForDestination() {
-        return enableCaptchaForDestination;
+    public boolean isEnableCaptchaForRequestPath() {
+        return enableCaptchaForRequestPath;
     }
 
-    public void setEnableCaptchaForDestination(boolean enableCaptchaForDestination) {
-        this.enableCaptchaForDestination = enableCaptchaForDestination;
+    public void setEnableCaptchaForRequestPath(boolean enableCaptchaForRequestPath) {
+        this.enableCaptchaForRequestPath = enableCaptchaForRequestPath;
     }
 
     public boolean isPostValidationRequired() {
@@ -69,19 +71,25 @@ public class CaptchaPreValidationResponse {
         this.postValidationRequired = postValidationRequired;
     }
 
-    public Map<String, String> getRequestAttributes() {
-        return requestAttributes;
+    public Map<String, String> getCaptchaAttributes() {
+        if (captchaAttributes == null) {
+            return Collections.emptyMap();
+        }
+        return captchaAttributes;
     }
 
-    public void setRequestAttributes(Map<String, String> requestAttributes) {
-        this.requestAttributes = requestAttributes;
+    public void setCaptchaAttributes(Map<String, String> captchaAttributes) {
+        this.captchaAttributes = captchaAttributes;
     }
 
-    public String getOnFailRedirectUrl() {
-        return onFailRedirectUrl;
+    public List<String> getOnCaptchaFailRedirectUrls() {
+        if (onCaptchaFailRedirectUrls == null) {
+            return Collections.emptyList();
+        }
+        return onCaptchaFailRedirectUrls;
     }
 
-    public void setOnFailRedirectUrl(String onFailRedirectUrl) {
-        this.onFailRedirectUrl = onFailRedirectUrl;
+    public void setOnCaptchaFailRedirectUrls(List<String> onCaptchaFailRedirectUrls) {
+        this.onCaptchaFailRedirectUrls = onCaptchaFailRedirectUrls;
     }
 }
