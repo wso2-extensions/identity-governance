@@ -208,7 +208,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             currentAttempts = Integer.parseInt(claimValues.get(verificationClaim));
         }
 
-        if (currentAttempts >= maxAttempts) {
+        if (currentAttempts > maxAttempts) {
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
             preValidationResponse.setPostValidationRequired(true);
@@ -216,10 +216,13 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
                     .ON_FAIL_REDIRECT_URL))) {
                 preValidationResponse.setOnCaptchaFailRedirectUrls(Arrays.asList(connectorConfigs.get(CONNECTOR_NAME +
                         ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL).split(",")));
+                // Add parameters which need to send back in case of failure.
                 Map<String, String> params = new HashMap<>();
                 params.put("reCaptcha", "true");
                 params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
                 params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+                params.put("authFailure", "true");
+                params.put("authFailureMsg", "login.fail.message");
                 preValidationResponse.setCaptchaAttributes(params);
             }
         } else if ((currentAttempts + 1) == maxAttempts) {

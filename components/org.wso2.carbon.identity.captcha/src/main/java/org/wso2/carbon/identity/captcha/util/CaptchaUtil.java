@@ -21,12 +21,10 @@ package org.wso2.carbon.identity.captcha.util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
-import org.wso2.carbon.identity.captcha.connector.recaptcha.PathBasedReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -128,8 +126,11 @@ public class CaptchaUtil {
         }
 
         for (String url : onFailRedirectUrls) {
-            if (StringUtils.isBlank(url) && referrerUrl.startsWith(uriBuilder.getPath())) {
-                return getUpdatedUrl(uriBuilder.getPath(), attributes);
+            if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
+                for(NameValuePair pair : uriBuilder.getQueryParams()) {
+                    attributes.put(pair.getName(), pair.getValue());
+                }
+                return getUpdatedUrl(url, attributes);
             }
         }
 

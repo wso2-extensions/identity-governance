@@ -135,10 +135,10 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
                     .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
                 preValidationResponse.setOnCaptchaFailRedirectUrls(Arrays.asList(connectorConfigs.get(CONNECTOR_NAME +
                         CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).split(",")));
+                // Add parameters which need to send back in case of failure.
                 Map<String, String> params = new HashMap<>();
-                params.put("reCaptcha", "true");
-                params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-                params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+                params.put("error", "true");
+                params.put("errorMsg", "Human verification failed. Please select reCaptcha.");
                 preValidationResponse.setCaptchaAttributes(params);
             }
         }

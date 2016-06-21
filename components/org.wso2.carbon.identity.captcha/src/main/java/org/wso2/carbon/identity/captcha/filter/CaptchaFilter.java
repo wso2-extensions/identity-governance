@@ -85,7 +85,7 @@ public class CaptchaFilter implements Filter {
                     .preValidate(servletRequest, servletResponse);
 
             if (captchaPreValidationResponse == null) {
-                // Captcha connector failed response. Default is success.
+                // Captcha connector failed to response. Default is success.
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
@@ -151,7 +151,7 @@ public class CaptchaFilter implements Filter {
             }
         } catch (CaptchaException e) {
             log.error("Error occurred in processing captcha.", e);
-            ((HttpServletResponse) servletResponse).sendRedirect(CaptchaUtil.getErrorPage("Server Error.", "Something " +
+            ((HttpServletResponse) servletResponse).sendRedirect(CaptchaUtil.getErrorPage("Server Error", "Something " +
                     "went wrong. Please try again"));
         }
     }
