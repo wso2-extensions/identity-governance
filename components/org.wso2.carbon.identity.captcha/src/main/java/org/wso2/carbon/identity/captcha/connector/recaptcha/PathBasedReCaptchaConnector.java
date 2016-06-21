@@ -36,6 +36,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -119,19 +120,27 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
 
         if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
                 .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
-            preValidationResponse.setEnableCaptchaForDestination(true);
+            preValidationResponse.setEnableCaptchaForRequestPath(true);
             Map<String, String> params = new HashMap<>();
             params.put("reCaptcha", "true");
-            params.put("reCapatchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
+            params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
             params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
-            preValidationResponse.setRequestAttributes(params);
+            preValidationResponse.setCaptchaAttributes(params);
         }
 
         if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
                 .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
-            preValidationResponse.setCaptchaRequired(true);
-            preValidationResponse.setOnFailRedirectUrl(connectorConfigs.get(CONNECTOR_NAME +
-                    CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL));
+            preValidationResponse.setCaptchaValidationRequired(true);
+            if (!StringUtils.isBlank(connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
+                    .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
+                preValidationResponse.setOnCaptchaFailRedirectUrls(Arrays.asList(connectorConfigs.get(CONNECTOR_NAME +
+                        CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).split(",")));
+                // Add parameters which need to send back in case of failure.
+                Map<String, String> params = new HashMap<>();
+                params.put("error", "true");
+                params.put("errorMsg", "Human verification failed. Please select reCaptcha.");
+                preValidationResponse.setCaptchaAttributes(params);
+            }
         }
         preValidationResponse.setPostValidationRequired(false);
 
@@ -168,8 +177,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         return new String[]{
                 CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
                 CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
-                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
-                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL
+                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS
         };
     }
 
@@ -191,12 +199,6 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
                 CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
             defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
                     .SECURED_DESTINATIONS, "");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL))) {
-            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
-                            .ON_FAIL_REDIRECT_URL,
-                    "/authenticationendpoint/retry.do");
         }
 
         Properties properties = new Properties();
@@ -220,8 +222,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
                         CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
                         CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
-                        CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
-                        CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL},
+                        CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES},
                 tenantDomain);
 
         return connectorConfigs;

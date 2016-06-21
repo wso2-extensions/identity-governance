@@ -48,4 +48,6 @@ public class CaptchaResponseWrapper extends HttpServletResponseWrapper {
     public String getRedirectURL() {
         return redirectURL;
     }
+
+
 }

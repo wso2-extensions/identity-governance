@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.connector;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -27,9 +28,9 @@ public class CaptchaPostValidationResponse {
 
     private boolean successfulAttempt;
 
-    private boolean enableCaptcha;
+    private boolean enableCaptchaResponsePath;
 
-    private Map<String, String> responseParameters;
+    private Map<String, String> captchaAttributes;
 
     public boolean isSuccessfulAttempt() {
         return successfulAttempt;
@@ -39,19 +40,22 @@ public class CaptchaPostValidationResponse {
         this.successfulAttempt = successfulAttempt;
     }
 
-    public boolean isEnableCaptcha() {
-        return enableCaptcha;
+    public boolean isEnableCaptchaResponsePath() {
+        return enableCaptchaResponsePath;
     }
 
-    public void setEnableCaptcha(boolean enableCaptcha) {
-        this.enableCaptcha = enableCaptcha;
+    public void setEnableCaptchaResponsePath(boolean enableCaptchaResponsePath) {
+        this.enableCaptchaResponsePath = enableCaptchaResponsePath;
     }
 
-    public Map<String, String> getResponseParameters() {
-        return responseParameters;
+    public Map<String, String> getCaptchaAttributes() {
+        if (captchaAttributes == null) {
+            return Collections.emptyMap();
+        }
+        return captchaAttributes;
     }
 
-    public void setResponseParameters(Map<String, String> responseParameters) {
-        this.responseParameters = responseParameters;
+    public void setCaptchaAttributes(Map<String, String> captchaAttributes) {
+        this.captchaAttributes = captchaAttributes;
     }
 }
