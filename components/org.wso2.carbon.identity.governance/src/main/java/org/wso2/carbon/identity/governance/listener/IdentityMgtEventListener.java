@@ -557,7 +557,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             eventMgtService.handleEvent(identityMgtEvent);
         } catch (EventMgtException e) {
-            throw new UserStoreException("Error when authenticating user", e);
+            throw new UserStoreException("Error when handling event : " + eventName, e);
         }
     }
 
