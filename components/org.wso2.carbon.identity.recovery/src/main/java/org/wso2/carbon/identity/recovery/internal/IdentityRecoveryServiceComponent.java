@@ -20,7 +20,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
@@ -67,6 +69,7 @@ public class IdentityRecoveryServiceComponent {
                     new SecurityQuestionPasswordRecoveryManager(), null);
             bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
                     new NotificationUsernameRecoveryManager(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new AccountConfirmationValidationHandler(), null);
 
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new RecoveryConnectorImpl(), null);
 
