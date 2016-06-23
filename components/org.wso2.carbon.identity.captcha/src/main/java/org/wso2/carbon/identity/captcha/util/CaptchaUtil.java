@@ -19,16 +19,22 @@
 package org.wso2.carbon.identity.captcha.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -38,6 +44,8 @@ import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaCo
  * Captcha util functions.
  */
 public class CaptchaUtil {
+
+    private static final Log log = LogFactory.getLog(CaptchaUtil.class);
 
     public static void buildReCaptchaFilterProperties() {
 
@@ -70,10 +78,12 @@ public class CaptchaUtil {
     }
 
     public static Path getCarbonHomeDirectory() {
+
         return Paths.get(System.getProperty(CaptchaConstants.CARBON_HOME));
     }
 
     public static boolean isPathAvailable(String currentPath, String securedPaths) {
+
         if (!StringUtils.isBlank(securedPaths)) {
             String[] paths = securedPaths.split(",");
             for (String path : paths) {
@@ -83,6 +93,63 @@ public class CaptchaUtil {
             }
         }
         return false;
+    }
+
+    public static String getUpdatedUrl(String url, Map<String, String> attributes) {
+
+        try {
+            URIBuilder uriBuilder = new URIBuilder(url);
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                uriBuilder.addParameter(entry.getKey(), entry.getValue());
+            }
+            return uriBuilder.build().toString();
+        } catch (URISyntaxException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while building URL.", e);
+            }
+            return url;
+        }
+    }
+
+    public static String getOnFailRedirectUrl(String referrerUrl, List<String> onFailRedirectUrls,
+                                              Map<String, String> attributes) {
+
+        if (StringUtils.isBlank(referrerUrl) || onFailRedirectUrls.isEmpty()) {
+            return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
+        }
+
+        URIBuilder uriBuilder;
+        try {
+            uriBuilder = new URIBuilder(referrerUrl);
+        } catch (URISyntaxException e) {
+            return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
+        }
+
+        for (String url : onFailRedirectUrls) {
+            if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
+                for(NameValuePair pair : uriBuilder.getQueryParams()) {
+                    attributes.put(pair.getName(), pair.getValue());
+                }
+                return getUpdatedUrl(url, attributes);
+            }
+        }
+
+        return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
+    }
+
+    public static String getErrorPage(String status, String statusMsg) {
+
+        try {
+            URIBuilder uriBuilder = new URIBuilder(CaptchaConstants.ERROR_PAGE);
+            uriBuilder.addParameter("status", status);
+            uriBuilder.addParameter("statusMsg", statusMsg);
+            return uriBuilder.build().toString();
+        } catch (URISyntaxException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while building URL.", e);
+            }
+            return CaptchaConstants.ERROR_PAGE;
+        }
     }
 
     private static void setReCaptchaConfigs(Properties properties) {

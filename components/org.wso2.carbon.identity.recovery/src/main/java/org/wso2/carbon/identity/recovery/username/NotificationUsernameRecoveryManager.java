@@ -146,6 +146,7 @@ public class NotificationUsernameRecoveryManager {
                     .ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
         }
 
+        //TODO need to improve the logic
         String userName = null;
         String[] tempUserList = null;
 

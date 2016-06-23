@@ -6,6 +6,8 @@ import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
@@ -78,8 +80,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } catch (SQLException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
-            IdentityDatabaseUtil.closeResultSet(resultSet);
-            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
         throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
     }
@@ -104,6 +105,40 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
 
     @Override
+    public UserRecoveryData load(User user) throws IdentityRecoveryException {
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
+
+        try {
+            //TODO should have two sqls based on caseSenstitiveUsername
+            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, user.getUserName());
+            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                UserRecoveryData userRecoveryData = new UserRecoveryData(user, resultSet.getString("CODE"),
+                        RecoveryScenarios.valueOf(resultSet.getString("SCENARIO")), RecoverySteps.valueOf(resultSet
+                        .getString("STEP")));
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
+                }
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        return null;
+    }
+
+    @Override
     public void invalidate(User user) throws IdentityRecoveryException {
         PreparedStatement prepStmt = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
@@ -121,6 +156,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
         }
     }
 }

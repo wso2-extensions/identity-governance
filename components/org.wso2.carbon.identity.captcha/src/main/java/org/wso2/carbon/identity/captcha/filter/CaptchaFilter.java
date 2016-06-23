@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaResponseWrapper;
+import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -36,6 +37,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -83,32 +85,37 @@ public class CaptchaFilter implements Filter {
                     .preValidate(servletRequest, servletResponse);
 
             if (captchaPreValidationResponse == null) {
-                // Captcha connector failed response. Default is success.
+                // Captcha connector failed to response. Default is success.
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
 
-            if (captchaPreValidationResponse.isCaptchaRequired()) {
+            HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+            HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+
+            if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
                     boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
-                        redirectToErrorPage(servletResponse, captchaPreValidationResponse.getOnFailRedirectUrl(),
-                                "Human User Verification Failed.", "Captcha validation failed for the user.");
+                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                                captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
+                                captchaPreValidationResponse.getCaptchaAttributes()));
                         return;
                     }
                 } catch (CaptchaClientException e) {
                     log.warn("Captcha validation failed for the user. Cause : " + e.getMessage());
-                    redirectToErrorPage(servletResponse, captchaPreValidationResponse.getOnFailRedirectUrl(),
-                            "Human User Verification Failed.", e.getMessage());
+                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                            captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
+                            captchaPreValidationResponse.getCaptchaAttributes()));
                     return;
                 }
             }
 
             // Enable reCaptcha for the destination.
-            if (captchaPreValidationResponse.isEnableCaptchaForDestination()) {
-                if (captchaPreValidationResponse.getRequestAttributes() != null) {
-                    for (Map.Entry<String, String> parameter : captchaPreValidationResponse.getRequestAttributes()
+            if (captchaPreValidationResponse.isEnableCaptchaForRequestPath()) {
+                if (captchaPreValidationResponse.getCaptchaAttributes() != null) {
+                    for (Map.Entry<String, String> parameter : captchaPreValidationResponse.getCaptchaAttributes()
                             .entrySet()) {
                         servletRequest.setAttribute(parameter.getKey(), parameter.getValue());
                     }
@@ -119,12 +126,11 @@ public class CaptchaFilter implements Filter {
 
             // Below the no. of max failed attempts, including the current attempt
             if (!captchaPreValidationResponse.isPostValidationRequired() || (!captchaPreValidationResponse
-                    .isCaptchaRequired() && !captchaPreValidationResponse.isMaxLimitReached())) {
+                    .isCaptchaValidationRequired() && !captchaPreValidationResponse.isMaxFailedLimitReached())) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
 
-            HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
             CaptchaResponseWrapper responseWrapper = new CaptchaResponseWrapper(httpResponse);
             filterChain.doFilter(servletRequest, responseWrapper);
 
@@ -139,24 +145,14 @@ public class CaptchaFilter implements Filter {
                 return;
             }
 
-            if (postValidationResponse.isEnableCaptcha() && responseWrapper.isRedirect()) {
-                if (postValidationResponse.getResponseParameters() != null) {
-                    URIBuilder uriBuilder;
-                    try {
-                        uriBuilder = new URIBuilder(responseWrapper.getRedirectURL());
-                        for (Map.Entry<String, String> entry : postValidationResponse.getResponseParameters()
-                                .entrySet()) {
-                            uriBuilder.addParameter(entry.getKey(), entry.getValue());
-                        }
-                        httpResponse.sendRedirect(uriBuilder.build().toString());
-                    } catch (URISyntaxException e) {
-                        httpResponse.sendRedirect(responseWrapper.getRedirectURL());
-                    }
-                }
+            if (postValidationResponse.isEnableCaptchaResponsePath() && responseWrapper.isRedirect()) {
+                httpResponse.sendRedirect(CaptchaUtil.getUpdatedUrl(responseWrapper.getRedirectURL(),
+                        postValidationResponse.getCaptchaAttributes()));
             }
         } catch (CaptchaException e) {
             log.error("Error occurred in processing captcha.", e);
-            redirectToErrorPage(servletResponse, null, "Server Error.", "Something went wrong. Please try again");
+            ((HttpServletResponse) servletResponse).sendRedirect(CaptchaUtil.getErrorPage("Server Error", "Something " +
+                    "went wrong. Please try again"));
         }
     }
 

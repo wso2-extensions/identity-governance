@@ -27,6 +27,7 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
@@ -35,6 +36,9 @@ public class IdentityRecoveryConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
+    public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String SIGN_UP_ROLE_SEPARATOR = ",";
+
 
 
     private IdentityRecoveryConstants() {
@@ -45,7 +49,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s.'"),
         ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s.'"),
         ERROR_CODE_INVALID_USER("18003", "Invalid User '%s.'"),
-        ERROR_CODE_UNEXPECTED("18013", "Expired Code '%s.'"),
+        ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found"),
@@ -59,7 +63,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
         ERROR_CODE_QUESTION_OF_USER("20006", "Error setting challenge quesitons of user '%s.'"),
         ERROR_CODE_NO_HASHING_ALGO("20007", "Error while hashing the security answer"),
-        ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION("20008", "Error while storing recovery data"),
+        ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION("20008", "Invalid answer"),
         ERROR_CODE_STORING_RECOVERY_DATA("20009", "Invalid answer for security question"),
         ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION("20010", "Need to answer more security questions"),
         ERROR_CODE_TRIGGER_NOTIFICATION("20011", "Error while trigger notification for user '%s.'"),
@@ -69,7 +73,15 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY("20015", "No valid user found"),
         ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS("20016", "Error loading recovery configs"),
         ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE("20017", "Notification based recovery is not enabled"),
-        ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20017", "Security questions based recovery is not enabled"),
+        ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20018", "Security questions based recovery is not enabled"),
+        ERROR_CODE_ADD_SELF_USER("20019", "Error while adding self signup user"),
+        ERROR_CODE_LOCK_USER_USER("20020", "Error while lock user"),
+        ERROR_CODE_DISABLE_SELF_SIGN_UP("20021", "Self sign up feature is disabled"),
+        ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
+        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20022", "Error loading signup configs"),
+        ERROR_CODE_UNLOCK_USER_USER("20023", "Error while lock user"),
+        ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
+
 
         ;
 
@@ -105,6 +117,10 @@ public class IdentityRecoveryConstants {
         public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.question.password.separator";
         public static final String QUESTION_MIN_NO_ANSWER = "Recovery.question.password.minAnswers";
         public static final String EXPIRY_TIME = "Recovery.expiryTime";
+        public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
+        public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
+        public static final String SELF_SIGN_UP_ROLES = "SelfRegistration.Roles";
+        public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification.InternallyManage";
     }
 
     public static class SQLQueries {
@@ -120,6 +136,9 @@ public class IdentityRecoveryConstants {
 
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
 
     }
 }

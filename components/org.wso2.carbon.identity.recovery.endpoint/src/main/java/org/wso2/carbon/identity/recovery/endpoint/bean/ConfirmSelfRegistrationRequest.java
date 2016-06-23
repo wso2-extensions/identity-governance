@@ -1,30 +1,29 @@
 package org.wso2.carbon.identity.recovery.endpoint.bean;
 
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.model.UserClaim;
 
 import javax.xml.bind.annotation.*;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(propOrder = {
-        "question",
+        "user",
         "code"
 })
-@XmlRootElement(name = "verifyAnswer")
-public class ChallengeQuestionResponse {
-
+@XmlRootElement(name = "confirmSelfRegistrationRequest")
+public class ConfirmSelfRegistrationRequest {
     @XmlElement(required = true)
-    private ChallengeQuestion question;
-
+    private User user;
     @XmlElement(required = true)
     private String code;
 
-    public ChallengeQuestion getQuestion() {
-        return question;
+    public User getUser() {
+        return user;
     }
 
-    public void setQuestion(ChallengeQuestion question) {
-        this.question = question;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getCode() {

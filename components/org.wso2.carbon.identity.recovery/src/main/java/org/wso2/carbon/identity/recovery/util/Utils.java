@@ -112,8 +112,7 @@ public class Utils {
         return identityRecoveryClientException;
     }
 
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data,
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error, String data,
                                                                         Throwable e)
             throws IdentityRecoveryClientException {
 
@@ -197,6 +196,18 @@ public class Utils {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+        }
+    }
+
+    public static String getSignUpConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+        try {
+            Property[] connectorConfigs;
+            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService();
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            return connectorConfigs[0].getValue();
+        } catch (IdentityGovernanceException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }
     }
 }

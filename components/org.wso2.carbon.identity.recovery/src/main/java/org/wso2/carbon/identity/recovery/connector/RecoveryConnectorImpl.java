@@ -23,8 +23,15 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
-        //implement
-        return null;
+        Map<String, String> nameMapping = new HashMap<>();
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        return nameMapping;
     }
 
     @Override
