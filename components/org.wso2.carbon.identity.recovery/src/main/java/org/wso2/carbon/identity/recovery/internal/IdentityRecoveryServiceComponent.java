@@ -26,8 +26,10 @@ import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHa
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
+import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -70,8 +72,11 @@ public class IdentityRecoveryServiceComponent {
             bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
                     new NotificationUsernameRecoveryManager(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new AccountConfirmationValidationHandler(), null);
+            bundleContext.registerService(UserSelfRegistrationManager.class.getName(),
+                    new UserSelfRegistrationManager(), null);
 
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new RecoveryConnectorImpl(), null);
+            context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new SelfRegistrationConnectorImpl(), null);
 
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
