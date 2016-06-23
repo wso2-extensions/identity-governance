@@ -22,6 +22,12 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
     }
 
     @Override
+    public Map<String, String> getPropertyNameMapping() {
+        //implement
+        return null;
+    }
+
+    @Override
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
