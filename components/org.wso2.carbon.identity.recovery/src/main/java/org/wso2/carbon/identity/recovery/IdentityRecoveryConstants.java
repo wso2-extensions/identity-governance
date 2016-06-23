@@ -27,6 +27,7 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
@@ -35,6 +36,9 @@ public class IdentityRecoveryConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
+    public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String SIGN_UP_ROLE_SEPARATOR = ",";
+
 
 
     private IdentityRecoveryConstants() {
@@ -69,7 +73,15 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY("20015", "No valid user found"),
         ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS("20016", "Error loading recovery configs"),
         ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE("20017", "Notification based recovery is not enabled"),
-        ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20017", "Security questions based recovery is not enabled"),
+        ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20018", "Security questions based recovery is not enabled"),
+        ERROR_CODE_ADD_SELF_USER("20019", "Error while adding self signup user"),
+        ERROR_CODE_LOCK_USER_USER("20020", "Error while lock user"),
+        ERROR_CODE_DISABLE_SELF_SIGN_UP("20021", "Self sign up feature is disabled"),
+        ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
+        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20022", "Error loading signup configs"),
+        ERROR_CODE_UNLOCK_USER_USER("20023", "Error while lock user"),
+        ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
+
 
         ;
 
@@ -105,6 +117,10 @@ public class IdentityRecoveryConstants {
         public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.question.password.separator";
         public static final String QUESTION_MIN_NO_ANSWER = "Recovery.question.password.minAnswers";
         public static final String EXPIRY_TIME = "Recovery.expiryTime";
+        public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
+        public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
+        public static final String SELF_SIGN_UP_ROLES = "SelfRegistration.Roles";
+        public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification.InternallyManage";
     }
 
     public static class SQLQueries {
@@ -120,6 +136,9 @@ public class IdentityRecoveryConstants {
 
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
 
     }
 }
