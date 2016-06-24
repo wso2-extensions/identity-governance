@@ -22,11 +22,11 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
-import org.wso2.carbon.identity.event.EventMgtConstants;
-import org.wso2.carbon.identity.event.EventMgtException;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.event.internal.EventMgtServiceDataHolder;
-import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -43,7 +43,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
-    EventMgtService eventMgtService = EventMgtServiceDataHolder.getInstance().getEventMgtService();
+    IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
 
     @Override
     public int getExecutionOrderId() {
@@ -69,7 +69,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_AUTHENTICATION;
+        String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -84,9 +84,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post authenticator is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_AUTHENTICATION;
+        String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.OPERATION_STATUS, authenticated);
+        properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
 
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
@@ -101,10 +101,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre set claims is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_SET_USER_CLAIMS;
+        String eventName = IdentityEventConstants.Event.PRE_SET_USER_CLAIMS;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -118,10 +118,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Post set claims is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_SET_USER_CLAIMS;
+        String eventName = IdentityEventConstants.Event.POST_SET_USER_CLAIMS;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -137,12 +137,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre add user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_ADD_USER;
+        String eventName = IdentityEventConstants.Event.PRE_ADD_USER;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
-        properties.put(EventMgtConstants.EventProperty.ROLE_LIST, roleList);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profile);
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, credential);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+        properties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profile);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
 
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
@@ -159,12 +159,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post add user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_ADD_USER;
+        String eventName = IdentityEventConstants.Event.POST_ADD_USER;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
-        properties.put(EventMgtConstants.EventProperty.ROLE_LIST, roleList);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profile);
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, credential);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+        properties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profile);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -180,10 +180,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre update credential is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_UPDATE_CREDENTIAL;
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_CREDENTIAL;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, newCredential);
-        properties.put(EventMgtConstants.EventProperty.OLD_CREDENTIAL, oldCredential);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, newCredential);
+        properties.put(IdentityEventConstants.EventProperty.OLD_CREDENTIAL, oldCredential);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -197,9 +197,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post update credential is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_UPDATE_CREDENTIAL;
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, credential);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -213,9 +213,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre update credential by admin is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN;
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, newCredential);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, newCredential);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -230,9 +230,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post update credential by admin is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN;
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CREDENTIAL, credential);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -246,7 +246,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre delete user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_DELETE_USER;
+        String eventName = IdentityEventConstants.Event.PRE_DELETE_USER;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -260,7 +260,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post delete user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_DELETE_USER;
+        String eventName = IdentityEventConstants.Event.POST_DELETE_USER;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -275,11 +275,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre set user claim value is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_SET_USER_CLAIM;
+        String eventName = IdentityEventConstants.Event.PRE_SET_USER_CLAIM;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CLAIM_URI, claimURI);
-        properties.put(EventMgtConstants.EventProperty.CLAIM_VALUE, claimValue);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.CLAIM_URI, claimURI);
+        properties.put(IdentityEventConstants.EventProperty.CLAIM_VALUE, claimValue);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -293,7 +293,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post set user claim value is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_SET_USER_CLAIM;
+        String eventName = IdentityEventConstants.Event.POST_SET_USER_CLAIM;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -308,10 +308,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre delete user claim values is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_DELETE_USER_CLAIMS;
+        String eventName = IdentityEventConstants.Event.PRE_DELETE_USER_CLAIMS;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_CLAIMS, claims);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -325,7 +325,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post delete user claim values is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_DELETE_USER_CLAIMS;
+        String eventName = IdentityEventConstants.Event.POST_DELETE_USER_CLAIMS;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -340,10 +340,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre delete user claim value is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_DELETE_USER_CLAIM;
+        String eventName = IdentityEventConstants.Event.PRE_DELETE_USER_CLAIM;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.CLAIM_URI, claimURI);
-        properties.put(EventMgtConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.CLAIM_URI, claimURI);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
@@ -357,7 +357,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post delete user claim value is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_DELETE_USER_CLAIM;
+        String eventName = IdentityEventConstants.Event.POST_DELETE_USER_CLAIM;
         handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
         return true;
     }
@@ -370,10 +370,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre add role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_ADD_ROLE;
+        String eventName = IdentityEventConstants.Event.PRE_ADD_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_LIST, userList);
-        properties.put(EventMgtConstants.EventProperty.PERMISSIONS, permissions);
+        properties.put(IdentityEventConstants.EventProperty.USER_LIST, userList);
+        properties.put(IdentityEventConstants.EventProperty.PERMISSIONS, permissions);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -387,10 +387,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post add role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_ADD_ROLE;
+        String eventName = IdentityEventConstants.Event.POST_ADD_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.USER_LIST, userList);
-        properties.put(EventMgtConstants.EventProperty.PERMISSIONS, permissions);
+        properties.put(IdentityEventConstants.EventProperty.USER_LIST, userList);
+        properties.put(IdentityEventConstants.EventProperty.PERMISSIONS, permissions);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -404,7 +404,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre delete role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_DELETE_ROLE;
+        String eventName = IdentityEventConstants.Event.PRE_DELETE_ROLE;
         handleEvent(null, userStoreManager, eventName, roleName, new HashMap<String, Object>());
         return true;
     }
@@ -418,7 +418,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post delete role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_DELETE_ROLE;
+        String eventName = IdentityEventConstants.Event.POST_DELETE_ROLE;
         handleEvent(null, userStoreManager, eventName, roleName, new HashMap<String, Object>());
         return true;
     }
@@ -432,9 +432,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre update role name is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_UPDATE_ROLE;
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.NEW_ROLE_NAME, newRoleName);
+        properties.put(IdentityEventConstants.EventProperty.NEW_ROLE_NAME, newRoleName);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -449,9 +449,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post update role name is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_UPDATE_ROLE;
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.NEW_ROLE_NAME, newRoleName);
+        properties.put(IdentityEventConstants.EventProperty.NEW_ROLE_NAME, newRoleName);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -466,10 +466,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre update user list of role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_UPDATE_USER_LIST_OF_ROLE;
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_USER_LIST_OF_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.DELETED_USERS, deletedUsers);
-        properties.put(EventMgtConstants.EventProperty.NEW_USERS, newUsers);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -484,10 +484,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post update user list of role is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_UPDATE_USER_LIST_OF_ROLE;
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.DELETED_USERS, deletedUsers);
-        properties.put(EventMgtConstants.EventProperty.NEW_USERS, newUsers);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
@@ -503,10 +503,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre update role list of user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.PRE_UPDATE_ROLE_LIST_OF_USER;
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_ROLE_LIST_OF_USER;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.DELETED_ROLES, deletedRoles);
-        properties.put(EventMgtConstants.EventProperty.NEW_ROLES, newRoles);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_ROLES, deletedRoles);
+        properties.put(IdentityEventConstants.EventProperty.NEW_ROLES, newRoles);
 
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
@@ -522,10 +522,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post update role list of user is called in IdentityMgtEventListener");
         }
-        String eventName = EventMgtConstants.Event.POST_UPDATE_ROLE_LIST_OF_USER;
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_ROLE_LIST_OF_USER;
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(EventMgtConstants.EventProperty.DELETED_ROLES, deletedRoles);
-        properties.put(EventMgtConstants.EventProperty.NEW_ROLES, newRoles);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_ROLES, deletedRoles);
+        properties.put(IdentityEventConstants.EventProperty.NEW_ROLES, newRoles);
 
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
@@ -542,21 +542,21 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
         try {
             if (StringUtils.isNotBlank(userName)) {
-                properties.put(EventMgtConstants.EventProperty.USER_NAME, userName);
+                properties.put(IdentityEventConstants.EventProperty.USER_NAME, userName);
             }
             if (StringUtils.isNotBlank(roleName)) {
-                properties.put(EventMgtConstants.EventProperty.ROLE_NAME, roleName);
+                properties.put(IdentityEventConstants.EventProperty.ROLE_NAME, roleName);
             }
-            properties.put(EventMgtConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-            properties.put(EventMgtConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+            properties.put(IdentityEventConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantId());
-            properties.put(EventMgtConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
+            properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantDomain());
 
             Event identityMgtEvent = new Event(eventName, properties);
 
             eventMgtService.handleEvent(identityMgtEvent);
-        } catch (EventMgtException e) {
+        } catch (IdentityEventException e) {
             throw new UserStoreException("Error when handling event : " + eventName, e);
         }
     }

@@ -4,6 +4,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -183,11 +184,16 @@ public class Utils {
 
     public static String getRecoveryConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
         try {
-            Map<String, String> connectorConfigs;
+            Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
-            return connectorConfigs.get(key);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, tenantDomain);
+            for (Property connectorConfig : connectorConfigs) {
+                if (key.equals(connectorConfig.getName())) {
+                    return connectorConfig.getValue();
+                }
+            }
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
         }
@@ -195,11 +201,11 @@ public class Utils {
 
     public static String getSignUpConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
         try {
-            Map<String, String> connectorConfigs;
+            Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
-            return connectorConfigs.get(key);
+            return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }

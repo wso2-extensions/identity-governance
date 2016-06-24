@@ -27,6 +27,8 @@ public interface IdentityGovernanceConnector {
 
     String getFriendlyName();
 
+    Map<String, String> getPropertyNameMapping();
+
     String[] getPropertyNames();
 
     Properties getDefaultPropertyValues (String tenantDomain) throws IdentityGovernanceException;

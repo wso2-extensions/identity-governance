@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.governance.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
@@ -36,8 +36,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 /**
  * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
  * @scr.reference name="EventMgtService"
- * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
- * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"
+ * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
+ * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
  * @scr.reference name="idp.mgt.event.listener.service"
  * interface="org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector"
  * cardinality="0..n" policy="dynamic"
@@ -79,12 +79,12 @@ public class IdentityMgtServiceComponent {
         }
     }
 
-    protected void unsetEventMgtService(EventMgtService eventMgtService) {
-        IdentityMgtServiceDataHolder.getInstance().setEventMgtService(null);
+    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+        IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(null);
     }
 
-    protected void setEventMgtService(EventMgtService eventMgtService) {
-        IdentityMgtServiceDataHolder.getInstance().setEventMgtService(eventMgtService);
+    protected void setIdentityEventService(IdentityEventService identityEventService) {
+        IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 
     protected void unsetIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {

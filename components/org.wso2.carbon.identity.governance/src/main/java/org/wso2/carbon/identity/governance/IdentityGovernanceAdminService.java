@@ -37,19 +37,23 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         identityGovernanceService = new IdentityGovernanceServiceImpl();
         List<IdentityGovernanceConnector> list = IdentityMgtServiceDataHolder.getInstance()
                 .getIdentityGovernanceConnectorList();
-        Map<String, String> properties = identityGovernanceService.getConfiguration(tenantDomain);
+        Property[] properties = identityGovernanceService.getConfiguration(tenantDomain);
         ConnectorConfig[] configs = new ConnectorConfig[list.size()];
         String[] connectorProperties;
         for (int i=0; i<list.size();i++) {
             ConnectorConfig config =new ConnectorConfig();
+            Map <String,String> friendlyNames = list.get(i).getPropertyNameMapping();
             config.setFriendlyName(list.get(i).getFriendlyName());
             connectorProperties = list.get(i).getPropertyNames();
             Property[] configProperties = new Property[connectorProperties.length];
             for (int j=0; j<connectorProperties.length;j++) {
-                Property prop = new Property();
-                prop.setName(connectorProperties[j]);
-                prop.setValue(properties.get(connectorProperties[j]));
-                configProperties[j] = prop;
+                for (int k = 0; k < properties.length; k++) {
+                    if (connectorProperties[j].equals(properties[k].getName())) {
+                        configProperties[j] = properties[k];
+                        configProperties[j].setDisplayName(friendlyNames.get(configProperties[j].getName()));
+                        break;
+                    }
+                }
             }
             config.setProperties(configProperties);
             configs[i] = config;

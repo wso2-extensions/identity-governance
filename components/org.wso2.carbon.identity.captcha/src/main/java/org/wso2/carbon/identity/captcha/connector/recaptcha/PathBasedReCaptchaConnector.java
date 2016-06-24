@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.captcha.connector.recaptcha;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
@@ -75,7 +76,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             return false;
         }
 
-        Map<String, String> connectorConfigs;
+        Property[] connectorConfigs;
         try {
             connectorConfigs = getConnectorConfigs(servletRequest);
         } catch (Exception e) {
@@ -86,16 +87,29 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             return false;
         }
 
-        if (!"TRUE".equalsIgnoreCase(connectorConfigs.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE))) {
+        String securedPages = "";
+        String securedDestinations = "";
+        String enable = "";
+        for (Property connectorConfig : connectorConfigs) {
+            if ((CONNECTOR_NAME + CaptchaConstants
+                    .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).equals(connectorConfig.getName())) {
+                securedPages = connectorConfig.getValue();
+            } else if ((CONNECTOR_NAME + CaptchaConstants
+                    .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig.getName())) {
+                securedDestinations = connectorConfig.getValue();
+            } else if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE)
+                    .equals(connectorConfig.getName())) {
+                enable = connectorConfig.getValue();
+            }
+        }
+
+        if (!"TRUE".equalsIgnoreCase(enable)) {
             return false;
         }
 
-        if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
-                .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
+        if (CaptchaUtil.isPathAvailable(path, securedPages)) {
             return true;
-        } else if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
-                .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
+        } else if (CaptchaUtil.isPathAvailable(path, securedDestinations)) {
             return true;
         }
 
@@ -111,15 +125,30 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        Map<String, String> connectorConfigs;
+        Property[] connectorConfigs;
         try {
             connectorConfigs = getConnectorConfigs(servletRequest);
         } catch (Exception e) {
             throw new CaptchaServerException("Error occurred while retrieving reCaptcha configuration.", e);
         }
 
-        if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
-                .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
+        String securedPages = "";
+        String securedDestinations = "";
+        String onFailRedirectUrl = "";
+        for (Property connectorConfig : connectorConfigs) {
+            if ((CONNECTOR_NAME + CaptchaConstants
+                    .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).equals(connectorConfig.getName())) {
+                securedPages = connectorConfig.getValue();
+            } else if ((CONNECTOR_NAME + CaptchaConstants
+                    .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig.getName())) {
+                securedDestinations = connectorConfig.getValue();
+            } else if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL)
+                    .equals(connectorConfig.getName())) {
+                onFailRedirectUrl = connectorConfig.getValue();
+            }
+        }
+
+        if (CaptchaUtil.isPathAvailable(path, securedPages)) {
             preValidationResponse.setEnableCaptchaForRequestPath(true);
             Map<String, String> params = new HashMap<>();
             params.put("reCaptcha", "true");
@@ -128,13 +157,10 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             preValidationResponse.setCaptchaAttributes(params);
         }
 
-        if (CaptchaUtil.isPathAvailable(path, connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
-                .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
+        if (CaptchaUtil.isPathAvailable(path, securedDestinations)) {
             preValidationResponse.setCaptchaValidationRequired(true);
-            if (!StringUtils.isBlank(connectorConfigs.get(CONNECTOR_NAME + CaptchaConstants
-                    .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES))) {
-                preValidationResponse.setOnCaptchaFailRedirectUrls(Arrays.asList(connectorConfigs.get(CONNECTOR_NAME +
-                        CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).split(",")));
+            if (!StringUtils.isBlank(securedPages)) {
+                preValidationResponse.setOnCaptchaFailRedirectUrls(Arrays.asList(securedPages.split(",")));
                 // Add parameters which need to send back in case of failure.
                 Map<String, String> params = new HashMap<>();
                 params.put("error", "true");
@@ -172,6 +198,15 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     }
 
     @Override
+    public Map<String, String> getPropertyNameMapping() {
+        Map<String, String> nameMapping = new HashMap<>();
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
+        return nameMapping;
+    }
+
+    @Override
     public String[] getPropertyNames() {
 
         return new String[]{
@@ -200,6 +235,12 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
                     .SECURED_DESTINATIONS, "");
         }
+        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
+                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL))) {
+            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
+                            .ON_FAIL_REDIRECT_URL,
+                    "/authenticationendpoint/retry.do");
+        }
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -211,14 +252,14 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         return null;
     }
 
-    private Map<String, String> getConnectorConfigs(ServletRequest servletRequest) throws Exception {
+    private Property[] getConnectorConfigs(ServletRequest servletRequest) throws Exception {
 
         String tenantDomain = servletRequest.getParameter("tenantDomain");
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
-        Map<String, String> connectorConfigs;
+        Property[] connectorConfigs;
         connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
                         CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
                         CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
