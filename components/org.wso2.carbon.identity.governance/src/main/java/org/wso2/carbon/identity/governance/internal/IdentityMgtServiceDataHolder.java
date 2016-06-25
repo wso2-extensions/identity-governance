@@ -16,7 +16,7 @@
 
 package org.wso2.carbon.identity.governance.internal;
 
-import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
@@ -26,7 +26,7 @@ import java.util.List;
 public class IdentityMgtServiceDataHolder {
 
     private static IdentityMgtServiceDataHolder instance = new IdentityMgtServiceDataHolder();
-    private EventMgtService eventMgtService;
+    private IdentityEventService identityEventService;
     private IdpManager idpManager;
     private static volatile List<IdentityGovernanceConnector> identityGovernanceConnectorList = new ArrayList<>();
 
@@ -35,12 +35,12 @@ public class IdentityMgtServiceDataHolder {
         return instance;
     }
 
-    public EventMgtService getEventMgtService() {
-        return eventMgtService;
+    public IdentityEventService getIdentityEventService() {
+        return identityEventService;
     }
 
-    public void setEventMgtService(EventMgtService eventMgtService) {
-        this.eventMgtService = eventMgtService;
+    public void setIdentityEventService(IdentityEventService eventMgtService) {
+        this.identityEventService = eventMgtService;
     }
 
     protected void addIdentityGovernanceConnector(

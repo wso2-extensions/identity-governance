@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
-import org.wso2.carbon.identity.event.services.EventMgtService;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
@@ -46,9 +46,9 @@ import org.wso2.carbon.user.core.service.RealmService;
  * @scr.reference name="IdentityGovernanceService"
  * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityGovernanceService" unbind="unsetIdentityGovernanceService"
- * @scr.reference name="EventMgtService"
- * interface="org.wso2.carbon.identity.event.services.EventMgtService" cardinality="1..1"
- * policy="dynamic" bind="setEventMgtService" unbind="unsetEventMgtService"
+ * @scr.reference name="IdentityEventService"
+ * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
+ * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -117,12 +117,12 @@ public class IdentityRecoveryServiceComponent {
         IdentityRecoveryServiceComponent.registryService = null;
     }
 
-    protected void unsetEventMgtService(EventMgtService eventMgtService) {
-        IdentityRecoveryServiceDataHolder.getInstance().setEventMgtService(null);
+    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(null);
     }
 
-    protected void setEventMgtService(EventMgtService eventMgtService) {
-        IdentityRecoveryServiceDataHolder.getInstance().setEventMgtService(eventMgtService);
+    protected void setIdentityEventService(IdentityEventService identityEventService) {
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 
     protected void unsetIdentityGovernanceService(IdentityGovernanceService idpManager) {
