@@ -58,14 +58,6 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerUser(User user, String password, UserClaim[] claims, Property[] properties) throws IdentityRecoveryException {
 
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
-
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
-        }
-
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("registerUser :Tenant domain is not in the request. set to default for user : " +
@@ -77,6 +69,13 @@ public class UserSelfRegistrationManager {
             log.info("registerUser :User store domain is not in the request. set to default for user : " + user.getUserName());
         }
 
+        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+
+        if (!enable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
+                    .getUserName());
+        }
 
         boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
@@ -157,14 +156,6 @@ public class UserSelfRegistrationManager {
 
     public void confirmUserSelfRegistration(User user, String code) throws IdentityRecoveryException {
 
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
-
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
-        }
-
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
@@ -174,6 +165,14 @@ public class UserSelfRegistrationManager {
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+        }
+
+        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+
+        if (!enable) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
+                    .getUserName());
         }
 
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
@@ -217,6 +216,18 @@ public class UserSelfRegistrationManager {
     }
 
     public NotificationResponseBean resendConfirmationCode(User user,  Property[] properties) throws IdentityRecoveryException {
+
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
+                    user.getUserName());
+        }
+
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+        }
+
         boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
@@ -229,16 +240,7 @@ public class UserSelfRegistrationManager {
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
 
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
 
-        if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
-        }
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
