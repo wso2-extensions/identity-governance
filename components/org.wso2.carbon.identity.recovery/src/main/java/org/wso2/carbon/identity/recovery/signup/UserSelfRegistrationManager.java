@@ -183,7 +183,7 @@ public class UserSelfRegistrationManager {
         UserRecoveryData load =
                 userRecoveryDataStore.load(user);
 
-        if(load == null){
+        if(load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())){
             isUserConfirmed = true ;
         }
         return isUserConfirmed ;
