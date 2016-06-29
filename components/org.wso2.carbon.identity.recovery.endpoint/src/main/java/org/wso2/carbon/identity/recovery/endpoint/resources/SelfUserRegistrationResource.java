@@ -42,7 +42,9 @@ public class SelfUserRegistrationResource extends AbstractResource {
             notificationResponseBean = userSelfRegistrationManager.registerUser(registrationRequest.getUser(), registrationRequest
                     .getPassword(), registrationRequest.getClaims(), registrationRequest.getProperties());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while registering user ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while registering user ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while registering user ", e);
@@ -66,7 +68,9 @@ public class SelfUserRegistrationResource extends AbstractResource {
             userSelfRegistrationManager.confirmUserSelfRegistration(confirmSelfRegistrationRequest.getUser(),
                     confirmSelfRegistrationRequest.getCode());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while confirming self sign up code ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while confirming self sign up code ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while confirming self sign up code ", e);
@@ -91,7 +95,9 @@ public class SelfUserRegistrationResource extends AbstractResource {
             notificationResponseBean = userSelfRegistrationManager.resendConfirmationCode(selfRegistrationRequest.getUser(),
                     selfRegistrationRequest.getProperties());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while regenerating self sign up code ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while regenerating self sign up code ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while regenerating self sign up code", e);
