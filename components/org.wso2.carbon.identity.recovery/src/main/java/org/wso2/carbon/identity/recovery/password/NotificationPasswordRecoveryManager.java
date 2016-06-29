@@ -30,8 +30,6 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -48,7 +46,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -56,6 +53,16 @@ import java.util.Map;
 public class NotificationPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(NotificationPasswordRecoveryManager.class);
+    private static NotificationPasswordRecoveryManager instance = new NotificationPasswordRecoveryManager();
+
+    private NotificationPasswordRecoveryManager() {
+
+    }
+
+    public static NotificationPasswordRecoveryManager getInstance() {
+        return instance;
+    }
+
 
     public NotificationResponseBean sendRecoveryNotification(User user) throws IdentityRecoveryException {
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -81,7 +88,7 @@ public class NotificationPasswordRecoveryManager {
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
@@ -137,7 +144,7 @@ public class NotificationPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.load(user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                 RecoverySteps.UPDATE_PASSWORD, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
@@ -161,7 +168,7 @@ public class NotificationPasswordRecoveryManager {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
             } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset success notification to user :"+ user.getUserName());
+                log.warn("Error while sending password reset success notification to user :" + user.getUserName());
             }
         }
 
