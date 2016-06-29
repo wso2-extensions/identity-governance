@@ -56,6 +56,18 @@ public class UserSelfRegistrationManager {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationManager.class);
 
+    private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
+
+
+    private UserSelfRegistrationManager() {
+
+    }
+
+    public static UserSelfRegistrationManager getInstance() {
+        return instance;
+    }
+
+
     public NotificationResponseBean registerUser(User user, String password, UserClaim[] claims, Property[] properties) throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -133,7 +145,7 @@ public class UserSelfRegistrationManager {
                 }
             }
 
-            UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
             String secretKey = UUIDGenerator.generateUUID();
@@ -175,7 +187,7 @@ public class UserSelfRegistrationManager {
                     .getUserName());
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         userRecoveryDataStore.load(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
@@ -215,7 +227,7 @@ public class UserSelfRegistrationManager {
 
     }
 
-    public NotificationResponseBean resendConfirmationCode(User user,  Property[] properties) throws IdentityRecoveryException {
+    public NotificationResponseBean resendConfirmationCode(User user, Property[] properties) throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -240,9 +252,8 @@ public class UserSelfRegistrationManager {
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
 
-
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
 
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret())) {

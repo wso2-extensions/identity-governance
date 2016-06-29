@@ -36,7 +36,9 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
         try {
             challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestion(user);
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while initiating password recovery flow using security questions ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while initiating password recovery flow using security questions ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while initiating password recovery flow using security questions ", e);
@@ -60,7 +62,10 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
             challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestion(verifyAnswerRequest.getUser(),
                     verifyAnswerRequest.getAnswer(), verifyAnswerRequest.getCode());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while verifying challenge answers in recovery flow", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while verifying challenge answers in recovery flow", e);
+            }
+
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while verifying challenge answers in recovery flow ", e);
@@ -83,7 +88,9 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
             securityQuestionBasedPwdRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
                     userPassword.getPassword());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while  updating password in security question recovery flow", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.error("Client Error while  updating password in security question recovery flow", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while updating password in security question recovery flow ", e);
@@ -106,7 +113,9 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
         try {
             challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager.initiateUserChallengeQuestionAtOnce(user);
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while initiating password recovery flow at once using security questions ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while initiating password recovery flow at once using security questions ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while initiating password recovery flow at once using security questions ", e);
@@ -131,7 +140,9 @@ public class SecurityQuestionPasswordRecoveryResource extends AbstractResource {
             challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestionsAtOnce(verifyAllAnswerRequest.getUser(),
                     verifyAllAnswerRequest.getAnswers(), verifyAllAnswerRequest.getCode());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while verifying challenge answers in recovery flow", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while verifying challenge answers in recovery flow", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while verifying challenge answers in recovery flow ", e);

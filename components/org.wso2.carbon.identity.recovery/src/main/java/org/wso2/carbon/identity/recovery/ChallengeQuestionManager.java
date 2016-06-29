@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -46,11 +47,22 @@ import java.util.List;
 public class ChallengeQuestionManager {
 
     private static final Log log = LogFactory.getLog(ChallengeQuestionManager.class);
+    private static ChallengeQuestionManager instance = new ChallengeQuestionManager();
+
+    private ChallengeQuestionManager() {
+
+    }
+
+    public static ChallengeQuestionManager getInstance() {
+        return instance;
+    }
+
 
     /**
      * @return
      * @throws IdentityRecoveryException
      */
+
     public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws IdentityRecoveryException {
 
         List<ChallengeQuestion> questions = new ArrayList<>();
@@ -145,8 +157,8 @@ public class ChallengeQuestionManager {
                         .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
             }
 
-            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                    .QUESTION_CHALLENGE_SEPARATOR);
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
@@ -179,13 +191,13 @@ public class ChallengeQuestionManager {
             challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_GETTING_CHALLENGE_QUESTION, user.getUserName(),e);
+                    .ERROR_CODE_GETTING_CHALLENGE_QUESTION, user.getUserName(), e);
         }
 
         if (challengeValue != null) {
 
-            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                    .QUESTION_CHALLENGE_SEPARATOR);
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
@@ -234,13 +246,13 @@ public class ChallengeQuestionManager {
             claimValue = Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_GETTING_CHALLENGE_URIS, user.getUserName(),e);
+                    .ERROR_CODE_GETTING_CHALLENGE_URIS, user.getUserName(), e);
         }
 
         if (claimValue != null) {
 
-            String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                    .QUESTION_CHALLENGE_SEPARATOR);
             if (claimValue.contains(challengeQuestionSeparator)) {
                 challengesUris = claimValue.split(challengeQuestionSeparator);
             } else {
@@ -270,8 +282,8 @@ public class ChallengeQuestionManager {
         try {
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
-            String separator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+            String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                    .QUESTION_CHALLENGE_SEPARATOR);
 
             if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
                 for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
@@ -312,7 +324,7 @@ public class ChallengeQuestionManager {
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_QUESTION_OF_USER, user.getUserName(),e);
+                    .ERROR_CODE_QUESTION_OF_USER, user.getUserName(), e);
         }
     }
 
@@ -339,7 +351,7 @@ public class ChallengeQuestionManager {
             for (UserChallengeAnswer storedAnswer : storedAnswers) {
                 if ((userChallengeAnswer.getQuestion().getQuestionSetId() == null || !userChallengeAnswer.getQuestion().getQuestionSetId()
                         .trim().equals(storedAnswer.getQuestion()
-                        .getQuestionSetId())) &&
+                                .getQuestionSetId())) &&
                         (userChallengeAnswer.getQuestion().getQuestion() == null || !userChallengeAnswer.getQuestion().getQuestion().
                                 trim().equals(storedAnswer.getQuestion()))) {
                     continue;
@@ -351,7 +363,7 @@ public class ChallengeQuestionManager {
                     hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
                 } catch (UserStoreException e) {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_NO_HASHING_ALGO, null,e);
+                            .ERROR_CODE_NO_HASHING_ALGO, null, e);
                 }
 
                 if (hashedAnswer.equals(storedAnswer.getAnswer())) {
@@ -389,7 +401,7 @@ public class ChallengeQuestionManager {
                 } catch (UserStoreException e) {
 
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_NO_HASHING_ALGO, null,e);
+                            .ERROR_CODE_NO_HASHING_ALGO, null, e);
                 }
                 if (hashedAnswer.equals(dto.getAnswer())) {
                     verification = true;

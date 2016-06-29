@@ -37,7 +37,9 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
         try {
             notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(user);
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while sending recovery notification ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while sending recovery notification ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while sending recovery notification ", e);
@@ -64,7 +66,9 @@ public class NotificationPasswordRecoveryResource extends AbstractResource {
             notificationPasswordRecoveryManager.updatePassword(userPassword.getUser(), userPassword.getCode(),
                     userPassword.getPassword());
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while resetting password ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while resetting password ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while resetting password ", e);

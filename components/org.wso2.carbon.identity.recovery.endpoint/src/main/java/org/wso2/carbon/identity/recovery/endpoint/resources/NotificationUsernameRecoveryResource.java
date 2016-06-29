@@ -37,7 +37,9 @@ public class NotificationUsernameRecoveryResource extends AbstractResource {
         try {
             userClaims = notificationBasedUsernameRecoveryManager.getUserIdentitySupportedClaims(dialect);
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while getting all identity claims ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while getting all identity claims ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while getting all identity claims ", e);
@@ -61,7 +63,9 @@ public class NotificationUsernameRecoveryResource extends AbstractResource {
         try {
             username = notificationBasedUsernameRecoveryManager.verifyUsername(userClaims, tenantDomain);
         } catch (IdentityRecoveryClientException e) {
-            LOG.error("Client Error while verifying for username recovery ", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while verifying for username recovery ", e);
+            }
             return handleErrorResponse(ResponseStatus.INVALID, e.getErrorDescription(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             LOG.error("Error while  verifying for username recovery ", e);

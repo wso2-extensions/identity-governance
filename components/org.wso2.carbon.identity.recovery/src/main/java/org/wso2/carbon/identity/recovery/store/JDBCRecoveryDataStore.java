@@ -15,6 +15,18 @@ import java.sql.*;
 import java.util.Date;
 
 public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
+
+    private static UserRecoveryDataStore jdbcRecoveryDataStore = new JDBCRecoveryDataStore();
+
+
+    private JDBCRecoveryDataStore() {
+
+    }
+    public static UserRecoveryDataStore getInstance() {
+        return jdbcRecoveryDataStore;
+    }
+
+
     @Override
     public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
