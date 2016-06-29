@@ -24,13 +24,15 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Notification Based" +
+                " Password Recovery Enabled");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Notification " +
+                "Internally Management Enable");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Security Question " +
+                "Based Password Recovery Enabled");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions Required For Password Recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Username Recovery Enabled");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
         return nameMapping;
     }
 
@@ -38,12 +40,11 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         return properties.toArray(new String[properties.size()]);
     }
@@ -53,18 +54,17 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
 
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE));
+
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME));
 

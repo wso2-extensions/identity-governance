@@ -55,6 +55,16 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(SecurityQuestionPasswordRecoveryManager.class);
 
+    private static SecurityQuestionPasswordRecoveryManager instance = new SecurityQuestionPasswordRecoveryManager();
+
+    private SecurityQuestionPasswordRecoveryManager() {
+
+    }
+
+    public static SecurityQuestionPasswordRecoveryManager getInstance() {
+        return instance;
+    }
+
     public ChallengeQuestionResponse initiateUserChallengeQuestion(User user) throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -83,15 +93,15 @@ public class SecurityQuestionPasswordRecoveryManager {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
             } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset initiating notification to user :"+ user.getUserName());
+                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
             }
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
-        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .QUESTION_CHALLENGE_SEPARATOR);
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
@@ -111,7 +121,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
 
-        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
         String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
 
         if (ids == null || ids.length == 0) {
@@ -163,15 +173,15 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .QUESTION_CHALLENGE_SEPARATOR);
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
                 RecoverySteps.VALIDATE_CHALLENGE_QUESTION, code);
 
         //if return data from load, it means the code is validated. Otherwise it returns exceptions.
-        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
         boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeAnswer);
         if (verified) {
             userRecoveryDataStore.invalidate(code);
@@ -221,7 +231,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
                 RecoverySteps.UPDATE_PASSWORD, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
@@ -237,7 +247,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(fullName, password);
         } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
         userRecoveryDataStore.invalidate(code);
@@ -263,8 +273,8 @@ public class SecurityQuestionPasswordRecoveryManager {
 
 
     public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
-        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .QUESTION_CHALLENGE_SEPARATOR);
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -292,12 +302,12 @@ public class SecurityQuestionPasswordRecoveryManager {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
             } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset initiating notification to user :"+ user.getUserName());
+                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
             }
         }
 
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -318,7 +328,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
 
-        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
         String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
 
         if (ids == null || ids.length == 0) {
@@ -366,10 +376,10 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        String challengeQuestionSeparator = Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR, user.getTenantDomain());
+        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .QUESTION_CHALLENGE_SEPARATOR);
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user, RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY,
                 RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION, code);
 
@@ -389,7 +399,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         } else {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
         }
-        ChallengeQuestionManager challengeQuestionManager = new ChallengeQuestionManager();
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
 
         for (int i = 0; i < userChallengeAnswer.length; i++) {
             boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeAnswer[i]);

@@ -23,6 +23,7 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -64,13 +65,15 @@ public class IdentityRecoveryServiceComponent {
             }
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(NotificationPasswordRecoveryManager.class.getName(),
-                    new NotificationPasswordRecoveryManager(), null);
+                    NotificationPasswordRecoveryManager.getInstance(), null);
             bundleContext.registerService(SecurityQuestionPasswordRecoveryManager.class.getName(),
-                    new SecurityQuestionPasswordRecoveryManager(), null);
+                    SecurityQuestionPasswordRecoveryManager.getInstance(), null);
             bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
-                    new NotificationUsernameRecoveryManager(), null);
+                    NotificationUsernameRecoveryManager.getInstance(), null);
             bundleContext.registerService(UserSelfRegistrationManager.class.getName(),
-                    new UserSelfRegistrationManager(), null);
+                    UserSelfRegistrationManager.getInstance(), null);
+            bundleContext.registerService(ChallengeQuestionManager.class.getName(),
+                    ChallengeQuestionManager.getInstance(), null);
 
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new RecoveryConnectorImpl(), null);
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new SelfRegistrationConnectorImpl(), null);
