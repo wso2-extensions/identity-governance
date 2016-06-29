@@ -104,7 +104,8 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         String reCaptchaPropertySuffixEnable = "";
         String connectorIdentifierAttribute = "";
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig.getName())) {
+            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig
+                    .getName())) {
                 securedPaths = connectorConfig.getValue();
             } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(connectorConfig.getName())) {
                 reCaptchaPropertySuffixEnable = connectorConfig.getValue();
@@ -164,9 +165,11 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         String maxAttemptsStr = "";
         String onFailRedirectUrl = "";
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM).equals(connectorConfig.getName())) {
+            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM).equals
+                    (connectorConfig.getName())) {
                 verificationClaim = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(connectorConfig.getName())) {
+            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(connectorConfig
+                    .getName())) {
                 maxAttemptsStr = connectorConfig.getValue();
             } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL).equals
                     (connectorConfig.getName())) {
@@ -289,13 +292,20 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME +
+                ReCaptchaConnectorPropertySuffixes.ENABLE);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
+                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME +
+                ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE, CONNECTOR_NAME
+                + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
+                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS, CONNECTOR_NAME +
+                ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL, CONNECTOR_NAME +
+                ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL);
         return nameMapping;
     }
 
