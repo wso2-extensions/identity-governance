@@ -73,7 +73,7 @@ public class IdentityRecoveryServiceComponent {
                     new NotificationUsernameRecoveryManager(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(UserSelfRegistrationManager.class.getName(),
-                    new UserSelfRegistrationManager(), null);
+                    UserSelfRegistrationManager.getInstance(), null);
 
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new RecoveryConnectorImpl(), null);
             context.getBundleContext().registerService(IdentityGovernanceConnector.class.getName(), new SelfRegistrationConnectorImpl(), null);

@@ -56,6 +56,12 @@ public class UserSelfRegistrationManager {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationManager.class);
 
+    private static UserSelfRegistrationManager userSelfRegistrationManager = new UserSelfRegistrationManager();
+
+    public static UserSelfRegistrationManager getInstance(){
+        return userSelfRegistrationManager ;
+    }
+
     public NotificationResponseBean registerUser(User user, String password, UserClaim[] claims, Property[] properties) throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -81,7 +87,8 @@ public class UserSelfRegistrationManager {
                 (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user
+                        .getTenantDomain()));
 
         String roles = String.valueOf(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, user.getTenantDomain()));
@@ -152,6 +159,35 @@ public class UserSelfRegistrationManager {
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Check whether user is already confirmed or not.
+     *
+     * @param user
+     * @return
+     * @throws IdentityRecoveryException
+     */
+    public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
+        boolean isUserConfirmed = false ;
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
+                     user.getUserName());
+        }
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+        }
+        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryData load =
+                userRecoveryDataStore.load(user);
+
+        if(load == null){
+            isUserConfirmed = true ;
+        }
+        return isUserConfirmed ;
+
     }
 
     public void confirmUserSelfRegistration(User user, String code) throws IdentityRecoveryException {

@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
+import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
@@ -28,6 +29,8 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -92,9 +95,27 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         super.init(configuration);
     }
 
+    @Override
+    public int getPriority(MessageContext messageContext) {
+        return 50 ;
+    }
 
-    private boolean isUserAccountConfirmed(User user){
-        return false ;
+
+    /**
+     * Check whether user is already confirmed or not.
+     *
+     * @param user
+     * @return
+     * @throws IdentityEventException
+     */
+    private boolean isUserAccountConfirmed(User user) throws IdentityEventException {
+        boolean userConfirmed = false ;
+        try {
+            userConfirmed = UserSelfRegistrationManager.getInstance().isUserConfirmed(user);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " + e.getMessage(), e);
+        }
+        return userConfirmed ;
     }
 
 }
