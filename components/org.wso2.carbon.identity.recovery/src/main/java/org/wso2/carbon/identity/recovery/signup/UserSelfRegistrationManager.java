@@ -184,7 +184,7 @@ public class UserSelfRegistrationManager {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
         }
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData load =
                 userRecoveryDataStore.load(user);
 
