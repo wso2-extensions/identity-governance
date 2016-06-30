@@ -55,6 +55,16 @@ public class NotificationUsernameRecoveryManager {
 
     private static final Log log = LogFactory.getLog(NotificationUsernameRecoveryManager.class);
 
+    private static NotificationUsernameRecoveryManager instance = new NotificationUsernameRecoveryManager();
+
+    private NotificationUsernameRecoveryManager() {
+
+    }
+
+    public static NotificationUsernameRecoveryManager getInstance() {
+        return instance;
+    }
+
 
     /**
      * This returns the user supported claims.

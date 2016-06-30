@@ -56,6 +56,18 @@ public class UserSelfRegistrationManager {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationManager.class);
 
+    private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
+
+
+    private UserSelfRegistrationManager() {
+
+    }
+
+    public static UserSelfRegistrationManager getInstance() {
+        return instance;
+    }
+
+
     public NotificationResponseBean registerUser(User user, String password, UserClaim[] claims, Property[]
             properties) throws IdentityRecoveryException {
 
@@ -141,7 +153,7 @@ public class UserSelfRegistrationManager {
                 }
             }
 
-            UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
             String secretKey = UUIDGenerator.generateUUID();
@@ -161,6 +173,35 @@ public class UserSelfRegistrationManager {
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Check whether user is already confirmed or not.
+     *
+     * @param user
+     * @return
+     * @throws IdentityRecoveryException
+     */
+    public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
+        boolean isUserConfirmed = false ;
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
+                     user.getUserName());
+        }
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+        }
+        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryData load =
+                userRecoveryDataStore.load(user);
+
+        if(load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())){
+            isUserConfirmed = true ;
+        }
+        return isUserConfirmed ;
+
     }
 
     public void confirmUserSelfRegistration(User user, String code) throws IdentityRecoveryException {
@@ -186,7 +227,7 @@ public class UserSelfRegistrationManager {
                     .getUserName());
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         userRecoveryDataStore.load(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
@@ -257,7 +298,7 @@ public class UserSelfRegistrationManager {
 
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
-        UserRecoveryDataStore userRecoveryDataStore = new JDBCRecoveryDataStore();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
 
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret())) {

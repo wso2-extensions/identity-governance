@@ -25,14 +25,14 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, IdentityRecoveryConstants
-                .ConnectorConfig.ENABLE_SELF_SIGNUP);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, IdentityRecoveryConstants
-                .ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, IdentityRecoveryConstants
-                .ConnectorConfig.SELF_SIGN_UP_ROLES);
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+                "Self User Registration Enabled");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                "Account Lock On Creation Enabled");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES,
+                "Self Registration Roles");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
+                "Notification Internally Management Enabled");
         return nameMapping;
     }
 
