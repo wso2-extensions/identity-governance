@@ -17,22 +17,13 @@
 package org.wso2.carbon.identity.password.history.internal;
 
 import org.osgi.framework.BundleContext;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
-import org.wso2.carbon.user.core.service.RealmService;
 
 public class IdentityPasswordHistoryServiceDataHolder {
 
     private static IdentityPasswordHistoryServiceDataHolder instance = new IdentityPasswordHistoryServiceDataHolder();
-    private IdentityEventService eventMgtService;
     private IdentityGovernanceService identityGovernanceService;
-    private IdpManager idpManager;
     private BundleContext bundleContext;
-    private RealmService realmService;
-    private RegistryService registryService;
-
 
     private IdentityPasswordHistoryServiceDataHolder() {
     }
@@ -40,22 +31,6 @@ public class IdentityPasswordHistoryServiceDataHolder {
     public static IdentityPasswordHistoryServiceDataHolder getInstance() {
 
         return instance;
-    }
-
-    public IdentityEventService getEventMgtService() {
-        return eventMgtService;
-    }
-
-    public void setEventMgtService(IdentityEventService eventMgtService) {
-        this.eventMgtService = eventMgtService;
-    }
-
-    public IdpManager getIdpManager() {
-        return idpManager;
-    }
-
-    public void setIdpManager(IdpManager idpManager) {
-        this.idpManager = idpManager;
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {
@@ -72,21 +47,5 @@ public class IdentityPasswordHistoryServiceDataHolder {
 
     public void setBundleContext(BundleContext bundleContext) {
         this.bundleContext = bundleContext;
-    }
-
-    public RealmService getRealmService() {
-        return realmService;
-    }
-
-    public void setRealmService(RealmService realmService) {
-        this.realmService = realmService;
-    }
-
-    public RegistryService getRegistryService() {
-        return registryService;
-    }
-
-    public void setRegistryService(RegistryService registryService) {
-        this.registryService = registryService;
     }
 }
