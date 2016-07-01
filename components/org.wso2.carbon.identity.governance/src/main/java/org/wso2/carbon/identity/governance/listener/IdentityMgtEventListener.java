@@ -557,6 +557,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             eventMgtService.handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
+            if (e.getErrorInfoList() != null && e.getErrorInfoList().get(0) != null) {
+                if (e.getErrorInfoList().get(0).getErrorCode() == "22001") {
+                    throw new UserStoreException(e.getMessage(), e);
+                }
+            }
             throw new UserStoreException("Error when handling event : " + eventName, e);
         }
     }
