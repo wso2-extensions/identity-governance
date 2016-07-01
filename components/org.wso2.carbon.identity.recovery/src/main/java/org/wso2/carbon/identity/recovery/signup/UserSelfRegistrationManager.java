@@ -101,7 +101,7 @@ public class UserSelfRegistrationManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
         try {
-            RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
             try {
                 userStoreManager = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain())).getUserStoreManager();
@@ -222,7 +222,7 @@ public class UserSelfRegistrationManager {
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
         try {
-            RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
             try {
                 userStoreManager = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain())).getUserStoreManager();

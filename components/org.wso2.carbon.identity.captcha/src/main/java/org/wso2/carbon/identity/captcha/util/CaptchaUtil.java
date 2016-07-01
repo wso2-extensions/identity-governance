@@ -18,14 +18,35 @@
 
 package org.wso2.carbon.identity.captcha.util;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
+import org.wso2.carbon.identity.captcha.exception.CaptchaException;
+import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URISyntaxException;
@@ -33,6 +54,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,8 +89,8 @@ public class CaptchaUtil {
             if (reCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
                 setReCaptchaConfigs(properties);
-                setSSOLoginConnectorConfigs(properties);
-                setPathBasedConnectorConfigs(properties);
+                //setSSOLoginConnectorConfigs(properties);
+                //setPathBasedConnectorConfigs(properties);
             } else {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(false);
 
@@ -127,7 +149,7 @@ public class CaptchaUtil {
 
         for (String url : onFailRedirectUrls) {
             if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
-                for(NameValuePair pair : uriBuilder.getQueryParams()) {
+                for (NameValuePair pair : uriBuilder.getQueryParams()) {
                     attributes.put(pair.getName(), pair.getValue());
                 }
                 return getUpdatedUrl(url, attributes);
@@ -150,6 +172,72 @@ public class CaptchaUtil {
             }
             return CaptchaConstants.ERROR_PAGE;
         }
+    }
+
+    public static Map<String, String> getClaimValues(String username, String tenantDomain, int tenantId,
+                                                     String[] claimUris) throws CaptchaServerException {
+
+        RealmService realmService = CaptchaDataHolder.getInstance().getRealmService();
+        UserRealm userRealm;
+        try {
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CaptchaServerException("Failed to retrieve user realm from tenant id : " + tenantId, e);
+        }
+
+        UserStoreManager userStoreManager;
+        try {
+            userStoreManager = userRealm.getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw new CaptchaServerException("Failed to retrieve user store manager.", e);
+        }
+
+        Map<String, String> claimValues = null;
+        try {
+            claimValues = userStoreManager.getUserClaimValues(username, claimUris, UserCoreConstants.DEFAULT_PROFILE);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while retrieving user claims.", e);
+            }
+        }
+
+        return claimValues;
+    }
+
+    public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
+
+        HttpClient httpclient = HttpClients.createDefault();
+        HttpPost httppost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
+
+        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
+                .getInstance().getReCaptchaSecretKey()), new BasicNameValuePair("response", reCaptchaResponse));
+        httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
+        HttpResponse response;
+        try {
+            response = httpclient.execute(httppost);
+        } catch (IOException e) {
+            throw new CaptchaServerException("Unable to get the verification response.", e);
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            throw new CaptchaServerException("reCaptcha verification response is not received.");
+        }
+
+        try {
+            try (InputStream in = entity.getContent()) {
+                JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                if (verificationResponse == null || verificationResponse.get("success") == null ||
+                        !verificationResponse.get("success").getAsBoolean()) {
+                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                }
+            }
+        } catch (IOException e) {
+            throw new CaptchaServerException("Unable to read the verification response.", e);
+        }
+
+        return true;
     }
 
     private static void setReCaptchaConfigs(Properties properties) {

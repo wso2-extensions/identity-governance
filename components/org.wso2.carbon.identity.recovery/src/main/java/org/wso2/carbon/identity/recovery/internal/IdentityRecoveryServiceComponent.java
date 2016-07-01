@@ -54,9 +54,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 public class IdentityRecoveryServiceComponent {
 
     private static Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);
-    private static RealmService realmService;
-    private static RegistryService registryService;
-
 
     protected void activate(ComponentContext context) {
 
@@ -85,22 +82,14 @@ public class IdentityRecoveryServiceComponent {
         }
     }
 
-    public static RealmService getRealmService() {
-        return realmService;
-    }
-
     protected void setRealmService(RealmService realmService) {
         log.debug("Setting the Realm Service");
-        IdentityRecoveryServiceComponent.realmService = realmService;
-    }
-
-    public static RegistryService getRegistryService() {
-        return registryService;
+        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
     }
 
     protected void setRegistryService(RegistryService registryService) {
         log.debug("Setting the Registry Service");
-        IdentityRecoveryServiceComponent.registryService = registryService;
+        IdentityRecoveryServiceDataHolder.getInstance().setRegistryService(registryService);
     }
 
     protected void deactivate(ComponentContext context) {
@@ -111,12 +100,12 @@ public class IdentityRecoveryServiceComponent {
 
     protected void unsetRealmService(RealmService realmService) {
         log.debug("UnSetting the Realm Service");
-        IdentityRecoveryServiceComponent.realmService = null;
+        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(null);
     }
 
     protected void unsetRegistryService(RegistryService registryService) {
         log.debug("UnSetting the Registry Service");
-        IdentityRecoveryServiceComponent.registryService = null;
+        IdentityRecoveryServiceDataHolder.getInstance().setRegistryService(null);
     }
 
     protected void unsetIdentityEventService(IdentityEventService identityEventService) {

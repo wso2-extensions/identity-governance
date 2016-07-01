@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PathBasedReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConnector;
@@ -73,6 +74,13 @@ public class CaptchaComponent {
                     .getIdentityGovernanceService());
             context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
             CaptchaDataHolder.getInstance().addCaptchaConnector((PathBasedReCaptchaConnector) connector);
+
+            // Initialize and register PasswordRecoveryReCaptchaConnector
+            connector = new PasswordRecoveryReCaptchaConnector();
+            ((PasswordRecoveryReCaptchaConnector) connector).init(CaptchaDataHolder.getInstance()
+                    .getIdentityGovernanceService());
+            context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
+            CaptchaDataHolder.getInstance().addCaptchaConnector((PasswordRecoveryReCaptchaConnector) connector);
 
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");

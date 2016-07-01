@@ -49,7 +49,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
 
     private static final Log log = LogFactory.getLog(PathBasedReCaptchaConnector.class);
 
-    private final String CONNECTOR_NAME = "path.based";
+    private final String CONNECTOR_NAME = "path.based.recaptcha";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -132,9 +132,8 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             throw new CaptchaServerException("Error occurred while retrieving reCaptcha configuration.", e);
         }
 
-        String securedPages = "";
-        String securedDestinations = "";
-        String onFailRedirectUrl = "";
+        String securedPages = null;
+        String securedDestinations = null;
         for (Property connectorConfig : connectorConfigs) {
             if ((CONNECTOR_NAME + CaptchaConstants
                     .ReCaptchaConnectorPropertySuffixes.SECURED_PAGES).equals(connectorConfig.getName())) {
@@ -142,9 +141,6 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
             } else if ((CONNECTOR_NAME + CaptchaConstants
                     .ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig.getName())) {
                 securedDestinations = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL)
-                    .equals(connectorConfig.getName())) {
-                onFailRedirectUrl = connectorConfig.getValue();
             }
         }
 
@@ -191,18 +187,21 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     public String getFriendlyName() {
 
         String friendlyName = "reCaptcha for Request Path";
-        if(!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            friendlyName += " (reCaptcha is not enabled)";
-        }
+//        if(!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+//            friendlyName += " (reCaptcha is not enabled)";
+//        }
         return friendlyName;
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE);
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES);
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
+                "Enable");
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
+                "Secured Pages");
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
+                "Secured Destinations");
         return nameMapping;
     }
 
@@ -234,12 +233,6 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
                 CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
             defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
                     .SECURED_DESTINATIONS, "");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL))) {
-            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes
-                            .ON_FAIL_REDIRECT_URL,
-                    "/authenticationendpoint/retry.do");
         }
 
         Properties properties = new Properties();

@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.connector;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,8 @@ public class CaptchaPreValidationResponse {
     private boolean postValidationRequired;
 
     private List<String> onCaptchaFailRedirectUrls;
+
+    private HttpServletRequest wrappedHttpServletRequest;
 
     public boolean isCaptchaValidationRequired() {
         return captchaValidationRequired;
@@ -91,5 +94,13 @@ public class CaptchaPreValidationResponse {
 
     public void setOnCaptchaFailRedirectUrls(List<String> onCaptchaFailRedirectUrls) {
         this.onCaptchaFailRedirectUrls = onCaptchaFailRedirectUrls;
+    }
+
+    public HttpServletRequest getWrappedHttpServletRequest() {
+        return wrappedHttpServletRequest;
+    }
+
+    public void setWrappedHttpServletRequest(HttpServletRequest wrappedHttpServletRequest) {
+        this.wrappedHttpServletRequest = wrappedHttpServletRequest;
     }
 }

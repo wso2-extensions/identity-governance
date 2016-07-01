@@ -18,14 +18,28 @@ package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.user.core.service.RealmService;
 
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
+
     private IdentityEventService identityEventService;
+
     private IdentityGovernanceService identityGovernanceService;
+
     private IdpManager idpManager;
+
+    private RealmService realmService;
+
+    private RegistryService registryService;
+
+    private IdentityRecoveryServiceDataHolder() {
+
+    }
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -49,10 +63,35 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {
+        if(identityEventService == null) {
+            throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
+        }
         return identityGovernanceService;
     }
 
     public void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
         this.identityGovernanceService = identityGovernanceService;
+    }
+
+    public RealmService getRealmService() {
+        if(identityEventService == null) {
+            throw new RuntimeException("RealmService not available. Component is not started properly.");
+        }
+        return realmService;
+    }
+
+    public void setRealmService(RealmService realmService) {
+        this.realmService = realmService;
+    }
+
+    public RegistryService getRegistryService() {
+        if(identityEventService == null) {
+            throw new RuntimeException("RegistryService not available. Component is not started properly.");
+        }
+        return registryService;
+    }
+
+    public void setRegistryService(RegistryService registryService) {
+        this.registryService = registryService;
     }
 }

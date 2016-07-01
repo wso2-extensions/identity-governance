@@ -34,7 +34,7 @@ public class Utils {
 
         String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
         String claimValue = "";
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -164,7 +164,7 @@ public class Utils {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
 
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
         if (realmService.getTenantUserRealm(tenantId) != null) {
             userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
                     getUserStoreManager();
