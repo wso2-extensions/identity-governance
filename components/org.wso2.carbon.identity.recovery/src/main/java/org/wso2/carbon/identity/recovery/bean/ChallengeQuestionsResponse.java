@@ -13,15 +13,22 @@ public class ChallengeQuestionsResponse {
     }
 
     public ChallengeQuestionsResponse(ChallengeQuestion[] question) {
-        this.question = question;
+        if (question != null) {
+            this.question = question.clone();
+        }
     }
 
     public ChallengeQuestion[] getQuestion() {
+        if (question == null) {
+            return new ChallengeQuestion[0];
+        }
         return question;
     }
 
     public void setQuestion(ChallengeQuestion[] question) {
-        this.question = question;
+        if (question != null) {
+            this.question = question.clone();
+        }
     }
 
     public String getCode() {
