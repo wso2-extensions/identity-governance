@@ -166,6 +166,35 @@ public class UserSelfRegistrationManager {
         return notificationResponseBean;
     }
 
+    /**
+     * Check whether user is already confirmed or not.
+     *
+     * @param user
+     * @return
+     * @throws IdentityRecoveryException
+     */
+    public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
+        boolean isUserConfirmed = false ;
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
+                     user.getUserName());
+        }
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+        }
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData load =
+                userRecoveryDataStore.load(user);
+
+        if(load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())){
+            isUserConfirmed = true ;
+        }
+        return isUserConfirmed ;
+
+    }
+
     public void confirmUserSelfRegistration(User user, String code) throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -250,6 +279,7 @@ public class UserSelfRegistrationManager {
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
 
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
