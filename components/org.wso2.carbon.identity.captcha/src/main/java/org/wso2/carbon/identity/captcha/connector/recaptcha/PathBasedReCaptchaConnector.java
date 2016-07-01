@@ -117,7 +117,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest,  ServletResponse servletResponse)
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
         // reCaptcha is required for all requests.
@@ -191,7 +191,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     public String getFriendlyName() {
 
         String friendlyName = "reCaptcha for Request Path";
-        if(!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
             friendlyName += " (reCaptcha is not enabled)";
         }
         return friendlyName;
@@ -200,9 +200,12 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE);
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES);
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME +
+                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
+                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_PAGES);
+        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
+                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
         return nameMapping;
     }
 
@@ -219,7 +222,8 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
     @Override
     public Properties getDefaultPropertyValues(String s) throws IdentityGovernanceException {
 
-        Map<String, String> defaultProperties = CaptchaDataHolder.getInstance().getPathBasedReCaptchaConnectorPropertyMap();
+        Map<String, String> defaultProperties = CaptchaDataHolder.getInstance()
+                .getPathBasedReCaptchaConnectorPropertyMap();
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE))) {
             defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,

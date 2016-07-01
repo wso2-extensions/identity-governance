@@ -94,7 +94,8 @@ public class IdentityMgtServiceComponent {
     protected void setIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
         IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityGovernanceConnector);
         try {
-            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, MultitenantConstants
+                    .SUPER_TENANT_DOMAIN_NAME);
         } catch (IdentityGovernanceException e) {
             log.error("Error while saving super tenant configurations for " + identityGovernanceConnector.getName() +
                     ".", e);

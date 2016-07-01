@@ -74,7 +74,8 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 

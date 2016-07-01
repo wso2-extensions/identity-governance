@@ -45,7 +45,8 @@ public class Utils {
 
         if (userStoreManager != null) {
             Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
+                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants
+                            .DEFAULT_PROFILE);
             if (claimsMap != null && !claimsMap.isEmpty()) {
                 claimValue = claimsMap.get(claim);
             }
@@ -64,8 +65,10 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
+        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException
+                (errorDescription);
+        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
+                IdentityRecoveryServerException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.errorCode(error.getCode());
         identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
@@ -83,9 +86,11 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription,
+        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException
+                (errorDescription,
                 e);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
+        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
+                IdentityRecoveryServerException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.cause(e);
         errorInfoBuilder.errorCode(error.getCode());
@@ -104,15 +109,18 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
+        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException
+                (errorDescription);
+        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
+                IdentityRecoveryClientException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.errorCode(error.getCode());
         identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
         return identityRecoveryClientException;
     }
 
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error, String data,
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data,
                                                                         Throwable e)
             throws IdentityRecoveryClientException {
 
@@ -123,9 +131,11 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription,
+        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException
+                (errorDescription,
                 e);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
+        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
+                IdentityRecoveryClientException
                 .ErrorInfo.ErrorInfoBuilder(errorDescription);
         errorInfoBuilder.cause(e);
         errorInfoBuilder.errorCode(error.getCode());
@@ -193,9 +203,11 @@ public class Utils {
                     return connectorConfig.getValue();
                 }
             }
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
         }
     }
 
@@ -207,7 +219,8 @@ public class Utils {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }
     }
 }

@@ -532,12 +532,14 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     }
 
 
-    private void handleEvent(String userName, UserStoreManager userStoreManager, String eventName, HashMap<String, Object> properties)
+    private void handleEvent(String userName, UserStoreManager userStoreManager, String eventName, HashMap<String,
+            Object> properties)
             throws UserStoreException {
         handleEvent(userName, userStoreManager, eventName, null, properties);
     }
 
-    private void handleEvent(String userName, UserStoreManager userStoreManager, String eventName, String roleName, HashMap<String, Object> properties)
+    private void handleEvent(String userName, UserStoreManager userStoreManager, String eventName, String roleName,
+                             HashMap<String, Object> properties)
             throws UserStoreException {
 
         try {

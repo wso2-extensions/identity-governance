@@ -31,8 +31,9 @@ public interface IdentityGovernanceConnector {
 
     String[] getPropertyNames();
 
-    Properties getDefaultPropertyValues (String tenantDomain) throws IdentityGovernanceException;
+    Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException;
 
-    Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
+    Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException;
 
 }

@@ -58,14 +58,16 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, "Internal/everyone");
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                        .SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 
