@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -555,7 +556,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             Event identityMgtEvent = new Event(eventName, properties);
 
-            eventMgtService.handleEvent(identityMgtEvent);
+            if (!TenantMgtUtil.isTenantAdminCreationOperation()) {
+                eventMgtService.handleEvent(identityMgtEvent);
+            }
+
         } catch (IdentityEventException e) {
             if (e.getErrorInfoList() != null && e.getErrorInfoList().get(0) != null) {
                 if (e.getErrorInfoList().get(0).getErrorCode() == "22001") {
