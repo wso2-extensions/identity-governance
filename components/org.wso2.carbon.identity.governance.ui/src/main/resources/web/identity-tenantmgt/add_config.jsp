@@ -127,7 +127,7 @@
                     String value = connectorProperties[k].getValue();%>
 
                 <tr>
-                    <td>
+                    <td style="width: 500px;">
                         <%=Encode.forHtmlAttribute(connectorProperties[k].getDisplayName())%>
                     </td>
                     <%
