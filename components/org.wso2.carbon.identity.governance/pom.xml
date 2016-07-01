@@ -36,6 +36,10 @@
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.idp.mgt</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.multitenancy</groupId>
+            <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
