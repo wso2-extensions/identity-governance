@@ -106,7 +106,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         try {
             residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
         } catch (IdentityProviderManagementException e) {
-            log.error("Error while retrieving resident Idp with identity mgt properties.");
+            String errorMsg = String.format("Error while retrieving resident Idp for %s tenant.", tenantDomain);
+            log.error(errorMsg, e);
+            throw new IdentityGovernanceException(errorMsg, e);
         }
         IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
         Property[] configMap = new Property[identityMgtProperties.length];
