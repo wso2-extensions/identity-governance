@@ -11,6 +11,7 @@ import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
+import org.wso2.carbon.user.api.Claim;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -33,7 +34,7 @@ public class NotificationUsernameRecoveryResource extends AbstractResource {
         String dialect = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT;
         NotificationUsernameRecoveryManager notificationBasedUsernameRecoveryManager = RecoveryUtil
                 .getNotificationBasedUsernameRecoveryManager();
-        String[] userClaims;
+        Claim[] userClaims;
         try {
             userClaims = notificationBasedUsernameRecoveryManager.getUserIdentitySupportedClaims(dialect);
         } catch (IdentityRecoveryClientException e) {
@@ -51,6 +52,9 @@ public class NotificationUsernameRecoveryResource extends AbstractResource {
         }
         return Response.ok(userClaims).build();
     }
+
+
+
 
     @PUT
     @Path("/notify")

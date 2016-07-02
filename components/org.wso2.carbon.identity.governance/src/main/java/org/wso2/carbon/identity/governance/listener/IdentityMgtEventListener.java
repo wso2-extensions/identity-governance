@@ -20,6 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -27,11 +29,14 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
+import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -555,10 +560,31 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             Event identityMgtEvent = new Event(eventName, properties);
 
-            eventMgtService.handleEvent(identityMgtEvent);
+            // TODO this is a temporary fix (https://wso2.org/jira/browse/IDENTITY-4752)
+            // Need to remove after fixed in carbon-multitenancy
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
+            IdentityProvider residentIdp = null;
+            try {
+                residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
+            } catch (IdentityProviderManagementException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Unable to get the resident identity provider for tenant: " + tenantDomain, e);
+                }
+            }
+
+            // Resident IDP can only be null during tenant admin creation. Therefore we skip handling the event when
+            // a tenant admin is created. Otherwise governance event handlers will try to retrieve properties from
+            // resident IDP leading to NPE
+            if (residentIdp != null) {
+                eventMgtService.handleEvent(identityMgtEvent);
+            }
         } catch (IdentityEventException e) {
-            if (e.getErrorInfoList() != null && e.getErrorInfoList().get(0) != null) {
-                if (e.getErrorInfoList().get(0).getErrorCode() == "22001") {
+            List<IdentityException.ErrorInfo> errorInfoList = e.getErrorInfoList();
+            if (!errorInfoList.isEmpty()) {
+                IdentityException.ErrorInfo errorInfo = errorInfoList.get(0);
+                //This errr code 22001 means user password history is vialated.
+                if (errorInfo != null && StringUtils.equals(errorInfo.getErrorCode(), "22001")) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }

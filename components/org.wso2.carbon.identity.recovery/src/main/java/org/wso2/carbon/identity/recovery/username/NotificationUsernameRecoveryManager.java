@@ -73,7 +73,7 @@ public class NotificationUsernameRecoveryManager {
      * @return
      * @throws IdentityRecoveryException
      */
-    public String[] getUserIdentitySupportedClaims(String dialect)
+    public String[] _getUserIdentitySupportedClaims(String dialect)
             throws IdentityException {
         IdentityClaimManager claimManager;
         Claim[] claims;
@@ -102,6 +102,31 @@ public class NotificationUsernameRecoveryManager {
         }
 
         return claimList.toArray(new String[claimList.size()]);
+    }
+
+
+    /**
+     * This returns the user supported claims info.
+     *
+     * @param dialect
+     * @return
+     * @throws IdentityRecoveryException
+     */
+    public Claim[] getUserIdentitySupportedClaims(String dialect)
+            throws IdentityException {
+        IdentityClaimManager claimManager;
+        Claim[] claims;
+
+        claimManager = IdentityClaimManager.getInstance();
+        UserRealm realm = IdentityTenantUtil.getRealm(null, null);
+        claims = claimManager.getAllSupportedClaims(dialect, realm);
+
+        if (claims == null || claims.length == 0) {
+            log.warn("Could not find any matching claims for requested dialect : " + dialect);
+            return new Claim[0];
+        }
+
+        return claims;
     }
 
 
