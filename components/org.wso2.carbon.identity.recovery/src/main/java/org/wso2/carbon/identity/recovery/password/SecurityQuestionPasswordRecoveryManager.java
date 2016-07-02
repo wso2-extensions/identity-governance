@@ -496,8 +496,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService()
                     .getConfiguration(
-                            new String[]{/*PROPERTY_AUTH_POLICY_ENABLE,*/ PROPERTY_ACCOUNT_LOCK_ON_FAILURE,
-                                    PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX},
+                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX},
                             tenantDomain);
         } catch (Exception e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -550,13 +549,11 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     private void handleAnswerVerificationFail(User user) throws IdentityRecoveryException {
 
-
         Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
 
         int maxAttempts = 0;
         for (Property connectorConfig : connectorConfigs) {
-            if ((/*PROPERTY_AUTH_POLICY_ENABLE.equals(connectorConfig.getName()) ||*/
-                    PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
+            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
                     !Boolean.parseBoolean(connectorConfig.getValue())) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                         .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
