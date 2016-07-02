@@ -129,7 +129,7 @@ public class CaptchaFilter implements Filter {
             }
 
             CaptchaHttpServletResponseWrapper responseWrapper = new CaptchaHttpServletResponseWrapper(httpResponse);
-            doFilter(captchaPreValidationResponse, servletRequest, servletResponse, filterChain);
+            doFilter(captchaPreValidationResponse, servletRequest, responseWrapper, filterChain);
 
             CaptchaPostValidationResponse postValidationResponse = selectedCaptchaConnector
                     .postValidate(servletRequest, responseWrapper);

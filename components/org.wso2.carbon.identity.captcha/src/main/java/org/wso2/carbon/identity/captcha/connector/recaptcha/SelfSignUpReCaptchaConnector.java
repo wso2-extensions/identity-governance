@@ -26,36 +26,29 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
-import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * ReCaptcha Page Based Connector.
  */
-public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector implements IdentityGovernanceConnector {
+public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
-    private static final Log log = LogFactory.getLog(PathBasedReCaptchaConnector.class);
+    private static final Log log = LogFactory.getLog(SelfSignUpReCaptchaConnector.class);
 
     private static final String SELF_REGISTRATION_INITIATE_URL = "/account-recovery/username/claims";
 
     private static final String SELF_REGISTRATION_URL = "/account-recovery/self/register";
 
-    private final String CONNECTOR_NAME = "path.based.recaptcha";
+    private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -97,8 +90,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
 
         String enable = null;
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE)
-                    .equals(connectorConfig.getName())) {
+            if ((PROPERTY_ENABLE_RECAPTCHA).equals(connectorConfig.getName())) {
                 enable = connectorConfig.getValue();
             }
         }
@@ -151,54 +143,6 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         return null;
     }
 
-    @Override
-    public String getName() {
-
-        return CONNECTOR_NAME;
-    }
-
-    @Override
-    public String getFriendlyName() {
-
-        return "reCaptcha for Request Path";
-    }
-
-    @Override
-    public Map<String, String> getPropertyNameMapping() {
-        Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
-                "Enable");
-        return nameMapping;
-    }
-
-    @Override
-    public String[] getPropertyNames() {
-
-        return new String[]{
-                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE
-        };
-    }
-
-    @Override
-    public Properties getDefaultPropertyValues(String s) throws IdentityGovernanceException {
-
-        Map<String, String> defaultProperties = CaptchaDataHolder.getInstance().getPathBasedReCaptchaConnectorPropertyMap();
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE))) {
-            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
-                    "false");
-        }
-
-        Properties properties = new Properties();
-        properties.putAll(defaultProperties);
-        return properties;
-    }
-
-    @Override
-    public Map<String, String> getDefaultPropertyValues(String[] strings, String s) throws IdentityGovernanceException {
-        return null;
-    }
-
     private Property[] getConnectorConfigs(ServletRequest servletRequest) throws Exception {
 
         String tenantDomain = servletRequest.getParameter("tenantDomain");
@@ -207,8 +151,7 @@ public class PathBasedReCaptchaConnector extends AbstractReCaptchaConnector impl
         }
 
         Property[] connectorConfigs;
-        connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                        CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE},
+        connectorConfigs = identityGovernanceService.getConfiguration(new String[]{PROPERTY_ENABLE_RECAPTCHA},
                 tenantDomain);
 
         return connectorConfigs;

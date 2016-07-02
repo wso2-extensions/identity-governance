@@ -55,7 +55,7 @@ import java.util.Properties;
 /**
  * Password Recovery reCaptcha Connector.
  */
-public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnector implements IdentityGovernanceConnector {
+public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final Log log = LogFactory.getLog(PasswordRecoveryReCaptchaConnector.class);
 
@@ -72,6 +72,11 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     private static final String ACCOUNT_RECOVERY_INITIATE_ALL_URL = "/account-recovery/questions/initiate-all";
 
     private static final String ACCOUNT_RECOVERY_VERIFY_ALL_URL = "/account-recovery/questions/verify-all";
+
+    private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Question.Password" +
+            ".ReCaptcha.Enable";
+    private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
+            ".Password.ReCaptcha.MaxFailedAttempts";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -158,8 +163,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                            CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
-                            CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS},
+                            RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+                            RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS},
                     tenantDomain);
         } catch (IdentityGovernanceException e) {
             throw new CaptchaServerException("Unable to retrieve connector configs.", e);
@@ -168,10 +173,10 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         String connectorEnabled = null;
         String maxAttemptsStr = null;
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE)
+            if ((RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE)
                     .equals(connectorConfig.getName())) {
                 connectorEnabled = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS)
+            } else if ((RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS)
                     .equals(connectorConfig.getName())) {
                 maxAttemptsStr = connectorConfig.getValue();
             }
@@ -256,65 +261,6 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         //TODO This will not executed since post validation will fixed in 5.3.0 Alpha release.
-        return null;
-    }
-
-    @Override
-    public String getName() {
-
-        return CONNECTOR_NAME;
-    }
-
-    @Override
-    public String getFriendlyName() {
-
-        return "reCaptcha for Password Recovery";
-    }
-
-    @Override
-    public Map<String, String> getPropertyNameMapping() {
-
-        Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
-                "Enable");
-        nameMapping.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
-                "Max failed attempts");
-        return nameMapping;
-    }
-
-    @Override
-    public String[] getPropertyNames() {
-
-        return new String[]{
-                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
-                CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS
-        };
-    }
-
-    @Override
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
-
-        Map<String, String> defaultProperties = CaptchaDataHolder.getInstance()
-                .getPasswordRecoveryReCaptchaConnectorPropertyMap();
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE))) {
-            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE, "false");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS))) {
-            defaultProperties.put(CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
-                    "3");
-        }
-
-        Properties properties = new Properties();
-        properties.putAll(defaultProperties);
-        return properties;
-    }
-
-    @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
-            throws IdentityGovernanceException {
-
         return null;
     }
 }

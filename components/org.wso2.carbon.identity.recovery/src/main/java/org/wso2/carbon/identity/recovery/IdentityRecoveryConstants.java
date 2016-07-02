@@ -117,17 +117,23 @@ public class IdentityRecoveryConstants {
     }
 
     public static class ConnectorConfig {
-        public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.notification.internallyManage";
-        public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.notification.password.enable";
-        public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.question.password.enable";
-        public static final String USERNAME_RECOVERY_ENABLE = "Recovery.notification.username.enable";
-        public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.question.password.separator";
-        public static final String QUESTION_MIN_NO_ANSWER = "Recovery.question.password.minAnswers";
-        public static final String EXPIRY_TIME = "Recovery.expiryTime";
+        public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
+        public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
+        public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.Question.Password.Enable";
+        public static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
+        public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.Question.Password.Separator";
+        public static final String QUESTION_MIN_NO_ANSWER = "Recovery.Question.Password.MinAnswers";
+        public static final String EXPIRY_TIME = "Recovery.ExpiryTime";
+        public static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Question.Password" +
+                ".ReCaptcha.Enable";
+        public static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
+                ".Password.ReCaptcha.MaxFailedAttempts";
         public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SELF_SIGN_UP_ROLES = "SelfRegistration.Roles";
-        public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification.InternallyManage";
+        public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
+                ".InternallyManage";
+        public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
     }
 
     public static class SQLQueries {
