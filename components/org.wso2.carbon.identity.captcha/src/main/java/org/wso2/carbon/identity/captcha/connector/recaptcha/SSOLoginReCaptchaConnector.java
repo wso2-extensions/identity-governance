@@ -62,7 +62,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
     private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
 
-    private static final String RECA    PTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
+    private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
 
     private IdentityGovernanceService identityGovernanceService;
 
