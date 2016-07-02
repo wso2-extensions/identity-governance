@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -68,7 +69,7 @@ public class ChallengeQuestionManager {
         List<ChallengeQuestion> questions = new ArrayList<>();
         try {
             int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-            Registry registry = IdentityRecoveryServiceComponent.getRegistryService().
+            Registry registry = IdentityRecoveryServiceDataHolder.getInstance().getRegistryService().
                     getConfigSystemRegistry(tenantId);
             if (registry.resourceExists(IdentityRecoveryConstants.IDENTITY_MANAGEMENT_QUESTIONS)) {
                 Collection collection = (Collection) registry.
@@ -102,7 +103,8 @@ public class ChallengeQuestionManager {
         Registry registry;
         try {
             int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-            registry = IdentityRecoveryServiceComponent.getRegistryService().getConfigSystemRegistry(tenantId);
+            registry = IdentityRecoveryServiceDataHolder.getInstance().getRegistryService()
+                    .getConfigSystemRegistry(tenantId);
 
             if (!registry.resourceExists(IdentityRecoveryConstants.IDENTITY_MANAGEMENT_PATH)) {
                 Collection securityQuestionResource = registry.newCollection();

@@ -227,7 +227,7 @@ public class NotificationUsernameRecoveryManager {
 
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
         String[] userList = null;
-        RealmService realmService = IdentityRecoveryServiceComponent.getRealmService();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
 
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {

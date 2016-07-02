@@ -92,5 +92,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity</groupId>
+            <artifactId>org.wso2.carbon.identity.captcha</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

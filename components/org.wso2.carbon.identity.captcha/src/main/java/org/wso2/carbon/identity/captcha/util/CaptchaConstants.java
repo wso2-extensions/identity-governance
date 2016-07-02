@@ -41,20 +41,22 @@ public class CaptchaConstants {
 
     public static final class ReCaptchaConnectorPropertySuffixes {
 
-        public static final String ENABLE = ".recaptcha.enable";
+        public static final String ENABLE = ".enable";
 
-        public static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = ".recaptcha.connector.identifier.attribute";
+        public static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = ".connector.identifier.attribute";
 
-        public static final String MAX_ATTEMPTS = ".recaptcha.on.max.failed.attempts";
+        public static final String MAX_ATTEMPTS = ".on.max.failed.attempts";
 
-        public static final String USER_IDENTIFIER_ATTRIBUTE = ".recaptcha.user.identifier.attribute";
+        public static final String USER_IDENTIFIER_ATTRIBUTE = ".user.identifier.attribute";
 
-        public static final String RECAPTCHA_VERIFICATION_CLAIM = ".recaptcha.verification.claim";
+        public static final String RECAPTCHA_VERIFICATION_CLAIM = ".verification.claim";
 
-        public static final String SECURED_DESTINATIONS = ".recaptcha.secured.destinations";
+        public static final String SECURED_DESTINATIONS = ".secured.destinations";
 
-        public static final String SECURED_PAGES = ".recaptcha.secured.pages";
+        public static final String SECURED_PAGES = ".secured.pages";
 
-        public static final String ON_FAIL_REDIRECT_URL = ".recaptcha.on.fail.redirect.url";
+        public static final String ON_FAIL_REDIRECT_URL = ".on.fail.redirect.url";
+
+        public static final String ON_FAIL_FORWARD_URL = ".on.fail.forward.url";
     }
 }

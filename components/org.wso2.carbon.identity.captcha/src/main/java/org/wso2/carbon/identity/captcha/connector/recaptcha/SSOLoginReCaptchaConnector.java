@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
-import org.wso2.carbon.identity.captcha.util.CaptchaResponseWrapper;
+import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
@@ -58,7 +58,11 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
     private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConnector.class);
 
-    private final String CONNECTOR_NAME = "sso.login";
+    private static final String CONNECTOR_NAME = "sso.login.recaptcha";
+
+    private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
+
+    private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -90,7 +94,6 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
                             CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
                             CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS},
                     tenantDomain);
         } catch (Exception e) {
@@ -100,37 +103,32 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             }
             return false;
         }
-        String securedPaths = "";
-        String reCaptchaPropertySuffixEnable = "";
-        String connectorIdentifierAttribute = "";
+        String securedDestinations = null;
+        String connectorEnabled = null;
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS).equals(connectorConfig.getName())) {
-                securedPaths = connectorConfig.getValue();
+            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS)
+                    .equals(connectorConfig.getName())) {
+                securedDestinations = connectorConfig.getValue();
             } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(connectorConfig.getName())) {
-                reCaptchaPropertySuffixEnable = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE).equals
-                    (connectorConfig.getName())) {
-                connectorIdentifierAttribute = connectorConfig.getValue();
+                connectorEnabled = connectorConfig.getValue();
             }
         }
-        if (!StringUtils.isBlank(securedPaths)) {
+
+        if (!"TRUE".equalsIgnoreCase(connectorEnabled)) {
+            return false;
+        }
+
+        if (!StringUtils.isBlank(securedDestinations)) {
             String currentPath = ((HttpServletRequest) servletRequest).getRequestURI();
             if (StringUtils.isBlank(currentPath)) {
                 return false;
             }
-            if (!CaptchaUtil.isPathAvailable(currentPath, securedPaths)) {
+            if (!CaptchaUtil.isPathAvailable(currentPath, securedDestinations)) {
                 return false;
             }
         }
 
-        if (!"TRUE".equalsIgnoreCase(reCaptchaPropertySuffixEnable)) {
-            return false;
-        }
-        if (StringUtils.isBlank(connectorIdentifierAttribute)) {
-            return false;
-        }
-
-        String[] connectorIdentifierAttributes = connectorIdentifierAttribute.split(",");
+        String[] connectorIdentifierAttributes = CONNECTOR_IDENTIFIER_ATTRIBUTE.split(",");
         for (String attribute : connectorIdentifierAttributes) {
             if (servletRequest.getParameter(attribute) == null) {
                 return false;
@@ -152,7 +150,6 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
                             CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                             CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL},
                     tenantDomain);
@@ -160,22 +157,19 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             throw new CaptchaServerException("Unable to retrieve connector configs.", e);
         }
 
-        String verificationClaim = "";
-        String maxAttemptsStr = "";
-        String onFailRedirectUrl = "";
+        String maxAttemptsStr = null;
+        String onFailRedirectUrl = null;
         for (Property connectorConfig : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM).equals(connectorConfig.getName())) {
-                verificationClaim = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(connectorConfig.getName())) {
+            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS)
+                    .equals(connectorConfig.getName())) {
                 maxAttemptsStr = connectorConfig.getValue();
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL).equals
-                    (connectorConfig.getName())) {
+            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL)
+                    .equals(connectorConfig.getName())) {
                 onFailRedirectUrl = connectorConfig.getValue();
             }
         }
 
-        if (StringUtils.isBlank(verificationClaim) || StringUtils.isBlank(maxAttemptsStr) ||
-                !NumberUtils.isNumber(maxAttemptsStr)) {
+        if (StringUtils.isBlank(maxAttemptsStr) || !NumberUtils.isNumber(maxAttemptsStr)) {
             throw new CaptchaServerException("Invalid reCaptcha configuration.");
         }
 
@@ -211,7 +205,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         Map<String, String> claimValues;
         try {
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils.getTenantAwareUsername(userName),
-                    new String[]{verificationClaim}, UserCoreConstants.DEFAULT_PROFILE);
+                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred while retrieving user claims.", e);
@@ -221,11 +215,11 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         }
 
         int currentAttempts = 0;
-        if (NumberUtils.isNumber(claimValues.get(verificationClaim))) {
-            currentAttempts = Integer.parseInt(claimValues.get(verificationClaim));
+        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
+            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
         }
 
-        if (currentAttempts > maxAttempts) {
+        if (currentAttempts >= maxAttempts) {
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
             preValidationResponse.setPostValidationRequired(true);
@@ -237,7 +231,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
                 params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
                 params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
                 params.put("authFailure", "true");
-                params.put("authFailureMsg", "login.fail.message");
+                params.put("authFailureMsg", "recaptcha.fail.message");
                 preValidationResponse.setCaptchaAttributes(params);
             }
         } else if ((currentAttempts + 1) == maxAttempts) {
@@ -253,7 +247,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             throws CaptchaException {
 
         CaptchaPostValidationResponse validationResponse = new CaptchaPostValidationResponse();
-        String redirectURL = ((CaptchaResponseWrapper) servletResponse).getRedirectURL();
+        String redirectURL = ((CaptchaHttpServletResponseWrapper) servletResponse).getRedirectURL();
         if (redirectURL != null && redirectURL.contains("authFailure=true")) {
             validationResponse.setSuccessfulAttempt(false);
             validationResponse.setEnableCaptchaResponsePath(true);
@@ -279,23 +273,20 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     @Override
     public String getFriendlyName() {
 
-        String friendlyName = "reCaptcha for SSO Login";
-        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            friendlyName += " (reCaptcha is not enabled)";
-        }
-        return friendlyName;
+        return "reCaptcha for SSO Login";
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS);
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL, CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL);
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Enable");
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
+                "Secured POST endpoints");
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+                "Max failed attempts");
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL,
+                "On fail redirect urls");
         return nameMapping;
     }
 
@@ -304,10 +295,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
         return new String[]{
                 CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
                 CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE,
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
                 CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                 CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL
         };
@@ -323,24 +311,9 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "false");
         }
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
-                    "username,password");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS))) {
             defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
                     "/samlsso,/oauth2,/commonauth");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE,
-                    "username");
-        }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
-                ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
-                    "http://wso2.org/claims/identity/failedLoginAttempts");
         }
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS))) {
@@ -349,7 +322,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL))) {
             defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ON_FAIL_REDIRECT_URL,
-                    "/authenticationendpoint/retry.do");
+                    "/authenticationendpoint/login.do");
         }
 
         Properties properties = new Properties();

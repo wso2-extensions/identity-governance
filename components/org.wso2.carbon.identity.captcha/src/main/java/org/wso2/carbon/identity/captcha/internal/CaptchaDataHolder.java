@@ -54,6 +54,8 @@ public class CaptchaDataHolder {
 
     private Map<String, String> pathBasedReCaptchaConnectorPropertyMap = new HashMap<>();
 
+    private Map<String, String> passwordRecoveryReCaptchaConnectorPropertyMap = new HashMap<>();
+
     private CaptchaDataHolder() {
 
     }
@@ -124,6 +126,15 @@ public class CaptchaDataHolder {
 
     public void setPathBasedReCaptchaConnectorPropertyMap(Map<String, String> pathBasedReCaptchaConnectorPropertyMap) {
         this.pathBasedReCaptchaConnectorPropertyMap = pathBasedReCaptchaConnectorPropertyMap;
+    }
+
+    public Map<String, String> getPasswordRecoveryReCaptchaConnectorPropertyMap() {
+        return passwordRecoveryReCaptchaConnectorPropertyMap;
+    }
+
+    public void setPasswordRecoveryReCaptchaConnectorPropertyMap(
+            Map<String, String> passwordRecoveryReCaptchaConnectorPropertyMap) {
+        this.passwordRecoveryReCaptchaConnectorPropertyMap = passwordRecoveryReCaptchaConnectorPropertyMap;
     }
 
     public List<CaptchaConnector> getCaptchaConnectors() {

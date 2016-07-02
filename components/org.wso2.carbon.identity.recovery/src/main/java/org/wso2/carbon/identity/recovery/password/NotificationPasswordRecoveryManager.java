@@ -92,7 +92,7 @@ public class NotificationPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
-            userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
@@ -153,7 +153,8 @@ public class NotificationPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         try {
-            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
+                    .getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(fullName, password);
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);

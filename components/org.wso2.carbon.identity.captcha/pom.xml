@@ -125,6 +125,10 @@
                             org.wso2.carbon.user.api.*; version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.utils.multitenancy.*;
                             version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.identity.application.common.model;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.core.util;
+                            version="${carbon.identity.framework.imp.pkg.version.range}"
                         </Import-Package>
                     </instructions>
                 </configuration>

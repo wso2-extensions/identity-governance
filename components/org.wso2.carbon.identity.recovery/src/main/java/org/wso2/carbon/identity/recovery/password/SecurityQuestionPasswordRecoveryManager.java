@@ -21,9 +21,11 @@ package org.wso2.carbon.identity.recovery.password;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -44,16 +46,22 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.*;
 
 /**
- *
- *
+ * Security Question Password Recovery Manager
  */
 public class SecurityQuestionPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(SecurityQuestionPasswordRecoveryManager.class);
+
+    private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE = "accountLock.enable";
+
+    private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX = "accountLock.On.Failure.Max.Attempts";
 
     private static SecurityQuestionPasswordRecoveryManager instance = new SecurityQuestionPasswordRecoveryManager();
 
@@ -106,7 +114,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
-            userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
@@ -217,10 +225,16 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
             userRecoveryDataStore.store(recoveryData);
+
+            // Reset password recovery failed attempts
+            resetRecoveryPasswordFailedAttempts(user);
+
             return challengeQuestionResponse;
         } else {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+            handleAnswerVerificationFail(user);
         }
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
     }
 
     public void updatePassword(User user, String code, String password) throws IdentityRecoveryException {
@@ -243,7 +257,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         try {
-            UserStoreManager userStoreManager = IdentityRecoveryServiceComponent.getRealmService()
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
                     .getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(fullName, password);
         } catch (UserStoreException e) {
@@ -313,7 +327,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
-            userStoreManager = IdentityRecoveryServiceComponent.getRealmService().
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
@@ -404,9 +418,13 @@ public class SecurityQuestionPasswordRecoveryManager {
         for (int i = 0; i < userChallengeAnswer.length; i++) {
             boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(user, userChallengeAnswer[i]);
             if (!verified) {
+                handleAnswerVerificationFail(user);
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
             }
         }
+
+        // Reset password recovery failed attempts
+        resetRecoveryPasswordFailedAttempts(user);
 
         userRecoveryDataStore.invalidate(code);
         ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
@@ -469,5 +487,156 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
+    }
+
+    private Property[] getConnectorConfigs(String tenantDomain) throws IdentityRecoveryException {
+
+        Property[] connectorConfigs;
+        try {
+            connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService()
+                    .getConfiguration(
+                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX},
+                            tenantDomain);
+        } catch (Exception e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS, null, e);
+        }
+        return connectorConfigs;
+    }
+
+    private void resetRecoveryPasswordFailedAttempts(User user) throws IdentityRecoveryException {
+
+        Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
+
+        for (Property connectorConfig : connectorConfigs) {
+            if ((/*PROPERTY_AUTH_POLICY_ENABLE.equals(connectorConfig.getName()) ||*/
+                    PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
+                            !Boolean.parseBoolean(connectorConfig.getValue())) {
+                return;
+            }
+        }
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        UserRealm userRealm;
+        try {
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
+        }
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
+        try {
+            userStoreManager = userRealm.getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
+        }
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM,"0");
+        try {
+            userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
+                    user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+        }
+    }
+
+    private void handleAnswerVerificationFail(User user) throws IdentityRecoveryException {
+
+        Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
+
+        int maxAttempts = 0;
+        for (Property connectorConfig : connectorConfigs) {
+            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
+                    !Boolean.parseBoolean(connectorConfig.getValue())) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+            } else if (PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX.equals(connectorConfig.getName())
+                    && NumberUtils.isNumber(connectorConfig.getValue())) {
+                maxAttempts = Integer.parseInt(connectorConfig.getValue());
+            }
+        }
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        UserRealm userRealm;
+        try {
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
+        }
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
+        try {
+            userStoreManager = userRealm.getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
+        }
+
+        Map<String, String> claimValues = null;
+        try {
+            claimValues = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
+                    user.getUserStoreDomain()),
+                    new String[]{IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM,
+                            IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM},
+                    UserCoreConstants.DEFAULT_PROFILE);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+        }
+
+        if (claimValues == null || claimValues.isEmpty()) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null);
+        }
+
+        if (Boolean.parseBoolean(claimValues.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
+                    null);
+        }
+
+        int currentAttempts = 0;
+        if (NumberUtils.isNumber(claimValues.get(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM))) {
+            currentAttempts = Integer.parseInt(claimValues.get(IdentityRecoveryConstants
+                    .PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM));
+        }
+
+        Map<String, String> updatedClaims = new HashMap<>();
+        if ((currentAttempts + 1) >= maxAttempts) {
+            updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+            updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
+            try {
+                userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
+                        user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_LOCKED_ACCOUNT, null);
+            } catch (org.wso2.carbon.user.core.UserStoreException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+            }
+        } else {
+            updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM,
+                    String.valueOf(currentAttempts + 1));
+            try {
+                userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
+                        user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
+            } catch (org.wso2.carbon.user.core.UserStoreException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+            }
+        }
+
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+
     }
 }

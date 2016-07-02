@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.util;
 
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
@@ -25,12 +26,13 @@ import java.io.IOException;
 /**
  * Captcha Response Wrapper.
  */
-public class CaptchaResponseWrapper extends HttpServletResponseWrapper {
+public class CaptchaHttpServletResponseWrapper extends HttpServletResponseWrapper {
 
     private boolean isRedirect;
+
     private String redirectURL;
 
-    public CaptchaResponseWrapper(HttpServletResponse response) {
+    public CaptchaHttpServletResponseWrapper(HttpServletResponse response) {
         super(response);
     }
 
@@ -48,6 +50,5 @@ public class CaptchaResponseWrapper extends HttpServletResponseWrapper {
     public String getRedirectURL() {
         return redirectURL;
     }
-
 
 }

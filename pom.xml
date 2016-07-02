@@ -276,6 +276,11 @@
                 <artifactId>org.wso2.carbon.identity.recovery</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.captcha</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>

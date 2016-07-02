@@ -21,8 +21,9 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.captcha.connector.recaptcha.PathBasedReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConnector;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
@@ -68,11 +69,14 @@ public class CaptchaComponent {
             CaptchaDataHolder.getInstance().addCaptchaConnector((SSOLoginReCaptchaConnector) connector);
 
             // Initialize and register PathBasedReCaptchaConnector
-            connector = new PathBasedReCaptchaConnector();
-            ((PathBasedReCaptchaConnector) connector).init(CaptchaDataHolder.getInstance()
-                    .getIdentityGovernanceService());
-            context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
-            CaptchaDataHolder.getInstance().addCaptchaConnector((PathBasedReCaptchaConnector) connector);
+            CaptchaConnector captchaConnector = new SelfSignUpReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+
+            // Initialize and register PasswordRecoveryReCaptchaConnector
+            captchaConnector = new PasswordRecoveryReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
 
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");

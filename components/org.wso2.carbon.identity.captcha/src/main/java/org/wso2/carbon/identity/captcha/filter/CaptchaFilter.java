@@ -18,17 +18,15 @@
 
 package org.wso2.carbon.identity.captcha.filter;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.client.utils.URIBuilder;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaResponseWrapper;
+import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 
 import javax.servlet.Filter;
@@ -40,7 +38,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -120,19 +117,19 @@ public class CaptchaFilter implements Filter {
                         servletRequest.setAttribute(parameter.getKey(), parameter.getValue());
                     }
                 }
-                filterChain.doFilter(servletRequest, servletResponse);
+                doFilter(captchaPreValidationResponse, servletRequest, servletResponse, filterChain);
                 return;
             }
 
             // Below the no. of max failed attempts, including the current attempt
             if (!captchaPreValidationResponse.isPostValidationRequired() || (!captchaPreValidationResponse
                     .isCaptchaValidationRequired() && !captchaPreValidationResponse.isMaxFailedLimitReached())) {
-                filterChain.doFilter(servletRequest, servletResponse);
+                doFilter(captchaPreValidationResponse, servletRequest, servletResponse, filterChain);
                 return;
             }
 
-            CaptchaResponseWrapper responseWrapper = new CaptchaResponseWrapper(httpResponse);
-            filterChain.doFilter(servletRequest, responseWrapper);
+            CaptchaHttpServletResponseWrapper responseWrapper = new CaptchaHttpServletResponseWrapper(httpResponse);
+            doFilter(captchaPreValidationResponse, servletRequest, responseWrapper, filterChain);
 
             CaptchaPostValidationResponse postValidationResponse = selectedCaptchaConnector
                     .postValidate(servletRequest, responseWrapper);
@@ -161,21 +158,13 @@ public class CaptchaFilter implements Filter {
 
     }
 
-    private void redirectToErrorPage(ServletResponse servletResponse, String url, String status, String statusMsg)
-            throws IOException {
-
-        if (StringUtils.isBlank(url)) {
-            url = "/authenticationendpoint/retry.do";
-        }
-
-        URIBuilder uriBuilder;
-        try {
-            uriBuilder = new URIBuilder(url);
-            uriBuilder.addParameter("status", status);
-            uriBuilder.addParameter("statusMsg", statusMsg);
-            ((HttpServletResponse) servletResponse).sendRedirect(uriBuilder.build().toString());
-        } catch (URISyntaxException e) {
-            ((HttpServletResponse) servletResponse).sendRedirect(url);
+    private void doFilter(CaptchaPreValidationResponse preValidationResponse, ServletRequest servletRequest,
+                          ServletResponse servletResponse, FilterChain filterChain)
+            throws IOException, ServletException {
+        if(preValidationResponse.getWrappedHttpServletRequest() != null) {
+            filterChain.doFilter(preValidationResponse.getWrappedHttpServletRequest(), servletResponse);
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
         }
     }
 }

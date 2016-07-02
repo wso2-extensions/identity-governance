@@ -4,7 +4,6 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.user.core.UserCoreConstants;
 
 import java.util.*;
 
@@ -26,13 +25,15 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                "Self User Registration Enabled");
+                "Enable Self User Registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Account Lock On Creation Enabled");
+                "Enable Account Lock On Creation Enabled");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES,
                 "Self Registration Roles");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Notification Internally Management Enabled");
+                "Enable Notification Internally Management");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+                "Enable reCaptcha");
         return nameMapping;
     }
 
@@ -44,6 +45,7 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
 
         return properties.toArray(new String[properties.size()]);
     }
@@ -59,6 +61,8 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, "Internal/everyone");
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA));
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;

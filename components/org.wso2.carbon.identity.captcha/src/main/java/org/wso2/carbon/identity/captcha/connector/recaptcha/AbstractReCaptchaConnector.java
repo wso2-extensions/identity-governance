@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -50,7 +51,8 @@ import java.util.List;
 public abstract class AbstractReCaptchaConnector implements CaptchaConnector {
 
     @Override
-    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         if (((HttpServletRequest) servletRequest).getMethod().equalsIgnoreCase("GET")) {
             throw new CaptchaClientException("reCaptcha response must send in a POST request.");
@@ -61,37 +63,6 @@ public abstract class AbstractReCaptchaConnector implements CaptchaConnector {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
 
-        HttpClient httpclient = HttpClients.createDefault();
-        HttpPost httppost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
-
-        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
-                .getInstance().getReCaptchaSecretKey()), new BasicNameValuePair("response", reCaptchaResponse));
-        httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-
-        HttpResponse response;
-        try {
-            response = httpclient.execute(httppost);
-        } catch (IOException e) {
-            throw new CaptchaServerException("Unable to get the verification response.", e);
-        }
-
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            throw new CaptchaServerException("reCaptcha verification response is not received.");
-        }
-
-        try {
-            try (InputStream in = entity.getContent()) {
-                JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                if (verificationResponse == null || verificationResponse.get("success") == null ||
-                        !verificationResponse.get("success").getAsBoolean()) {
-                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
-                }
-            }
-        } catch (IOException e) {
-            throw new CaptchaServerException("Unable to read the verification response.", e);
-        }
-
-        return true;
+        return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
     }
 }
