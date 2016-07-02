@@ -4,6 +4,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
+import org.wso2.carbon.user.api.Claim;
 
 import javax.xml.bind.annotation.*;
 
@@ -20,7 +21,7 @@ public class SelfRegistrationRequest {
     private User user;
 
     @XmlElement(required = true)
-    private UserClaim[] claims;
+    private Claim[] claims;
 
     @XmlElement(required = false)
     private Property[] properties;
@@ -36,11 +37,11 @@ public class SelfRegistrationRequest {
         this.user = user;
     }
 
-    public UserClaim[] getClaims() {
+    public Claim[] getClaims() {
         return claims;
     }
 
-    public void setClaims(UserClaim[] claims) {
+    public void setClaims(Claim[] claims) {
         this.claims = claims;
     }
 
