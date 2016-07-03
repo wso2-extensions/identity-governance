@@ -6,7 +6,7 @@
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,37 +14,55 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.wso2.carbon.identity</groupId>
         <artifactId>identity-governance</artifactId>
+        <groupId>org.wso2.carbon.identity</groupId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.identity.recovery</artifactId>
+    <artifactId>org.wso2.carbon.identity.recovery.ui</artifactId>
     <packaging>bundle</packaging>
-    <name>WSO2 Carbon - Identity Recovery Management</name>
+    <name>WSO2 Carbon - Identity Recovery Management UI</name>
 
     <dependencies>
         <dependency>
-            <groupId>org.wso2.carbon.identity</groupId>
-            <artifactId>org.wso2.carbon.identity.event</artifactId>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ws.commons.axiom.wso2</groupId>
+            <artifactId>axiom</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.logging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity</groupId>
             <artifactId>org.wso2.carbon.identity.core</artifactId>
-            <version>${carbon.identity.framework.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity</groupId>
-            <artifactId>org.wso2.carbon.idp.mgt</artifactId>
+            <artifactId>org.wso2.carbon.identity.core.ui</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity</groupId>
-            <artifactId>org.wso2.carbon.identity.governance</artifactId>
+            <artifactId>org.wso2.carbon.identity.recovery.stub</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -57,28 +75,21 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>
                             ${project.artifactId}
                         </Bundle-SymbolicName>
-                        <Private-Package>
-                            org.wso2.carbon.identity.recovery.internal
-                        </Private-Package>
                         <Export-Package>
-                            org.wso2.carbon.identity.recovery.*; version="${identity.governance.exp.pkg.version}",
-                            !org.wso2.carbon.identity.recovery.internal
+                            org.wso2.carbon.identity.recovery.ui.*;version"${identity.governance.exp.pkg.version}"
                         </Export-Package>
                         <Import-Package>
-                            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
-                            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.core;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}"
+                            org.wso2.carbon.identity.recovery.stub;
+                            version="${identity.governance.imp.pkg.version.range}"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Carbon-Component>UIBundle</Carbon-Component>
                     </instructions>
                 </configuration>
             </plugin>

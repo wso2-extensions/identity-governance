@@ -20,20 +20,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
-import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
+import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 
 /**
@@ -47,6 +50,9 @@ import org.wso2.carbon.user.core.service.RealmService;
  * @scr.reference name="IdentityGovernanceService"
  * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityGovernanceService" unbind="unsetIdentityGovernanceService"
+ * @scr.reference name="RegistryResourceMgtService"
+ * interface="org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService" cardinality="1..1"
+ * policy="dynamic" bind="setResourceMgtService" unbind="unsetResourceMgtService"
  * @scr.reference name="IdentityEventService"
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
@@ -54,14 +60,11 @@ import org.wso2.carbon.user.core.service.RealmService;
 public class IdentityRecoveryServiceComponent {
 
     private static Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);
+    private IdentityRecoveryServiceDataHolder dataHolder = IdentityRecoveryServiceDataHolder.getInstance();
 
     protected void activate(ComponentContext context) {
 
         try {
-
-            if (log.isDebugEnabled()) {
-                log.debug("Identity Management Listener is enabled");
-            }
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(NotificationPasswordRecoveryManager.class.getName(),
                     NotificationPasswordRecoveryManager.getInstance(), null);
@@ -80,16 +83,21 @@ public class IdentityRecoveryServiceComponent {
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
-    }
 
-    protected void setRealmService(RealmService realmService) {
-        log.debug("Setting the Realm Service");
-        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
-    }
+        // register the tenant management listener
+        TenantMgtListener tenantMgtListener = new TenantManagementListener();
+        context.getBundleContext().registerService(TenantMgtListener.class.getName(), tenantMgtListener, null);
 
-    protected void setRegistryService(RegistryService registryService) {
-        log.debug("Setting the Registry Service");
-        IdentityRecoveryServiceDataHolder.getInstance().setRegistryService(registryService);
+        // register default challenge questions
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Loading default challenge questions for super tenant.");
+            }
+            loadDefaultChallengeQuestions();
+            //   new ChallengeQuestionManager().getAllChallengeQuestions("carbon.super", "lk_LK");
+        } catch (IdentityRecoveryException e) {
+            log.error("Error persisting challenge question for super tenant.", e);
+        }
     }
 
     protected void deactivate(ComponentContext context) {
@@ -98,14 +106,28 @@ public class IdentityRecoveryServiceComponent {
         }
     }
 
+    protected void setRealmService(RealmService realmService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the Realm Service");
+        }
+        dataHolder.setRealmService(realmService);
+    }
+
+    protected void setRegistryService(RegistryService registryService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the Registry Service");
+        }
+        dataHolder.setRegistryService(registryService);
+    }
+
     protected void unsetRealmService(RealmService realmService) {
         log.debug("UnSetting the Realm Service");
-        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(null);
+        dataHolder.setRealmService(null);
     }
 
     protected void unsetRegistryService(RegistryService registryService) {
         log.debug("UnSetting the Registry Service");
-        IdentityRecoveryServiceDataHolder.getInstance().setRegistryService(null);
+        dataHolder.setRegistryService(null);
     }
 
     protected void unsetIdentityEventService(IdentityEventService identityEventService) {
@@ -117,11 +139,30 @@ public class IdentityRecoveryServiceComponent {
     }
 
     protected void unsetIdentityGovernanceService(IdentityGovernanceService idpManager) {
-        IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(null);
+        dataHolder.setIdentityGovernanceService(null);
     }
 
     protected void setIdentityGovernanceService(IdentityGovernanceService idpManager) {
-        IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(idpManager);
+        dataHolder.setIdentityGovernanceService(idpManager);
+    }
+
+    protected void unsetResourceMgtService(RegistryResourceMgtService registryResourceMgtService) {
+        dataHolder.setResourceMgtService(null);
+        if (log.isDebugEnabled()) {
+            log.debug("Setting Identity Resource Mgt service.");
+        }
+    }
+
+    protected void setResourceMgtService(RegistryResourceMgtService registryResourceMgtService) {
+        dataHolder.setResourceMgtService(registryResourceMgtService);
+        if (log.isDebugEnabled()) {
+            log.debug("Unsetting Identity Resource Mgt service.");
+        }
+    }
+
+    private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
+        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions(tenantDomain);
     }
 
 

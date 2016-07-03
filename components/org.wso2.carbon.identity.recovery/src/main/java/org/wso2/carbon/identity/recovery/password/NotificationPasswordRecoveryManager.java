@@ -81,8 +81,8 @@ public class NotificationPasswordRecoveryManager {
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE,
-                    null);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
@@ -141,7 +141,8 @@ public class NotificationPasswordRecoveryManager {
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -153,8 +154,8 @@ public class NotificationPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         try {
-            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
-                    .getTenantUserRealm(tenantId).getUserStoreManager();
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(fullName, password);
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
@@ -197,8 +198,8 @@ public class NotificationPasswordRecoveryManager {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
         }
     }
 }

@@ -22,8 +22,11 @@ package org.wso2.carbon.identity.recovery;
 public class IdentityRecoveryConstants {
 
 
-    public static final String IDENTITY_MANAGEMENT_PATH = "/repository/components/org.wso2.carbon.identity.mgt";
+    public static final String IDENTITY_MANAGEMENT_PATH = "/identity";
     public static final String IDENTITY_MANAGEMENT_QUESTIONS = IDENTITY_MANAGEMENT_PATH + "/questionCollection";
+    public static final String IDENTITY_MANAGEMENT_I18N_PATH = "/repository/components/identity";
+    public static final String IDENTITY_I18N_QUESTIONS =
+            IDENTITY_MANAGEMENT_I18N_PATH + "/questionCollection";
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
@@ -41,6 +44,9 @@ public class IdentityRecoveryConstants {
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
 
+
+    public static final String LOCALE_EN_US = "en_US";
+    public static final String LOCALE_LK_LK = "lk_lk";
 
 
     private IdentityRecoveryConstants() {
@@ -152,6 +158,26 @@ public class IdentityRecoveryConstants {
 
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
+
+    }
+
+    public static class Questions {
+
+        public static final String LOCALE_CLAIM = "http://wso2.org/claims/locality";
+        public static final String BLACKLIST_REGEX = ".*[/\\\\].*";
+
+        public static final String CHALLENGE_QUESTION_SET_ID = "questionSetId";
+        public static final String CHALLENGE_QUESTION_ID = "questionId";
+        public static final String CHALLENGE_QUESTION_LOCALE = "locale";
+
+        // TODO remove this
+        public static final String[] SECRET_QUESTIONS_SET01 = new String[]{"City where you were born ?",
+                "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"};
+
+        // TODO remove this
+        public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
+                "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
+
 
     }
 }
