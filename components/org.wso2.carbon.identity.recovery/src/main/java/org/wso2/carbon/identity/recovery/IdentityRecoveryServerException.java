@@ -33,6 +33,7 @@ import java.util.Map;
 public class IdentityRecoveryServerException extends IdentityRecoveryException {
 
     private static final long serialVersionUID = -6763234985286131368L;
+
     public IdentityRecoveryServerException(String errorDescription) {
         super(errorDescription);
     }

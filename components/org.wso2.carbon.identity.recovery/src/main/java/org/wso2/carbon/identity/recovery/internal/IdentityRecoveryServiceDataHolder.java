@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.internal;
 
+import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
@@ -26,23 +27,14 @@ import org.wso2.carbon.user.core.service.RealmService;
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
-
-    private IdentityEventService identityEventService;
-
-    private IdentityGovernanceService identityGovernanceService;
-
-    private IdpManager idpManager;
-
     private RealmService realmService;
-
     private RegistryService registryService;
-
-    private IdentityRecoveryServiceDataHolder() {
-
-    }
+    private IdentityEventService identityEventService;
+    private IdentityGovernanceService identityGovernanceService;
+    private IdpManager idpManager;
+    private RegistryResourceMgtService resourceMgtService;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
-
         return instance;
     }
 
@@ -73,10 +65,15 @@ public class IdentityRecoveryServiceDataHolder {
         this.identityGovernanceService = identityGovernanceService;
     }
 
+    public RegistryResourceMgtService getResourceMgtService() {
+        return resourceMgtService;
+    }
+
+    public void setResourceMgtService(RegistryResourceMgtService resourceMgtService) {
+        this.resourceMgtService = resourceMgtService;
+    }
+
     public RealmService getRealmService() {
-        if(identityEventService == null) {
-            throw new RuntimeException("RealmService not available. Component is not started properly.");
-        }
         return realmService;
     }
 
@@ -85,9 +82,6 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     public RegistryService getRegistryService() {
-        if(identityEventService == null) {
-            throw new RuntimeException("RegistryService not available. Component is not started properly.");
-        }
         return registryService;
     }
 

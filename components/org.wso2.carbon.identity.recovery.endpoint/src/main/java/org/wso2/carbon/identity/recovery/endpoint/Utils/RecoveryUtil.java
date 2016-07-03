@@ -9,17 +9,17 @@ import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryMa
 public class RecoveryUtil {
     public static NotificationPasswordRecoveryManager getNotificationBasedPwdRecoveryManager() {
         return (NotificationPasswordRecoveryManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                .getOSGiService(NotificationPasswordRecoveryManager.class);
+                .getOSGiService(NotificationPasswordRecoveryManager.class, null);
     }
 
     public static SecurityQuestionPasswordRecoveryManager getSecurityQuestionBasedPwdRecoveryManager() {
         return (SecurityQuestionPasswordRecoveryManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                .getOSGiService(SecurityQuestionPasswordRecoveryManager.class);
+                .getOSGiService(SecurityQuestionPasswordRecoveryManager.class, null);
     }
 
     public static NotificationUsernameRecoveryManager getNotificationBasedUsernameRecoveryManager() {
         return (NotificationUsernameRecoveryManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                .getOSGiService(NotificationUsernameRecoveryManager.class);
+                .getOSGiService(NotificationUsernameRecoveryManager.class, null);
     }
 
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {

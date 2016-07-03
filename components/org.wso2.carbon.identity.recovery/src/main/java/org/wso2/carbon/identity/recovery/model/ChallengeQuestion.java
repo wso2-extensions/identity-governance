@@ -25,7 +25,11 @@ public class ChallengeQuestion {
 
     private String question;
 
+    private String questionId;
+
     private String questionSetId;
+
+    private String locale;
 
     public ChallengeQuestion() {
         //default constructor
@@ -34,6 +38,21 @@ public class ChallengeQuestion {
     public ChallengeQuestion(String questionSetId, String question) {
         this.question = question;
         this.questionSetId = questionSetId;
+    }
+
+    public ChallengeQuestion(String questionSetId, String questionId, String question, String locale) {
+        this.questionSetId = questionSetId;
+        this.questionId = questionId;
+        this.question = question;
+        this.locale = locale;
+    }
+
+    public String getQuestionId() {
+        return questionId;
+    }
+
+    public void setQuestionId(String questionId) {
+        this.questionId = questionId;
     }
 
     public String getQuestionSetId() {
@@ -50,5 +69,13 @@ public class ChallengeQuestion {
 
     public void setQuestion(String question) {
         this.question = question;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 }

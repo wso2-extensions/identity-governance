@@ -120,10 +120,13 @@
         <module>components/org.wso2.carbon.identity.governance</module>
         <module>components/org.wso2.carbon.identity.governance.stub</module>
         <module>components/org.wso2.carbon.identity.recovery</module>
+        <module>components/org.wso2.carbon.identity.recovery.ui</module>
         <module>components/org.wso2.carbon.identity.recovery.endpoint</module>
+        <module>components/org.wso2.carbon.identity.recovery.stub</module>
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
         <module>features/org.wso2.carbon.identity.recovery.server.feature</module>
+        <module>features/org.wso2.carbon.identity.recovery.ui.feature</module>
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.ui.feature</module>
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
@@ -252,6 +255,16 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.core</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity</groupId>
+                <artifactId>org.wso2.carbon.identity.core.ui</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
             <dependency>

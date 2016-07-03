@@ -32,7 +32,11 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.recovery.*;
+import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
@@ -50,7 +54,12 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Security Question Password Recovery Manager
