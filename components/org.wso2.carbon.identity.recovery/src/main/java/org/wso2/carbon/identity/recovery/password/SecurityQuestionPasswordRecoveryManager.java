@@ -519,8 +519,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
 
         for (Property connectorConfig : connectorConfigs) {
-            if ((/*PROPERTY_AUTH_POLICY_ENABLE.equals(connectorConfig.getName()) ||*/
-                    PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
+            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
                             !Boolean.parseBoolean(connectorConfig.getValue())) {
                 return;
             }
@@ -610,7 +609,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         if (Boolean.parseBoolean(claimValues.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                    null);
+                    IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()));
         }
 
         int currentAttempts = 0;
@@ -627,7 +626,8 @@ public class SecurityQuestionPasswordRecoveryManager {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
                         user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_LOCKED_ACCOUNT, null);
+                        .ERROR_CODE_LOCKED_ACCOUNT, IdentityUtil.addDomainToName(user.getUserName(),
+                        user.getUserStoreDomain()));
             } catch (org.wso2.carbon.user.core.UserStoreException e) {
                 throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                         .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
