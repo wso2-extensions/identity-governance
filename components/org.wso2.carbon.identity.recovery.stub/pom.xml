@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
   ~
@@ -6,7 +6,7 @@
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,20 +14,37 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.wso2.carbon.identity</groupId>
         <artifactId>identity-governance</artifactId>
+        <groupId>org.wso2.carbon.identity</groupId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.identity.governance.stub</artifactId>
+    <artifactId>org.wso2.carbon.identity.recovery.stub</artifactId>
     <packaging>bundle</packaging>
-    <name>WSO2 Carbon - Identity Governance Stub</name>
+    <name>WSO2 Carbon - Identity Recovery Stub</name>
     <url>http://wso2.org</url>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ws.commons.axiom.wso2</groupId>
+            <artifactId>axiom</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -51,7 +68,7 @@
                                     <pathelement location="${settings.localRepository}/org/apache/ws/commons/axiom/wso2/axiom/${axiom.wso2.version}/axiom-${axiom.wso2.version}.jar" />
                                 </path>
                                 <java classname="org.apache.axis2.wsdl.WSDL2Java" fork="true">
-                                    <arg line="-uri src/main/resources/IdentityGovernanceAdminService.wsdl -u -uw -o target/generated-code -p org.wso2.carbon.identity.governance.stub -ns2p http://governance.identity.carbon.wso2.org=org.wso2.carbon.identity.governance.stub,http://bean.governance.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://model.common.application.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.bean,http://governance.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.governance.stub.xsd, http://beans.mgt.captcha.carbon.wso2.org/xsd=org.wso2.carbon.captcha.mgt.beans" />
+                                    <arg line="-uri src/main/resources/ChallengeQuestionManagementAdminService.wsdl -u -uw -o target/generated-code -p org.wso2.carbon.identity.recovery.stub -ns2p http://services.recovery.identity.carbon.wso2.org=org.wso2.carbon.identity.recovery.stub,http://model.recovery.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.recovery.stub.model,http://beans.recovery.identity.carbon.wso2.org/xsd=org.wso2.carbon.identity.recovery.stub.beans" />
                                     <classpath refid="wsdl2java.classpath" />
                                 </java>
                             </tasks>
@@ -88,8 +105,8 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
-                            org.wso2.carbon.identity.governance.stub.*; version="${identity.governance.exp.pkg.version}",
-                            org.wso2.carbon.identity.governance.xsd; version="${identity.governance.exp.pkg.version}"
+                            org.wso2.carbon.identity.recovery.stub.*;version="${identity.governance.exp.pkg.version}",
+                            org.wso2.carbon.identity.recovery.xsd;version="${identity.governance.exp.pkg.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
@@ -97,19 +114,5 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.axis2.wso2</groupId>
-            <artifactId>axis2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis2.wso2</groupId>
-            <artifactId>axis2-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ws.commons.axiom.wso2</groupId>
-            <artifactId>axiom</artifactId>
-        </dependency>
-    </dependencies>
 
 </project>
