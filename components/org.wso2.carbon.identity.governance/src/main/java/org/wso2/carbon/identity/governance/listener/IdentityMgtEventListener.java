@@ -592,4 +592,36 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         }
     }
 
+    public boolean doPostGetUserClaimValue(String userName, String claim, List<String> claimValue, String profileName, UserStoreManager storeManager) throws UserStoreException {
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post get user claim value is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_GET_USER_CLAIM;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.CLAIM_URI, claim);
+        properties.put(IdentityEventConstants.EventProperty.CLAIM_VALUE, claimValue);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
+        handleEvent(userName, storeManager, eventName, properties);
+        return true;
+    }
+
+
+    public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName, Map<String, String>
+            claimMap, UserStoreManager storeManager) throws UserStoreException {
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post get user claim values is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_GET_USER_CLAIMS;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claimMap);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
+        handleEvent(userName, storeManager, eventName, properties);
+        return true;
+    }
 }
