@@ -35,6 +35,8 @@
         <url-pattern>/questions/initiate-all</url-pattern>
         <url-pattern>/questions/verify</url-pattern>
         <url-pattern>/questions/verify-all</url-pattern>
+        <url-pattern>/username/claims</url-pattern>
+        <url-pattern>/self/register</url-pattern>
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 
