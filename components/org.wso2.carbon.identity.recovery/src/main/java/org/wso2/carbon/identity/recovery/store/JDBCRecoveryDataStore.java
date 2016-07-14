@@ -22,6 +22,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     private JDBCRecoveryDataStore() {
 
     }
+
     public static UserRecoveryDataStore getInstance() {
         return jdbcRecoveryDataStore;
     }
@@ -95,6 +96,57 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
         throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+    }
+
+    @Override
+    public UserRecoveryData load(String code) throws IdentityRecoveryException {
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
+
+        try {
+            //TODO should have two sqls based on caseSenstitiveUsername
+            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_FROM_CODE;
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, code);
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                User user = new User();
+                user.setUserName(resultSet.getString("USER_NAME"));
+                user.setTenantDomain(IdentityTenantUtil.getTenantDomain(resultSet.getInt("TENANT_ID")));
+                user.setUserStoreDomain(resultSet.getString("USER_DOMAIN"));
+
+                String recoveryScenario = resultSet.getString("SCENARIO");
+                String recoveryStep = resultSet.getString("STEP");
+
+                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, RecoveryScenarios.valueOf
+                        (recoveryScenario), RecoverySteps.valueOf(recoveryStep));
+
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
+                }
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                long createdTimeStamp = timeCreated.getTime();
+                int notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
+                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
+
+                if (System.currentTimeMillis() > expiryTime) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_EXPIRED_CODE, code);
+                }
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+
     }
 
     @Override

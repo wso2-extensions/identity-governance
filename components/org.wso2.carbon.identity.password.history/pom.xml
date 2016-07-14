@@ -67,7 +67,7 @@
                             org.wso2.carbon.identity.password.history.internal
                         </Private-Package>
                         <Export-Package>
-                            org.wso2.carbon.identity.password.history.*,
+                            org.wso2.carbon.identity.password.history.*; version="${identity.governance.exp.pkg.version}",
                             !org.wso2.carbon.identity.password.history.internal
                         </Export-Package>
                         <Import-Package>

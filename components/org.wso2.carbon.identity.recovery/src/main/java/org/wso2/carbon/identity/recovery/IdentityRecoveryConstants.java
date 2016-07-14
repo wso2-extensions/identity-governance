@@ -95,6 +95,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS("20028", "Error occurred while retrieving account lock connector " +
                 "configuration"),
         ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20027", "Error occurred while updating user claims"),
+        ERROR_CODE_HISTORY_VIOLATE("22001", "This password has been used in recent history. Please choose a different" +
+                " password"),
+        ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND("20028", "No challenge question found"),
+        ERROR_CODE_MULTIPLE_QUESTION_NOT_ALLOWED("20029", "Multiple challenge question not allowed for this operation"),
 
         ;
 
@@ -150,6 +154,9 @@ public class IdentityRecoveryConstants {
         public static final String LOAD_RECOVERY_DATA = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
                 "SCENARIO = ? AND STEP = ?";
+
+        public static final String LOAD_RECOVERY_DATA_FROM_CODE = "SELECT * FROM IDN_RECOVERY_DATA WHERE CODE = ?";
+
 
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 

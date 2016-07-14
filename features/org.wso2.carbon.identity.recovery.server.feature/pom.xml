@@ -68,7 +68,7 @@
                                     <type>war</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
-                                    <destFileName>account-recovery.war</destFileName>
+                                    <destFileName>api#identity#recovery#v0.9.war</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

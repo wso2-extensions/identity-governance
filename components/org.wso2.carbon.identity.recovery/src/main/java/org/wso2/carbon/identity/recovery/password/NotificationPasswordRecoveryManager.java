@@ -25,17 +25,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.RecoveryScenarios;
-import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -46,6 +43,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -64,7 +62,8 @@ public class NotificationPasswordRecoveryManager {
     }
 
 
-    public NotificationResponseBean sendRecoveryNotification(User user) throws IdentityRecoveryException {
+    public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify) throws
+            IdentityRecoveryException {
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -85,8 +84,16 @@ public class NotificationPasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+        //TODO checkAccountLock
+        //TODO checkAccountDisable
+
+        boolean isNotificationInternallyManage;
+        if (notify == null) {
+            isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                    (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+        } else {
+            isNotificationInternallyManage = notify.booleanValue();
+        }
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -123,62 +130,76 @@ public class NotificationPasswordRecoveryManager {
     }
 
 
-    public void updatePassword(User user, String code, String password) throws IdentityRecoveryException {
+    public void updatePassword(String code, String password) throws IdentityRecoveryException {
 
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("UpdatePassword :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+        //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-        if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("UpdatePassword :User store domain is not in the request. set to default for user" +
-                    " : " + user.getUserName());
-
-        }
 
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
+                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, userRecoveryData.getUser().getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.load(user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
-                RecoverySteps.UPDATE_PASSWORD, code);
-        //if return data from load method, it means the code is validated. Otherwise it returns exceptions
+        if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
 
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        String fullName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(), userRecoveryData.getUser().getUserStoreDomain());
         try {
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
-            userStoreManager.updateCredentialByAdmin(fullName, password);
+            userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
         } catch (UserStoreException e) {
+            checkPasswordHistoryViolate(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
         userRecoveryDataStore.invalidate(code);
 
         boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().getTenantDomain()));
 
+
+        //TODO need a configuration
         if (isNotificationInternallyManaged) {
             try {
-                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
+                triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
             } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset success notification to user :" + user.getUserName());
+                log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
             }
         }
 
         if (log.isDebugEnabled()) {
-            String msg = "Password is updated for  user: " + fullName;
+            String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
 
+    }
+
+    private void checkPasswordHistoryViolate(UserStoreException e) throws IdentityRecoveryClientException {
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause instanceof IdentityEventException) {
+                List<IdentityException.ErrorInfo> errorInfoList = ((IdentityEventException) cause)
+                        .getErrorInfoList();
+                if (errorInfoList.size() > 0) {
+                    IdentityException.ErrorInfo errorInfo = errorInfoList.get(0);
+                    if (errorInfo != null && StringUtils.equals(errorInfo.getErrorCode(), "22001")) {
+                        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                .ERROR_CODE_HISTORY_VIOLATE, null, e);
+                    }
+                }
+                break;
+            }
+            cause = cause.getCause();
+        }
     }
 
     private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
