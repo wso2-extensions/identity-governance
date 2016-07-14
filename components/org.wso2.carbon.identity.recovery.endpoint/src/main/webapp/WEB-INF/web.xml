@@ -7,12 +7,23 @@
     <display-name>WSO2 Identity Server Recovery REST API</display-name>
     <description>WSO2 Identity Server Recovery REST API</description>
 
+    <servlet>
+        <servlet-name>cxf</servlet-name>
+        <display-name>cxf</display-name>
+        <description>Apache CXF Endpoint</description>
+        <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>WEB-INF/beans.xml</param-value>
     </context-param>
 
+    <filter>
+        <filter-name>CaptchaFilter</filter-name>
+        <filter-class>org.wso2.carbon.identity.captcha.filter.CaptchaFilter</filter-class>
+    </filter>
     <listener>
         <listener-class>
             org.springframework.web.context.ContextLoaderListener
@@ -37,19 +48,37 @@
     <!--<filter-class>org.wso2.carbon.identity.captcha.filter.CaptchaFilter</filter-class>-->
     <!--</filter>-->
 
-    <!--<filter-mapping>-->
-    <!--<filter-name>CaptchaFilter</filter-name>-->
-    <!--<url-pattern>/questions/initiate</url-pattern>-->
-    <!--<url-pattern>/questions/initiate-all</url-pattern>-->
-    <!--<url-pattern>/questions/verify</url-pattern>-->
-    <!--<url-pattern>/questions/verify-all</url-pattern>-->
-    <!--<url-pattern>/username/claims</url-pattern>-->
-    <!--<url-pattern>/self/register</url-pattern>-->
-    <!--<dispatcher>REQUEST</dispatcher>-->
-    <!--</filter-mapping>-->
+    <filter-mapping>
+        <filter-name>CaptchaFilter</filter-name>
+        <url-pattern>/questions/initiate</url-pattern>
+        <url-pattern>/questions/initiate-all</url-pattern>
+        <url-pattern>/questions/verify</url-pattern>
+        <url-pattern>/questions/verify-all</url-pattern>
+        <url-pattern>/username/claims</url-pattern>
+        <url-pattern>/self/register</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
 
-    <!--<session-config>-->
-    <!--<session-timeout>60</session-timeout>-->
-    <!--</session-config>-->
+    <servlet>
+        <servlet-name>cxf</servlet-name>
+        <display-name>cxf</display-name>
+        <description>Apache CXF Endpoint</description>
+        <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <context-param>
+        <param-name>log4jConfigLocation</param-name>
+        <param-value>/WEB-INF/classes/log4j.properties</param-value>
+    </context-param>
+
+    <servlet-mapping>
+        <servlet-name>cxf</servlet-name>
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
 
 </web-app>
