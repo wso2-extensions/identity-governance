@@ -59,24 +59,6 @@
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 
-    <servlet>
-        <servlet-name>cxf</servlet-name>
-        <display-name>cxf</display-name>
-        <description>Apache CXF Endpoint</description>
-        <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <context-param>
-        <param-name>log4jConfigLocation</param-name>
-        <param-value>/WEB-INF/classes/log4j.properties</param-value>
-    </context-param>
-
-    <servlet-mapping>
-        <servlet-name>cxf</servlet-name>
-        <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-
     <session-config>
         <session-timeout>60</session-timeout>
     </session-config>
