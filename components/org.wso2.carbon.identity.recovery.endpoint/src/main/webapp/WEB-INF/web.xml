@@ -4,16 +4,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
 	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
     <display-name>WSO2 Identity Server Recovery REST API</display-name>
     <description>WSO2 Identity Server Recovery REST API</description>
-
-    <servlet>
-        <servlet-name>cxf</servlet-name>
-        <display-name>cxf</display-name>
-        <description>Apache CXF Endpoint</description>
-        <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
 
     <context-param>
         <param-name>contextConfigLocation</param-name>
