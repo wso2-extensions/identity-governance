@@ -73,7 +73,7 @@ public class NotificationUsernameRecoveryManager {
      * @return
      * @throws IdentityRecoveryException
      */
-    public String[] _getUserIdentitySupportedClaims(String dialect)
+    public String[] getUserIdentitySupportedClaims(String dialect, String tenantDomain)
             throws IdentityException {
         IdentityClaimManager claimManager;
         Claim[] claims;
@@ -112,13 +112,13 @@ public class NotificationUsernameRecoveryManager {
      * @return
      * @throws IdentityRecoveryException
      */
-    public Claim[] getUserIdentitySupportedClaims(String dialect)
+    public Claim[] getIdentitySupportedClaims(String dialect, String tenantDomain)
             throws IdentityException {
         IdentityClaimManager claimManager;
         Claim[] claims;
 
         claimManager = IdentityClaimManager.getInstance();
-        UserRealm realm = IdentityTenantUtil.getRealm(null, null);
+        UserRealm realm = IdentityTenantUtil.getRealm(tenantDomain, null);
         claims = claimManager.getAllSupportedClaims(dialect, realm);
 
         if (claims == null || claims.length == 0) {
@@ -130,13 +130,19 @@ public class NotificationUsernameRecoveryManager {
     }
 
 
-    public String verifyUsername(UserClaim[] claims, String tenantDomain) throws
+    public String verifyUsername(UserClaim[] claims, String tenantDomain, Boolean notify) throws
             IdentityRecoveryException {
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
-        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+
+        boolean isNotificationInternallyManaged;
+        if (notify == null) {
+            isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+        } else {
+            isNotificationInternallyManaged = notify.booleanValue();
+        }
 
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         String userName = getUsernameByClaims(claims, tenantId);
@@ -213,9 +219,8 @@ public class NotificationUsernameRecoveryManager {
                         continue;
                     }
                 } else {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
-
                 }
             }
         }
