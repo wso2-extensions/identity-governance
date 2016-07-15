@@ -34,11 +34,9 @@ public class ValidateAnswerApiServiceImpl extends ValidateAnswerApiService {
         SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager = RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
         ChallengeQuestionResponse challengeQuestion = null;
         try {
-            //TODO need to send properties
-
             challengeQuestion = securityQuestionBasedPwdRecoveryManager.validateUserChallengeQuestions
                     (RecoveryUtil.getUserChallengeAnswers(answerVerificationRequest.getAnswers()),
-                            answerVerificationRequest.getKey());
+                            answerVerificationRequest.getKey(), RecoveryUtil.getProperties(answerVerificationRequest.getProperties()));
         } catch (IdentityRecoveryClientException e) {
 
             if (LOG.isDebugEnabled()) {

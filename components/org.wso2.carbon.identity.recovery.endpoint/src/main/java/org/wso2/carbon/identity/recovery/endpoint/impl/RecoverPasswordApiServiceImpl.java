@@ -28,11 +28,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 .getNotificationBasedPwdRecoveryManager();
         NotificationResponseBean notificationResponseBean = null;
 
-        //TODO need to send properties
-        recoveryInitiatingRequest.getUser();
         try {
             notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(RecoveryUtil
-                    .getUser(recoveryInitiatingRequest.getUser()), type, notify);
+                    .getUser(recoveryInitiatingRequest.getUser()), type, notify, RecoveryUtil.getProperties
+                    (recoveryInitiatingRequest.getProperties()));
 
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {

@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.*;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -62,8 +63,8 @@ public class NotificationPasswordRecoveryManager {
     }
 
 
-    public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify) throws
-            IdentityRecoveryException {
+    public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[] properties)
+            throws IdentityRecoveryException {
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -74,7 +75,6 @@ public class NotificationPasswordRecoveryManager {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("SendRecoveryNotification :User store domain is not in the request. set to default for user" +
                     " : " + user.getUserName());
-
         }
 
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
@@ -84,8 +84,13 @@ public class NotificationPasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        //TODO checkAccountLock
-        //TODO checkAccountDisable
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+        }
 
         boolean isNotificationInternallyManage;
         if (notify == null) {
@@ -121,7 +126,7 @@ public class NotificationPasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey);
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
@@ -130,7 +135,7 @@ public class NotificationPasswordRecoveryManager {
     }
 
 
-    public void updatePassword(String code, String password) throws IdentityRecoveryException {
+    public void updatePassword(String code, String password, Property[] properties) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
@@ -170,7 +175,8 @@ public class NotificationPasswordRecoveryManager {
         //TODO need a configuration
         if (isNotificationInternallyManaged) {
             try {
-                triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null);
+                triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
+                        .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
             } catch (IdentityRecoveryException e) {
                 log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
             }
@@ -202,7 +208,8 @@ public class NotificationPasswordRecoveryManager {
         }
     }
 
-    private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
+    private void triggerNotification(User user, String type, String code, Property[] metaProperties) throws
+            IdentityRecoveryException {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
@@ -214,6 +221,15 @@ public class NotificationPasswordRecoveryManager {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
         Event identityMgtEvent = new Event(eventName, properties);
         try {

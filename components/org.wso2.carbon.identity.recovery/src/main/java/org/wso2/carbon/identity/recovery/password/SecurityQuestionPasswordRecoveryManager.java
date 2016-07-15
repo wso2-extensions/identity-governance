@@ -105,10 +105,16 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+        }
+
         //TODO need a configuratoin
 
-        //TODO need to check account lock
-        //TODO need to check account disable
         if (isNotificationInternallyManaged) {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
@@ -210,10 +216,15 @@ public class SecurityQuestionPasswordRecoveryManager {
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
 
-        //TODO need a configuratoin
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+        }
 
-        //TODO need to check account lock
-        //TODO need to check account disable
+        //TODO need a configuratoin
 
         if (isNotificationInternallyManaged) {
             try {
@@ -283,7 +294,8 @@ public class SecurityQuestionPasswordRecoveryManager {
     }
 
 
-    public ChallengeQuestionResponse validateUserChallengeQuestions(UserChallengeAnswer[] userChallengeAnswer, String code) throws
+    public ChallengeQuestionResponse validateUserChallengeQuestions(UserChallengeAnswer[] userChallengeAnswer, String
+            code, org.wso2.carbon.identity.recovery.model.Property[] properties) throws
             IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -365,13 +377,15 @@ public class SecurityQuestionPasswordRecoveryManager {
                 String[] requestedQuestions = allChallengeQuestions.split(challengeQuestionSeparator);
 
                 if (requestedQuestions.length != userChallengeAnswer.length) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
                 }
                 validateQuestion(requestedQuestions, userChallengeAnswer);
                 //Validate whether user answered all the requested questions
 
             } else {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
             }
             ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
 
@@ -380,7 +394,8 @@ public class SecurityQuestionPasswordRecoveryManager {
                         userChallengeAnswer[i]);
                 if (!verified) {
                     handleAnswerVerificationFail(userRecoveryData.getUser());
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
                 }
             }
 
@@ -404,10 +419,10 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_INVALID_CODE, null);
         }
-
     }
 
-    private void validateQuestion(String[] requestedQuestions, UserChallengeAnswer[] userChallengeAnswer) throws IdentityRecoveryException {
+    private void validateQuestion(String[] requestedQuestions, UserChallengeAnswer[] userChallengeAnswer)
+            throws IdentityRecoveryException {
         List<String> userChallengeIds = new ArrayList<>();
         for (int i = 0; i < userChallengeAnswer.length; i++) {
             userChallengeIds.add(userChallengeAnswer[i].getQuestion().getQuestionSetId().toLowerCase());
@@ -415,7 +430,8 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         for (int i = 0; i < requestedQuestions.length; i++) {
             if (!userChallengeIds.contains(requestedQuestions[i].toLowerCase())) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
             }
         }
     }

@@ -33,9 +33,8 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
 
         NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil.getNotificationBasedPwdRecoveryManager();
         try {
-            //TODO need to send properties
             notificationPasswordRecoveryManager.updatePassword(resetPasswordRequest.getKey(),
-                    resetPasswordRequest.getPassword());
+                    resetPasswordRequest.getPassword(), RecoveryUtil.getProperties(resetPasswordRequest.getProperties()));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resetting password ", e);

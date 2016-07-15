@@ -14,6 +14,7 @@ import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -222,6 +223,19 @@ public class RecoveryUtil {
         }
 
         return userChallengeAnswers;
+    }
+
+    public static Property[] getProperties(List<PropertyDTO> propertyDTOs) {
+        if (propertyDTOs == null) {
+            return new Property[0];
+        }
+
+        Property[] properties = new Property[propertyDTOs.size()];
+        for (int i = 0; i < propertyDTOs.size(); i++) {
+            Property property = new Property(propertyDTOs.get(i).getKey(), propertyDTOs.get(i).getValue());
+            properties[i] = property;
+        }
+        return properties;
     }
 
     /**

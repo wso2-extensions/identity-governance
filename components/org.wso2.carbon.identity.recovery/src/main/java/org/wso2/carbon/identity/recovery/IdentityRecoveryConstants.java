@@ -40,6 +40,7 @@ public class IdentityRecoveryConstants {
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
