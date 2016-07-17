@@ -130,16 +130,13 @@
             proxy.setChallengeQuestions(questionToBeUpdated.toArray(new ChallengeQuestion[size]), tenantDomain);
             session.setAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION_DELETE, new ArrayList<ChallengeQuestion>());
         }
-
-
 %>
 <script type="text/javascript">
     location.href = "challenge-set-list.jsp";
 </script>
 <%
 } catch (Exception e) {
-    CarbonUIMessage.sendCarbonUIMessage(e.getMessage(), CarbonUIMessage.ERROR,
-            request);
+    CarbonUIMessage.sendCarbonUIMessage(e.getMessage(), CarbonUIMessage.ERROR, request);
 %>
 <script type="text/javascript">
     location.href = "challenge-set-list.jsp";

@@ -62,6 +62,8 @@
     String questionId = request.getParameter("questionId");
     String questionLocale = request.getParameter("questionLocale");
 
+    String localeMapping = request.getParameter("localeMapping");
+
     challenges = (List<ChallengeQuestion>) session.getAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION);
     tempChallenges = (List<ChallengeQuestion>) session.getAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION_SET_TEMP);
     deletedChallenges = (List<ChallengeQuestion>) session.getAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION_DELETE);
@@ -147,7 +149,6 @@
     session.setAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION_DELETE, deletedChallenges);
     session.setAttribute(IdentityManagementAdminClient.CHALLENGE_QUESTION_UPDATE, updatedChallenges);
 
-    Collections.sort(challengeURIs);
     Collections.sort(tempChallenges, Utils.questionComparator);
     Collections.sort(challenges, Utils.questionComparator);
 
@@ -194,7 +195,7 @@
         }
 
         function addRow() {
-            var setIndex = document.getElementsByName("setName0")[0].selectedIndex;
+            var setIndex = document.getElementsByName("setName0").selectedIndex;
             var setName = document.getElementsByName("setName0")[0].value;
 
             var question = document.getElementsByName("question0")[0].value;
@@ -203,17 +204,19 @@
             var questionLocale = document.getElementsByName("questionLocale0")[0].value;
             var localeIndex = document.getElementsByName("questionLocale0")[0].selectedIndex;
 
+            var localeMapping = $("input[name=localeMapping]:checked").val();
+
             if (setIndex == 0) {
                 CARBON.showWarningDialog('Please select a Question Set Id', null, null);
                 location.href = '#';
             } else if (questionId == null || questionId == "") {
                 CARBON.showWarningDialog('Please enter a valid question id', null, null);
                 location.href = '#';
-            } else if (question == null || question == "") {
-                CARBON.showWarningDialog('Please enter a valid security question', null, null);
-                location.href = '#';
             } else if (localeIndex == 0) {
                 CARBON.showWarningDialog('Please select a valid locale for the question', null, null);
+                location.href = '#';
+            } else if (question == null || question == "") {
+                CARBON.showWarningDialog('Please enter a valid security question', null, null);
                 location.href = '#';
             }
             // validate questionId
@@ -224,7 +227,8 @@
                     location.href = 'challenge-question-add.jsp?addRowId=' + encodeURIComponent(question) +
                             '&setName=' + encodeURIComponent(setName) +
                             '&questionId=' + encodeURIComponent(questionId) +
-                            '&questionLocale=' + encodeURIComponent(questionLocale);
+                            '&questionLocale=' + encodeURIComponent(questionLocale) +
+                            '&localeMapping=' + encodeURIComponent(localeMapping);
                 }
 
             }
@@ -232,7 +236,7 @@
 
 
         function onChangeSelect() {
-            var index = document.getElementById("setName0")[0].selectedIndex;
+            var index = document.getElementById("setName0").selectedIndex;
             var setName = document.getElementsByName("setName0")[0].value;
 
             var question = document.getElementsByName("question0")[0].value;
@@ -241,6 +245,7 @@
             var questionLocale = document.getElementsByName("questionLocale0")[0].value;
             var localeIndex = document.getElementsByName("questionLocale0")[0].selectedIndex;
 
+            var localeMapping = $("input[name=localeMapping]:checked").val();
 
             if (index != 0) {
                 var redirectTo = 'challenge-question-add.jsp?setName=' + encodeURIComponent(setName);
@@ -256,12 +261,41 @@
                 if (localeIndex != 0) {
                     redirectTo = redirectTo + '&questionLocale=' + encodeURIComponent(questionLocale);
                 }
+
+                if (localeMapping != null && localeMapping != "") {
+                    redirectTo = redirectTo + '&localeMapping=' + encodeURIComponent(localeMapping);
+                }
+                location.href = redirectTo;
+            }
+        }
+
+        function getQuestionIDs() {
+            var questionSetIndex = document.getElementById("setName0").selectedIndex;
+            var questionSetName = document.getElementsByName("setName0")[0].value;
+
+            var localeMapping = $("input[name=localeMapping]:checked").val();
+
+            if (questionSetIndex == 0) {
+                CARBON.showWarningDialog('Please select a Question Set Id', null, null);
+                location.href = '#';
+            } else {
+                var redirectTo = 'challenge-question-add.jsp?setName=' + encodeURIComponent(questionSetName)
+                        + '&localeMapping=' + encodeURIComponent(localeMapping);
                 location.href = redirectTo;
             }
         }
 
         function disableSetIDSelection(selectElementID) {
             document.getElementById(selectElementID).setAttribute("disabled", "disabled");
+        }
+
+        function setLocaleMappingCheckBox(option) {
+            if (option != null && option == "no") {
+                document.getElementById("localeNo").checked = true;
+            } else {
+                document.getElementById("localeYes").checked = true;
+            }
+
         }
 
         function cancelForm() {
@@ -275,10 +309,10 @@
 
         <form id="questionForm" name="questionForm" method="post" action="challenges-mgt-finish-ajaxprocessor.jsp">
             <div id="workArea">
-                <table class="normal">
+                <table class="styledLeft">
                     <tr>
                         <td class="formRow">
-                            <table class="carbonFormTable" cellspacing="0">
+                            <table class="normal" cellspacing="0">
                                 <tr>
                                     <td class="leftCol-med labelField">
                                         <fmt:message key="challenge.question.add.questionSet"/>
@@ -287,7 +321,7 @@
                                     <td>
                                         <select id="setName0" name="setName0" onchange="onChangeSelect()"
                                                 class="leftCol-med">
-                                            <option value="selectcard">--- Select Set Id ---</option>
+                                            <option value="selectID">--- Select Set Id ---</option>
 
                                             <%
                                                 for (String setURI : challengeURIs) {
@@ -309,12 +343,38 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <td class="leftCol-med labelField">
+                                    <fmt:message key="challenge.question.add.locale.mapping"/>
+                                    <span class="required">*</span>
+                                </td>
+                                <td>
+                                    <input type="radio" name="localeMapping" id="localeYes" value="yes"
+                                           onchange="getQuestionIDs()">Yes</input>
+                                    <input type="radio" name="localeMapping" id="localeNo" value="no"
+                                           onchange="getQuestionIDs()">No</input>
+
+                                    <% if (StringUtils.isNotBlank(localeMapping) && StringUtils.equalsIgnoreCase("no", localeMapping)) {%>
+                                    <script>
+                                        setLocaleMappingCheckBox("no");
+                                    </script>
+                                    <%
+                                        }
+                                        if (StringUtils.isNotBlank(localeMapping) && StringUtils.equalsIgnoreCase("yes", localeMapping)) {
+                                    %>
+                                    <script>
+                                        setLocaleMappingCheckBox("yes");
+                                    </script>
+                                    <%}%>
+
+                                </td>
+                                </tr>
                                 <tr>
                                     <td class="leftCol-med labelField">
                                         <fmt:message key="challenge.question.add.questionId"/>
                                         <span class="required">*</span>
                                     </td>
                                     <td>
+                                        <% if (StringUtils.isBlank(localeMapping) || StringUtils.equalsIgnoreCase("no", localeMapping)) {%>
                                         <% if (StringUtils.isNotBlank(questionId)) { %>
                                         <input size="70" name="questionId0" id="questionId0" class="text-box-big"
                                                white-list-patterns="^[a-zA-Z0-9]+$"
@@ -322,21 +382,30 @@
                                         <%} else { %>
                                         <input size="70" name="questionId0" id="questionId0" class="text-box-big"
                                                white-list-patterns="^[a-zA-Z0-9]+$"/>
-                                        <% }%>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="leftCol-med labelField">
-                                        <fmt:message key="challenge.question.add.question"/>
-                                        <span class="required">*</span>
-                                    </td>
-                                    <td>
-                                        <% if (StringUtils.isNotBlank(question)) { %>
-                                        <input size="100" name="question0" id="question0" class="text-box-big"
-                                               value='<%=Encode.forHtmlAttribute(question)%>'/>
-                                        <%} else { %>
-                                        <input size="100" name="question0" id="question0" class="text-box-big"/>
-                                        <% }%>
+                                        <% }
+                                        } else {%>
+                                        <select id="questionId0" name="questionId0" class="leftCol-med">
+                                            <%
+                                                List<String> questionIds = Utils.getUniqueQuestionIds(challenges, setName);
+                                                for (String qID : questionIds) {
+                                                    if (StringUtils.isNotBlank(qID) && StringUtils.equalsIgnoreCase(questionId, qID)) {
+                                            %>
+                                            <option value="<%=Encode.forHtmlAttribute(qID)%>" selected="selected">
+                                                <%=Encode.forHtmlContent(qID)%>
+                                            </option>
+                                            <%
+                                            } else {
+                                            %>
+                                            <option value="<%=Encode.forHtmlAttribute(qID)%>">
+                                                <%=Encode.forHtmlContent(qID)%>
+                                            </option>
+                                            <%
+                                                    }
+                                                }
+                                            %>
+                                        </select>
+
+                                        <%}%>
                                     </td>
                                 </tr>
                                 <tr>
@@ -368,12 +437,26 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td class="leftCol-med labelField">
+                                        <fmt:message key="challenge.question.add.question"/>
+                                        <span class="required">*</span>
+                                    </td>
+                                    <td class="leftCol-big">
+                                        <% if (StringUtils.isNotBlank(question)) { %>
+                                        <input size="100" name="question0" id="question0" class="text-box-big"
+                                               value='<%=Encode.forHtmlAttribute(question)%>'/>
+                                        <%} else { %>
+                                        <input size="100" name="question0" id="question0" class="text-box-big"/>
+                                        <% }%>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <button onclick="addRow()" type="button" class="button">Add</button>
+                                    </td>
+                                </tr>
                             </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <button onclick="addRow()" type="button" class="button">Add</button>
                         </td>
                     </tr>
                 </table>
