@@ -39,7 +39,7 @@ public class UserDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("tenantDomain")
+  @JsonProperty("tenant-domain")
   public String getTenantDomain() {
     return tenantDomain;
   }

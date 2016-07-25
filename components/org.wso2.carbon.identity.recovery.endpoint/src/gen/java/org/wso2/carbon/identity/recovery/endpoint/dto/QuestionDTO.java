@@ -36,7 +36,7 @@ public class QuestionDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("questionSetId")
+  @JsonProperty("question-set-id")
   public String getQuestionSetId() {
     return questionSetId;
   }

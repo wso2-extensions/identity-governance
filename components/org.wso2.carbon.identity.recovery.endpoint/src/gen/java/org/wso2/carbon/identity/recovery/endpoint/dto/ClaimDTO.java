@@ -75,7 +75,7 @@ public class ClaimDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("displayName")
+  @JsonProperty("display-name")
   public String getDisplayName() {
     return displayName;
   }

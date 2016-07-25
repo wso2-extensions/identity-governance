@@ -10,8 +10,8 @@ import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.SecurityQuestionApiService;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDTO;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
-import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateAllQuestionResponseDTO;
 
 
 import javax.ws.rs.core.Response;
@@ -27,7 +27,7 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
         user.setUserName(username);
         user.setTenantDomain(tenantDomain);
 
-        InitiateAllQuestionResponseDTO initiateAllQuestionResponseDTO = null;
+        InitiateQuestionResponseDTO initiateQuestionResponseDTO = null;
 
         SecurityQuestionPasswordRecoveryManager securityQuestionBasedPwdRecoveryManager =
                 RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager();
@@ -35,7 +35,7 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
         try {
             ChallengeQuestionResponse challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager
                     .initiateUserChallengeQuestion(user);
-            initiateAllQuestionResponseDTO = RecoveryUtil.getInitiateAllQuestionResponseDTO(challengeQuestionResponse);
+            initiateQuestionResponseDTO = RecoveryUtil.getInitiateQuestionResponseDTO(challengeQuestionResponse);
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while initiating password recovery flow using security questions ", e);
@@ -55,6 +55,6 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.accepted(initiateAllQuestionResponseDTO).build();
+        return Response.accepted(initiateQuestionResponseDTO).build();
     }
 }

@@ -148,21 +148,20 @@ public class RecoveryUtil {
         return userClaims;
     }
 
-    public static InitiateAllQuestionResponseDTO getInitiateAllQuestionResponseDTO
+    public static InitiateQuestionResponseDTO getInitiateQuestionResponseDTO
             (ChallengeQuestionResponse challengeQuestionResponse) {
-        InitiateAllQuestionResponseDTO initiateAllQuestionResponseDTO = new InitiateAllQuestionResponseDTO();
+        InitiateQuestionResponseDTO initiateQuestionResponseDTO = new InitiateQuestionResponseDTO();
 
-        List<QuestionDTO> questionDTOs = new ArrayList<>();
+        QuestionDTO questionDTO = new QuestionDTO();
 
         if (challengeQuestionResponse.getQuestion() != null) {
-            QuestionDTO questionDTO = new QuestionDTO();
             questionDTO.setQuestion(challengeQuestionResponse.getQuestion().getQuestion());
             questionDTO.setQuestionSetId(challengeQuestionResponse.getQuestion().getQuestionSetId());
-            questionDTOs.add(questionDTO);
+
+            initiateQuestionResponseDTO.setQuestion(questionDTO);
         }
 
-        initiateAllQuestionResponseDTO.setQuestions(questionDTOs);
-        initiateAllQuestionResponseDTO.setKey(challengeQuestionResponse.getCode());
+        initiateQuestionResponseDTO.setKey(challengeQuestionResponse.getCode());
 
         LinkDTO linkDTO = new LinkDTO();
 
@@ -174,11 +173,11 @@ public class RecoveryUtil {
             linkDTO.setUri("/api/identity/recovery/v0.9");
         }
 
-        initiateAllQuestionResponseDTO.setLink(linkDTO);
-        return initiateAllQuestionResponseDTO;
+        initiateQuestionResponseDTO.setLink(linkDTO);
+        return initiateQuestionResponseDTO;
     }
 
-    public static InitiateAllQuestionResponseDTO getInitiateAllQuestionResponseDTO
+    public static InitiateAllQuestionResponseDTO getInitiateQuestionResponseDTO
             (ChallengeQuestionsResponse challengeQuestionsResponse) {
         InitiateAllQuestionResponseDTO initiateAllQuestionResponseDTO = new InitiateAllQuestionResponseDTO();
 
