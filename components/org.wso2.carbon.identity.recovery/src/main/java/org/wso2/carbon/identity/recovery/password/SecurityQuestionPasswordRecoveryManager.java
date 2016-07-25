@@ -366,11 +366,9 @@ public class SecurityQuestionPasswordRecoveryManager {
 
                 return challengeQuestionResponse;
             } else {
-                handleAnswerVerificationFail(userRecoveryData.getUser());
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
             }
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
-
 
         } else if (RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION.equals(userRecoveryData.getRecoveryStep())) {
             String allChallengeQuestions = userRecoveryData.getRemainingSetIds();
