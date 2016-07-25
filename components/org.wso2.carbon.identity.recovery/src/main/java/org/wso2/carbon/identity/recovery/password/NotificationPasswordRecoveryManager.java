@@ -84,14 +84,6 @@ public class NotificationPasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        if (Utils.isAccountDisabled(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
-        } else if (Utils.isAccountLocked(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
-        }
-
         boolean isNotificationInternallyManage;
         if (notify == null) {
             isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
@@ -114,6 +106,14 @@ public class NotificationPasswordRecoveryManager {
 
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        }
+
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
         }
 
         userRecoveryDataStore.invalidate(user);

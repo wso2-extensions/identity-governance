@@ -6,22 +6,13 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
-import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.endpoint.*;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 
 
-import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDTO;
-import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.AnswerVerificationRequestDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RetryErrorDTO;
 
-import java.util.List;
-
-import java.io.InputStream;
-
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 
 import javax.ws.rs.core.Response;
@@ -60,6 +51,6 @@ public class ValidateAnswerApiServiceImpl extends ValidateAnswerApiService {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.ok(RecoveryUtil.getInitiateAllQuestionResponseDTO(challengeQuestion)).build();
+        return Response.ok(RecoveryUtil.getInitiateQuestionResponseDTO(challengeQuestion)).build();
     }
 }

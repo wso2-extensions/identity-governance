@@ -105,24 +105,6 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
-        if (Utils.isAccountDisabled(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
-        } else if (Utils.isAccountLocked(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
-        }
-
-        //TODO need a configuratoin
-
-        if (isNotificationInternallyManaged) {
-            try {
-                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
-            } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
-            }
-        }
-
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
@@ -143,6 +125,26 @@ public class SecurityQuestionPasswordRecoveryManager {
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
+
+
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+        }
+
+        //TODO need a configuratoin
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
+            }
+        }
+
 
         int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
@@ -216,25 +218,6 @@ public class SecurityQuestionPasswordRecoveryManager {
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
 
-        if (Utils.isAccountDisabled(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
-        } else if (Utils.isAccountLocked(user)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
-        }
-
-        //TODO need a configuratoin
-
-        if (isNotificationInternallyManaged) {
-            try {
-                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
-            } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
-            }
-        }
-
-
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
@@ -251,6 +234,25 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
+        }
+
+
+        if (Utils.isAccountDisabled(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+        } else if (Utils.isAccountLocked(user)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+        }
+
+        //TODO need a configuratoin
+
+        if (isNotificationInternallyManaged) {
+            try {
+                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
+            }
         }
 
         int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
@@ -393,7 +395,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(userRecoveryData.getUser(),
                         userChallengeAnswer[i]);
                 if (!verified) {
-                    handleAnswerVerificationFail(userRecoveryData.getUser());
+//                    handleAnswerVerificationFail(userRecoveryData.getUser());
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
                 }

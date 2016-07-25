@@ -34,7 +34,7 @@ public class SecurityQuestionsApiServiceImpl extends SecurityQuestionsApiService
         try {
             ChallengeQuestionsResponse challengeQuestionResponse = securityQuestionBasedPwdRecoveryManager
                     .initiateUserChallengeQuestionAtOnce(user);
-            initiateAllQuestionResponseDTO = RecoveryUtil.getInitiateAllQuestionResponseDTO(challengeQuestionResponse);
+            initiateAllQuestionResponseDTO = RecoveryUtil.getInitiateQuestionResponseDTO(challengeQuestionResponse);
 
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
