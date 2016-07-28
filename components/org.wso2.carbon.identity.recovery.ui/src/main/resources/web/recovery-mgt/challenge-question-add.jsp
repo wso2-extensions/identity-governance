@@ -234,7 +234,7 @@
             }
         }
 
-
+        // function to handle the question set ID select event
         function onChangeSelect() {
             var index = document.getElementById("setName0").selectedIndex;
             var setName = document.getElementsByName("setName0")[0].value;
@@ -248,6 +248,8 @@
             var localeMapping = $("input[name=localeMapping]:checked").val();
 
             if (index != 0) {
+                disableInputEdit(false);
+
                 var redirectTo = 'challenge-question-add.jsp?setName=' + encodeURIComponent(setName);
 
                 if (question != null && question != "") {
@@ -267,7 +269,33 @@
                 }
                 location.href = redirectTo;
             }
+            else {
+                // disable input fields when a questionSetId is not selected.
+                disableInputEdit(true);
+            }
         }
+
+        function disableInputEdit(disabled) {
+            var status = (disabled == true);
+
+            document.getElementsByName("question0")[0].disabled = status;
+            document.getElementsByName("questionId0")[0].disabled = status;
+            document.getElementsByName("questionLocale0")[0].disabled = status;
+            document.getElementsByName("localeMapping")[0].disabled = status;
+            document.getElementsByName("localeMapping")[1].disabled = status;
+            document.getElementById("addButton").disabled = status;
+        }
+
+
+        $(document).ready(function(){
+            var index = document.getElementById("setName0").selectedIndex;
+            var disabled = (index == 0);
+            if(disabled) {
+                setLocaleMappingCheckBox("no");
+            }
+            disableInputEdit(disabled)
+        });
+
 
         function getQuestionIDs() {
             var questionSetIndex = document.getElementById("setName0").selectedIndex;
@@ -453,7 +481,9 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <button onclick="addRow()" type="button" class="button">Add</button>
+                                        <button id="addButton" onclick="addRow()" type="button"
+                                                class="button">Add
+                                        </button>
                                     </td>
                                 </tr>
                             </table>
