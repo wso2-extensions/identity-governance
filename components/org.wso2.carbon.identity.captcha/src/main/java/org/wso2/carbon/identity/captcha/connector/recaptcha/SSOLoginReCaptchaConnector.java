@@ -65,7 +65,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
     private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
 
-    private static final String SECURED_DESTINATIONS = "/commonauth";
+    private static final String SECURED_DESTINATIONS = "/commonauth,/samlsso,/oauth2";
 
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
 
