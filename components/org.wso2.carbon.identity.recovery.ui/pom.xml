@@ -85,8 +85,7 @@
                             org.wso2.carbon.identity.recovery.ui.*;version"${identity.governance.exp.pkg.version}"
                         </Export-Package>
                         <Import-Package>
-                            org.wso2.carbon.identity.recovery.stub;
-                            version="${identity.governance.imp.pkg.version.range}"
+                            org.wso2.carbon.identity.recovery.stub;version="${identity.governance.imp.pkg.version.range}"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Carbon-Component>UIBundle</Carbon-Component>

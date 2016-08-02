@@ -36,12 +36,12 @@ import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.AuthorizationManager;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.List;
 
 /**
  * Admin Service class to carry out operations related to challenge questions management.
- *
  */
 public class ChallengeQuestionManagementAdminService {
 
@@ -72,18 +72,22 @@ public class ChallengeQuestionManagementAdminService {
     /**
      * Get all challenge questions applicable for a user based on his locale.
      *
-     * @param tenantAwareUserName
+     * @param user
      * @return
      * @throws IdentityRecoveryServerException
      */
-    public ChallengeQuestion[] getChallengeQuestionsForUser(String tenantAwareUserName)
+    public ChallengeQuestion[] getChallengeQuestionsForUser(User user)
             throws IdentityRecoveryException {
+        if (user == null) {
+            log.error("User object provided is null.");
+            throw new IdentityRecoveryClientException("User object provided is null.");
+        }
 
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-
         List<ChallengeQuestion> challengeQuestionList;
         try {
-            String locale = getLocaleOfUser(tenantAwareUserName, tenantDomain);
+            String locale = getLocaleOfUser(user, tenantDomain);
             challengeQuestionList = questionManager.getAllChallengeQuestions(tenantDomain, locale);
             return challengeQuestionList.toArray(new ChallengeQuestion[challengeQuestionList.size()]);
         } catch (IdentityRecoveryException e) {
@@ -162,12 +166,18 @@ public class ChallengeQuestionManagementAdminService {
     /**
      * Set challenge question answers for a user
      *
-     * @param tenantAwareUserName
+     * @param user
      * @param userChallengeAnswers
      * @throws IdentityRecoveryException
      */
-    public void setUserChallengeAnswers(String tenantAwareUserName, UserChallengeAnswer[] userChallengeAnswers)
+    public void setUserChallengeAnswers(User user, UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
+        if (user == null) {
+            log.error("User object provided is null.");
+            throw new IdentityRecoveryClientException("User object provided is null.");
+        }
+
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
 
         if (ArrayUtils.isEmpty(userChallengeAnswers)) {
             String errorMsg = "No challenge question answers provided by the user " + tenantAwareUserName;
@@ -191,7 +201,6 @@ public class ChallengeQuestionManagementAdminService {
         }
 
         try {
-            User user = Utils.createUser(tenantAwareUserName, tenantDomain);
             questionManager.setChallengesOfUser(user, userChallengeAnswers);
 
         } catch (IdentityException e) {
@@ -204,12 +213,17 @@ public class ChallengeQuestionManagementAdminService {
     /**
      * Get Challenge question answers along with their encrypted answers of a user
      *
-     * @param tenantAwareUserName
+     * @param user
      * @return
      * @throws IdentityRecoveryException
      */
-    public UserChallengeAnswer[] getUserChallengeAnswers(String tenantAwareUserName) throws IdentityRecoveryException {
+    public UserChallengeAnswer[] getUserChallengeAnswers(User user) throws IdentityRecoveryException {
+        if (user == null) {
+            log.error("User object provided is null.");
+            throw new IdentityRecoveryClientException("User object provided is null.");
+        }
 
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String loggedInName = CarbonContext.getThreadLocalCarbonContext().getUsername();
 
@@ -226,7 +240,6 @@ public class ChallengeQuestionManagementAdminService {
         }
 
         try {
-            User user = Utils.createUser(tenantAwareUserName, tenantDomain);
             return questionManager.getChallengeAnswersOfUser(user);
         } catch (IdentityRecoveryException e) {
             String msg = "Error retrieving user challenge answers for " + tenantAwareUserName;
@@ -236,9 +249,8 @@ public class ChallengeQuestionManagementAdminService {
     }
 
 
-    private String getLocaleOfUser(String tenantAwareUserName, String tenantDomain)
-            throws IdentityRecoveryServerException {
-        User user = Utils.createUser(tenantAwareUserName, tenantDomain);
+    private String getLocaleOfUser(User user, String tenantDomain) throws IdentityRecoveryException {
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String locale = IdentityRecoveryConstants.LOCALE_EN_US;
         try {
             String userLocale =
@@ -247,7 +259,7 @@ public class ChallengeQuestionManagementAdminService {
                 locale = userLocale;
             }
         } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user %s of %s domain.",
+            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
                     tenantAwareUserName, tenantDomain);
             log.error(errorMsg);
             throw new IdentityRecoveryServerException(errorMsg, e);
