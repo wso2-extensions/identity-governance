@@ -48,7 +48,7 @@ public class IdentityRecoveryConstants {
 
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
-
+    public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
 
     private IdentityRecoveryConstants() {
     }

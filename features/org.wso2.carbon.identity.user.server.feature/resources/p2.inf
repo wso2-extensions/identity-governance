@@ -1,0 +1,2 @@
+instructions.configure = \
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.user.server_${feature.version}/api#identity#user#v0.9.war,target:${installFolder}/../../deployment/server/webapps/api#identity#user#v0.9.war,overwrite:true);\
