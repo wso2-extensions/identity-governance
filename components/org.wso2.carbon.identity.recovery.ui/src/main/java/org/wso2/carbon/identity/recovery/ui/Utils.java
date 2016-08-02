@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.recovery.stub.model.ChallengeQuestion;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +66,20 @@ public class Utils {
                 }
             }
         }
-        return new ArrayList<String>(questionSetNames);
+        List<String> challengeSetUriList = new ArrayList<String>(questionSetNames);
+        Collections.sort(challengeSetUriList);
+        return challengeSetUriList;
+    }
+
+    public static List<String> getUniqueQuestionIds(List<ChallengeQuestion> challengeQuestions, String setId) {
+        HashSet<String> questionIds = new HashSet<String>();
+        for (ChallengeQuestion question : challengeQuestions) {
+            if (StringUtils.equalsIgnoreCase(setId, question.getQuestionSetId())) {
+                questionIds.add(question.getQuestionId());
+            }
+        }
+        List<String> questioIdList = new ArrayList<>(questionIds);
+        Collections.sort(questioIdList);
+        return questioIdList;
     }
 }
