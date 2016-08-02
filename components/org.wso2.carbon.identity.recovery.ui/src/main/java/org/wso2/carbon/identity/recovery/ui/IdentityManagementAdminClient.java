@@ -25,6 +25,7 @@ import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.xsd.User;
 import org.wso2.carbon.identity.recovery.stub.ChallengeQuestionManagementAdminServiceStub;
 import org.wso2.carbon.identity.recovery.stub.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.stub.model.UserChallengeAnswer;
@@ -70,10 +71,10 @@ public class IdentityManagementAdminClient {
     }
 
 
-    public ChallengeQuestion[] getChallengeQuestionsForUser(String tenantAwareUserName) throws AxisFault {
+    public ChallengeQuestion[] getChallengeQuestionsForUser(User user) throws AxisFault {
 
         try {
-            return stub.getChallengeQuestionsForUser(tenantAwareUserName);
+            return stub.getChallengeQuestionsForUser(user);
         } catch (Exception e) {
             handleException(e.getMessage(), e);
         }
@@ -111,18 +112,18 @@ public class IdentityManagementAdminClient {
         }
     }
 
-    public void setUserChallengeAnswers(String username, UserChallengeAnswer[] userChallengeAnswers)
+    public void setUserChallengeAnswers(User user, UserChallengeAnswer[] userChallengeAnswers)
             throws AxisFault {
         try {
-            stub.setUserChallengeAnswers(username, userChallengeAnswers);
+            stub.setUserChallengeAnswers(user, userChallengeAnswers);
         } catch (Exception e) {
             handleException(e.getMessage(), e);
         }
     }
 
-    public UserChallengeAnswer[] getUserChallengeAnswers(String username) throws AxisFault {
+    public UserChallengeAnswer[] getUserChallengeAnswers(User user) throws AxisFault {
         try {
-            return stub.getUserChallengeAnswers(username);
+            return stub.getUserChallengeAnswers(user);
         } catch (Exception e) {
             handleException(e.getMessage(), e);
         }
