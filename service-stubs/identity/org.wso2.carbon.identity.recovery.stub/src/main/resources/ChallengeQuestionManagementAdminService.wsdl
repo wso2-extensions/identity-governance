@@ -1,33 +1,26 @@
-<!--
-  ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-
-<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ax2369="http://recovery.identity.carbon.wso2.org/xsd" xmlns:ns="http://services.recovery.identity.carbon.wso2.org" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:ax2370="http://base.identity.carbon.wso2.org/xsd" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ax2373="http://model.recovery.identity.carbon.wso2.org/xsd" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="http://services.recovery.identity.carbon.wso2.org">
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ax2389="http://model.common.application.identity.carbon.wso2.org/xsd" xmlns:ns="http://services.recovery.identity.carbon.wso2.org" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:ax2383="http://recovery.identity.carbon.wso2.org/xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ax2384="http://base.identity.carbon.wso2.org/xsd" xmlns:ns1="http://org.apache.axis2/xsd" xmlns:ax2387="http://model.recovery.identity.carbon.wso2.org/xsd" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="http://services.recovery.identity.carbon.wso2.org">
     <wsdl:documentation>ChallengeQuestionManagementAdminService</wsdl:documentation>
     <wsdl:types>
-        <xs:schema xmlns:ax2371="http://base.identity.carbon.wso2.org/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://recovery.identity.carbon.wso2.org/xsd">
+        <xs:schema xmlns:ax2385="http://base.identity.carbon.wso2.org/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://recovery.identity.carbon.wso2.org/xsd">
             <xs:import namespace="http://base.identity.carbon.wso2.org/xsd"/>
             <xs:complexType name="IdentityRecoveryException">
                 <xs:complexContent>
-                    <xs:extension base="ax2370:IdentityException">
+                    <xs:extension base="ax2384:IdentityException">
                         <xs:sequence>
                             <xs:element minOccurs="0" name="errorCode" nillable="true" type="xs:string"/>
                             <xs:element minOccurs="0" name="errorDescription" nillable="true" type="xs:string"/>
                         </xs:sequence>
                     </xs:extension>
                 </xs:complexContent>
+            </xs:complexType>
+        </xs:schema>
+        <xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://model.common.application.identity.carbon.wso2.org/xsd">
+            <xs:complexType name="User">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="tenantDomain" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="userName" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="userStoreDomain" nillable="true" type="xs:string"/>
+                </xs:sequence>
             </xs:complexType>
         </xs:schema>
         <xs:schema attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://model.recovery.identity.carbon.wso2.org/xsd">
@@ -42,7 +35,7 @@
             <xs:complexType name="UserChallengeAnswer">
                 <xs:sequence>
                     <xs:element minOccurs="0" name="answer" nillable="true" type="xs:string"/>
-                    <xs:element minOccurs="0" name="question" nillable="true" type="ax2373:ChallengeQuestion"/>
+                    <xs:element minOccurs="0" name="question" nillable="true" type="ax2387:ChallengeQuestion"/>
                 </xs:sequence>
             </xs:complexType>
         </xs:schema>
@@ -54,13 +47,14 @@
                 </xs:sequence>
             </xs:complexType>
         </xs:schema>
-        <xs:schema xmlns:ax2372="http://recovery.identity.carbon.wso2.org/xsd" xmlns:ax2374="http://model.recovery.identity.carbon.wso2.org/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://services.recovery.identity.carbon.wso2.org">
+        <xs:schema xmlns:ax2388="http://model.recovery.identity.carbon.wso2.org/xsd" xmlns:ax2386="http://recovery.identity.carbon.wso2.org/xsd" xmlns:ax2390="http://model.common.application.identity.carbon.wso2.org/xsd" attributeFormDefault="qualified" elementFormDefault="qualified" targetNamespace="http://services.recovery.identity.carbon.wso2.org">
             <xs:import namespace="http://recovery.identity.carbon.wso2.org/xsd"/>
             <xs:import namespace="http://model.recovery.identity.carbon.wso2.org/xsd"/>
+            <xs:import namespace="http://model.common.application.identity.carbon.wso2.org/xsd"/>
             <xs:element name="ChallengeQuestionManagementAdminServiceIdentityRecoveryException">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="IdentityRecoveryException" nillable="true" type="ax2369:IdentityRecoveryException"/>
+                        <xs:element minOccurs="0" name="IdentityRecoveryException" nillable="true" type="ax2383:IdentityRecoveryException"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -74,21 +68,21 @@
             <xs:element name="getChallengeQuestionsOfTenantResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2373:ChallengeQuestion"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2388:ChallengeQuestion"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="getChallengeQuestionsForUser">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="tenantAwareUserName" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="user" nillable="true" type="ax2389:User"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="getChallengeQuestionsForUserResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2373:ChallengeQuestion"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2388:ChallengeQuestion"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -103,14 +97,14 @@
             <xs:element name="getChallengeQuestionsForLocaleResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2373:ChallengeQuestion"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2388:ChallengeQuestion"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="setChallengeQuestionsOfTenant">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="challengeQuestions" nillable="true" type="ax2373:ChallengeQuestion"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="challengeQuestions" nillable="true" type="ax2388:ChallengeQuestion"/>
                         <xs:element minOccurs="0" name="tenantDomain" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
@@ -118,7 +112,7 @@
             <xs:element name="deleteChallengeQuestionsOfTenant">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="challengeQuestions" nillable="true" type="ax2373:ChallengeQuestion"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="challengeQuestions" nillable="true" type="ax2388:ChallengeQuestion"/>
                         <xs:element minOccurs="0" name="tenantDomain" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
@@ -126,22 +120,22 @@
             <xs:element name="setUserChallengeAnswers">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="tenantAwareUserName" nillable="true" type="xs:string"/>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="userChallengeAnswers" nillable="true" type="ax2373:UserChallengeAnswer"/>
+                        <xs:element minOccurs="0" name="user" nillable="true" type="ax2389:User"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="userChallengeAnswers" nillable="true" type="ax2388:UserChallengeAnswer"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="getUserChallengeAnswers">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element minOccurs="0" name="tenantAwareUserName" nillable="true" type="xs:string"/>
+                        <xs:element minOccurs="0" name="user" nillable="true" type="ax2389:User"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="getUserChallengeAnswersResponse">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2373:UserChallengeAnswer"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2388:UserChallengeAnswer"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
