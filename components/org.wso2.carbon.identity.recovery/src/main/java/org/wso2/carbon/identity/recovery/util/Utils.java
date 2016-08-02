@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -232,6 +233,18 @@ public class Utils {
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+        }
+    }
+
+    public static String getSelfSignUpConfigs(String key, String tenantDomain) throws IdentityEventException {
+        try {
+            Property[] connectorConfigs;
+            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService();
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            return connectorConfigs[0].getValue();
+        } catch (IdentityGovernanceException e) {
+            throw new IdentityEventException("Error while getting self signup configuraitons", e);
         }
     }
 
