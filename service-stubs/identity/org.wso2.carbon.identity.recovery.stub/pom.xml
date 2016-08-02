@@ -110,7 +110,8 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Export-Package>
                             org.wso2.carbon.identity.recovery.stub.*;version="${identity.governance.exp.pkg.version}",
-                            org.wso2.carbon.identity.recovery.xsd;version="${identity.governance.exp.pkg.version}"
+                            org.wso2.carbon.identity.recovery.xsd;version="${identity.governance.exp.pkg.version}",
+                            org.wso2.carbon.identity.application.common.model.xsd;version="${identity.governance.exp.pkg.version}"
                         </Export-Package>
                     </instructions>
                 </configuration>
