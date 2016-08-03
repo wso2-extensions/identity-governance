@@ -33,11 +33,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
@@ -174,8 +176,13 @@ public class CaptchaUtil {
         }
     }
 
-    public static Map<String, String> getClaimValues(String username, String tenantDomain, int tenantId,
+    public static Map<String, String> getClaimValues(User user, int tenantId,
                                                      String[] claimUris) throws CaptchaServerException {
+
+        String username = user.getUserName();
+        if (!StringUtils.isBlank(user.getUserStoreDomain()) && !"PRIMARY".equals(user.getUserStoreDomain())) {
+            username = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        }
 
         RealmService realmService = CaptchaDataHolder.getInstance().getRealmService();
         UserRealm userRealm;
