@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
+import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -137,73 +138,10 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         String userName = servletRequest.getParameter("username");
         String tenantDomain = MultitenantUtils.getTenantDomain(userName);
 
-        Property[] connectorConfigs;
-        try {
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                    CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
-        } catch (IdentityGovernanceException e) {
-            throw new CaptchaServerException("Unable to retrieve connector configs.", e);
-        }
-
-        String maxAttemptsStr = null;
-        if (connectorConfigs != null && connectorConfigs.length > 0) {
-            maxAttemptsStr = connectorConfigs[0].getValue();
-        }
-
-        if (StringUtils.isBlank(maxAttemptsStr) || !NumberUtils.isNumber(maxAttemptsStr)) {
-            throw new CaptchaServerException("Invalid reCaptcha configuration.");
-        }
-
-        int maxAttempts = Integer.parseInt(maxAttemptsStr);
-
-        RealmService realmService = CaptchaDataHolder.getInstance().getRealmService();
-        int tenantId;
-        try {
-            tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
-        } catch (UserStoreException e) {
-            //Tenant is already validated in the canHandle section.
-            throw new CaptchaServerException("Failed to retrieve tenant id from tenant domain : " + tenantDomain, e);
-        }
-
-        if (MultitenantConstants.INVALID_TENANT_ID == tenantId) {
-            throw new CaptchaServerException("Invalid tenant domain : " + tenantDomain);
-        }
-
-        UserRealm userRealm;
-        try {
-            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
-        } catch (UserStoreException e) {
-            throw new CaptchaServerException("Failed to retrieve user realm from tenant id : " + tenantId, e);
-        }
-
-        UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw new CaptchaServerException("Failed to retrieve user store manager.", e);
-        }
-
-        Map<String, String> claimValues;
-        try {
-            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils.getTenantAwareUsername(userName),
-                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
-        } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Error occurred while retrieving user claims.", e);
-            }
-            // Invalid user
-            return preValidationResponse;
-        }
-
-        int currentAttempts = 0;
-        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
-            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
-        }
-
-        if (currentAttempts >= maxAttempts) {
+        if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(userName),
+                tenantDomain)) {
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
-            preValidationResponse.setPostValidationRequired(true);
             // Add parameters which need to send back in case of failure.
             preValidationResponse.setOnCaptchaFailRedirectUrls(Collections.singletonList(ON_FAIL_REDIRECT_URL));
             Map<String, String> params = new HashMap<>();
@@ -213,10 +151,10 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             params.put("authFailure", "true");
             params.put("authFailureMsg", "recaptcha.fail.message");
             preValidationResponse.setCaptchaAttributes(params);
-        } else if ((currentAttempts + 1) == maxAttempts) {
-            preValidationResponse.setMaxFailedLimitReached(true);
-            preValidationResponse.setPostValidationRequired(true);
         }
+        // Post validate all requests
+        preValidationResponse.setMaxFailedLimitReached(true);
+        preValidationResponse.setPostValidationRequired(true);
 
         return preValidationResponse;
     }
@@ -225,9 +163,9 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        CaptchaPostValidationResponse validationResponse = new CaptchaPostValidationResponse();
-        String redirectURL = ((CaptchaHttpServletResponseWrapper) servletResponse).getRedirectURL();
-        if (redirectURL != null && redirectURL.contains("authFailure=true")) {
+        if (!StringUtils.isBlank(CaptchaConstants.getEnableSecurityMechanism())) {
+            CaptchaConstants.removeEnabledSecurityMechanism();
+            CaptchaPostValidationResponse validationResponse = new CaptchaPostValidationResponse();
             validationResponse.setSuccessfulAttempt(false);
             validationResponse.setEnableCaptchaResponsePath(true);
             Map<String, String> params = new HashMap<>();
@@ -237,11 +175,7 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
             validationResponse.setCaptchaAttributes(params);
             return validationResponse;
         }
-
-        //Account lock situation also considered as successful, it will redirect to a error page
-        validationResponse.setSuccessfulAttempt(true);
-        validationResponse.setEnableCaptchaResponsePath(false);
-        return validationResponse;
+        return null;
     }
 
     @Override
