@@ -170,10 +170,11 @@ public class NotificationPasswordRecoveryManager {
 
         boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().getTenantDomain()));
+        boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, userRecoveryData.getUser().getTenantDomain()));
 
 
-        //TODO need a configuration
-        if (isNotificationInternallyManaged) {
+        if (isNotificationInternallyManaged && isNotificationSendWhenSuccess) {
             try {
                 triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
                         .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
