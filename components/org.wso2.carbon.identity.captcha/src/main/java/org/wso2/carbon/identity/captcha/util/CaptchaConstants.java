@@ -23,6 +23,8 @@ package org.wso2.carbon.identity.captcha.util;
  */
 public class CaptchaConstants {
 
+    private static ThreadLocal enableSecurityMechanism = new ThreadLocal();
+
     public static final String CARBON_HOME = "carbon.home";
 
     public static final String ERROR_PAGE = "/authenticationendpoint/retry.do";
@@ -54,9 +56,19 @@ public class CaptchaConstants {
         public static final String SECURED_DESTINATIONS = ".secured.destinations";
 
         public static final String SECURED_PAGES = ".secured.pages";
+    }
 
-        public static final String ON_FAIL_REDIRECT_URL = ".on.fail.redirect.url";
+    public static void setEnableSecurityMechanism(String mechanism) {
 
-        public static final String ON_FAIL_FORWARD_URL = ".on.fail.forward.url";
+        enableSecurityMechanism.set(mechanism);
+    }
+
+    public static String getEnableSecurityMechanism() {
+
+        return (String) enableSecurityMechanism.get();
+    }
+
+    public static void removeEnabledSecurityMechanism() {
+        enableSecurityMechanism.remove();
     }
 }

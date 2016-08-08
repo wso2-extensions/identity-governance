@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -33,17 +34,21 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -174,8 +179,13 @@ public class CaptchaUtil {
         }
     }
 
-    public static Map<String, String> getClaimValues(String username, String tenantDomain, int tenantId,
+    public static Map<String, String> getClaimValues(User user, int tenantId,
                                                      String[] claimUris) throws CaptchaServerException {
+
+        String username = user.getUserName();
+        if (!StringUtils.isBlank(user.getUserStoreDomain()) && !"PRIMARY".equals(user.getUserStoreDomain())) {
+            username = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        }
 
         RealmService realmService = CaptchaDataHolder.getInstance().getRealmService();
         UserRealm userRealm;
@@ -238,6 +248,92 @@ public class CaptchaUtil {
         }
 
         return true;
+    }
+
+    public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain) throws
+            CaptchaException {
+
+        String CONNECTOR_NAME = "sso.login.recaptcha";
+        String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
+        Property[] connectorConfigs;
+        try {
+            connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService()
+                    .getConfiguration(new String[]{CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
+        } catch (Exception e) {
+            // Can happen due to invalid user/ invalid tenant/ invalid configuration
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load connector configuration.", e);
+            }
+            return false;
+        }
+
+        if (connectorConfigs == null) {
+            return false;
+        }
+
+        String maxAttemptsStr = null;
+        for (Property property : connectorConfigs) {
+            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(property.getName())
+                    && !Boolean.valueOf(property.getValue())) {
+                return false;
+            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(property.getName())) {
+                maxAttemptsStr = property.getValue();
+            }
+        }
+
+        if (StringUtils.isBlank(maxAttemptsStr) || !NumberUtils.isNumber(maxAttemptsStr)) {
+            throw new CaptchaServerException("Invalid reCaptcha configuration.");
+        }
+
+        int maxAttempts = Integer.parseInt(maxAttemptsStr);
+
+        RealmService realmService = CaptchaDataHolder.getInstance().getRealmService();
+        int tenantId;
+        try {
+            tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+        } catch (UserStoreException e) {
+            //Tenant is already validated in the canHandle section.
+            throw new CaptchaServerException("Failed to retrieve tenant id from tenant domain : " + tenantDomain, e);
+        }
+
+        if (MultitenantConstants.INVALID_TENANT_ID == tenantId) {
+            throw new CaptchaServerException("Invalid tenant domain : " + tenantDomain);
+        }
+
+        UserRealm userRealm;
+        try {
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CaptchaServerException("Failed to retrieve user realm from tenant id : " + tenantId, e);
+        }
+
+        UserStoreManager userStoreManager;
+        try {
+            userStoreManager = userRealm.getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw new CaptchaServerException("Failed to retrieve user store manager.", e);
+        }
+
+        Map<String, String> claimValues;
+        try {
+            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
+                    .getTenantAwareUsername(usernameWithDomain),
+                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while retrieving user claims.", e);
+            }
+            // Invalid user
+            return false;
+        }
+
+        int currentAttempts = 0;
+        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
+            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
+        }
+
+        return currentAttempts >= maxAttempts;
     }
 
     private static void setReCaptchaConfigs(Properties properties) {
