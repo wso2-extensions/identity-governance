@@ -53,6 +53,33 @@ import java.util.Map;
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 
+
+    //This is used to pass the arbitrary properties from self user manager to self user handler
+    private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
+            ThreadLocal<>();
+
+    /**
+     * @return
+     */
+    public static org.wso2.carbon.identity.recovery.model.Property[] getArbitraryProperties() {
+        if (arbitraryProperties.get() == null) {
+            return null;
+        }
+        return arbitraryProperties.get();
+    }
+
+    /**
+     * @param properties
+     */
+    public static void setArbitraryProperties(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+        arbitraryProperties.set(properties);
+    }
+
+    public static void clearArbitraryProperties() {
+        arbitraryProperties.remove();
+    }
+
+
     public static String getClaimFromUserStoreManager(User user, String claim)
             throws UserStoreException {
 

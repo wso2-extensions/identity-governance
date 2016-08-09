@@ -121,6 +121,9 @@ public class UserSelfRegistrationManager {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
 
+            //Set arbitrary properties to use in UserSelfRegistrationHandler
+            Utils.setArbitraryProperties(properties);
+
             try {
                 String[] userRoles = null;
                 if (StringUtils.isNotBlank(roles)) {
@@ -157,6 +160,7 @@ public class UserSelfRegistrationManager {
 
 
         } finally {
+            Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
