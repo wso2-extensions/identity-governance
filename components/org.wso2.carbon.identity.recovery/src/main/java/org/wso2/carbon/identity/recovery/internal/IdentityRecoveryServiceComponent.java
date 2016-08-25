@@ -30,7 +30,9 @@ import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
+import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConnectorImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
+import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -86,10 +88,15 @@ public class IdentityRecoveryServiceComponent {
                     new AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new UserSelfRegistrationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new UserEmailVerificationHandler(), null);
             bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
                     new RecoveryConnectorImpl(), null);
             bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
                     new SelfRegistrationConnectorImpl(), null);
+            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
+                    new UserEmailVerificationConnectorImpl(), null);
+
 
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);

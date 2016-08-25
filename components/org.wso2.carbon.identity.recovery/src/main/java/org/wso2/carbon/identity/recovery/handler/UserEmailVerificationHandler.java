@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -48,16 +49,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UserSelfRegistrationHandler extends AbstractEventHandler {
+public class UserEmailVerificationHandler extends AbstractEventHandler {
 
-    private static final Log log = LogFactory.getLog(UserSelfRegistrationHandler.class);
+    private static final Log log = LogFactory.getLog(UserEmailVerificationHandler.class);
 
     public String getName() {
-        return "userSelfRegistration";
+        return "userEmailVerification";
     }
 
     public String getFriendlyName() {
-        return "User Self Registration";
+        return "User Email Verification";
     }
 
     @Override
@@ -72,64 +73,118 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
 
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
+                .USER_CLAIMS);
+
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
+
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
 
         if (!enable) {
-            //Self signup feature is disabled
+            //Email Verification feature is disabled
             return;
         }
 
-        //Check selfSignupRole is in the request. If it is not there, this handler will not do anything. just retrun
-        if (roleList == null) {
-            return;
-        } else {
+        if (roleList != null) {
             List<String> roles = Arrays.asList(roleList);
-            if (!roles.contains(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
+            if (roles.contains(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
+                //This is a self signup request. Will be handled in self signup handler
                 return;
             }
         }
 
         boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+
+
+        if (IdentityEventConstants.Event.PRE_ADD_USER.equals(event.getEventName())) {
+            if (claims == null || claims.isEmpty()) {
+                //Not required to handle in this handler
+                return;
+            } else if (claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) != null) {
+                Claim claim = new Claim();
+                claim.setClaimUri(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+                claim.setValue(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+                Utils.clearEmailVerifyTemporaryClaim();
+                Utils.setEmailVerifyTemporaryClaim(claim);
+                claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+
+            } else if (claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) != null) {
+                Claim claim = new Claim();
+                claim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+                claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
+                Utils.clearEmailVerifyTemporaryClaim();
+                Utils.setEmailVerifyTemporaryClaim(claim);
+                claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+
+            } else {
+                return;
+                //Not required to handle in this handler
+            }
+        }
+
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            try {
 
-                if (isNotificationInternallyManage) {
-                    userRecoveryDataStore.invalidate(user);
-                    String secretKey = UUIDGenerator.generateUUID();
-                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                            .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
-                    userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(),
-                            secretKey, Utils.getArbitraryProperties());
+            Claim claim = Utils.getEmailVerifyTemporaryClaim();
+            if (claim == null) {
+                return;
+                //Not required to handle in this handler
+            } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
+                try {
+                    if (isNotificationInternallyManage) {
+                        userRecoveryDataStore.invalidate(user);
+                        String secretKey = UUIDGenerator.generateUUID();
+                        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+
+                        userRecoveryDataStore.store(recoveryDataDO);
+                        triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString(),
+                                secretKey, Utils.getArbitraryProperties());
+                    }
+                } catch (IdentityRecoveryException e) {
+                    throw new IdentityEventException("Error while sending  notification ", e);
                 }
-            } catch (IdentityRecoveryException e) {
-                throw new IdentityEventException("Error while sending self sign up notification ", e);
-            }
-            if (isAccountLockOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
+
                 //Need to lock user account
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                if (isAccountLockOnCreation) {
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                }
                 try {
                     userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
                             user.getUserStoreDomain()), userClaims, null);
                 } catch (UserStoreException e) {
-                    throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
+                    throw new IdentityEventException("Error while set user claim values :" + user.getUserName(), e);
+                }
+
+            } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
+
+                try {
+                    if (isNotificationInternallyManage) {
+                        userRecoveryDataStore.invalidate(user);
+                        String secretKey = UUIDGenerator.generateUUID();
+                        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                                .ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD);
+
+                        userRecoveryDataStore.store(recoveryDataDO);
+                        triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString(),
+                                secretKey, Utils.getArbitraryProperties());
+                    }
+                } catch (IdentityRecoveryException e) {
+                    throw new IdentityEventException("Error while sending  notification ", e);
                 }
             }
-
         }
     }
 
@@ -140,7 +195,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
     @Override
     public int getPriority(MessageContext messageContext) {
-        return 60;
+        return 65;
     }
 
 

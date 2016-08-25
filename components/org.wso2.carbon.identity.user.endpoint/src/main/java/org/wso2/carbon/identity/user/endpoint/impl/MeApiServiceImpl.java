@@ -45,8 +45,7 @@ public class MeApiServiceImpl extends MeApiService {
             notificationResponseBean = userSelfRegistrationManager.registerUser(
                     RecoveryUtil.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
                     RecoveryUtil.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
-                    RecoveryUtil.getProperties(selfUserRegistrationRequestDTO.getProperties()),
-                    RecoveryUtil.getRoles(selfUserRegistrationRequestDTO.getRoles()));
+                    RecoveryUtil.getProperties(selfUserRegistrationRequestDTO.getProperties()));
 
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {

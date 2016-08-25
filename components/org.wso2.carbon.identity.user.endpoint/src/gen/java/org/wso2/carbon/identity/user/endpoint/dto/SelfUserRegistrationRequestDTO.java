@@ -22,9 +22,6 @@ public class SelfUserRegistrationRequestDTO  {
   private SelfRegistrationUserDTO user = null;
   
   
-  private List<String> roles = new ArrayList<String>();
-  
-  
   private List<PropertyDTO> properties = new ArrayList<PropertyDTO>();
 
   
@@ -37,18 +34,6 @@ public class SelfUserRegistrationRequestDTO  {
   }
   public void setUser(SelfRegistrationUserDTO user) {
     this.user = user;
-  }
-
-  
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("roles")
-  public List<String> getRoles() {
-    return roles;
-  }
-  public void setRoles(List<String> roles) {
-    this.roles = roles;
   }
 
   
@@ -71,7 +56,6 @@ public class SelfUserRegistrationRequestDTO  {
     sb.append("class SelfUserRegistrationRequestDTO {\n");
     
     sb.append("  user: ").append(user).append("\n");
-    sb.append("  roles: ").append(roles).append("\n");
     sb.append("  properties: ").append(properties).append("\n");
     sb.append("}\n");
     return sb.toString();
