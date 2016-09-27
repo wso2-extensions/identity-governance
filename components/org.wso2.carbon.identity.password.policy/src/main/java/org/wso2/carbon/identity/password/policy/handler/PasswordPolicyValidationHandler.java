@@ -18,14 +18,11 @@ package org.wso2.carbon.identity.password.policy.handler;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.NumberUtils;
 import org.apache.commons.lang.StringUtils;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.handler.InitConfig;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -40,10 +37,13 @@ import org.wso2.carbon.identity.mgt.policy.password.DefaultPasswordPatternPolicy
 import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.policy.internal.IdentityPasswordPolicyServiceDataHolder;
 import org.wso2.carbon.identity.password.policy.util.Utils;
-import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 
 public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
 
@@ -133,7 +133,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 getProperty(PasswordPolicyConstants.PW_POLICY_PATTERN_CLASS);
         try {
             if (StringUtils.isNotBlank(pwLengthPolicyCls)) {
-                DefaultPasswordLengthPolicy defaultPasswordLengthPolicy = (DefaultPasswordLengthPolicy)Class.forName(pwLengthPolicyCls).newInstance();
+                DefaultPasswordLengthPolicy defaultPasswordLengthPolicy = (DefaultPasswordLengthPolicy) Class.
+                        forName(pwLengthPolicyCls).newInstance();
                 HashMap pwPolicyLengthParams = new HashMap<String, String>();
                 pwPolicyLengthParams.put("min.length", pwMinLength);
                 pwPolicyLengthParams.put("max.length", pwMaxLength);
@@ -142,12 +143,14 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
             }
 
             if (StringUtils.isNotBlank(pwNamePolicyCls)) {
-                DefaultPasswordNamePolicy defaultPasswordNamePolicy = (DefaultPasswordNamePolicy)Class.forName(pwNamePolicyCls).newInstance();
+                DefaultPasswordNamePolicy defaultPasswordNamePolicy = (DefaultPasswordNamePolicy) Class.
+                        forName(pwNamePolicyCls).newInstance();
                 policyRegistry.addPolicy(defaultPasswordNamePolicy);
             }
 
             if (StringUtils.isNotBlank(pwPatternPolicyCls)) {
-                DefaultPasswordPatternPolicy defaultPasswordPatternPolicy = (DefaultPasswordPatternPolicy)Class.forName(pwPatternPolicyCls).newInstance();
+                DefaultPasswordPatternPolicy defaultPasswordPatternPolicy = (DefaultPasswordPatternPolicy) Class.
+                        forName(pwPatternPolicyCls).newInstance();
                 HashMap pwPolicyPatternParams = new HashMap<String, String>();
                 pwPolicyPatternParams.put("pattern", pwPattern);
                 pwPolicyPatternParams.put("errorMsg", errorMsg);
@@ -155,13 +158,15 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 policyRegistry.addPolicy(defaultPasswordPatternPolicy);
             }
         } catch (Exception e) {
-            throw Utils.handleEventException(PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);
+            throw Utils.handleEventException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);
         }
 
         try {
             policyRegistry.enforcePasswordPolicies(credentials.toString(), userName);
         } catch (PolicyViolationException e) {
-            throw Utils.handleEventException(PasswordPolicyConstants.ErrorMessages.ERROR_CODE_VALIDATING_PASSWORD_POLICY, e.getMessage(), e);
+            throw Utils.handleEventException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_CODE_VALIDATING_PASSWORD_POLICY, e.getMessage(), e);
         }
     }
 
@@ -222,7 +227,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 }

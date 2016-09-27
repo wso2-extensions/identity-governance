@@ -40,7 +40,7 @@ public class IdentityPasswordPolicyServiceComponent {
         try {
 
             if (log.isDebugEnabled()) {
-                log.debug("Identity Management Listener is enabled");
+                log.debug("Password Policy Service component is enabled");
             }
             BundleContext bundleContext = context.getBundleContext();
             IdentityPasswordPolicyServiceDataHolder.getInstance().setBundleContext(bundleContext);
@@ -50,13 +50,13 @@ public class IdentityPasswordPolicyServiceComponent {
 
 
         } catch (Exception e) {
-            log.error("Error while activating identity governance component.", e);
+            log.error("Error while activating password policy component.", e);
         }
     }
 
     protected void deactivate(ComponentContext context) {
         if (log.isDebugEnabled()) {
-            log.debug("Identity Management bundle is de-activated");
+            log.debug("Password Policy Service component is de-activated");
         }
     }
 
