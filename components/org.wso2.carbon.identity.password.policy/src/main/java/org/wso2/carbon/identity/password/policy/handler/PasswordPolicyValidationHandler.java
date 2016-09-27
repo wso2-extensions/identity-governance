@@ -163,63 +163,6 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         } catch (PolicyViolationException e) {
             throw Utils.handleEventException(PasswordPolicyConstants.ErrorMessages.ERROR_CODE_VALIDATING_PASSWORD_POLICY, e.getMessage(), e);
         }
-
-   /*     if (historyCount <= 0) {
-            //The policy should not validate
-            return;
-        }
-
-        hashingAlgorithm = configs.getModuleProperties().getProperty(PasswordHistoryConstants.PW_HISTORY_HASHING_ALGORITHM);
-        String passwordHistoryDataStoreClass = configs.getModuleProperties().getProperty(PasswordHistoryConstants.PW_HISTORY_DATA_STORE);;
-        if (StringUtils.isBlank(passwordHistoryDataStoreClass)) {
-            passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.policy.store.Impl.DefaultPasswordHistoryDataStore";
-        }
-
-        PasswordHistoryDataStore passwordHistoryDataStore;
-        try {
-            Class<?> cls = Class.forName(passwordHistoryDataStoreClass);
-            Class[] parameterTypes = new Class[]{String.class, Integer.TYPE};
-            Constructor<?> cons = cls.getConstructor(parameterTypes);
-            Object[] arguments = {hashingAlgorithm, historyCount};
-            passwordHistoryDataStore = (PasswordHistoryDataStore) cons.newInstance(arguments);
-        } catch (Exception e) {
-            throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_LOADING_HISTORY_DATA_SOURCE, null, e);
-        }
-
-        if (IdentityEventConstants.Event.PRE_UPDATE_CREDENTIAL.equals(event.getEventName()) || IdentityEventConstants.Event
-                .PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
-            Object credential = event.getEventProperties().get(IdentityEventConstants.EventProperty.CREDENTIAL);
-            try {
-                boolean validate = passwordHistoryDataStore.validate(user, credential);
-                if (!validate) {
-                    throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null);
-                }
-            } catch (IdentityPasswordHistoryException e) {
-                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_VALIDATING_HISTORY, null, e);
-            }
-        }
-
-        if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) || IdentityEventConstants.Event
-                .POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) || IdentityEventConstants.Event
-                .POST_ADD_USER.equals(event.getEventName())) {
-            Object credential = event.getEventProperties().get(IdentityEventConstants.EventProperty.CREDENTIAL);
-            ;
-            try {
-                passwordHistoryDataStore.store(user, credential);
-            } catch (IdentityPasswordHistoryException e) {
-                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_STORING_HISTORY, null, e);
-            }
-        }
-
-        if (IdentityEventConstants.Event.POST_DELETE_USER.equals(event.getEventName())) {
-            try {
-                passwordHistoryDataStore.remove(user);
-            } catch (IdentityPasswordHistoryException e) {
-                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_DELETE_HISTORY,
-                        user.getUserName(), e);
-            }
-        }*/
-
     }
 
     @Override
