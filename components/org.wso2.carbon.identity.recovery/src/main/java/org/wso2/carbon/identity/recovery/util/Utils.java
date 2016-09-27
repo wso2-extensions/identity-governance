@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -34,9 +35,9 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
@@ -58,6 +59,9 @@ public class Utils {
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
             ThreadLocal<>();
 
+    //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
+    private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
     /**
      * @return
      */
@@ -77,6 +81,28 @@ public class Utils {
 
     public static void clearArbitraryProperties() {
         arbitraryProperties.remove();
+    }
+
+
+    /**
+     * @return
+     */
+    public static Claim getEmailVerifyTemporaryClaim() {
+        if (emailVerifyTemporaryClaim.get() == null) {
+            return null;
+        }
+        return emailVerifyTemporaryClaim.get();
+    }
+
+    /**
+     * @param claim
+     */
+    public static void setEmailVerifyTemporaryClaim(Claim claim) {
+        emailVerifyTemporaryClaim.set(claim);
+    }
+
+    public static void clearEmailVerifyTemporaryClaim() {
+        emailVerifyTemporaryClaim.remove();
     }
 
 
@@ -263,7 +289,7 @@ public class Utils {
         }
     }
 
-    public static String getSelfSignUpConfigs(String key, String tenantDomain) throws IdentityEventException {
+    public static String getConnectorConfig(String key, String tenantDomain) throws IdentityEventException {
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
@@ -271,7 +297,7 @@ public class Utils {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
-            throw new IdentityEventException("Error while getting self signup configuraitons", e);
+            throw new IdentityEventException("Error while getting connector configurations", e);
         }
     }
 

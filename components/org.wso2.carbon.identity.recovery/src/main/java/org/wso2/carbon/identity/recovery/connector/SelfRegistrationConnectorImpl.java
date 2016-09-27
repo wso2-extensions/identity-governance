@@ -28,8 +28,6 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
                 "Enable Self User Registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation Enabled");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES,
-                "Self Registration Roles");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -43,7 +41,6 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
 
@@ -58,7 +55,6 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, "Internal/everyone");
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, IdentityUtil.getProperty
