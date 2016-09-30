@@ -33,6 +33,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
+//    public static final String NOTIFICATION_TYPE_RESET_PASSWORD = "resetPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
@@ -159,6 +160,10 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE= "Recovery.AdminPasswordReset.Offline";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP= "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK= "Recovery.AdminPasswordReset.RecoveryLink";
     }
 
     public static class SQLQueries {
