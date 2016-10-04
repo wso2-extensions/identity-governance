@@ -37,7 +37,6 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.password.history</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>
