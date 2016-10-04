@@ -124,6 +124,7 @@
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
+        <module>components/org.wso2.carbon.identity.password.policy</module>
 
         <module>service-stubs/identity</module>
 
@@ -135,6 +136,7 @@
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.feature</module>
+        <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
     </modules>
 
     <dependencyManagement>

@@ -584,7 +584,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             if (!errorInfoList.isEmpty()) {
                 IdentityException.ErrorInfo errorInfo = errorInfoList.get(0);
                 //This errr code 22001 means user password history is vialated.
-                if (errorInfo != null && StringUtils.equals(errorInfo.getErrorCode(), "22001")) {
+                if (errorInfo != null && (StringUtils.equals(errorInfo.getErrorCode(), "22001")||
+                        StringUtils.equals(errorInfo.getErrorCode(), "40001")||
+                        StringUtils.equals(errorInfo.getErrorCode(), "40002"))) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }
