@@ -125,6 +125,7 @@
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
         <module>components/org.wso2.carbon.identity.password.policy</module>
+        <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
 
         <module>service-stubs/identity</module>
 
@@ -137,6 +138,7 @@
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.feature</module>
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
+        <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -307,6 +309,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.password.history</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.account.suspension.notification.task</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
