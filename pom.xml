@@ -19,7 +19,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.3-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -124,6 +124,8 @@
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
+        <module>components/org.wso2.carbon.identity.password.policy</module>
+        <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
 
         <module>service-stubs/identity</module>
 
@@ -135,6 +137,8 @@
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.feature</module>
+        <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
+        <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -280,6 +284,11 @@
                 <artifactId>org.wso2.carbon.idp.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!--Carbon Identity Extension Dependencies-->
             <dependency>
@@ -294,7 +303,17 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.password.policy</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.password.history</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.account.suspension.notification.task</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -425,7 +444,7 @@
     <properties>
         <!--Carbon Identity Governance Version-->
         <identity.governance.exp.pkg.version>${project.version}</identity.governance.exp.pkg.version>
-        <identity.governance.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[0.0.0, 1.0.0)</identity.governance.imp.pkg.version.range>
 
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
 
@@ -463,7 +482,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.5.0-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.5.0</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.0.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -480,7 +499,6 @@
         <swagger-jaxrs.version>1.5.2</swagger-jaxrs.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
-
     </properties>
 
 </project>
