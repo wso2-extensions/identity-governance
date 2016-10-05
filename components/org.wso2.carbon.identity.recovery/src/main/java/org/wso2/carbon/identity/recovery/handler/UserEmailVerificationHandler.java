@@ -141,6 +141,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 if (isNotificationInternallyManage) {
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString());
                 }
+                if (isAccountLockOnCreation) {
+                    lockAccount(user, userStoreManager);
+                }
             }
         }
     }
