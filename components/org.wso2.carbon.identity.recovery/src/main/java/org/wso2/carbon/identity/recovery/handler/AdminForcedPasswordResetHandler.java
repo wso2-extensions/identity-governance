@@ -54,9 +54,9 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                     IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK, user.getTenantDomain()));
 
             if (adminPassResetRecoveryLink) {
-                if (Boolean.valueOf(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
+                if (Boolean.valueOf(claims.get(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM))) {
                     initNotification(user, RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET, RecoverySteps.UPDATE_PASSWORD, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET.toString());
-                    claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+                    claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
                     lockAccount(user, userStoreManager);
                 }
             }

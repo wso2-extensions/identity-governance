@@ -47,6 +47,7 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
+    public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
 
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
