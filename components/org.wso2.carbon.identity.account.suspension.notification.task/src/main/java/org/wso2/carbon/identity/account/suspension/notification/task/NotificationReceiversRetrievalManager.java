@@ -24,7 +24,11 @@ import org.wso2.carbon.identity.account.suspension.notification.task.exception.A
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiversRetrievalUtil;
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class NotificationReceiversRetrievalManager {
