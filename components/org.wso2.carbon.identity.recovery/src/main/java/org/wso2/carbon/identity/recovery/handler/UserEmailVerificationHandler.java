@@ -65,22 +65,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     public void handleEvent(Event event) throws IdentityEventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
-        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
-
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        User user = getUser(eventProperties, userStoreManager);
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
-
-        User user = new User();
-        user.setUserName(userName);
-        user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(domainName);
-
 
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
@@ -221,6 +212,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
     }
 
+    public User getUser(Map eventProperties, UserStoreManager userStoreManager){
+
+        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
+        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+
+        User user = new User();
+        user.setUserName(userName);
+        user.setTenantDomain(tenantDomain);
+        user.setUserStoreDomain(domainName);
+        return user;
+    }
 
 
 }
