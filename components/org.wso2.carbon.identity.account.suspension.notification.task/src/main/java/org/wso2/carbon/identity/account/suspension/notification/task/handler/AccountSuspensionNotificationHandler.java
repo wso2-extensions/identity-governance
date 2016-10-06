@@ -85,10 +85,12 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     @Override public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable Account Suspension Notification Feature");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable "
+                + "Account Suspension Notification Feature");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Account Disable Delay");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Account Suspension Notification Delays");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME, "Account Suspension Notification Time");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME,
+                "Account Suspension Notification Time");
 
         return nameMapping;
     }
@@ -148,11 +150,10 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
         if (scheduledExecutorServiceMap.containsKey(tenantDomain)) {
             scheduler = scheduledExecutorServiceMap
-                    .get(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+                    .get(tenantDomain);
             if (!scheduler.isShutdown()) {
                 scheduler.shutdownNow();
-                scheduledExecutorServiceMap
-                        .remove(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+                scheduledExecutorServiceMap.remove(tenantDomain);
             }
         }
 
@@ -179,12 +180,14 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             }
         }
 
-        String delayForSuspensionProperty = (String) schedulerProperties.get(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
+        String delayForSuspensionProperty = (String) schedulerProperties.get(
+                NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         if (delayForSuspensionProperty != null) {
             delayForSuspension = Long.parseLong(delayForSuspensionProperty.trim());
         }
 
-        String notificationDelaysProperty = (String) schedulerProperties.get(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
+        String notificationDelaysProperty = (String)
+                schedulerProperties.get(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
         if (notificationDelaysProperty != null) {
             String[] parts = notificationDelaysProperty.split(",");
             notificationDelays = new long[parts.length];

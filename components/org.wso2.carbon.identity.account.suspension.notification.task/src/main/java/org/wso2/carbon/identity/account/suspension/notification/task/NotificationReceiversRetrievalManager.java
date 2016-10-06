@@ -39,7 +39,9 @@ public class NotificationReceiversRetrievalManager {
             AccountValidatorThreadProperties accountValidatorThreadProperties)
             throws AccountSuspensionNotificationException {
 
-        Set<String> userStoreDomains = NotificationReceiversRetrievalUtil.getSuspensionNotificationEnabledUserStores();
+        Set<String> userStoreDomains = NotificationReceiversRetrievalUtil.getSuspensionNotificationEnabledUserStores
+                (accountValidatorThreadProperties.getTenantDomain(), accountValidatorThreadProperties.getTenantId());
+
         List<NotificationReceiver> receivers = new ArrayList<>();
 
         for (String userStoreDomain : userStoreDomains) {
@@ -50,7 +52,7 @@ public class NotificationReceiversRetrievalManager {
                         .getTimeInMillis() - (TimeUnit.DAYS.toMillis(delay + 1));
                 long lookupMax = lookupMin + TimeUnit.DAYS.toMillis(1);
                 receivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
-                        accountValidatorThreadProperties.getDelayForSuspension());
+                        accountValidatorThreadProperties);
             }
         }
 

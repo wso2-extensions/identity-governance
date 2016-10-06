@@ -20,6 +20,7 @@ import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,9 @@ public class NotificationTaskDataHolder {
     private IdentityEventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private BundleContext bundleContext;
-    private Map<String, NotificationReceiversRetrievalFactory> notificationReceiversRetrievalFactories = new HashMap<>();
+    private Map<String, NotificationReceiversRetrievalFactory> notificationReceiversRetrievalFactories =
+            new HashMap<>();
+    private RealmService realmService;
 
     private NotificationTaskDataHolder() {
 
@@ -67,5 +70,13 @@ public class NotificationTaskDataHolder {
 
     public Map<String, NotificationReceiversRetrievalFactory> getNotificationReceiversRetrievalFactories() {
         return notificationReceiversRetrievalFactories;
+    }
+
+    public void setRealmService(RealmService realmService) {
+        this.realmService = realmService;
+    }
+
+    public RealmService getRealmService() {
+        return realmService;
     }
 }
