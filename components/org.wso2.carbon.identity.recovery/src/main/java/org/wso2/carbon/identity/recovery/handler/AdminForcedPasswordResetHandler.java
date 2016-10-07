@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -68,6 +69,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
                 String OTP = generateOTPValue();
                 String notificationType = "";
+                Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
                 if (adminPasswordResetOffline) {
                     setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
                 }
@@ -76,9 +78,10 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 }
                 if (adminPasswordResetRecoveryLink) {
                     OTP = UUIDGenerator.generateUUID();
+                    recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
                     notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET.toString();
                 }
-                if(adminPasswordResetOTP | adminPasswordResetRecoveryLink){
+                if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
                     try {
                         triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
                     } catch (IdentityRecoveryException e) {
@@ -88,11 +91,33 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
                     claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
                 }
-                setRecoveryData(user, RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET, RecoverySteps.UPDATE_PASSWORD, OTP);
+                setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
                 lockAccount(user, userStoreManager);
             }
         }
 
+        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {
+            if (log.isDebugEnabled()) {
+                log.debug("PreAuthenticate");
+            }
+            UserRecoveryData userRecoveryData = getRecoveryData(user);
+            if (userRecoveryData != null) {
+                String errorCode = null;
+                String errorMsg = "User : " + user.getUserName() + " has given correct OTP";
+                if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())){
+                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
+                } else if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())){
+                    String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+                    if(userRecoveryData.getSecret().equals(credential)){
+                        errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
+                    }
+                }
+
+                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                throw new IdentityEventException(errorMsg);
+            }
+        }
     }
 
     @Override

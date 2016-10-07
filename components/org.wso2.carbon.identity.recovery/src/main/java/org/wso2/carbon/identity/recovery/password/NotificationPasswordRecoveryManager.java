@@ -161,7 +161,7 @@ public class NotificationPasswordRecoveryManager {
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
-            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET.equals(userRecoveryData.getRecoveryScenario())) {
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
                 HashMap<String, String> userClaims = new HashMap<>();
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
