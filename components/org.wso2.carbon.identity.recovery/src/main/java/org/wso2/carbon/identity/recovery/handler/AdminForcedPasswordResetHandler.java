@@ -20,16 +20,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
+import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.Map;
+import java.util.Random;
 
 public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandler {
 
@@ -37,33 +44,55 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
+
+        Map<String, Object> eventProperties = event.getEventProperties();
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        User user = getUser(eventProperties, userStoreManager);
+
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(event.getEventName())) {
-            Map<String, Object> eventProperties = event.getEventProperties();
-            UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
-            User user = getUser(eventProperties, userStoreManager);
 
             Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                     .USER_CLAIMS);
 
-            boolean adminPassResetOffline = Boolean.parseBoolean(Utils.getConnectorConfig(
+            boolean adminPasswordResetOffline = Boolean.parseBoolean(Utils.getConnectorConfig(
                     IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE, user.getTenantDomain()));
-            boolean adminPassResetOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
-                                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP, user.getTenantDomain()));
+            boolean adminPasswordResetOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP, user.getTenantDomain()));
 
-            boolean adminPassResetRecoveryLink = Boolean.parseBoolean(Utils.getConnectorConfig(
+            boolean adminPasswordResetRecoveryLink = Boolean.parseBoolean(Utils.getConnectorConfig(
                     IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK, user.getTenantDomain()));
 
-            if (adminPassResetRecoveryLink) {
-                if (Boolean.valueOf(claims.get(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM))) {
-                    initNotification(user, RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET, RecoverySteps.UPDATE_PASSWORD, IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET.toString());
-                    claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
-                    if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
-                        claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
-                    }
-                    lockAccount(user, userStoreManager);
+            boolean isAdminPasswordReset = adminPasswordResetOffline | adminPasswordResetOTP | adminPasswordResetRecoveryLink;
+
+            if (Boolean.valueOf(claims.get(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM)) && isAdminPasswordReset) {
+                claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
+                String OTP = generateOTPValue();
+                String notificationType = "";
+                if (adminPasswordResetOffline) {
+                    setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
                 }
+                if (adminPasswordResetOTP) {
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
+                }
+                if (adminPasswordResetRecoveryLink) {
+                    OTP = UUIDGenerator.generateUUID();
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET.toString();
+                }
+                if(adminPasswordResetOTP | adminPasswordResetRecoveryLink){
+                    try {
+                        triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
+                    } catch (IdentityRecoveryException e) {
+                        throw new IdentityEventException("Error while sending  notification ", e);
+                    }
+                }
+                if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
+                    claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
+                }
+                setRecoveryData(user, RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET, RecoverySteps.UPDATE_PASSWORD, OTP);
+                lockAccount(user, userStoreManager);
             }
         }
+
     }
 
     @Override
@@ -78,7 +107,17 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
     @Override
     public int getPriority(MessageContext messageContext) {
-        return 70;
+        return 27;
+    }
+
+    private String generateOTPValue() {
+        char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        Random rnd = new Random();
+        StringBuilder sb = new StringBuilder("");
+        for (int i = 0; i < 6; i++) {
+            sb.append(chars[rnd.nextInt(chars.length)]);
+        }
+        return sb.toString();
     }
 
 

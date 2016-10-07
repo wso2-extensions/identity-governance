@@ -154,13 +154,18 @@ public class NotificationPasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
 
-
         int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(), userRecoveryData.getUser().getUserStoreDomain());
         try {
+
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET.equals(userRecoveryData.getRecoveryScenario())) {
+                HashMap<String, String> userClaims = new HashMap<>();
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+                userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+            }
         } catch (UserStoreException e) {
             checkPasswordHistoryViolate(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
