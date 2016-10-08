@@ -75,7 +75,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
         String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
+        handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
 
