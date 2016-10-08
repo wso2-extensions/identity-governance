@@ -19,11 +19,12 @@ package org.wso2.carbon.identity.account.suspension.notification.task;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.account.suspension.notification.task.bean.AccountValidatorThreadProperties;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
+import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiversRetrievalUtil;
 
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
@@ -35,22 +36,29 @@ public class NotificationReceiversRetrievalManager {
 
     private static final Log log = LogFactory.getLog(NotificationReceiversRetrievalManager.class);
 
-    public static List<NotificationReceiver> getReceivers(long delay,
-            AccountValidatorThreadProperties accountValidatorThreadProperties)
+    public static List<NotificationReceiver> getReceivers(long delay, String tenantDomain, long delayForSuspension)
             throws AccountSuspensionNotificationException {
 
-        Set<String> userStoreDomains = NotificationReceiversRetrievalUtil.getSuspensionNotificationEnabledUserStores();
+        Set<String> userStoreDomains = NotificationReceiversRetrievalUtil.
+                getSuspensionNotificationEnabledUserStores(tenantDomain);
+
         List<NotificationReceiver> receivers = new ArrayList<>();
 
         for (String userStoreDomain : userStoreDomains) {
             NotificationReceiversRetrieval notificationReceiversRetrieval = NotificationReceiversRetrievalUtil
-                    .getNotificationReceiversRetrievalForDomain(userStoreDomain);
+                    .getNotificationReceiversRetrievalForDomain(userStoreDomain, tenantDomain);
             if (notificationReceiversRetrieval != null) {
-                long lookupMin = getCurrentExecutionTime(accountValidatorThreadProperties.getNotificationTriggerTime())
-                        .getTimeInMillis() - (TimeUnit.DAYS.toMillis(delay + 1));
+                long lookupMin = 0;
+                try {
+                    lookupMin = getCurrentExecutionTime(NotificationTaskDataHolder.getInstance().
+                            getNotificationTriggerTime()).getTimeInMillis() - TimeUnit.DAYS.toMillis(delay+1);
+                } catch (ParseException e) {
+                    throw new AccountSuspensionNotificationException("Error occurred while reading notification "
+                            + "trigger time", e);
+                }
                 long lookupMax = lookupMin + TimeUnit.DAYS.toMillis(1);
                 receivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
-                        accountValidatorThreadProperties.getDelayForSuspension());
+                        delayForSuspension, tenantDomain);
             }
         }
 

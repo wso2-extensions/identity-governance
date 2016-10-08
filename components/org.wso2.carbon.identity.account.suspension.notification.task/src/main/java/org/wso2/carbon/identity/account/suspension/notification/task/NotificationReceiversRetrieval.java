@@ -25,8 +25,8 @@ import java.util.List;
 
 public interface NotificationReceiversRetrieval {
 
-    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax, long delayForSuspension) throws
-            AccountSuspensionNotificationException;
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException;
 
     void init(RealmConfiguration realmConfiguration);
 
