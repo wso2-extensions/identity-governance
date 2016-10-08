@@ -65,22 +65,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     public void handleEvent(Event event) throws IdentityEventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
-        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
-
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        User user = getUser(eventProperties, userStoreManager);
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
-
-        User user = new User();
-        user.setUserName(userName);
-        user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(domainName);
-
 
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
@@ -133,56 +124,22 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
-            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-
-
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
             if (claim == null) {
                 return;
                 //Not required to handle in this handler
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
-                try {
-                    if (isNotificationInternallyManage) {
-                        userRecoveryDataStore.invalidate(user);
-                        String secretKey = UUIDGenerator.generateUUID();
-                        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
-
-                        userRecoveryDataStore.store(recoveryDataDO);
-                        triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString(),
-                                secretKey, Utils.getArbitraryProperties());
-                    }
-                } catch (IdentityRecoveryException e) {
-                    throw new IdentityEventException("Error while sending  notification ", e);
+                if (isNotificationInternallyManage) {
+                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString());
                 }
-                HashMap<String, String> userClaims = new HashMap<>();
 
                 //Need to lock user account
                 if (isAccountLockOnCreation) {
-                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                    lockAccount(user, userStoreManager);
                 }
-                try {
-                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()), userClaims, null);
-                } catch (UserStoreException e) {
-                    throw new IdentityEventException("Error while set user claim values :" + user.getUserName(), e);
-                }
-
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
-
-                try {
-                    if (isNotificationInternallyManage) {
-                        userRecoveryDataStore.invalidate(user);
-                        String secretKey = UUIDGenerator.generateUUID();
-                        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                                .ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD);
-
-                        userRecoveryDataStore.store(recoveryDataDO);
-                        triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString(),
-                                secretKey, Utils.getArbitraryProperties());
-                    }
-                } catch (IdentityRecoveryException e) {
-                    throw new IdentityEventException("Error while sending  notification ", e);
+                if (isNotificationInternallyManage) {
+                    initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString());
                 }
             }
         }
@@ -198,8 +155,65 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         return 65;
     }
 
+    public void lockAccount(User user, UserStoreManager userStoreManager) throws IdentityEventException {
+        setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString(), userStoreManager, user);
+    }
 
-    private void triggerNotification(User user, String type, String code, Property[] props) throws
+    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType) throws IdentityEventException {
+            String secretKey = UUIDGenerator.generateUUID();
+            initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
+    }
+
+    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep,String notificationType, String secretKey) throws IdentityEventException {
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        try {
+            userRecoveryDataStore.invalidate(user);
+            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
+
+            userRecoveryDataStore.store(recoveryDataDO);
+            triggerNotification(user, notificationType, secretKey, Utils.getArbitraryProperties());
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while sending  notification ", e);
+        }
+    }
+
+    protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey) throws IdentityEventException {
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        try {
+            userRecoveryDataStore.invalidate(user);
+            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
+
+            userRecoveryDataStore.store(recoveryDataDO);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while setting recovery data for user ", e);
+        }
+    }
+
+    protected UserRecoveryData getRecoveryData(User user) throws IdentityEventException {
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData recoveryData;
+        try {
+            recoveryData = userRecoveryDataStore.load(user);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while loading recovery data for user ", e);
+        }
+        return recoveryData;
+    }
+
+    protected void setUserClaim(String claimName, String claimValue, UserStoreManager userStoreManager, User user) throws IdentityEventException {
+        HashMap<String, String> userClaims = new HashMap<>();
+        userClaims.put(claimName, claimValue);
+        try {
+            userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
+                    user.getUserStoreDomain()), userClaims, null);
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error while setting user claim value :" + user.getUserName(), e);
+        }
+
+    }
+    protected void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
@@ -226,5 +240,19 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     .getUserName(), e);
         }
     }
+
+    protected User getUser(Map eventProperties, UserStoreManager userStoreManager){
+
+        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
+        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+
+        User user = new User();
+        user.setUserName(userName);
+        user.setTenantDomain(tenantDomain);
+        user.setUserStoreDomain(domainName);
+        return user;
+    }
+
 
 }
