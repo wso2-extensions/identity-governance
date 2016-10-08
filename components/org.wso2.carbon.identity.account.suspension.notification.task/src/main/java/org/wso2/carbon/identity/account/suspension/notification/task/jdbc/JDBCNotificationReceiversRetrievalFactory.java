@@ -24,16 +24,19 @@ import org.wso2.carbon.user.api.RealmConfiguration;
 
 public class JDBCNotificationReceiversRetrievalFactory implements NotificationReceiversRetrievalFactory {
 
-    public static final String JDBC = "org.wso2.carbon.identity.account.suspension.notification.task.jdbc.JDBCNotificationReceiversRetrieval";
+    public static final String JDBC = "org.wso2.carbon.identity.account.suspension.notification.task.jdbc."
+            + "JDBCNotificationReceiversRetrieval";
 
-    @Override public NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)
+    @Override
+    public NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)
             throws AccountSuspensionNotificationException {
         JDBCNotificationReceiversRetrieval jdbcNotificationReceiversRetrieval = new JDBCNotificationReceiversRetrieval();
         jdbcNotificationReceiversRetrieval.init(realmConfiguration);
         return jdbcNotificationReceiversRetrieval;
     }
 
-    @Override public String getType() {
+    @Override
+    public String getType() {
         return JDBC;
     }
 }

@@ -19,8 +19,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
-import org.wso2.carbon.identity.account.suspension.notification.task.bean.AccountValidatorThreadProperties;
-import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
@@ -48,7 +46,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     private static final Log log = LogFactory.getLog(AccountSuspensionNotificationHandler.class);
     private static final String UPDATE_CONFIGURATION = "UPDATE_CONFIGURATION";
 
-    @Override public void handleEvent(Event event) throws IdentityEventException {
+    @Override
+    public void handleEvent(Event event) throws IdentityEventException {
 
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             Map<String, Object> eventProperties = event.getEventProperties();
@@ -64,39 +63,37 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
             }
-        } else if (UPDATE_CONFIGURATION.equals(event.getEventName())) {
-            try {
-                updateScheduler(event.getEventProperties());
-            } catch (AccountSuspensionNotificationException e) {
-                log.error("Error occurred while updating Notification Scheduler: ", e);
-            }
-
         }
     }
 
-    @Override public String getName() {
+    @Override
+    public String getName() {
         return "suspension.notification";
     }
 
-    @Override public String getFriendlyName() {
+    @Override
+    public String getFriendlyName() {
         return "Account Suspension Notification";
     }
 
-    @Override public Map<String, String> getPropertyNameMapping() {
+    @Override
+    public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable "
                 + "Account Suspension Notification Feature");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Account Disable Delay");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Account Suspension Notification Delays");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME,
-                "Account Suspension Notification Time");
-
         return nameMapping;
     }
 
-    @Override public void init(InitConfig configuration) throws IdentityRuntimeException {
+    @Override
+    public void init(InitConfig configuration) throws IdentityRuntimeException {
+
         super.init(configuration);
+        NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(configs.getModuleProperties().
+                getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
+        startScheduler();
         NotificationTaskDataHolder.getInstance().getBundleContext()
                 .registerService(IdentityGovernanceConnector.class.getName(), this, null);
     }
@@ -107,11 +104,11 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
-        properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME);
         return properties.toArray(new String[properties.size()]);
     }
 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+
         Map<String, String> defaultProperties = new HashMap<>();
 
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED,
@@ -124,75 +121,30 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS,
                 configs.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS));
 
-        defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME,
-                configs.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
-
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
     }
 
-    @Override public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+    @Override
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
             throws IdentityGovernanceException {
         return null;
     }
 
-    private void updateScheduler(Map<String, Object> schedulerProperties) throws
-            AccountSuspensionNotificationException {
-
-        boolean isNotificatonEnabled = Boolean
-                .parseBoolean((String) schedulerProperties.get(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED));
-        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-
-        Map<String, ScheduledExecutorService> scheduledExecutorServiceMap = new HashMap<>();
-        ScheduledExecutorService scheduler = null;
-
-        if (scheduledExecutorServiceMap.containsKey(tenantDomain)) {
-            scheduler = scheduledExecutorServiceMap
-                    .get(tenantDomain);
-            if (!scheduler.isShutdown()) {
-                scheduler.shutdownNow();
-                scheduledExecutorServiceMap.remove(tenantDomain);
-            }
-        }
-
-        if (!isNotificatonEnabled) {
-            return;
-        }
-
-        scheduler = Executors.newScheduledThreadPool(5);
-        scheduledExecutorServiceMap.put(tenantDomain, scheduler);
+    private void startScheduler() {
 
         Date notificationTriggerTime = null;
-        long delayForSuspension = 0;
-        long[] notificationDelays = null;
+        String notificationTriggerTimeProperty = configs.getModuleProperties().getProperty(NotificationConstants.
+                SUSPENSION_NOTIFICATION_TRIGGER_TIME);
 
         DateFormat dateFormat = new SimpleDateFormat(NotificationConstants.TRIGGER_TIME_FORMAT);
-        String notificationTriggerTimeProperty = (String) schedulerProperties
-                .get(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME);
+
         if (notificationTriggerTimeProperty != null) {
             try {
                 notificationTriggerTime = dateFormat.parse(notificationTriggerTimeProperty);
             } catch (ParseException e) {
-                throw new AccountSuspensionNotificationException("Invalid Date format for Notification trigger time",
-                        e);
-            }
-        }
-
-        String delayForSuspensionProperty = (String) schedulerProperties.get(
-                NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
-        if (delayForSuspensionProperty != null) {
-            delayForSuspension = Long.parseLong(delayForSuspensionProperty.trim());
-        }
-
-        String notificationDelaysProperty = (String)
-                schedulerProperties.get(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
-        if (notificationDelaysProperty != null) {
-            String[] parts = notificationDelaysProperty.split(",");
-            notificationDelays = new long[parts.length];
-            for (int i = 0; i < parts.length; i++) {
-                notificationDelays[i] = Long.parseLong(parts[i]);
+                log.error("Invalid Date format for Notification trigger time", e);
             }
         }
 
@@ -214,18 +166,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         if (delay < 0) {
             delay += schedulerDelayInSeconds;
         }
-        AccountValidatorThreadProperties accountValidatorThreadProperties = new AccountValidatorThreadProperties();
 
-        accountValidatorThreadProperties.setTenantDomain(tenantDomain);
-        accountValidatorThreadProperties.setTenantId(tenantId);
-
-        accountValidatorThreadProperties.setDelayForSuspension(delayForSuspension);
-        accountValidatorThreadProperties.setNotificationDelays(notificationDelays);
-        accountValidatorThreadProperties.setNotificationTriggerTime(notificationTriggerTime);
-
-        // Schedule the task to occur at fixed rate
-        scheduler.scheduleAtFixedRate(new AccountValidatorThread(accountValidatorThreadProperties), delay,
-                schedulerDelayInSeconds, TimeUnit.SECONDS);
-
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+        scheduler.scheduleAtFixedRate(new AccountValidatorThread(), delay, schedulerDelayInSeconds, TimeUnit.SECONDS);
     }
 }

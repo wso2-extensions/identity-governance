@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.account.suspension.notification.task.jdbc;
 
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
-import org.wso2.carbon.identity.account.suspension.notification.task.bean.AccountValidatorThreadProperties;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -27,14 +26,14 @@ import java.util.List;
 
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
-    @Override public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
-            AccountValidatorThreadProperties accountValidatorThreadProperties) throws
-            AccountSuspensionNotificationException {
-        //do to
+    @Override
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
         return null;
     }
 
-    @Override public void init(RealmConfiguration realmConfiguration) {
+    @Override
+    public void init(RealmConfiguration realmConfiguration) {
 
     }
 }

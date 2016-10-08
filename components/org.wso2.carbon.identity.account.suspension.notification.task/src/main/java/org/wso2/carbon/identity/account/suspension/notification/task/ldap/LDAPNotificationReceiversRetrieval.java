@@ -21,10 +21,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
-import org.wso2.carbon.identity.account.suspension.notification.task.bean.AccountValidatorThreadProperties;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -33,6 +33,7 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
 import org.wso2.carbon.user.core.ldap.LDAPConstants;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -49,19 +50,19 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
 
     private static final Log log = LogFactory.getLog(LDAPNotificationReceiversRetrieval.class);
     private RealmConfiguration realmConfiguration = null;
-    private final static String USERNAME_CLAIM = "http://wso2.org/claims/username ";
+    private final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
     private final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
     private final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
 
-    @Override public void init(RealmConfiguration realmConfiguration) {
+    @Override
+    public void init(RealmConfiguration realmConfiguration) {
         this.realmConfiguration = realmConfiguration;
     }
 
-    @Override public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
-            AccountValidatorThreadProperties accountValidatorThreadProperties) throws
-            AccountSuspensionNotificationException {
+    @Override
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
 
-        long delayForSuspension = accountValidatorThreadProperties.getDelayForSuspension();
         List<NotificationReceiver> users = new ArrayList<NotificationReceiver>();
 
         if (realmConfiguration != null) {
@@ -69,8 +70,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
             RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
             try {
-                ClaimManager claimManager = (ClaimManager)realmService.
-                        getTenantUserRealm(accountValidatorThreadProperties.getTenantId()).getClaimManager();
+                ClaimManager claimManager = (ClaimManager)realmService.getTenantUserRealm(IdentityTenantUtil.
+                        getTenantId(tenantDomain)).getClaimManager();
                 String userStoreDomain = realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.
                         PROPERTY_DOMAIN_NAME);
                 if (StringUtils.isBlank(userStoreDomain)) {
@@ -123,7 +124,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 throw new AccountSuspensionNotificationException("Failed to load LDAP connection context.", e);
             } catch (org.wso2.carbon.user.api.UserStoreException e) {
                 throw new AccountSuspensionNotificationException("Error occurred while getting tenant user realm for "
-                        + "tenant:" + accountValidatorThreadProperties.getTenantId(), e);
+                        + "tenant:" + tenantDomain, e);
             }
         }
         return users;
