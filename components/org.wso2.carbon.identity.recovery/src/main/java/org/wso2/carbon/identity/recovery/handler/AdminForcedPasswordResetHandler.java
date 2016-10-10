@@ -103,13 +103,15 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             UserRecoveryData userRecoveryData = getRecoveryData(user);
             if (userRecoveryData != null) {
                 String errorCode = null;
-                String errorMsg = "User : " + user.getUserName() + " has given correct OTP";
+                String errorMsg = "User needs to reset the password";
                 if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())){
                     errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
+                    errorMsg = "User : " + user.getUserName() + " needs to reset the password using the given link in email";
                 } else if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())){
                     String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
                     if(userRecoveryData.getSecret().equals(credential)){
                         errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
+                        errorMsg = "User : " + user.getUserName() + " has given correct OTP";
                     }
                 }
 

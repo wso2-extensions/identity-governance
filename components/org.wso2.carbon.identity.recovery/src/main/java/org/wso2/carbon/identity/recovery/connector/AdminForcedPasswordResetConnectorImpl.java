@@ -24,12 +24,12 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                "Admin Forced Password Reset Offline");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "Admin Forced Password Reset via OTP");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                "Admin Forced Password Reset via Recovery Email");
+                "Enable Password Reset via Recovery Email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+                "Enable Password Reset via OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
+                "Enable Password Reset Offline");
         return nameMapping;
     }
 
@@ -37,9 +37,9 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
 
         return properties.toArray(new String[properties.size()]);
     }
@@ -48,12 +48,12 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE));
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -64,6 +64,5 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
     public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
         return null;
     }
-
 
 }
