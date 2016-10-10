@@ -24,8 +24,8 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.context.SessionContext;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -67,18 +67,20 @@ public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler im
         if ("BasicAuthenticator".equals(authenticationContext.getCurrentAuthenticator()) && map != null && map.get
                 (FrameworkConstants.AnalyticsAttributes.USER) != null) {
 
-            AuthenticatedUser failedUser = (AuthenticatedUser) map.get(FrameworkConstants.AnalyticsAttributes.USER);
-            String username = failedUser.getUserName();
-            if (!StringUtils.isBlank(failedUser.getUserStoreDomain()) &&
-                    !IdentityUtil.getPrimaryDomainName().equals(failedUser.getUserStoreDomain())) {
-                username = UserCoreUtil.addDomainToName(username, failedUser.getUserStoreDomain());
-            }
-            try {
-                if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(username, failedUser.getTenantDomain())) {
-                    CaptchaConstants.setEnableSecurityMechanism("enable");
+            if (map.get(FrameworkConstants.AnalyticsAttributes.USER) instanceof User) {
+                User failedUser = (User) map.get(FrameworkConstants.AnalyticsAttributes.USER);
+                String username = failedUser.getUserName();
+                if (!StringUtils.isBlank(failedUser.getUserStoreDomain()) &&
+                        !IdentityUtil.getPrimaryDomainName().equals(failedUser.getUserStoreDomain())) {
+                    username = UserCoreUtil.addDomainToName(username, failedUser.getUserStoreDomain());
                 }
-            } catch (CaptchaException e) {
-                log.error("Failed to evaluate max failed attempts of the user." , e);
+                try {
+                    if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(username, failedUser.getTenantDomain())) {
+                        CaptchaConstants.setEnableSecurityMechanism("enable");
+                    }
+                } catch (CaptchaException e) {
+                    log.error("Failed to evaluate max failed attempts of the user.", e);
+                }
             }
         }
     }
@@ -93,7 +95,6 @@ public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler im
     public void publishAuthenticationFailure(HttpServletRequest httpServletRequest,
                                              AuthenticationContext authenticationContext, Map<String, Object> map) {
 
-        log.info("test");
     }
 
     @Override
