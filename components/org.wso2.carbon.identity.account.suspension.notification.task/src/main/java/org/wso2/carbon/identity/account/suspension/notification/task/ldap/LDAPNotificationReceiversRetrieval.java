@@ -17,15 +17,23 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.ldap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
+import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
 import org.wso2.carbon.user.core.ldap.LDAPConstants;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -42,20 +50,38 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
 
     private static final Log log = LogFactory.getLog(LDAPNotificationReceiversRetrieval.class);
     private RealmConfiguration realmConfiguration = null;
+    private final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
+    private final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
+    private final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
 
-    @Override public void init(RealmConfiguration realmConfiguration) {
+    @Override
+    public void init(RealmConfiguration realmConfiguration) {
         this.realmConfiguration = realmConfiguration;
     }
 
-    @Override public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax, long delayForSuspension)
-            throws AccountSuspensionNotificationException {
+    @Override
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
 
         List<NotificationReceiver> users = new ArrayList<NotificationReceiver>();
 
         if (realmConfiguration != null) {
             String ldapSearchBase = realmConfiguration.getUserStoreProperty(LDAPConstants.USER_SEARCH_BASE);
+            RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
             try {
+                ClaimManager claimManager = (ClaimManager)realmService.getTenantUserRealm(IdentityTenantUtil.
+                        getTenantId(tenantDomain)).getClaimManager();
+                String userStoreDomain = realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.
+                        PROPERTY_DOMAIN_NAME);
+                if (StringUtils.isBlank(userStoreDomain)) {
+                    userStoreDomain = IdentityUtil.getPrimaryDomainName();
+                }
+
+                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, USERNAME_CLAIM);
+                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, FIRST_NAME_CLAIM);
+                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, EMAIL_CLAIM);
+
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);
                 }
@@ -79,9 +105,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     SearchResult result = results.nextElement();
 
                     NotificationReceiver receiver = new NotificationReceiver();
-                    receiver.setEmail((String) result.getAttributes().get("mail").get());
-                    receiver.setUsername((String) result.getAttributes().get("uid").get());
-                    receiver.setFirstName((String) result.getAttributes().get("givenname").get());
+                    receiver.setEmail((String) result.getAttributes().get(emailMapAttribute).get());
+                    receiver.setUsername((String) result.getAttributes().get(usernameMapAttribute).get());
+                    receiver.setFirstName((String) result.getAttributes().get(firstNameMapAttribute).get());
 
                     long lastLoginTime = Long.parseLong(result.getAttributes().get("carLicense").get().toString());
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
@@ -93,9 +119,12 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     users.add(receiver);
                 }
             } catch (NamingException e) {
-                log.error("Failed to filter users from LDAP user store.", e);
+                throw new AccountSuspensionNotificationException("Failed to filter users from LDAP user store.", e);
             } catch (UserStoreException e) {
-                log.error("Failed to load LDAP connection context.", e);
+                throw new AccountSuspensionNotificationException("Failed to load LDAP connection context.", e);
+            } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                throw new AccountSuspensionNotificationException("Error occurred while getting tenant user realm for "
+                        + "tenant:" + tenantDomain, e);
             }
         }
         return users;

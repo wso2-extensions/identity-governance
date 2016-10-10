@@ -26,13 +26,14 @@ import java.util.List;
 
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
-    @Override public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax, long delayForSuspension)
-            throws AccountSuspensionNotificationException {
-        //do to
+    @Override
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
         return null;
     }
 
-    @Override public void init(RealmConfiguration realmConfiguration) {
+    @Override
+    public void init(RealmConfiguration realmConfiguration) {
 
     }
 }
