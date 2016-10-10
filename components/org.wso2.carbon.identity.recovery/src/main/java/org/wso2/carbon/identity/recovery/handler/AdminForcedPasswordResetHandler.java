@@ -31,7 +31,6 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
-import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -98,18 +97,18 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
         if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {
             if (log.isDebugEnabled()) {
-                log.debug("PreAuthenticate");
+                log.debug("PreAuthenticate - AdminForcedPasswordResetHandler");
             }
             UserRecoveryData userRecoveryData = getRecoveryData(user);
             if (userRecoveryData != null) {
                 String errorCode = null;
                 String errorMsg = "User needs to reset the password";
-                if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())){
+                if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())) {
                     errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
                     errorMsg = "User : " + user.getUserName() + " needs to reset the password using the given link in email";
-                } else if(RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())){
+                } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
                     String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                    if(userRecoveryData.getSecret().equals(credential)){
+                    if (userRecoveryData.getSecret().equals(credential)) {
                         errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
                         errorMsg = "User : " + user.getUserName() + " has given correct OTP";
                     }
