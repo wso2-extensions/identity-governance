@@ -45,79 +45,141 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
 
+        String eventName = event.getEventName();
+        if (log.isDebugEnabled()) {
+            log.debug("Handling event : " + eventName);//
+        }
         Map<String, Object> eventProperties = event.getEventProperties();
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
+                .EventProperty.USER_STORE_MANAGER);
         User user = getUser(eventProperties, userStoreManager);
 
-        if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(event.getEventName())) {
-
-            Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
-                    .USER_CLAIMS);
-
-            boolean adminPasswordResetOffline = Boolean.parseBoolean(Utils.getConnectorConfig(
-                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE, user.getTenantDomain()));
-            boolean adminPasswordResetOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
-                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP, user.getTenantDomain()));
-
-            boolean adminPasswordResetRecoveryLink = Boolean.parseBoolean(Utils.getConnectorConfig(
-                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK, user.getTenantDomain()));
-
-            boolean isAdminPasswordReset = adminPasswordResetOffline | adminPasswordResetOTP | adminPasswordResetRecoveryLink;
-
-            if (Boolean.valueOf(claims.get(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM)) && isAdminPasswordReset) {
-                claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
-                String OTP = generateOTPValue();
-                String notificationType = "";
-                Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
-                if (adminPasswordResetOffline) {
-                    setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
-                }
-                if (adminPasswordResetOTP) {
-                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
-                }
-                if (adminPasswordResetRecoveryLink) {
-                    OTP = UUIDGenerator.generateUUID();
-                    recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
-                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET.toString();
-                }
-                if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
-                    try {
-                        triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
-                    } catch (IdentityRecoveryException e) {
-                        throw new IdentityEventException("Error while sending  notification ", e);
-                    }
-                }
-                if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
-                    claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
-                }
-                setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
-                lockAccount(user, userStoreManager);
-            }
+        if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            handleClaimUpdate(eventProperties, userStoreManager, user);
         }
 
-        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {
+        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
+            handleAuthenticate(eventProperties, user);
+        }
+    }
+
+    protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager,
+                                     User user) throws IdentityEventException {
+        if (log.isDebugEnabled()) {
+            log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for : " + user.toString());
+        }
+
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
+                .USER_CLAIMS);
+
+        boolean adminPasswordResetOffline = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
+                user.getTenantDomain()));
+
+        boolean adminPasswordResetOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+                user.getTenantDomain()));
+
+        boolean adminPasswordResetRecoveryLink = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
+                user.getTenantDomain()));
+
+        boolean isAdminPasswordReset = adminPasswordResetOffline | adminPasswordResetOTP |
+                adminPasswordResetRecoveryLink;
+
+        if (isAdminPasswordReset && Boolean.valueOf(claims.get(IdentityRecoveryConstants
+                .ADMIN_FORCED_PASSWORD_RESET_CLAIM))) {
+
             if (log.isDebugEnabled()) {
-                log.debug("PreAuthenticate - AdminForcedPasswordResetHandler");
+                log.debug(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM + " update request.");
             }
-            UserRecoveryData userRecoveryData = getRecoveryData(user);
-            if (userRecoveryData != null) {
-                String errorCode = null;
-                String errorMsg = "User needs to reset the password";
-                if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())) {
-                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
-                    errorMsg = "User : " + user.getUserName() + " needs to reset the password using the given link in email";
-                } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
-                    String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                    if (userRecoveryData.getSecret().equals(credential)) {
-                        errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
-                        errorMsg = "User : " + user.getUserName() + " has given correct OTP";
-                    }
+            // Remove claim to prevent persisting this temporary claim
+            claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
+
+            String OTP = generateOTPValue();
+            String notificationType = "";
+            Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
+
+            if (adminPasswordResetOffline) {
+                setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
+            }
+
+            if (adminPasswordResetOTP) {
+                notificationType = IdentityRecoveryConstants
+                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
+            }
+
+            if (adminPasswordResetRecoveryLink) {
+                OTP = UUIDGenerator.generateUUID();
+                recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET
+                        .toString();
+            }
+
+            if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
+                claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
+            }
+            setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
+            lockAccount(user, userStoreManager);
+
+            if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
+                try {
+                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
+                } catch (IdentityRecoveryException e) {
+                    throw new IdentityEventException("Error while sending  notification ", e);
+                }
+            }
+
+        }
+    }
+
+    protected void handleAuthenticate(Map<String, Object> eventProperties, User user) throws IdentityEventException {
+        if (log.isDebugEnabled()) {
+            log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for user : " + user.toString());
+        }
+
+        UserRecoveryData userRecoveryData = getRecoveryData(user);
+        if (userRecoveryData != null) {
+
+            Enum recoveryScenario = userRecoveryData.getRecoveryScenario();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Handling recovery scenario : " + recoveryScenario.toString() + " for user : " + user.toString
+                        ());
+            }
+
+            String errorCode = null;
+            String errorMsg = "User : " + user.toString();
+            boolean isForcedPasswordReset = false;
+
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)) {
+                errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
+                errorMsg = errorMsg + " needs to reset the password using the given link in email";
+                isForcedPasswordReset = true;
+
+            } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)) {
+                String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+                isForcedPasswordReset = true;
+
+                if (userRecoveryData.getSecret().equals(credential)) {
+                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
+                    errorMsg = errorMsg + " has given correct OTP";
+                } else {
+                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_MISMATCHED_ERROR_CODE;
+                    errorMsg = errorMsg + " has given in-correct OTP";
+                }
+            }
+
+            if (isForcedPasswordReset) {
+                if (log.isDebugEnabled()) {
+                    log.debug(errorMsg);
                 }
 
                 IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(errorMsg);
             }
+
         }
     }
 
@@ -145,6 +207,5 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         }
         return sb.toString();
     }
-
 
 }

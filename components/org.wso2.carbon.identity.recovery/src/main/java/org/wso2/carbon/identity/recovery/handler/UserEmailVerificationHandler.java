@@ -216,6 +216,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     protected void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
+        if (log.isDebugEnabled()) {
+            log.debug("Sending : " + type + " notification to user : " + user.toString());
+        }
+
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
