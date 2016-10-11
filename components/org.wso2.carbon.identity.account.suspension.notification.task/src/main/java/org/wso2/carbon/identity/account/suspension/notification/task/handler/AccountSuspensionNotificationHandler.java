@@ -73,17 +73,16 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public String getFriendlyName() {
-        return "Account Suspension Notification";
+        return "Disable Idle Accounts";
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable "
-                + "Account Suspension Notification Feature");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Account Disable Delay");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Account Suspension Notification Delays");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert User In (days comma-separated list");
         return nameMapping;
     }
 
