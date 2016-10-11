@@ -63,15 +63,15 @@ public class AccountValidatorThread implements Runnable {
             log.error("Error occurred while retrieving tenants", e);
         }
 
-        handleRun(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        handleTask(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
-        for(Tenant tenant:tenants) {
-            handleRun(tenant.getDomain());
+        for (Tenant tenant : tenants) {
+            handleTask(tenant.getDomain());
         }
 
     }
 
-    private void handleRun(String tenantDomain) {
+    private void handleTask(String tenantDomain) {
 
         Property[] identityProperties;
         try {
@@ -88,11 +88,19 @@ public class AccountValidatorThread implements Runnable {
 
                 if (NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED.equals(identityProperty.getName())) {
                     isEnabled = Boolean.parseBoolean(identityProperty.getValue());
+                    if (!isEnabled) {
+                        return;
+                    }
                 }
 
                 if (NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY.
                         equals(identityProperty.getName())) {
-                    suspensionDelay = Long.parseLong(identityProperty.getValue());
+                    try {
+                        suspensionDelay = Long.parseLong(identityProperty.getValue());
+                    } catch (NumberFormatException e) {
+                        log.error("Error occurred while reading account suspension delay for tenant: " + tenantDomain,
+                                e);
+                    }
                 }
 
                 if (NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS.equals(identityProperty.getName())) {
@@ -101,7 +109,12 @@ public class AccountValidatorThread implements Runnable {
                         String[] parts = identityProperty.getValue().split(",");
                         notificationDelays = new long[parts.length];
                         for (int i = 0; i < parts.length; i++) {
-                            notificationDelays[i] = Long.parseLong(parts[i]);
+                            try {
+                                notificationDelays[i] = Long.parseLong(parts[i]);
+                            } catch (NumberFormatException e) {
+                                log.error("Error occurred while reading account suspension notification delays for "
+                                        + "tenant: " + tenantDomain, e);
+                            }
                         }
                     }
                 }

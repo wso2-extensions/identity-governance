@@ -46,7 +46,7 @@ public class EmailUtil {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, receiver.getUsername());
         properties.put("first-name", receiver.getFirstName());
         properties.put("suspension-date", receiver.getExpireDate());
-        properties.put("TEMPLATE_TYPE", "Relogin");
+        properties.put("TEMPLATE_TYPE", "reminderLogin");
 
         Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
         try {
