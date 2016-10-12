@@ -27,5 +27,6 @@ public class NotificationConstants {
     public static final String SUSPENSION_NOTIFICATION_DELAYS="suspension.notification.delays";
     public static final String TRIGGER_TIME_FORMAT = "HH:mm:ss";
     public static final long SCHEDULER_DELAY = 24; // In hours
+    public static final String SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE = "suspension.notification.thread.pool.size";
 
 }
