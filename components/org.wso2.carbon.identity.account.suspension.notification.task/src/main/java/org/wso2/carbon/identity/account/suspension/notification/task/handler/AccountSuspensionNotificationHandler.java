@@ -147,6 +147,11 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private void startScheduler() {
 
+        if(!Boolean.parseBoolean(configs.getModuleProperties().getProperty(NotificationConstants.
+                SUSPENSION_NOTIFICATION_ENABLED))) {
+            return;
+        }
+
         Date notificationTriggerTime = null;
         String notificationTriggerTimeProperty = configs.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_TRIGGER_TIME);
