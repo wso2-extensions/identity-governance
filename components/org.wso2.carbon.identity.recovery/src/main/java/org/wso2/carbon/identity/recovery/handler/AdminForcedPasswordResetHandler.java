@@ -101,6 +101,9 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
 
             if (adminPasswordResetOffline) {
+                if (claims.containsKey(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM)) {
+                    claims.remove(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM);
+                }
                 setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
             }
 
