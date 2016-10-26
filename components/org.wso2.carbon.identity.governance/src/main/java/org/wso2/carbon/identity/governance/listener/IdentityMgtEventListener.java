@@ -568,7 +568,6 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                     log.error("Unable to get the get the domain from realmService for tenant: " + tenantId, e);
             }
 
-
             properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
             properties.put(IdentityEventConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantId());
