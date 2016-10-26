@@ -565,9 +565,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 TenantManager tenantManager = realmService.getTenantManager();
                 userTenantDomain = tenantManager.getDomain(tenantId);
             } catch (org.wso2.carbon.user.api.UserStoreException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Unable to get the get the domain for tenant: " + tenantId, e);
-                }
+                    log.error("Unable to get the get the domain from realmService for tenant: " + tenantId, e);
             }
 
 
