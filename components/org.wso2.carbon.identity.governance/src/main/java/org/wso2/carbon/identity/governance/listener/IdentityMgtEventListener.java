@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.internal.CarbonCoreDataHolder;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
@@ -32,8 +33,10 @@ import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.api.Permission;
+import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -554,11 +557,21 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             if (StringUtils.isNotBlank(roleName)) {
                 properties.put(IdentityEventConstants.EventProperty.ROLE_NAME, roleName);
             }
+
+            int tenantId = userStoreManager.getTenantId();
+            String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            try {
+                RealmService realmService = IdentityMgtServiceDataHolder.getInstance().getRealmService();
+                TenantManager tenantManager = realmService.getTenantManager();
+                userTenantDomain = tenantManager.getDomain(tenantId);
+            } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                    log.error("Unable to get the get the domain from realmService for tenant: " + tenantId, e);
+            }
+
             properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
             properties.put(IdentityEventConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantId());
-            properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, PrivilegedCarbonContext
-                    .getThreadLocalCarbonContext().getTenantDomain());
+            properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, userTenantDomain);
 
             Event identityMgtEvent = new Event(eventName, properties);
 
