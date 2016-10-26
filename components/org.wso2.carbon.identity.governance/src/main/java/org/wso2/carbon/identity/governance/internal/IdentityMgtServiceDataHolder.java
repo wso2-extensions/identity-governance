@@ -69,7 +69,6 @@ public class IdentityMgtServiceDataHolder {
         this.idpManager = idpManager;
     }
 
-
     public RealmService getRealmService() {
         return realmService;
     }
