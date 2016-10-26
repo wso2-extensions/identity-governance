@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance.listener;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityException;
@@ -40,6 +41,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
     private UserIdentityDataStore store;
+    private static final String INVALID_OPERATION = "InvalidOperation";
+
 
     public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this
@@ -120,6 +123,31 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         } finally {
 
         }
+    }
+
+    public boolean doPreGetUserClaimValue(String userName, String claim, String profileName, UserStoreManager storeManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        //This operation is not supported for Identity Claims
+        if (StringUtils.isNotBlank(claim) && claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            throw new UserStoreException(INVALID_OPERATION + " This operation is not supported for Identity claims");
+        }
+        return true;
+    }
+
+    public boolean doPreSetUserClaimValue(String userName, String claimURI, String claimValue, String profileName, UserStoreManager userStoreManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        //This operation is not supported for Identity Claims
+        if (StringUtils.isNotBlank(claimURI) && claimURI.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            throw new UserStoreException(INVALID_OPERATION + " This operation is not supported for Identity claims");
+        }
+        return true;
     }
 
 }
