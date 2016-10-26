@@ -34,7 +34,6 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.TenantManager;
-import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -565,7 +564,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 RealmService realmService = IdentityMgtServiceDataHolder.getInstance().getRealmService();
                 TenantManager tenantManager = realmService.getTenantManager();
                 userTenantDomain = tenantManager.getDomain(tenantId);
-            } catch (Exception e) {
+            } catch (org.wso2.carbon.user.api.UserStoreException e) {
                 if (log.isDebugEnabled()) {
                     log.debug("Unable to get the get the domain for tenant: " + tenantId, e);
                 }
@@ -609,8 +608,6 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }
-            throw new UserStoreException("Error when handling event : " + eventName, e);
-        } catch (UserStoreException e) {
             throw new UserStoreException("Error when handling event : " + eventName, e);
         }
     }
