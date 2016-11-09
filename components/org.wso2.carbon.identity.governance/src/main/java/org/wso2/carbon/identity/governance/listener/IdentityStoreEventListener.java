@@ -35,7 +35,7 @@ import java.util.Map;
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
-    private static final String DO_PRE_SET_USER_CLAIM_VALUES = "doPreSetUserClaimValues";
+    private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
@@ -81,8 +81,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // Top level try and finally blocks are used to unset thread local variables
         try {
-            if (!IdentityUtil.threadLocalProperties.get().containsKey(DO_PRE_SET_USER_CLAIM_VALUES)) {
-                IdentityUtil.threadLocalProperties.get().put(DO_PRE_SET_USER_CLAIM_VALUES, true);
+            if (!IdentityUtil.threadLocalProperties.get().containsKey(PRE_SET_USER_CLAIM_VALUES)) {
+                IdentityUtil.threadLocalProperties.get().put(PRE_SET_USER_CLAIM_VALUES, true);
 
                 UserIdentityDataStore identityDataStore = this.store;
                 UserIdentityClaim identityDTO = identityDataStore.load(userName, userStoreManager);
@@ -113,7 +113,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                             "Error while saving user store data for user : " + userName, e);
                 } finally {
                     // Remove thread local variable
-                    IdentityUtil.threadLocalProperties.get().remove(DO_PRE_SET_USER_CLAIM_VALUES);
+                    IdentityUtil.threadLocalProperties.get().remove(PRE_SET_USER_CLAIM_VALUES);
                 }
             }
             return true;
