@@ -48,6 +48,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOCALE_EN_US;
+
 /**
  * OSGi Service to handle functionality related to challenge question management and verification.
  */
@@ -154,6 +156,17 @@ public class ChallengeQuestionManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
+
+        /*
+            If there are no challenge questions found in the locale of the user we return challenge questions from
+            default en_US locale.
+         */
+        if (questions.isEmpty() && !StringUtils.equalsIgnoreCase(LOCALE_EN_US, locale)) {
+            log.error("Unable to find challenge questions in " + locale + " locale. Returning questions of default " +
+                    "locale : " + LOCALE_EN_US);
+            questions = getAllChallengeQuestions(tenantDomain, LOCALE_EN_US);
+        }
+
         return questions;
     }
 
@@ -607,7 +620,7 @@ public class ChallengeQuestionManager {
 
         if (questionSetId != null) {
             if (IdentityUtil.isBlank(questionLocale)) {
-                questionLocale = IdentityRecoveryConstants.LOCALE_EN_US;
+                questionLocale = LOCALE_EN_US;
             }
             challengeQuestion = new ChallengeQuestion(questionSetId, questionId, questionText, questionLocale);
         }
@@ -742,7 +755,7 @@ public class ChallengeQuestionManager {
     private String validateLocale(String locale) throws IdentityRecoveryClientException {
         // if the locale is blank, we go with the default locale
         if (StringUtils.isBlank(locale)) {
-            locale = IdentityRecoveryConstants.LOCALE_EN_US;
+            locale = LOCALE_EN_US;
         }
         // validate locale input string
         if (locale.matches(IdentityRecoveryConstants.Questions.BLACKLIST_REGEX)) {
