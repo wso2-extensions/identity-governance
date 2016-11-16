@@ -44,7 +44,8 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final Log log = LogFactory.getLog(SelfSignUpReCaptchaConnector.class);
 
-    private static final String SELF_REGISTRATION_INITIATE_URL = "/account-recovery/username/claims";
+//    private static final String SELF_REGISTRATION_INITIATE_URL = "/account-recovery/username/claims";
+    private static final String SELF_REGISTRATION_INITIATE_URL = "/api/identity/recovery/v0.9/claims";
 
     private static final String SELF_REGISTRATION_URL = "/account-recovery/self/register";
 
