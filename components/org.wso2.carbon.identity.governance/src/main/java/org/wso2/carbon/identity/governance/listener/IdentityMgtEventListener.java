@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -34,9 +35,11 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.TenantManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +80,14 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
+        if (!isUserExistsInDomain(userStoreManager, userName)) {
+            if (log.isDebugEnabled()) {
+                log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
+                        "user store domain :" + userStoreManager.getRealmConfiguration().getUserStoreProperty
+                        (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
+            }
+            return true;
+        }
         String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
@@ -93,6 +104,14 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         }
         if (log.isDebugEnabled()) {
             log.debug("post authenticator is called in IdentityMgtEventListener");
+        }
+        if (!isUserExistsInDomain(userStoreManager, userName, authenticated)){
+            if (log.isDebugEnabled()) {
+                log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
+                        "user store domain: " + userStoreManager.getRealmConfiguration().getUserStoreProperty
+                        (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME) );
+            }
+            return true;
         }
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
@@ -640,5 +659,34 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         handleEvent(userName, storeManager, eventName, properties);
         return true;
+    }
+
+    private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName) throws UserStoreException {
+        boolean isExists = false;
+        if (userStoreManager.isExistingUser(userName)) {
+            isExists = true;
+        }
+        return isExists;
+    }
+
+    private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName,
+                                         boolean authenticated) throws UserStoreException {
+        boolean isExists = false;
+        if (authenticated) {
+            String userDomain = UserCoreUtil.getDomainFromThreadLocal();
+            String userStoreDomain = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants
+                    .RealmConfig.PROPERTY_DOMAIN_NAME);
+
+            if (userDomain != null) {
+                if (userDomain.equals(userStoreDomain)) {
+                    isExists = true;
+                }
+            } else if (IdentityUtil.getPrimaryDomainName().equals(userStoreDomain)) {
+                isExists = true;
+            }
+        } else {
+            isExists = isUserExistsInDomain(userStoreManager, userName);
+        }
+        return isExists;
     }
 }
