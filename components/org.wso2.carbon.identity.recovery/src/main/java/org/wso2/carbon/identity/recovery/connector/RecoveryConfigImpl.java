@@ -2,12 +2,12 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
 import java.util.*;
 
-public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
+public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "account-recovery";
 
@@ -18,8 +18,21 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
 
     @Override
     public String getFriendlyName() {
-        return "Account Recover";
+        return "Password Recovery";
     }
+
+    @Override
+    public String getCategory() {
+        return "Account Management Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() { return 0; }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -46,6 +59,16 @@ public class RecoveryConnectorImpl implements IdentityGovernanceConnector {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
         return nameMapping;
+    }
+
+    @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                "Set false if the client application handles notification sending");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+                "Show captcha for challenge question based password recovery");
+        return descriptionMapping;
     }
 
     @Override

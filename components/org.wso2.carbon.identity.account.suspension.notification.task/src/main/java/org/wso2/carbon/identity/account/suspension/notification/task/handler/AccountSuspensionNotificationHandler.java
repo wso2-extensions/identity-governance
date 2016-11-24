@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
+public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(AccountSuspensionNotificationHandler.class);
     private static final String UPDATE_CONFIGURATION = "UPDATE_CONFIGURATION";
@@ -74,17 +74,34 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public String getFriendlyName() {
-        return "Disable Idle Accounts";
+        return "Lock Idle Accounts";
     }
 
     @Override
-    public Map<String, String> getPropertyNameMapping() {
+    public String getCategory() {
+        return "Account Management Policies";
+    }
 
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() { return 0; }
+
+    @Override
+    public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert User In (days comma-separated list");
         return nameMapping;
+    }
+
+    @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        return new HashMap<>();
     }
 
     @Override
@@ -95,7 +112,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                 getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         startScheduler();
         NotificationTaskDataHolder.getInstance().getBundleContext()
-                .registerService(IdentityGovernanceConnector.class.getName(), this, null);
+                .registerService(IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {

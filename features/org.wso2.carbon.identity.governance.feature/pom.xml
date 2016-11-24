@@ -41,12 +41,6 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
-            <artifactId>org.wso2.carbon.identity.governance.ui.feature</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.recovery.server.feature</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
@@ -111,9 +105,6 @@
                             <includedFeatures>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.governance.server.feature
-                                </includedFeatureDef>
-                                <includedFeatureDef>
-                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.governance.ui.feature
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery.server.feature
