@@ -52,19 +52,21 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         Map<String, Object> eventProperties = event.getEventProperties();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
                 .EventProperty.USER_STORE_MANAGER);
-        User user = getUser(eventProperties, userStoreManager);
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
-            handleClaimUpdate(eventProperties, userStoreManager, user);
+            handleClaimUpdate(eventProperties, userStoreManager);
         }
 
         if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
-            handleAuthenticate(eventProperties, user);
+            handleAuthenticate(eventProperties, userStoreManager);
         }
+
     }
 
-    protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager,
-                                     User user) throws IdentityEventException {
+    protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
+            IdentityEventException {
+        User user = getUser(eventProperties, userStoreManager);
+
         if (log.isDebugEnabled()) {
             log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for : " + user.toString());
         }
@@ -136,7 +138,10 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         }
     }
 
-    protected void handleAuthenticate(Map<String, Object> eventProperties, User user) throws IdentityEventException {
+    protected void handleAuthenticate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
+            IdentityEventException {
+        User user = getUser(eventProperties, userStoreManager);
+
         if (log.isDebugEnabled()) {
             log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for user : " + user.toString());
         }

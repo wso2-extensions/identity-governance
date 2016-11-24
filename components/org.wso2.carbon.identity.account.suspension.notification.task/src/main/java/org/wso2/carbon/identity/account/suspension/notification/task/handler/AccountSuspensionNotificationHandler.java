@@ -17,7 +17,6 @@ package org.wso2.carbon.identity.account.suspension.notification.task.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
@@ -53,13 +52,15 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             Map<String, Object> eventProperties = event.getEventProperties();
 
             String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-            String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
             UserStoreManager userStoreManager = (UserStoreManager) eventProperties
                     .get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
-
+            if (!(Boolean) eventProperties.get(IdentityEventConstants.EventProperty.OPERATION_STATUS)) {
+                return;
+            }
             try {
-                userStoreManager.setUserClaimValue(userName, IdentityMgtConstants.LAST_LOGIN_TIME,
-                        Long.toString(System.currentTimeMillis()), null);
+                HashMap<String, String> userClaims = new HashMap<>();
+                userClaims.put(IdentityMgtConstants.LAST_LOGIN_TIME, Long.toString(System.currentTimeMillis()));
+                userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
             }
@@ -169,4 +170,5 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
         scheduler.scheduleAtFixedRate(new AccountValidatorThread(), delay, schedulerDelayInSeconds, TimeUnit.SECONDS);
     }
+
 }

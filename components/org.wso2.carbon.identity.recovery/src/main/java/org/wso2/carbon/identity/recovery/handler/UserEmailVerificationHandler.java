@@ -122,7 +122,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             }
         }
 
-
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
             if (claim == null) {
@@ -206,8 +205,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         HashMap<String, String> userClaims = new HashMap<>();
         userClaims.put(claimName, claimValue);
         try {
-            userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                    user.getUserStoreDomain()), userClaims, null);
+            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
         } catch (UserStoreException e) {
             throw new IdentityEventException("Error while setting user claim value :" + user.getUserName(), e);
         }
