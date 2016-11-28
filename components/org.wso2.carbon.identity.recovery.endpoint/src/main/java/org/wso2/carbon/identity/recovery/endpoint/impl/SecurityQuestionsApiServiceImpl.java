@@ -3,6 +3,7 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -21,6 +22,10 @@ public class SecurityQuestionsApiServiceImpl extends SecurityQuestionsApiService
 
     @Override
     public Response securityQuestionsGet(String username, String realm, String tenantDomain) {
+
+        if (IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT) != null) {
+            tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+        }
 
         User user = new User();
         user.setUserStoreDomain(realm);

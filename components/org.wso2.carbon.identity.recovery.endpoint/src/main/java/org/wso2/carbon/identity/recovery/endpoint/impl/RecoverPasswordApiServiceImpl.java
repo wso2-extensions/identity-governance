@@ -3,6 +3,7 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -24,6 +25,13 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
 
     @Override
     public Response recoverPasswordPost(RecoveryInitiatingRequestDTO recoveryInitiatingRequest, String type, Boolean notify) {
+        String tenantDomainFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants
+                .TENANT_NAME_FROM_CONTEXT);
+
+        if (StringUtils.isNotBlank(tenantDomainFromContext)) {
+            recoveryInitiatingRequest.getUser().setTenantDomain(tenantDomainFromContext);
+        }
+
         NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                 .getNotificationBasedPwdRecoveryManager();
         NotificationResponseBean notificationResponseBean = null;

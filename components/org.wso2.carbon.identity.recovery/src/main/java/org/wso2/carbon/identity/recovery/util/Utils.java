@@ -302,7 +302,7 @@ public class Utils {
     }
 
 
-    // challenge question related Utils
+    // challenge question related Util
     public static String getChallengeSetDirFromUri(String challengeSetUri) {
         if (StringUtils.isBlank(challengeSetUri)) {
             return challengeSetUri;

@@ -1,10 +1,12 @@
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
@@ -22,6 +24,7 @@ import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecove
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.core.UserCoreConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -204,7 +207,12 @@ public class RecoveryUtil {
     public static User getUser(UserDTO userDTO) {
         User user = new User();
         user.setTenantDomain(userDTO.getTenantDomain());
-        user.setUserStoreDomain(userDTO.getRealm());
+        if (StringUtils.isNotBlank(userDTO.getRealm())) {
+            user.setUserStoreDomain(userDTO.getRealm());
+        } else {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+        }
+
         user.setUserName(userDTO.getUsername());
         return user;
     }
