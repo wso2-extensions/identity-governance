@@ -51,7 +51,11 @@ public class MeApiServiceImpl extends MeApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while registering self up user ", e);
             }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
+                RecoveryUtil.handleConflict(e.getMessage(), e.getErrorCode());
+            } else {
+                RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            }
         } catch (IdentityRecoveryException e) {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
