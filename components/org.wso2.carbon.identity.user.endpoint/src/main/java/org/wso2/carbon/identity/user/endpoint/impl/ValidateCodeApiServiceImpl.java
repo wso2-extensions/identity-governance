@@ -23,7 +23,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
-import org.wso2.carbon.identity.user.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.user.endpoint.Util.Utils;
 import org.wso2.carbon.identity.user.endpoint.ValidateCodeApiService;
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidationRequestDTO;
 
@@ -35,7 +35,7 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
 
     @Override
     public Response validateCodePost(CodeValidationRequestDTO codeValidationRequestDTO) {
-        UserSelfRegistrationManager userSelfRegistrationManager = RecoveryUtil
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils
                 .getUserSelfRegistrationManager();
         try {
             userSelfRegistrationManager.confirmUserSelfRegistration(codeValidationRequestDTO.getCode());
@@ -44,11 +44,11 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while confirming self up user ", e);
             }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
 

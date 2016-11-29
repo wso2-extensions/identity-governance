@@ -33,7 +33,9 @@ host: apis.is.com
 
 # The base path of the API.
 # Will be prefixed to all paths.
-basePath: /api/identity/user/v0.9
+
+# if the tenant domain is carbon.super basepath can be /api/identity/user/v0.9 like this too.
+basePath: /t/{tenant-domain}/api/identity/user/v0.9
 
 # The following media types can be passed as input in message bodies of the API.
 # The actual media type must be specified in the Content-Type header field of the request.
@@ -157,8 +159,6 @@ definitions:
     properties:
       username:
         type: string
-      tenant-domain:
-        type: string
       realm: 
         type: string
       password:
@@ -175,8 +175,6 @@ definitions:
     type: object
     properties:
       username:
-        type: string
-      tenant-domain:
         type: string
       realm: 
         type: string

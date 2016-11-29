@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.user.endpoint.Utils;
+package org.wso2.carbon.identity.user.endpoint.Util;
 
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -13,7 +13,7 @@ import org.wso2.carbon.user.api.Claim;
 
 import java.util.List;
 
-public class RecoveryUtil {
+public class Utils {
 
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()

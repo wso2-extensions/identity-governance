@@ -25,4 +25,6 @@ public final class Constants {
 
     public static final String STATUS_INTERNAL_SERVER_ERROR_DESCRIPTION_DEFAULT = "The server encountered "
             + "an internal error. Please contact administrator.";
+    public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
+
 }
