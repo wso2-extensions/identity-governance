@@ -135,7 +135,11 @@ public class UserSelfRegistrationManager {
                         password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
-                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+                } else {
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+                }
             }
 
             if (!isNotificationInternallyManage) {
