@@ -7,6 +7,7 @@ import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
+import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.user.endpoint.dto.*;
 import org.wso2.carbon.user.api.Claim;
@@ -72,6 +73,29 @@ public class Utils {
     public static BadRequestException buildBadRequestException(String description, String code) {
         ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_BAD_REQUEST_MESSAGE_DEFAULT, code, description);
         return new BadRequestException(errorDTO);
+    }
+
+    /**
+     * Logs the error, builds a ConflictException with specified details and throws it
+     *
+     * @param msg  error message
+     * @param code error code
+     * @throws ConflictException
+     */
+    public static void handleConflict(String msg, String code) throws ConflictException {
+        ConflictException conflictException = buildConflictException(msg, code);
+        throw conflictException;
+    }
+
+    /**
+     * Returns a new ConflictException
+     *
+     * @param description description of the exception
+     * @return a new ConflictException with the specified details as a response DTO
+     */
+    public static ConflictException buildConflictException(String description, String code) {
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_CONFLICT_MESSAGE_DEFAULT, code, description);
+        return new ConflictException(errorDTO);
     }
 
     /**

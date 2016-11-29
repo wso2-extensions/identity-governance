@@ -37,7 +37,6 @@ public class MeApiServiceImpl extends MeApiService {
 
     private static final Log LOG = LogFactory.getLog(MeApiServiceImpl.class);
 
-
     @Override
     public Response mePost(SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO) {
         String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
@@ -59,7 +58,11 @@ public class MeApiServiceImpl extends MeApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while registering self up user ", e);
             }
-            Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
+                Utils.handleConflict(e.getMessage(), e.getErrorCode());
+            } else {
+                Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
+            }
         } catch (IdentityRecoveryException e) {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
