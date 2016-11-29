@@ -116,7 +116,6 @@
     </pluginRepositories>
 
     <modules>
-        <module>components/org.wso2.carbon.identity.governance.ui</module>
         <module>components/org.wso2.carbon.identity.governance</module>
         <module>components/org.wso2.carbon.identity.recovery</module>
         <module>components/org.wso2.carbon.identity.recovery.ui</module>
@@ -133,7 +132,6 @@
         <module>features/org.wso2.carbon.identity.user.server.feature</module>
         <module>features/org.wso2.carbon.identity.recovery.ui.feature</module>
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
-        <module>features/org.wso2.carbon.identity.governance.ui.feature</module>
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.feature</module>

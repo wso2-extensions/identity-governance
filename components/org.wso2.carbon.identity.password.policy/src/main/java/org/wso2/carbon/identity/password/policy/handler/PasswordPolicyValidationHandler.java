@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.mgt.policy.PolicyRegistry;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.mgt.policy.password.DefaultPasswordLengthPolicy;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Properties;
 
 
-public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
+public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(PasswordPolicyValidationHandler.class);
 
@@ -177,8 +177,21 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
 
     @Override
     public String getFriendlyName() {
-        return "Password Policy Validation";
+        return "Password Patterns";
     }
+
+    @Override
+    public String getCategory() {
+        return "Password Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() { return 0; }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -192,10 +205,19 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     }
 
     @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable password pattern policy");
+        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Allowed password regex pattern");
+        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Error message for invalid password patterns");
+        return descriptionMapping;
+    }
+
+    @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
         IdentityPasswordPolicyServiceDataHolder.getInstance().getBundleContext().registerService
-                (IdentityGovernanceConnector.class.getName(), this, null);
+                (IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {

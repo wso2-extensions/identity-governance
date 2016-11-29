@@ -2,12 +2,12 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
 import java.util.*;
 
-public class UserEmailVerificationConnectorImpl implements IdentityGovernanceConnector {
+public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "user-email-verification";
 
@@ -18,8 +18,21 @@ public class UserEmailVerificationConnectorImpl implements IdentityGovernanceCon
 
     @Override
     public String getFriendlyName() {
-        return "User Email Verification";
+        return "User Onboarding";
     }
+
+    @Override
+    public String getCategory() {
+        return "Account Management Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() { return 0; }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -31,6 +44,18 @@ public class UserEmailVerificationConnectorImpl implements IdentityGovernanceCon
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
         return nameMapping;
+    }
+
+    @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
+                "Enable to trigger a verification notification during user creation");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
+                "Lock user account during user creation");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                "Set false if the client application handles notification sending");
+        return descriptionMapping;
     }
 
     @Override

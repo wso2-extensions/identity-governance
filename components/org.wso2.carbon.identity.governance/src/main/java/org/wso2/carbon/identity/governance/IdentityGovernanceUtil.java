@@ -23,7 +23,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -37,10 +37,10 @@ public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
-    public static void saveConnectorDefaultProperties (IdentityGovernanceConnector identityGovernanceConnector,
+    public static void saveConnectorDefaultProperties (IdentityConnectorConfig identityConnectorConfig,
                                                        String tenantDomain) throws IdentityGovernanceException{
 
-        Properties connectorProperties = identityGovernanceConnector.getDefaultPropertyValues(tenantDomain);
+        Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
 
         try {
@@ -51,7 +51,7 @@ public class IdentityGovernanceUtil {
             List<IdentityProviderProperty> propertyList = new ArrayList<>();
             for (IdentityProviderProperty idpProperty : idpProperties) {
                 String propertyName = idpProperty.getName();
-                if ((identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
+                if ((identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
                     }
@@ -69,7 +69,7 @@ public class IdentityGovernanceUtil {
                 propertyList.add(property);
             }
             IdentityProviderProperty property = new IdentityProviderProperty();
-            property.setName(identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig
+            property.setName(identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
                     .ALREADY_WRITTEN_PROPERTY_KEY);
             property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
             propertyList.add(property);

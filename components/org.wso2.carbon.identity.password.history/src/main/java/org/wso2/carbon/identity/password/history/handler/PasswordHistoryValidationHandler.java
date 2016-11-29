@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.password.history.Util.Utils;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
@@ -40,7 +40,7 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
-public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
+public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(PasswordHistoryValidationHandler.class);
 
@@ -154,8 +154,21 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
     @Override
     public String getFriendlyName() {
-        return "Password History Validation";
+        return "Password History";
     }
+
+    @Override
+    public String getCategory() {
+        return "Password Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() { return 0; }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -166,10 +179,18 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "Enable to disallow previously used passwords");
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict reusing last x number of password during password update");
+        return descriptionMapping;
+    }
+
+    @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
         IdentityPasswordHistoryServiceDataHolder.getInstance().getBundleContext().registerService
-                (IdentityGovernanceConnector.class.getName(), this, null);
+                (IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {

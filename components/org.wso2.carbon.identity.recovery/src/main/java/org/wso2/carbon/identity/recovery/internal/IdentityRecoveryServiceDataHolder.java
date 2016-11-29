@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.recovery.internal;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;

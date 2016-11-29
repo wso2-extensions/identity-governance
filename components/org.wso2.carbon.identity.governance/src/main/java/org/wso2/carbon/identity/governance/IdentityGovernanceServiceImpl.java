@@ -16,7 +16,6 @@
 
 package org.wso2.carbon.identity.governance;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -25,13 +24,12 @@ import org.wso2.carbon.identity.application.common.model.IdentityProviderPropert
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -144,7 +142,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     }
 
-    public List<IdentityGovernanceConnector> getConnectorList() throws IdentityGovernanceException {
+    public List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException {
         return IdentityMgtServiceDataHolder.getInstance().getIdentityGovernanceConnectorList();
     }
 

@@ -21,13 +21,21 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import java.util.Map;
 import java.util.Properties;
 
-public interface IdentityGovernanceConnector {
+public interface IdentityConnectorConfig {
 
     String getName();
 
     String getFriendlyName();
 
+    String getCategory();
+
+    String getSubCategory();
+
+    int getOrder();
+
     Map<String, String> getPropertyNameMapping();
+
+    Map<String, String> getPropertyDescriptionMapping();
 
     String[] getPropertyNames();
 
