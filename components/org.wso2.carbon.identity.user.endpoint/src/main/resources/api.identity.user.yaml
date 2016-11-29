@@ -84,6 +84,11 @@ paths:
           description: Server Error
           schema:
              $ref: '#/definitions/Error'
+
+        409:
+          description: Conflict
+          schema:
+             $ref: '#/definitions/Error'
       tags:
         - Self Register
             
