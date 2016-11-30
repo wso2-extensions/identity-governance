@@ -22,7 +22,7 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -33,12 +33,15 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Identity governance util.
+ */
 public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
-    public static void saveConnectorDefaultProperties (IdentityGovernanceConnector identityGovernanceConnector,
-                                                       String tenantDomain) throws IdentityGovernanceException{
+    public static void saveConnectorDefaultProperties(IdentityGovernanceConnector identityGovernanceConnector,
+                                                      String tenantDomain) throws IdentityGovernanceException {
 
         Properties connectorProperties = identityGovernanceConnector.getDefaultPropertyValues(tenantDomain);
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
@@ -47,17 +50,16 @@ public class IdentityGovernanceUtil {
             Enumeration enuKeys = connectorProperties.keys();
             IdentityProvider residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
             IdentityProviderProperty[] idpProperties = residentIdp.getIdpProperties();
-            List<String> idpPropertyKeys = new ArrayList<>();
             List<IdentityProviderProperty> propertyList = new ArrayList<>();
             for (IdentityProviderProperty idpProperty : idpProperties) {
                 String propertyName = idpProperty.getName();
-                if ((identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
+                if ((identityGovernanceConnector.getName() + "." + EventConstants.PropertyConfig
+                        .ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
                     }
                     return;
                 }
-                idpPropertyKeys.add(idpProperty.getName());
                 propertyList.add(idpProperty);
             }
             while (enuKeys.hasMoreElements()) {
@@ -69,9 +71,9 @@ public class IdentityGovernanceUtil {
                 propertyList.add(property);
             }
             IdentityProviderProperty property = new IdentityProviderProperty();
-            property.setName(identityGovernanceConnector.getName() + "." + IdentityEventConstants.PropertyConfig
+            property.setName(identityGovernanceConnector.getName() + "." + EventConstants.PropertyConfig
                     .ALREADY_WRITTEN_PROPERTY_KEY);
-            property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
+            property.setValue(EventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
             propertyList.add(property);
             residentIdp.setIdpProperties(propertyList.toArray(new IdentityProviderProperty[propertyList.size()]));
             FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
@@ -95,7 +97,5 @@ public class IdentityGovernanceUtil {
         } catch (IdentityProviderManagementException e) {
             log.error("Error while adding identity management properties to resident Idp.", e);
         }
-
     }
-
 }

@@ -32,6 +32,9 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Identity store event listener.
+ */
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);

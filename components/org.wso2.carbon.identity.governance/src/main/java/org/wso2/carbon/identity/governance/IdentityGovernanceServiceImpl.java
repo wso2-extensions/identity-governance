@@ -16,7 +16,6 @@
 
 package org.wso2.carbon.identity.governance;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -24,28 +23,31 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Identity governance service implementation.
+ */
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
 
     /**
-     * Store the configurations of a tenant in cache and database
+     * Store the configurations of a tenant in cache and database.
      *
      * @param tenantDomain             Domain name of the tenant
      * @param configurationDetails Configurations belong to the tenant
      */
-    public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws IdentityGovernanceException {
+    public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws
+            IdentityGovernanceException {
 
         try {
             IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
@@ -93,7 +95,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     }
 
     /**
-     * Get the configurations of a tenant from cache or database
+     * Get the configurations of a tenant from cache or database.
      *
      * @param tenantDomain Domain name of the tenant
      * @return Configurations belong to the tenant
@@ -113,7 +115,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         Property[] configMap = new Property[identityMgtProperties.length];
         int index = 0;
         for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
-            if (IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY.equals(identityMgtProperty.getName())) {
+            if (EventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY.equals(identityMgtProperty.getName())) {
                 continue;
             }
             Property property = new Property();

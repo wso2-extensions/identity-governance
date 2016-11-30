@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
-        <version>1</version>
+        <version>5</version>
     </parent>
 
     <scm>
@@ -41,104 +41,28 @@
         <tag>v1.0.0-SNAPSHOT</tag>
     </scm>
 
-    <repositories>
-        <repository>
-            <id>wso2-nexus</id>
-            <name>WSO2 internal Repository</name>
-            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>ignore</checksumPolicy>
-            </releases>
-        </repository>
-
-        <repository>
-            <id>wso2.releases</id>
-            <name>WSO2 internal Repository</name>
-            <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>ignore</checksumPolicy>
-            </releases>
-        </repository>
-
-        <repository>
-            <id>wso2.snapshots</id>
-            <name>Apache Snapshot Repository</name>
-            <url>http://maven.wso2.org/nexus/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>wso2.releases</id>
-            <name>WSO2 internal Repository</name>
-            <url>http://maven.wso2.org/nexus/content/repositories/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>ignore</checksumPolicy>
-            </releases>
-        </pluginRepository>
-
-        <pluginRepository>
-            <id>wso2.snapshots</id>
-            <name>WSO2 Snapshot Repository</name>
-            <url>http://maven.wso2.org/nexus/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </pluginRepository>
-        <pluginRepository>
-            <id>wso2-nexus</id>
-            <name>WSO2 internal Repository</name>
-            <url>http://maven.wso2.org/nexus/content/groups/wso2-public/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>ignore</checksumPolicy>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-
     <modules>
-        <module>components/org.wso2.carbon.identity.governance.ui</module>
+        <!--<module>components/org.wso2.carbon.identity.governance.ui</module>-->
         <module>components/org.wso2.carbon.identity.governance</module>
-        <module>components/org.wso2.carbon.identity.recovery</module>
-        <module>components/org.wso2.carbon.identity.recovery.ui</module>
-        <module>components/org.wso2.carbon.identity.recovery.endpoint</module>
-        <module>components/org.wso2.carbon.identity.user.endpoint</module>
-        <module>components/org.wso2.carbon.identity.captcha</module>
-        <module>components/org.wso2.carbon.identity.password.history</module>
-        <module>components/org.wso2.carbon.identity.password.policy</module>
+        <!--<module>components/org.wso2.carbon.identity.recovery</module>-->
+        <!--<module>components/org.wso2.carbon.identity.recovery.ui</module>-->
+        <!--<module>components/org.wso2.carbon.identity.recovery.endpoint</module>-->
+        <!--<module>components/org.wso2.carbon.identity.user.endpoint</module>-->
+        <!--<module>components/org.wso2.carbon.identity.captcha</module>-->
+        <!--<module>components/org.wso2.carbon.identity.password.history</module>-->
+        <!--<module>components/org.wso2.carbon.identity.password.policy</module>-->
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
-
-        <module>service-stubs/identity</module>
-
-        <module>features/org.wso2.carbon.identity.recovery.server.feature</module>
-        <module>features/org.wso2.carbon.identity.user.server.feature</module>
-        <module>features/org.wso2.carbon.identity.recovery.ui.feature</module>
-        <module>features/org.wso2.carbon.identity.governance.server.feature</module>
-        <module>features/org.wso2.carbon.identity.governance.ui.feature</module>
-        <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
-        <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
-        <module>features/org.wso2.carbon.identity.governance.feature</module>
-        <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
-        <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
+        <!--<module>service-stubs/identity</module>-->
+        <!--<module>features/org.wso2.carbon.identity.recovery.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.user.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.recovery.ui.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.governance.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.governance.ui.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.captcha.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.password.history.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.governance.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.password.policy.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>-->
     </modules>
 
     <dependencyManagement>
@@ -265,9 +189,14 @@
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <groupId>org.wso2.carbon.identity.commons</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
-                <version>${carbon.identity.framework.version}</version>
+                <version>${carbon.identity.commons.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.commons</groupId>
+                <artifactId>org.wso2.carbon.identity.commons</artifactId>
+                <version>${carbon.identity.commons.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -368,14 +297,11 @@
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>${hibernate-validator.version}</version>
             </dependency>
-
-
         </dependencies>
 
     </dependencyManagement>
@@ -430,8 +356,8 @@
                 <inherited>true</inherited>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -483,6 +409,7 @@
 
         <!--Carbon Identity Framework Version-->
         <carbon.identity.framework.version>5.6.3</carbon.identity.framework.version>
+        <carbon.identity.commons.version>6.0.0-SNAPSHOT</carbon.identity.commons.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.6.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -490,7 +417,6 @@
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <jackson-jaxrs-json-provider.version>2.4.2</jackson-jaxrs-json-provider.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
         <cxf-bundle.version>3.1.4</cxf-bundle.version>

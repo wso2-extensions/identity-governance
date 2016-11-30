@@ -29,14 +29,15 @@ public abstract class UserIdentityDataStore {
     public static final String ONE_TIME_PASSWORD = "http://wso2.org/claims/identity/otp";
     public static final String PASSWORD_CHANGE_REQUIRED = "http://wso2.org/claims/identity/passwordChangeRequired";
     public static final String TEMPORARY_LOCK = "http://wso2.org/claims/identity/temporaryLock";
-    public static final String LAST_FAILED_LOGIN_ATTEMPT_TIME = "http://wso2.org/claims/identity/lastFailedLoginAttemptTime";
+    public static final String LAST_FAILED_LOGIN_ATTEMPT_TIME =
+            "http://wso2.org/claims/identity/lastFailedLoginAttemptTime";
     public static final String FAIL_LOGIN_ATTEMPTS = "http://wso2.org/claims/identity/failedLoginAttempts";
     public static final String LAST_LOGON_TIME = "http://wso2.org/claims/identity/lastLogonTime";
     public static final String UNLOCKING_TIME = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_LOCK = "http://wso2.org/claims/identity/accountLocked";
 
     /**
-     * Get all claim types that is need to persist in the store
+     * Get all claim types that is need to persist in the store.
      *
      * @return
      */
@@ -49,7 +50,7 @@ public abstract class UserIdentityDataStore {
     }
 
     /**
-     * Stores data
+     * Stores data.
      *
      * @param userIdentityDTO
      * @param userStoreManager
@@ -58,7 +59,7 @@ public abstract class UserIdentityDataStore {
             throws IdentityException;
 
     /**
-     * Loads
+     * Loads.
      *
      * @param userName
      * @param userStoreManager
@@ -68,7 +69,7 @@ public abstract class UserIdentityDataStore {
 
 
     /**
-     * Removes
+     * Removes.
      *
      * @param userName
      * @param userStoreManager

@@ -19,9 +19,9 @@ package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
 import org.apache.log4j.Logger;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.mgt.NotificationSender;
 
 import java.util.HashMap;
@@ -43,15 +43,15 @@ public class EmailUtil {
     public void sendEmail(NotificationReceiver receiver) {
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, receiver.getUsername());
+        properties.put(EventConstants.EventProperty.USER_NAME, receiver.getUsername());
         properties.put("first-name", receiver.getFirstName());
         properties.put("suspension-date", receiver.getExpireDate());
         properties.put("TEMPLATE_TYPE", "reminderLogin");
 
-        Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
+        Event identityMgtEvent = new Event(EventConstants.Event.TRIGGER_NOTIFICATION, properties);
         try {
             NotificationTaskDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (EventException e) {
             log.error("Error occurred while sending email to: " + receiver.getUsername(), e);
         }
 

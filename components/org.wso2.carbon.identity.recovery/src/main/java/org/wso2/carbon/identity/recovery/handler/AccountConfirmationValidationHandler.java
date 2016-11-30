@@ -57,10 +57,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty
+                .USER_STORE_MANAGER);
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig
+                .PROPERTY_DOMAIN_NAME);
         String usernameWithDomain = UserCoreUtil.addDomainToName(userName, domainName);
 
         User user = new User();
@@ -68,14 +70,14 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
-
         if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {
-                if(log.isDebugEnabled()){
+                if (log.isDebugEnabled()) {
                     log.debug("PreAuthenticate");
                 }
-            boolean isAccountLocked = true ;
+            boolean isAccountLocked = true;
             try {
-                isAccountLocked = Boolean.parseBoolean(userStoreManager.getUserClaimValue(userName,ACCOUNT_LOCKED_CLAIM, null));
+                isAccountLocked = Boolean.parseBoolean(userStoreManager.getUserClaimValue(userName,
+                        ACCOUNT_LOCKED_CLAIM, null));
             } catch (UserStoreException e) {
                 throw new IdentityEventException("Error while retrieving account lock claim value", e);
             }
@@ -97,7 +99,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
     @Override
     public int getPriority(MessageContext messageContext) {
-        return 50 ;
+        return 50;
     }
 
 
@@ -109,13 +111,13 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
      * @throws IdentityEventException
      */
     private boolean isUserAccountConfirmed(User user) throws IdentityEventException {
-        boolean userConfirmed = false ;
+        boolean userConfirmed = false;
         try {
             userConfirmed = UserSelfRegistrationManager.getInstance().isUserConfirmed(user);
         } catch (IdentityRecoveryException e) {
-            throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " + e.getMessage(), e);
+            throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " +
+                    e.getMessage(), e);
         }
-        return userConfirmed ;
+        return userConfirmed;
     }
-
 }

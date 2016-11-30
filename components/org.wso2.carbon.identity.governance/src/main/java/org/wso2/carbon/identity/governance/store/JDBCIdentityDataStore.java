@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * //TODO remove method when user is deleted
+ * TODO remove method when user is deleted.
  */
 public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
@@ -96,7 +96,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
-        ResultSet results;
+
         boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
         try {
             String query;
@@ -109,9 +109,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             prepStmt.setInt(1, tenantId);
             prepStmt.setString(2, userName);
             prepStmt.setString(3, key);
-            results = prepStmt.executeQuery();
-            if (results.next()) {
-                return true;
+            try (ResultSet results = prepStmt.executeQuery()) {
+                if (results.next()) {
+                    return true;
+                }
             }
             connection.commit();
         } finally {

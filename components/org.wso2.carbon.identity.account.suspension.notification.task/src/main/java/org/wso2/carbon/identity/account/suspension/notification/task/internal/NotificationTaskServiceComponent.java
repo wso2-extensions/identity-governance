@@ -23,8 +23,8 @@ import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.handler.AccountSuspensionNotificationHandler;
 import org.wso2.carbon.identity.account.suspension.notification.task.ldap.LDAPNotificationReceiversRetrievalFactory;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -74,11 +74,11 @@ public class NotificationTaskServiceComponent {
         }
     }
 
-    protected void unsetIdentityEventService(IdentityEventService eventService) {
+    protected void unsetIdentityEventService(EventService eventService) {
         NotificationTaskDataHolder.getInstance().setIdentityEventService(null);
     }
 
-    protected void setIdentityEventService(IdentityEventService eventService) {
+    protected void setIdentityEventService(EventService eventService) {
         NotificationTaskDataHolder.getInstance().setIdentityEventService(eventService);
     }
 

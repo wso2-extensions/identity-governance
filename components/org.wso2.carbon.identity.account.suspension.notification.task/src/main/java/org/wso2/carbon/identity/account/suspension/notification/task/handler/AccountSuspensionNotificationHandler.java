@@ -17,16 +17,15 @@ package org.wso2.carbon.identity.account.suspension.notification.task.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.handler.InitConfig;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.common.base.handler.InitConfig;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
@@ -36,26 +35,35 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Account suspension notification handler.
+ */
 public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
 
     private static final Log log = LogFactory.getLog(AccountSuspensionNotificationHandler.class);
     private static final String UPDATE_CONFIGURATION = "UPDATE_CONFIGURATION";
 
     @Override
-    public void handleEvent(Event event) throws IdentityEventException {
+    public void handleEvent(Event event) throws EventException {
 
-        if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
+        if (EventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             Map<String, Object> eventProperties = event.getEventProperties();
 
-            String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-            String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+            String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
+            String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
             UserStoreManager userStoreManager = (UserStoreManager) eventProperties
-                    .get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+                    .get(EventConstants.EventProperty.USER_STORE_MANAGER);
 
             try {
                 userStoreManager.setUserClaimValue(userName, IdentityMgtConstants.LAST_LOGIN_TIME,
@@ -81,8 +89,10 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert User In (days comma-separated list");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY,
+                "Lock Account After (days)");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS,
+                "Alert User In (days comma-separated list");
         return nameMapping;
     }
 
@@ -90,7 +100,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
         super.init(configuration);
-        NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(configs.getModuleProperties().
+        NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(moduleConfig.getModuleProperties().
                 getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         startScheduler();
         NotificationTaskDataHolder.getInstance().getBundleContext()
@@ -111,14 +121,14 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         Map<String, String> defaultProperties = new HashMap<>();
 
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED,
-                configs.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED));
+                moduleConfig.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED));
 
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY,
-                configs.getModuleProperties()
+                moduleConfig.getModuleProperties()
                         .getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY));
 
         defaultProperties.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS,
-                configs.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS));
+                moduleConfig.getModuleProperties().getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS));
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -134,7 +144,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     private void startScheduler() {
 
         Date notificationTriggerTime = null;
-        String notificationTriggerTimeProperty = configs.getModuleProperties().getProperty(NotificationConstants.
+        String notificationTriggerTimeProperty = moduleConfig.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_TRIGGER_TIME);
 
         DateFormat dateFormat = new SimpleDateFormat(NotificationConstants.TRIGGER_TIME_FORMAT);

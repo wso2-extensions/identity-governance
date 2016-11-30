@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This encapsulates the user's data that is related user's login information
+ * This encapsulates the user's data that is related user's login information.
  */
 public class UserIdentityClaim implements Serializable {
 
@@ -30,7 +30,7 @@ public class UserIdentityClaim implements Serializable {
     private Map<String, String> userIdentityDataMap = new HashMap<>();
     private int tenantId;
 
-    public UserIdentityClaim (String userName) {
+    public UserIdentityClaim(String userName) {
         this.userName = userName;
     }
 
@@ -49,7 +49,7 @@ public class UserIdentityClaim implements Serializable {
     }
 
     public Map<String, String> getUserIdentityDataMap() {
-        if(userIdentityDataMap == null){
+        if (userIdentityDataMap == null) {
             return Collections.emptyMap();
         }
         return userIdentityDataMap;
@@ -68,7 +68,7 @@ public class UserIdentityClaim implements Serializable {
     }
 
     /**
-     * Sets user identity data claim
+     * Sets user identity data claim.
      *
      * @param claim
      * @param value

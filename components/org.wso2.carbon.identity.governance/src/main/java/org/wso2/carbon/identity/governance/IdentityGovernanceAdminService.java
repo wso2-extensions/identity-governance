@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Identity Governance admin service.
+ */
 public class IdentityGovernanceAdminService extends AbstractAdmin {
 
     IdentityGovernanceService identityGovernanceService;
@@ -40,13 +43,13 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         Property[] properties = identityGovernanceService.getConfiguration(tenantDomain);
         ConnectorConfig[] configs = new ConnectorConfig[list.size()];
         String[] connectorProperties;
-        for (int i=0; i<list.size();i++) {
-            ConnectorConfig config =new ConnectorConfig();
-            Map <String,String> friendlyNames = list.get(i).getPropertyNameMapping();
+        for (int i = 0; i < list.size(); i++) {
+            ConnectorConfig config = new ConnectorConfig();
+            Map<String, String> friendlyNames = list.get(i).getPropertyNameMapping();
             config.setFriendlyName(list.get(i).getFriendlyName());
             connectorProperties = list.get(i).getPropertyNames();
             Property[] configProperties = new Property[connectorProperties.length];
-            for (int j=0; j<connectorProperties.length;j++) {
+            for (int j = 0; j < connectorProperties.length; j++) {
                 for (int k = 0; k < properties.length; k++) {
                     if (connectorProperties[j].equals(properties[k].getName())) {
                         configProperties[j] = properties[k];
@@ -61,7 +64,7 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         return configs;
     }
 
-    public void updateConfigurations (Property[] configurations) throws IdentityGovernanceException {
+    public void updateConfigurations(Property[] configurations) throws IdentityGovernanceException {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         identityGovernanceService = new IdentityGovernanceServiceImpl();
         Map<String, String> confMap = new HashMap<>();
@@ -69,7 +72,5 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
             confMap.put(configuration.getName(), configuration.getValue());
         }
         identityGovernanceService.updateConfiguration(tenantDomain, confMap);
-
     }
-
 }

@@ -17,21 +17,24 @@
 package org.wso2.carbon.identity.governance;
 
 /**
- * Identity management related constants
+ * Identity management related constants.
  */
 public class IdentityMgtConstants {
 
-    private IdentityMgtConstants(){}
+    private IdentityMgtConstants() {
+    }
 
-    public class PropertyConfig {
-
-        private PropertyConfig(){}
+    /**
+     * Constants related to property config.
+     */
+    public static class PropertyConfig {
 
         public static final String CONFIG_FILE_NAME = "identity-mgt.properties";
         public static final String ACCOUNT_LOCK_ENABLE = "Account.Lock.Enable";
         public static final String AUTH_POLICY_ENABLE = "Authentication.Policy.Enable";
         public static final String AUTH_POLICY_ACCOUNT_EXIST = "Authentication.Policy.Check.Account.Exist";
-        public static final String AUTH_POLICY_ACCOUNT_LOCKING_FAIL_ATTEMPTS = "Authentication.Policy.Account.Lock.On.Failure.Max.Attempts";
+        public static final String AUTH_POLICY_ACCOUNT_LOCKING_FAIL_ATTEMPTS =
+                "Authentication.Policy.Account.Lock.On.Failure.Max.Attempts";
         public static final String PASSWORD_POLICY_EXTENSIONS = "Password.policy.extensions";
         public static final String EXTENSION_USER_DATA_STORE = "Identity.Mgt.User.Data.Store";
         public static final String EXTENSION_USER_RECOVERY_DATA_STORE = "Identity.Mgt.User.Recovery.Data.Store";
@@ -39,18 +42,19 @@ public class IdentityMgtConstants {
 
     }
 
-    public class Event {
-
-        private Event(){}
+    /**
+     * Constants related to event.
+     */
+    public static class Event {
 
         public static final String PRE_AUTHENTICATION = "PRE_AUTHENTICATION";
-
     }
 
 
-    public class EventProperty {
-
-        private EventProperty(){}
+    /**
+     * Constants related to event property.
+     */
+    public static class EventProperty {
 
         public static final String MODULE = "module";
         public static final String USER_NAME = "userName";
@@ -59,9 +63,10 @@ public class IdentityMgtConstants {
 
     }
 
-    public class ErrorMessage {
-
-        private ErrorMessage(){}
+    /**
+     * Error messages.
+     */
+    public static class ErrorMessage {
 
         public static final String FAILURE = "Failure";
         public static final String FAILED_AUTHENTICATION = "Authentication Failed.";
@@ -69,10 +74,10 @@ public class IdentityMgtConstants {
 
     }
 
-
-    public class Claim {
-
-        private Claim(){}
+    /**
+     * Constants related to claim.
+     */
+    public static class Claim {
 
         public static final String FAIL_LOGIN_ATTEMPTS = "http://wso2.org/claims/identity/failedLoginAttempts";
         public static final String UNLOCKING_TIME = "http://wso2.org/claims/identity/unlockTime";

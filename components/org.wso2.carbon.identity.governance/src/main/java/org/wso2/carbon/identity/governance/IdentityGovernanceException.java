@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.governance;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Identity governance exception.
+ */
 public class IdentityGovernanceException extends Exception {
 
     public static final int FAILURE = 0;
@@ -30,22 +33,22 @@ public class IdentityGovernanceException extends Exception {
     static {
 
         FAULT_CODE_MAP.put(
-                new Integer(IdentityGovernanceException.FAILURE),
+                Integer.valueOf(IdentityGovernanceException.FAILURE),
                 IdentityMgtConstants.ErrorMessage.FAILURE
         );
         FAULT_CODE_MAP.put(
-                new Integer(FAILED_AUTHENTICATION),
+                Integer.valueOf(FAILED_AUTHENTICATION),
                 IdentityMgtConstants.ErrorMessage.FAILED_AUTHENTICATION
         );
         FAULT_CODE_MAP.put(
-                new Integer(FAILED_ENCRYPTION),
+                Integer.valueOf(FAILED_ENCRYPTION),
                 IdentityMgtConstants.ErrorMessage.FAILED_ENCRYPTION
         );
     }
 
     private int errorCode;
 
-    IdentityGovernanceException(){
+    IdentityGovernanceException() {
         super();
     }
 
@@ -61,11 +64,11 @@ public class IdentityGovernanceException extends Exception {
         super(cause);
     }
 
-    public IdentityGovernanceException(int errorCode){
+    public IdentityGovernanceException(int errorCode) {
         this(errorCode, null);
     }
 
-    public IdentityGovernanceException(int errorCode, Object[] args){
+    public IdentityGovernanceException(int errorCode, Object[] args) {
         getMessage(errorCode, args);
         this.errorCode = errorCode;
     }

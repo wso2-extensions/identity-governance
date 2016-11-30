@@ -22,6 +22,9 @@ import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Identity governance service.
+ */
 public interface IdentityGovernanceService {
 
     void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws

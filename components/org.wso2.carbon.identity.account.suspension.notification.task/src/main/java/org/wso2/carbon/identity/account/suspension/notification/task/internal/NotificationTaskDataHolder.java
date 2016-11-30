@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.account.suspension.notification.task.internal;
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -30,11 +30,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Notification task data holder.
+ */
 public class NotificationTaskDataHolder {
 
     private static volatile NotificationTaskDataHolder accountServiceDataHolder = new NotificationTaskDataHolder();
 
-    private IdentityEventService identityEventService;
+    private EventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private BundleContext bundleContext;
     private Map<String, NotificationReceiversRetrievalFactory> notificationReceiversRetrievalFactories =
@@ -68,11 +71,11 @@ public class NotificationTaskDataHolder {
         return accountServiceDataHolder;
     }
 
-    public IdentityEventService getIdentityEventService() {
+    public EventService getIdentityEventService() {
         return identityEventService;
     }
 
-    public void setIdentityEventService(IdentityEventService identityEventService) {
+    public void setIdentityEventService(EventService identityEventService) {
         this.identityEventService = identityEventService;
     }
 

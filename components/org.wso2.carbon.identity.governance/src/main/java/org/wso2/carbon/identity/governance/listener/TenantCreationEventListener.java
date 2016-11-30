@@ -26,6 +26,9 @@ import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 
 import java.util.List;
 
+/**
+ * Tenant creation event listener.
+ */
 public class TenantCreationEventListener implements TenantMgtListener {
 
     @Override
@@ -37,8 +40,8 @@ public class TenantCreationEventListener implements TenantMgtListener {
                 IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, tenantInfoBean
                         .getTenantDomain());
             } catch (IdentityGovernanceException e) {
-                throw new StratosException("Error while saving tenant configurations for " + identityGovernanceConnector.getName() +
-                        ".", e);
+                throw new StratosException("Error while saving tenant configurations for " +
+                        identityGovernanceConnector.getName() + ".", e);
             }
         }
 

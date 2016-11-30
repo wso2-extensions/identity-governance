@@ -21,6 +21,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Identity governance connector.
+ */
 public interface IdentityGovernanceConnector {
 
     String getName();
@@ -33,6 +36,7 @@ public interface IdentityGovernanceConnector {
 
     Properties getDefaultPropertyValues (String tenantDomain) throws IdentityGovernanceException;
 
-    Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
+    Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException;
 
 }

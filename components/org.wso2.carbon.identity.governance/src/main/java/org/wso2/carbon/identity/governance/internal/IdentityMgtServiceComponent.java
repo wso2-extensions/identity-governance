@@ -19,20 +19,22 @@ package org.wso2.carbon.identity.governance.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
-import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;;
+import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
 import org.wso2.carbon.identity.governance.listener.TenantCreationEventListener;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+
+;
 
 /**
  * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
@@ -55,12 +57,11 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 public class IdentityMgtServiceComponent {
 
     private static Log log = LogFactory.getLog(IdentityMgtServiceComponent.class);
-    private static IdentityMgtEventListener listener = null;
 
     protected void activate(ComponentContext context) {
 
         try {
-            listener = new IdentityMgtEventListener();
+            IdentityMgtEventListener listener = new IdentityMgtEventListener();
             context.getBundleContext().registerService(UserOperationEventListener.class,
                     listener, null);
             context.getBundleContext().registerService(UserOperationEventListener.class,
@@ -84,11 +85,11 @@ public class IdentityMgtServiceComponent {
         }
     }
 
-    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+    protected void unsetIdentityEventService(EventService identityEventService) {
         IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(null);
     }
 
-    protected void setIdentityEventService(IdentityEventService identityEventService) {
+    protected void setIdentityEventService(EventService identityEventService) {
         IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 
@@ -99,7 +100,8 @@ public class IdentityMgtServiceComponent {
     protected void setIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
         IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityGovernanceConnector);
         try {
-            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector,
+                    MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         } catch (IdentityGovernanceException e) {
             log.error("Error while saving super tenant configurations for " + identityGovernanceConnector.getName() +
                     ".", e);

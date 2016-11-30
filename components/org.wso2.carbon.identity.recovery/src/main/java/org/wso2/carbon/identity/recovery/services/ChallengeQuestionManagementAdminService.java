@@ -99,7 +99,7 @@ public class ChallengeQuestionManagementAdminService {
 
 
     /**
-     * Get all tenant questions of a locale in a tenant domain
+     * Get all tenant questions of a locale in a tenant domain.
      *
      * @param tenantDomain
      * @param locale
@@ -124,7 +124,7 @@ public class ChallengeQuestionManagementAdminService {
 
 
     /**
-     * Set challenge questions for a tenant domain
+     * Set challenge questions for a tenant domain.
      *
      * @param challengeQuestions
      * @param tenantDomain
@@ -144,7 +144,7 @@ public class ChallengeQuestionManagementAdminService {
 
 
     /**
-     * Set challenge questions for a tenant domain
+     * Set challenge questions for a tenant domain.
      *
      * @param challengeQuestions
      * @param tenantDomain
@@ -164,7 +164,7 @@ public class ChallengeQuestionManagementAdminService {
 
 
     /**
-     * Set challenge question answers for a user
+     * Set challenge question answers for a user.
      *
      * @param user
      * @param userChallengeAnswers

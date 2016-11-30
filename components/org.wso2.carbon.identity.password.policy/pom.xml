@@ -43,40 +43,20 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-scr-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>
-                            ${project.artifactId}
-                        </Bundle-SymbolicName>
-                        <Private-Package>
-                            org.wso2.carbon.identity.password.policy.internal
-                        </Private-Package>
-                        <Export-Package>
-                            org.wso2.carbon.identity.password.policy.*; version="${identity.governance.exp.pkg.version}",
-                            !org.wso2.carbon.identity.password.policy.internal
-                        </Export-Package>
-                        <Import-Package>
-                            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
-                            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
-                            org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}"
-                        </Import-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
+    <properties>
+        <private.package>
+            org.wso2.carbon.identity.password.policy.internal
+        </private.package>
+        <export.package>
+            org.wso2.carbon.identity.password.policy.*; version="${identity.governance.exp.pkg.version}",
+            !org.wso2.carbon.identity.password.policy.internal
+        </export.package>
+        <import.package>
+            org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
+            org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
+            org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
+            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}"
+        </import.package>
+        <dynamic.import.package>*</dynamic.import.package>
+    </properties>
 </project>

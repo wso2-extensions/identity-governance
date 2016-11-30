@@ -69,29 +69,15 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>
-                            ${project.artifactId}
-                        </Bundle-SymbolicName>
-                        <Export-Package>
-                            org.wso2.carbon.identity.governance.ui.*;version="${identity.governance.exp.pkg.version}",
-                        </Export-Package>
-                        <Import-Package>
-                            org.wso2.carbon.identity.governance.stub;
-                            version="${identity.governance.imp.pkg.version.range}"
-                        </Import-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
-                        <Carbon-Component>UIBundle</Carbon-Component>
-                    </instructions>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <properties>
+        <export.package>
+            org.wso2.carbon.identity.governance.ui.*;version="${identity.governance.exp.pkg.version}",
+        </export.package>
+        <import.package>
+            org.wso2.carbon.identity.governance.stub;
+            version="${identity.governance.imp.pkg.version.range}"
+        </import.package>
+        <dynamic.import.package>*</dynamic.import.package>
+        <carbon.component>UIBundle</carbon.component>
+    </properties>
 </project>

@@ -33,8 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This module persists data in to user store as user's attribute
- * //TODO remove method when user is deleted
+ * This module persists data in to user store as user's attribute.
+ * TODO remove method when user is deleted
  */
 public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
 
@@ -64,42 +64,40 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
         }
         String username = UserCoreUtil.removeDomainFromName(userIdentityDTO.getUserName());
 
-            try {
-                // Check if the user store is read only. If it is read only and still uses user store based data
-                // store then log a warn.
-                if(!userStoreManager.isReadOnly()) {
-                    // Need to clone the map. If not iterative calls will refer the same map
-                    userStoreManager.setUserClaimValues(username, new HashMap<String,String>
-                            (userIdentityDTO.getUserIdentityDataMap()), null);
-                } else {
-                    // If the user store is read only and still uses UserStoreBasedIdentityDataStore, then log a warn
-                    log.warn("User store is read only. Changes to identities are only stored in memory, " +
-                            "and not updated in user store.");
-                    return;
-                }
-            } catch (UserStoreException e) {
-                if(!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)){
-                    throw IdentityException.error("Error while persisting identity user data in to user store", e);
-                } else if (log.isDebugEnabled()){
-                    String message = null;
-                    if(userStoreManager instanceof AbstractUserStoreManager){
-                        String domain = ((AbstractUserStoreManager)userStoreManager).getRealmConfiguration()
-                                .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-                        if(domain != null){
-                            message = "User: " + username + " does not exist in " + domain;
-                        }
-                    }
-                    if(message == null) {
-                        message = "User: " + username + " does not exist";
-                    }
-                    log.debug(message);
-                    return;
-                }
+        try {
+            // Check if the user store is read only. If it is read only and still uses user store based data
+            // store then log a warn.
+            if (!userStoreManager.isReadOnly()) {
+                // Need to clone the map. If not iterative calls will refer the same map
+                userStoreManager.setUserClaimValues(username, new HashMap<>
+                        (userIdentityDTO.getUserIdentityDataMap()), null);
+            } else {
+                // If the user store is read only and still uses UserStoreBasedIdentityDataStore, then log a warn
+                log.warn("User store is read only. Changes to identities are only stored in memory, " +
+                        "and not updated in user store.");
             }
+        } catch (UserStoreException e) {
+            if (!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)) {
+                throw IdentityException.error("Error while persisting identity user data in to user store", e);
+            } else if (log.isDebugEnabled()) {
+                String message = null;
+                if (userStoreManager instanceof AbstractUserStoreManager) {
+                    String domain = ((AbstractUserStoreManager) userStoreManager).getRealmConfiguration()
+                            .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+                    if (domain != null) {
+                        message = "User: " + username + " does not exist in " + domain;
+                    }
+                }
+                if (message == null) {
+                    message = "User: " + username + " does not exist";
+                }
+                log.debug(message);
+            }
+        }
     }
 
     /**
-     * This method loads identity and security questions from the user stores
+     * This method loads identity and security questions from the user stores.
      */
     @Override
     public UserIdentityClaim load(String userName, UserStoreManager userStoreManager) {
@@ -135,7 +133,8 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
                     if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI) ||
                             claimUri.contains(UserCoreConstants.ClaimTypeURIs.CHALLENGE_QUESTION_URI)) {
                         if (log.isDebugEnabled()) {
-                            log.debug("Adding UserIdentityClaim : " + claimUri + " with the value : " + claim.getValue());
+                            log.debug("Adding UserIdentityClaim : " + claimUri + " with the value : "
+                                    + claim.getValue());
                         }
                         userDataMap.put(claimUri, claim.getValue());
                     }
@@ -145,18 +144,18 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
                 return null;
             }
         } catch (UserStoreException e) {
-            if(!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)){
+            if (!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)) {
                 log.error("Error while reading identity user data from user store", e);
-            } else if (log.isDebugEnabled()){
+            } else if (log.isDebugEnabled()) {
                 String message = null;
-                if(userStoreManager instanceof AbstractUserStoreManager){
-                    String domain = ((AbstractUserStoreManager)userStoreManager).getRealmConfiguration()
+                if (userStoreManager instanceof AbstractUserStoreManager) {
+                    String domain = ((AbstractUserStoreManager) userStoreManager).getRealmConfiguration()
                             .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-                    if(domain != null){
+                    if (domain != null) {
                         message = "User: " + userName + " does not exist in " + domain;
                     }
                 }
-                if(message == null) {
+                if (message == null) {
                     message = "User: " + userName + " does not exist";
                 }
                 log.debug(message);
@@ -173,8 +172,9 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
         userIdentityDTO = new UserIdentityClaim(userName, userDataMap);
         int tenantId = CarbonContext.getThreadLocalCarbonContext().getTenantId();
         userIdentityDTO.setTenantId(tenantId);
-        org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager) userStoreManager;
-        String domainName= store.getRealmConfiguration().getUserStoreProperty(
+        org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager)
+                userStoreManager;
+        String domainName = store.getRealmConfiguration().getUserStoreProperty(
                 UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         try {

@@ -18,6 +18,9 @@ package org.wso2.carbon.identity.governance.bean;
 
 import org.wso2.carbon.identity.application.common.model.Property;
 
+/**
+ * Connector configuration.
+ */
 public class ConnectorConfig {
 
     private String friendlyName;
@@ -32,10 +35,14 @@ public class ConnectorConfig {
     }
 
     public Property[] getProperties() {
-        return properties;
+        if (properties != null) {
+            return properties.clone();
+        }
+
+        return new Property[0];
     }
 
     public void setProperties(Property[] properties) {
-        this.properties = properties;
+        this.properties = properties.clone();
     }
 }

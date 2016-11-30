@@ -17,7 +17,6 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -35,7 +34,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.Tenant;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,6 +143,7 @@ public class AccountValidatorThread implements Runnable {
                 receivers = NotificationReceiversRetrievalManager.getReceivers(delay, tenantDomain, suspensionDelay);
             } catch (AccountSuspensionNotificationException e) {
                 log.error("Error occurred while retrieving notification receivers", e);
+                return;
             }
             if (!receivers.isEmpty()) {
                 for (NotificationReceiver receiver : receivers) {
