@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -50,9 +51,6 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
 
     private static final Log log = LogFactory.getLog(LDAPNotificationReceiversRetrieval.class);
     private RealmConfiguration realmConfiguration = null;
-    private final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
-    private final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
-    private final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
 
     @Override
     public void init(RealmConfiguration realmConfiguration) {
@@ -70,7 +68,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
             RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
             try {
-                ClaimManager claimManager = (ClaimManager)realmService.getTenantUserRealm(IdentityTenantUtil.
+                ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
                         getTenantId(tenantDomain)).getClaimManager();
                 String userStoreDomain = realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.
                         PROPERTY_DOMAIN_NAME);
@@ -78,9 +76,10 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     userStoreDomain = IdentityUtil.getPrimaryDomainName();
                 }
 
-                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, USERNAME_CLAIM);
-                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, FIRST_NAME_CLAIM);
-                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, EMAIL_CLAIM);
+                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.USERNAME_CLAIM);
+                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, NotificationConstants.FIRST_NAME_CLAIM);
+                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.EMAIL_CLAIM);
+                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);
@@ -90,7 +89,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 DirContext ctx = ldapConnectionContext.getContext();
 
                 //carLicense is the mapped LDAP attribute for LastLoginTime claim
-                String searchFilter = "(&(carLicense>=" + lookupMin + ")(carLicense<=" + lookupMax + "))";
+                String searchFilter = "(&("+lastLoginTimeAttribute+">=" + lookupMin + ")("+lastLoginTimeAttribute+"<="
+                        + lookupMax + "))";
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -109,7 +109,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setUsername((String) result.getAttributes().get(usernameMapAttribute).get());
                     receiver.setFirstName((String) result.getAttributes().get(firstNameMapAttribute).get());
 
-                    long lastLoginTime = Long.parseLong(result.getAttributes().get("carLicense").get().toString());
+                    long lastLoginTime = Long.parseLong(result.getAttributes().get(lastLoginTimeAttribute).get().
+                            toString());
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
                     receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
 

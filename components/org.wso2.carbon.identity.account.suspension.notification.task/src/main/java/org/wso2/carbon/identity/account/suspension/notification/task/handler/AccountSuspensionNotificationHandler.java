@@ -15,6 +15,7 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
@@ -108,6 +109,19 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
         super.init(configuration);
+
+        if (StringUtils.isBlank(configs.getModuleProperties().
+                getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME))) {
+            NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(configs.getModuleProperties().
+                    getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
+        }
+
+        if (StringUtils.isBlank(configs.getModuleProperties().
+                getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE))) {
+            NotificationTaskDataHolder.getInstance().setNotificationSendingThreadPoolSize(configs.getModuleProperties().
+                    getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE));
+
+        }
         NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(configs.getModuleProperties().
                 getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         startScheduler();
@@ -151,6 +165,11 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private void startScheduler() {
 
+        if(!Boolean.parseBoolean(configs.getModuleProperties().getProperty(NotificationConstants.
+                SUSPENSION_NOTIFICATION_ENABLED))) {
+            return;
+        }
+
         Date notificationTriggerTime = null;
         String notificationTriggerTimeProperty = configs.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_TRIGGER_TIME);
@@ -184,7 +203,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             delay += schedulerDelayInSeconds;
         }
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(NotificationTaskDataHolder.getInstance().
+                                getNotificationSendingThreadPoolSize());
         scheduler.scheduleAtFixedRate(new AccountValidatorThread(), delay, schedulerDelayInSeconds, TimeUnit.SECONDS);
     }
 
