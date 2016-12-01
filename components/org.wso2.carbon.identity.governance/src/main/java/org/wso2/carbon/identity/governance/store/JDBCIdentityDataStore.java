@@ -99,13 +99,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
         try {
-            String query;
             if (isUsernameCaseSensitive) {
-                query = SQLQuery.CHECK_EXIST_USER_DATA;
+                prepStmt = connection.prepareStatement(SQLQuery.CHECK_EXIST_USER_DATA);
             } else {
-                query = SQLQuery.CHECK_EXIST_USER_DATA_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(SQLQuery.CHECK_EXIST_USER_DATA_CASE_INSENSITIVE);
             }
-            prepStmt = connection.prepareStatement(query);
             prepStmt.setInt(1, tenantId);
             prepStmt.setString(2, userName);
             prepStmt.setString(3, key);
@@ -149,13 +147,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         PreparedStatement prepStmt = null;
         boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
         try {
-            String query;
             if (isUsernameCaseSensitive) {
-                query = SQLQuery.UPDATE_USER_DATA;
+                prepStmt = connection.prepareStatement(SQLQuery.UPDATE_USER_DATA);
             } else {
-                query = SQLQuery.UPDATE_USER_DATA_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(SQLQuery.UPDATE_USER_DATA_CASE_INSENSITIVE);
             }
-            prepStmt = connection.prepareStatement(query);
             prepStmt.setString(1, value);
             prepStmt.setInt(2, tenantId);
             prepStmt.setString(3, userName);
@@ -188,13 +184,12 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         try {
             int tenantId = userStoreManager.getTenantId();
             boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
-            String query;
             if (isUsernameCaseSensitive) {
-                query = SQLQuery.LOAD_USER_DATA;
+                prepStmt = connection.prepareStatement(SQLQuery.LOAD_USER_DATA);
             } else {
-                query = SQLQuery.LOAD_USER_DATA_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(SQLQuery.LOAD_USER_DATA_CASE_INSENSITIVE);
             }
-            prepStmt = connection.prepareStatement(query);
+
             prepStmt.setInt(1, tenantId);
             prepStmt.setString(2, userName);
             results = prepStmt.executeQuery();
@@ -240,13 +235,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         try {
             int tenantId = userStoreManager.getTenantId();
             boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
-            String query;
             if (isUsernameCaseSensitive) {
-                query = SQLQuery.DELETE_USER_DATA;
+                prepStmt = connection.prepareStatement(SQLQuery.DELETE_USER_DATA);
             } else {
-                query = SQLQuery.DELETE_USER_DATA_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(SQLQuery.DELETE_USER_DATA_CASE_INSENSITIVE);
             }
-            prepStmt = connection.prepareStatement(query);
             prepStmt.setInt(1, tenantId);
             prepStmt.setString(2, userName);
             prepStmt.execute();

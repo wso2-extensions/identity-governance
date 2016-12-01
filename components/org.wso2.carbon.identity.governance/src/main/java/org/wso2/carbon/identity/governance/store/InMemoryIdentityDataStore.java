@@ -27,6 +27,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
+import java.util.Locale;
 import java.util.Map;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -67,9 +68,9 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                             userStoreManager)) {
                         if (log.isDebugEnabled()) {
                             log.debug("Case insensitive user store found. Changing username from : " + userName +
-                                    " to : " + userName.toLowerCase());
+                                    " to : " + userName.toLowerCase(Locale.ENGLISH));
                         }
-                        userName = userName.toLowerCase();
+                        userName = userName.toLowerCase(Locale.ENGLISH);
                     }
                 }
 
@@ -123,9 +124,9 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                             userStoreManager)) {
                         if (log.isDebugEnabled()) {
                             log.debug("Case insensitive user store found. Changing username from : " + userName +
-                                    " to : " + userName.toLowerCase());
+                                    " to : " + userName.toLowerCase(Locale.ENGLISH));
                         }
-                        userName = userName.toLowerCase();
+                        userName = userName.toLowerCase(Locale.ENGLISH);
                     }
                 }
 
@@ -182,9 +183,9 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                     if (log.isDebugEnabled()) {
                         log.debug("Case insensitive user store found. Changing username from : " + userName
                                 + " to : " +
-                                userName.toLowerCase());
+                                userName.toLowerCase(Locale.ENGLISH));
                     }
-                    userName = userName.toLowerCase();
+                    userName = userName.toLowerCase(Locale.ENGLISH);
                 }
             }
             org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager)
