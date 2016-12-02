@@ -16,7 +16,7 @@
 
 package org.wso2.carbon.identity.password.policy.exeption;
 
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 
 /**
  * Used for creating checked exceptions that can be handled.

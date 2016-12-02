@@ -16,6 +16,9 @@
 
 package org.wso2.carbon.identity.password.policy.constants;
 
+/**
+ * Constants for password policy
+ */
 public class PasswordPolicyConstants {
 
     public static final String PW_POLICY_ENABLE = "passwordPolicy.enable";
@@ -27,6 +30,9 @@ public class PasswordPolicyConstants {
     public static final String PW_POLICY_NAME_CLASS = "passwordPolicy.class.PasswordNamePolicy";
     public static final String PW_POLICY_PATTERN_CLASS = "passwordPolicy.class.PasswordPatternPolicy";
 
+    /**
+     * Error messages
+     */
     public enum ErrorMessages {
 
         ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES("40001", "Error occurred while loading Password Policies"),

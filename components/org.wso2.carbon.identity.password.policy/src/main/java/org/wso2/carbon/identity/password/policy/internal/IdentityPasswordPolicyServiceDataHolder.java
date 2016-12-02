@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.password.policy.internal;
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
+/**
+ * Data holder to store identity governance service
+ */
 public class IdentityPasswordPolicyServiceDataHolder {
 
     private static IdentityPasswordPolicyServiceDataHolder instance = new IdentityPasswordPolicyServiceDataHolder();
