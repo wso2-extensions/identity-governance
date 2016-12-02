@@ -54,17 +54,17 @@ public class AccountValidatorThread implements Runnable {
 
         RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
-        Tenant tenants[] = new Tenant[0];
+        org.wso2.carbon.user.api.Tenant[] tenants = new Tenant[0];
 
         try {
-            tenants = (Tenant[]) realmService.getTenantManager().getAllTenants();
+            tenants = realmService.getTenantManager().getAllTenants();
         } catch (UserStoreException e) {
             log.error("Error occurred while retrieving tenants", e);
         }
 
         handleTask(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
-        for (Tenant tenant : tenants) {
+        for (org.wso2.carbon.user.api.Tenant tenant : tenants) {
             handleTask(tenant.getDomain());
         }
 

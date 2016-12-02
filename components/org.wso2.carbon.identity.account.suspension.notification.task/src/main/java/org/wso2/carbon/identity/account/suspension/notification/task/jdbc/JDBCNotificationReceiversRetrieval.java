@@ -24,6 +24,9 @@ import org.wso2.carbon.user.api.RealmConfiguration;
 
 import java.util.List;
 
+/**
+ * LDAP notification receivers retrieval
+ */
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
     @Override
