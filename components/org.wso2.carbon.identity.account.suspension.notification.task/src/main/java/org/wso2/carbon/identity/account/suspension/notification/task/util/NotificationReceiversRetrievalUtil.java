@@ -28,7 +28,6 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.HashMap;
 import java.util.HashSet;

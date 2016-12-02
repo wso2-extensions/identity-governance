@@ -73,6 +73,12 @@ public class IdentityMgtServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
             }
+        } catch (IllegalAccessException e) {
+            log.error("Error while activating identity governance component.", e);
+        } catch (InstantiationException e) {
+            log.error("Error while activating identity governance component.", e);
+        } catch (ClassNotFoundException e) {
+            log.error("Error while activating identity governance component.", e);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

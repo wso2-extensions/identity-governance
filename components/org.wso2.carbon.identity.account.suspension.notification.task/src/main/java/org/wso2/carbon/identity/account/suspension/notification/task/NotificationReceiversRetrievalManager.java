@@ -25,12 +25,17 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.Notifi
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiversRetrievalUtil;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Set;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Set;
+
 import java.util.concurrent.TimeUnit;
+
+/**
+ * Iterate through all user stores and get notification receivers
+ */
 
 public class NotificationReceiversRetrievalManager {
 
@@ -51,7 +56,7 @@ public class NotificationReceiversRetrievalManager {
                 long lookupMin = 0;
                 try {
                     lookupMin = getCurrentExecutionTime(NotificationTaskDataHolder.getInstance().
-                            getNotificationTriggerTime()).getTimeInMillis() - TimeUnit.DAYS.toMillis(delay+1);
+                            getNotificationTriggerTime()).getTimeInMillis() - TimeUnit.DAYS.toMillis(delay + 1);
                 } catch (ParseException e) {
                     throw new AccountSuspensionNotificationException("Error occurred while reading notification "
                             + "trigger time", e);

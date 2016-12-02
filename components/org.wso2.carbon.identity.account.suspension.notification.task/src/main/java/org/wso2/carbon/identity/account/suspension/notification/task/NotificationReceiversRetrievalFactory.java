@@ -20,6 +20,9 @@ package org.wso2.carbon.identity.account.suspension.notification.task;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.user.api.RealmConfiguration;
 
+/**
+ * Provide an interface to implement notification retrieval for different user store typed
+ */
 public interface NotificationReceiversRetrievalFactory {
 
     public abstract NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)

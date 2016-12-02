@@ -38,6 +38,9 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Scheduled task to send notifications
+ */
 public class AccountValidatorThread implements Runnable {
 
     private static final Log log = LogFactory.getLog(AccountValidatorThread.class);
@@ -135,7 +138,7 @@ public class AccountValidatorThread implements Runnable {
     /**
      * Notify users about account inactivity via Email.
      */
-    private void notifyUsers(String tenantDomain, long suspensionDelay, long[] notificationDelays ) {
+    private void notifyUsers (String tenantDomain, long suspensionDelay, long[] notificationDelays) {
         EmailUtil util = new EmailUtil();
         for (long delay : notificationDelays) {
             List<NotificationReceiver> receivers = null;
@@ -177,7 +180,8 @@ public class AccountValidatorThread implements Runnable {
                 privilegedCarbonContext.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
                 privilegedCarbonContext.setTenantDomain(tenantDomain);
 
-                UserIdentityManagementAdminService userIdentityManagementAdminService = new UserIdentityManagementAdminService();
+                UserIdentityManagementAdminService userIdentityManagementAdminService =
+                        new UserIdentityManagementAdminService();
                 // Iterate through all the receivers and disable them
                 for (NotificationReceiver receiver : receivers) {
                     if (log.isDebugEnabled()) {
