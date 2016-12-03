@@ -40,6 +40,7 @@ import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -157,17 +158,39 @@ public class ChallengeQuestionManager {
                     .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
 
+        return questions;
+    }
+
+
+    /**
+     * Get challenge questions available for a user.
+     *
+     * @param tenantDomain tenantDomain of the user
+     * @param user         User object
+     * @return List of available challenge questions in user's locale in the tenantDomain. If no challenge questions
+     * are available we return challenge questions from the default en_US locale.
+     * @throws IdentityRecoveryException
+     */
+    public List<ChallengeQuestion> getAllChallengeQuestionsForUser(String tenantDomain,
+                                                                   User user) throws IdentityRecoveryException {
+
+        // Identify the locale of the user
+        String locale = getLocaleOfUser(user, tenantDomain);
+        // get challenge questions in the given tenant domain for give locale.
+        List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
+
         /*
-            If there are no challenge questions found in the locale of the user we return challenge questions from
-            default en_US locale.
+            If there are no challenge questions found in the locale of the user and the locale is not the default one.
+             we return challenge questions from default en_US locale.
          */
-        if (questions.isEmpty() && !StringUtils.equalsIgnoreCase(LOCALE_EN_US, locale)) {
-            log.error("Unable to find challenge questions in " + locale + " locale. Returning questions of default " +
-                    "locale : " + LOCALE_EN_US);
-            questions = getAllChallengeQuestions(tenantDomain, LOCALE_EN_US);
+        if (challengeQuestions.isEmpty() && !StringUtils.equalsIgnoreCase(LOCALE_EN_US, locale)) {
+            String error = "No challenge questions available in '%s' locale in %s tenant. Sending questions of " +
+                    "default '%s' locale";
+            log.error(String.format(error, locale, tenantDomain, LOCALE_EN_US));
+            challengeQuestions = getAllChallengeQuestions(tenantDomain, LOCALE_EN_US);
         }
 
-        return questions;
+        return challengeQuestions;
     }
 
 
@@ -797,6 +820,25 @@ public class ChallengeQuestionManager {
         if (!StringUtils.isAlphanumeric(questionId)) {
             throw new IdentityRecoveryClientException(String.format(errorMsg, "QuestionId"));
         }
+    }
+
+    private String getLocaleOfUser(User user, String tenantDomain) throws IdentityRecoveryException {
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
+        String locale = IdentityRecoveryConstants.LOCALE_EN_US;
+        try {
+            String userLocale =
+                    Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.Questions.LOCALE_CLAIM);
+            if (StringUtils.isNotBlank(userLocale)) {
+                locale = userLocale;
+            }
+        } catch (UserStoreException e) {
+            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
+                    tenantAwareUserName, tenantDomain);
+            log.error(errorMsg);
+            throw new IdentityRecoveryServerException(errorMsg, e);
+        }
+
+        return locale;
     }
 
 

@@ -70,7 +70,8 @@ public class ChallengeQuestionManagementAdminService {
     }
 
     /**
-     * Get all challenge questions applicable for a user based on his locale.
+     * Get all challenge questions applicable for a user based on his locale. If we can't find any question in his
+     * locale we return challenge questions from the default en_US locale.
      *
      * @param user
      * @return
@@ -83,17 +84,15 @@ public class ChallengeQuestionManagementAdminService {
             throw new IdentityRecoveryClientException("User object provided is null.");
         }
 
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         List<ChallengeQuestion> challengeQuestionList;
         try {
-            String locale = getLocaleOfUser(user, tenantDomain);
-            challengeQuestionList = questionManager.getAllChallengeQuestions(tenantDomain, locale);
+            challengeQuestionList = questionManager.getAllChallengeQuestionsForUser(tenantDomain, user);
             return challengeQuestionList.toArray(new ChallengeQuestion[challengeQuestionList.size()]);
         } catch (IdentityRecoveryException e) {
             String errorMgs = "Error loading challenge questions for user : %s@%s.";
-            log.error(String.format(errorMgs, tenantAwareUserName, tenantDomain), e);
-            throw new IdentityRecoveryException(String.format(errorMgs, tenantAwareUserName, tenantDomain), e);
+            log.error(String.format(errorMgs, user.getUserName(), tenantDomain), e);
+            throw new IdentityRecoveryException(String.format(errorMgs, user.getUserName(), tenantDomain), e);
         }
     }
 
@@ -246,26 +245,6 @@ public class ChallengeQuestionManagementAdminService {
             log.error(msg, e);
             throw new IdentityRecoveryException(msg, e);
         }
-    }
-
-
-    private String getLocaleOfUser(User user, String tenantDomain) throws IdentityRecoveryException {
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
-        String locale = IdentityRecoveryConstants.LOCALE_EN_US;
-        try {
-            String userLocale =
-                    Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.Questions.LOCALE_CLAIM);
-            if (StringUtils.isNotBlank(userLocale)) {
-                locale = userLocale;
-            }
-        } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
-                    tenantAwareUserName, tenantDomain);
-            log.error(errorMsg);
-            throw new IdentityRecoveryServerException(errorMsg, e);
-        }
-
-        return locale;
     }
 
     private boolean isUserAuthorized(String tenantAwareUserName, String tenantDomain)
