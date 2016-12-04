@@ -38,6 +38,7 @@ import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
@@ -594,25 +595,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             Event identityMgtEvent = new Event(eventName, properties);
 
-            // TODO this is a temporary fix (https://wso2.org/jira/browse/IDENTITY-4752)
-            // Need to remove after fixed in carbon-multitenancy
-            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-            IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
-            IdentityProvider residentIdp = null;
-            try {
-                residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
-            } catch (IdentityProviderManagementException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Unable to get the resident identity provider for tenant: " + tenantDomain, e);
-                }
-            }
-
-            // Resident IDP can only be null during tenant admin creation. Therefore we skip handling the event when
-            // a tenant admin is created. Otherwise governance event handlers will try to retrieve properties from
-            // resident IDP leading to NPE
-            if (residentIdp != null) {
+            if (!TenantMgtUtil.isTenantAdminCreationOperation()) {
                 eventMgtService.handleEvent(identityMgtEvent);
             }
+
         } catch (IdentityEventException e) {
             List<IdentityException.ErrorInfo> errorInfoList = e.getErrorInfoList();
             if (!errorInfoList.isEmpty()) {
