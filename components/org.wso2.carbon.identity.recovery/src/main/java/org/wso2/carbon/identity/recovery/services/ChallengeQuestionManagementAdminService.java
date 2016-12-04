@@ -258,7 +258,7 @@ public class ChallengeQuestionManagementAdminService {
             authzManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getAuthorizationManager();
 
-            isAuthorized = authzManager.isUserAuthorized(tenantAwareUserName, "/permission/admin/configure/security",
+            isAuthorized = authzManager.isUserAuthorized(tenantAwareUserName, "/permission/admin/manage/identity",
                     CarbonConstants.UI_PERMISSION_ACTION);
 
         } catch (UserStoreException e) {
