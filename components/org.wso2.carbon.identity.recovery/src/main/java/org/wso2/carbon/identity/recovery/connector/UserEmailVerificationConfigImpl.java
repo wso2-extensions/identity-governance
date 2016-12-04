@@ -1,5 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -72,13 +73,34 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
+        String enableEmailVerification = "false";
+        String enableEmailAccountLockOnCreation = "false";
+        String enableNotificationInternallyManage = "true";
+
+        String emailVerificationProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
+        String lockOnCreationProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
+        String notificationInternallyManagedProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
+
+        if (StringUtils.isNotEmpty(emailVerificationProperty)) {
+            enableEmailVerification = emailVerificationProperty;
+        }
+        if (StringUtils.isNotEmpty(lockOnCreationProperty)) {
+            enableEmailAccountLockOnCreation = lockOnCreationProperty;
+        }
+        if (StringUtils.isNotEmpty(notificationInternallyManagedProperty)) {
+            enableNotificationInternallyManage = notificationInternallyManagedProperty;
+        }
+
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION));
+                enableEmailVerification);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION));
+                enableEmailAccountLockOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE));
+                enableNotificationInternallyManage);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

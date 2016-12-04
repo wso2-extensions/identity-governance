@@ -1,5 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -91,32 +92,89 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
+        String enableNotificationBasedPasswordRecovery = "false";
+        String enableQuestionBasedPasswordRecovery = "false";
+        String minimumAnswers = "2";
+        String enableRecoveryQuestionPasswordReCaptcha = "true";
+        String recoveryQuestionPasswordReCaptchaMaxFailedAttempts = "3";
+        String enableUsernameRecovery = "false";
+        String enableNotificationInternallyManage = "true";
+        String expiryTime = "1440";
+        String notifySuccess = "true";
+        String notifyStart = "true";
+
+        String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        String questionBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
+        String miniMumAnswerProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
+        String recoveryQuestionPasswordReCaptcha = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
+        String passwordReCaptchaMaxFailedAttempts = IdentityUtil.getProperty( IdentityRecoveryConstants.
+                ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
+        String usernameRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        String notificationInternallyManged = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
+        String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        String notifySuccessProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
+        String notifyStartProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
+
+        if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
+            enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
+        }
+        if (StringUtils.isNotEmpty(questionBasedPasswordRecovery)) {
+            enableQuestionBasedPasswordRecovery = questionBasedPasswordRecovery;
+        }
+        if (StringUtils.isNotEmpty(notificationInternallyManged)) {
+            enableNotificationInternallyManage = notificationInternallyManged;
+        }
+        if (StringUtils.isNotEmpty(miniMumAnswerProperty)) {
+            minimumAnswers = miniMumAnswerProperty;
+        }
+        if (StringUtils.isNotEmpty(recoveryQuestionPasswordReCaptcha)) {
+            enableRecoveryQuestionPasswordReCaptcha = recoveryQuestionPasswordReCaptcha;
+        }
+        if (StringUtils.isNotEmpty(passwordReCaptchaMaxFailedAttempts)) {
+            recoveryQuestionPasswordReCaptchaMaxFailedAttempts = passwordReCaptchaMaxFailedAttempts;
+        }
+        if (StringUtils.isNotEmpty(usernameRecovery)) {
+            enableUsernameRecovery = usernameRecovery;
+        }
+        if (StringUtils.isNotEmpty(expiryTimeProperty)) {
+            expiryTime = expiryTimeProperty;
+        }
+        if (StringUtils.isNotEmpty(notifySuccessProperty)) {
+            notifySuccess = notifySuccessProperty;
+        }
+        if (StringUtils.isNotEmpty(notifyStartProperty)) {
+            notifyStart = notifyStartProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
-
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY));
+                enableNotificationBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY));
+                enableQuestionBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER));
+                minimumAnswers);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                        .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE));
+                enableRecoveryQuestionPasswordReCaptcha);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                        .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS));
+                recoveryQuestionPasswordReCaptchaMaxFailedAttempts);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE));
+                enableUsernameRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME));
+                enableNotificationInternallyManage);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, expiryTime);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS));
+                notifySuccess);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START));
+                notifyStart);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
