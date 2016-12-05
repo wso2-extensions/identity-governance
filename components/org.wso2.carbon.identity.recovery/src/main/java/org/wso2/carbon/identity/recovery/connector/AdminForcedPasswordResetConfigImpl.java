@@ -1,5 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -72,13 +73,34 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
+        String enableAdminPasswordResetWithRecoveryLink = "false";
+        String enableAdminPasswordResetWithOTP = "false";
+        String enableAdminPasswordResetOffline = "false";
+
+        String adminPasswordRecoveryWithLinkProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
+        String adminPasswordResetWithOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
+        String adminPasswordResetOfflineProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
+
+        if (StringUtils.isNotEmpty(adminPasswordRecoveryWithLinkProperty)) {
+            enableAdminPasswordResetWithRecoveryLink = adminPasswordRecoveryWithLinkProperty;
+        }
+        if (StringUtils.isNotEmpty(adminPasswordResetWithOTPProperty)) {
+            enableAdminPasswordResetWithOTP = adminPasswordResetWithOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(adminPasswordResetOfflineProperty)) {
+            enableAdminPasswordResetOffline = adminPasswordResetOfflineProperty;
+        }
+
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK));
+                enableAdminPasswordResetWithRecoveryLink);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP));
+                enableAdminPasswordResetWithOTP);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE));
+                enableAdminPasswordResetOffline);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

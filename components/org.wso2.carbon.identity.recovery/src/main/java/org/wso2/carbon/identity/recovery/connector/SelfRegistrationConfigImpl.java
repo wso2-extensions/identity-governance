@@ -1,5 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -79,15 +80,41 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
+        String enableSelfSignUp = "false";
+        String enableAccountLockOnCreation = "true";
+        String enableNotificationInternallyManage = "true";
+        String enableSelfRegistrationReCaptcha = "true";
+
+        String selfSignUpProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+        String accountLockProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+        String notificationInternallyMangedProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
+        String reCaptchaProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
+
+        if (StringUtils.isNotEmpty(selfSignUpProperty)) {
+            enableSelfSignUp = selfSignUpProperty;
+        }
+        if (StringUtils.isNotEmpty(accountLockProperty)) {
+            enableAccountLockOnCreation = accountLockProperty;
+        }
+        if (StringUtils.isNotEmpty(notificationInternallyMangedProperty)) {
+            enableNotificationInternallyManage = notificationInternallyMangedProperty;
+        }
+        if (StringUtils.isNotEmpty(reCaptchaProperty)) {
+            enableSelfRegistrationReCaptcha = reCaptchaProperty;
+        }
+
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION));
+                enableAccountLockOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, IdentityUtil.getProperty
-                (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA));
+                enableNotificationInternallyManage);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+                enableSelfRegistrationReCaptcha);
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
