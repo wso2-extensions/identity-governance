@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -48,6 +49,13 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
+
+        boolean isEnabled = isSuspensionNotificationEnabled(event);
+
+        if (!isEnabled) {
+            return;
+        }
+
 
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             Map<String, Object> eventProperties = event.getEventProperties();
@@ -89,7 +97,9 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -204,8 +214,33 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         }
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(NotificationTaskDataHolder.getInstance().
-                                getNotificationSendingThreadPoolSize());
+                getNotificationSendingThreadPoolSize());
         scheduler.scheduleAtFixedRate(new AccountValidatorThread(), delay, schedulerDelayInSeconds, TimeUnit.SECONDS);
+    }
+
+    private boolean isSuspensionNotificationEnabled(Event event) throws IdentityEventException {
+
+        boolean isEnabled = false;
+
+        Map<String, Object> eventProperties = event.getEventProperties();
+        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+
+        Property[] identityProperties;
+        try {
+            identityProperties = NotificationTaskDataHolder.getInstance()
+                    .getIdentityGovernanceService().getConfiguration(getPropertyNames(), tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            throw new IdentityEventException("Error while retrieving Account Locking Handler properties.", e);
+        }
+
+        for (Property identityProperty : identityProperties) {
+            if (NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED.equals(identityProperty.getName())) {
+                isEnabled = Boolean.parseBoolean(identityProperty.getValue());
+                break;
+            }
+        }
+
+        return isEnabled;
     }
 
 }
