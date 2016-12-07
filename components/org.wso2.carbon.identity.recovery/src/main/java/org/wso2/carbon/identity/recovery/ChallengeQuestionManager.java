@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -77,7 +76,8 @@ public class ChallengeQuestionManager {
      * @return
      * @throws IdentityRecoveryServerException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws IdentityRecoveryServerException {
+    public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws
+            IdentityRecoveryServerException {
 
         tenantDomain = validateTenantDomain(tenantDomain);
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
@@ -193,7 +193,8 @@ public class ChallengeQuestionManager {
      * @param tenantDomain
      * @throws IdentityRecoveryException
      */
-    public void addChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws IdentityRecoveryException {
+    public void addChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws
+            IdentityRecoveryException {
         try {
             tenantDomain = validateTenantDomain(tenantDomain);
 
@@ -307,7 +308,8 @@ public class ChallengeQuestionManager {
      * @return
      * @throws IdentityRecoveryException
      */
-    public ChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws IdentityRecoveryException {
+    public ChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws
+            IdentityRecoveryException {
 
         validateUser(user);
 
@@ -413,7 +415,8 @@ public class ChallengeQuestionManager {
      * @param userChallengeAnswers
      * @throws IdentityException
      */
-    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws IdentityRecoveryException {
+    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws
+            IdentityRecoveryException {
 
         validateUser(user);
 
@@ -438,24 +441,26 @@ public class ChallengeQuestionManager {
 
             if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
                 for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
-                    if (userChallengeAnswer.getQuestion().getQuestionSetId() != null && userChallengeAnswer.getQuestion().getQuestion() !=
+                    if (userChallengeAnswer.getQuestion().getQuestionSetId() != null &&
+                            userChallengeAnswer.getQuestion().getQuestion() !=
                             null && userChallengeAnswer.getAnswer() != null) {
                         String oldValue = Utils.
-                                getClaimFromUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+                                getClaimFromUserStoreManager(user,
+                                        userChallengeAnswer.getQuestion().getQuestionSetId().trim());
 
                         if (oldValue != null && oldValue.contains(separator)) {
                             String oldAnswer = oldValue.split(separator)[1];
                             if (!oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
                                 String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
                                         Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
-                                Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
-                                        claimValue);
+                                Utils.setClaimInUserStoreManager(user,
+                                        userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                             }
                         } else {
                             String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
                                     Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
-                            Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
-                                    claimValue);
+                            Utils.setClaimInUserStoreManager(user,
+                                    userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                         }
                         challengesUris.add(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
                     }
@@ -469,7 +474,8 @@ public class ChallengeQuestionManager {
                                 separator + challengesUri;
                     }
                 }
-                Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
+                Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI,
+                        challengesUrisValue);
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -500,9 +506,11 @@ public class ChallengeQuestionManager {
             }
 
             for (UserChallengeAnswer storedAnswer : storedAnswers) {
-                if ((userChallengeAnswer.getQuestion().getQuestionSetId() == null || !userChallengeAnswer.getQuestion().getQuestionSetId()
+                if ((userChallengeAnswer.getQuestion().getQuestionSetId() == null ||
+                        !userChallengeAnswer.getQuestion().getQuestionSetId()
                         .trim().equals(storedAnswer.getQuestion().getQuestionSetId())) &&
-                        (userChallengeAnswer.getQuestion().getQuestion() == null || !userChallengeAnswer.getQuestion().getQuestion().
+                        (userChallengeAnswer.getQuestion().getQuestion() == null ||
+                                !userChallengeAnswer.getQuestion().getQuestion().
                                 trim().equals(storedAnswer.getQuestion().getQuestion()))) {
                     continue;
 
@@ -622,7 +630,8 @@ public class ChallengeQuestionManager {
      * @return
      * @throws RegistryException
      */
-    private Resource createRegistryResource(ChallengeQuestion question) throws RegistryException, UnsupportedEncodingException {
+    private Resource createRegistryResource(ChallengeQuestion question) throws RegistryException,
+            UnsupportedEncodingException {
         byte[] questionText = question.getQuestion().getBytes("UTF-8");
         String questionSetId = question.getQuestionSetId();
         String questionId = question.getQuestionId();
@@ -761,7 +770,8 @@ public class ChallengeQuestionManager {
         }
     }
 
-    private void validateChallengeQuestionAttributes(ChallengeQuestion question) throws IdentityRecoveryClientException {
+    private void validateChallengeQuestionAttributes(ChallengeQuestion question) throws
+            IdentityRecoveryClientException {
 
         String setId = question.getQuestionSetId();
         String questionId = question.getQuestionId();

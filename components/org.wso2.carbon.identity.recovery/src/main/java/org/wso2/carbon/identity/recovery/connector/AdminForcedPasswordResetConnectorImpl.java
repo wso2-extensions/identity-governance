@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * AdminForcedPasswordReset Connector
+ */
 public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernanceConnector {
 
     private static String connectorName = "admin-forced-password-reset";
@@ -53,11 +56,14 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK));
+                IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP));
+                IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE));
+                IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE));
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -65,7 +71,8 @@ public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernance
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 

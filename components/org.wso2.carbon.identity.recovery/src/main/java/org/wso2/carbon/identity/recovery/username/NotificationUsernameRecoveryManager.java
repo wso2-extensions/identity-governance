@@ -29,12 +29,10 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.IdentityClaimManager;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
+
+
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -162,18 +160,19 @@ public class NotificationUsernameRecoveryManager {
 
     private void triggerNotification(String user, String type, String tenantDomain) throws IdentityRecoveryException {
 
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        String eventName = EventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, UserCoreUtil.removeDomainFromName(user));
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, IdentityUtil.extractDomainFromName(user));
+        properties.put(EventConstants.EventProperty.USER_NAME, UserCoreUtil.removeDomainFromName(user));
+        properties.put(EventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(EventConstants.EventProperty.USER_STORE_DOMAIN,
+                IdentityUtil.extractDomainFromName(user));
 
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (EventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_TRIGGER_NOTIFICATION, user, e);
         }
@@ -236,8 +235,8 @@ public class NotificationUsernameRecoveryManager {
 
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                        getUserStoreManager();
+                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager)
+                        realmService.getTenantUserRealm(tenantId).getUserStoreManager();
             }
 
         } catch (Exception e) {

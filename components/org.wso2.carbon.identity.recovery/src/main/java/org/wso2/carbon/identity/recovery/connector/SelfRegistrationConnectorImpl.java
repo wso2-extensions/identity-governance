@@ -5,8 +5,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
-import java.util.*;
-
+/**
+ * SelfRegistration Connector
+ */
 public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnector {
 
     private static String connectorName = "self-sign-up";
@@ -56,16 +57,18 @@ public class SelfRegistrationConnectorImpl implements IdentityGovernanceConnecto
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, IdentityUtil.getProperty
-                (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA));
+                IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE));
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA));
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 
