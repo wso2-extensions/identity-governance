@@ -22,11 +22,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.handler.InitConfig;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.common.base.handler.InitConfig;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.mgt.policy.PolicyRegistry;
@@ -44,26 +44,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-
+/**
+ * Event handler and governance connector to handle password policy
+ */
 public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
 
     private static final Log log = LogFactory.getLog(PasswordPolicyValidationHandler.class);
 
     @Override
-    public void handleEvent(Event event) throws IdentityEventException {
+    public void handleEvent(Event event) throws EventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
 
-        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        Object credentials = eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+        String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
+        String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
+        Object credentials = eventProperties.get(EventConstants.EventProperty.CREDENTIAL);
 
         Property[] identityProperties;
         try {
             identityProperties = IdentityPasswordPolicyServiceDataHolder.getInstance()
                     .getIdentityGovernanceService().getConfiguration(getPropertyNames(), tenantDomain);
         } catch (IdentityGovernanceException e) {
-            throw new IdentityEventException("Error while retrieving password policy properties.", e);
+            throw new EventException("Error while retrieving password policy properties.", e);
         }
 
         /*initialize to default values*/
@@ -125,11 +127,11 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
 
         PolicyRegistry policyRegistry = new PolicyRegistry();
 
-        String pwLengthPolicyCls = configs.getModuleProperties().
+        String pwLengthPolicyCls = moduleConfig.getModuleProperties().
                 getProperty(PasswordPolicyConstants.PW_POLICY_LENGTH_CLASS);
-        String pwNamePolicyCls = configs.getModuleProperties().
+        String pwNamePolicyCls = moduleConfig.getModuleProperties().
                 getProperty(PasswordPolicyConstants.PW_POLICY_NAME_CLASS);
-        String pwPatternPolicyCls = configs.getModuleProperties().
+        String pwPatternPolicyCls = moduleConfig.getModuleProperties().
                 getProperty(PasswordPolicyConstants.PW_POLICY_PATTERN_CLASS);
         try {
             if (StringUtils.isNotBlank(pwLengthPolicyCls)) {
@@ -157,6 +159,9 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 defaultPasswordPatternPolicy.init(pwPolicyPatternParams);
                 policyRegistry.addPolicy(defaultPasswordPatternPolicy);
             }
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            throw Utils.handleEventException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);
         } catch (Exception e) {
             throw Utils.handleEventException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);
@@ -211,15 +216,15 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ENABLE, configs.getModuleProperties()
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ENABLE, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_ENABLE));
-        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH, configs.getModuleProperties()
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH));
-        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, configs.getModuleProperties()
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH));
-        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_PATTERN, configs.getModuleProperties()
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_PATTERN, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_PATTERN));
-        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, configs.getModuleProperties()
+        defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_ERROR_MSG));
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

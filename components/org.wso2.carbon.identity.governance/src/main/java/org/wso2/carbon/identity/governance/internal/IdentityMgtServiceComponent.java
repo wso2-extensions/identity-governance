@@ -75,6 +75,8 @@ public class IdentityMgtServiceComponent {
             }
         } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
             log.error("Error while activating identity governance component.", e);
+        } catch (Exception e) {
+            log.error("Error while activating identity governance component.", e);
         }
     }
 

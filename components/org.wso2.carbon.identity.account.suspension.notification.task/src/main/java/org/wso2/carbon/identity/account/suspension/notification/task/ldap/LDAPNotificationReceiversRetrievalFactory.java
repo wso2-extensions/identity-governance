@@ -22,6 +22,9 @@ import org.wso2.carbon.identity.account.suspension.notification.task.Notificatio
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.user.api.RealmConfiguration;
 
+/**
+ * Plugin to LDAP implementation to get notification receivers
+ */
 public class LDAPNotificationReceiversRetrievalFactory implements NotificationReceiversRetrievalFactory {
 
     public static final String LDAP =
@@ -30,7 +33,8 @@ public class LDAPNotificationReceiversRetrievalFactory implements NotificationRe
     @Override
     public NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)
             throws AccountSuspensionNotificationException {
-        LDAPNotificationReceiversRetrieval ldapNotificationReceiversRetrieval = new LDAPNotificationReceiversRetrieval();
+        LDAPNotificationReceiversRetrieval ldapNotificationReceiversRetrieval =
+                new LDAPNotificationReceiversRetrieval();
         ldapNotificationReceiversRetrieval.init(realmConfiguration);
         return ldapNotificationReceiversRetrieval;
     }

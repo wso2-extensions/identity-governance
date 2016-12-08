@@ -5,8 +5,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
-import java.util.*;
-
+/**
+ *  UserEmailVerification Connector
+ */
 public class UserEmailVerificationConnectorImpl implements IdentityGovernanceConnector {
 
     private static String connectorName = "user-email-verification";
@@ -52,8 +53,10 @@ public class UserEmailVerificationConnectorImpl implements IdentityGovernanceCon
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION));
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION));
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE));
+        defaultProperties.put(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE));
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -61,7 +64,8 @@ public class UserEmailVerificationConnectorImpl implements IdentityGovernanceCon
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException {
         return null;
     }
 

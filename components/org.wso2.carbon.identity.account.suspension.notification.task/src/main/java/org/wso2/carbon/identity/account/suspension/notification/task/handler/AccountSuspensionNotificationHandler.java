@@ -61,7 +61,6 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             Map<String, Object> eventProperties = event.getEventProperties();
 
             String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
-            String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
             UserStoreManager userStoreManager = (UserStoreManager) eventProperties
                     .get(EventConstants.EventProperty.USER_STORE_MANAGER);
 
@@ -143,7 +142,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private void startScheduler() {
 
-        Date notificationTriggerTime = null;
+        Date notificationTriggerTime = new Date();
         String notificationTriggerTimeProperty = moduleConfig.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_TRIGGER_TIME);
 

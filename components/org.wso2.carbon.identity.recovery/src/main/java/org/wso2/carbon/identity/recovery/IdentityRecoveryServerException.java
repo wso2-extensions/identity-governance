@@ -18,15 +18,6 @@
 
 package org.wso2.carbon.identity.recovery;
 
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.base.IdentityException;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Used for creating checked exceptions that can be handled.
  */

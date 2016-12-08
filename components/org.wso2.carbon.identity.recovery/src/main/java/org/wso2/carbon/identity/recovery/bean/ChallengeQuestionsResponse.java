@@ -20,6 +20,9 @@ package org.wso2.carbon.identity.recovery.bean;
 
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 
+/**
+ * Challenge Questions Response
+ */
 public class ChallengeQuestionsResponse {
 
     private ChallengeQuestion[] question;

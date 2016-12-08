@@ -44,13 +44,13 @@
     <modules>
         <!--<module>components/org.wso2.carbon.identity.governance.ui</module>-->
         <module>components/org.wso2.carbon.identity.governance</module>
-        <!--<module>components/org.wso2.carbon.identity.recovery</module>-->
+        <module>components/org.wso2.carbon.identity.recovery</module>
         <!--<module>components/org.wso2.carbon.identity.recovery.ui</module>-->
         <!--<module>components/org.wso2.carbon.identity.recovery.endpoint</module>-->
         <!--<module>components/org.wso2.carbon.identity.user.endpoint</module>-->
         <!--<module>components/org.wso2.carbon.identity.captcha</module>-->
         <!--<module>components/org.wso2.carbon.identity.password.history</module>-->
-        <!--<module>components/org.wso2.carbon.identity.password.policy</module>-->
+        <module>components/org.wso2.carbon.identity.password.policy</module>
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
         <!--<module>service-stubs/identity</module>-->
         <!--<module>features/org.wso2.carbon.identity.recovery.server.feature</module>-->

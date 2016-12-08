@@ -20,9 +20,6 @@ package org.wso2.carbon.identity.recovery;
 
 import org.wso2.carbon.identity.base.IdentityException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Used for creating checked exceptions that can be handled.
  */

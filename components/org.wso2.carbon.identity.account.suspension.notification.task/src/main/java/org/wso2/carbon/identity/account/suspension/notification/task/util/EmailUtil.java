@@ -26,6 +26,9 @@ import org.wso2.carbon.identity.mgt.NotificationSender;
 
 import java.util.HashMap;
 
+/**
+ * Utility class to send emails
+ */
 public class EmailUtil {
     private static final Logger log = Logger.getLogger(EmailUtil.class);
 

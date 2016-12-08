@@ -33,26 +33,29 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
 import org.wso2.carbon.user.core.ldap.LDAPConstants;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
+
+/**
+ * LDAP implementation to get notification receivers
+ */
 public class LDAPNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
     private static final Log log = LogFactory.getLog(LDAPNotificationReceiversRetrieval.class);
     private RealmConfiguration realmConfiguration = null;
-    private final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
-    private final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
-    private final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
+    private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
+    private static final String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
+    private static final String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
 
     @Override
     public void init(RealmConfiguration realmConfiguration) {
@@ -70,7 +73,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
             RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
             try {
-                ClaimManager claimManager = (ClaimManager)realmService.getTenantUserRealm(IdentityTenantUtil.
+                ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
                         getTenantId(tenantDomain)).getClaimManager();
                 String userStoreDomain = realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.
                         PROPERTY_DOMAIN_NAME);
@@ -83,7 +86,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, EMAIL_CLAIM);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);
+                    log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " +
+                            lookupMax);
                 }
 
                 LDAPConnectionContext ldapConnectionContext = new LDAPConnectionContext(realmConfiguration);

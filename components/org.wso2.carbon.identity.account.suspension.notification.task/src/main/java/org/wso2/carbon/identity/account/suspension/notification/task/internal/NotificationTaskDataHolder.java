@@ -46,7 +46,7 @@ public class NotificationTaskDataHolder {
     private String notificationTriggerTime;
     private String schedulerDelay;
 
-    public Date getNotificationTriggerTime() throws ParseException{
+    public Date getNotificationTriggerTime() throws ParseException {
         DateFormat dateFormat = new SimpleDateFormat(NotificationConstants.TRIGGER_TIME_FORMAT);
         return dateFormat.parse(notificationTriggerTime);
     }

@@ -28,13 +28,15 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Provide utility functions get effective user stores
+ */
 public class NotificationReceiversRetrievalUtil {
 
     public static final String NOTIFICATION_RECEIVERS_RETRIEVAL_CLASS = "NotificationReceiversRetrievalClass";
@@ -58,7 +60,7 @@ public class NotificationReceiversRetrievalUtil {
                 userStoreSet.add(domain);
             }
 
-            while (realmConfiguration != null) {
+             do {
                 realmConfiguration = realmConfiguration.getSecondaryRealmConfig();
                 if (realmConfiguration != null) {
                     if (isEffectiveUserStore(realmConfiguration, false)) {
@@ -66,9 +68,7 @@ public class NotificationReceiversRetrievalUtil {
                                 .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
                     }
                 }
-                while (realmConfiguration != null)
-                    ;
-            }
+            } while (realmConfiguration != null);
         } catch (UserStoreException e) {
             throw new AccountSuspensionNotificationException("Error while getting the notification enabled user stores",
                     e);
