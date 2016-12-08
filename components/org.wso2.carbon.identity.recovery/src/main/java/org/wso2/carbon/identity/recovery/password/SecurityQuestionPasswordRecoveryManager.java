@@ -112,6 +112,10 @@ public class SecurityQuestionPasswordRecoveryManager {
         String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .QUESTION_CHALLENGE_SEPARATOR);
 
+        if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+            challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+        }
+
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
@@ -196,6 +200,10 @@ public class SecurityQuestionPasswordRecoveryManager {
     public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
         String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .QUESTION_CHALLENGE_SEPARATOR);
+
+        if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+            challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+        }
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -320,6 +328,10 @@ public class SecurityQuestionPasswordRecoveryManager {
 
             String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                     .QUESTION_CHALLENGE_SEPARATOR);
+
+            if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+                challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+            }
 
             if (RecoverySteps.VALIDATE_CHALLENGE_QUESTION.equals(userRecoveryData.getRecoveryStep())) {
 
