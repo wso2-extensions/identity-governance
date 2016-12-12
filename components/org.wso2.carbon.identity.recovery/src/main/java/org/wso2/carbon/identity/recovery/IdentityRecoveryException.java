@@ -18,10 +18,8 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.base.IdentityException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Used for creating checked exceptions that can be handled.
@@ -30,29 +28,30 @@ public class IdentityRecoveryException extends IdentityException {
 
     private static final long serialVersionUID = 5697663399373749593L;
 
-    public IdentityRecoveryException(String errorDescription) {
-        super(errorDescription);
+    public IdentityRecoveryException(String message) {
+        super(message);
     }
 
-    public IdentityRecoveryException(String errorDescription, Throwable cause) {
-        super(errorDescription, cause);
+    public IdentityRecoveryException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public String getErrorDescription() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorDescription();
+
+        String errorDescription = this.getMessage();
+        if (StringUtils.isEmpty(errorDescription)) {
+            errorDescription = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getMessage();
         }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getMessage();
+        return errorDescription;
     }
 
     public String getErrorCode() {
-        for (int i = this.errorInfoList.size() - 1; i >= 0; i--) {
-            ErrorInfo info = this.errorInfoList.get(i);
-            return info.getErrorCode();
-        }
-        return IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode();
 
+        String errorCode = super.getErrorCode();
+        if (StringUtils.isEmpty(errorCode)) {
+            errorCode = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode();
+        }
+        return errorCode;
     }
 
 }
