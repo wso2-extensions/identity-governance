@@ -14,6 +14,9 @@
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+            <bean class="org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper">
+                <property name="printStackTrace" value="false" />
+            </bean>
         </jaxrs:providers>
     </jaxrs:server>
 </beans>
