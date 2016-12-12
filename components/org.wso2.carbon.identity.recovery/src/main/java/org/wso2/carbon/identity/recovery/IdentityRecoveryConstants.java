@@ -50,6 +50,7 @@ public class IdentityRecoveryConstants {
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
+    public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
 
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
