@@ -20,9 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.core.internal.CarbonCoreDataHolder;
-import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -31,8 +28,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
-import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
-import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -40,7 +36,6 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
-import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -599,13 +594,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 eventMgtService.handleEvent(identityMgtEvent);
             }
         } catch (IdentityEventException e) {
-            List<IdentityException.ErrorInfo> errorInfoList = e.getErrorInfoList();
-            if (!errorInfoList.isEmpty()) {
-                IdentityException.ErrorInfo errorInfo = errorInfoList.get(0);
-                //This errr code 22001 means user password history is vialated.
-                if (errorInfo != null && (StringUtils.equals(errorInfo.getErrorCode(), "22001")||
-                        StringUtils.equals(errorInfo.getErrorCode(), "40001")||
-                        StringUtils.equals(errorInfo.getErrorCode(), "40002"))) {
+            String errorCode = e.getErrorCode();
+
+            if (StringUtils.isNotEmpty(errorCode)) {
+                //This error code 22001 means user password history is violated.
+                if (StringUtils.equals(errorCode, "22001")|| StringUtils.equals(errorCode, "40001")
+                        || StringUtils.equals(errorCode, "40002")) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }
