@@ -30,10 +30,12 @@ public class IdentityRecoveryException extends IdentityException {
 
     public IdentityRecoveryException(String message) {
         super(message);
+        this.setErrorCode(getDefaultErrorCode());
     }
 
     public IdentityRecoveryException(String message, Throwable cause) {
         super(message, cause);
+        this.setErrorCode(getDefaultErrorCode());
     }
 
     public String getErrorDescription() {
@@ -45,7 +47,7 @@ public class IdentityRecoveryException extends IdentityException {
         return errorDescription;
     }
 
-    public String getErrorCode() {
+    private String getDefaultErrorCode() {
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
