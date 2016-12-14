@@ -45,6 +45,10 @@ public class MeApiServiceImpl extends MeApiService {
             selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
 
+        if (StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
+            selfUserRegistrationRequestDTO.getUser().setRealm(IdentityUtil.getPrimaryDomainName());
+        }
+
         UserSelfRegistrationManager userSelfRegistrationManager = Utils
                 .getUserSelfRegistrationManager();
         NotificationResponseBean notificationResponseBean = null;
