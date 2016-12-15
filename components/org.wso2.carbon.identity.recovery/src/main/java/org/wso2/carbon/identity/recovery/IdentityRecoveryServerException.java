@@ -41,4 +41,8 @@ public class IdentityRecoveryServerException extends IdentityRecoveryException {
     public IdentityRecoveryServerException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
+
+    public IdentityRecoveryServerException(String errorCode, String message) {
+        super(errorCode, message);
+    }
 }

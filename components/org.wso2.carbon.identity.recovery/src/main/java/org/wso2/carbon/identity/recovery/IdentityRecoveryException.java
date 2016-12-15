@@ -38,6 +38,11 @@ public class IdentityRecoveryException extends IdentityException {
         this.setErrorCode(getDefaultErrorCode());
     }
 
+    public IdentityRecoveryException(String errorCode, String message) {
+        super(errorCode, message);
+        this.setErrorCode(errorCode);
+    }
+
     public String getErrorDescription() {
 
         String errorDescription = this.getMessage();
