@@ -143,10 +143,12 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, userRecoveryData.getUser().getTenantDomain()));
-        if (!isRecoveryEnable) {
+        boolean isRecoveryEnable = (Boolean.parseBoolean(
+                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                        userRecoveryData.getUser().getTenantDomain())) || Boolean.parseBoolean(
+                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+                        userRecoveryData.getUser().getTenantDomain())));
+        if (!isRecoveryEnable) {//
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE, null);
         }

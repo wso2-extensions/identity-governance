@@ -140,18 +140,6 @@ public class SecurityQuestionPasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
         }
 
-        boolean isNotificationSendWhenInitiatingPWRecovery= Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START, user.getTenantDomain()));
-
-        if (isNotificationInternallyManaged && isNotificationSendWhenInitiatingPWRecovery) {
-            try {
-                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
-            } catch (IdentityRecoveryException e) {
-                log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
-            }
-        }
-
-
         int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_MIN_NO_ANSWER, user.getTenantDomain()));
 
