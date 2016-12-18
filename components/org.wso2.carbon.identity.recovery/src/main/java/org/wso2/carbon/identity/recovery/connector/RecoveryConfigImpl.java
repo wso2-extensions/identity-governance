@@ -19,7 +19,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public String getFriendlyName() {
-        return "Password Recovery";
+        return "Account Recovery";
     }
 
     @Override

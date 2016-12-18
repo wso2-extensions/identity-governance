@@ -3,6 +3,7 @@ package org.wso2.carbon.identity.user.endpoint.Util;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
@@ -115,6 +116,9 @@ public class Utils {
     public static User getUser(UserDTO userDTO) {
         User user = new User();
         user.setTenantDomain(userDTO.getTenantDomain());
+        if (userDTO.getRealm() == null) {
+            userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
+        }
         user.setUserStoreDomain(userDTO.getRealm());
         user.setUserName(userDTO.getUsername());
         return user;

@@ -26,4 +26,8 @@ public final class Constants {
 
     public static final String STATUS_INTERNAL_SERVER_ERROR_DESCRIPTION_DEFAULT = "The server encountered "
             + "an internal error. Please contact administrator.";
+
+    public static final String ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY = "20015";
+    public static final String ERROR_CODE_MULTIPLE_USERS_MATCHING = "20015";
+
 }

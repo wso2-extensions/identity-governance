@@ -134,15 +134,15 @@ public class NotificationUsernameRecoveryManager {
     public String verifyUsername(UserClaim[] claims, String tenantDomain, Boolean notify) throws
             IdentityRecoveryException {
 
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE, null);
-        }
-
-        if (StringUtils.isBlank(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
         boolean isNotificationInternallyManaged;
