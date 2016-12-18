@@ -143,14 +143,6 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, userRecoveryData.getUser().getTenantDomain()));
-        if (!isRecoveryEnable) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE, null);
-        }
-
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
@@ -185,7 +177,7 @@ public class NotificationPasswordRecoveryManager {
             try {
                 triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
                         .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
-            } catch (IdentityRecoveryException e) {
+            } catch (Exception e) {
                 log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
             }
         }

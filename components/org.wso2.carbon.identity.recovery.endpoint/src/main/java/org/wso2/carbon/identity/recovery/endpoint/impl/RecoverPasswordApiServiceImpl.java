@@ -38,26 +38,29 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         String tenantDomainFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants
                 .TENANT_NAME_FROM_CONTEXT);
 
-        UserDTO user = recoveryInitiatingRequest.getUser();
         if (StringUtils.isNotBlank(tenantDomainFromContext)) {
             recoveryInitiatingRequest.getUser().setTenantDomain(tenantDomainFromContext);
+        } else {
+            recoveryInitiatingRequest.getUser().setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         }
+
+        UserDTO user = recoveryInitiatingRequest.getUser();
         int tenantIdFromContext = IdentityTenantUtil.getTenantId(user.getTenantDomain());
 
         if (StringUtils.isBlank(user.getRealm())) {
-            String[] userList = getUserList(tenantIdFromContext, user.getUsername());
+            String[] userList = RecoveryUtil.getUserList(tenantIdFromContext, user.getUsername());
 
             if (ArrayUtils.isEmpty(userList)) {
                 String msg = "Unable to find an user with username: " + user.getUsername() + " in the system.";
                 LOG.error(msg);
-                RecoveryUtil.handleBadRequest(msg, "404");
+                RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY);
             } else if (userList.length == 1) {
                 recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(userList[0]));
             } else {
                 String msg = "There are multiple users with username: " + user.getUsername() + " in the system, " +
                         "please send the correct user-store domain along with the username.";
                 LOG.error(msg);
-                RecoveryUtil.handleBadRequest(msg, "400");
+                RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_MULTIPLE_USERS_MATCHING);
             }
         }
 
@@ -85,24 +88,5 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             return Response.accepted().build();
         }
         return Response.accepted(notificationResponseBean.getKey()).build();
-    }
-
-    private static String[] getUserList(int tenantId, String username) {
-
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        String[] userList = null;
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
-                        (tenantId).getUserStoreManager();
-                userList = userStoreManager.getUserList(USERNAME_CLAIM, username, null);
-            }
-        } catch (Exception e) {
-            String msg = "Error retrieving the user-list for the tenant : " + tenantId;
-            RecoveryUtil.handleInternalServerError(msg, "500", LOG, e);
-        }
-        return userList;
     }
 }

@@ -115,7 +115,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND("20028", "No challenge question found"),
         ERROR_CODE_MULTIPLE_QUESTION_NOT_ALLOWED("20029", "Multiple challenge question not allowed for this operation"),
         ERROR_CODE_USER_ALREADY_EXISTS("20030", "User %s already exists in the system. Please use a different username."),
-        ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE("20031", "Username recovery is not enabled")
+        ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE("20031", "Username recovery is not enabled"),
+        ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found")
 
         ;
 
