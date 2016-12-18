@@ -76,6 +76,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
+        IdentityUtil.clearIdentityErrorMsg();
         if (!isUserExistsInDomain(userStoreManager, userName)) {
             if (log.isDebugEnabled()) {
                 log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
@@ -109,6 +110,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             }
             return true;
         }
+        IdentityUtil.threadLocalProperties.get().remove(IdentityCoreConstants.USER_ACCOUNT_STATE);
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
@@ -126,6 +128,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre set claims is called in IdentityMgtEventListener");
         }
+        IdentityUtil.threadLocalProperties.get().remove(IdentityCoreConstants.USER_ACCOUNT_STATE);
         String eventName = IdentityEventConstants.Event.PRE_SET_USER_CLAIMS;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
@@ -300,6 +303,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("pre set user claim value is called in IdentityMgtEventListener");
         }
+        IdentityUtil.threadLocalProperties.get().remove(IdentityCoreConstants.USER_ACCOUNT_STATE);
         String eventName = IdentityEventConstants.Event.PRE_SET_USER_CLAIM;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.CLAIM_URI, claimURI);
