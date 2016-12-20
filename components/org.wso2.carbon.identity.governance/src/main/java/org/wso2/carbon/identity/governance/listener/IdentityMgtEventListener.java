@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
+import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -83,6 +84,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                         "user store domain :" + userStoreManager.getRealmConfiguration().getUserStoreProperty
                         (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
             }
+
+            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
+                    .ErrorCode.USER_DOES_NOT_EXIST);
+            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
             return true;
         }
         String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
