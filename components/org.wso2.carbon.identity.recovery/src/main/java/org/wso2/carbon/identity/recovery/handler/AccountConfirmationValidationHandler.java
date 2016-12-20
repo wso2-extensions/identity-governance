@@ -75,8 +75,9 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 }
             boolean isAccountLocked = true ;
             try {
-                isAccountLocked = Boolean.parseBoolean(userStoreManager.getUserClaimValue(userName, 
-                        ACCOUNT_LOCKED_CLAIM, null));
+                Map<String, String> values = userStoreManager.getUserClaimValues(userName, new String[]{
+                        ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                isAccountLocked = Boolean.parseBoolean(values.get(ACCOUNT_LOCKED_CLAIM));
             } catch (UserStoreException e) {
                 throw new IdentityEventException("Error while retrieving account lock claim value", e);
             }
