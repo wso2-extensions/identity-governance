@@ -33,6 +33,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
