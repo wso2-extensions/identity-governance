@@ -26,10 +26,12 @@ import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
+import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -74,6 +76,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (!isEnable()) {
             return true;
         }
+
         IdentityUtil.clearIdentityErrorMsg();
         boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
         if (accountLocked) {
@@ -82,12 +85,17 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
         }
 
+        UserIdentityDataStore identityDataStore = this.store;
+
+        // No need to separately handle if data store is user store based
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
         // Top level try and finally blocks are used to unset thread local variables
         try {
             if (!IdentityUtil.threadLocalProperties.get().containsKey(PRE_SET_USER_CLAIM_VALUES)) {
                 IdentityUtil.threadLocalProperties.get().put(PRE_SET_USER_CLAIM_VALUES, true);
 
-                UserIdentityDataStore identityDataStore = this.store;
                 UserIdentityClaim identityDTO = identityDataStore.load(userName, userStoreManager);
                 if (identityDTO == null) {
                     identityDTO = new UserIdentityClaim(userName);
@@ -123,6 +131,53 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         } finally {
 
         }
+    }
+
+    @Override
+    public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName,
+                                            Map<String, String> claimMap,
+                                            UserStoreManager storeManager) {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        UserIdentityDataStore identityDataStore = this.store;
+
+        // No need to separately handle if data store is user store based
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
+        if (claimMap == null) {
+            claimMap = new HashMap<>();
+        }
+        // check if there are identity claims
+        boolean containsIdentityClaims = false;
+        for (String claim : claims) {
+            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+                containsIdentityClaims = true;
+                break;
+            }
+        }
+        // if there are no identity claims, let it go
+        if (!containsIdentityClaims) {
+            return true;
+        }
+        // there is/are identity claim/s . load the dto
+
+        UserIdentityClaim identityDTO = identityDataStore.load(userName, storeManager);
+        // if no user identity data found, just continue
+        if (identityDTO == null) {
+            return true;
+        }
+        // data found, add the values for security questions and identity claims
+        for (String claim : claims) {
+            if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
+                claimMap.put(claim, identityDTO.getUserIdentityDataMap().get(claim));
+            }
+        }
+        return true;
     }
 
     public boolean doPreGetUserClaimValue(String userName, String claim, String profileName, UserStoreManager storeManager) throws UserStoreException {
