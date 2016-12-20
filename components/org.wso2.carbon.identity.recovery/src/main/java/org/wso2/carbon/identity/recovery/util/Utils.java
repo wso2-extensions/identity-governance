@@ -227,7 +227,9 @@ public class Utils {
         }
 
         if (userStoreManager != null) {
-            String oldValue = userStoreManager.getUserClaimValue(fullUserName, claim, null);
+            Map<String, String> values = userStoreManager.getUserClaimValues(fullUserName, new String[]{
+                    claim}, UserCoreConstants.DEFAULT_PROFILE);
+            String oldValue = values.get(claim);
             if (oldValue == null || !oldValue.equals(value)) {
                 Map<String, String> claimMap = new HashMap<String, String>();
                 claimMap.put(claim, value);
