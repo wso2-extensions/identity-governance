@@ -323,7 +323,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
             if (userChallengeAnswer == null) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND, null);
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
             }
 
             String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
