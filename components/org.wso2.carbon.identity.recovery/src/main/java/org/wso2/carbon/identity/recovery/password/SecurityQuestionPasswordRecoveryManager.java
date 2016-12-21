@@ -593,11 +593,6 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
         }
 
-        if (claimValues == null || claimValues.isEmpty()) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null);
-        }
-
         if (Boolean.parseBoolean(claimValues.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
             return;
         }
