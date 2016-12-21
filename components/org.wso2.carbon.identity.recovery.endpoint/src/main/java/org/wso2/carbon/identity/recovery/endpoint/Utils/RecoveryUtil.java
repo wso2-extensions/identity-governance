@@ -276,7 +276,7 @@ public class RecoveryUtil {
             if (realmService.getTenantUserRealm(tenantId) != null) {
                 userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
                         (tenantId).getUserStoreManager();
-                userList = userStoreManager.getUserList(USERNAME_CLAIM, username, null);
+                userList = userStoreManager.listUsers(username , 2) ;
             }
         } catch (Exception e) {
             String msg = "Error retrieving the user-list for the tenant : " + tenantId;
