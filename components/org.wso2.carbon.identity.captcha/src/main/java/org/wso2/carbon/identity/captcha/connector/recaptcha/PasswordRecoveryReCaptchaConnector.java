@@ -126,7 +126,11 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         if (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL)
                 || CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL)) {
             user.setUserName(servletRequest.getParameter("username"));
-            user.setUserStoreDomain(servletRequest.getParameter("realm"));
+            if (StringUtils.isNotBlank(servletRequest.getParameter("realm"))) {
+                user.setUserStoreDomain(servletRequest.getParameter("realm"));
+            } else {
+                user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            }
             user.setTenantDomain(servletRequest.getParameter("tenant-domain"));
             initializationFlow = true;
         } else {
