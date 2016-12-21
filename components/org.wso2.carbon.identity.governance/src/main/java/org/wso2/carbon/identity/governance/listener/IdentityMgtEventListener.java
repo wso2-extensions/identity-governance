@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.Permission;
@@ -52,6 +53,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
+    private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
 
     @Override
     public int getExecutionOrderId() {
@@ -78,6 +80,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
         IdentityUtil.clearIdentityErrorMsg();
+        IdentityUtil.threadLocalProperties.get().remove(RE_CAPTCHA_USER_DOMAIN);
+
         if (!isUserExistsInDomain(userStoreManager, userName)) {
             if (log.isDebugEnabled()) {
                 log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
@@ -90,6 +94,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
             return true;
         }
+
+        // This is used set domain of the user when authentication is failed for an existing user. This is required
+        // for re-captcha feature.
+        IdentityUtil.threadLocalProperties.get().put(RE_CAPTCHA_USER_DOMAIN,
+                IdentityGovernanceUtil.getUserStoreDomainName(userStoreManager));
         String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
@@ -121,6 +130,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
 
         handleEvent(userName, userStoreManager, eventName, properties);
+
+        // This is not required for authenticated users.
+        if (authenticated) {
+            IdentityUtil.threadLocalProperties.get().remove(RE_CAPTCHA_USER_DOMAIN);
+        }
         return true;
     }
 

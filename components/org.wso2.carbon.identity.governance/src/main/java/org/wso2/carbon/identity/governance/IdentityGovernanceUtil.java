@@ -16,17 +16,21 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -96,6 +100,19 @@ public class IdentityGovernanceUtil {
             log.error("Error while adding identity management properties to resident Idp.", e);
         }
 
+    }
+
+    public static String getUserStoreDomainName(UserStoreManager userStoreManager) {
+        String domainNameProperty = null;
+        if(userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
+            domainNameProperty = ((org.wso2.carbon.user.core.UserStoreManager)
+                    userStoreManager).getRealmConfiguration()
+                    .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+            if(StringUtils.isBlank(domainNameProperty)) {
+                domainNameProperty = IdentityUtil.getPrimaryDomainName();
+            }
+        }
+        return domainNameProperty;
     }
 
 }

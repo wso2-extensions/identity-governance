@@ -116,7 +116,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE("20031", "Username recovery is not enabled"),
         ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found"),
         ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20033", "Error loading signup configs"),
-        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims")
+        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims"),
 
         ;
 
