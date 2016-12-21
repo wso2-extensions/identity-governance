@@ -102,7 +102,6 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCK_USER_USER("20020", "Error while lock user"),
         ERROR_CODE_DISABLE_SELF_SIGN_UP("20021", "Self sign up feature is disabled"),
         ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
-        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20022", "Error loading signup configs"),
         ERROR_CODE_UNLOCK_USER_USER("20023", "Error while unlock user"),
         ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
         ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE("20025", "Failed to retrieve user realm from tenant id : %s"),
@@ -110,14 +109,14 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS("20027", "Error occurred while retrieving user claims"),
         ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS("20028", "Error occurred while retrieving account lock connector " +
                 "configuration"),
-        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20027", "Error occurred while updating user claims"),
         ERROR_CODE_HISTORY_VIOLATE("22001", "This password has been used in recent history. Please choose a different" +
                 " password"),
-        ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND("20028", "No challenge question found"),
         ERROR_CODE_MULTIPLE_QUESTION_NOT_ALLOWED("20029", "Multiple challenge question not allowed for this operation"),
         ERROR_CODE_USER_ALREADY_EXISTS("20030", "User %s already exists in the system. Please use a different username."),
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE("20031", "Username recovery is not enabled"),
-        ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found")
+        ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found"),
+        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20033", "Error loading signup configs"),
+        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims")
 
         ;
 

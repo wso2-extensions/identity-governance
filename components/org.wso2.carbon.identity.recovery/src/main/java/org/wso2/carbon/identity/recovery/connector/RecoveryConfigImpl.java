@@ -96,12 +96,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableQuestionBasedPasswordRecovery = "false";
         String minimumAnswers = "2";
         String enableRecoveryQuestionPasswordReCaptcha = "true";
-        String recoveryQuestionPasswordReCaptchaMaxFailedAttempts = "3";
+        String recoveryQuestionPasswordReCaptchaMaxFailedAttempts = "2";
         String enableUsernameRecovery = "false";
         String enableNotificationInternallyManage = "true";
         String expiryTime = "1440";
-        String notifySuccess = "true";
-        String notifyStart = "true";
+        String notifySuccess = "false";
+        String notifyStart = "false";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);

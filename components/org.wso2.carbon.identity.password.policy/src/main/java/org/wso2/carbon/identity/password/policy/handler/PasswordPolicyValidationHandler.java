@@ -115,7 +115,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 continue;
             } else if (PasswordPolicyConstants.PW_POLICY_ERROR_MSG.equals(propertyName)) {
                 if (StringUtils.isNotBlank(propertyValue)) {
-                    pwPattern = propertyValue;
+                    errorMsg = propertyValue;
                 } else {
                     log.warn("Password Policy Error Msg cannot be Empty hence using default Msg: " + errorMsg);
                 }

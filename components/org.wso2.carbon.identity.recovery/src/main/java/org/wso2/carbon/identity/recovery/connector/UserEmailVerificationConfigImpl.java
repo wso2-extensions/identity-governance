@@ -74,7 +74,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
         String enableEmailVerification = "false";
-        String enableEmailAccountLockOnCreation = "false";
+        String enableEmailAccountLockOnCreation = "true";
         String enableNotificationInternallyManage = "true";
 
         String emailVerificationProperty = IdentityUtil.getProperty(
