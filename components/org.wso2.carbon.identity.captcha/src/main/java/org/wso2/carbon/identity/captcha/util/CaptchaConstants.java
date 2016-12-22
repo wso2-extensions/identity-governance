@@ -29,7 +29,7 @@ public class CaptchaConstants {
 
     public static final String ERROR_PAGE = "/authenticationendpoint/retry.do";
 
-    public static final String CAPTCHA_CONFIG_FILE_NAME = "CaptchaConfig.properties";
+    public static final String CAPTCHA_CONFIG_FILE_NAME = "captcha-config.properties";
 
     public static final String RE_CAPTCHA_ENABLED = "recaptcha.enabled";
 

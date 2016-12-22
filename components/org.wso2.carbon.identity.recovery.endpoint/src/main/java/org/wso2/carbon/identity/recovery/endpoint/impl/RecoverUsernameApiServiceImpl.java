@@ -3,6 +3,8 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -22,6 +24,11 @@ public class RecoverUsernameApiServiceImpl extends RecoverUsernameApiService {
 
     @Override
     public Response recoverUsernamePost(List<UserClaimDTO> claim, String tenantDomain, Boolean notify) {
+
+        if (IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT) != null) {
+            tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+        }
+
         NotificationUsernameRecoveryManager notificationBasedUsernameRecoveryManager = RecoveryUtil
                 .getNotificationBasedUsernameRecoveryManager();
         String username = null;

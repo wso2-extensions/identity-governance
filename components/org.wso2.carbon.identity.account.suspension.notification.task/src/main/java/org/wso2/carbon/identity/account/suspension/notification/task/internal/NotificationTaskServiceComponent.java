@@ -22,11 +22,13 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.handler.AccountSuspensionNotificationHandler;
+import org.wso2.carbon.identity.account.suspension.notification.task.jdbc.JDBCNotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.ldap.LDAPNotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * Notification scheduler. Check for users who requires a notification for relogin
@@ -43,6 +45,9 @@ import org.wso2.carbon.user.core.UserStoreException;
  * interface="org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory"
  * cardinality="0..n" policy="dynamic" bind="setNotificationReceiversRetrievalFactory"
  * unbind="unsetNotificationReceiversRetrievalFactory"
+ * @scr.reference name="user.realmservice.default"
+ * interface="org.wso2.carbon.user.core.service.RealmService"
+ * cardinality="1..1" policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
  */
 public class NotificationTaskServiceComponent {
     /*
@@ -58,9 +63,16 @@ public class NotificationTaskServiceComponent {
         AccountSuspensionNotificationHandler handler = new AccountSuspensionNotificationHandler();
         context.getBundleContext().registerService(AbstractEventHandler.class.getName(), handler, null);
 
-        LDAPNotificationReceiversRetrievalFactory ladLdapNotificationReceiversRetrievalFactory = new LDAPNotificationReceiversRetrievalFactory();
+        LDAPNotificationReceiversRetrievalFactory ladLdapNotificationReceiversRetrievalFactory = new
+                LDAPNotificationReceiversRetrievalFactory();
         bundleContext.registerService(NotificationReceiversRetrievalFactory.class.getName(),
                 ladLdapNotificationReceiversRetrievalFactory, null);
+
+        JDBCNotificationReceiversRetrievalFactory jdbcNotificationReceiversRetrievalFactory =
+                new JDBCNotificationReceiversRetrievalFactory();
+        bundleContext.registerService(NotificationReceiversRetrievalFactory.class.getName(),
+                jdbcNotificationReceiversRetrievalFactory, null);
+
     }
 
     protected void deactivate(ComponentContext context) {
@@ -104,6 +116,22 @@ public class NotificationTaskServiceComponent {
 
         if (log.isDebugEnabled()) {
             log.debug("Removed notification retriever : " + notificationReceiversRetrievalFactory.getType());
+        }
+    }
+
+    protected void setRealmService(RealmService realmService) {
+
+        NotificationTaskDataHolder.getInstance().setRealmService(realmService);
+        if (log.isDebugEnabled()) {
+            log.debug("RealmService is set in the User Store Count bundle");
+        }
+    }
+
+    protected void unsetRealmService(RealmService realmService) {
+
+        NotificationTaskDataHolder.getInstance().setRealmService(null);
+        if (log.isDebugEnabled()) {
+            log.debug("RealmService is unset in the Application Authentication Framework bundle");
         }
     }
 }

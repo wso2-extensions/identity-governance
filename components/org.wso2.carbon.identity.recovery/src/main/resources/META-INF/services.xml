@@ -37,18 +37,18 @@
             <parameter name="AuthorizationAction" locked="true">/permission/admin/login</parameter>
         </operation>
         <operation name="deleteChallengeQuestionsOfTenant">
-            <parameter name="AuthorizationAction" locked="true">/permission/admin/configure/security</parameter>
+            <parameter name="AuthorizationAction" locked="true">/permission/admin/manage/identity</parameter>
         </operation>
         <operation name="getUserChallengeAnswers">
             <parameter name="AuthorizationAction" locked="true">/permission/admin/login</parameter>
         </operation>
         <operation name="setUserChallengeAnswers">
-            <parameter name="AuthorizationAction" locked="true">/permission/admin/configure/security</parameter>
+            <parameter name="AuthorizationAction" locked="true">/permission/admin/login</parameter>
         </operation>
 
         <parameter name="adminService" locked="false">true</parameter>
         <parameter name="hiddenService" locked="false">true</parameter>
-        <parameter name="AuthorizationAction" locked="false">/permission/admin/configure/security</parameter>
+        <parameter name="AuthorizationAction" locked="false">/permission/admin/manage/identity</parameter>
     </service>
 
 </serviceGroup>

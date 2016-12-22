@@ -1,2 +1,2 @@
 instructions.configure = \
-org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/CaptchaConfig.properties,target:${installFolder}/../../conf/identity/CaptchaConfig.properties,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/captcha-config.properties,target:${installFolder}/../../conf/identity/captcha-config.properties,overwrite:true);\

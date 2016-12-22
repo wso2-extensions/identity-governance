@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.username;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -34,7 +35,6 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -45,6 +45,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -132,8 +133,16 @@ public class NotificationUsernameRecoveryManager {
 
     public String verifyUsername(UserClaim[] claims, String tenantDomain, Boolean notify) throws
             IdentityRecoveryException {
+
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                .ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));
+        if (!isRecoveryEnable) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE, null);
         }
 
         boolean isNotificationInternallyManaged;
@@ -187,9 +196,8 @@ public class NotificationUsernameRecoveryManager {
                     .ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
         }
 
-        //TODO need to improve the logic
         String userName = null;
-        String[] tempUserList = null;
+        String[] resultedUserList = null;
 
         // Need to populate the claim email as the first element in the
         // passed array.
@@ -198,33 +206,68 @@ public class NotificationUsernameRecoveryManager {
             UserClaim claim = claims[i];
             if (claim.getClaimURI() != null && claim.getClaimValue() != null) {
 
-                String[] userList = getUserList(tenantId, claim.getClaimURI(),
+                if (log.isDebugEnabled()) {
+                    log.debug("Searching users for " + claim.getClaimURI() + " with the value :" + claim
+                            .getClaimValue());
+                }
+                String[] matchedUserList = getUserList(tenantId, claim.getClaimURI(),
                         claim.getClaimValue());
 
-                if (userList != null && userList.length > 0) {
-                    if (userList.length == 1) {
-                        return userList[0];
-                    } else {
-                        //If more than one user find the first matching user. Hence need to define unique claims
-                        if (tempUserList != null) {
-                            for (int j = 0; j < tempUserList.length; j++) {
-                                for (int x = 0; x < userList.length; x++) {
-                                    if (tempUserList[j].equals(userList[x])) {
-                                        return userList[x];
-                                    }
+                if (!ArrayUtils.isEmpty(matchedUserList)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Matched userList : " + Arrays.toString(matchedUserList));
+                    }
+                    //If more than one user find the first matching user list. Hence need to define unique claims
+                    if (resultedUserList != null) {
+                        List<String> users = new ArrayList<String>();
+                        for (String user : resultedUserList) {
+                            for (String matchedUser : matchedUserList) {
+                                if (user.equals(matchedUser)) {
+                                    users.add(matchedUser);
                                 }
                             }
                         }
-                        tempUserList = userList;
-                        continue;
+                        if (users.size() > 0) {
+                            resultedUserList = new String[users.size()];
+                            users.toArray(resultedUserList);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Current matching temporary userlist :" + Arrays.toString(resultedUserList));
+                            }
+                        } else {
+                            if (log.isDebugEnabled()) {
+                                log.debug("There are no users for " + claim.getClaimURI() + " with the value : " + claim
+                                        .getClaimValue()+ " in the previously filtered user list");
+                            }
+                            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+                        }
+                    } else {
+                        resultedUserList = matchedUserList;
+                        if (log.isDebugEnabled()) {
+                            log.debug("Current matching temporary userlist :" + Arrays.toString(resultedUserList));
+                        }
                     }
+
                 } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("There are no matching users for " + claim.getClaimURI() + " with the value : " + claim
+                                .getClaimValue());
+                    }
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
                 }
             }
         }
 
+        if (resultedUserList.length == 1) {
+            userName = resultedUserList[0];
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("There are more than one user in the result set : "  + Arrays.toString(resultedUserList));
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+        }
         return userName;
     }
 

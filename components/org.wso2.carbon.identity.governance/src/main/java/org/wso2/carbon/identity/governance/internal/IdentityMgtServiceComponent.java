@@ -24,13 +24,14 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;;
 import org.wso2.carbon.identity.governance.listener.TenantCreationEventListener;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 /**
@@ -39,13 +40,17 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
  * @scr.reference name="idp.mgt.event.listener.service"
- * interface="org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector"
+ * interface="org.wso2.carbon.identity.governance.common.IdentityConnectorConfig"
  * cardinality="0..n" policy="dynamic"
  * bind="setIdentityGovernanceConnector"
  * unbind="unsetIdentityGovernanceConnector"
  * @scr.reference name="IdentityProviderManager"
  * interface="org.wso2.carbon.idp.mgt.IdpManager" cardinality="1..1"
  * policy="dynamic" bind="setIdpManager" unbind="unsetIdpManager"
+ * @scr.reference name="RealmService"
+ * interface="org.wso2.carbon.user.core.service.RealmService"
+ * cardinality="1..1" policy="dynamic" bind="setRealmService"
+ * unbind="unsetRealmService"
  */
 public class IdentityMgtServiceComponent {
 
@@ -87,16 +92,16 @@ public class IdentityMgtServiceComponent {
         IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 
-    protected void unsetIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
-        IdentityMgtServiceDataHolder.getInstance().unsetIdentityGovernanceConnector(identityGovernanceConnector);
+    protected void unsetIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
+        IdentityMgtServiceDataHolder.getInstance().unsetIdentityGovernanceConnector(identityConnectorConfig);
     }
 
-    protected void setIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
-        IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityGovernanceConnector);
+    protected void setIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
+        IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityConnectorConfig);
         try {
-            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityConnectorConfig, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         } catch (IdentityGovernanceException e) {
-            log.error("Error while saving super tenant configurations for " + identityGovernanceConnector.getName() +
+            log.error("Error while saving super tenant configurations for " + identityConnectorConfig.getName() +
                     ".", e);
         }
     }
@@ -108,6 +113,16 @@ public class IdentityMgtServiceComponent {
     protected void setIdpManager(IdpManager idpManager) {
         IdentityMgtServiceDataHolder.getInstance().setIdpManager(idpManager);
     }
+    protected void setRealmService(RealmService realmService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the Realm Service");
+        }
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(realmService);
+    }
 
+    protected void unsetRealmService(RealmService realmService) {
+        log.debug("UnSetting the Realm Service");
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+    }
 
 }

@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.filter;
 
+import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.captcha.util.EnabledSecurityMechanism;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,17 +43,24 @@ public class ResponseValidationFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext containerRequestContext,
                        ContainerResponseContext containerResponseContext) throws IOException {
 
-        if (containerResponseContext.getStatusInfo().getFamily() == Response.Status.Family.CLIENT_ERROR && httpRequest
-                .getSession().getAttribute("enabled-security-mechanism") != null) {
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
+            if (containerResponseContext.getStatusInfo().getFamily() == Response.Status.Family.CLIENT_ERROR && httpRequest
+                    .getSession().getAttribute("enabled-security-mechanism") != null) {
 
-            EnabledSecurityMechanism enabledSecurityMechanism = (EnabledSecurityMechanism) httpRequest
-                    .getSession().getAttribute("enabled-security-mechanism");
-            containerResponseContext.getHeaders().add(enabledSecurityMechanism.getMechanism(), "true");
-            if (!enabledSecurityMechanism.getProperties().isEmpty()) {
-                for (Map.Entry<String, String> entry : enabledSecurityMechanism.getProperties().entrySet()) {
-                    containerResponseContext.getHeaders().add(entry.getKey(), entry.getValue());
+                EnabledSecurityMechanism enabledSecurityMechanism = (EnabledSecurityMechanism) httpRequest
+                        .getSession().getAttribute("enabled-security-mechanism");
+                containerResponseContext.getHeaders().add(enabledSecurityMechanism.getMechanism(), "true");
+                if (!enabledSecurityMechanism.getProperties().isEmpty()) {
+                    for (Map.Entry<String, String> entry : enabledSecurityMechanism.getProperties().entrySet()) {
+                        containerResponseContext.getHeaders().add(entry.getKey(), entry.getValue());
+                    }
                 }
             }
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
 
     }

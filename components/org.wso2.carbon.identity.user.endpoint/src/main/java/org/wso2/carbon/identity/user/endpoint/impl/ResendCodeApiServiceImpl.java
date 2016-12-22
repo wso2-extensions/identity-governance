@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -26,7 +27,7 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
-import org.wso2.carbon.identity.user.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.user.endpoint.Util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 
 import javax.ws.rs.core.Response;
@@ -36,23 +37,30 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
 
     @Override
     public Response resendCodePost(ResendCodeRequestDTO resendCodeRequestDTO) {
-        UserSelfRegistrationManager userSelfRegistrationManager = RecoveryUtil
+
+        String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+
+        if(StringUtils.isNotBlank(tenantFromContext)) {
+            resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
+        }
+
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils
                 .getUserSelfRegistrationManager();
         NotificationResponseBean notificationResponseBean = null;
         try {
             notificationResponseBean = userSelfRegistrationManager.resendConfirmationCode(
-                    RecoveryUtil.getUser(resendCodeRequestDTO.getUser()),
-                    RecoveryUtil.getProperties(resendCodeRequestDTO.getProperties()));
+                    Utils.getUser(resendCodeRequestDTO.getUser()),
+                    Utils.getProperties(resendCodeRequestDTO.getProperties()));
 
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resending self sign-up confirmation code ", e);
             }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
         if (StringUtils.isBlank(notificationResponseBean.getKey())) {

@@ -30,7 +30,10 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
@@ -46,6 +49,9 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
+    public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
+    public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
+    public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
 
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
@@ -90,13 +96,12 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY("20014", "No fileds found for username recovery"),
         ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY("20015", "No valid user found"),
         ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS("20016", "Error loading recovery configs"),
-        ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE("20017", "Notification based recovery is not enabled"),
+        ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE("20017", "Notification based password recovery is not enabled"),
         ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE("20018", "Security questions based recovery is not enabled"),
         ERROR_CODE_ADD_SELF_USER("20019", "Error while adding self signup user"),
         ERROR_CODE_LOCK_USER_USER("20020", "Error while lock user"),
         ERROR_CODE_DISABLE_SELF_SIGN_UP("20021", "Self sign up feature is disabled"),
         ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
-        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20022", "Error loading signup configs"),
         ERROR_CODE_UNLOCK_USER_USER("20023", "Error while unlock user"),
         ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
         ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE("20025", "Failed to retrieve user realm from tenant id : %s"),
@@ -104,11 +109,14 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS("20027", "Error occurred while retrieving user claims"),
         ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS("20028", "Error occurred while retrieving account lock connector " +
                 "configuration"),
-        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20027", "Error occurred while updating user claims"),
         ERROR_CODE_HISTORY_VIOLATE("22001", "This password has been used in recent history. Please choose a different" +
                 " password"),
-        ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND("20028", "No challenge question found"),
         ERROR_CODE_MULTIPLE_QUESTION_NOT_ALLOWED("20029", "Multiple challenge question not allowed for this operation"),
+        ERROR_CODE_USER_ALREADY_EXISTS("20030", "User %s already exists in the system. Please use a different username."),
+        ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE("20031", "Username recovery is not enabled"),
+        ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found"),
+        ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20033", "Error loading signup configs"),
+        ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims")
 
         ;
 
@@ -159,6 +167,10 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE= "Recovery.AdminPasswordReset.Offline";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP= "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK= "Recovery.AdminPasswordReset.RecoveryLink";
     }
 
     public static class SQLQueries {

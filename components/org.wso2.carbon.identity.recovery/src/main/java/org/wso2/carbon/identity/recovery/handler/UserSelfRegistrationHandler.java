@@ -123,8 +123,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 //Need to lock user account
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                 try {
-                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()), userClaims, null);
+                    userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
                 } catch (UserStoreException e) {
                     throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
                 }
