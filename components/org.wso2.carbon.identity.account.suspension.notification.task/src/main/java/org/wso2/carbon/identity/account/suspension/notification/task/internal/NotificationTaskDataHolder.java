@@ -42,7 +42,7 @@ public class NotificationTaskDataHolder {
     private RealmService realmService;
     private String notificationTriggerTime;
     private String schedulerDelay;
-    private String notificationSendingThreadPoolSize = "5";
+    private String notificationSendingThreadPoolSize = "1";
 
     public int getNotificationSendingThreadPoolSize() {
         return Integer.parseInt(notificationSendingThreadPoolSize);

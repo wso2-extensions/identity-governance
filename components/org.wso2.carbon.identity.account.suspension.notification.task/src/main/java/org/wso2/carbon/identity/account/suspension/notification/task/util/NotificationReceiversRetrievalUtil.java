@@ -47,10 +47,6 @@ public class NotificationReceiversRetrievalUtil {
         String domain;
 
         try {
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
-            privilegedCarbonContext.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
-            privilegedCarbonContext.setTenantDomain(tenantDomain);
             realmConfiguration = CarbonContext.getThreadLocalCarbonContext().getUserRealm().getRealmConfiguration();
             domain = IdentityUtil.getPrimaryDomainName();
 
@@ -72,8 +68,6 @@ public class NotificationReceiversRetrievalUtil {
         } catch (UserStoreException e) {
             throw new AccountSuspensionNotificationException("Error while getting the notification enabled user stores",
                     e);
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
         }
 
         return userStoreSet;
