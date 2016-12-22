@@ -51,9 +51,9 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     public Map<String, String> getPropertyDescriptionMapping() {
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                "User get notificed with a link to reset password");
+                "User gets notified with a link to reset password");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "User get notificed with a one time password to try with SSO login");
+                "User gets notified with a one time password to try with SSO login");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "An OTP generated and stored in users claims");
         return descriptionMapping;

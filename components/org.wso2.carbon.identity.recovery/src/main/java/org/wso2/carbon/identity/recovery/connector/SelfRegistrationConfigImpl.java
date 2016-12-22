@@ -43,7 +43,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable Self User Registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation Enabled");
+                "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -61,7 +61,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                "Enable cpatcha verification during self registration");
+                "Enable captcha verification during self registration");
         return descriptionMapping;
     }
 

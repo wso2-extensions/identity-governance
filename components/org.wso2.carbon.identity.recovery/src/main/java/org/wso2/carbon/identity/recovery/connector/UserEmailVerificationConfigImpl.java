@@ -41,7 +41,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
                 "Enable User Email Verification");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation Enabled");
+                "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
         return nameMapping;
