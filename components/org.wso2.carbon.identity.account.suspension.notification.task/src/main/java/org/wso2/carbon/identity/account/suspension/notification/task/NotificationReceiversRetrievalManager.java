@@ -57,8 +57,9 @@ public class NotificationReceiversRetrievalManager {
                             + "trigger time", e);
                 }
                 long lookupMax = lookupMin + TimeUnit.DAYS.toMillis(1);
-                receivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
+                List<NotificationReceiver> newReceivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
                         delayForSuspension, tenantDomain);
+                receivers.addAll(newReceivers);
             }
         }
 

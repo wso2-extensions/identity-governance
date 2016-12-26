@@ -18,11 +18,14 @@
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
 import org.apache.log4j.Logger;
+import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.mgt.NotificationSender;
+import org.wso2.carbon.user.api.UserStoreException;
 
 import java.util.HashMap;
 
@@ -44,9 +47,19 @@ public class EmailUtil {
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, receiver.getUsername());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, receiver.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
+                CarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+        try {
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,
+                    CarbonContext.getThreadLocalCarbonContext().getUserRealm().getUserStoreManager());
+        } catch (UserStoreException e) {
+            log.error("Error while getting user store manager", e);
+        }
+
         properties.put("first-name", receiver.getFirstName());
         properties.put("suspension-date", receiver.getExpireDate());
-        properties.put("TEMPLATE_TYPE", "reminderLogin");
+        properties.put("TEMPLATE_TYPE", "idleAccountReminder");
 
         Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
         try {

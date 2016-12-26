@@ -111,6 +111,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setEmail(map.get(NotificationConstants.EMAIL_CLAIM));
                     receiver.setUsername(userName);
                     receiver.setFirstName(map.get(NotificationConstants.FIRST_NAME_CLAIM));
+                    receiver.setUserStoreDomain(userStoreDomain);
 
                     long lastLoginTime = Long.parseLong(map.get(NotificationConstants.LAST_LOGIN_TIME));
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);

@@ -68,7 +68,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             }
             try {
                 HashMap<String, String> userClaims = new HashMap<>();
-                userClaims.put(IdentityMgtConstants.LAST_LOGIN_TIME, Long.toString(System.currentTimeMillis()));
+                userClaims.put(NotificationConstants.LAST_LOGIN_TIME, Long.toString(System.currentTimeMillis()));
                 userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
@@ -126,12 +126,6 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                     getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         }
 
-        if (StringUtils.isBlank(configs.getModuleProperties().
-                getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE))) {
-            NotificationTaskDataHolder.getInstance().setNotificationSendingThreadPoolSize(configs.getModuleProperties().
-                    getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE));
-
-        }
         NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(configs.getModuleProperties().
                 getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         startScheduler();

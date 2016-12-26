@@ -108,6 +108,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setEmail((String) result.getAttributes().get(emailMapAttribute).get());
                     receiver.setUsername((String) result.getAttributes().get(usernameMapAttribute).get());
                     receiver.setFirstName((String) result.getAttributes().get(firstNameMapAttribute).get());
+                    receiver.setUserStoreDomain(userStoreDomain);
 
                     long lastLoginTime = Long.parseLong(result.getAttributes().get(lastLoginTimeAttribute).get().
                             toString());
