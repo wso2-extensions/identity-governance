@@ -38,6 +38,6 @@ public class NotificationConstants {
     public final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
     public final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
     public final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
-    public final static String LAST_LOGIN_TIME = "http://wso2.org/claims/identity/lastLoginTime";
+    public final static String LAST_LOGIN_TIME = "http://wso2.org/claims/lastLoginTime";
 
 }
