@@ -21,8 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
@@ -66,7 +66,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  */
 
 /**
- * Identity Recovery Service Component
+ * Identity Recovery Service Component.
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -155,11 +155,11 @@ public class IdentityRecoveryServiceComponent {
         dataHolder.setRegistryService(null);
     }
 
-    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+    protected void unsetIdentityEventService(EventService identityEventService) {
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(null);
     }
 
-    protected void setIdentityEventService(IdentityEventService identityEventService) {
+    protected void setIdentityEventService(EventService identityEventService) {
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 

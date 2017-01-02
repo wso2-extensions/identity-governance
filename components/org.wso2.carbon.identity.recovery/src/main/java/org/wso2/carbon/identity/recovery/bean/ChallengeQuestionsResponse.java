@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.recovery.bean;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 
 /**
- * Challenge Questions Response
+ * Challenge Questions Response.
  */
 public class ChallengeQuestionsResponse {
 
@@ -43,7 +43,7 @@ public class ChallengeQuestionsResponse {
         if (question == null) {
             return new ChallengeQuestion[0];
         }
-        return question;
+        return question.clone();
     }
 
     public void setQuestion(ChallengeQuestion[] question) {

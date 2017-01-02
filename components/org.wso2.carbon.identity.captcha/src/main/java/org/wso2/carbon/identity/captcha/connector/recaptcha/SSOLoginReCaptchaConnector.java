@@ -19,37 +19,28 @@
 package org.wso2.carbon.identity.captcha.connector.recaptcha;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
-import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
-import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserRealm;
-import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
@@ -85,6 +76,11 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
 
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+
+        if (!(servletRequest instanceof HttpServletRequest) || !(servletResponse instanceof HttpServletResponse)) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
 
         if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
             return false;

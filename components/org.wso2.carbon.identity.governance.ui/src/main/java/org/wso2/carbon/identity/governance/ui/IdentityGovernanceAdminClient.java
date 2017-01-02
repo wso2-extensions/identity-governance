@@ -21,13 +21,16 @@ import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.governance.stub.bean.Property;
 import org.wso2.carbon.identity.governance.stub.IdentityGovernanceAdminServiceIdentityGovernanceExceptionException;
 import org.wso2.carbon.identity.governance.stub.IdentityGovernanceAdminServiceStub;
 import org.wso2.carbon.identity.governance.stub.bean.ConnectorConfig;
+import org.wso2.carbon.identity.governance.stub.bean.Property;
 
 import java.rmi.RemoteException;
 
+/**
+ * Identity governance admin client.
+ */
 public class IdentityGovernanceAdminClient {
 
     protected IdentityGovernanceAdminServiceStub stub = null;
@@ -49,11 +52,13 @@ public class IdentityGovernanceAdminClient {
         }
     }
 
-    public ConnectorConfig[] getConnectorList() throws RemoteException, IdentityGovernanceAdminServiceIdentityGovernanceExceptionException {
+    public ConnectorConfig[] getConnectorList() throws RemoteException,
+            IdentityGovernanceAdminServiceIdentityGovernanceExceptionException {
         return stub.getConnectorList();
     }
 
-    public void updateConfigurations (Property[] properties) throws RemoteException, IdentityGovernanceAdminServiceIdentityGovernanceExceptionException {
+    public void updateConfigurations (Property[] properties) throws RemoteException,
+            IdentityGovernanceAdminServiceIdentityGovernanceExceptionException {
         stub.updateConfigurations(properties);
     }
 

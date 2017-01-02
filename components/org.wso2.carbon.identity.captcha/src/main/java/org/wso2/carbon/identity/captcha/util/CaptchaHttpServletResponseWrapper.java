@@ -18,10 +18,9 @@
 
 package org.wso2.carbon.identity.captcha.util;
 
-import javax.servlet.ServletResponse;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.IOException;
 
 /**
  * Captcha Response Wrapper.

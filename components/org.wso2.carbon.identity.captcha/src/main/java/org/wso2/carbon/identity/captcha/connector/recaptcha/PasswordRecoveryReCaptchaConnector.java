@@ -37,7 +37,6 @@ import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.util.EnabledSecurityMechanism;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -46,14 +45,14 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Password Recovery reCaptcha Connector.
@@ -97,7 +96,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             return false;
         }
 
-        String path = ((HttpServletRequest) servletRequest).getRequestURI();
+        String path = servletRequest instanceof  HttpServletRequest ? ((HttpServletRequest) servletRequest)
+                .getRequestURI() : null;
 
         return !StringUtils.isBlank(path) &&
                 (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL) ||
@@ -106,7 +106,13 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
+
+        if (!(servletRequest instanceof HttpServletRequest) || !(servletResponse instanceof  HttpServletResponse)) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
@@ -141,7 +147,7 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             try {
                 UserRecoveryData userRecoveryData = userRecoveryDataStore.load(requestObject.get("key").getAsString());
-                if(userRecoveryData != null) {
+                if (userRecoveryData != null) {
                     user = userRecoveryData.getUser();
                 }
             } catch (IdentityRecoveryException e) {
@@ -238,6 +244,11 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
+        if (!(servletRequest instanceof HttpServletRequest) || !(servletResponse instanceof  HttpServletResponse)) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
+
         String reCaptchaResponse = ((HttpServletRequest) servletRequest).getHeader("g-recaptcha-response");
         if (StringUtils.isBlank(reCaptchaResponse)) {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
@@ -247,7 +258,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     }
 
     @Override
-    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         //This validation will happens through a CXF Filter
         return null;

@@ -211,7 +211,7 @@ public class ChallengeQuestionManagementAdminService {
     }
 
     /**
-     * Get Challenge question answers along with their encrypted answers of a user
+     * Get Challenge question answers along with their encrypted answers of a user.
      *
      * @param user
      * @return

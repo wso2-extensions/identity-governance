@@ -29,8 +29,9 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.IdentityClaimManager;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-
-
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -47,7 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class NotificationUsernameRecoveryManager {
 

@@ -18,10 +18,10 @@
 
 package org.wso2.carbon.identity.captcha.connector;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * reCaptcha pre validation response.

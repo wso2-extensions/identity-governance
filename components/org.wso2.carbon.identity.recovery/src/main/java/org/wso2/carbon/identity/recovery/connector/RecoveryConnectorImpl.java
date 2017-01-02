@@ -13,7 +13,7 @@ import java.util.Properties;
 
 
 /**
- * Recovery Connector
+ * Recovery Connector.
  */
 
 public class RecoveryConnectorImpl implements IdentityGovernanceConnector {

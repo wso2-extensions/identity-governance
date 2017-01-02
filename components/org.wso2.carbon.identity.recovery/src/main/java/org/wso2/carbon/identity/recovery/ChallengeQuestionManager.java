@@ -45,6 +45,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -187,7 +188,7 @@ public class ChallengeQuestionManager {
     }
 
     /**
-     * Add new challenge questions to the registry of a tenant
+     * Add new challenge questions to the registry of a tenant.
      *
      * @param questions
      * @param tenantDomain
@@ -283,7 +284,7 @@ public class ChallengeQuestionManager {
                     .QUESTION_CHALLENGE_SEPARATOR);
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
-            if (challengeValues != null && challengeValues.length == 2) {
+            if (challengeValues.length == 2) {
                 ChallengeQuestion userChallengeQuestion = new ChallengeQuestion(challengesUri,
                         challengeValues[0].trim());
                 UserChallengeAnswer userChallengeAnswer = new UserChallengeAnswer(userChallengeQuestion,
@@ -332,7 +333,7 @@ public class ChallengeQuestionManager {
                     .QUESTION_CHALLENGE_SEPARATOR);
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
-            if (challengeValues != null && challengeValues.length == 2) {
+            if (challengeValues.length == 2) {
                 userChallengeQuestion = new ChallengeQuestion(challengesUri, challengeValues[0].trim());
             }
         }
@@ -364,7 +365,7 @@ public class ChallengeQuestionManager {
     }
 
     /**
-     * Get the claims URIs of the challenge sets answered by the user
+     * Get the claims URIs of the challenge sets answered by the user.
      *
      * @param user
      * @return
@@ -452,13 +453,14 @@ public class ChallengeQuestionManager {
                             String oldAnswer = oldValue.split(separator)[1];
                             if (!oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
                                 String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
-                                        Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                                        Utils.doHash(userChallengeAnswer.getAnswer().trim()
+                                                .toLowerCase(Locale.ENGLISH));
                                 Utils.setClaimInUserStoreManager(user,
                                         userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                             }
                         } else {
                             String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
-                                    Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                                    Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
                             Utils.setClaimInUserStoreManager(user,
                                     userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                         }
@@ -518,7 +520,7 @@ public class ChallengeQuestionManager {
 
                 String hashedAnswer = null;
                 try {
-                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
                 } catch (UserStoreException e) {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_HASHING_ALGO, null, e);
@@ -556,7 +558,7 @@ public class ChallengeQuestionManager {
             if (dto.getQuestion().getQuestionSetId().equals(userChallengeAnswer.getQuestion().getQuestionSetId())) {
                 String hashedAnswer = null;
                 try {
-                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                    hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
                 } catch (UserStoreException e) {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_HASHING_ALGO, null, e);
@@ -598,7 +600,7 @@ public class ChallengeQuestionManager {
     }
 
     /**
-     * Create a challenge question object from the registry resource
+     * Create a challenge question object from the registry resource.
      *
      * @param resource
      * @return
@@ -700,7 +702,7 @@ public class ChallengeQuestionManager {
 
 
     /**
-     * Check whether an answered challenge question actually exists in the tenant registry
+     * Check whether an answered challenge question actually exists in the tenant registry.
      *
      * @param userChallengeAnswers
      * @param tenantDomain

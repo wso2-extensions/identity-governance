@@ -34,8 +34,8 @@ import org.wso2.carbon.identity.core.handler.AbstractIdentityMessageHandler;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * FailLoginAttemptValidator.
