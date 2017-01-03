@@ -40,7 +40,6 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
                 LOG.debug("Client Error while resetting password ", e);
             }
 
-            //TODO need to check PolicyViolationException
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE.getCode()
                     .equals(e.getErrorCode())) {
                 RetryErrorDTO errorDTO = new RetryErrorDTO();
@@ -50,7 +49,6 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
                 errorDTO.setKey(resetPasswordRequest.getKey());
                 return Response.status(Response.Status.PRECONDITION_FAILED).entity(errorDTO).build();
             }
-
 
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
 
