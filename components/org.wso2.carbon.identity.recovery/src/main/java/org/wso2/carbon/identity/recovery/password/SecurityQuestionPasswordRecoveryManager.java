@@ -29,9 +29,9 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.Event;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -58,11 +58,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
 /**
- * Security Question Password Recovery Manager
+ * Security Question Password Recovery Manager.
  */
 public class SecurityQuestionPasswordRecoveryManager {
 
@@ -444,11 +445,11 @@ public class SecurityQuestionPasswordRecoveryManager {
             throws IdentityRecoveryException {
         List<String> userChallengeIds = new ArrayList<>();
         for (int i = 0; i < userChallengeAnswer.length; i++) {
-            userChallengeIds.add(userChallengeAnswer[i].getQuestion().getQuestionSetId().toLowerCase());
+            userChallengeIds.add(userChallengeAnswer[i].getQuestion().getQuestionSetId().toLowerCase(Locale.ENGLISH));
         }
 
         for (int i = 0; i < requestedQuestions.length; i++) {
-            if (!userChallengeIds.contains(requestedQuestions[i].toLowerCase())) {
+            if (!userChallengeIds.contains(requestedQuestions[i].toLowerCase(Locale.ENGLISH))) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                         .ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS, null);
             }

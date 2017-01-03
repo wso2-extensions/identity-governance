@@ -30,7 +30,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
-import org.wso2.carbon.identity.event.Event;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -49,8 +49,11 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class UserSelfRegistrationManager {
 
@@ -301,7 +304,7 @@ public class UserSelfRegistrationManager {
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(), secretKey,
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM, secretKey,
                     properties);
         } else {
             notificationResponseBean.setKey(secretKey);

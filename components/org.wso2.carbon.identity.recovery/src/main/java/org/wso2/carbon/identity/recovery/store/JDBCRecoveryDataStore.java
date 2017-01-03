@@ -12,10 +12,16 @@ import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Locale;
 
 /**
- * JDBC recovery data store
+ * JDBC recovery data store.
  */
 public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
@@ -38,7 +44,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         try {
             prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
-            prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
+            prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase(Locale.ENGLISH));
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
             prepStmt.setString(4, recoveryDataDO.getSecret());
             prepStmt.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
@@ -63,18 +69,18 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
-        String sql;
+
         try {
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
                     IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
-                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA);
             } else {
-                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries
+                        .LOAD_RECOVERY_DATA_CASE_INSENSITIVE);
             }
 
-            prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, user.getUserName());
-            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase(Locale.ENGLISH));
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             prepStmt.setString(4, code);
             prepStmt.setString(5, String.valueOf(recoveryScenario));
@@ -92,7 +98,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 int notificationExpiryTimeInMinutes = Integer.parseInt(
                         Utils.getRecoveryConfigs(IdentityRecoveryConstants
                         .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
-                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
+                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60L * 1000L;
 
                 if (System.currentTimeMillis() > expiryTime) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
@@ -142,7 +148,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 int notificationExpiryTimeInMinutes = Integer.parseInt(
                         Utils.getRecoveryConfigs(IdentityRecoveryConstants
                         .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
-                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
+                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60L * 1000L;
 
                 if (System.currentTimeMillis() > expiryTime) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
@@ -185,17 +191,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
 
         try {
-            String sql;
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(
                     user.getTenantDomain()))) {
-                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER);
             } else {
-                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries
+                        .LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE);
             }
 
-            prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, user.getUserName());
-            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase(Locale.ENGLISH));
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
 
             resultSet = prepStmt.executeQuery();
@@ -222,15 +227,14 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         try {
-            String sql;
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(
                     user.getTenantDomain()))) {
-                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES);
             } else {
-                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES_CASE_INSENSITIVE;
+                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries
+                        .INVALIDATE_USER_CODES_CASE_INSENSITIVE);
             }
 
-            prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, user.getUserName());
             prepStmt.setString(2, user.getUserStoreDomain());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));

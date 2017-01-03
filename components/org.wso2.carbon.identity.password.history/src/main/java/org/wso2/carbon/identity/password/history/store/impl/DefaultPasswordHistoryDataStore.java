@@ -14,26 +14,31 @@
  * limitations under the License.
  */
 
-package org.wso2.carbon.identity.password.history.store.Impl;
+package org.wso2.carbon.identity.password.history.store.impl;
 
 import org.apache.axiom.om.util.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.identity.password.history.store.PasswordHistoryDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreException;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * This interface provides to plug module for preferred persistence store.
@@ -94,7 +99,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
 
             prepStmt3 = connection.prepareStatement(PasswordHistoryConstants.SQLQueries.STORE_HISTORY_DATA);
             prepStmt3.setString(1, user.getUserName());
-            prepStmt3.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt3.setString(2, user.getUserStoreDomain().toUpperCase(Locale.ENGLISH));
             prepStmt3.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             prepStmt3.setString(4, saltValue);
             prepStmt3.setString(5, preparePassword(credential.toString(), saltValue));
@@ -216,7 +221,6 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
      * @param password
      * @param saltValue
      * @return
-     * @throws UserStoreException
      */
     private String preparePassword(String password, String saltValue) throws
             IdentityPasswordHistoryException {
@@ -233,7 +237,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
                 }
 
                 MessageDigest dgst = MessageDigest.getInstance(digestFunction);
-                byte[] byteValue = dgst.digest(digestInput.getBytes());
+                byte[] byteValue = dgst.digest(digestInput.getBytes(Charset.forName("UTF-8")));
                 password = Base64.encode(byteValue);
             }
             return password;

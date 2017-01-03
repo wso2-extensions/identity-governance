@@ -37,7 +37,8 @@ public abstract class AbstractReCaptchaConnector implements CaptchaConnector {
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        if (((HttpServletRequest) servletRequest).getMethod().equalsIgnoreCase("GET")) {
+        if (servletRequest instanceof  HttpServletRequest && ((HttpServletRequest) servletRequest).getMethod()
+                .equalsIgnoreCase("GET")) {
             throw new CaptchaClientException("reCaptcha response must send in a POST request.");
         }
 

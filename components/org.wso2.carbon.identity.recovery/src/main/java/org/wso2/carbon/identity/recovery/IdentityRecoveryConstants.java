@@ -17,7 +17,7 @@
 package org.wso2.carbon.identity.recovery;
 
 /**
- * Identity management related constants
+ * Identity management related constants.
  */
 public class IdentityRecoveryConstants {
 
@@ -69,7 +69,7 @@ public class IdentityRecoveryConstants {
     }
 
     /**
-     * Error Messages
+     * Error Messages.
      */
     public enum ErrorMessages {
 
@@ -148,7 +148,7 @@ public class IdentityRecoveryConstants {
     }
 
     /**
-     * Connector Config
+     * Connector Config.
      */
     public static class ConnectorConfig {
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
@@ -182,7 +182,7 @@ public class IdentityRecoveryConstants {
     }
 
     /**
-     * SQL Queries
+     * SQL Queries.
      */
     public static class SQLQueries {
 
@@ -217,7 +217,7 @@ public class IdentityRecoveryConstants {
     }
 
     /**
-     * Questions
+     * Questions.
      */
     public static class Questions {
 
@@ -229,13 +229,19 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_LOCALE = "locale";
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET01 = new String[]{"City where you were born ?",
+        private static String[] secretQuestionsSet01 = new String[]{"City where you were born ?",
                 "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"};
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
+        private static String[] secretQuestionsSet02 = new String[]{"Model of your first car ?",
                 "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
 
+        public static String[] getSecretQuestionsSet01() {
+            return secretQuestionsSet01.clone();
+        }
 
+        public static String[] getSecretQuestionsSet02() {
+            return secretQuestionsSet02.clone();
+        }
     }
 }

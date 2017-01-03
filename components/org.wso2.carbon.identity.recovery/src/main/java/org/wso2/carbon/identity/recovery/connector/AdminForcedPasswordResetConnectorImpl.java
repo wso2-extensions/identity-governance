@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * AdminForcedPasswordReset Connector
+ * AdminForcedPasswordReset Connector.
  */
 public class AdminForcedPasswordResetConnectorImpl implements IdentityGovernanceConnector {
 

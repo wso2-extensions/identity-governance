@@ -17,7 +17,7 @@
 package org.wso2.carbon.identity.governance.ui;
 
 /**
- * Identity management admin ui related constants
+ * Identity management admin ui related constants.
  */
 public class IdentityMgtAdminUIConstants {
 

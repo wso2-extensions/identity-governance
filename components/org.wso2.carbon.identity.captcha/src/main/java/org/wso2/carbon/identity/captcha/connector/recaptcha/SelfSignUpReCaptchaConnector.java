@@ -27,7 +27,6 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -48,7 +47,7 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final String SELF_REGISTRATION_URL = "/account-recovery/self/register";
 
-    private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
+    private static final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -65,6 +64,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+
+        if (!(servletRequest instanceof HttpServletRequest) || servletResponse instanceof  HttpServletResponse) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
 
         if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
             return false;
@@ -103,6 +107,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
+        if (!(servletRequest instanceof HttpServletRequest) || !(servletResponse instanceof  HttpServletResponse)) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
+
         // reCaptcha is required for all requests.
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
@@ -126,6 +135,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     @Override
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
+
+        if (!(servletRequest instanceof HttpServletRequest) || !(servletResponse instanceof HttpServletResponse)) {
+            throw new CaptchaException("Servlet request or response is not a HttpServletRequest or " +
+                    "HttpServletResponse.");
+        }
 
         String reCaptchaResponse = ((HttpServletRequest) servletRequest).getHeader("g-recaptcha-response");
         if (StringUtils.isBlank(reCaptchaResponse)) {

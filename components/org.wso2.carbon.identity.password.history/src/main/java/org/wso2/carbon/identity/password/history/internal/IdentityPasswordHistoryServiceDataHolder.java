@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.password.history.internal;
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
+/**
+ * Identity password history service data holder.
+ */
 public class IdentityPasswordHistoryServiceDataHolder {
 
     private static IdentityPasswordHistoryServiceDataHolder instance = new IdentityPasswordHistoryServiceDataHolder();

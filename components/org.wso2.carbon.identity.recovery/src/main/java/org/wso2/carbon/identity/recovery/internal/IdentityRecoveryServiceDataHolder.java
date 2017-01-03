@@ -24,7 +24,7 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * Identity Recovery Service DataHolder
+ * Identity Recovery Service DataHolder.
  */
 public class IdentityRecoveryServiceDataHolder {
 

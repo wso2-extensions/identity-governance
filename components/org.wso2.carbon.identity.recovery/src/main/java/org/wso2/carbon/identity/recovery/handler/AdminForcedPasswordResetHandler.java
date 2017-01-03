@@ -19,13 +19,13 @@ package org.wso2.carbon.identity.recovery.handler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.common.base.message.MessageContext;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
-import org.wso2.carbon.identity.event.Event;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * Admin Forced Password Reset Handler
+ * Admin Forced Password Reset Handler.
  */
 public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandler {
 
@@ -112,14 +112,13 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
             if (adminPasswordResetOTP) {
                 notificationType = IdentityRecoveryConstants
-                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
+                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP;
             }
 
             if (adminPasswordResetRecoveryLink) {
                 otp = UUIDGenerator.generateUUID();
                 recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
-                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET
-                        .toString();
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET;
             }
 
             if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
