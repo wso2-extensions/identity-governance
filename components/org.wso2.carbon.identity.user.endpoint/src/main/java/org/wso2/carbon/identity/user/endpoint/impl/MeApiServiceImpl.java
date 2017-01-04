@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -27,7 +28,7 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
-import org.wso2.carbon.identity.user.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.user.endpoint.Util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 
 import javax.ws.rs.core.Response;
@@ -38,24 +39,38 @@ public class MeApiServiceImpl extends MeApiService {
 
     @Override
     public Response mePost(SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO) {
-        UserSelfRegistrationManager userSelfRegistrationManager = RecoveryUtil
+        String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+
+        if(StringUtils.isNotBlank(tenantFromContext)) {
+            selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);
+        }
+
+        if (StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
+            selfUserRegistrationRequestDTO.getUser().setRealm(IdentityUtil.getPrimaryDomainName());
+        }
+
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils
                 .getUserSelfRegistrationManager();
         NotificationResponseBean notificationResponseBean = null;
         try {
             notificationResponseBean = userSelfRegistrationManager.registerUser(
-                    RecoveryUtil.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
-                    RecoveryUtil.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
-                    RecoveryUtil.getProperties(selfUserRegistrationRequestDTO.getProperties()));
+                    Utils.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
+                    Utils.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
+                    Utils.getProperties(selfUserRegistrationRequestDTO.getProperties()));
 
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while registering self up user ", e);
             }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
+                Utils.handleConflict(e.getMessage(), e.getErrorCode());
+            } else {
+                Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
+            }
         } catch (IdentityRecoveryException e) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
         if (StringUtils.isBlank(notificationResponseBean.getKey())) {

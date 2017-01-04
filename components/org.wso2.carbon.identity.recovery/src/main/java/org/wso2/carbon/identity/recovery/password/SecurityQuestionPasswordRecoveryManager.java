@@ -29,9 +29,9 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -112,6 +112,10 @@ public class SecurityQuestionPasswordRecoveryManager {
         String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .QUESTION_CHALLENGE_SEPARATOR);
 
+        if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+            challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+        }
+
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         UserStoreManager userStoreManager;
         try {
@@ -130,10 +134,10 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, user.getUserName());
         }
 
         boolean isNotificationSendWhenInitiatingPWRecovery= Boolean.parseBoolean(Utils.getRecoveryConfigs
@@ -142,7 +146,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         if (isNotificationInternallyManaged && isNotificationSendWhenInitiatingPWRecovery) {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
-            } catch (IdentityRecoveryException e) {
+            } catch (Exception e) {
                 log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
             }
         }
@@ -196,6 +200,10 @@ public class SecurityQuestionPasswordRecoveryManager {
     public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
         String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .QUESTION_CHALLENGE_SEPARATOR);
+
+        if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+            challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+        }
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -253,7 +261,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         if (isNotificationInternallyManaged && isNotificationSendWhenInitiatingPWRecovery) {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
-            } catch (IdentityRecoveryException e) {
+            } catch (Exception e) {
                 log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
             }
         }
@@ -315,11 +323,15 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
             if (userChallengeAnswer == null) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_ANSWERS_NOT_FOUND, null);
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
             }
 
             String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                     .QUESTION_CHALLENGE_SEPARATOR);
+
+            if (StringUtils.isEmpty(challengeQuestionSeparator)) {
+                challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+            }
 
             if (RecoverySteps.VALIDATE_CHALLENGE_QUESTION.equals(userRecoveryData.getRecoveryStep())) {
 
@@ -458,12 +470,12 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     private void triggerNotification(User user, String type, String code) throws IdentityRecoveryException {
 
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        String eventName = EventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(EventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(EventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(EventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
@@ -472,7 +484,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (EventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
@@ -579,11 +591,6 @@ public class SecurityQuestionPasswordRecoveryManager {
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        }
-
-        if (claimValues == null || claimValues.isEmpty()) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null);
         }
 
         if (Boolean.parseBoolean(claimValues.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {

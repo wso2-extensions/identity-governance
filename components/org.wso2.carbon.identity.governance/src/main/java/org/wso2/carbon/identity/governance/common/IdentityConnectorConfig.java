@@ -24,13 +24,21 @@ import java.util.Properties;
 /**
  * Identity governance connector.
  */
-public interface IdentityGovernanceConnector {
+public interface IdentityConnectorConfig {
 
     String getName();
 
     String getFriendlyName();
 
+    String getCategory();
+
+    String getSubCategory();
+
+    int getOrder();
+
     Map<String, String> getPropertyNameMapping();
+
+    Map<String, String> getPropertyDescriptionMapping();
 
     String[] getPropertyNames();
 

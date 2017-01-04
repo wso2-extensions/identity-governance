@@ -16,7 +16,7 @@
 
 package org.wso2.carbon.identity.governance.store;
 
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;

@@ -24,7 +24,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProviderPropert
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.event.EventConstants;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -146,7 +146,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     }
 
-    public List<IdentityGovernanceConnector> getConnectorList() throws IdentityGovernanceException {
+    public List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException {
         return IdentityMgtServiceDataHolder.getInstance().getIdentityGovernanceConnectorList();
     }
 

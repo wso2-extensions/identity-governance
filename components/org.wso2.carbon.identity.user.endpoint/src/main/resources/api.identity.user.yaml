@@ -33,7 +33,9 @@ host: apis.is.com
 
 # The base path of the API.
 # Will be prefixed to all paths.
-basePath: /api/identity/user/v0.9
+
+# if the tenant domain is carbon.super basepath can be /api/identity/user/v0.9 like this too.
+basePath: /t/{tenant-domain}/api/identity/user/v0.9
 
 # The following media types can be passed as input in message bodies of the API.
 # The actual media type must be specified in the Content-Type header field of the request.
@@ -57,6 +59,14 @@ paths:
     post:
       description: |
          This API is used to user self registration. 
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING", "password": "P@ssw0rd2017","claims": [{"uri": "http://wso2.org/claims/givenname","value": "Isura" },{"uri": "http://wso2.org/claims/emailaddress","value": "isura@mail.com"},{"uri": "http://wso2.org/claims/lastname","value": "Karunaratne"},{"uri": "http://wso2.org/claims/mobile","value": "+947721584558"} ] },"properties": []}' "https://localhost:9443/api/identity/user/v0.9/me"
+            
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+
+      summary: |
+        Register User
        
       # This are the post parameters:
       parameters:
@@ -84,6 +94,11 @@ paths:
           description: Server Error
           schema:
              $ref: '#/definitions/Error'
+
+        409:
+          description: Conflict
+          schema:
+             $ref: '#/definitions/Error'
       tags:
         - Self Register
             
@@ -91,6 +106,14 @@ paths:
     post:
       description: |
          This API is used to validate code of self reigstered users
+      x-wso2-request: |
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","properties": []}' "https://localhost:9443/api/identity/user/v0.9/validate-code"
+            
+      x-wso2-response: |
+        "HTTP/1.1 202 Accepted"
+        
+      summary: |
+        Validate Code         
        
       # This are the post parameters:
       parameters:
@@ -120,6 +143,13 @@ paths:
     post:
       description: |
          This API is used to resend confirmation code, if it is missing.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "isura","realm": "ENGINEERING"},"properties": []}' "https://localhost:9443/api/identity/user/v0.9/resend-code"
+            
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+      summary: |
+        Resend Code         
        
       # This are the post parameters:
       parameters:
@@ -157,8 +187,6 @@ definitions:
     properties:
       username:
         type: string
-      tenant-domain:
-        type: string
       realm: 
         type: string
       password:
@@ -175,8 +203,6 @@ definitions:
     type: object
     properties:
       username:
-        type: string
-      tenant-domain:
         type: string
       realm: 
         type: string
@@ -247,7 +273,7 @@ definitions:
 
 #-----------------------------------------------------    
 # The SelfRegistrationUser Registration Request
-#-----------------------------------------------------      
+#-----------------------------------------------------
   ResendCodeRequest:
     type: object
     properties:
@@ -257,4 +283,3 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Property'
-          

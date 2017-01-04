@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.governance.store;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -78,7 +78,7 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
             }
         } catch (UserStoreException e) {
             if (!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)) {
-                throw IdentityException.error("Error while persisting identity user data in to user store", e);
+                throw IdentityException.error(IdentityException.class, "Error while persisting identity user data in to user store", e);
             } else if (log.isDebugEnabled()) {
                 String message = null;
                 if (userStoreManager instanceof AbstractUserStoreManager) {

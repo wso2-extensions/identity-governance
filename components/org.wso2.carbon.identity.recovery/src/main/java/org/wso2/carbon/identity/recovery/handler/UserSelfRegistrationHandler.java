@@ -22,12 +22,12 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
-import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -61,16 +61,16 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     }
 
     @Override
-    public void handleEvent(Event event) throws IdentityEventException {
+    public void handleEvent(Event event) throws EventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
-        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants.EventProperty.USER_STORE_MANAGER);
 
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+        String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
-        String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
+        String[] roleList = (String[]) eventProperties.get(EventConstants.EventProperty.ROLE_LIST);
 
         User user = new User();
         user.setUserName(userName);
@@ -101,7 +101,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
-        if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
+        if (EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             try {
 
@@ -116,17 +116,16 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                             secretKey, Utils.getArbitraryProperties());
                 }
             } catch (IdentityRecoveryException e) {
-                throw new IdentityEventException("Error while sending self sign up notification ", e);
+                throw new EventException("Error while sending self sign up notification ", e);
             }
             if (isAccountLockOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
                 //Need to lock user account
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                 try {
-                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()), userClaims, null);
+                    userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
                 } catch (UserStoreException e) {
-                    throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
+                    throw new EventException("Error while lock user account :" + user.getUserName(), e);
                 }
             }
 
@@ -138,21 +137,16 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         super.init(configuration);
     }
 
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 60;
-    }
-
 
     private void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        String eventName = EventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(EventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(EventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(EventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (props != null && props.length > 0) {
             for (int i = 0; i < props.length; i++) {
@@ -166,7 +160,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (EventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }

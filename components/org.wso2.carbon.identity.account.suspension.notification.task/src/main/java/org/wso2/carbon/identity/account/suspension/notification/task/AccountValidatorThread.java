@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.account.suspension.notification.task;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
@@ -26,9 +27,11 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.EmailU
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.mgt.IdentityMgtServiceException;
 import org.wso2.carbon.identity.mgt.services.UserIdentityManagementAdminService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -71,6 +74,12 @@ public class AccountValidatorThread implements Runnable {
 
         Property[] identityProperties;
         try {
+            // Start Tenant flow
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
+            privilegedCarbonContext.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
+            privilegedCarbonContext.setTenantDomain(tenantDomain);
+
             identityProperties = NotificationTaskDataHolder.getInstance().getIdentityGovernanceService()
                     .getConfiguration(getPropertyNames(), tenantDomain);
             boolean isEnabled = false;
@@ -129,6 +138,8 @@ public class AccountValidatorThread implements Runnable {
             log.error("Error occurred while loading governance configuration for tenants", e);
         } catch (IdentityException e) {
             log.error("Unable to disable user accounts", e);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
@@ -168,7 +179,7 @@ public class AccountValidatorThread implements Runnable {
                     suspensionDelay);
 
         } catch (AccountSuspensionNotificationException e) {
-            throw IdentityException.error("Error occurred while retrieving users for account disable", e);
+            throw IdentityException.error(IdentityException.class, "Error occurred while retrieving users for account disable", e);
         }
         if (receivers.size() > 0) {
             try {
@@ -185,6 +196,8 @@ public class AccountValidatorThread implements Runnable {
                     }
                     userIdentityManagementAdminService.disableUserAccount(receiver.getUsername(), "email");
                 }
+            } catch (IdentityMgtServiceException e) {
+                throw IdentityException.error(IdentityException.class, e.getMessage(), e);
             } finally {
                 PrivilegedCarbonContext.endTenantFlow();
             }

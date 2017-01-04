@@ -33,7 +33,8 @@ host: apis.is.com
 
 # The base path of the API.
 # Will be prefixed to all paths.
-basePath: /api/identity/recovery/v0.9
+# if the tenant domain is carbon.super basepath can be /api/identity/recovery/v0.9 like this too.
+basePath: /t/{tenant-domain}/api/identity/recovery/v0.9
 
 # The following media types can be passed as input in message bodies of the API.
 # The actual media type must be specified in the Content-Type header field of the request.
@@ -57,6 +58,13 @@ paths:
     post:
       description: |
          This API is used to send password recovery confirmation over defined channels like email/sms
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING","tenant-domain":"carbon.super"},"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/recover-password?type=email¬ify=true"
+        
+      x-wso2-response: |
+        "HTTP/1.1 202 Accepted"
+      summary: |
+        Send Recovery Notification
        
       # This are the post parameters:
       parameters:
@@ -106,6 +114,13 @@ paths:
     post:
       description: |
         This API will be used to reset user password using the confirmatin key recieved through recovery process. Need to input `key`  and the new `password`.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "5c765a47-6764-4048-b5cf-55864cb654c0", "password": "P@ssW0rd","properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/set-password"
+            
+      x-wso2-response: |
+        "HTTP/1.1 200 OK"        
+      summary: |
+        Update Password
        
       parameters:
         -
@@ -144,6 +159,13 @@ paths:
      get:
       description: |
          This API is used to initiate password recovery using user challenge questions. Response will be a random challenge question with a confirmation key.
+      x-wso2-request: |
+         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
+            
+      x-wso2-response: |    
+          {"key":"7ced9ef0-7f3f-4f65-a115-ddbcce3a6b49","question":{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"}
+      summary: |
+        Get Challenge Question of User
        
       # This are the post parameters:
       parameters:
@@ -194,6 +216,13 @@ paths:
      get:
       description: |
          This API is used to initiate password recovery using user challenge questions at once. Response will be a random challenge questions with a confirmation key.
+      x-wso2-request: |
+         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
+            
+      x-wso2-response: |    
+          {"key":"f9f04fd7-3666-4bc6-bc99-9190b04b0ccc","questions":[{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"},{"question":"Model of your first car ?","question-set-id":"http://wso2.org/claims/challengeQuestion2"}],"link":{"rel":"validate-answer","uri":"/api/identity/recovery/v0.9"}}       
+      summary: |
+        Get Challenge Questions of User         
        
       # This are the post parameters:
       parameters:
@@ -244,6 +273,14 @@ paths:
      post:
       description: |
          This is used to validate user challenge answer. If user challenge answer is valid, it will send another challenge question to answer until the status become `COMPLETE`. If the answer is wrong, user can retry the answer.
+      x-wso2-request: |
+         curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "0b20bd4d-cd82-4e8f-8ca4-4d265360b56b","answers": [{ "question-set-id": "http://wso2.org/claims/challengeQuestion1","answer": "born"},{"question-set-id": "http://wso2.org/claims/challengeQuestion2","answer": "car"}],"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/validate-answer"
+
+            
+      x-wso2-response: |    
+          {"key":"c45d7251-59f1-468d-9844-8a6d7c5fe9d9","question":null,"link":{"rel":"set-password","uri":"/api/identity/recovery/v0.9"}}              
+      summary: |
+        Validate user challenge answer/answers.         
        
       # This are the post parameters:
       parameters:
@@ -278,6 +315,14 @@ paths:
     post:
       description: |
        This API can be used to recover forgot username. 
+      x-wso2-request: |
+         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '[{"uri": "http://wso2.org/claims/givenname","value": "isura"},{"uri": "http://wso2.org/claims/emailaddress", "value": "isuradil@email.com"},{"uri": "http://wso2.org/claims/lastname","value": "karunaratne" }]' "https://localhost:9443/api/identity/recovery/v0.9/recover-username/"
+
+      x-wso2-response: |
+        "HTTP/1.1 202 Accepted" 
+        
+      summary: |
+        Recover username  
        
       parameters:
         -
@@ -325,6 +370,14 @@ paths:
     get:
       description: |
        return the recovery supported claims in the given tenant.
+      x-wso2-request: |
+         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/claims?tenant-domain=carbon.super"
+
+      x-wso2-response: |
+        [{"uri":"http://wso2.org/claims/mobile","value":null,"description":"Mobile","display-name":"Mobile","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/role","value":null,"description":"Role","display-name":"Role","dialect":"http://wso2.org/claims","required":false,"readOnly":true},{"uri":"http://wso2.org/claims/givenname","value":null,"description":"First Name","display-name":"First Name","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/organization","value":null,"description":"Organization","display-name":"Organization","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/im","value":null,"description":"IM","display-name":"IM","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/lastname","value":null,"description":"Last Name","display-name":"Last Name","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/telephone","value":null,"description":"Telephone","display-name":"Telephone","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/country","value":null,"description":"Country","display-name":"Country","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/emailaddress","value":null,"description":"Email Address","display-name":"Email","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/url","value":null,"description":"URL","display-name":"URL","dialect":"http://wso2.org/claims","required":false,"readOnly":false}] 
+        
+      summary: |
+       Get Supported Claims
        
       parameters:
         -
@@ -363,8 +416,6 @@ definitions:
     type: object
     properties:
       username:
-        type: string
-      tenant-domain:
         type: string
       realm: 
         type: string

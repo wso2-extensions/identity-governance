@@ -23,9 +23,9 @@ import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -43,33 +43,35 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
     private static final Log log = LogFactory.getLog(AdminForcedPasswordResetHandler.class);
 
     @Override
-    public void handleEvent(Event event) throws IdentityEventException {
+    public void handleEvent(Event event) throws EventException {
 
         String eventName = event.getEventName();
         if (log.isDebugEnabled()) {
             log.debug("Handling event : " + eventName);//
         }
         Map<String, Object> eventProperties = event.getEventProperties();
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants
                 .EventProperty.USER_STORE_MANAGER);
-        User user = getUser(eventProperties, userStoreManager);
 
-        if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
-            handleClaimUpdate(eventProperties, userStoreManager, user);
+        if (EventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            handleClaimUpdate(eventProperties, userStoreManager);
         }
 
-        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
-            handleAuthenticate(eventProperties, user);
+        if (EventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
+            handleAuthenticate(eventProperties, userStoreManager);
         }
+
     }
 
-    protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager,
-                                     User user) throws IdentityEventException {
+    protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
+            EventException {
+        User user = getUser(eventProperties, userStoreManager);
+
         if (log.isDebugEnabled()) {
             log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for : " + user.toString());
         }
 
-        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(EventConstants.EventProperty
                 .USER_CLAIMS);
 
         boolean adminPasswordResetOffline = Boolean.parseBoolean(Utils.getConnectorConfig(
@@ -129,14 +131,17 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 try {
                     triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
                 } catch (IdentityRecoveryException e) {
-                    throw new IdentityEventException("Error while sending  notification ", e);
+                    throw new EventException("Error while sending  notification ", e);
                 }
             }
 
         }
     }
 
-    protected void handleAuthenticate(Map<String, Object> eventProperties, User user) throws IdentityEventException {
+    protected void handleAuthenticate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
+            EventException {
+        User user = getUser(eventProperties, userStoreManager);
+
         if (log.isDebugEnabled()) {
             log.debug("PreAuthenticate - AdminForcedPasswordResetHandler for user : " + user.toString());
         }
@@ -161,7 +166,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 isForcedPasswordReset = true;
 
             } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)) {
-                String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+                String credential = (String) eventProperties.get(EventConstants.EventProperty.CREDENTIAL);
                 isForcedPasswordReset = true;
 
                 if (userRecoveryData.getSecret().equals(credential)) {
@@ -180,7 +185,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
                 IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                throw new IdentityEventException(errorMsg);
+                throw new EventException(errorMsg);
             }
 
         }
@@ -194,11 +199,6 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
     @Override
     public String getFriendlyName() {
         return "Admin Forced Password Reset";
-    }
-
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 27;
     }
 
     private String generateOTPValue() {

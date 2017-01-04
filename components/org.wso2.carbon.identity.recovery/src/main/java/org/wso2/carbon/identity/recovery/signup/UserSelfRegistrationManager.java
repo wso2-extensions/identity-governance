@@ -28,9 +28,9 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -135,7 +135,11 @@ public class UserSelfRegistrationManager {
                         password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
-                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+                } else {
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+                }
             }
 
             if (!isNotificationInternallyManage) {
@@ -195,14 +199,6 @@ public class UserSelfRegistrationManager {
 
         UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
         User user = recoveryData.getUser();
-
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
-
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
-        }
 
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(
@@ -290,7 +286,7 @@ public class UserSelfRegistrationManager {
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(), secretKey, properties);
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(), secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
@@ -303,12 +299,12 @@ public class UserSelfRegistrationManager {
     private void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        String eventName = EventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(EventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(EventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(EventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (props != null && props.length > 0) {
             for (int i = 0; i < props.length; i++) {
@@ -322,7 +318,7 @@ public class UserSelfRegistrationManager {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (EventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
