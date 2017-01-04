@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
@@ -45,6 +46,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 
 import java.util.HashMap;
 
@@ -161,7 +163,7 @@ public class NotificationPasswordRecoveryManager {
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
             }
         } catch (UserStoreException e) {
-            checkPasswordHistoryViolate(e);
+            checkPasswordValidity(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
@@ -189,7 +191,7 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void checkPasswordHistoryViolate(UserStoreException e) throws IdentityRecoveryClientException {
+    private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
         Throwable cause = e.getCause();
         while (cause != null) {
             if (cause instanceof EventException) {
@@ -198,7 +200,11 @@ public class NotificationPasswordRecoveryManager {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_HISTORY_VIOLATE, null, e);
                 }
-                break;
+            }
+
+            if (cause instanceof PolicyViolationException) {
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
             }
             cause = cause.getCause();
         }

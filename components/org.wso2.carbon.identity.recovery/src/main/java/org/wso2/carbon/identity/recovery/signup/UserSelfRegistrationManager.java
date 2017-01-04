@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
@@ -43,12 +44,13 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
-import org.wso2.carbon.stratos.common.exception.StratosException;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 
 import java.util.*;
 
@@ -135,6 +137,16 @@ public class UserSelfRegistrationManager {
                         password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
+                Throwable cause = e;
+
+                while (cause != null) {
+                    if (cause instanceof PolicyViolationException) {
+                        throw IdentityException.error(IdentityRecoveryClientException.class,
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
+                    }
+                    cause = cause.getCause();
+                }
+
                 if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
                 } else {
