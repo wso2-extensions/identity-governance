@@ -30,12 +30,12 @@ public class NotificationResponseBean implements Serializable {
     private static final long serialVersionUID = -2913500114444797062L;
 
     /**
-     * user identifier according to the user store
+     * user identifier according to the user store.
      */
     private User user;
 
     /**
-     * key that is received after successful verification
+     * key that is received after successful verification.
      */
     private String key;
 

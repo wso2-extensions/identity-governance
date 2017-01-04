@@ -16,6 +16,9 @@
 
 package org.wso2.carbon.identity.password.history.constants;
 
+/**
+ * Password history constants.
+ */
 public class PasswordHistoryConstants {
 
     public static final String PW_HISTORY_ENABLE = "passwordHistory.enable";
@@ -23,14 +26,16 @@ public class PasswordHistoryConstants {
     public static final String PW_HISTORY_HASHING_ALGORITHM = "passwordHistory.hashingAlgorithm";
     public static final String PW_HISTORY_DATA_STORE = "passwordHistory.dataStore";
 
-
+    /**
+     * SQL Queries.
+     */
     public static class SQLQueries {
 
         public static final String STORE_HISTORY_DATA = "INSERT INTO  IDN_PASSWORD_HISTORY_DATA "
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, SALT_VALUE, HASH, TIME_CREATED)"
                 + "VALUES (?,?,?,?,?,?)";
-        public static final String LOAD_HISTORY_DATA = "SELECT * FROM IDN_PASSWORD_HISTORY_DATA WHERE USER_NAME= ? AND " +
-                "USER_DOMAIN = ? AND TENANT_ID = ? ORDER BY TIME_CREATED DESC  ";
+        public static final String LOAD_HISTORY_DATA = "SELECT * FROM IDN_PASSWORD_HISTORY_DATA WHERE " +
+                "USER_NAME= ? AND USER_DOMAIN = ? AND TENANT_ID = ? ORDER BY TIME_CREATED DESC  ";
 
         public static final String DELETE_HISTORY_RECORD = "DELETE FROM IDN_PASSWORD_HISTORY_DATA WHERE ID=?";
 
@@ -39,6 +44,9 @@ public class PasswordHistoryConstants {
 
     }
 
+    /**
+     * Error messages.
+     */
     public enum ErrorMessages {
 
         ERROR_CODE_HISTORY_VIOLATE("22001", "This password has been used in recent history. Please choose a different" +

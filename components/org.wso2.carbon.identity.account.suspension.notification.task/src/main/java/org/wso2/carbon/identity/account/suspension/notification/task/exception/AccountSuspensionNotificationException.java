@@ -17,6 +17,9 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.exception;
 
+/**
+ * Exception type for account suspension
+ */
 public class AccountSuspensionNotificationException extends Exception {
 
     private static final long serialVersionUID = 8260611169153946414L;

@@ -26,21 +26,21 @@ public interface PasswordHistoryDataStore {
 
 
     /**
-     * Stores data
+     * Stores data.
      *
      * @param credential,user
      */
     void store(User user, Object credential) throws IdentityPasswordHistoryException;
 
     /**
-     * Removes
+     * Removes.
      *
      * @param user
      */
     void remove(User user) throws IdentityPasswordHistoryException;
 
     /**
-     * validate
+     * validate.
      *
      * @param user,credential
      *

@@ -50,7 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class NotificationUsernameRecoveryManager {
 
@@ -279,8 +279,8 @@ public class NotificationUsernameRecoveryManager {
 
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                        getUserStoreManager();
+                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager)
+                        realmService.getTenantUserRealm(tenantId).getUserStoreManager();
             }
 
         } catch (Exception e) {

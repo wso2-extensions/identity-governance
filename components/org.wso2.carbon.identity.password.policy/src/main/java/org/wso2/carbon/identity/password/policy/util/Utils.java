@@ -22,6 +22,9 @@ import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
 
+/**
+ * Utility to handle password policy exceptions
+ */
 public class Utils {
 
     private static final Log log = LogFactory.getLog(Utils.class);

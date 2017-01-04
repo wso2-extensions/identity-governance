@@ -51,7 +51,7 @@ import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import java.util.HashMap;
 
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class NotificationPasswordRecoveryManager {
 
@@ -67,8 +67,8 @@ public class NotificationPasswordRecoveryManager {
     }
 
 
-    public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[] properties)
-            throws IdentityRecoveryException {
+    public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[]
+            properties) throws IdentityRecoveryException {
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -102,7 +102,8 @@ public class NotificationPasswordRecoveryManager {
         try {
             userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
-            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(),
+                    user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, user
                         .getUserName());
@@ -130,7 +131,8 @@ public class NotificationPasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey, properties);
+            triggerNotification(user,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET, secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
@@ -151,13 +153,17 @@ public class NotificationPasswordRecoveryManager {
         }
 
         int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
-        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(), userRecoveryData.getUser().getUserStoreDomain());
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
         try {
 
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
-            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(
+                    userRecoveryData.getRecoveryScenario()) ||
+                    RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(
+                            userRecoveryData.getRecoveryScenario())) {
                 HashMap<String, String> userClaims = new HashMap<>();
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
@@ -170,17 +176,20 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.invalidate(code);
 
         boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                        userRecoveryData.getUser().getTenantDomain()));
         boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, userRecoveryData.getUser().getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+                        userRecoveryData.getUser().getTenantDomain()));
 
 
         if (isNotificationInternallyManaged && isNotificationSendWhenSuccess) {
             try {
                 triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
                         .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
-            } catch (Exception e) {
-                log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
+            } catch (IdentityRecoveryException e) {
+                log.warn("Error while sending password reset success notification to user :" +
+                        userRecoveryData.getUser().getUserName());
             }
         }
 
@@ -197,8 +206,8 @@ public class NotificationPasswordRecoveryManager {
             if (cause instanceof EventException) {
                 String errorCode = ((EventException) cause).getErrorCode();
                 if (StringUtils.equals(errorCode, "22001")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_HISTORY_VIOLATE, null, e);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null, e);
                 }
             }
 

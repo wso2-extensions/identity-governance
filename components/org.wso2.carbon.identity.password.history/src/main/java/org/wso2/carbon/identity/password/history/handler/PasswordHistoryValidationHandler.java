@@ -29,17 +29,30 @@ import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.password.history.Util.Utils;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
+import org.wso2.carbon.identity.event.EventConstants;
+import org.wso2.carbon.identity.event.EventException;
+import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.identity.password.history.internal.IdentityPasswordHistoryServiceDataHolder;
 import org.wso2.carbon.identity.password.history.store.PasswordHistoryDataStore;
+import org.wso2.carbon.identity.password.history.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
-
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+/**
+ * Password history validation handler.
+ */
 public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(PasswordHistoryValidationHandler.class);
@@ -94,10 +107,13 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
             return;
         }
 
-        hashingAlgorithm = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants.PW_HISTORY_HASHING_ALGORITHM);
-        String passwordHistoryDataStoreClass = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants.PW_HISTORY_DATA_STORE);;
+        hashingAlgorithm = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
+                .PW_HISTORY_HASHING_ALGORITHM);
+        String passwordHistoryDataStoreClass = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
+                .PW_HISTORY_DATA_STORE);;
         if (StringUtils.isBlank(passwordHistoryDataStoreClass)) {
-            passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.history.store.Impl.DefaultPasswordHistoryDataStore";
+            passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.history." +
+                    "store.impl.DefaultPasswordHistoryDataStore";
         }
 
         PasswordHistoryDataStore passwordHistoryDataStore;
@@ -107,32 +123,37 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
             Constructor<?> cons = cls.getConstructor(parameterTypes);
             Object[] arguments = {hashingAlgorithm, historyCount};
             passwordHistoryDataStore = (PasswordHistoryDataStore) cons.newInstance(arguments);
-        } catch (Exception e) {
-            throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_LOADING_HISTORY_DATA_SOURCE, null, e);
+        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException |
+                ClassNotFoundException e) {
+            throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages
+                    .ERROR_CODE_LOADING_HISTORY_DATA_SOURCE, null, e);
         }
 
-        if (EventConstants.Event.PRE_UPDATE_CREDENTIAL.equals(event.getEventName()) || EventConstants.Event
-                .PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
+        if (EventConstants.Event.PRE_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
+                EventConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(EventConstants.EventProperty.CREDENTIAL);
             try {
                 boolean validate = passwordHistoryDataStore.validate(user, credential);
                 if (!validate) {
-                    throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null);
+                    throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE,
+                            null);
                 }
             } catch (IdentityPasswordHistoryException e) {
-                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_VALIDATING_HISTORY, null, e);
+                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_VALIDATING_HISTORY,
+                        null, e);
             }
         }
 
-        if (EventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) || EventConstants.Event
-                .POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) || EventConstants.Event
-                .POST_ADD_USER.equals(event.getEventName())) {
+        if (EventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
+                EventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) ||
+                EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(EventConstants.EventProperty.CREDENTIAL);
             ;
             try {
                 passwordHistoryDataStore.store(user, credential);
             } catch (IdentityPasswordHistoryException e) {
-                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_STORING_HISTORY, null, e);
+                throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_STORING_HISTORY,
+                        null, e);
             }
         }
 
@@ -213,7 +234,8 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
         return null;
     }
 }

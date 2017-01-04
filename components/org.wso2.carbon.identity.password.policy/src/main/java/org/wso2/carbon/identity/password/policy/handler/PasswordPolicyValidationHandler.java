@@ -44,6 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Event handler and governance connector to handle password policy
+ */
 
 public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
@@ -157,6 +160,9 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 defaultPasswordPatternPolicy.init(pwPolicyPatternParams);
                 policyRegistry.addPolicy(defaultPasswordPatternPolicy);
             }
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            throw Utils.handleEventException(
+                    PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);
         } catch (Exception e) {
             throw Utils.handleEventException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_CODE_LOADING_PASSWORD_POLICY_CLASSES, null, e);

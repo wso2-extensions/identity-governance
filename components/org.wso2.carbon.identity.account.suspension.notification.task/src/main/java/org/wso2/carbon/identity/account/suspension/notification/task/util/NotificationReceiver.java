@@ -16,6 +16,10 @@
 
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
+/**
+ * Notification Receiver attributes
+ */
+
 public class NotificationReceiver {
 
     private String username;

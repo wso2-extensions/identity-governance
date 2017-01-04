@@ -41,6 +41,9 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_SECRET_KEY = "recaptcha.secret.key";
 
+    /**
+     * Re Captcha connector property suffixes.
+     */
     public static final class ReCaptchaConnectorPropertySuffixes {
 
         public static final String ENABLE = ".enable";

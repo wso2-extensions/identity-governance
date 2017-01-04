@@ -47,6 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * LDAP notification receivers retrieval
+ */
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
     private static final Log log = LogFactory.getLog(JDBCNotificationReceiversRetrieval.class);

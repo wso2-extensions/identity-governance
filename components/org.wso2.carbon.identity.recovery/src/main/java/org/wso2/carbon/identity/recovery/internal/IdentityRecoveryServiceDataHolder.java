@@ -23,6 +23,9 @@ import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
+/**
+ * Identity Recovery Service DataHolder.
+ */
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
@@ -54,7 +57,7 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {
-        if(identityEventService == null) {
+        if (identityEventService == null) {
             throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
         }
         return identityGovernanceService;

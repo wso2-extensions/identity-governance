@@ -252,13 +252,13 @@ public class CaptchaUtil {
     public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain) throws
             CaptchaException {
 
-        String CONNECTOR_NAME = "sso.login.recaptcha";
-        String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
+        String connectorName = "sso.login.recaptcha";
+        String reCaptchaVerificationClaim = "http://wso2.org/claims/identity/failedLoginAttempts";
         Property[] connectorConfigs;
         try {
             connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService()
-                    .getConfiguration(new String[]{CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
+                    .getConfiguration(new String[]{connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                            connectorName + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
         } catch (Exception e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration
             if (log.isDebugEnabled()) {
@@ -273,10 +273,10 @@ public class CaptchaUtil {
 
         String maxAttemptsStr = null;
         for (Property property : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(property.getName())
+            if ((connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(property.getName())
                     && !Boolean.valueOf(property.getValue())) {
                 return false;
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(property.getName())) {
+            } else if ((connectorName + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(property.getName())) {
                 maxAttemptsStr = property.getValue();
             }
         }
@@ -318,7 +318,7 @@ public class CaptchaUtil {
         try {
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
                     .getTenantAwareUsername(usernameWithDomain),
-                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                    new String[]{reCaptchaVerificationClaim}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred while retrieving user claims.", e);
@@ -328,8 +328,8 @@ public class CaptchaUtil {
         }
 
         int currentAttempts = 0;
-        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
-            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
+        if (NumberUtils.isNumber(claimValues.get(reCaptchaVerificationClaim))) {
+            currentAttempts = Integer.parseInt(claimValues.get(reCaptchaVerificationClaim));
         }
 
         return currentAttempts >= maxAttempts;
@@ -362,39 +362,39 @@ public class CaptchaUtil {
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
     }
 
-    private static void setSSOLoginConnectorConfigs(Properties properties) {
+    public static void setSSOLoginConnectorConfigs(Properties properties) {
 
         Map<String, String> connectorPropertyMap = new HashMap<>();
 
-        final String CONNECTOR_NAME = "sso.login";
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, properties
-                .getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes
+        final String connectorName = "sso.login";
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE, properties
+                .getProperty(connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE));
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.CONNECTOR_IDENTIFIER_ATTRIBUTE,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes
                         .CONNECTOR_IDENTIFIER_ATTRIBUTE));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.USER_IDENTIFIER_ATTRIBUTE,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes
                         .USER_IDENTIFIER_ATTRIBUTE));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.RECAPTCHA_VERIFICATION_CLAIM,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes
                         .RECAPTCHA_VERIFICATION_CLAIM));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS));
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS));
 
         CaptchaDataHolder.getInstance().setSSOLoginReCaptchaConnectorPropertyMap(connectorPropertyMap);
     }
 
-    private static void setPathBasedConnectorConfigs(Properties properties) {
+    public static void setPathBasedConnectorConfigs(Properties properties) {
 
         Map<String, String> connectorPropertyMap = new HashMap<>();
 
-        final String CONNECTOR_NAME = "path.based";
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, properties
-                .getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_PAGES));
-        connectorPropertyMap.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
-                properties.getProperty(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS));
+        final String connectorName = "path.based";
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE, properties
+                .getProperty(connectorName + ReCaptchaConnectorPropertySuffixes.ENABLE));
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.SECURED_PAGES,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes.SECURED_PAGES));
+        connectorPropertyMap.put(connectorName + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS,
+                properties.getProperty(connectorName + ReCaptchaConnectorPropertySuffixes.SECURED_DESTINATIONS));
 
         CaptchaDataHolder.getInstance().setPathBasedReCaptchaConnectorPropertyMap(connectorPropertyMap);
     }

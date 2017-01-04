@@ -18,8 +18,8 @@
 
 package org.wso2.carbon.identity.captcha.internal;
 
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
@@ -150,7 +150,7 @@ public class CaptchaDataHolder {
     }
 
     public RealmService getRealmService() {
-        if(realmService == null) {
+        if (realmService == null) {
             throw new RuntimeException("Realm Service is not available. Component did not start correctly.");
         }
         return realmService;

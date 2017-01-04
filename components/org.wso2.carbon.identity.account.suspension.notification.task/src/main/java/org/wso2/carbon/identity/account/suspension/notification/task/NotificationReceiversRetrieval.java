@@ -23,6 +23,9 @@ import org.wso2.carbon.user.api.RealmConfiguration;
 
 import java.util.List;
 
+/**
+ * Notification receivers retrieval contract
+ */
 public interface NotificationReceiversRetrieval {
 
     public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,

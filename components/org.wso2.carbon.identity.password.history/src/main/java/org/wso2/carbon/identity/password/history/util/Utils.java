@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.password.history.Util;
+package org.wso2.carbon.identity.password.history.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -7,6 +7,9 @@ import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 
+/**
+ * Utility methods.
+ */
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 

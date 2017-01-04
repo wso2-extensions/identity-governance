@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.recovery.model;
 
 /**
- * encapsulates challenge questions data
+ * encapsulates challenge questions .
  */
 public class ChallengeQuestion {
 

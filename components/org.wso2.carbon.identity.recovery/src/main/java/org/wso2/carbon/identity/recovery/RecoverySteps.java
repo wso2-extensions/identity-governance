@@ -1,5 +1,8 @@
 package org.wso2.carbon.identity.recovery;
 
+/**
+ * Recovery Steps constants.
+ */
 public enum RecoverySteps {
     NOTIFY,
     UPDATE_PASSWORD,

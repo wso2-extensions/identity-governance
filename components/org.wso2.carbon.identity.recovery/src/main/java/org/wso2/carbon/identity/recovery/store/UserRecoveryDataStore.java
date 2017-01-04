@@ -22,6 +22,9 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 
+/**
+ * User recovery data store.
+ */
 public interface UserRecoveryDataStore {
     void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
 

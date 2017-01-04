@@ -55,7 +55,7 @@ public class NotificationTaskDataHolder {
         this.notificationSendingThreadPoolSize = notificationSendingThreadPoolSize;
     }
 
-    public Date getNotificationTriggerTime() throws ParseException{
+    public Date getNotificationTriggerTime() throws ParseException {
         DateFormat dateFormat = new SimpleDateFormat(NotificationConstants.TRIGGER_TIME_FORMAT);
         return dateFormat.parse(notificationTriggerTime);
     }

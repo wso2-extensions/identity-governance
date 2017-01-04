@@ -43,6 +43,7 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -50,6 +51,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Utility to provide recovery functionality.
+ */
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 
@@ -66,7 +70,7 @@ public class Utils {
      */
     public static org.wso2.carbon.identity.recovery.model.Property[] getArbitraryProperties() {
         if (arbitraryProperties.get() == null) {
-            return null;
+            return new org.wso2.carbon.identity.recovery.model.Property[0];
         }
         return arbitraryProperties.get();
     }
@@ -121,7 +125,8 @@ public class Utils {
 
         if (userStoreManager != null) {
             Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
+                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim},
+                            UserCoreConstants.DEFAULT_PROFILE);
             if (claimsMap != null && !claimsMap.isEmpty()) {
                 claimValue = claimsMap.get(claim);
             }
@@ -198,7 +203,7 @@ public class Utils {
         try {
             String digsestFunction = "SHA-256";
             MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes());
+            byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
             return Base64.encode(byteValue);
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);
@@ -207,12 +212,12 @@ public class Utils {
     }
 
     /**
-     * Set claim to user store manager
+     * Set claim to user store manager.
      *
      * @param user  user
      * @param claim claim uri
      * @param value claim value
-     * @throws IdentityException if fails
+     * @throws UserStoreException if fails
      */
     public static void setClaimInUserStoreManager(User user, String claim, String value) throws UserStoreException {
 
@@ -251,9 +256,11 @@ public class Utils {
                     return connectorConfig.getValue();
                 }
             }
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
         }
     }
 
@@ -262,10 +269,11 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }
     }
 
@@ -274,7 +282,7 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw new EventException("Error while getting connector configurations", e);
@@ -296,7 +304,7 @@ public class Utils {
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
         // locale en_US, challengeSet1
         int count = 0;
-        for (String question : IdentityRecoveryConstants.Questions.SECRET_QUESTIONS_SET01) {
+        for (String question : IdentityRecoveryConstants.Questions.getSecretQuestionsSet01()) {
             String setId = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" + "challengeQuestion1";
             String questionId = "question" + (++count);
             challengeQuestions.add(
@@ -304,7 +312,7 @@ public class Utils {
         }
 
         count = 0;
-        for (String question : IdentityRecoveryConstants.Questions.SECRET_QUESTIONS_SET02) {
+        for (String question : IdentityRecoveryConstants.Questions.getSecretQuestionsSet02()) {
             String setId = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" + "challengeQuestion2";
             String questionId = "question" + (++count);
             challengeQuestions.add(

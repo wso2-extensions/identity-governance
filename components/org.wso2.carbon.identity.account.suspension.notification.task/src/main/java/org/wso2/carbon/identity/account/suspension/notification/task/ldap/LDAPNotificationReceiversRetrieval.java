@@ -34,23 +34,29 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
 import org.wso2.carbon.user.core.ldap.LDAPConstants;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
+
+/**
+ * LDAP implementation to get notification receivers
+ */
 public class LDAPNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
     private static final Log log = LogFactory.getLog(LDAPNotificationReceiversRetrieval.class);
     private RealmConfiguration realmConfiguration = null;
+    private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
+    private static final String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
+    private static final String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
 
     @Override
     public void init(RealmConfiguration realmConfiguration) {
@@ -82,7 +88,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);
+                    log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " +
+                            lookupMax);
                 }
 
                 LDAPConnectionContext ldapConnectionContext = new LDAPConnectionContext(realmConfiguration);

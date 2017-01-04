@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.recovery.handler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.common.base.message.MessageContext;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -38,6 +38,9 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * Admin Forced Password Reset Handler.
+ */
 public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandler {
 
     private static final Log log = LogFactory.getLog(AdminForcedPasswordResetHandler.class);
@@ -47,7 +50,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
         String eventName = event.getEventName();
         if (log.isDebugEnabled()) {
-            log.debug("Handling event : " + eventName);//
+            log.debug("Handling event : " + eventName);
         }
         Map<String, Object> eventProperties = event.getEventProperties();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants
@@ -59,6 +62,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
         if (EventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
             handleAuthenticate(eventProperties, userStoreManager);
+            handleClaimUpdate(eventProperties, userStoreManager);
         }
 
     }
@@ -98,7 +102,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             // Remove claim to prevent persisting this temporary claim
             claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
 
-            String OTP = generateOTPValue();
+            String otp = generateOTPValue();
             String notificationType = "";
             Enum recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
 
@@ -106,30 +110,29 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 if (claims.containsKey(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM)) {
                     claims.remove(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM);
                 }
-                setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
+                setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, otp, userStoreManager, user);
             }
 
             if (adminPasswordResetOTP) {
                 notificationType = IdentityRecoveryConstants
-                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
+                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP;
             }
 
             if (adminPasswordResetRecoveryLink) {
-                OTP = UUIDGenerator.generateUUID();
+                otp = UUIDGenerator.generateUUID();
                 recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
-                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET
-                        .toString();
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET;
             }
 
             if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
                 claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
             }
-            setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
+            setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, otp);
             lockAccount(user, userStoreManager);
 
             if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
                 try {
-                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
+                    triggerNotification(user, notificationType, otp, Utils.getArbitraryProperties());
                 } catch (IdentityRecoveryException e) {
                     throw new EventException("Error while sending  notification ", e);
                 }

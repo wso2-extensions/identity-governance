@@ -48,6 +48,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * User SelfRegistration Handler.
+ */
 public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationHandler.class);
@@ -99,7 +102,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                        user.getTenantDomain()));
 
         if (EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -112,7 +116,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                             .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
                     userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(),
+                    triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM,
                             secretKey, Utils.getArbitraryProperties());
                 }
             } catch (IdentityRecoveryException e) {
@@ -161,8 +165,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (EventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
         }
     }
 

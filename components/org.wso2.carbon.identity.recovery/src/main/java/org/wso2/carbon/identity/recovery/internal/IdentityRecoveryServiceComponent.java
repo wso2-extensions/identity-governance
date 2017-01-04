@@ -64,6 +64,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
  */
+
+/**
+ * Identity Recovery Service Component.
+ */
 public class IdentityRecoveryServiceComponent {
 
     private static Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);

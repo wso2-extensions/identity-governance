@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
@@ -34,10 +33,12 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.Map;
 
+/**
+ * Account Confirmation Validation Handler.
+ */
 public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(AccountConfirmationValidationHandler.class);
@@ -63,7 +64,6 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig
                 .PROPERTY_DOMAIN_NAME);
-        String usernameWithDomain = UserCoreUtil.addDomainToName(userName, domainName);
 
         User user = new User();
         user.setUserName(userName);

@@ -17,7 +17,7 @@
 package org.wso2.carbon.identity.recovery;
 
 /**
- * Identity management related constants
+ * Identity management related constants.
  */
 public class IdentityRecoveryConstants {
 
@@ -31,7 +31,8 @@ public class IdentityRecoveryConstants {
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
-    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
+            "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
@@ -49,7 +50,8 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
-    public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
+    public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM =
+            "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
 
@@ -68,6 +70,9 @@ public class IdentityRecoveryConstants {
     private IdentityRecoveryConstants() {
     }
 
+    /**
+     * Error Messages.
+     */
     public enum ErrorMessages {
 
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s.'"),
@@ -80,8 +85,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
-        ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
-        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
+        ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001",
+                "Registry exception while getting challenge question"),
+        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002",
+                "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
@@ -144,6 +151,9 @@ public class IdentityRecoveryConstants {
 
     }
 
+    /**
+     * Connector Config.
+     */
     public static class ConnectorConfig {
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
@@ -158,29 +168,34 @@ public class IdentityRecoveryConstants {
                 ".ReCaptcha.Enable";
         public static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
                 ".Password.ReCaptcha.MaxFailedAttempts";
-        public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
+        public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
                 ".InternallyManage";
         public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
 
-        public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
+        public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
-        public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE =
+                "EmailVerification.Notification.InternallyManage";
 
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE= "Recovery.AdminPasswordReset.Offline";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP= "Recovery.AdminPasswordReset.OTP";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK= "Recovery.AdminPasswordReset.RecoveryLink";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK =
+                "Recovery.AdminPasswordReset.RecoveryLink";
     }
 
+    /**
+     * SQL Queries.
+     */
     public static class SQLQueries {
 
         public static final String STORE_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS)"
                 + "VALUES (?,?,?,?,?,?,?,?)";
         public static final String LOAD_RECOVERY_DATA = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
-                "SCENARIO = ? AND STEP = ?";
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? " +
+                "AND " + "SCENARIO = ? AND STEP = ?";
 
         public static final String LOAD_RECOVERY_DATA_CASE_INSENSITIVE = "SELECT * FROM IDN_RECOVERY_DATA WHERE" +
                 " LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE= ? AND SCENARIO = ? AND " +
@@ -205,6 +220,9 @@ public class IdentityRecoveryConstants {
 
     }
 
+    /**
+     * Questions.
+     */
     public static class Questions {
 
         public static final String LOCALE_CLAIM = "http://wso2.org/claims/locality";
@@ -215,13 +233,19 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_LOCALE = "locale";
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET01 = new String[]{"City where you were born ?",
+        private static String[] secretQuestionsSet01 = new String[]{"City where you were born ?",
                 "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"};
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
+        private static String[] secretQuestionsSet02 = new String[]{"Model of your first car ?",
                 "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
 
+        public static String[] getSecretQuestionsSet01() {
+            return secretQuestionsSet01.clone();
+        }
 
+        public static String[] getSecretQuestionsSet02() {
+            return secretQuestionsSet02.clone();
+        }
     }
 }
