@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.util.EnabledSecurityMechanism;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
