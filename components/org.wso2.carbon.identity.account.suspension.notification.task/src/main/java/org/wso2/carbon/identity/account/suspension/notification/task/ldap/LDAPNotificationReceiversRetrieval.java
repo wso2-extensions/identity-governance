@@ -82,10 +82,14 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     userStoreDomain = IdentityUtil.getPrimaryDomainName();
                 }
 
-                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.USERNAME_CLAIM);
-                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, NotificationConstants.FIRST_NAME_CLAIM);
-                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.EMAIL_CLAIM);
-                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
+                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                            NotificationConstants.USERNAME_CLAIM);
+                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain,
+                                                                              NotificationConstants.FIRST_NAME_CLAIM);
+                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                         NotificationConstants.EMAIL_CLAIM);
+                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                              NotificationConstants.LAST_LOGIN_TIME);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " +
@@ -96,8 +100,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 DirContext ctx = ldapConnectionContext.getContext();
 
                 //carLicense is the mapped LDAP attribute for LastLoginTime claim
-                String searchFilter = "(&("+lastLoginTimeAttribute+">=" + lookupMin + ")("+lastLoginTimeAttribute+"<="
-                        + lookupMax + "))";
+                String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute
+                                      + "<=" + lookupMax + "))";
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);

@@ -78,7 +78,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             try {
                 isUserExists = isExistingUserDataValue(userName, tenantId, key);
             } catch (SQLException e) {
-                throw IdentityException.error(IdentityException.class, "Error occurred while checking if user existing", e);
+                throw IdentityException.error(IdentityException.class,
+                                              "Error occurred while checking if user existing", e);
             }
             try {
                 if (isUserExists) {

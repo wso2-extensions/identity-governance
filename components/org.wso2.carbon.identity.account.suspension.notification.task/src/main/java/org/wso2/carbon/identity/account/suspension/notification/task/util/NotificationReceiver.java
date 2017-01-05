@@ -65,7 +65,11 @@ public class NotificationReceiver {
                 + ", ExpireDate: " + getExpireDate();
     }
 
-    public String getUserStoreDomain() { return userStoreDomain; }
+    public String getUserStoreDomain() {
+        return userStoreDomain;
+    }
 
-    public void setUserStoreDomain(String userStoreDomain) { this.userStoreDomain = userStoreDomain; }
+    public void setUserStoreDomain(String userStoreDomain) {
+        this.userStoreDomain = userStoreDomain;
+    }
 }

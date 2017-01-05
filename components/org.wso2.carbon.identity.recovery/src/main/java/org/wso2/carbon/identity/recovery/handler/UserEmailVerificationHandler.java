@@ -21,13 +21,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -68,14 +66,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     public void handleEvent(Event event) throws EventException {
 
         Map<String, Object> eventProperties = event.getEventProperties();
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants.EventProperty.USER_STORE_MANAGER);
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(
+                                                                EventConstants.EventProperty.USER_STORE_MANAGER);
         User user = getUser(eventProperties, userStoreManager);
-
         String[] roleList = (String[]) eventProperties.get(EventConstants.EventProperty.ROLE_LIST);
-
-        Map<String, String> claims = (Map<String, String>) eventProperties.get(EventConstants.EventProperty
-                .USER_CLAIMS);
-
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(
+                                                                EventConstants.EventProperty.USER_CLAIMS);
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
 
@@ -129,7 +125,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
             if (claim == null) {
-                return;
                 //Not required to handle in this handler
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
                 if (isNotificationInternallyManage) {
@@ -159,12 +154,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString(), userStoreManager, user);
     }
 
-    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType) throws EventException {
+    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType)
+            throws EventException {
             String secretKey = UUIDGenerator.generateUUID();
             initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
     }
 
-    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep,String notificationType, String secretKey) throws EventException {
+    protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType,
+                                    String secretKey) throws EventException {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
@@ -178,7 +175,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
     }
 
-    protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey) throws EventException {
+    protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey)
+            throws EventException {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
@@ -202,7 +200,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         return recoveryData;
     }
 
-    protected void setUserClaim(String claimName, String claimValue, UserStoreManager userStoreManager, User user) throws EventException {
+    protected void setUserClaim(String claimName, String claimValue, UserStoreManager userStoreManager, User user)
+            throws EventException {
         HashMap<String, String> userClaims = new HashMap<>();
         userClaims.put(claimName, claimValue);
         try {
@@ -248,7 +247,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
+                                    UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);

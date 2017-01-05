@@ -137,8 +137,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
     @Override
     public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName,
-                                            Map<String, String> claimMap,
-                                            UserStoreManager storeManager) {
+                                            Map<String, String> claimMap, UserStoreManager storeManager) {
 
         if (!isEnable()) {
             return true;
@@ -182,7 +181,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         return true;
     }
 
-    public boolean doPreGetUserClaimValue(String userName, String claim, String profileName, UserStoreManager storeManager) throws UserStoreException {
+    public boolean doPreGetUserClaimValue(String userName, String claim, String profileName,
+                                          UserStoreManager storeManager) throws UserStoreException {
 
         if (!isEnable()) {
             return true;
@@ -195,7 +195,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         return true;
     }
 
-    public boolean doPreSetUserClaimValue(String userName, String claimURI, String claimValue, String profileName, UserStoreManager userStoreManager) throws UserStoreException {
+    public boolean doPreSetUserClaimValue(String userName, String claimURI, String claimValue, String profileName,
+                                          UserStoreManager userStoreManager) throws UserStoreException {
 
         if (!isEnable()) {
             return true;

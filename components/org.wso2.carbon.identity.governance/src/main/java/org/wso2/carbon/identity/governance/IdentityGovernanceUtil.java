@@ -23,8 +23,8 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -45,7 +45,7 @@ public class IdentityGovernanceUtil {
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
     public static void saveConnectorDefaultProperties (IdentityConnectorConfig identityConnectorConfig,
-                                                       String tenantDomain) throws IdentityGovernanceException{
+                                                       String tenantDomain) throws IdentityGovernanceException {
 
         Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
@@ -57,7 +57,8 @@ public class IdentityGovernanceUtil {
             List<IdentityProviderProperty> propertyList = new ArrayList<>();
             for (IdentityProviderProperty idpProperty : idpProperties) {
                 String propertyName = idpProperty.getName();
-                if ((identityConnectorConfig.getName() + "." + EventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
+                if ((identityConnectorConfig.getName() + "."
+                     + EventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
                     }
@@ -104,11 +105,11 @@ public class IdentityGovernanceUtil {
 
     public static String getUserStoreDomainName(UserStoreManager userStoreManager) {
         String domainNameProperty = null;
-        if(userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
+        if (userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
             domainNameProperty = ((org.wso2.carbon.user.core.UserStoreManager)
                     userStoreManager).getRealmConfiguration()
                     .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-            if(StringUtils.isBlank(domainNameProperty)) {
+            if (StringUtils.isBlank(domainNameProperty)) {
                 domainNameProperty = IdentityUtil.getPrimaryDomainName();
             }
         }

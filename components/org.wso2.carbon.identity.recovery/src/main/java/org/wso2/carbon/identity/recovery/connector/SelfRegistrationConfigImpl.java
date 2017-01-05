@@ -6,8 +6,15 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+/**
+ * Self Registration Identity connector config implementation
+ */
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "self-sign-up";
@@ -121,7 +128,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
         return null;
     }
 

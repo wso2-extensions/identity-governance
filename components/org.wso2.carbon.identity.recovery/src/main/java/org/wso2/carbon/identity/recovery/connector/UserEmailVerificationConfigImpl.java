@@ -6,8 +6,15 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+/**
+ * User Email Verification Identity Connector Config
+ */
 public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "user-email-verification";
@@ -33,7 +40,9 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -54,7 +63,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Enable to trigger a verification notification during user creation");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account during user creation");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
         return descriptionMapping;
     }
@@ -99,7 +109,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 enableEmailVerification);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 enableEmailAccountLockOnCreation);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+        defaultProperties.put(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
 
         Properties properties = new Properties();
@@ -108,7 +119,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
         return null;
     }
 

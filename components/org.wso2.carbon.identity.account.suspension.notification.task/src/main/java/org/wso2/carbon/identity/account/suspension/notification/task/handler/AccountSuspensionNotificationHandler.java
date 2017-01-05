@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
@@ -29,10 +30,8 @@ import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -180,7 +179,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private void startScheduler() {
 
-        if(!Boolean.parseBoolean(moduleConfig.getModuleProperties().getProperty(NotificationConstants.
+        if (!Boolean.parseBoolean(moduleConfig.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_ENABLED))) {
             return;
         }

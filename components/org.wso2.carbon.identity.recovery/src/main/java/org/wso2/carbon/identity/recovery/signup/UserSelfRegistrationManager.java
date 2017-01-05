@@ -32,6 +32,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -49,8 +51,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -150,15 +150,19 @@ public class UserSelfRegistrationManager {
                 while (cause != null) {
                     if (cause instanceof PolicyViolationException) {
                         throw IdentityException.error(IdentityRecoveryClientException.class,
-                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                                                      cause.getMessage(), e);
                     }
                     cause = cause.getCause();
                 }
 
                 if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(),
+                            e);
                 } else {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER,
+                                                      user.getUserName(), e);
                 }
             }
 
@@ -320,7 +324,8 @@ public class UserSelfRegistrationManager {
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(), secretKey, properties);
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(),
+                                secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }

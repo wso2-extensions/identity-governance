@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.account.suspension.notification.task;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
@@ -29,7 +28,6 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.Notifi
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.mgt.IdentityMgtServiceException;
 import org.wso2.carbon.identity.mgt.services.UserIdentityManagementAdminService;
@@ -182,7 +180,8 @@ public class AccountValidatorThread implements Runnable {
                     suspensionDelay);
 
         } catch (AccountSuspensionNotificationException e) {
-            throw IdentityException.error(IdentityException.class, "Error occurred while retrieving users for account disable", e);
+            throw IdentityException.error(IdentityException.class,
+                                          "Error occurred while retrieving users for account disable", e);
         }
         if (receivers.size() > 0) {
             try {

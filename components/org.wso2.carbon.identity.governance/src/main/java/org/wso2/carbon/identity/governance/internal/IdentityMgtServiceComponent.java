@@ -34,8 +34,6 @@ import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-;
-
 /**
  * @scr.component name="org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent" immediate="true"
  * @scr.reference name="EventMgtService"
@@ -102,7 +100,8 @@ public class IdentityMgtServiceComponent {
     protected void setIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
         IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityConnectorConfig);
         try {
-            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityConnectorConfig, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityConnectorConfig,
+                                                                  MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         } catch (IdentityGovernanceException e) {
             log.error("Error while saving super tenant configurations for " + identityConnectorConfig.getName() +
                     ".", e);

@@ -44,10 +44,10 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         ConnectorConfig[] configs = new ConnectorConfig[list.size()];
         String[] connectorProperties;
 
-        for (int i=0; i<list.size();i++) {
-            ConnectorConfig config =new ConnectorConfig();
-            Map <String,String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
-            Map <String,String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+        for (int i = 0; i < list.size(); i++) {
+            ConnectorConfig config = new ConnectorConfig();
+            Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
+            Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setCategory(list.get(i).getCategory());
             config.setSubCategory(list.get(i).getSubCategory());

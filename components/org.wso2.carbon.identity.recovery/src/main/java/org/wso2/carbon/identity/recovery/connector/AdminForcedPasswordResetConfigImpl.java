@@ -6,8 +6,15 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+/**
+ * Admin forced password reset connector config implementation
+ */
 public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "admin-forced-password-reset";
@@ -33,7 +40,9 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -108,7 +117,8 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
         return null;
     }
 

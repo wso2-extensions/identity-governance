@@ -20,16 +20,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
@@ -54,8 +52,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
-    EventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
-    private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
+    private final EventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
+    private static final String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
 
     @Override
     public int getExecutionOrderId() {
@@ -120,11 +118,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post authenticator is called in IdentityMgtEventListener");
         }
-        if (!isUserExistsInDomain(userStoreManager, userName, authenticated)){
+        if (!isUserExistsInDomain(userStoreManager, userName, authenticated)) {
             if (log.isDebugEnabled()) {
                 log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
                         "user store domain: " + userStoreManager.getRealmConfiguration().getUserStoreProperty
-                        (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME) );
+                        (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
             }
             return true;
         }
@@ -178,10 +176,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     }
 
 
-    public boolean doPreAddUser(String userName, Object credential, String[] roleList,
-                                Map<String, String> claims, String profile,
-                                UserStoreManager userStoreManager)
-            throws UserStoreException {
+    public boolean doPreAddUser(String userName, Object credential, String[] roleList, Map<String, String> claims,
+                                String profile, UserStoreManager userStoreManager) throws UserStoreException {
         if (!isEnable()) {
             return true;
         }
@@ -298,7 +294,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("pre delete user is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.PRE_DELETE_USER;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        handleEvent(userName, userStoreManager, eventName, new HashMap<>());
         return true;
     }
 
@@ -312,7 +308,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post delete user is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.POST_DELETE_USER;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        handleEvent(userName, userStoreManager, eventName, new HashMap<>());
         return true;
     }
 
@@ -346,7 +342,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post set user claim value is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.POST_SET_USER_CLAIM;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        handleEvent(userName, userStoreManager, eventName, new HashMap<>());
         return true;
     }
 
@@ -378,7 +374,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post delete user claim values is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.POST_DELETE_USER_CLAIMS;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        handleEvent(userName, userStoreManager, eventName, new HashMap<>());
         return true;
     }
 
@@ -410,7 +406,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post delete user claim value is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.POST_DELETE_USER_CLAIM;
-        handleEvent(userName, userStoreManager, eventName, new HashMap<String, Object>());
+        handleEvent(userName, userStoreManager, eventName, new HashMap<>());
         return true;
     }
 
@@ -457,7 +453,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("pre delete role is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.PRE_DELETE_ROLE;
-        handleEvent(null, userStoreManager, eventName, roleName, new HashMap<String, Object>());
+        handleEvent(null, userStoreManager, eventName, roleName, new HashMap<>());
         return true;
     }
 
@@ -471,7 +467,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post delete role is called in IdentityMgtEventListener");
         }
         String eventName = EventConstants.Event.POST_DELETE_ROLE;
-        handleEvent(null, userStoreManager, eventName, roleName, new HashMap<String, Object>());
+        handleEvent(null, userStoreManager, eventName, roleName, new HashMap<>());
         return true;
     }
 
@@ -626,7 +622,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             if (StringUtils.isNotEmpty(errorCode)) {
                 //This error code 22001 means user password history is violated.
-                if (StringUtils.equals(errorCode, "22001")|| StringUtils.equals(errorCode, "40001")
+                if (StringUtils.equals(errorCode, "22001") || StringUtils.equals(errorCode, "40001")
                         || StringUtils.equals(errorCode, "40002")) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
@@ -654,8 +650,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     }
 
 
-    public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName, Map<String, String>
-            claimMap, UserStoreManager storeManager) throws UserStoreException {
+    public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName,
+                                            Map<String, String> claimMap, UserStoreManager storeManager)
+            throws UserStoreException {
         if (!isEnable()) {
             return true;
         }

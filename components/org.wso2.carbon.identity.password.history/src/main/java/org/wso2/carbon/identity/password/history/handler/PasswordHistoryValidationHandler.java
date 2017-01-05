@@ -23,17 +23,12 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
-import org.wso2.carbon.identity.event.EventConstants;
-import org.wso2.carbon.identity.event.EventException;
-import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.identity.password.history.internal.IdentityPasswordHistoryServiceDataHolder;
@@ -41,8 +36,8 @@ import org.wso2.carbon.identity.password.history.store.PasswordHistoryDataStore;
 import org.wso2.carbon.identity.password.history.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
+
 import java.lang.reflect.Constructor;
-import java.util.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,7 +105,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         hashingAlgorithm = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
                 .PW_HISTORY_HASHING_ALGORITHM);
         String passwordHistoryDataStoreClass = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
-                .PW_HISTORY_DATA_STORE);;
+                .PW_HISTORY_DATA_STORE);
         if (StringUtils.isBlank(passwordHistoryDataStoreClass)) {
             passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.history." +
                     "store.impl.DefaultPasswordHistoryDataStore";
@@ -148,7 +143,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
                 EventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) ||
                 EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(EventConstants.EventProperty.CREDENTIAL);
-            ;
+
             try {
                 passwordHistoryDataStore.store(user, credential);
             } catch (IdentityPasswordHistoryException e) {
@@ -189,7 +184,9 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -202,8 +199,10 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
         Map<String, String> descriptionMapping = new HashMap<>();
-        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "Enable to disallow previously used passwords");
-        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict reusing last x number of password during password update");
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE,
+                               "Enable to disallow previously used passwords");
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT,
+                               "Restrict reusing last x number of password during password update");
         return descriptionMapping;
     }
 

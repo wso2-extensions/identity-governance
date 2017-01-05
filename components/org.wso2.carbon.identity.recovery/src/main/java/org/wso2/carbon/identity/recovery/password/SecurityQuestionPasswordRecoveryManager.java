@@ -331,11 +331,12 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
             if (userChallengeAnswer == null) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
             }
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
+            String challengeQuestionSeparator = IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(challengeQuestionSeparator)) {
                 challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -391,8 +392,9 @@ public class SecurityQuestionPasswordRecoveryManager {
 
                     return challengeQuestionResponse;
                 } else {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION, null);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION,
+                            null);
                 }
 
             } else if (RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION.equals(userRecoveryData.getRecoveryStep())) {

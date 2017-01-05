@@ -78,7 +78,8 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
             }
         } catch (UserStoreException e) {
             if (!e.getMessage().startsWith(IdentityCoreConstants.USER_NOT_FOUND)) {
-                throw IdentityException.error(IdentityException.class, "Error while persisting identity user data in to user store", e);
+                throw IdentityException.error(IdentityException.class,
+                                              "Error while persisting identity user data in to user store", e);
             } else if (log.isDebugEnabled()) {
                 String message = null;
                 if (userStoreManager instanceof AbstractUserStoreManager) {

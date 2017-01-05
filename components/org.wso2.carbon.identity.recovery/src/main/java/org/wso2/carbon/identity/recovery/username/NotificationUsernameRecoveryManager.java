@@ -20,8 +20,8 @@
 package org.wso2.carbon.identity.recovery.username;
 
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -138,8 +138,8 @@ public class NotificationUsernameRecoveryManager {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));
+        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE, null);
@@ -147,8 +147,8 @@ public class NotificationUsernameRecoveryManager {
 
         boolean isNotificationInternallyManaged;
         if (notify == null) {
-            isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+            isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
         } else {
             isNotificationInternallyManaged = notify.booleanValue();
         }
@@ -164,8 +164,7 @@ public class NotificationUsernameRecoveryManager {
                 return userName;
             }
         }
-        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                .ERROR_CODE_NO_VALID_USERNAME, null);
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_VALID_USERNAME, null);
     }
 
 
@@ -183,8 +182,8 @@ public class NotificationUsernameRecoveryManager {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (EventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_TRIGGER_NOTIFICATION, user, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user, e);
         }
     }
 
@@ -192,8 +191,8 @@ public class NotificationUsernameRecoveryManager {
             throws IdentityRecoveryException {
 
         if (claims == null || claims.length < 1) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
         }
 
         String userName = null;
@@ -235,11 +234,12 @@ public class NotificationUsernameRecoveryManager {
                             }
                         } else {
                             if (log.isDebugEnabled()) {
-                                log.debug("There are no users for " + claim.getClaimURI() + " with the value : " + claim
-                                        .getClaimValue()+ " in the previously filtered user list");
+                                log.debug("There are no users for " + claim.getClaimURI() + " with the value : "
+                                          + claim.getClaimValue() + " in the previously filtered user list");
                             }
-                            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+                            throw Utils.handleClientException(
+                                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY,
+                                    null);
                         }
                     } else {
                         resultedUserList = matchedUserList;
@@ -250,11 +250,11 @@ public class NotificationUsernameRecoveryManager {
 
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("There are no matching users for " + claim.getClaimURI() + " with the value : " + claim
-                                .getClaimValue());
+                        log.debug("There are no matching users for " + claim.getClaimURI() + " with the value : "
+                                  + claim.getClaimValue());
                     }
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
                 }
             }
         }
@@ -265,8 +265,8 @@ public class NotificationUsernameRecoveryManager {
             if (log.isDebugEnabled()) {
                 log.debug("There are more than one user in the result set : "  + Arrays.toString(resultedUserList));
             }
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
         }
         return userName;
     }

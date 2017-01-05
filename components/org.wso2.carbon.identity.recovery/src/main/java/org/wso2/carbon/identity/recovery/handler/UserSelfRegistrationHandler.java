@@ -21,13 +21,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -68,11 +66,11 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants.EventProperty.USER_STORE_MANAGER);
-
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(
+                                                EventConstants.EventProperty.USER_STORE_MANAGER);
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
+                                                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
         String[] roleList = (String[]) eventProperties.get(EventConstants.EventProperty.ROLE_LIST);
 
         User user = new User();
@@ -112,8 +110,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 if (isNotificationInternallyManage) {
                     userRecoveryDataStore.invalidate(user);
                     String secretKey = UUIDGenerator.generateUUID();
-                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                            .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+                                                                           RecoveryScenarios.SELF_SIGN_UP,
+                                                                           RecoverySteps.CONFIRM_SIGN_UP);
 
                     userRecoveryDataStore.store(recoveryDataDO);
                     triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM,

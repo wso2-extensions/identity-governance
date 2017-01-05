@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -46,7 +47,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 
 import java.util.HashMap;
 
@@ -85,7 +85,8 @@ public class NotificationPasswordRecoveryManager {
                 .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE,
+                    null);
         }
 
         boolean isNotificationInternallyManage;
@@ -105,8 +106,8 @@ public class NotificationPasswordRecoveryManager {
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(),
                     user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, user
-                        .getUserName());
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                                                  user.getUserName());
             }
 
         } catch (UserStoreException e) {
@@ -124,8 +125,8 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.invalidate(user);
 
         String secretKey = UUIDGenerator.generateUUID();
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                .NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(
+                user, secretKey, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
         userRecoveryDataStore.store(recoveryDataDO);
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
@@ -213,7 +214,8 @@ public class NotificationPasswordRecoveryManager {
 
             if (cause instanceof PolicyViolationException) {
                 throw IdentityException.error(IdentityRecoveryClientException.class,
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        cause.getMessage(), e);
             }
             cause = cause.getCause();
         }

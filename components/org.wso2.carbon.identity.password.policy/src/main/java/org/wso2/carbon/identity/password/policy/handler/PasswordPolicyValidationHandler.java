@@ -16,17 +16,17 @@
 package org.wso2.carbon.identity.password.policy.handler;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.NumberUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.mgt.policy.PolicyRegistry;
@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 
 /**
  * Event handler and governance connector to handle password policy
@@ -94,35 +95,30 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                     }
                     return;
                 }
-                continue;
             } else if (PasswordPolicyConstants.PW_POLICY_MIN_LENGTH.equals(propertyName)) {
                 if (NumberUtils.isNumber(propertyValue) && Integer.parseInt(propertyValue) > 0) {
                     pwMinLength = propertyValue;
                 } else {
                     log.warn("Password Policy MIN Length is not correct hence using default value: " + pwMinLength);
                 }
-                continue;
             } else if (PasswordPolicyConstants.PW_POLICY_MAX_LENGTH.equals(propertyName)) {
                 if (NumberUtils.isNumber(propertyValue) && Integer.parseInt(propertyValue) > 0) {
                     pwMaxLength = propertyValue;
                 } else {
                     log.warn("Password Policy MAX Length is not correct hence using default value: " + pwMaxLength);
                 }
-                continue;
             } else if (PasswordPolicyConstants.PW_POLICY_PATTERN.equals(propertyName)) {
                 if (StringUtils.isNotBlank(propertyValue)) {
                     pwPattern = propertyValue;
                 } else {
                     log.warn("Password Policy Pattern is not correct hence using default value: " + pwPattern);
                 }
-                continue;
             } else if (PasswordPolicyConstants.PW_POLICY_ERROR_MSG.equals(propertyName)) {
                 if (StringUtils.isNotBlank(propertyValue)) {
                     errorMsg = propertyValue;
                 } else {
                     log.warn("Password Policy Error Msg cannot be Empty hence using default Msg: " + errorMsg);
                 }
-                continue;
             }
         }
 
@@ -197,7 +193,9 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
@@ -215,7 +213,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable password pattern policy");
         descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Allowed password regex pattern");
-        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Error message for invalid password patterns");
+        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG,
+                               "Error message for invalid password patterns");
         return descriptionMapping;
     }
 

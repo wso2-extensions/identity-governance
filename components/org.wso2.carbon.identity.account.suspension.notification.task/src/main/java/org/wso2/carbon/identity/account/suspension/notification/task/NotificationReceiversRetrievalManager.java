@@ -44,8 +44,8 @@ public class NotificationReceiversRetrievalManager {
     public static List<NotificationReceiver> getReceivers(long delay, String tenantDomain, long delayForSuspension)
             throws AccountSuspensionNotificationException {
 
-        Set<String> userStoreDomains = NotificationReceiversRetrievalUtil.
-                getSuspensionNotificationEnabledUserStores(tenantDomain);
+        Set<String> userStoreDomains =
+                NotificationReceiversRetrievalUtil.getSuspensionNotificationEnabledUserStores(tenantDomain);
 
         List<NotificationReceiver> receivers = new ArrayList<>();
 
@@ -62,8 +62,8 @@ public class NotificationReceiversRetrievalManager {
                             + "trigger time", e);
                 }
                 long lookupMax = lookupMin + TimeUnit.DAYS.toMillis(1);
-                List<NotificationReceiver> newReceivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
-                        delayForSuspension, tenantDomain);
+                List<NotificationReceiver> newReceivers = notificationReceiversRetrieval.getNotificationReceivers(
+                        lookupMin, lookupMax, delayForSuspension, tenantDomain);
                 receivers.addAll(newReceivers);
             }
         }

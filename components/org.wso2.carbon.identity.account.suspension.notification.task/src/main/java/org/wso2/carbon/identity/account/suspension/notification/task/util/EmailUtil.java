@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
 import org.apache.log4j.Logger;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.event.EventConstants;

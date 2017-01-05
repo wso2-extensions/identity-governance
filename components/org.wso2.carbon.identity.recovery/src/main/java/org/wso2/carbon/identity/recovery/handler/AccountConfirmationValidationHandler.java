@@ -24,10 +24,10 @@ import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -60,7 +60,6 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants.EventProperty
                 .USER_STORE_MANAGER);
-
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig
                 .PROPERTY_DOMAIN_NAME);
@@ -106,7 +105,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
      * @throws EventException
      */
     private boolean isUserAccountConfirmed(User user) throws EventException {
-        boolean userConfirmed = false;
+        boolean userConfirmed;
         try {
             userConfirmed = UserSelfRegistrationManager.getInstance().isUserConfirmed(user);
         } catch (IdentityRecoveryException e) {

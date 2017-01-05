@@ -37,7 +37,9 @@ public class ConnectorConfig {
         this.friendlyName = friendlyName;
     }
 
-    public String getCategory() { return category; }
+    public String getCategory() {
+        return category;
+    }
 
     public void setCategory(String category) {
         this.category = category;
@@ -63,7 +65,11 @@ public class ConnectorConfig {
         this.properties = properties.clone();
     }
 
-    public int getOrder() { return order; }
+    public int getOrder() {
+        return order;
+    }
 
-    public void setOrder(int order) { this.order = order; }
+    public void setOrder(int order) {
+        this.order = order;
+    }
 }
