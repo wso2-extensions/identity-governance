@@ -21,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.common.base.message.MessageContext;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -61,7 +60,6 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(EventConstants.EventProperty
                 .USER_STORE_MANAGER);
-
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig
                 .PROPERTY_DOMAIN_NAME);
@@ -77,18 +75,17 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 }
             boolean isAccountLocked = true;
             try {
-                isAccountLocked = Boolean.parseBoolean(userStoreManager.getUserClaimValue(userName,
-                        ACCOUNT_LOCKED_CLAIM, null));
+                Map<String, String> values = userStoreManager.getUserClaimValues(userName, new String[]{
+                        ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                isAccountLocked = Boolean.parseBoolean(values.get(ACCOUNT_LOCKED_CLAIM));
             } catch (UserStoreException e) {
                 throw new EventException("Error while retrieving account lock claim value", e);
             }
             if (isAccountLocked && !isUserAccountConfirmed(user)) {
-                if (!isUserAccountConfirmed(user)) {
-                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
-                            IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
-                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                    throw new EventException("User : " + userName + " not confirmed yet.");
-                }
+                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
+                        IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                throw new EventException("User : " + userName + " not confirmed yet.");
             }
         }
     }
@@ -98,10 +95,6 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         super.init(configuration);
     }
 
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 50;
-    }
 
 
     /**
@@ -112,7 +105,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
      * @throws EventException
      */
     private boolean isUserAccountConfirmed(User user) throws EventException {
-        boolean userConfirmed = false;
+        boolean userConfirmed;
         try {
             userConfirmed = UserSelfRegistrationManager.getInstance().isUserConfirmed(user);
         } catch (IdentityRecoveryException e) {

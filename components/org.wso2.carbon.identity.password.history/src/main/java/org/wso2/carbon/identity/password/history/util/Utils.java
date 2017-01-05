@@ -6,7 +6,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
-import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 
 /**
  * Utility methods.
@@ -22,12 +21,7 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        EventException identityEventException = new EventException(errorDescription);
-        IdentityException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityPasswordHistoryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityEventException.addErrorInfo(errorInfoBuilder.build());
-        return identityEventException;
+        return IdentityException.error(EventException.class, error.getCode(), errorDescription);
     }
 
     public static EventException handleEventException(PasswordHistoryConstants.ErrorMessages
@@ -38,12 +32,6 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        EventException identityEventException = new EventException(errorDescription, throwable);
-        IdentityException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityPasswordHistoryException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        errorInfoBuilder.cause(throwable);
-        identityEventException.addErrorInfo(errorInfoBuilder.build());
-        return identityEventException;
+        return IdentityException.error(EventException.class, error.getCode(), errorDescription, throwable);
     }
 }

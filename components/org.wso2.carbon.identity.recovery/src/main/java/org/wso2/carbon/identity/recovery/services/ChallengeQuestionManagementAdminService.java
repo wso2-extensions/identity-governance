@@ -23,17 +23,15 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
-import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.AuthorizationManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -70,7 +68,8 @@ public class ChallengeQuestionManagementAdminService {
     }
 
     /**
-     * Get all challenge questions applicable for a user based on his locale.
+     * Get all challenge questions applicable for a user based on his locale. If we can't find any question in his
+     * locale we return challenge questions from the default en_US locale.
      *
      * @param user
      * @return
@@ -83,17 +82,15 @@ public class ChallengeQuestionManagementAdminService {
             throw new IdentityRecoveryClientException("User object provided is null.");
         }
 
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         List<ChallengeQuestion> challengeQuestionList;
         try {
-            String locale = getLocaleOfUser(user, tenantDomain);
-            challengeQuestionList = questionManager.getAllChallengeQuestions(tenantDomain, locale);
+            challengeQuestionList = questionManager.getAllChallengeQuestionsForUser(tenantDomain, user);
             return challengeQuestionList.toArray(new ChallengeQuestion[challengeQuestionList.size()]);
         } catch (IdentityRecoveryException e) {
             String errorMgs = "Error loading challenge questions for user : %s@%s.";
-            log.error(String.format(errorMgs, tenantAwareUserName, tenantDomain), e);
-            throw new IdentityRecoveryException(String.format(errorMgs, tenantAwareUserName, tenantDomain), e);
+            log.error(String.format(errorMgs, user.getUserName(), tenantDomain), e);
+            throw new IdentityRecoveryException(String.format(errorMgs, user.getUserName(), tenantDomain), e);
         }
     }
 
@@ -248,26 +245,6 @@ public class ChallengeQuestionManagementAdminService {
         }
     }
 
-
-    private String getLocaleOfUser(User user, String tenantDomain) throws IdentityRecoveryException {
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
-        String locale = IdentityRecoveryConstants.LOCALE_EN_US;
-        try {
-            String userLocale =
-                    Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.Questions.LOCALE_CLAIM);
-            if (StringUtils.isNotBlank(userLocale)) {
-                locale = userLocale;
-            }
-        } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
-                    tenantAwareUserName, tenantDomain);
-            log.error(errorMsg);
-            throw new IdentityRecoveryServerException(errorMsg, e);
-        }
-
-        return locale;
-    }
-
     private boolean isUserAuthorized(String tenantAwareUserName, String tenantDomain)
             throws IdentityRecoveryException {
 
@@ -279,7 +256,7 @@ public class ChallengeQuestionManagementAdminService {
             authzManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getAuthorizationManager();
 
-            isAuthorized = authzManager.isUserAuthorized(tenantAwareUserName, "/permission/admin/configure/security",
+            isAuthorized = authzManager.isUserAuthorized(tenantAwareUserName, "/permission/admin/manage/identity",
                     CarbonConstants.UI_PERMISSION_ACTION);
 
         } catch (UserStoreException e) {

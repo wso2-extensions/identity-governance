@@ -32,4 +32,13 @@ public class IdentityRecoveryClientException extends IdentityRecoveryException {
     public IdentityRecoveryClientException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
+
+    public IdentityRecoveryClientException(String errorCode, String message) {
+        super(errorCode, message);
+    }
+
+    public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable) {
+        super(errorCode, message, throwable);
+    }
+
 }

@@ -146,15 +146,6 @@
                                 </tr>
                                 <tr>
                                     <td class="leftCol-med labelField">
-                                        <fmt:message key="challenge.question.add.question"/>
-                                        <span class="required">*</span>
-                                    </td>
-                                    <td class="leftCol-big">
-                                        <input size="100" name="question0" id="question0" class="text-box-big"/>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="leftCol-med labelField">
                                         <fmt:message key="challenge.question.add.questionLocale"/>
                                         <span class="required">*</span>
                                     </td>
@@ -168,6 +159,15 @@
                                                 }
                                             %>
                                         </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="leftCol-med labelField">
+                                        <fmt:message key="challenge.question.add.question"/>
+                                        <span class="required">*</span>
+                                    </td>
+                                    <td class="leftCol-big">
+                                        <input size="100" name="question0" id="question0" class="text-box-big"/>
                                     </td>
                                 </tr>
                                 <tr>

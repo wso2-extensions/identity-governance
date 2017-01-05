@@ -22,8 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.common.base.message.MessageContext;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
@@ -69,14 +67,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         Map<String, Object> eventProperties = event.getEventProperties();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(
-                EventConstants.EventProperty.USER_STORE_MANAGER);
+                                                                EventConstants.EventProperty.USER_STORE_MANAGER);
         User user = getUser(eventProperties, userStoreManager);
-
         String[] roleList = (String[]) eventProperties.get(EventConstants.EventProperty.ROLE_LIST);
-
-        Map<String, String> claims = (Map<String, String>) eventProperties.get(EventConstants.EventProperty
-                .USER_CLAIMS);
-
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(
+                                                                EventConstants.EventProperty.USER_CLAIMS);
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
 
@@ -127,11 +122,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             }
         }
 
-
         if (EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
             if (claim == null) {
-                return;
                 //Not required to handle in this handler
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
                 if (isNotificationInternallyManage) {
@@ -155,11 +148,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
-    }
-
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 65;
     }
 
     public void lockAccount(User user, UserStoreManager userStoreManager) throws EventException {
@@ -187,8 +175,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
     }
 
-    protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey) throws
-            EventException {
+    protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey)
+            throws EventException {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
@@ -217,8 +205,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         HashMap<String, String> userClaims = new HashMap<>();
         userClaims.put(claimName, claimValue);
         try {
-            userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                    user.getUserStoreDomain()), userClaims, null);
+            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
         } catch (UserStoreException e) {
             throw new EventException("Error while setting user claim value :" + user.getUserName(), e);
         }
@@ -261,8 +248,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
-                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-
+                                    UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);

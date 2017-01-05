@@ -30,7 +30,7 @@ import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.Collections;
@@ -47,9 +47,9 @@ import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaCo
 /**
  * reCaptcha login identity governance connector.
  */
-public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector implements IdentityGovernanceConnector {
+public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implements IdentityConnectorConfig {
 
-    private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConnector.class);
+    private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConfig.class);
 
     private static final String CONNECTOR_NAME = "sso.login.recaptcha";
 
@@ -182,7 +182,22 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
     @Override
     public String getFriendlyName() {
 
-        return "reCaptcha for SSO Login";
+        return "Captcha for SSO Login";
+    }
+
+    @Override
+    public String getCategory() {
+        return "Login Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
     }
 
     @Override
@@ -193,6 +208,16 @@ public class SSOLoginReCaptchaConnector extends AbstractReCaptchaConnector imple
         nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                 "Max failed attempts");
         return nameMapping;
+    }
+
+    @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                               "Enable captcha verification during SSO login");
+        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+                               "Number of failed attempts allows without showing the captcha");
+        return descriptionMapping;
     }
 
     @Override

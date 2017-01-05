@@ -24,6 +24,9 @@ import org.wso2.carbon.identity.application.common.model.Property;
 public class ConnectorConfig {
 
     private String friendlyName;
+    private String category;
+    private String subCategory;
+    private int order;
     private Property[] properties;
 
     public String getFriendlyName() {
@@ -32,6 +35,22 @@ public class ConnectorConfig {
 
     public void setFriendlyName(String friendlyName) {
         this.friendlyName = friendlyName;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getSubCategory() {
+        return subCategory;
+    }
+
+    public void setSubCategory(String subCategory) {
+        this.subCategory = subCategory;
     }
 
     public Property[] getProperties() {
@@ -44,5 +63,13 @@ public class ConnectorConfig {
 
     public void setProperties(Property[] properties) {
         this.properties = properties.clone();
+    }
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
     }
 }

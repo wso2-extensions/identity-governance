@@ -25,11 +25,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -47,7 +49,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -84,7 +85,8 @@ public class NotificationPasswordRecoveryManager {
                 .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE,
+                    null);
         }
 
         boolean isNotificationInternallyManage;
@@ -104,8 +106,8 @@ public class NotificationPasswordRecoveryManager {
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(),
                     user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, user
-                        .getUserName());
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                                                  user.getUserName());
             }
 
         } catch (UserStoreException e) {
@@ -114,17 +116,17 @@ public class NotificationPasswordRecoveryManager {
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, user.getUserName());
         }
 
         userRecoveryDataStore.invalidate(user);
 
         String secretKey = UUIDGenerator.generateUUID();
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                .NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(
+                user, secretKey, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
         userRecoveryDataStore.store(recoveryDataDO);
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
@@ -145,14 +147,6 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
-
-
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, userRecoveryData.getUser().getTenantDomain()));
-        if (!isRecoveryEnable) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
-        }
 
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(
@@ -176,7 +170,7 @@ public class NotificationPasswordRecoveryManager {
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
             }
         } catch (UserStoreException e) {
-            checkPasswordHistoryViolate(e);
+            checkPasswordValidity(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
@@ -207,22 +201,21 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void checkPasswordHistoryViolate(UserStoreException e) throws IdentityRecoveryClientException {
+    private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
         Throwable cause = e.getCause();
         while (cause != null) {
             if (cause instanceof EventException) {
-                List<org.wso2.carbon.identity.common.base.exception.IdentityException.ErrorInfo> errorInfoList =
-                        ((EventException) cause)
-                        .getErrorInfoList();
-                if (errorInfoList.size() > 0) {
-                    org.wso2.carbon.identity.common.base.exception.IdentityException.ErrorInfo errorInfo =
-                            errorInfoList.get(0);
-                    if (errorInfo != null && StringUtils.equals(errorInfo.getErrorCode(), "22001")) {
-                        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                .ERROR_CODE_HISTORY_VIOLATE, null, e);
-                    }
+                String errorCode = ((EventException) cause).getErrorCode();
+                if (StringUtils.equals(errorCode, "22001")) {
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null, e);
                 }
-                break;
+            }
+
+            if (cause instanceof PolicyViolationException) {
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        cause.getMessage(), e);
             }
             cause = cause.getCause();
         }

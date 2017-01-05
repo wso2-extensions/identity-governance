@@ -18,7 +18,7 @@ package org.wso2.carbon.identity.governance.listener;
 
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.stratos.common.beans.TenantInfoBean;
 import org.wso2.carbon.stratos.common.exception.StratosException;
@@ -33,15 +33,15 @@ public class TenantCreationEventListener implements TenantMgtListener {
 
     @Override
     public void onTenantCreate(TenantInfoBean tenantInfoBean) throws StratosException {
-        List<IdentityGovernanceConnector> connectorList = IdentityMgtServiceDataHolder.getInstance()
+        List<IdentityConnectorConfig> connectorList = IdentityMgtServiceDataHolder.getInstance()
                 .getIdentityGovernanceConnectorList();
-        for (IdentityGovernanceConnector identityGovernanceConnector : connectorList) {
+        for (IdentityConnectorConfig identityConnectorConfig : connectorList) {
             try {
-                IdentityGovernanceUtil.saveConnectorDefaultProperties(identityGovernanceConnector, tenantInfoBean
+                IdentityGovernanceUtil.saveConnectorDefaultProperties(identityConnectorConfig, tenantInfoBean
                         .getTenantDomain());
             } catch (IdentityGovernanceException e) {
-                throw new StratosException("Error while saving tenant configurations for " +
-                        identityGovernanceConnector.getName() + ".", e);
+                throw new StratosException("Error while saving tenant configurations for "
+                                           + identityConnectorConfig.getName() + ".", e);
             }
         }
 

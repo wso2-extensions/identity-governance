@@ -17,26 +17,146 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.jdbc;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
+import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.DatabaseUtil;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 
 /**
  * LDAP notification receivers retrieval
  */
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
-    @Override
-    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
-            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
-        return null;
-    }
+    private static final Log log = LogFactory.getLog(JDBCNotificationReceiversRetrieval.class);
+    private RealmConfiguration realmConfiguration = null;
 
     @Override
     public void init(RealmConfiguration realmConfiguration) {
+        this.realmConfiguration = realmConfiguration;
+    }
 
+    @Override
+    public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
+            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
+
+        List<NotificationReceiver> users = new ArrayList<NotificationReceiver>();
+        RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
+
+//        Connection dbConnection = null;
+        String sqlStmt = null;
+//        PreparedStatement prepStmt = null;
+//        ResultSet resultSet = null;
+
+        try {
+            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
+                    getTenantId(tenantDomain)).getClaimManager();
+            String userStoreDomain = realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.
+                    PROPERTY_DOMAIN_NAME);
+
+            if (StringUtils.isBlank(userStoreDomain)) {
+                userStoreDomain = IdentityUtil.getPrimaryDomainName();
+            }
+
+            String lastLoginTimeAttribute = claimManager
+                    .getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
+
+            try (Connection dbConnection = getDBConnection(realmConfiguration)) {
+                sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
+                try (PreparedStatement prepStmt = dbConnection.prepareStatement(sqlStmt)) {
+                    prepStmt.setString(1, lastLoginTimeAttribute);
+                    prepStmt.setString(2, String.valueOf(lookupMin));
+                    prepStmt.setString(3, String.valueOf(lookupMax));
+                    prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+                    prepStmt.setString(5, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+
+                    try (ResultSet resultSet = prepStmt.executeQuery()) {
+
+                        if (resultSet.next()) {
+
+                            String userName = resultSet.getString(1);
+
+                            if (StringUtils.isNotBlank(userName)) {
+
+                                String[] claims = new String[3];
+                                claims[0] = NotificationConstants.FIRST_NAME_CLAIM;
+                                claims[1] = NotificationConstants.EMAIL_CLAIM;
+                                claims[2] = NotificationConstants.LAST_LOGIN_TIME;
+                                Map<String, String> map =
+                                        realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(tenantDomain)).
+                                                getUserStoreManager().getUserClaimValues(userName, claims, null);
+
+                                NotificationReceiver receiver = new NotificationReceiver();
+                                receiver.setEmail(map.get(NotificationConstants.EMAIL_CLAIM));
+                                receiver.setUsername(userName);
+                                receiver.setFirstName(map.get(NotificationConstants.FIRST_NAME_CLAIM));
+                                receiver.setUserStoreDomain(userStoreDomain);
+
+                                long lastLoginTime = Long.parseLong(map.get(NotificationConstants.LAST_LOGIN_TIME));
+                                long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
+                                receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                                users.add(receiver);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Using sql : " + sqlStmt);
+            }
+            throw new AccountSuspensionNotificationException(e.getMessage(), e);
+        } catch (UserStoreException e) {
+            throw new AccountSuspensionNotificationException(e.getMessage(), e);
+        }
+        return users;
+    }
+
+    private Connection getDBConnection(RealmConfiguration realmConfiguration) throws SQLException, UserStoreException {
+
+        Connection dbConnection = null;
+        DataSource dataSource = DatabaseUtil.createUserStoreDataSource(realmConfiguration);
+
+        if (dataSource != null) {
+            dbConnection = DatabaseUtil.getDBConnection(dataSource);
+        }
+
+        //if primary user store, DB connection can be same as realm data source.
+        if (dbConnection == null && realmConfiguration.isPrimary()) {
+            dbConnection = IdentityDatabaseUtil.getUserDBConnection();
+        } else if (dbConnection == null) {
+            throw new UserStoreException("Could not create a database connection to " + realmConfiguration
+                    .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
+        } else {
+            // db connection is present
+        }
+        dbConnection.setAutoCommit(false);
+        dbConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        return dbConnection;
     }
 }

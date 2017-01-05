@@ -22,6 +22,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.handler.AccountSuspensionNotificationHandler;
+import org.wso2.carbon.identity.account.suspension.notification.task.jdbc.JDBCNotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.ldap.LDAPNotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventService;
@@ -66,6 +67,12 @@ public class NotificationTaskServiceComponent {
                 LDAPNotificationReceiversRetrievalFactory();
         bundleContext.registerService(NotificationReceiversRetrievalFactory.class.getName(),
                 ladLdapNotificationReceiversRetrievalFactory, null);
+
+        JDBCNotificationReceiversRetrievalFactory jdbcNotificationReceiversRetrievalFactory =
+                new JDBCNotificationReceiversRetrievalFactory();
+        bundleContext.registerService(NotificationReceiversRetrievalFactory.class.getName(),
+                jdbcNotificationReceiversRetrievalFactory, null);
+
     }
 
     protected void deactivate(ComponentContext context) {

@@ -1,19 +1,21 @@
-package org.wso2.carbon.identity.user.endpoint.Utils;
+package org.wso2.carbon.identity.user.endpoint.Util;
 
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
+import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.user.endpoint.dto.*;
 import org.wso2.carbon.user.api.Claim;
 
 import java.util.List;
 
-public class RecoveryUtil {
+public class Utils {
 
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
@@ -75,6 +77,29 @@ public class RecoveryUtil {
     }
 
     /**
+     * Logs the error, builds a ConflictException with specified details and throws it
+     *
+     * @param msg  error message
+     * @param code error code
+     * @throws ConflictException
+     */
+    public static void handleConflict(String msg, String code) throws ConflictException {
+        ConflictException conflictException = buildConflictException(msg, code);
+        throw conflictException;
+    }
+
+    /**
+     * Returns a new ConflictException
+     *
+     * @param description description of the exception
+     * @return a new ConflictException with the specified details as a response DTO
+     */
+    public static ConflictException buildConflictException(String description, String code) {
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_CONFLICT_MESSAGE_DEFAULT, code, description);
+        return new ConflictException(errorDTO);
+    }
+
+    /**
      * Returns a generic errorDTO
      *
      * @param message specifies the error message
@@ -91,6 +116,9 @@ public class RecoveryUtil {
     public static User getUser(UserDTO userDTO) {
         User user = new User();
         user.setTenantDomain(userDTO.getTenantDomain());
+        if (userDTO.getRealm() == null) {
+            userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
+        }
         user.setUserStoreDomain(userDTO.getRealm());
         user.setUserName(userDTO.getUsername());
         return user;

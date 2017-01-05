@@ -45,6 +45,15 @@ public class NotificationTaskDataHolder {
     private RealmService realmService;
     private String notificationTriggerTime;
     private String schedulerDelay;
+    private String notificationSendingThreadPoolSize = "1";
+
+    public int getNotificationSendingThreadPoolSize() {
+        return Integer.parseInt(notificationSendingThreadPoolSize);
+    }
+
+    public void setNotificationSendingThreadPoolSize(String notificationSendingThreadPoolSize) {
+        this.notificationSendingThreadPoolSize = notificationSendingThreadPoolSize;
+    }
 
     public Date getNotificationTriggerTime() throws ParseException {
         DateFormat dateFormat = new SimpleDateFormat(NotificationConstants.TRIGGER_TIME_FORMAT);

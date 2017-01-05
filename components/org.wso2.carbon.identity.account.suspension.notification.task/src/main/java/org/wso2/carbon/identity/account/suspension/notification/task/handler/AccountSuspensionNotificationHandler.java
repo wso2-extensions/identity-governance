@@ -15,11 +15,13 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
@@ -27,8 +29,7 @@ import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
-import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Account suspension notification handler.
  */
-public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
+public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(AccountSuspensionNotificationHandler.class);
     private static final String UPDATE_CONFIGURATION = "UPDATE_CONFIGURATION";
@@ -57,16 +58,26 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     @Override
     public void handleEvent(Event event) throws EventException {
 
+        boolean isEnabled = isSuspensionNotificationEnabled(event);
+
+        if (!isEnabled) {
+            return;
+        }
+
         if (EventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             Map<String, Object> eventProperties = event.getEventProperties();
 
             String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
             UserStoreManager userStoreManager = (UserStoreManager) eventProperties
                     .get(EventConstants.EventProperty.USER_STORE_MANAGER);
+            if (!(Boolean) eventProperties.get(EventConstants.EventProperty.OPERATION_STATUS)) {
+                return;
+            }
 
             try {
-                userStoreManager.setUserClaimValue(userName, IdentityMgtConstants.LAST_LOGIN_TIME,
-                        Long.toString(System.currentTimeMillis()), null);
+                HashMap<String, String> userClaims = new HashMap<>();
+                userClaims.put(NotificationConstants.LAST_LOGIN_TIME, Long.toString(System.currentTimeMillis()));
+                userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
             }
@@ -80,12 +91,26 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public String getFriendlyName() {
-        return "Disable Idle Accounts";
+        return "Lock Idle Accounts";
+    }
+
+    @Override
+    public String getCategory() {
+        return "Account Management Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
-
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY,
@@ -96,14 +121,26 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     }
 
     @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        return new HashMap<>();
+    }
+
+    @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
         super.init(configuration);
+
+        if (StringUtils.isBlank(moduleConfig.getModuleProperties().
+                getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME))) {
+            NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(moduleConfig.getModuleProperties().
+                    getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
+        }
+
         NotificationTaskDataHolder.getInstance().setNotificationTriggerTime(moduleConfig.getModuleProperties().
                 getProperty(NotificationConstants.SUSPENSION_NOTIFICATION_TRIGGER_TIME));
         startScheduler();
         NotificationTaskDataHolder.getInstance().getBundleContext()
-                .registerService(IdentityGovernanceConnector.class.getName(), this, null);
+                .registerService(IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {
@@ -142,6 +179,11 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     private void startScheduler() {
 
+        if (!Boolean.parseBoolean(moduleConfig.getModuleProperties().getProperty(NotificationConstants.
+                SUSPENSION_NOTIFICATION_ENABLED))) {
+            return;
+        }
+
         Date notificationTriggerTime = new Date();
         String notificationTriggerTimeProperty = moduleConfig.getModuleProperties().getProperty(NotificationConstants.
                 SUSPENSION_NOTIFICATION_TRIGGER_TIME);
@@ -175,7 +217,34 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             delay += schedulerDelayInSeconds;
         }
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(NotificationTaskDataHolder.getInstance().
+                getNotificationSendingThreadPoolSize());
         scheduler.scheduleAtFixedRate(new AccountValidatorThread(), delay, schedulerDelayInSeconds, TimeUnit.SECONDS);
     }
+
+    private boolean isSuspensionNotificationEnabled(Event event) throws EventException {
+
+        boolean isEnabled = false;
+
+        Map<String, Object> eventProperties = event.getEventProperties();
+        String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
+
+        Property[] identityProperties;
+        try {
+            identityProperties = NotificationTaskDataHolder.getInstance()
+                    .getIdentityGovernanceService().getConfiguration(getPropertyNames(), tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            throw new EventException("Error while retrieving Account Locking Handler properties.", e);
+        }
+
+        for (Property identityProperty : identityProperties) {
+            if (NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED.equals(identityProperty.getName())) {
+                isEnabled = Boolean.parseBoolean(identityProperty.getValue());
+                break;
+            }
+        }
+
+        return isEnabled;
+    }
+
 }

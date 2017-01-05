@@ -24,13 +24,13 @@ import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtSer
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConnectorImpl;
-import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
-import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
-import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConnectorImpl;
+import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
@@ -95,14 +95,14 @@ public class IdentityRecoveryServiceComponent {
                     new UserEmailVerificationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AdminForcedPasswordResetHandler(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new RecoveryConnectorImpl(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new SelfRegistrationConnectorImpl(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new UserEmailVerificationConnectorImpl(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new AdminForcedPasswordResetConnectorImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new RecoveryConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new SelfRegistrationConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new UserEmailVerificationConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new AdminForcedPasswordResetConfigImpl(), null);
 
 
         } catch (Exception e) {

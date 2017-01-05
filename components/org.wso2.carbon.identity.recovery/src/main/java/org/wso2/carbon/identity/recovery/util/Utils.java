@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventException;
@@ -144,13 +145,9 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        IdentityRecoveryServerException identityRecoveryServerException = new
-                IdentityRecoveryServerException(errorDescription);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
-                IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryServerException;
+
+        return IdentityException.error(
+                IdentityRecoveryServerException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -164,14 +161,8 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryServerException identityRecoveryServerException = new
-                IdentityRecoveryServerException(errorDescription, e);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
-                IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryServerException;
+        return IdentityException.error(
+                IdentityRecoveryServerException.class, error.getCode(), errorDescription, e);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
@@ -185,13 +176,7 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new
-                IdentityRecoveryClientException(errorDescription);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
-                IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryClientException;
+        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
@@ -206,14 +191,7 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new
-                IdentityRecoveryClientException(errorDescription, e);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new
-                IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryClientException;
+        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription, e);
     }
 
     /**
@@ -254,7 +232,9 @@ public class Utils {
         }
 
         if (userStoreManager != null) {
-            String oldValue = userStoreManager.getUserClaimValue(fullUserName, claim, null);
+            Map<String, String> values = userStoreManager.getUserClaimValues(fullUserName, new String[]{
+                    claim}, UserCoreConstants.DEFAULT_PROFILE);
+            String oldValue = values.get(claim);
             if (oldValue == null || !oldValue.equals(value)) {
                 Map<String, String> claimMap = new HashMap<String, String>();
                 claimMap.put(claim, value);
@@ -310,7 +290,7 @@ public class Utils {
     }
 
 
-    // challenge question related Utils
+    // challenge question related Util
     public static String getChallengeSetDirFromUri(String challengeSetUri) {
         if (StringUtils.isBlank(challengeSetUri)) {
             return challengeSetUri;

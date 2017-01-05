@@ -32,5 +32,16 @@ public class NotificationConstants {
     public static final String SUSPENSION_NOTIFICATION_DELAYS = "suspension.notification.delays";
     public static final String TRIGGER_TIME_FORMAT = "HH:mm:ss";
     public static final long SCHEDULER_DELAY = 24; // In hours
+    public static final String SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE = "suspension.notification.thread.pool.size";
+
+    public static final String GET_USERS_FILTERED_BY_LAST_LOGIN_TIME = "SELECT UM_USER.UM_USER_NAME FROM "
+    + "UM_USER, UM_USER_ATTRIBUTE WHERE UM_USER_ATTRIBUTE.UM_USER_ID = UM_USER.UM_ID "
+    + "AND UM_USER_ATTRIBUTE.UM_ATTR_NAME = ? AND UM_USER_ATTRIBUTE.UM_ATTR_VALUE BETWEEN ? AND ? "
+    + "AND UM_USER_ATTRIBUTE.UM_TENANT_ID=? AND UM_USER.UM_TENANT_ID=?";
+
+    public static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
+    public static final String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
+    public static final String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
+    public static final String LAST_LOGIN_TIME = "http://wso2.org/claims/lastLoginTime";
 
 }

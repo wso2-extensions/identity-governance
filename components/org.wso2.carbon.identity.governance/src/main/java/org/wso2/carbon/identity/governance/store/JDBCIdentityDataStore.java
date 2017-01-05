@@ -18,7 +18,7 @@ package org.wso2.carbon.identity.governance.store;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
@@ -78,7 +78,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             try {
                 isUserExists = isExistingUserDataValue(userName, tenantId, key);
             } catch (SQLException e) {
-                throw IdentityException.error("Error occurred while checking if user existing", e);
+                throw IdentityException.error(IdentityException.class,
+                                              "Error occurred while checking if user existing", e);
             }
             try {
                 if (isUserExists) {
@@ -87,7 +88,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                     addUserDataValue(userName, tenantId, key, value);
                 }
             } catch (SQLException e) {
-                throw IdentityException.error("Error occurred while persisting user data", e);
+                throw IdentityException.error(IdentityException.class, "Error occurred while persisting user data", e);
             }
         }
     }
@@ -245,7 +246,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException | UserStoreException e) {
-            throw IdentityException.error("Error while reading user identity data", e);
+            throw IdentityException.error(IdentityException.class, "Error while reading user identity data", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);

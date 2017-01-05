@@ -22,8 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.common.base.message.MessageContext;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
@@ -69,12 +67,10 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(EventConstants.EventProperty.USER_NAME);
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(
-                EventConstants.EventProperty.USER_STORE_MANAGER);
-
+                                                EventConstants.EventProperty.USER_STORE_MANAGER);
         String tenantDomain = (String) eventProperties.get(EventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
-                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-
+                                                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
         String[] roleList = (String[]) eventProperties.get(EventConstants.EventProperty.ROLE_LIST);
 
         User user = new User();
@@ -114,8 +110,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 if (isNotificationInternallyManage) {
                     userRecoveryDataStore.invalidate(user);
                     String secretKey = UUIDGenerator.generateUUID();
-                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                            .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+                    UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+                                                                           RecoveryScenarios.SELF_SIGN_UP,
+                                                                           RecoverySteps.CONFIRM_SIGN_UP);
 
                     userRecoveryDataStore.store(recoveryDataDO);
                     triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM,
@@ -129,8 +126,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 //Need to lock user account
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                 try {
-                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()), userClaims, null);
+                    userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
                 } catch (UserStoreException e) {
                     throw new EventException("Error while lock user account :" + user.getUserName(), e);
                 }
@@ -142,11 +138,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
-    }
-
-    @Override
-    public int getPriority(MessageContext messageContext) {
-        return 60;
     }
 
 

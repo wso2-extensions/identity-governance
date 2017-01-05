@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrieval;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -81,9 +82,14 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     userStoreDomain = IdentityUtil.getPrimaryDomainName();
                 }
 
-                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, USERNAME_CLAIM);
-                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, FIRST_NAME_CLAIM);
-                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, EMAIL_CLAIM);
+                String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                            NotificationConstants.USERNAME_CLAIM);
+                String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain,
+                                                                              NotificationConstants.FIRST_NAME_CLAIM);
+                String emailMapAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                         NotificationConstants.EMAIL_CLAIM);
+                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain,
+                                                                              NotificationConstants.LAST_LOGIN_TIME);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " +
@@ -94,7 +100,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 DirContext ctx = ldapConnectionContext.getContext();
 
                 //carLicense is the mapped LDAP attribute for LastLoginTime claim
-                String searchFilter = "(&(carLicense>=" + lookupMin + ")(carLicense<=" + lookupMax + "))";
+                String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute
+                                      + "<=" + lookupMax + "))";
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -112,8 +119,10 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setEmail((String) result.getAttributes().get(emailMapAttribute).get());
                     receiver.setUsername((String) result.getAttributes().get(usernameMapAttribute).get());
                     receiver.setFirstName((String) result.getAttributes().get(firstNameMapAttribute).get());
+                    receiver.setUserStoreDomain(userStoreDomain);
 
-                    long lastLoginTime = Long.parseLong(result.getAttributes().get("carLicense").get().toString());
+                    long lastLoginTime = Long.parseLong(result.getAttributes().get(lastLoginTimeAttribute).get().
+                            toString());
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
                     receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
 

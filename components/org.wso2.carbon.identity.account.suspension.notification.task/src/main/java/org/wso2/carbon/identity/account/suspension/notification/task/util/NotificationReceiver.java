@@ -26,6 +26,7 @@ public class NotificationReceiver {
     private String firstName;
     private String expireDate;
     private String email;
+    private String userStoreDomain;
 
     public String getEmail() {
         return email;
@@ -62,5 +63,13 @@ public class NotificationReceiver {
     @Override public String toString() {
         return "Username: " + getUsername() + ", Email: " + getEmail() + ", FirstName: " + getFirstName()
                 + ", ExpireDate: " + getExpireDate();
+    }
+
+    public String getUserStoreDomain() {
+        return userStoreDomain;
+    }
+
+    public void setUserStoreDomain(String userStoreDomain) {
+        this.userStoreDomain = userStoreDomain;
     }
 }

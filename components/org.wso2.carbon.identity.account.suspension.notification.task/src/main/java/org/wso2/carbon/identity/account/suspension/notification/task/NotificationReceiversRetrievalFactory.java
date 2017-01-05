@@ -25,11 +25,11 @@ import org.wso2.carbon.user.api.RealmConfiguration;
  */
 public interface NotificationReceiversRetrievalFactory {
 
-    public abstract NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)
+    NotificationReceiversRetrieval buildCountRetriever(RealmConfiguration realmConfiguration)
             throws AccountSuspensionNotificationException;
 
     /**
      * @return
      */
-    public abstract String getType();
+    String getType();
 }

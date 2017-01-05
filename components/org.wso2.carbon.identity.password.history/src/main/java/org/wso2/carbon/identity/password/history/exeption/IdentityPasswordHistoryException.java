@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.password.history.exeption;
 
-
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 
 /**

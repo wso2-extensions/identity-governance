@@ -21,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
-import org.wso2.carbon.identity.password.policy.exeption.IdentityPasswordPolicyException;
 
 /**
  * Utility to handle password policy exceptions
@@ -30,7 +29,6 @@ public class Utils {
 
     private static final Log log = LogFactory.getLog(Utils.class);
 
-
     public static EventException handleEventException(PasswordPolicyConstants.ErrorMessages error,
                                                  String errorText, Throwable throwable) throws EventException {
 
@@ -38,12 +36,6 @@ public class Utils {
             errorText = error.getMessage();
         }
 
-        EventException identityEventException = new EventException(errorText, throwable);
-        IdentityException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityPasswordPolicyException
-                .ErrorInfo.ErrorInfoBuilder(errorText);
-        errorInfoBuilder.errorCode(error.getCode());
-        errorInfoBuilder.cause(throwable);
-        identityEventException.addErrorInfo(errorInfoBuilder.build());
-        return identityEventException;
+        return IdentityException.error(EventException.class, error.getCode(), errorText, throwable);
     }
 }

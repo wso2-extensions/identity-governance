@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.identity.password.history.internal.IdentityPasswordHistoryServiceDataHolder;
@@ -48,7 +48,7 @@ import java.util.Properties;
 /**
  * Password history validation handler.
  */
-public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityGovernanceConnector {
+public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
     private static final Log log = LogFactory.getLog(PasswordHistoryValidationHandler.class);
 
@@ -105,7 +105,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         hashingAlgorithm = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
                 .PW_HISTORY_HASHING_ALGORITHM);
         String passwordHistoryDataStoreClass = moduleConfig.getModuleProperties().getProperty(PasswordHistoryConstants
-                .PW_HISTORY_DATA_STORE);;
+                .PW_HISTORY_DATA_STORE);
         if (StringUtils.isBlank(passwordHistoryDataStoreClass)) {
             passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.history." +
                     "store.impl.DefaultPasswordHistoryDataStore";
@@ -125,8 +125,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         }
 
         if (EventConstants.Event.PRE_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
-                EventConstants.Event
-                .PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
+                EventConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(EventConstants.EventProperty.CREDENTIAL);
             try {
                 boolean validate = passwordHistoryDataStore.validate(user, credential);
@@ -141,11 +140,10 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         }
 
         if (EventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
-                EventConstants.Event
-                .POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) || EventConstants.Event
-                .POST_ADD_USER.equals(event.getEventName())) {
+                EventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) ||
+                EventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(EventConstants.EventProperty.CREDENTIAL);
-            ;
+
             try {
                 passwordHistoryDataStore.store(user, credential);
             } catch (IdentityPasswordHistoryException e) {
@@ -172,7 +170,22 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
     @Override
     public String getFriendlyName() {
-        return "Password History Validation";
+        return "Password History";
+    }
+
+    @Override
+    public String getCategory() {
+        return "Password Policies";
+    }
+
+    @Override
+    public String getSubCategory() {
+        return "DEFAULT";
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
     }
 
     @Override
@@ -184,10 +197,20 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     @Override
+    public Map<String, String> getPropertyDescriptionMapping() {
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE,
+                               "Enable to disallow previously used passwords");
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT,
+                               "Restrict reusing last x number of password during password update");
+        return descriptionMapping;
+    }
+
+    @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
         IdentityPasswordHistoryServiceDataHolder.getInstance().getBundleContext().registerService
-                (IdentityGovernanceConnector.class.getName(), this, null);
+                (IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {
