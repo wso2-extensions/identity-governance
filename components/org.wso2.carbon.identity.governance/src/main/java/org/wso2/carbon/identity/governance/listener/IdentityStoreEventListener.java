@@ -135,6 +135,9 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UC_USELESS_OBJECT",
+            justification = "Claim Map object is used by the caller of doPostGetUserClaimValues which is in user " +
+                            "core. So Find bug cannot find the usage of the claim map object. Hence the warning.")
     @Override
     public boolean doPostGetUserClaimValues(String userName, String[] claims, String profileName,
                                             Map<String, String> claimMap, UserStoreManager storeManager) {
