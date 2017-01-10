@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,25 +23,10 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+/**
+ * Exception for Internal server error
+ */
 public class InternalServerErrorException extends WebApplicationException {
-
-    private String message;
-
-    public InternalServerErrorException(Throwable e) {
-        super(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    public InternalServerErrorException() {
-        super(Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    public InternalServerErrorException(String message, Throwable e) {
-        super(message, e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    public InternalServerErrorException(String message) {
-        super(message, Response.Status.INTERNAL_SERVER_ERROR);
-    }
 
     public InternalServerErrorException(ErrorDTO errorDTO) {
         super(Response.status(Response.Status.INTERNAL_SERVER_ERROR)

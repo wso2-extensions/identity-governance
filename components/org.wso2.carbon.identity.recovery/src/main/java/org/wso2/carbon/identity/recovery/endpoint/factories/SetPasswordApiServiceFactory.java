@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.wso2.carbon.identity.recovery.endpoint.factories;
 
-package org.wso2.carbon.identity.recovery.endpoint.exceptions;
+import org.wso2.carbon.identity.recovery.endpoint.SetPasswordApiService;
+import org.wso2.carbon.identity.recovery.endpoint.impl.SetPasswordApiServiceImpl;
 
-import org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper;
+/**
+ * Service factory for set password api
+ */
+public class SetPasswordApiServiceFactory {
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+   private static final SetPasswordApiService service = new SetPasswordApiServiceImpl();
 
-public class RecoveryEndpointExceptionMapper extends WebApplicationExceptionMapper {
-
-    public Response toResponse(WebApplicationException ex) {
-
-        if (ex instanceof BadRequestException) {
-            this.setPrintStackTrace(false);
-        }
-        return super.toResponse(ex);
-    }
+   public static SetPasswordApiService getSetPasswordApi() {
+      return service;
+   }
 }

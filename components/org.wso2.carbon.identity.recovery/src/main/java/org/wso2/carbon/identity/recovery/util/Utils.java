@@ -43,6 +43,14 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,7 +64,6 @@ import java.util.Map;
  */
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
-
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -396,5 +403,97 @@ public class Utils {
 
         return user;
     }
+
+    //TODO:move to DB
+    public static void writeChallangeQuestionsToCSV(List<ChallengeQuestion> challengeQuestions) throws IOException {
+        char separator = ',';
+        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+        boolean created = csvFile.createNewFile();
+        if (log.isDebugEnabled() && created) {
+            log.debug("File does not exist. Hense creating file.");
+        }
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(csvFile), "UTF-8")) {
+            StringBuilder fileContentBuilder = new StringBuilder();
+            for (ChallengeQuestion challengeQuestion : challengeQuestions) {
+                String id = challengeQuestion.getQuestionId();
+                String question = challengeQuestion.getQuestion();
+                String questionSetID = challengeQuestion.getQuestionSetId();
+                String locale = challengeQuestion.getLocale();
+                StringBuilder lineBuilder = new StringBuilder();
+                String value = (lineBuilder.append(id).append(separator).append(question).append(separator)
+                                           .append(questionSetID).append(separator).append(locale)).toString();
+
+                if (value.contains("\"")) {
+                    value = value.replace("\"", "\"\"");
+                }
+                fileContentBuilder.append(value);
+                fileContentBuilder.append("\n");
+            }
+            writer.append(fileContentBuilder.toString());
+        }
+
+    }
+
+    public static List<ChallengeQuestion> readChallengeQuestionsFromCSV() throws IOException {
+        String line;
+        String separator = ",";
+        List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
+        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
+            while ((line = br.readLine()) != null) {
+                String[] challengeQuestionDetails = line.split(separator);
+                ChallengeQuestion challengeQuestion = new ChallengeQuestion();
+                challengeQuestion.setQuestionId(challengeQuestionDetails[0]);
+                challengeQuestion.setQuestion(challengeQuestionDetails[1]);
+                challengeQuestion.setQuestionSetId(challengeQuestionDetails[2]);
+                challengeQuestion.setLocale(challengeQuestionDetails[3]);
+                challengeQuestionList.add(challengeQuestion);
+            }
+        }
+
+        return challengeQuestionList;
+    }
+
+    public static List<ChallengeQuestion> readChallengeQuestionsFromCSV(String locale) throws IOException {
+        String line;
+        String separator = ",";
+        List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
+        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
+            while ((line = br.readLine()) != null) {
+                String[] challengeQuestionDetails = line.split(separator);
+                String questionLocale = challengeQuestionDetails[3];
+                if (questionLocale.equalsIgnoreCase(locale)) {
+                    continue;
+                }
+                ChallengeQuestion challengeQuestion = new ChallengeQuestion();
+                challengeQuestion.setQuestionId(challengeQuestionDetails[0]);
+                challengeQuestion.setQuestion(challengeQuestionDetails[1]);
+                challengeQuestion.setQuestionSetId(challengeQuestionDetails[2]);
+                challengeQuestion.setLocale(challengeQuestionDetails[3]);
+                challengeQuestionList.add(challengeQuestion);
+            }
+        }
+
+        return challengeQuestionList;
+    }
+
+    public static boolean isChallangeQuestionExist(ChallengeQuestion challengeQuestion) throws IOException {
+        List<ChallengeQuestion> challengeQuestionList = readChallengeQuestionsFromCSV();
+        return challengeQuestionList.contains(challengeQuestion);
+    }
+
+    public static void deleteChallangeQuestions(List<ChallengeQuestion> challengeQuestionList) throws IOException {
+        List<ChallengeQuestion> challengeQuestionFullList = readChallengeQuestionsFromCSV();
+        challengeQuestionFullList.removeAll(challengeQuestionList);
+        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+        if (csvFile.exists()) {
+            boolean deleted = csvFile.delete();
+        }
+        writeChallangeQuestionsToCSV(challengeQuestionFullList);
+    }
+    //TODO:END
 
 }

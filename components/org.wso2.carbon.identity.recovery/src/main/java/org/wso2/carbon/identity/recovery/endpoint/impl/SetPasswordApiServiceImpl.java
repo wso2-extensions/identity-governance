@@ -1,3 +1,19 @@
+/*
+ *
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import org.apache.commons.logging.Log;
@@ -5,24 +21,18 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.endpoint.*;
-import org.wso2.carbon.identity.recovery.endpoint.utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.endpoint.dto.*;
-
-
+import org.wso2.carbon.identity.recovery.endpoint.Constants;
+import org.wso2.carbon.identity.recovery.endpoint.SetPasswordApiService;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ResetPasswordRequestDTO;
-import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RetryErrorDTO;
-
-import java.util.List;
-
-import java.io.InputStream;
-
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.wso2.carbon.identity.recovery.endpoint.utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import javax.ws.rs.core.Response;
 
+/**
+ * Set password api implementation
+ */
 public class SetPasswordApiServiceImpl extends SetPasswordApiService {
 
     private static final Log LOG = LogFactory.getLog(SetPasswordApiServiceImpl.class);
@@ -31,10 +41,12 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
     public Response setPasswordPost(ResetPasswordRequestDTO resetPasswordRequest) {
 
 
-        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil.getNotificationBasedPwdRecoveryManager();
+        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                RecoveryUtil.getNotificationBasedPwdRecoveryManager();
         try {
             notificationPasswordRecoveryManager.updatePassword(resetPasswordRequest.getKey(),
-                    resetPasswordRequest.getPassword(), RecoveryUtil.getProperties(resetPasswordRequest.getProperties()));
+                    resetPasswordRequest.getPassword(),
+                    RecoveryUtil.getProperties(resetPasswordRequest.getProperties()));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resetting password ", e);

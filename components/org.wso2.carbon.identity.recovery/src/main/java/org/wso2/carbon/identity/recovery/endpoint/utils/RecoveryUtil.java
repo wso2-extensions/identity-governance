@@ -1,3 +1,19 @@
+/*
+ *
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.wso2.carbon.identity.recovery.endpoint.utils;
 
 import org.apache.commons.lang.StringUtils;
@@ -12,9 +28,18 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateAllQuestionResponseDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.LinkDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.QuestionDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.SecurityAnswerDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.recovery.endpoint.exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -30,7 +55,9 @@ import org.wso2.carbon.user.core.service.RealmService;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Util for account recovery rest calls
+ */
 public class RecoveryUtil {
     private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
     private static final Log LOG = LogFactory.getLog(RecoveryUtil.class);
@@ -276,7 +303,7 @@ public class RecoveryUtil {
             if (realmService.getTenantUserRealm(tenantId) != null) {
                 userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
                         (tenantId).getUserStoreManager();
-                userList = userStoreManager.listUsers(username , 2) ;
+                userList = userStoreManager.listUsers(username, 2);
             }
         } catch (Exception e) {
             String msg = "Error retrieving the user-list for the tenant : " + tenantId;

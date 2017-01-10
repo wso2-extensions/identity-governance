@@ -1,6 +1,6 @@
 /*
  *
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.exceptions;
 
-
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+/**
+ * Exception for bad request
+ */
 public class BadRequestException extends WebApplicationException {
 
     private String message;
 
-    public BadRequestException(ErrorDTO errorDTO){
+    public BadRequestException(ErrorDTO errorDTO) {
         super(Response.status(Response.Status.BAD_REQUEST)
                 .entity(errorDTO)
                 .header(Constants.HEADER_CONTENT_TYPE, Constants.DEFAULT_RESPONSE_CONTENT_TYPE)
@@ -36,7 +38,7 @@ public class BadRequestException extends WebApplicationException {
         message = errorDTO.getDescription();
     }
 
-    public BadRequestException(){
+    public BadRequestException() {
         super(Response.Status.BAD_REQUEST);
     }
 

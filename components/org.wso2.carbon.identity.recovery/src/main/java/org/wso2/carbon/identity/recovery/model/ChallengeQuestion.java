@@ -78,4 +78,20 @@ public class ChallengeQuestion {
     public void setLocale(String locale) {
         this.locale = locale;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof ChallengeQuestion) {
+            ChallengeQuestion challengeQuestion = (ChallengeQuestion) obj;
+            return challengeQuestion.getQuestionId().equals(this.getQuestionId()) &&
+                   challengeQuestion.getQuestion().equals(this.getQuestion()) &&
+                   challengeQuestion.getQuestionSetId().equals(this.getQuestionSetId()) &&
+                   challengeQuestion.getLocale().equals(this.getLocale());
+        }
+        return false;
+    }
+
+    @Override public int hashCode() {
+        return super.hashCode();
+    }
 }
