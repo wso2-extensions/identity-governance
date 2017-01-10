@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -39,7 +38,6 @@ import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryMa
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -149,7 +147,7 @@ public class IdentityRecoveryServiceComponent {
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
         String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions(tenantDomain);
+        ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions();
     }
 
 

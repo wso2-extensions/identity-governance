@@ -47,7 +47,7 @@ public class IdentityGovernanceUtil {
     public static void saveConnectorDefaultProperties (IdentityConnectorConfig identityConnectorConfig,
                                                        String tenantDomain) throws IdentityGovernanceException {
 
-        Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
+        Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues();
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
 
         try {

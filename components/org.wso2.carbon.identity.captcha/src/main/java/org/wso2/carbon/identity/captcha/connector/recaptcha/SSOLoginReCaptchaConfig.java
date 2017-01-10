@@ -230,7 +230,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     }
 
     @Override
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    public Properties getDefaultPropertyValues() throws IdentityGovernanceException {
 
         Map<String, String> defaultProperties = CaptchaDataHolder.getInstance()
                 .getSSOLoginReCaptchaConnectorPropertyMap();
@@ -249,7 +249,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames)
             throws IdentityGovernanceException {
 
         return null;
