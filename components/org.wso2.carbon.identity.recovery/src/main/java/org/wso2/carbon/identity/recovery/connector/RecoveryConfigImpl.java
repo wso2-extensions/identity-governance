@@ -99,7 +99,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    public Properties getDefaultPropertyValues() throws IdentityGovernanceException {
 
         String enableNotificationBasedPasswordRecovery = "false";
         String enableQuestionBasedPasswordRecovery = "false";
@@ -191,7 +191,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames)
             throws IdentityGovernanceException {
         return null;
     }

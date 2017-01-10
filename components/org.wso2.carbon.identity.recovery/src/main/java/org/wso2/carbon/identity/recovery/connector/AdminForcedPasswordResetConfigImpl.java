@@ -80,7 +80,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     @Override
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    public Properties getDefaultPropertyValues() throws IdentityGovernanceException {
 
         String enableAdminPasswordResetWithRecoveryLink = "false";
         String enableAdminPasswordResetWithOTP = "false";
@@ -117,7 +117,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames)
             throws IdentityGovernanceException {
         return null;
     }
