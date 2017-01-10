@@ -236,7 +236,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         return properties.toArray(new String[properties.size()]);
     }
 
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    public Properties getDefaultPropertyValues() throws IdentityGovernanceException {
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(PasswordPolicyConstants.PW_POLICY_ENABLE, moduleConfig.getModuleProperties()
                 .getProperty(PasswordPolicyConstants.PW_POLICY_ENABLE));
@@ -254,7 +254,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames) throws
             IdentityGovernanceException {
         return null;
     }

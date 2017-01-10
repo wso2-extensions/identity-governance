@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -596,7 +595,7 @@ public class ChallengeQuestionManager {
 
             if (!isQuestionAvailable) {
                 String error = "Error persisting user challenge answers for user. " +
-                        "Challenge question answered is not registered with %s domain.";
+                        "Challenge question answered is not registered with.";
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND,
                         String.format(error));
@@ -653,7 +652,7 @@ public class ChallengeQuestionManager {
 //    }
 
     private String getLocaleOfUser(User user) throws IdentityRecoveryException {
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
+
         String locale = IdentityRecoveryConstants.LOCALE_EN_US;
         try {
             String userLocale =
@@ -662,8 +661,7 @@ public class ChallengeQuestionManager {
                 locale = userLocale;
             }
         } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
-                    tenantAwareUserName);
+            String errorMsg = String.format("Error when retrieving the locale claim of user '%s'.", user.getUserName());
             log.error(errorMsg);
             throw new IdentityRecoveryServerException(errorMsg, e);
         }

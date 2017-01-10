@@ -221,7 +221,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         return properties.toArray(new String[properties.size()]);
     }
 
-    public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    public Properties getDefaultPropertyValues() throws IdentityGovernanceException {
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, moduleConfig.getModuleProperties()
                 .getProperty(PasswordHistoryConstants.PW_HISTORY_ENABLE));
@@ -233,7 +233,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames)
             throws IdentityGovernanceException {
         return null;
     }

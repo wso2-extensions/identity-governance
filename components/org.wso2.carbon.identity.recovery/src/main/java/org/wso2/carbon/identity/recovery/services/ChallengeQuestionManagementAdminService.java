@@ -19,13 +19,11 @@ package org.wso2.carbon.identity.recovery.services;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 
@@ -52,7 +50,7 @@ public class ChallengeQuestionManagementAdminService {
             challengeQuestionList = questionManager.getAllChallengeQuestions();
             return challengeQuestionList.toArray(new ChallengeQuestion[challengeQuestionList.size()]);
         } catch (IdentityRecoveryException e) {
-            String errorMgs = "Error loading challenge questions for tenant : %s.";
+            String errorMgs = "Error loading challenge questions";
             log.error(String.format(errorMgs), e);
             throw new IdentityRecoveryException(String.format(errorMgs), e);
         }
@@ -64,7 +62,7 @@ public class ChallengeQuestionManagementAdminService {
      *
      * @param user
      * @return
-     * @throws IdentityRecoveryServerException
+     * @throws IdentityRecoveryException
      */
     public ChallengeQuestion[] getChallengeQuestionsForUser(User user)
             throws IdentityRecoveryException {
@@ -90,7 +88,7 @@ public class ChallengeQuestionManagementAdminService {
      *
      * @param locale
      * @return
-     * @throws IdentityRecoveryServerException
+     * @throws IdentityRecoveryException
      */
     public ChallengeQuestion[] getChallengeQuestionsForLocale(String locale)
             throws IdentityRecoveryException {
@@ -163,8 +161,6 @@ public class ChallengeQuestionManagementAdminService {
             log.error(errorMsg);
             throw new IdentityRecoveryClientException(errorMsg);
         }
-
-        String loggedInName = CarbonContext.getThreadLocalCarbonContext().getUsername();
 
         try {
             questionManager.setChallengesOfUser(user, userChallengeAnswers);
