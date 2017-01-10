@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.recovery.endpoint.Utils;
+package org.wso2.carbon.identity.recovery.endpoint.utils;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -12,8 +12,8 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
-import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException;
-import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
+import org.wso2.carbon.identity.recovery.endpoint.exceptions.BadRequestException;
+import org.wso2.carbon.identity.recovery.endpoint.exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;

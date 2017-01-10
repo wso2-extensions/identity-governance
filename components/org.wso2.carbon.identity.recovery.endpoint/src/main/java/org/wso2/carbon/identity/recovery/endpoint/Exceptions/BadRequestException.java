@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.recovery.endpoint.Exceptions;
+package org.wso2.carbon.identity.recovery.endpoint.exceptions;
 
 
 import org.wso2.carbon.identity.recovery.endpoint.Constants;

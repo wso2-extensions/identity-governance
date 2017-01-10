@@ -42,9 +42,9 @@ public interface IdentityConnectorConfig {
 
     String[] getPropertyNames();
 
-    Properties getDefaultPropertyValues (String tenantDomain) throws IdentityGovernanceException;
+    Properties getDefaultPropertyValues () throws IdentityGovernanceException;
 
-    Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain)
+    Map<String, String> getDefaultPropertyValues (String[] propertyNames)
             throws IdentityGovernanceException;
 
 }

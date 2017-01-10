@@ -24,26 +24,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.base.IdentityRuntimeException;
-import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.Collection;
-import org.wso2.carbon.registry.core.CollectionImpl;
-import org.wso2.carbon.registry.core.RegistryConstants;
-import org.wso2.carbon.registry.core.Resource;
-import org.wso2.carbon.registry.core.ResourceImpl;
-import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -60,59 +50,25 @@ public class ChallengeQuestionManager {
     private static ChallengeQuestionManager instance = new ChallengeQuestionManager();
 
     private ChallengeQuestionManager() {
-
     }
 
     public static ChallengeQuestionManager getInstance() {
         return instance;
     }
 
-    private IdentityRecoveryServiceDataHolder dataHolder = IdentityRecoveryServiceDataHolder.getInstance();
-    private RegistryResourceMgtService resourceMgtService = dataHolder.getResourceMgtService();
-
-    private static final String QUESTIONS_BASE_PATH = IdentityRecoveryConstants.IDENTITY_MANAGEMENT_QUESTIONS;
-
-
     /**
      * Get all challenge questions registered for a tenant.
      *
-     * @param tenantDomain
      * @return
      * @throws IdentityRecoveryServerException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain) throws
-            IdentityRecoveryServerException {
-
-        tenantDomain = validateTenantDomain(tenantDomain);
-        List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
+    public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryServerException {
 
         try {
-            Resource questionCollection = resourceMgtService.getIdentityResource(QUESTIONS_BASE_PATH, tenantDomain);
-            if (questionCollection != null) {
-                Collection questionSetCollection = (Collection) resourceMgtService.getIdentityResource(
-                        QUESTIONS_BASE_PATH, tenantDomain);
-
-                for (String questionSetId : questionSetCollection.getChildren()) {
-                    Collection questionIdCollection =
-                            (Collection) resourceMgtService.getIdentityResource(questionSetId, tenantDomain);
-                    // iterate each question to find the one with correct locale
-                    for (String questionIdPath : questionIdCollection.getChildren()) {
-                        Collection questions =
-                                (Collection) resourceMgtService.getIdentityResource(questionIdPath, tenantDomain);
-                        for (String question : questions.getChildren()) {
-                            Resource resource = resourceMgtService.getIdentityResource(question, tenantDomain);
-                            if (resource != null) {
-                                challengeQuestions.add(createChallengeQuestion(resource));
-                            }
-                        }
-
-                    }
-                }
-            }
-            return challengeQuestions;
-        } catch (RegistryException e) {
+            return Utils.readChallengeQuestionsFromCSV();
+        } catch (IOException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
+                    .ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
 
     }
@@ -121,74 +77,49 @@ public class ChallengeQuestionManager {
     /**
      * Get registered challenge questions in tenant based on a locale.
      *
-     * @param tenantDomain
      * @param locale
      * @return
      * @throws IdentityRecoveryException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions(String tenantDomain, String locale)
+    public List<ChallengeQuestion> getAllChallengeQuestions(String locale)
             throws IdentityRecoveryException {
+
         // check the value and set defaults if empty or null
         locale = validateLocale(locale);
-        tenantDomain = validateTenantDomain(tenantDomain);
 
-        List<ChallengeQuestion> questions = new ArrayList<>();
         try {
-            Resource questionCollection = resourceMgtService.getIdentityResource(QUESTIONS_BASE_PATH, tenantDomain);
-            // check whether the base challenge question directory exists
-            if (questionCollection != null) {
-                Collection questionSetCollection = (Collection) resourceMgtService.getIdentityResource(
-                        QUESTIONS_BASE_PATH, tenantDomain);
-
-                for (String questionSetId : questionSetCollection.getChildren()) {
-                    Collection questionIdCollection = (Collection) resourceMgtService.
-                            getIdentityResource(questionSetId, tenantDomain);
-                    // iterate each question to find the one with correct locale
-                    for (String questionIdPath : questionIdCollection.getChildren()) {
-                        Resource questionResource = resourceMgtService.getIdentityResource(questionIdPath,
-                                tenantDomain, locale);
-                        if (questionResource != null) {
-                            questions.add(createChallengeQuestion(questionResource));
-                        }
-                    }
-                }
-            }
-
-        } catch (RegistryException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
+            return Utils.readChallengeQuestionsFromCSV(locale);
+        } catch (IOException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
-
-        return questions;
     }
 
 
     /**
      * Get challenge questions available for a user.
      *
-     * @param tenantDomain tenantDomain of the user
      * @param user         User object
-     * @return List of available challenge questions in user's locale in the tenantDomain. If no challenge questions
+     * @return List of available challenge questions in user's locale. If no challenge questions
      * are available we return challenge questions from the default en_US locale.
      * @throws IdentityRecoveryException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestionsForUser(String tenantDomain,
-                                                                   User user) throws IdentityRecoveryException {
+    public List<ChallengeQuestion> getAllChallengeQuestionsForUser(User user) throws IdentityRecoveryException {
 
         // Identify the locale of the user
-        String locale = getLocaleOfUser(user, tenantDomain);
-        // get challenge questions in the given tenant domain for give locale.
-        List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
+        String locale = getLocaleOfUser(user);
+        // get challenge questions in the given for give locale.
+        List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(locale);
 
         /*
             If there are no challenge questions found in the locale of the user and the locale is not the default one.
              we return challenge questions from default en_US locale.
          */
         if (challengeQuestions.isEmpty() && !StringUtils.equalsIgnoreCase(LOCALE_EN_US, locale)) {
-            String error = "No challenge questions available in '%s' locale in %s tenant. Sending questions of " +
+            String error = "No challenge questions available in '%s' locale. Sending questions of " +
                     "default '%s' locale";
-            log.error(String.format(error, locale, tenantDomain, LOCALE_EN_US));
-            challengeQuestions = getAllChallengeQuestions(tenantDomain, LOCALE_EN_US);
+            log.error(String.format(error, locale, LOCALE_EN_US));
+            challengeQuestions = getAllChallengeQuestions(LOCALE_EN_US);
         }
 
         return challengeQuestions;
@@ -196,17 +127,14 @@ public class ChallengeQuestionManager {
 
 
     /**
-     * Set default challenge questions to a tenant registry. (This is done during startup)
+     * Set default challenge questions. (This is done during startup)
      *
-     * @param tenantDomain
      * @throws IdentityRecoveryException
      */
-    public void setDefaultChallengeQuestions(String tenantDomain) throws IdentityRecoveryException {
-
-        tenantDomain = validateTenantDomain(tenantDomain);
+    public void setDefaultChallengeQuestions() throws IdentityRecoveryException {
 
         // check whether we already have default questions.
-        boolean isDefaultAvailable = !getAllChallengeQuestions(tenantDomain).isEmpty();
+        boolean isDefaultAvailable = !getAllChallengeQuestions().isEmpty();
         if (isDefaultAvailable) {
             if (log.isDebugEnabled()) {
                 log.debug("Default Challenge Questions already available.");
@@ -215,77 +143,46 @@ public class ChallengeQuestionManager {
         }
 
         ChallengeQuestion[] questions = Utils.getDefaultChallengeQuestions();
-        addChallengeQuestions(questions, tenantDomain);
+        addChallengeQuestions(questions);
 
         if (log.isDebugEnabled()) {
-            String errorMsg = "%d default challenge questions added to registry of %s tenant.";
-            log.debug(String.format(errorMsg, questions.length, tenantDomain));
+            String errorMsg = "%d default challenge questions added.";
+            log.debug(String.format(errorMsg, questions.length));
         }
     }
 
     /**
-     * Add new challenge questions to the registry of a tenant.
+     * Add new challenge questions.
      *
      * @param questions
-     * @param tenantDomain
      * @throws IdentityRecoveryException
      */
-    public void addChallengeQuestions(ChallengeQuestion[] questions, String tenantDomain) throws
+    public void addChallengeQuestions(ChallengeQuestion[] questions) throws
             IdentityRecoveryException {
+
         try {
-            tenantDomain = validateTenantDomain(tenantDomain);
-
-            // check whether registry path for question collection exists
-            Resource challengeQuestionCollection =
-                    resourceMgtService.getIdentityResource(QUESTIONS_BASE_PATH, tenantDomain);
-
-            // create the question collection if it does not exist
-            if (challengeQuestionCollection == null) {
-                challengeQuestionCollection = new CollectionImpl();
-                resourceMgtService.
-                        putIdentityResource(challengeQuestionCollection, QUESTIONS_BASE_PATH, tenantDomain);
-            }
-
-            for (ChallengeQuestion challengeQuestion : questions) {
-                validateChallengeQuestionAttributes(challengeQuestion);
-
-                String questionPath = getQuestionPath(challengeQuestion);
-                String locale = validateLocale(challengeQuestion.getLocale());
-
-                // create a registry resource
-                Resource resource = createRegistryResource(challengeQuestion);
-                resourceMgtService.putIdentityResource(resource, questionPath, tenantDomain, locale);
-            }
-
-        } catch (RegistryException | UnsupportedEncodingException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
+            Utils.writeChallangeQuestionsToCSV(Arrays.asList(questions));
+        } catch (IOException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
         }
 
     }
 
 
     /**
-     * Delete challenge questions from a tenant registry.
+     * Delete challenge questions.
      *
      * @param challengeQuestions
-     * @param tenantDomain
      * @throws IdentityRecoveryException
      */
-    public void deleteChallengeQuestions(ChallengeQuestion[] challengeQuestions, String tenantDomain)
+    public void deleteChallengeQuestions(ChallengeQuestion[] challengeQuestions)
             throws IdentityRecoveryException {
-        try {
-            tenantDomain = validateTenantDomain(tenantDomain);
 
-            for (ChallengeQuestion question : challengeQuestions) {
-                if (isChallengeQuestionExists(question, tenantDomain)) {
-                    String questionPath = getQuestionPath(question);
-                    String locale = question.getLocale();
-                    resourceMgtService.deleteIdentityResource(questionPath, tenantDomain, locale);
-                }
-            }
-        } catch (IdentityRuntimeException e) {
-            log.error("Error deleting challenge quesitons in " + tenantDomain);
+        try {
+            Utils.deleteChallangeQuestions(Arrays.asList(challengeQuestions));
+        } catch (IOException e) {
+            log.error("Error deleting challenge quesitons.");
             throw new IdentityRecoveryException("Error when deleting challenge questions.", e);
         }
     }
@@ -463,7 +360,7 @@ public class ChallengeQuestionManager {
     /**
      * @param user
      * @param userChallengeAnswers
-     * @throws IdentityException
+     * @throws IdentityRecoveryException
      */
     public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws
             IdentityRecoveryException {
@@ -475,14 +372,11 @@ public class ChallengeQuestionManager {
         }
 
         try {
-            String tenantDomain = StringUtils.isBlank(user.getTenantDomain()) ?
-                    MultitenantConstants.SUPER_TENANT_DOMAIN_NAME : user.getTenantDomain();
-
             // validate whether two questions from the same set has been answered.
             validateSecurityQuestionDuplicate(userChallengeAnswers);
 
             // check whether the answered questions exist in the tenant domain
-            checkChallengeQuestionExists(userChallengeAnswers, tenantDomain);
+            checkChallengeQuestionExists(userChallengeAnswers);
 
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
@@ -633,92 +527,6 @@ public class ChallengeQuestionManager {
         return verification;
     }
 
-    /**
-     * Check whether a challenge question exists in the tenant domain. Here we check whether a question exists with the
-     * given questionSetID, questionID and locale.
-     *
-     * @param challengeQuestion
-     * @param tenantDomain
-     * @return
-     * @throws IdentityRecoveryClientException
-     */
-    private boolean isChallengeQuestionExists(ChallengeQuestion challengeQuestion, String tenantDomain)
-            throws IdentityRecoveryClientException {
-        validateChallengeQuestionAttributes(challengeQuestion);
-
-        String locale = validateLocale(challengeQuestion.getLocale());
-        String questionPath = getQuestionPath(challengeQuestion);
-
-        return (resourceMgtService.getIdentityResource(questionPath, tenantDomain, locale) != null);
-    }
-
-    /**
-     * Create a challenge question object from the registry resource.
-     *
-     * @param resource
-     * @return
-     */
-    private ChallengeQuestion createChallengeQuestion(Resource resource) throws RegistryException {
-        ChallengeQuestion challengeQuestion = null;
-
-        byte[] resourceContent = (byte[]) resource.getContent();
-
-        String questionText = new String(resourceContent, Charset.forName("UTF-8"));
-        String questionSetId = resource.getProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_SET_ID);
-        String questionId = resource.getProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_ID);
-        String questionLocale = resource.getProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_LOCALE);
-
-        if (questionSetId != null) {
-            if (IdentityUtil.isBlank(questionLocale)) {
-                questionLocale = LOCALE_EN_US;
-            }
-            challengeQuestion = new ChallengeQuestion(questionSetId, questionId, questionText, questionLocale);
-        }
-
-        return challengeQuestion;
-    }
-
-    /**
-     * Create registry resource from a challenge question model object.
-     *
-     * @param question
-     * @return
-     * @throws RegistryException
-     */
-    private Resource createRegistryResource(ChallengeQuestion question) throws RegistryException,
-            UnsupportedEncodingException {
-        byte[] questionText = question.getQuestion().getBytes("UTF-8");
-        String questionSetId = question.getQuestionSetId();
-        String questionId = question.getQuestionId();
-        String locale = question.getLocale();
-
-        Resource resource = new ResourceImpl();
-        resource.setContent(questionText);
-        resource.addProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_SET_ID, questionSetId);
-        resource.addProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_ID, questionId);
-        resource.addProperty(IdentityRecoveryConstants.Questions.CHALLENGE_QUESTION_LOCALE, locale); // added locale
-        resource.setMediaType(RegistryConstants.TAG_MEDIA_TYPE);
-
-        return resource;
-    }
-
-    /**
-     * Get the relative path to the parent directory of the challenge question resource.
-     *
-     * @param challengeQuestion
-     * @return Path to the parent of challenge question relative to the root of the registry.
-     */
-    private String getQuestionPath(ChallengeQuestion challengeQuestion) {
-        // challenge set uri
-        String questionSetIdUri = challengeQuestion.getQuestionSetId();
-        String questionId = challengeQuestion.getQuestionId();
-
-        String questionSetId = Utils.getChallengeSetDirFromUri(questionSetIdUri);
-
-        return QUESTIONS_BASE_PATH + RegistryConstants.PATH_SEPARATOR + questionSetId +
-                RegistryConstants.PATH_SEPARATOR + questionId;
-    }
-
 
     /**
      * Validate whether two questions from the same question set have been answered (ie. we only allow a maximum of
@@ -755,13 +563,12 @@ public class ChallengeQuestionManager {
 
 
     /**
-     * Check whether an answered challenge question actually exists in the tenant registry.
+     * Check whether an answered challenge question actually exists.
      *
      * @param userChallengeAnswers
-     * @param tenantDomain
      * @throws IdentityRecoveryClientException
      */
-    private void checkChallengeQuestionExists(UserChallengeAnswer[] userChallengeAnswers, String tenantDomain)
+    private void checkChallengeQuestionExists(UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
 
         for (UserChallengeAnswer challengeAnswer : userChallengeAnswers) {
@@ -779,7 +586,7 @@ public class ChallengeQuestionManager {
 
             String locale = validateLocale(challengeQuestion.getLocale());
 
-            List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
+            List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(locale);
             boolean isQuestionAvailable = false;
             for (ChallengeQuestion availableQuestion : challengeQuestions) {
                 if (StringUtils.equals(availableQuestion.getQuestion(), challengeQuestion.getQuestion())) {
@@ -792,16 +599,10 @@ public class ChallengeQuestionManager {
                         "Challenge question answered is not registered with %s domain.";
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND,
-                        String.format(error, tenantDomain));
+                        String.format(error));
             }
         }
     }
-
-
-    private String validateTenantDomain(String tenantDomain) {
-        return StringUtils.isBlank(tenantDomain) ? MultitenantConstants.SUPER_TENANT_DOMAIN_NAME : tenantDomain;
-    }
-
 
     private String validateLocale(String locale) throws IdentityRecoveryClientException {
         // if the locale is blank, we go with the default locale
@@ -825,33 +626,33 @@ public class ChallengeQuestionManager {
         }
     }
 
-    private void validateChallengeQuestionAttributes(ChallengeQuestion question) throws
-            IdentityRecoveryClientException {
+//    private void validateChallengeQuestionAttributes(ChallengeQuestion question) throws
+//            IdentityRecoveryClientException {
+//
+//        String setId = question.getQuestionSetId();
+//        String questionId = question.getQuestionId();
+//        String questionText = question.getQuestion();
+//        String questionLocale = question.getLocale();
+//
+//        if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
+//                StringUtils.isBlank(questionLocale)) {
+//            throw new IdentityRecoveryClientException
+//                    ("Invalid Challenge Question. Attributes of Challenge question to be set cannot be empty.");
+//        }
+//
+//
+//        String challengeSetDir = Utils.getChallengeSetDirFromUri(setId);
+//        String errorMsg = "%s contains non alpha-numeric characters.";
+//        if (StringUtils.isBlank(challengeSetDir) || !StringUtils.isAlphanumeric(challengeSetDir)) {
+//            throw new IdentityRecoveryClientException(String.format(errorMsg, "ChallengeSetId"));
+//        }
+//
+//        if (!StringUtils.isAlphanumeric(questionId)) {
+//            throw new IdentityRecoveryClientException(String.format(errorMsg, "QuestionId"));
+//        }
+//    }
 
-        String setId = question.getQuestionSetId();
-        String questionId = question.getQuestionId();
-        String questionText = question.getQuestion();
-        String questionLocale = question.getLocale();
-
-        if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
-                StringUtils.isBlank(questionLocale)) {
-            throw new IdentityRecoveryClientException
-                    ("Invalid Challenge Question. Attributes of Challenge question to be set cannot be empty.");
-        }
-
-
-        String challengeSetDir = Utils.getChallengeSetDirFromUri(setId);
-        String errorMsg = "%s contains non alpha-numeric characters.";
-        if (StringUtils.isBlank(challengeSetDir) || !StringUtils.isAlphanumeric(challengeSetDir)) {
-            throw new IdentityRecoveryClientException(String.format(errorMsg, "ChallengeSetId"));
-        }
-
-        if (!StringUtils.isAlphanumeric(questionId)) {
-            throw new IdentityRecoveryClientException(String.format(errorMsg, "QuestionId"));
-        }
-    }
-
-    private String getLocaleOfUser(User user, String tenantDomain) throws IdentityRecoveryException {
+    private String getLocaleOfUser(User user) throws IdentityRecoveryException {
         String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
         String locale = IdentityRecoveryConstants.LOCALE_EN_US;
         try {
@@ -862,7 +663,7 @@ public class ChallengeQuestionManager {
             }
         } catch (UserStoreException e) {
             String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
-                    tenantAwareUserName, tenantDomain);
+                    tenantAwareUserName);
             log.error(errorMsg);
             throw new IdentityRecoveryServerException(errorMsg, e);
         }

@@ -30,11 +30,9 @@ public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
     private RealmService realmService;
-    private RegistryService registryService;
     private EventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private IdpManager idpManager;
-    private RegistryResourceMgtService resourceMgtService;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
         return instance;
@@ -67,14 +65,6 @@ public class IdentityRecoveryServiceDataHolder {
         this.identityGovernanceService = identityGovernanceService;
     }
 
-    public RegistryResourceMgtService getResourceMgtService() {
-        return resourceMgtService;
-    }
-
-    public void setResourceMgtService(RegistryResourceMgtService resourceMgtService) {
-        this.resourceMgtService = resourceMgtService;
-    }
-
     public RealmService getRealmService() {
         return realmService;
     }
@@ -83,11 +73,4 @@ public class IdentityRecoveryServiceDataHolder {
         this.realmService = realmService;
     }
 
-    public RegistryService getRegistryService() {
-        return registryService;
-    }
-
-    public void setRegistryService(RegistryService registryService) {
-        this.registryService = registryService;
-    }
 }

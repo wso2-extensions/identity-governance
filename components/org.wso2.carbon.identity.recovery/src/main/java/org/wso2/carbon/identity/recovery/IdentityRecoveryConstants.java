@@ -65,7 +65,7 @@ public class IdentityRecoveryConstants {
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
     public static final String EXECUTE_ACTION = "ui.execute";
-
+    public static final String CSV_LOCATION = "/tmp/tmp.csv";
 
     private IdentityRecoveryConstants() {
     }
@@ -85,10 +85,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
-        ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001",
-                "Registry exception while getting challenge question"),
-        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002",
-                "Registry exception while setting challenge question"),
+        ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
+        ERROR_CODE_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),

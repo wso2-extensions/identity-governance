@@ -10,7 +10,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.RecoverUsernameApiService;
-import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.recovery.endpoint.utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 

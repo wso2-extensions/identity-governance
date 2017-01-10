@@ -35,31 +35,23 @@ import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHa
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
-import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
-import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 
 /**
  * @scr.component name="org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent" immediate="true"
- * @scr.reference name="registry.service"
- * interface="org.wso2.carbon.registry.core.service.RegistryService" cardinality="1..1"
- * policy="dynamic" bind="setRegistryService" unbind="unsetRegistryService"
  * @scr.reference name="realm.service"
  * interface="org.wso2.carbon.user.core.service.RealmService"cardinality="1..1"
  * policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
  * @scr.reference name="IdentityGovernanceService"
  * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityGovernanceService" unbind="unsetIdentityGovernanceService"
- * @scr.reference name="RegistryResourceMgtService"
- * interface="org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService" cardinality="1..1"
- * policy="dynamic" bind="setResourceMgtService" unbind="unsetResourceMgtService"
  * @scr.reference name="IdentityEventService"
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
@@ -109,10 +101,6 @@ public class IdentityRecoveryServiceComponent {
             log.error("Error while activating identity governance component.", e);
         }
 
-        // register the tenant management listener
-        TenantMgtListener tenantMgtListener = new TenantManagementListener();
-        context.getBundleContext().registerService(TenantMgtListener.class.getName(), tenantMgtListener, null);
-
         // register default challenge questions
         try {
             if (log.isDebugEnabled()) {
@@ -138,21 +126,9 @@ public class IdentityRecoveryServiceComponent {
         dataHolder.setRealmService(realmService);
     }
 
-    protected void setRegistryService(RegistryService registryService) {
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Registry Service");
-        }
-        dataHolder.setRegistryService(registryService);
-    }
-
     protected void unsetRealmService(RealmService realmService) {
         log.debug("UnSetting the Realm Service");
         dataHolder.setRealmService(null);
-    }
-
-    protected void unsetRegistryService(RegistryService registryService) {
-        log.debug("UnSetting the Registry Service");
-        dataHolder.setRegistryService(null);
     }
 
     protected void unsetIdentityEventService(EventService identityEventService) {
@@ -169,20 +145,6 @@ public class IdentityRecoveryServiceComponent {
 
     protected void setIdentityGovernanceService(IdentityGovernanceService idpManager) {
         dataHolder.setIdentityGovernanceService(idpManager);
-    }
-
-    protected void unsetResourceMgtService(RegistryResourceMgtService registryResourceMgtService) {
-        dataHolder.setResourceMgtService(null);
-        if (log.isDebugEnabled()) {
-            log.debug("Setting Identity Resource Mgt service.");
-        }
-    }
-
-    protected void setResourceMgtService(RegistryResourceMgtService registryResourceMgtService) {
-        dataHolder.setResourceMgtService(registryResourceMgtService);
-        if (log.isDebugEnabled()) {
-            log.debug("Unsetting Identity Resource Mgt service.");
-        }
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
