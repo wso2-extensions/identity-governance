@@ -45,7 +45,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -170,7 +169,7 @@ public class UserSelfRegistrationManager {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
                 userRecoveryDataStore.invalidate(user);
 
-                String secretKey = UUIDGenerator.generateUUID();
+                String secretKey = Utils.generateUUID();
                 UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                         .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
@@ -317,7 +316,7 @@ public class UserSelfRegistrationManager {
         //Invalid old code
         userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
 
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = Utils.generateUUID();
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 

@@ -36,7 +36,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -156,7 +155,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType)
             throws EventException {
-            String secretKey = UUIDGenerator.generateUUID();
+            String secretKey = Utils.generateUUID();
             initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
     }
 

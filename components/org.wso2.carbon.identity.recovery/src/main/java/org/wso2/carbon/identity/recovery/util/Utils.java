@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Utility to provide recovery functionality.
@@ -402,6 +403,10 @@ public class Utils {
         user.setTenantDomain(tenantDomain);
 
         return user;
+    }
+
+    public static String generateUUID() {
+        return UUID.randomUUID().toString();
     }
 
     //TODO:move to DB

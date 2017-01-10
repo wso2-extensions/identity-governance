@@ -44,7 +44,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
@@ -124,7 +123,7 @@ public class NotificationPasswordRecoveryManager {
 
         userRecoveryDataStore.invalidate(user);
 
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = Utils.generateUUID();
         UserRecoveryData recoveryDataDO = new UserRecoveryData(
                 user, secretKey, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
