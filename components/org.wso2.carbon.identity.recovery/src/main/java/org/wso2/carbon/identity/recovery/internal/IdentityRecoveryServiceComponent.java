@@ -39,8 +39,6 @@ import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecove
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-
 
 /**
  * @scr.component name="org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent" immediate="true"
@@ -146,7 +144,6 @@ public class IdentityRecoveryServiceComponent {
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
-        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions();
     }
 

@@ -21,10 +21,8 @@ package org.wso2.carbon.identity.recovery.username;
 
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.IdentityClaimManager;
@@ -134,9 +132,6 @@ public class NotificationUsernameRecoveryManager {
     public String verifyUsername(UserClaim[] claims, String tenantDomain, Boolean notify) throws
             IdentityRecoveryException {
 
-        if (StringUtils.isBlank(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
 
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));

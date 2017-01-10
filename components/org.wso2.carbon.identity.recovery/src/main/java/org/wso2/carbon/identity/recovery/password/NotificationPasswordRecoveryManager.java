@@ -23,7 +23,6 @@ package org.wso2.carbon.identity.recovery.password;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -68,11 +67,6 @@ public class NotificationPasswordRecoveryManager {
 
     public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[]
             properties) throws IdentityRecoveryException {
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());

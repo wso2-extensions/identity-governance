@@ -23,7 +23,6 @@ package org.wso2.carbon.identity.recovery.signup;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
@@ -75,12 +74,6 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("registerUser :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
@@ -196,11 +189,6 @@ public class UserSelfRegistrationManager {
      */
     public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
         boolean isUserConfirmed = false;
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : "
@@ -278,12 +266,6 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean resendConfirmationCode(User user, Property[] properties) throws
             IdentityRecoveryException {
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());

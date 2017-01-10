@@ -41,7 +41,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -117,8 +116,7 @@ public class Utils {
     }
 
 
-    public static String getClaimFromUserStoreManager(User user, String claim)
-            throws UserStoreException {
+    public static String getClaimFromUserStoreManager(User user, String claim) throws UserStoreException {
 
         String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
         org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
@@ -143,8 +141,8 @@ public class Utils {
 
     }
 
-    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
+    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages error,
+                                                                        String data)
             throws IdentityRecoveryServerException {
 
         String errorDescription;
@@ -173,8 +171,8 @@ public class Utils {
                 IdentityRecoveryServerException.class, error.getCode(), errorDescription, e);
     }
 
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
+                                                                        String data)
             throws IdentityRecoveryClientException {
 
         String errorDescription;
@@ -183,13 +181,11 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
-                                                                        String data,
-                                                                        Throwable e)
+                                                                        String data, Throwable e)
             throws IdentityRecoveryClientException {
 
         String errorDescription;
@@ -198,7 +194,6 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription, e);
     }
 
@@ -297,17 +292,6 @@ public class Utils {
         }
     }
 
-
-    // challenge question related Util
-    public static String getChallengeSetDirFromUri(String challengeSetUri) {
-        if (StringUtils.isBlank(challengeSetUri)) {
-            return challengeSetUri;
-        }
-
-        int index = challengeSetUri.lastIndexOf("/");
-        return challengeSetUri.substring(index + 1);
-    }
-
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
         // locale en_US, challengeSet1
@@ -397,14 +381,6 @@ public class Utils {
         }
     }
 
-    public static User createUser(String username, String tenantDomain) {
-        User user = new User();
-        user.setUserName(MultitenantUtils.getTenantAwareUsername(username));
-        user.setTenantDomain(tenantDomain);
-
-        return user;
-    }
-
     public static String generateUUID() {
         return UUID.randomUUID().toString();
     }
@@ -483,11 +459,6 @@ public class Utils {
         }
 
         return challengeQuestionList;
-    }
-
-    public static boolean isChallangeQuestionExist(ChallengeQuestion challengeQuestion) throws IOException {
-        List<ChallengeQuestion> challengeQuestionList = readChallengeQuestionsFromCSV();
-        return challengeQuestionList.contains(challengeQuestion);
     }
 
     public static void deleteChallangeQuestions(List<ChallengeQuestion> challengeQuestionList) throws IOException {

@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -83,12 +82,6 @@ public class SecurityQuestionPasswordRecoveryManager {
     }
 
     public ChallengeQuestionResponse initiateUserChallengeQuestion(User user) throws IdentityRecoveryException {
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
@@ -206,12 +199,6 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         if (StringUtils.isEmpty(challengeQuestionSeparator)) {
             challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
-        }
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("initiateUserChallengeQuestionAtOnce :Tenant domain is not in the request. set to default for " +
-                    "user : " + user.getUserName());
         }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
