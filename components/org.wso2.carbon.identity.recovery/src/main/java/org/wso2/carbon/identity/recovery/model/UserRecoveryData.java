@@ -18,8 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.model;
 
-
-import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.mgt.User;
 
 /**
  * This object represents an entry of the identity metadata database.

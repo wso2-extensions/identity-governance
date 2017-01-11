@@ -23,25 +23,22 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.mgt.IdentityStore;
+import org.wso2.carbon.identity.mgt.RealmService;
+import org.wso2.carbon.identity.mgt.User;
+import org.wso2.carbon.identity.mgt.claim.Claim;
+import org.wso2.carbon.identity.mgt.exception.IdentityStoreException;
+import org.wso2.carbon.identity.mgt.exception.UserNotFoundException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
-import org.wso2.carbon.user.api.Claim;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserRealm;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -55,9 +52,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -66,7 +61,8 @@ import java.util.UUID;
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 
-    //This is used to pass the arbitrary properties from self user manager to self user handler
+    //This is used to pass the arbitrary properties from self
+    // user manager to self user org.wso2.carbon.identity.recovery.handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
             ThreadLocal<>();
 
@@ -116,35 +112,39 @@ public class Utils {
         emailVerifyTemporaryClaim.remove();
     }
 
+    /**
+     * Get user claim value from identity store manager
+     *
+     * @param user
+     * @param claimuri
+     * @return
+     * @throws IdentityStoreException
+     * @throws UserNotFoundException
+     */
+    public static String getClaimFromUserStoreManager(User user, String claimuri)
+            throws IdentityStoreException, UserNotFoundException {
 
-    public static String getClaimFromUserStoreManager(User user, String claim)
-            throws UserStoreException {
-
-        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
         RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        IdentityStore identityStore = realmService.getIdentityStore();
         String claimValue = "";
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        if (realmService.getTenantUserRealm(tenantId) != null) {
-            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                    getUserStoreManager();
-        }
-
-        if (userStoreManager != null) {
-            Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim},
-                            UserCoreConstants.DEFAULT_PROFILE);
-            if (claimsMap != null && !claimsMap.isEmpty()) {
-                claimValue = claimsMap.get(claim);
+        if (identityStore != null) {
+            List<Claim> claimsList = identityStore.getClaimsOfUser(user.getUniqueUserId());
+            if (claimsList != null && !claimsList.isEmpty()) {
+                for (Claim claim : claimsList) {
+                    if (claim.getClaimUri().equals(claimuri)) {
+                        claimValue = claim.getValue();
+                        break;
+                    }
+                }
             }
         }
         return claimValue;
 
     }
 
-    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
+    public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages error,
+                                                                        String data)
             throws IdentityRecoveryServerException {
 
         String errorDescription;
@@ -173,8 +173,8 @@ public class Utils {
                 IdentityRecoveryServerException.class, error.getCode(), errorDescription, e);
     }
 
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
+                                                                        String data)
             throws IdentityRecoveryClientException {
 
         String errorDescription;
@@ -183,13 +183,11 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
-                                                                        String data,
-                                                                        Throwable e)
+                                                                        String data, Throwable e)
             throws IdentityRecoveryClientException {
 
         String errorDescription;
@@ -198,67 +196,62 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription, e);
     }
 
     /**
+     * Hash and encode a string.
+     *
      * @param value
      * @return
-     * @throws UserStoreException
+     * @throws NoSuchAlgorithmException
      */
-    public static String doHash(String value) throws UserStoreException {
-        try {
-            String digsestFunction = "SHA-256";
-            MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
-            return Base64.encode(byteValue);
-        } catch (NoSuchAlgorithmException e) {
-            log.error(e.getMessage(), e);
-            throw new UserStoreException(e.getMessage(), e);
-        }
+    public static String doHash(String value) throws NoSuchAlgorithmException {
+        String digsestFunction = "SHA-256";
+        MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
+        byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
+        return Base64.encode(byteValue);
     }
 
     /**
-     * Set claim to user store manager.
-     *
-     * @param user  user
-     * @param claim claim uri
-     * @param value claim value
-     * @throws UserStoreException if fails
+     * Set claim to identity store manager.
+     * @param user
+     * @param claimuri
+     * @param value
+     * @throws IdentityStoreException
+     * @throws UserNotFoundException
      */
-    public static void setClaimInUserStoreManager(User user, String claim, String value) throws UserStoreException {
+    public static void setClaimInUserStoreManager(User user, String claimuri, String value)
+            throws IdentityStoreException, UserNotFoundException {
 
-        String fullUserName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
         RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        if (realmService.getTenantUserRealm(tenantId) != null) {
-            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                    getUserStoreManager();
-        }
+        IdentityStore identityStore = realmService.getIdentityStore();
+        String oldValue;
 
-        if (userStoreManager != null) {
-            Map<String, String> values = userStoreManager.getUserClaimValues(fullUserName, new String[]{
-                    claim}, UserCoreConstants.DEFAULT_PROFILE);
-            String oldValue = values.get(claim);
-            if (oldValue == null || !oldValue.equals(value)) {
-                Map<String, String> claimMap = new HashMap<String, String>();
-                claimMap.put(claim, value);
-                userStoreManager.setUserClaimValues(fullUserName, claimMap, UserCoreConstants.DEFAULT_PROFILE);
+        if (identityStore != null) {
+            List<Claim> claimsList = identityStore.getClaimsOfUser(user.getUniqueUserId());
+            if (claimsList != null && !claimsList.isEmpty()) {
+                for (Claim claim : claimsList) {
+                    if (claim.getClaimUri().equals(claimuri)) {
+                        oldValue = claim.getValue();
+                        if (StringUtils.isEmpty(oldValue) || !oldValue.equals(value)) {
+                            claim.setValue(value);
+                            identityStore.updateUserClaims(user.getUniqueUserId(), claimsList);
+                        }
+                        return;
+                    }
+                }
             }
         }
-
     }
 
 
-    public static String getRecoveryConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+    public static String getRecoveryConfigs(String key) throws IdentityRecoveryServerException {
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, "");
             for (Property connectorConfig : connectorConfigs) {
                 if (key.equals(connectorConfig.getName())) {
                     return connectorConfig.getValue();
@@ -272,12 +265,12 @@ public class Utils {
         }
     }
 
-    public static String getSignUpConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+    public static String getSignUpConfigs(String key) throws IdentityRecoveryServerException {
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(
@@ -285,27 +278,16 @@ public class Utils {
         }
     }
 
-    public static String getConnectorConfig(String key, String tenantDomain) throws EventException {
+    public static String getConnectorConfig(String key) throws EventException {
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw new EventException("Error while getting connector configurations", e);
         }
-    }
-
-
-    // challenge question related Util
-    public static String getChallengeSetDirFromUri(String challengeSetUri) {
-        if (StringUtils.isBlank(challengeSetUri)) {
-            return challengeSetUri;
-        }
-
-        int index = challengeSetUri.lastIndexOf("/");
-        return challengeSetUri.substring(index + 1);
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
@@ -332,77 +314,31 @@ public class Utils {
 
     public static boolean isAccountLocked(User user) throws IdentityRecoveryException {
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        UserRealm userRealm;
         try {
-            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
-        }
-
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
-        }
-
-        try {
-            Map<String, String> values = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user
-                    .getUserName(), user.getUserStoreDomain()), new String[]{
-                    IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
-            boolean accountLock = Boolean.parseBoolean(values.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
-            return accountLock;
-        } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+            return Boolean.parseBoolean(
+                    getClaimFromUserStoreManager(user, IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
+        } catch (IdentityStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+        } catch (UserNotFoundException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
         }
     }
 
 
     public static boolean isAccountDisabled(User user) throws IdentityRecoveryException {
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        UserRealm userRealm;
         try {
-            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
+            return Boolean.parseBoolean(
+                    getClaimFromUserStoreManager(user, IdentityRecoveryConstants.ACCOUNT_DISABLED_CLAIM));
+        } catch (IdentityStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+        } catch (UserNotFoundException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
         }
-
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
-        }
-
-        try {
-            Map<String, String> values = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user
-                    .getUserName(), user.getUserStoreDomain()), new String[]{
-                    IdentityRecoveryConstants.ACCOUNT_DISABLED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
-            boolean accountDisable = Boolean.parseBoolean(values.get(IdentityRecoveryConstants.ACCOUNT_DISABLED_CLAIM));
-            return accountDisable;
-        } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        }
-    }
-
-    public static User createUser(String username, String tenantDomain) {
-        User user = new User();
-        user.setUserName(MultitenantUtils.getTenantAwareUsername(username));
-        user.setTenantDomain(tenantDomain);
-
-        return user;
     }
 
     public static String generateUUID() {
@@ -483,11 +419,6 @@ public class Utils {
         }
 
         return challengeQuestionList;
-    }
-
-    public static boolean isChallangeQuestionExist(ChallengeQuestion challengeQuestion) throws IOException {
-        List<ChallengeQuestion> challengeQuestionList = readChallengeQuestionsFromCSV();
-        return challengeQuestionList.contains(challengeQuestion);
     }
 
     public static void deleteChallangeQuestions(List<ChallengeQuestion> challengeQuestionList) throws IOException {

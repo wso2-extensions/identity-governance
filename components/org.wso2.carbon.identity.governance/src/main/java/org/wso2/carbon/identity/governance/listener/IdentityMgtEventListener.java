@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.governance.listener;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
@@ -30,13 +29,10 @@ import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.event.model.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
-import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.Permission;
-import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
@@ -596,34 +592,16 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             if (StringUtils.isNotBlank(roleName)) {
                 properties.put(EventConstants.EventProperty.ROLE_NAME, roleName);
             }
-
-            int tenantId = userStoreManager.getTenantId();
-            String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-            try {
-                RealmService realmService = IdentityMgtServiceDataHolder.getInstance().getRealmService();
-                TenantManager tenantManager = realmService.getTenantManager();
-                userTenantDomain = tenantManager.getDomain(tenantId);
-            } catch (org.wso2.carbon.user.api.UserStoreException e) {
-                    log.error("Unable to get the get the domain from realmService for tenant: " + tenantId, e);
-            }
-
             properties.put(EventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-            properties.put(EventConstants.EventProperty.TENANT_ID, PrivilegedCarbonContext
-                    .getThreadLocalCarbonContext().getTenantId());
-            properties.put(EventConstants.EventProperty.TENANT_DOMAIN, userTenantDomain);
-
             Event identityMgtEvent = new Event(eventName, properties);
-
-            if (!TenantMgtUtil.isTenantAdminCreationOperation()) {
-                eventMgtService.handleEvent(identityMgtEvent);
-            }
+            eventMgtService.handleEvent(identityMgtEvent);
         } catch (EventException e) {
             String errorCode = e.getErrorCode();
 
             if (StringUtils.isNotEmpty(errorCode)) {
                 //This error code 22001 means user password history is violated.
                 if (StringUtils.equals(errorCode, "22001") || StringUtils.equals(errorCode, "40001")
-                        || StringUtils.equals(errorCode, "40002")) {
+                    || StringUtils.equals(errorCode, "40002")) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }

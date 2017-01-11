@@ -20,32 +20,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.mgt.RealmService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
-import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
-import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
-import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
-import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
-import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
-import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-
 
 /**
  * @scr.component name="org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent" immediate="true"
  * @scr.reference name="realm.service"
- * interface="org.wso2.carbon.user.core.service.RealmService"cardinality="1..1"
+ * interface="org.wso2.carbon.identity.mgt.RealmService"cardinality="1..1"
  * policy="dynamic" bind="setRealmService" unbind="unsetRealmService"
  * @scr.reference name="IdentityGovernanceService"
  * interface="org.wso2.carbon.identity.governance.IdentityGovernanceService" cardinality="1..1"
@@ -77,22 +67,22 @@ public class IdentityRecoveryServiceComponent {
                     UserSelfRegistrationManager.getInstance(), null);
             bundleContext.registerService(ChallengeQuestionManager.class.getName(),
                     ChallengeQuestionManager.getInstance(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(),
-                    new AccountConfirmationValidationHandler(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(),
-                    new UserSelfRegistrationHandler(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(),
-                    new UserEmailVerificationHandler(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(),
-                    new AdminForcedPasswordResetHandler(), null);
+//            bundleContext.registerService(AbstractEventHandler.class.getName(),
+//                    new AccountConfirmationValidationHandler(), null);
+//            bundleContext.registerService(AbstractEventHandler.class.getName(),
+//                    new UserSelfRegistrationHandler(), null);
+//            bundleContext.registerService(AbstractEventHandler.class.getName(),
+//                    new UserEmailVerificationHandler(), null);
+//            bundleContext.registerService(AbstractEventHandler.class.getName(),
+//                    new AdminForcedPasswordResetHandler(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     new RecoveryConfigImpl(), null);
-            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
-                    new SelfRegistrationConfigImpl(), null);
-            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
-                    new UserEmailVerificationConfigImpl(), null);
-            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
-                    new AdminForcedPasswordResetConfigImpl(), null);
+//            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+//                    new SelfRegistrationConfigImpl(), null);
+//            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+//                    new UserEmailVerificationConfigImpl(), null);
+//            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+//                    new AdminForcedPasswordResetConfigImpl(), null);
 
 
         } catch (Exception e) {
@@ -146,7 +136,6 @@ public class IdentityRecoveryServiceComponent {
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
-        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions();
     }
 

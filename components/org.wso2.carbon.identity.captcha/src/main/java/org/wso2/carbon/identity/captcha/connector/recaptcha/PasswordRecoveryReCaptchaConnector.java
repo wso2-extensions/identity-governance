@@ -18,9 +18,6 @@
 
 package org.wso2.carbon.identity.captcha.connector.recaptcha;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
@@ -40,14 +37,9 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
-import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
-import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.ServletRequest;
@@ -140,24 +132,25 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             }
             user.setTenantDomain(servletRequest.getParameter("tenant-domain"));
             initializationFlow = true;
-        } else {
-            JsonObject requestObject;
-            try {
-                try (InputStream in = httpServletRequestWrapper.getInputStream()) {
-                    requestObject = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                }
-            } catch (IOException e) {
-                return preValidationResponse;
-            }
-            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            try {
-                UserRecoveryData userRecoveryData = userRecoveryDataStore.load(requestObject.get("key").getAsString());
-                if (userRecoveryData != null) {
-                    user = userRecoveryData.getUser();
-                }
-            } catch (IdentityRecoveryException e) {
-                return preValidationResponse;
-            }
+//        } else {
+//            JsonObject requestObject;
+//            try {
+//                try (InputStream in = httpServletRequestWrapper.getInputStream()) {
+//                    requestObject = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+//                }
+//            } catch (IOException e) {
+//                return preValidationResponse;
+//            }
+//            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+//            try {
+//                UserRecoveryData userRecoveryData = userRecoveryDataStore.load(requestObject.get("
+            // key").getAsString());
+////                if (userRecoveryData != null) {
+////                    user = userRecoveryData.getUser();
+////                }
+//            } catch (IdentityRecoveryException e) {
+//                return preValidationResponse;
+//            }
         }
 
         if (StringUtils.isBlank(user.getUserName())) {

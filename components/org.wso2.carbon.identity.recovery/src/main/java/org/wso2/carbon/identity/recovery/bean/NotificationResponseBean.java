@@ -18,7 +18,7 @@
  */
 package org.wso2.carbon.identity.recovery.bean;
 
-import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.mgt.User;
 
 import java.io.Serializable;
 

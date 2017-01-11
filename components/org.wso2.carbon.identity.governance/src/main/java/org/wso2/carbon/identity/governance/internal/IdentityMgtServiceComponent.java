@@ -27,9 +27,7 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
-import org.wso2.carbon.identity.governance.listener.TenantCreationEventListener;
 import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -66,8 +64,6 @@ public class IdentityMgtServiceComponent {
                     new IdentityStoreEventListener(), null);
             context.getBundleContext().registerService(IdentityGovernanceService.class, new
                     IdentityGovernanceServiceImpl(), null);
-            context.getBundleContext().registerService(TenantMgtListener.class.getName(),
-                    new TenantCreationEventListener(), null);
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
             }

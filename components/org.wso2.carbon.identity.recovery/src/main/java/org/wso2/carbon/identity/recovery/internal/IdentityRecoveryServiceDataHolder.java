@@ -18,8 +18,8 @@ package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.mgt.RealmService;
 import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * Identity Recovery Service DataHolder.

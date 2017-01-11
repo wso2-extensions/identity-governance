@@ -23,14 +23,16 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.mgt.User;
+import org.wso2.carbon.identity.mgt.exception.IdentityStoreException;
+import org.wso2.carbon.identity.mgt.exception.UserNotFoundException;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.user.api.UserStoreException;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -207,9 +209,14 @@ public class ChallengeQuestionManager {
             String challengeValue;
             try {
                 challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
-            } catch (UserStoreException e) {
-                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+            } catch (IdentityStoreException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTIONS,
+                        user.getUniqueUserId(), e);
+            } catch (UserNotFoundException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTIONS,
+                        user.getUniqueUserId(), e);
             }
 
             String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
@@ -258,9 +265,14 @@ public class ChallengeQuestionManager {
         String challengeValue = null;
         try {
             challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_GETTING_CHALLENGE_QUESTION, user.getUserName(), e);
+        } catch (IdentityStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTION,
+                    user.getUniqueUserId(), e);
+        } catch (UserNotFoundException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTION,
+                    user.getUniqueUserId(), e);
         }
 
         if (challengeValue != null) {
@@ -282,8 +294,7 @@ public class ChallengeQuestionManager {
     }
 
 
-    public String[] getUserChallengeQuestionIds(User user)
-            throws IdentityRecoveryException {
+    public String[] getUserChallengeQuestionIds(User user) throws IdentityRecoveryException {
 
         validateUser(user);
 
@@ -293,7 +304,7 @@ public class ChallengeQuestionManager {
         List<String> challengesUris = getChallengeQuestionUris(user);
 
         if (challengesUris.isEmpty()) {
-            String msg = "No associated challenge question found for the user : " + user.getUserName();
+            String msg = "No associated challenge question found for the user : " + user.getUniqueUserId();
             if (log.isDebugEnabled()) {
                 log.debug(msg);
             }
@@ -325,9 +336,14 @@ public class ChallengeQuestionManager {
 
         try {
             claimValue = Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_GETTING_CHALLENGE_URIS, user.getUserName(), e);
+        } catch (IdentityStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_URIS,
+                    user.getUniqueUserId(), e);
+        } catch (UserNotFoundException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_URIS,
+                    user.getUniqueUserId(), e);
         }
 
         if (claimValue != null) {
@@ -391,9 +407,11 @@ public class ChallengeQuestionManager {
                     if (userChallengeAnswer.getQuestion().getQuestionSetId() != null &&
                             userChallengeAnswer.getQuestion().getQuestion() !=
                             null && userChallengeAnswer.getAnswer() != null) {
-                        String oldValue = Utils.
-                                getClaimFromUserStoreManager(user,
-                                        userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+                        String oldValue =
+                                Utils.getClaimFromUserStoreManager(user,
+                                                                   userChallengeAnswer.getQuestion()
+                                                                                      .getQuestionSetId()
+                                                                                      .trim());
 
                         if (oldValue != null && oldValue.contains(separator)) {
                             String oldAnswer = oldValue.split(separator)[1];
@@ -425,9 +443,16 @@ public class ChallengeQuestionManager {
                 Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI,
                         challengesUrisValue);
             }
-        } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_QUESTION_OF_USER, user.getUserName(), e);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_OF_USER, user.getUniqueUserId(), e);
+        } catch (UserNotFoundException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_OF_USER, user.getUniqueUserId(), e);
+        } catch (IdentityStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_OF_USER, user.getUniqueUserId(), e);
         }
     }
 
@@ -467,7 +492,7 @@ public class ChallengeQuestionManager {
                 String hashedAnswer = null;
                 try {
                     hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
-                } catch (UserStoreException e) {
+                } catch (NoSuchAlgorithmException e) {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_HASHING_ALGO, null, e);
                 }
@@ -505,7 +530,7 @@ public class ChallengeQuestionManager {
                 String hashedAnswer = null;
                 try {
                     hashedAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
-                } catch (UserStoreException e) {
+                } catch (NoSuchAlgorithmException e) {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_NO_HASHING_ALGO, null, e);
                 }
@@ -619,37 +644,11 @@ public class ChallengeQuestionManager {
     }
 
     private void validateUser(User user) throws IdentityRecoveryClientException {
-        if (user == null || StringUtils.isBlank(user.getUserName())) {
+        if (user == null || StringUtils.isBlank(user.getUniqueUserId())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, "Invalid User Data provided.");
         }
     }
-
-//    private void validateChallengeQuestionAttributes(ChallengeQuestion question) throws
-//            IdentityRecoveryClientException {
-//
-//        String setId = question.getQuestionSetId();
-//        String questionId = question.getQuestionId();
-//        String questionText = question.getQuestion();
-//        String questionLocale = question.getLocale();
-//
-//        if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
-//                StringUtils.isBlank(questionLocale)) {
-//            throw new IdentityRecoveryClientException
-//                    ("Invalid Challenge Question. Attributes of Challenge question to be set cannot be empty.");
-//        }
-//
-//
-//        String challengeSetDir = Utils.getChallengeSetDirFromUri(setId);
-//        String errorMsg = "%s contains non alpha-numeric characters.";
-//        if (StringUtils.isBlank(challengeSetDir) || !StringUtils.isAlphanumeric(challengeSetDir)) {
-//            throw new IdentityRecoveryClientException(String.format(errorMsg, "ChallengeSetId"));
-//        }
-//
-//        if (!StringUtils.isAlphanumeric(questionId)) {
-//            throw new IdentityRecoveryClientException(String.format(errorMsg, "QuestionId"));
-//        }
-//    }
 
     private String getLocaleOfUser(User user) throws IdentityRecoveryException {
 
@@ -660,8 +659,14 @@ public class ChallengeQuestionManager {
             if (StringUtils.isNotBlank(userLocale)) {
                 locale = userLocale;
             }
-        } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s'.", user.getUserName());
+        } catch (IdentityStoreException e) {
+            String errorMsg = String.format("Error when retrieving the locale claim of user '%s'.",
+                                            user.getUniqueUserId());
+            log.error(errorMsg);
+            throw new IdentityRecoveryServerException(errorMsg, e);
+        } catch (UserNotFoundException e) {
+            String errorMsg = String.format("Error when retrieving the locale claim of user '%s'.",
+                                            user.getUniqueUserId());
             log.error(errorMsg);
             throw new IdentityRecoveryServerException(errorMsg, e);
         }

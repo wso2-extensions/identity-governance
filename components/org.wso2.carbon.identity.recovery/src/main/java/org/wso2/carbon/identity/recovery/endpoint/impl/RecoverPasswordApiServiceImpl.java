@@ -23,16 +23,11 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.RecoverPasswordApiService;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import javax.ws.rs.core.Response;
 
@@ -76,29 +71,31 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             }
         }
 
-        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
-                .getNotificationBasedPwdRecoveryManager();
-        NotificationResponseBean notificationResponseBean = null;
+//        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
+//                .getNotificationBasedPwdRecoveryManager();
+//        NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user,
+        // user.getTenantDomain());
 
-        try {
-            notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(RecoveryUtil
-                    .getUser(recoveryInitiatingRequest.getUser()), type, notify, RecoveryUtil.getProperties
-                    (recoveryInitiatingRequest.getProperties()));
-
-        } catch (IdentityRecoveryClientException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Client Error while sending recovery notification ", e);
-            }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
-        } catch (IdentityRecoveryException e) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
-        } catch (Throwable throwable) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
-        }
-        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
-            return Response.ok().build();
-        }
-        return Response.ok(notificationResponseBean.getKey()).build();
+//        try {
+//            notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(RecoveryUtil
+//                    .getUser(recoveryInitiatingRequest.getUser()), type, notify, RecoveryUtil.getProperties
+//                    (recoveryInitiatingRequest.getProperties()));
+//
+//        } catch (IdentityRecoveryClientException e) {
+//            if (LOG.isDebugEnabled()) {
+//                LOG.debug("Client Error while sending recovery notification ", e);
+//            }
+//            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+//        } catch (IdentityRecoveryException e) {
+//            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+//        } catch (Throwable throwable) {
+//            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+//                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+//        }
+//        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+//            return Response.ok().build();
+//        }
+//        return Response.ok(notificationResponseBean.getKey()).build();
+        return null;
     }
 }

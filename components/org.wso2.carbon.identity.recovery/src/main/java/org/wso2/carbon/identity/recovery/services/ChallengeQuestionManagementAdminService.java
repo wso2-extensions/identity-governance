@@ -19,8 +19,8 @@ package org.wso2.carbon.identity.recovery.services;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
+import org.wso2.carbon.identity.mgt.User;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -77,8 +77,8 @@ public class ChallengeQuestionManagementAdminService {
             return challengeQuestionList.toArray(new ChallengeQuestion[challengeQuestionList.size()]);
         } catch (IdentityRecoveryException e) {
             String errorMgs = "Error loading challenge questions for user : %s.";
-            log.error(String.format(errorMgs, user.getUserName()), e);
-            throw new IdentityRecoveryException(String.format(errorMgs, user.getUserName()), e);
+            log.error(String.format(errorMgs, user.toString()), e);
+            throw new IdentityRecoveryException(String.format(errorMgs, user.getUniqueUserId()), e);
         }
     }
 
@@ -90,9 +90,8 @@ public class ChallengeQuestionManagementAdminService {
      * @return
      * @throws IdentityRecoveryException
      */
-    public ChallengeQuestion[] getChallengeQuestionsForLocale(String locale)
-            throws IdentityRecoveryException {
-        // check for cross tenant access
+    public ChallengeQuestion[] getChallengeQuestionsForLocale(String locale) throws IdentityRecoveryException {
+
         List<ChallengeQuestion> challengeQuestionList;
         try {
             challengeQuestionList = questionManager.getAllChallengeQuestions(locale);
@@ -113,6 +112,7 @@ public class ChallengeQuestionManagementAdminService {
      */
     public void setChallengeQuestionsOfTenant(ChallengeQuestion[] challengeQuestions)
             throws IdentityRecoveryException {
+
         try {
             questionManager.addChallengeQuestions(challengeQuestions);
         } catch (IdentityRecoveryException e) {
@@ -131,6 +131,7 @@ public class ChallengeQuestionManagementAdminService {
      */
     public void deleteChallengeQuestionsOfTenant(ChallengeQuestion[] challengeQuestions)
             throws IdentityRecoveryException {
+
         try {
             questionManager.deleteChallengeQuestions(challengeQuestions);
         } catch (IdentityRecoveryException e) {
@@ -157,7 +158,7 @@ public class ChallengeQuestionManagementAdminService {
 
 
         if (ArrayUtils.isEmpty(userChallengeAnswers)) {
-            String errorMsg = "No challenge question answers provided by the user " + user.getUserName();
+            String errorMsg = "No challenge question answers provided by the user " + user.getUniqueUserId();
             log.error(errorMsg);
             throw new IdentityRecoveryClientException(errorMsg);
         }
@@ -166,7 +167,7 @@ public class ChallengeQuestionManagementAdminService {
             questionManager.setChallengesOfUser(user, userChallengeAnswers);
 
         } catch (IdentityException e) {
-            String errorMessage = "Error while persisting user challenges for user : " + user.getUserName();
+            String errorMessage = "Error while persisting user challenges for user : " + user.getUniqueUserId();
             log.error(errorMessage, e);
             throw new IdentityRecoveryException(errorMessage, e);
         }
@@ -188,7 +189,7 @@ public class ChallengeQuestionManagementAdminService {
         try {
             return questionManager.getChallengeAnswersOfUser(user);
         } catch (IdentityRecoveryException e) {
-            String msg = "Error retrieving user challenge answers for " + user.getUserName();
+            String msg = "Error retrieving user challenge answers for " + user.getUniqueUserId();
             log.error(msg, e);
             throw new IdentityRecoveryException(msg, e);
         }

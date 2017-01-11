@@ -40,7 +40,6 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.recovery.endpoint.exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -50,7 +49,6 @@ import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecove
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
-import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -295,21 +293,22 @@ public class RecoveryUtil {
 
     public static String[] getUserList(int tenantId, String username) {
 
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        String[] userList = null;
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
-                        (tenantId).getUserStoreManager();
-                userList = userStoreManager.listUsers(username, 2);
-            }
-        } catch (Exception e) {
-            String msg = "Error retrieving the user-list for the tenant : " + tenantId;
-            RecoveryUtil.handleInternalServerError(msg, "500", LOG, e);
-        }
-        return userList;
+//        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+//        String[] userList = null;
+//        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+//
+//        try {
+//            if (realmService.getTenantUserRealm(tenantId) != null) {
+//                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
+//                        (tenantId).getUserStoreManager();
+//                userList = userStoreManager.listUsers(username, 2);
+//            }
+//        } catch (Exception e) {
+//            String msg = "Error retrieving the user-list for the tenant : " + tenantId;
+//            RecoveryUtil.handleInternalServerError(msg, "500", LOG, e);
+//        }
+//        return userList;
+        return new String[]{};
     }
 
 }
