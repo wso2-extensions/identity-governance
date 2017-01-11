@@ -46,7 +46,7 @@ import java.util.Properties;
 
 
 /**
- * Event handler and governance connector to handle password policy
+ * Event org.wso2.carbon.identity.recovery.handler and governance connector to handle password policy
  */
 
 public class PasswordPolicyValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {

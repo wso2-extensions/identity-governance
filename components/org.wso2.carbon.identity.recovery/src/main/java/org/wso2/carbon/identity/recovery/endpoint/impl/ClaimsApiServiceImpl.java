@@ -19,15 +19,11 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.endpoint.ClaimsApiService;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
-import org.wso2.carbon.identity.recovery.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.recovery.endpoint.utils.RecoveryUtil;
-import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
-import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.ws.rs.core.Response;
@@ -51,20 +47,21 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
             RecoveryUtil.handleBadRequest("Invalid tenant domain :" + tenantDomain, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
         }
-        String dialect = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT;
-        NotificationUsernameRecoveryManager notificationBasedUsernameRecoveryManager = RecoveryUtil
-                .getNotificationBasedUsernameRecoveryManager();
-        ClaimDTO[] claimDTOs = null;
-        try {
-            Claim[] userClaims =
-                    notificationBasedUsernameRecoveryManager.getIdentitySupportedClaims(dialect, tenantDomain);
-            claimDTOs = RecoveryUtil.getClaimDTOs(userClaims);
-
-        } catch (IdentityException throwable) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
-
-        }
-        return Response.ok(claimDTOs).build();
+//        String dialect = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT;
+//        NotificationUsernameRecoveryManager notificationBasedUsernameRecoveryManager = RecoveryUtil
+//                .getNotificationBasedUsernameRecoveryManager();
+//        ClaimDTO[] claimDTOs = null;
+//        try {
+//            Claim[] userClaims =
+//                    notificationBasedUsernameRecoveryManager.getIdentitySupportedClaims(dialect, tenantDomain);
+//            claimDTOs = RecoveryUtil.getClaimDTOs(userClaims);
+//
+//        } catch (IdentityException throwable) {
+//            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+//                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+//
+//        }
+//        return Response.ok(claimDTOs).build();
+        return null;
     }
 }

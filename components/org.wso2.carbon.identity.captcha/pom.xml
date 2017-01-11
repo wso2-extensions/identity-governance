@@ -128,7 +128,7 @@
             version="${identity.governance.imp.pkg.version.range}",
             org.wso2.carbon.identity.application.authentication.framework.*;
             version="${carbon.identity.framework.imp.pkg.version.range}",
-            org.wso2.carbon.identity.core.handler;
+            org.wso2.carbon.identity.core.org.wso2.carbon.identity.recovery.handler;
             version="${carbon.identity.framework.imp.pkg.version.range}",
         </import.package>
     </properties>

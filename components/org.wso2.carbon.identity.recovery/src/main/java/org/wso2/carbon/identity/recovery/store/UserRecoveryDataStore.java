@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.store;
 
-import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.mgt.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 

@@ -48,7 +48,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Account suspension notification handler.
+ * Account suspension notification org.wso2.carbon.identity.recovery.handler.
  */
 public class AccountSuspensionNotificationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
