@@ -87,15 +87,6 @@ public class UserSelfRegistrationManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
         try {
-            
-//            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-//            IdentityStore identityStore = realmService.getIdentityStore();
-
-
-//            Map<String, String> claimsMap = new HashMap<>();
-//            for (Claim claim : claims) {
-//                claimsMap.put(claim.getClaimUri(), claim.getValue());
-//            }
 
             //Set arbitrary properties to use in UserSelfRegistrationHandler
             Utils.setArbitraryProperties(properties);
@@ -118,12 +109,12 @@ public class UserSelfRegistrationManager {
 //
 //                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
 //                    throw Utils.handleClientException(
-//                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.
-            // getUserName(),
+//                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS,
+            // user.getUserName(),
 //                            e);
 //                } else {
-//                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_
-            // ADD_SELF_USER,
+//                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+            // ERROR_CODE_ADD_SELF_USER,
 //                                                      user.getUserName(), e);
 //                }
 //            }
@@ -168,8 +159,7 @@ public class UserSelfRegistrationManager {
                                                                             user.getUniqueUserId()));
         }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData load =
-                userRecoveryDataStore.load(user);
+        UserRecoveryData load = userRecoveryDataStore.load(user);
 
         if (load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())) {
             isUserConfirmed = true;
@@ -202,12 +192,12 @@ public class UserSelfRegistrationManager {
 
         try {
 
-            Utils.setClaimInUserStoreManager(user,
-                                             IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM,
-                                             Boolean.FALSE.toString());
-            Utils.setClaimInUserStoreManager(user,
-                                             IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
-                                             Boolean.TRUE.toString());
+            Utils.setClaimInIdentityStore(user,
+                                          IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM,
+                                          Boolean.FALSE.toString());
+            Utils.setClaimInIdentityStore(user,
+                                          IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM,
+                                          Boolean.TRUE.toString());
 
             //Invalidate code
             userRecoveryDataStore.invalidate(code);

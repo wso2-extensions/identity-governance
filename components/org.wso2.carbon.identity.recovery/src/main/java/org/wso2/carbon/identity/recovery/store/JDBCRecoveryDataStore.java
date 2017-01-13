@@ -10,9 +10,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.Locale;
 
 /**
  * JDBC recovery data store.
@@ -33,28 +30,29 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
-        PreparedStatement prepStmt = null;
-        try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
-            prepStmt.setString(1, recoveryDataDO.getUser().getUniqueUserId());
-            prepStmt.setString(2, recoveryDataDO.getUser().getDomainName().toUpperCase(Locale.ENGLISH));
-            prepStmt.setInt(3, 1);
-            prepStmt.setString(4, recoveryDataDO.getSecret());
-            prepStmt.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
-            prepStmt.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
-            prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
-            prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
-            prepStmt.execute();
-            connection.setAutoCommit(false);
-            connection.commit();
-        } catch (SQLException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA,
-                    null, e);
-        } finally {
-            IdentityDatabaseUtil.closeStatement(prepStmt);
-            IdentityDatabaseUtil.closeConnection(connection);
-        }
+//        Connection connection = IdentityDatabaseUtil.getDBConnection();
+//        PreparedStatement prepStmt = null;
+//        try {
+//            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+//            prepStmt.setString(1, recoveryDataDO.getUser().getUniqueUserId());
+//            prepStmt.setString(2, recoveryDataDO.getUser().getDomainName().toUpperCase(Locale.ENGLISH));
+//            prepStmt.setInt(3, 1);
+//            prepStmt.setString(4, recoveryDataDO.getSecret());
+//            prepStmt.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
+//            prepStmt.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
+//            prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
+//            prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
+//            prepStmt.execute();
+//            connection.setAutoCommit(false);
+//            connection.commit();
+//        } catch (SQLException e) {
+//            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+        // ERROR_CODE_STORING_RECOVERY_DATA,
+//                    null, e);
+//        } finally {
+//            IdentityDatabaseUtil.closeStatement(prepStmt);
+//            IdentityDatabaseUtil.closeConnection(connection);
+//        }
     }
 
     @Override
@@ -187,8 +185,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 //        try {
 //            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(
 //                    user.getTenantDomain()))) {
-//                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_
-        // USER);
+//                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.
+        // LOAD_RECOVERY_DATA_OF_USER);
 //            } else {
 //                prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries
 //                        .LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE);

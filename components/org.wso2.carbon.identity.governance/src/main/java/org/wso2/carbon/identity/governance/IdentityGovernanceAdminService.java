@@ -73,7 +73,7 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
     public void updateConfigurations(Property[] configurations) throws IdentityGovernanceException {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         identityGovernanceService = new IdentityGovernanceServiceImpl();
-        Map<String, String> confMap = new HashMap<>();
+        Map<String, String> confMap = new HashMap<String, String>();
         for (Property configuration : configurations) {
             confMap.put(configuration.getName(), configuration.getValue());
         }

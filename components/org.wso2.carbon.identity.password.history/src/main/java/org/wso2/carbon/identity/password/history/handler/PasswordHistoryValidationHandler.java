@@ -76,8 +76,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
             identityProperties = IdentityPasswordHistoryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService().getConfiguration(getPropertyNames(), tenantDomain);
         } catch (IdentityGovernanceException e) {
-            throw new EventException("Error while retrieving account lock " +
-                                     "org.wso2.carbon.identity.recovery.handler properties.", e);
+            throw new EventException("Error while retrieving account lock handler properties.", e);
         }
 
         boolean passwordHistoryValidation = false;

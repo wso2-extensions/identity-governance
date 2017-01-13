@@ -143,8 +143,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 //            }
 //            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 //            try {
-//                UserRecoveryData userRecoveryData = userRecoveryDataStore.load(requestObject.get("
-            // key").getAsString());
+////                UserRecoveryData userRecoveryData =
+            // userRecoveryDataStore.load(requestObject.get("key").getAsString());
 ////                if (userRecoveryData != null) {
 ////                    user = userRecoveryData.getUser();
 ////                }
