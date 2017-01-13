@@ -34,16 +34,12 @@ public interface UserRecoveryDataStore {
     UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
             IdentityRecoveryException;
 
-    UserRecoveryData load(String code) throws
-            IdentityRecoveryException;
+    UserRecoveryData load(String code) throws IdentityRecoveryException;
 
-    UserRecoveryData load(User user) throws
-            IdentityRecoveryException;
+    UserRecoveryData load(User user) throws IdentityRecoveryException;
 
-    void invalidate(String code) throws
-            IdentityRecoveryException;
+    void invalidate(String code) throws IdentityRecoveryException;
 
-    void invalidate(User user) throws
-            IdentityRecoveryException;
+    void invalidate(User user) throws IdentityRecoveryException;
 
 }

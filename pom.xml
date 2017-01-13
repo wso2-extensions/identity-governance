@@ -320,6 +320,16 @@
                 <artifactId>msf4j-core</artifactId>
                 <version>${msf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.mgt</groupId>
+                <artifactId>org.wso2.carbon.identity.mgt</artifactId>
+                <version>${carbon.identiti.mgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.mgt</groupId>
+                <artifactId>org.wso2.carbon.identity.meta.claim.mgt</artifactId>
+                <version>${carbon.identiti.mgt.version}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
@@ -430,6 +440,8 @@
         <carbon.identity.framework.version>5.7.0</carbon.identity.framework.version>
         <carbon.identity.commons.version>6.0.0-SNAPSHOT</carbon.identity.commons.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)</carbon.identity.framework.imp.pkg.version.range>
+
+        <carbon.identiti.mgt.version>1.0.0-SNAPSHOT</carbon.identiti.mgt.version>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>

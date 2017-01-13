@@ -61,8 +61,7 @@ import java.util.UUID;
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 
-    //This is used to pass the arbitrary properties from self
-    // user manager to self user org.wso2.carbon.identity.recovery.handler
+    //This is used to pass the arbitrary properties from self user manager to self handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
             ThreadLocal<>();
 
@@ -121,7 +120,7 @@ public class Utils {
      * @throws IdentityStoreException
      * @throws UserNotFoundException
      */
-    public static String getClaimFromUserStoreManager(User user, String claimuri)
+    public static String getClaimFromIdentityStore(User user, String claimuri)
             throws IdentityStoreException, UserNotFoundException {
 
         RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
@@ -216,12 +215,12 @@ public class Utils {
     /**
      * Set claim to identity store manager.
      * @param user
-     * @param claimuri
+     * @param claimUri
      * @param value
      * @throws IdentityStoreException
      * @throws UserNotFoundException
      */
-    public static void setClaimInUserStoreManager(User user, String claimuri, String value)
+    public static void setClaimInIdentityStore(User user, String claimUri, String value)
             throws IdentityStoreException, UserNotFoundException {
 
         RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
@@ -232,7 +231,7 @@ public class Utils {
             List<Claim> claimsList = identityStore.getClaimsOfUser(user.getUniqueUserId());
             if (claimsList != null && !claimsList.isEmpty()) {
                 for (Claim claim : claimsList) {
-                    if (claim.getClaimUri().equals(claimuri)) {
+                    if (claim.getClaimUri().equals(claimUri)) {
                         oldValue = claim.getValue();
                         if (StringUtils.isEmpty(oldValue) || !oldValue.equals(value)) {
                             claim.setValue(value);
@@ -316,7 +315,7 @@ public class Utils {
 
         try {
             return Boolean.parseBoolean(
-                    getClaimFromUserStoreManager(user, IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
+                    getClaimFromIdentityStore(user, IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
         } catch (IdentityStoreException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
@@ -331,7 +330,7 @@ public class Utils {
 
         try {
             return Boolean.parseBoolean(
-                    getClaimFromUserStoreManager(user, IdentityRecoveryConstants.ACCOUNT_DISABLED_CLAIM));
+                    getClaimFromIdentityStore(user, IdentityRecoveryConstants.ACCOUNT_DISABLED_CLAIM));
         } catch (IdentityStoreException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
@@ -345,7 +344,7 @@ public class Utils {
         return UUID.randomUUID().toString();
     }
 
-    //TODO:move to DB
+    //TODO:implement properly
     public static void writeChallangeQuestionsToCSV(List<ChallengeQuestion> challengeQuestions) throws IOException {
         char separator = ',';
         File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);

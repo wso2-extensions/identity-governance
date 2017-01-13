@@ -208,7 +208,7 @@ public class ChallengeQuestionManager {
             String challengesUri = challengesUri1.trim();
             String challengeValue;
             try {
-                challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
+                challengeValue = Utils.getClaimFromIdentityStore(user, challengesUri);
             } catch (IdentityStoreException e) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTIONS,
@@ -264,7 +264,7 @@ public class ChallengeQuestionManager {
 
         String challengeValue = null;
         try {
-            challengeValue = Utils.getClaimFromUserStoreManager(user, challengesUri);
+            challengeValue = Utils.getClaimFromIdentityStore(user, challengesUri);
         } catch (IdentityStoreException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_QUESTION,
@@ -335,7 +335,7 @@ public class ChallengeQuestionManager {
         String[] challengesUris;
 
         try {
-            claimValue = Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
+            claimValue = Utils.getClaimFromIdentityStore(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
         } catch (IdentityStoreException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_GETTING_CHALLENGE_URIS,
@@ -408,8 +408,8 @@ public class ChallengeQuestionManager {
                             userChallengeAnswer.getQuestion().getQuestion() !=
                             null && userChallengeAnswer.getAnswer() != null) {
                         String oldValue =
-                                Utils.getClaimFromUserStoreManager(user,
-                                                                   userChallengeAnswer.getQuestion()
+                                Utils.getClaimFromIdentityStore(user,
+                                                                userChallengeAnswer.getQuestion()
                                                                                       .getQuestionSetId()
                                                                                       .trim());
 
@@ -419,14 +419,16 @@ public class ChallengeQuestionManager {
                                 String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
                                         Utils.doHash(userChallengeAnswer.getAnswer().trim()
                                                 .toLowerCase(Locale.ENGLISH));
-                                Utils.setClaimInUserStoreManager(user,
-                                        userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
+                                Utils.setClaimInIdentityStore(user,
+                                                              userChallengeAnswer.getQuestion().getQuestionSetId()
+                                                                                 .trim(), claimValue);
                             }
                         } else {
                             String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
                                     Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase(Locale.ENGLISH));
-                            Utils.setClaimInUserStoreManager(user,
-                                    userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
+                            Utils.setClaimInIdentityStore(user,
+                                                          userChallengeAnswer.getQuestion().getQuestionSetId()
+                                                                             .trim(), claimValue);
                         }
                         challengesUris.add(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
                     }
@@ -440,8 +442,8 @@ public class ChallengeQuestionManager {
                                 separator + challengesUri;
                     }
                 }
-                Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI,
-                        challengesUrisValue);
+                Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI,
+                                              challengesUrisValue);
             }
 
         } catch (NoSuchAlgorithmException e) {
@@ -655,7 +657,7 @@ public class ChallengeQuestionManager {
         String locale = IdentityRecoveryConstants.LOCALE_EN_US;
         try {
             String userLocale =
-                    Utils.getClaimFromUserStoreManager(user, IdentityRecoveryConstants.Questions.LOCALE_CLAIM);
+                    Utils.getClaimFromIdentityStore(user, IdentityRecoveryConstants.Questions.LOCALE_CLAIM);
             if (StringUtils.isNotBlank(userLocale)) {
                 locale = userLocale;
             }
