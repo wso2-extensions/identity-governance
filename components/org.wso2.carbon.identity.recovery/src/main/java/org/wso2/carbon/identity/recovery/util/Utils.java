@@ -344,15 +344,15 @@ public class Utils {
         return UUID.randomUUID().toString();
     }
 
-    //TODO:implement properly
-    public static void writeChallangeQuestionsToCSV(List<ChallengeQuestion> challengeQuestions) throws IOException {
+    public static void updateChallengeQuestionsYAML(List<ChallengeQuestion> challengeQuestions) throws IOException {
         char separator = ',';
-        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
-        boolean created = csvFile.createNewFile();
+        File challengeQuestionsFile = new File(System.getenv("user.dir")
+                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
+        boolean created = challengeQuestionsFile.createNewFile();
         if (log.isDebugEnabled() && created) {
-            log.debug("File does not exist. Hense creating file.");
+            log.debug("File does not exist. Hence creating file.");
         }
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(csvFile), "UTF-8")) {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(challengeQuestionsFile), "UTF-8")) {
             StringBuilder fileContentBuilder = new StringBuilder();
             for (ChallengeQuestion challengeQuestion : challengeQuestions) {
                 String id = challengeQuestion.getQuestionId();
@@ -374,13 +374,15 @@ public class Utils {
 
     }
 
-    public static List<ChallengeQuestion> readChallengeQuestionsFromCSV() throws IOException {
+    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML() throws IOException {
         String line;
         String separator = ",";
         List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
-        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+        File challengeQuestionsFile = new File(System.getenv("user.dir")
+                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(challengeQuestionsFile), "UTF-8"))) {
             while ((line = br.readLine()) != null) {
                 String[] challengeQuestionDetails = line.split(separator);
                 ChallengeQuestion challengeQuestion = new ChallengeQuestion();
@@ -395,13 +397,15 @@ public class Utils {
         return challengeQuestionList;
     }
 
-    public static List<ChallengeQuestion> readChallengeQuestionsFromCSV(String locale) throws IOException {
+    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML(String locale) throws IOException {
         String line;
         String separator = ",";
         List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
-        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
+        File challengeQuestionsFile = new File(System.getenv("user.dir")
+                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
 
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(challengeQuestionsFile), "UTF-8"))) {
             while ((line = br.readLine()) != null) {
                 String[] challengeQuestionDetails = line.split(separator);
                 String questionLocale = challengeQuestionDetails[3];
@@ -421,14 +425,14 @@ public class Utils {
     }
 
     public static void deleteChallangeQuestions(List<ChallengeQuestion> challengeQuestionList) throws IOException {
-        List<ChallengeQuestion> challengeQuestionFullList = readChallengeQuestionsFromCSV();
+        List<ChallengeQuestion> challengeQuestionFullList = readChallengeQuestionsFromYAML();
         challengeQuestionFullList.removeAll(challengeQuestionList);
-        File csvFile = new File(System.getenv("carbon.home") + IdentityRecoveryConstants.CSV_LOCATION);
-        if (csvFile.exists()) {
-            boolean deleted = csvFile.delete();
+        File challengeQuestionsFile = new File(System.getenv("user.dir")
+                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
+        if (challengeQuestionsFile.exists()) {
+            boolean deleted = challengeQuestionsFile.delete();
         }
-        writeChallangeQuestionsToCSV(challengeQuestionFullList);
+        updateChallengeQuestionsYAML(challengeQuestionFullList);
     }
-    //TODO:END
 
 }

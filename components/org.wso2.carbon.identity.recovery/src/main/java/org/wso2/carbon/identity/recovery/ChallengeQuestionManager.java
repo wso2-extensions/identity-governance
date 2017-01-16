@@ -66,7 +66,7 @@ public class ChallengeQuestionManager {
     public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryServerException {
 
         try {
-            return Utils.readChallengeQuestionsFromCSV();
+            return Utils.readChallengeQuestionsFromYAML();
         } catch (IOException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
@@ -89,7 +89,7 @@ public class ChallengeQuestionManager {
         locale = validateLocale(locale);
 
         try {
-            return Utils.readChallengeQuestionsFromCSV(locale);
+            return Utils.readChallengeQuestionsFromYAML(locale);
         } catch (IOException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
@@ -162,7 +162,7 @@ public class ChallengeQuestionManager {
             IdentityRecoveryException {
 
         try {
-            Utils.writeChallangeQuestionsToCSV(Arrays.asList(questions));
+            Utils.updateChallengeQuestionsYAML(Arrays.asList(questions));
         } catch (IOException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
