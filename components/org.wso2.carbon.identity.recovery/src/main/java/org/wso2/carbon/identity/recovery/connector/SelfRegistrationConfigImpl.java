@@ -1,7 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -92,14 +91,20 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
 
-        String selfSignUpProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
-        String accountLockProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
-        String notificationInternallyMangedProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
-        String reCaptchaProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
+        String selfSignUpProperty = IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
+        String accountLockProperty = IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
+        String notificationInternallyMangedProperty =
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
+        String reCaptchaProperty = IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA;
+
+//        String selfSignUpProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+//        String accountLockProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+//        String notificationInternallyMangedProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
+//        String reCaptchaProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;

@@ -1,15 +1,10 @@
 package org.wso2.carbon.identity.recovery.store;
 
-import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.mgt.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 /**
  * JDBC recovery data store.
@@ -159,20 +154,20 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {
-        PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
-        try {
-            String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_CODE;
-
-            prepStmt = connection.prepareStatement(sql);
-            prepStmt.setString(1, code);
-            prepStmt.execute();
-            connection.commit();
-        } catch (SQLException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
-        } finally {
-            IdentityDatabaseUtil.closeStatement(prepStmt);
-        }
+//        PreparedStatement prepStmt = null;
+//        Connection connection = IdentityDatabaseUtil.getDBConnection();
+//        try {
+//            String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_CODE;
+//
+//            prepStmt = connection.prepareStatement(sql);
+//            prepStmt.setString(1, code);
+//            prepStmt.execute();
+//            connection.commit();
+//        } catch (SQLException e) {
+//            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+//        } finally {
+//            IdentityDatabaseUtil.closeStatement(prepStmt);
+//        }
     }
 
 

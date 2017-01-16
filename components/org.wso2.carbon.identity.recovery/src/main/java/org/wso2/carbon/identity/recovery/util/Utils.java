@@ -19,14 +19,11 @@
 package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventException;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.mgt.IdentityStore;
 import org.wso2.carbon.identity.mgt.RealmService;
 import org.wso2.carbon.identity.mgt.User;
@@ -246,47 +243,50 @@ public class Utils {
 
 
     public static String getRecoveryConfigs(String key) throws IdentityRecoveryServerException {
-        try {
-            Property[] connectorConfigs;
-            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, "");
-            for (Property connectorConfig : connectorConfigs) {
-                if (key.equals(connectorConfig.getName())) {
-                    return connectorConfig.getValue();
-                }
-            }
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
-        } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
-        }
+//        try {
+//            Property[] connectorConfigs;
+//            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+//                    .getIdentityGovernanceService();
+//            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, "");
+//            for (Property connectorConfig : connectorConfigs) {
+//                if (key.equals(connectorConfig.getName())) {
+//                    return connectorConfig.getValue();
+//                }
+//            }
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
+//        } catch (IdentityGovernanceException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+//        }
+        return null;
     }
 
     public static String getSignUpConfigs(String key) throws IdentityRecoveryServerException {
-        try {
-            Property[] connectorConfigs;
-            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
-            return connectorConfigs[0].getValue();
-        } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
-        }
+//        try {
+//            Property[] connectorConfigs;
+//            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+//                    .getIdentityGovernanceService();
+//            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
+//            return connectorConfigs[0].getValue();
+//        } catch (IdentityGovernanceException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+//        }
+        return null;
     }
 
     public static String getConnectorConfig(String key) throws EventException {
-        try {
-            Property[] connectorConfigs;
-            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
-            return connectorConfigs[0].getValue();
-        } catch (IdentityGovernanceException e) {
-            throw new EventException("Error while getting connector configurations", e);
-        }
+//        try {
+//            Property[] connectorConfigs;
+//            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+//                    .getIdentityGovernanceService();
+//            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key} , "");
+//            return connectorConfigs[0].getValue();
+//        } catch (IdentityGovernanceException e) {
+//            throw new EventException("Error while getting connector configurations", e);
+//        }
+        return null;
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {

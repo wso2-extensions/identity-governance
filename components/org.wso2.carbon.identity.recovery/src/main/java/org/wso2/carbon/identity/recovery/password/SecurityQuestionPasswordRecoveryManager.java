@@ -20,12 +20,9 @@
 package org.wso2.carbon.identity.recovery.password;
 
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
@@ -101,8 +98,9 @@ public class SecurityQuestionPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
-        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                .QUESTION_CHALLENGE_SEPARATOR);
+        String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                .QUESTION_CHALLENGE_SEPARATOR);
 
         if (StringUtils.isEmpty(challengeQuestionSeparator)) {
             challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -188,8 +186,9 @@ public class SecurityQuestionPasswordRecoveryManager {
 
 
     public ChallengeQuestionsResponse initiateUserChallengeQuestionAtOnce(User user) throws IdentityRecoveryException {
-        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                .QUESTION_CHALLENGE_SEPARATOR);
+        String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//        String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                .QUESTION_CHALLENGE_SEPARATOR);
 
         if (StringUtils.isEmpty(challengeQuestionSeparator)) {
             challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -312,8 +311,9 @@ public class SecurityQuestionPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
             }
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(
-                    IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
+            String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//            String challengeQuestionSeparator = IdentityUtil.getProperty(
+//                    IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(challengeQuestionSeparator)) {
                 challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -365,7 +365,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
                     userRecoveryDataStore.store(recoveryData);
                     // Reset password recovery failed attempts
-                    resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
+//                    resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
 
                     return challengeQuestionResponse;
                 } else {
@@ -404,7 +404,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 }
 
                 // Reset password recovery failed attempts
-                resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
+//                resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
 
                 userRecoveryDataStore.invalidate(code);
                 ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
@@ -478,111 +478,114 @@ public class SecurityQuestionPasswordRecoveryManager {
         }
     }
 
-    private Property[] getConnectorConfigs() throws IdentityRecoveryException {
-
-        Property[] connectorConfigs;
-        try {
-            connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getIdentityGovernanceService()
-                    .getConfiguration(
-                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX}, "");
-        } catch (Exception e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS, null, e);
-        }
-        return connectorConfigs;
-    }
-
-    private void resetRecoveryPasswordFailedAttempts(User user) throws IdentityRecoveryException {
-
-        Property[] connectorConfigs = getConnectorConfigs();
-
-        for (Property connectorConfig : connectorConfigs) {
-            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
-                    !Boolean.parseBoolean(connectorConfig.getValue())) {
-                return;
-            }
-        }
-
-        try {
-            Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
-        } catch (IdentityStoreException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
-        } catch (UserNotFoundException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
-        }
-    }
+//    private Property[] getConnectorConfigs() throws IdentityRecoveryException {
+//
+//        Property[] connectorConfigs;
+//        try {
+//            connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
+//                    .getIdentityGovernanceService()
+//                    .getConfiguration(
+//                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX}, "");
+//        } catch (Exception e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS, null, e);
+//        }
+//        return connectorConfigs;
+//    }
+//
+//    private void resetRecoveryPasswordFailedAttempts(User user) throws IdentityRecoveryException {
+//
+//        Property[] connectorConfigs = getConnectorConfigs();
+//
+//        for (Property connectorConfig : connectorConfigs) {
+//            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
+//                    !Boolean.parseBoolean(connectorConfig.getValue())) {
+//                return;
+//            }
+//        }
+//
+//        try {
+//            Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
+//        } catch (IdentityStoreException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
+//        } catch (UserNotFoundException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
+//        }
+//    }
 
     private void handleAnswerVerificationFail(User user) throws IdentityRecoveryException {
 
-        Property[] connectorConfigs = getConnectorConfigs();
-
-        int maxAttempts = 0;
-        for (Property connectorConfig : connectorConfigs) {
-            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName()))
-                && !Boolean.parseBoolean(connectorConfig.getValue())) {
-                return;
-            } else if (PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX.equals(connectorConfig.getName())
-                       && NumberUtils.isNumber(connectorConfig.getValue())) {
-                maxAttempts = Integer.parseInt(connectorConfig.getValue());
-            }
-        }
-
-        try {
-            if (Boolean.parseBoolean(
-                    Utils.getClaimFromIdentityStore(user, IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
-                return;
-            }
-        } catch (IdentityStoreException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        } catch (UserNotFoundException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        }
-
-        String passwordResetFailAttempts;
-        try {
-            passwordResetFailAttempts =
-                    Utils.getClaimFromIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM);
-        } catch (IdentityStoreException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        } catch (UserNotFoundException e) {
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        }
-
-        int currentAttempts = 0;
-        if (NumberUtils.isNumber(passwordResetFailAttempts)) {
-            currentAttempts = Integer.parseInt(passwordResetFailAttempts);
-        }
-
-        if ((currentAttempts + 1) >= maxAttempts) {
-            try {
-                Utils.setClaimInIdentityStore(user,
-                                              IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
-                Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
-            } catch (IdentityStoreException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
-            } catch (UserNotFoundException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
-            }
-        } else {
-            try {
-                Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM,
-                                              String.valueOf(currentAttempts + 1));
-            } catch (IdentityStoreException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
-            } catch (UserNotFoundException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
-            }
-        }
+//        Property[] connectorConfigs = getConnectorConfigs();
+//
+//        int maxAttempts = 0;
+//        for (Property connectorConfig : connectorConfigs) {
+//            if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName()))
+//                && !Boolean.parseBoolean(connectorConfig.getValue())) {
+//                return;
+//            } else if (PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX.equals(connectorConfig.getName())
+//                       && NumberUtils.isNumber(connectorConfig.getValue())) {
+//                maxAttempts = Integer.parseInt(connectorConfig.getValue());
+//            }
+//        }
+//
+//        try {
+//            if (Boolean.parseBoolean(
+//                    Utils.getClaimFromIdentityStore(user, IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
+//                return;
+//            }
+//        } catch (IdentityStoreException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+//        } catch (UserNotFoundException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+//        }
+//
+//        String passwordResetFailAttempts;
+//        try {
+//            passwordResetFailAttempts =
+//                    Utils.getClaimFromIdentityStore(user,
+        // IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM);
+//        } catch (IdentityStoreException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+//        } catch (UserNotFoundException e) {
+//            throw Utils.handleServerException(
+//                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+//        }
+//
+//        int currentAttempts = 0;
+//        if (NumberUtils.isNumber(passwordResetFailAttempts)) {
+//            currentAttempts = Integer.parseInt(passwordResetFailAttempts);
+//        }
+//
+//        if ((currentAttempts + 1) >= maxAttempts) {
+//            try {
+//                Utils.setClaimInIdentityStore(user,
+//
+        // IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+//                Utils.setClaimInIdentityStore(user,
+        // IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
+//            } catch (IdentityStoreException e) {
+//                throw Utils.handleServerException(
+//                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+//            } catch (UserNotFoundException e) {
+//                throw Utils.handleServerException(
+//                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+//            }
+//        } else {
+//            try {
+//                Utils.setClaimInIdentityStore(user, IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM,
+//                                              String.valueOf(currentAttempts + 1));
+//            } catch (IdentityStoreException e) {
+//                throw Utils.handleServerException(
+//                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+//            } catch (UserNotFoundException e) {
+//                throw Utils.handleServerException(
+//                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+//            }
+//        }
     }
 }

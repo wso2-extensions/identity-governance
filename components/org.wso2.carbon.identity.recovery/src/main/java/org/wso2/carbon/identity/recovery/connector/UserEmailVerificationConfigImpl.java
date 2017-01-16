@@ -1,7 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -87,12 +86,19 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         String enableEmailAccountLockOnCreation = "true";
         String enableNotificationInternallyManage = "true";
 
-        String emailVerificationProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
-        String lockOnCreationProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
-        String notificationInternallyManagedProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
+        String emailVerificationProperty =
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION;
+        String lockOnCreationProperty =
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION;
+        String notificationInternallyManagedProperty =
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE;
+
+//        String emailVerificationProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
+//        String lockOnCreationProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
+//        String notificationInternallyManagedProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
 
         if (StringUtils.isNotEmpty(emailVerificationProperty)) {
             enableEmailVerification = emailVerificationProperty;

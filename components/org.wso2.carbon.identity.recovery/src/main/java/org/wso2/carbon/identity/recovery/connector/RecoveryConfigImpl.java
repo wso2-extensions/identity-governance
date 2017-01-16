@@ -1,7 +1,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -112,25 +111,46 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String notifySuccess = "false";
         String notifyStart = "false";
 
-        String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
-        String questionBasedPasswordRecovery = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
-        String miniMumAnswerProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
-        String recoveryQuestionPasswordReCaptcha = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
-        String passwordReCaptchaMaxFailedAttempts = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
-        String usernameRecovery = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
-        String notificationInternallyManged = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
-        String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
-        String notifySuccessProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
-        String notifyStartProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
+
+        String notificationBasedPasswordRecovery =
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY;
+        String questionBasedPasswordRecovery =
+                IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY;
+        String miniMumAnswerProperty =
+                IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER;
+        String recoveryQuestionPasswordReCaptcha =
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE;
+        String passwordReCaptchaMaxFailedAttempts =
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS;
+        String usernameRecovery =
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE;
+        String notificationInternallyManged =
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE;
+        String expiryTimeProperty = IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME;
+        String notifySuccessProperty =
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS;
+        String notifyStartProperty =
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START;
+
+//        String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+//        String questionBasedPasswordRecovery = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
+//        String miniMumAnswerProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
+//        String recoveryQuestionPasswordReCaptcha = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
+//        String passwordReCaptchaMaxFailedAttempts = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
+//        String usernameRecovery = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+//        String notificationInternallyManged = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
+//        String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+//        String notifySuccessProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
+//        String notifyStartProperty = IdentityUtil.getProperty(
+//                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
 
         if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
             enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
