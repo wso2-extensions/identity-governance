@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.recovery.internal;
 import org.wso2.carbon.identity.event.EventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.mgt.RealmService;
-import org.wso2.carbon.idp.mgt.IdpManager;
 
 /**
  * Identity Recovery Service DataHolder.
@@ -30,7 +29,6 @@ public class IdentityRecoveryServiceDataHolder {
     private RealmService realmService;
     private EventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
-    private IdpManager idpManager;
 
     public static IdentityRecoveryServiceDataHolder getInstance() {
         return instance;
@@ -42,14 +40,6 @@ public class IdentityRecoveryServiceDataHolder {
 
     public void setIdentityEventService(EventService identityEventService) {
         this.identityEventService = identityEventService;
-    }
-
-    public IdpManager getIdpManager() {
-        return idpManager;
-    }
-
-    public void setIdpManager(IdpManager idpManager) {
-        this.idpManager = idpManager;
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {

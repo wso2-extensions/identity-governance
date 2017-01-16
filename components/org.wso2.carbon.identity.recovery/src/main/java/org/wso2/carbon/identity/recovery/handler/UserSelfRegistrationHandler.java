@@ -16,10 +16,10 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.base.IdentityRuntimeException;
+import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;

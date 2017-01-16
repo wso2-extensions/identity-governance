@@ -19,11 +19,10 @@
 package org.wso2.carbon.identity.recovery;
 
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.User;
 import org.wso2.carbon.identity.mgt.exception.IdentityStoreException;
 import org.wso2.carbon.identity.mgt.exception.UserNotFoundException;
@@ -66,7 +65,7 @@ public class ChallengeQuestionManager {
     public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryServerException {
 
         try {
-            return Utils.readChallengeQuestionsFromCSV();
+            return Utils.readChallengeQuestionsFromYAML();
         } catch (IOException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
@@ -89,7 +88,7 @@ public class ChallengeQuestionManager {
         locale = validateLocale(locale);
 
         try {
-            return Utils.readChallengeQuestionsFromCSV(locale);
+            return Utils.readChallengeQuestionsFromYAML(locale);
         } catch (IOException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
@@ -162,7 +161,7 @@ public class ChallengeQuestionManager {
             IdentityRecoveryException {
 
         try {
-            Utils.writeChallangeQuestionsToCSV(Arrays.asList(questions));
+            Utils.updateChallengeQuestionsYAML(Arrays.asList(questions));
         } catch (IOException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
@@ -219,8 +218,9 @@ public class ChallengeQuestionManager {
                         user.getUniqueUserId(), e);
             }
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
+            String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                    .QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(challengeQuestionSeparator)) {
                 challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -277,8 +277,9 @@ public class ChallengeQuestionManager {
 
         if (challengeValue != null) {
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
+            String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                    .QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(challengeQuestionSeparator)) {
                 challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -348,8 +349,9 @@ public class ChallengeQuestionManager {
 
         if (claimValue != null) {
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
+            String challengeQuestionSeparator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                    .QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(challengeQuestionSeparator)) {
                 challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
@@ -395,8 +397,9 @@ public class ChallengeQuestionManager {
 
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
-            String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
+            String separator = IdentityRecoveryConstants.ConnectorConfig.QUESTION_CHALLENGE_SEPARATOR;
+//            String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+//                    .QUESTION_CHALLENGE_SEPARATOR);
 
             if (StringUtils.isEmpty(separator)) {
                 separator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;

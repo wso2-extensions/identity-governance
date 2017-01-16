@@ -20,10 +20,9 @@
 package org.wso2.carbon.identity.recovery.password;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.common.base.exception.IdentityException;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
@@ -31,7 +30,6 @@ import org.wso2.carbon.identity.mgt.IdentityStore;
 import org.wso2.carbon.identity.mgt.User;
 import org.wso2.carbon.identity.mgt.exception.IdentityStoreException;
 import org.wso2.carbon.identity.mgt.exception.UserNotFoundException;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -197,12 +195,6 @@ public class NotificationPasswordRecoveryManager {
                     throw Utils.handleClientException(
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null, e);
                 }
-            }
-
-            if (cause instanceof PolicyViolationException) {
-                throw IdentityException.error(IdentityRecoveryClientException.class,
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
-                        cause.getMessage(), e);
             }
             cause = cause.getCause();
         }

@@ -42,25 +42,16 @@
     </scm>
 
     <modules>
-        <!--<module>components/org.wso2.carbon.identity.governance.ui</module>-->
         <module>components/org.wso2.carbon.identity.governance</module>
         <module>components/org.wso2.carbon.identity.recovery</module>
-        <!--<module>components/org.wso2.carbon.identity.user.endpoint</module>-->
-        <module>components/org.wso2.carbon.identity.captcha</module>
-        <module>components/org.wso2.carbon.identity.password.history</module>
-        <module>components/org.wso2.carbon.identity.password.policy</module>
-        <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
-        <!--<module>service-stubs/identity</module>-->
-        <!--<module>features/org.wso2.carbon.identity.recovery.server.feature</module>-->
-        <!--<module>features/org.wso2.carbon.identity.user.server.feature</module>-->
-        <!--<module>features/org.wso2.carbon.identity.recovery.ui.feature</module>-->
+        <!--<module>components/org.wso2.carbon.identity.captcha</module>-->
+        <!--<module>components/org.wso2.carbon.identity.password.history</module>-->
+        <!--<module>components/org.wso2.carbon.identity.password.policy</module>-->
+        <!--<module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>-->
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
-        <!--<module>features/org.wso2.carbon.identity.governance.ui.feature</module>-->
-        <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
-        <!--<module>features/org.wso2.carbon.identity.password.history.server.feature</module>-->
-        <!--<module>features/org.wso2.carbon.identity.governance.feature</module>-->
-        <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
-        <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
+        <!--<module>features/org.wso2.carbon.identity.captcha.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.password.policy.server.feature</module>-->
+        <!--<module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>-->
     </modules>
 
     <dependencyManagement>
@@ -330,6 +321,11 @@
                 <artifactId>org.wso2.carbon.identity.meta.claim.mgt</artifactId>
                 <version>${carbon.identiti.mgt.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang.version}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
@@ -460,6 +456,7 @@
         <msf4j.version>2.1.0</msf4j.version>
         <jackson.version>2.8.5</jackson.version>
         <swagger.version>1.5.8</swagger.version>
+        <commons.lang.version>3.4</commons.lang.version>
     </properties>
 
 </project>

@@ -18,11 +18,8 @@ package org.wso2.carbon.identity.recovery.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.base.IdentityRuntimeException;
+import org.wso2.carbon.identity.common.base.exception.IdentityRuntimeException;
 import org.wso2.carbon.identity.common.base.handler.InitConfig;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
-import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.AbstractEventHandler;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
@@ -78,9 +75,9 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 throw new EventException("User not found " + uniqueUserID, e);
             }
             if (isAccountLocked && !isUserAccountConfirmed(user)) {
-                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
-                        IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
-                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+//                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
+//                        IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
+//                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new EventException("User : " + uniqueUserID + " not confirmed yet.");
             }
         }

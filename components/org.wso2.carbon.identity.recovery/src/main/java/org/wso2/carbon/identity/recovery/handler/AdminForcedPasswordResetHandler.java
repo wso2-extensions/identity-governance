@@ -18,9 +18,6 @@ package org.wso2.carbon.identity.recovery.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
-import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.EventConstants;
 import org.wso2.carbon.identity.event.EventException;
 import org.wso2.carbon.identity.event.model.Event;
@@ -163,12 +160,12 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                           + user.toString());
             }
 
-            String errorCode = null;
+//            String errorCode = null;
             String errorMsg = "User : " + user.toString();
             boolean isForcedPasswordReset = false;
 
             if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)) {
-                errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
+//                errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_EMAIL_LINK_ERROR_CODE;
                 errorMsg = errorMsg + " needs to reset the password using the given link in email";
                 isForcedPasswordReset = true;
 
@@ -177,10 +174,10 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 isForcedPasswordReset = true;
 
                 if (userRecoveryData.getSecret().equals(credential)) {
-                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
+//                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_ERROR_CODE;
                     errorMsg = errorMsg + " has given correct OTP";
                 } else {
-                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_MISMATCHED_ERROR_CODE;
+//                    errorCode = IdentityCoreConstants.ADMIN_FORCED_USER_PASSWORD_RESET_VIA_OTP_MISMATCHED_ERROR_CODE;
                     errorMsg = errorMsg + " has given in-correct OTP";
                 }
             }
@@ -190,8 +187,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                     log.debug(errorMsg);
                 }
 
-                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
-                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+//                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(errorCode);
+//                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new EventException(errorMsg);
             }
 
