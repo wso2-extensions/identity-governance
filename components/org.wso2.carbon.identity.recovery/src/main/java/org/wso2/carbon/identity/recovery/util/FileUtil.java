@@ -19,9 +19,11 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.introspector.BeanAccess;
 
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
@@ -34,6 +36,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * File util to write read yaml configurations
+ */
 public class FileUtil {
     private FileUtil() {
     }
@@ -44,7 +49,8 @@ public class FileUtil {
     }
 
     public static <T> T readConfigFile(Path file, Class<T> classType) throws IdentityRecoveryException {
-        if(Files.exists(file, new LinkOption[0])) {
+
+        if (Files.exists(file, new LinkOption[0])) {
             try {
                 InputStreamReader inputStreamReader =
                         new InputStreamReader(Files.newInputStream(file, new OpenOption[0]), StandardCharsets.UTF_8);
@@ -63,8 +69,9 @@ public class FileUtil {
 
     public static <T> List<T> readConfigFiles(Path path, Class<T> classType, String fileNameRegex)
             throws IdentityRecoveryException {
+
         ArrayList configEntries = new ArrayList();
-        if(Files.exists(path, new LinkOption[0])) {
+        if (Files.exists(path, new LinkOption[0])) {
             try {
                 DirectoryStream directoryStream = Files.newDirectoryStream(path, fileNameRegex);
                 Throwable ex = null;
@@ -72,8 +79,8 @@ public class FileUtil {
                 try {
                     Iterator iterator = directoryStream.iterator();
 
-                    while(iterator.hasNext()) {
-                        Path file = (Path)iterator.next();
+                    while (iterator.hasNext()) {
+                        Path file = (Path) iterator.next();
                         InputStreamReader in =
                                 new InputStreamReader(
                                         Files.newInputStream(file, new OpenOption[0]), StandardCharsets.UTF_8);
@@ -85,12 +92,14 @@ public class FileUtil {
                     ex = e;
                     throw e;
                 } finally {
-                    if(directoryStream != null) {
-                        if(ex != null) {
+                    if (directoryStream != null) {
+                        if (ex != null) {
                             try {
                                 directoryStream.close();
                             } catch (Throwable throwable) {
-                                ex.addSuppressed(throwable);
+                                throw new IdentityRecoveryException(
+                                        String.format("Error in reading file %s", new Object[]{path.getFileName()}),
+                                        throwable);
                             }
                         } else {
                             directoryStream.close();
@@ -115,8 +124,10 @@ public class FileUtil {
             try {
                 Yaml yaml = new Yaml();
                 yaml.setBeanAccess(BeanAccess.FIELD);
-                FileWriter writer = new FileWriter(file.toString());
-                yaml.dump(data, writer);
+                try (Writer writer = new OutputStreamWriter(new FileOutputStream(file.toFile()),
+                                                            StandardCharsets.UTF_8)) {
+                    yaml.dump(data, writer);
+                }
             } catch (IOException e) {
                 throw new IdentityRecoveryException(
                         String.format("Error in reading file %s", new Object[] { file.toString() }), e);

@@ -362,7 +362,7 @@ public class Utils {
                 updateChallengeQuestionsYAML(value, key);
             } catch (IdentityRecoveryException e) {
                 log.error(String.format("Error while updating challenge questions from locale file %s", key));
-                e.printStackTrace();
+                error[0] = true;
             }
         });
 

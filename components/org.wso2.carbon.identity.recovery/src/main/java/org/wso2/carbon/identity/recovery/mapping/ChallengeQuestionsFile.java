@@ -20,6 +20,9 @@ import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Mapping class to yaml challange questions.
+ */
 public class ChallengeQuestionsFile {
 
     private List<ChallengeQuestion> challengeQuestionList;
