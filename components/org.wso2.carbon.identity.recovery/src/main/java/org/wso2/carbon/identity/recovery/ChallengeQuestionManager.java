@@ -30,7 +30,6 @@ import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,39 +56,38 @@ public class ChallengeQuestionManager {
     }
 
     /**
-     * Get all challenge questions registered for a tenant.
+     * Get all challenge questions registered.
      *
      * @return
-     * @throws IdentityRecoveryServerException
+     * @throws IdentityRecoveryException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryServerException {
+    public List<ChallengeQuestion> getAllChallengeQuestions() throws IdentityRecoveryException {
 
         try {
             return Utils.readChallengeQuestionsFromYAML();
-        } catch (IOException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
 
     }
 
 
     /**
-     * Get registered challenge questions in tenant based on a locale.
+     * Get registered challenge questions based on a locale.
      *
      * @param locale
      * @return
      * @throws IdentityRecoveryException
      */
-    public List<ChallengeQuestion> getAllChallengeQuestions(String locale)
-            throws IdentityRecoveryException {
+    public List<ChallengeQuestion> getAllChallengeQuestions(String locale) throws IdentityRecoveryException {
 
         // check the value and set defaults if empty or null
         locale = validateLocale(locale);
 
         try {
             return Utils.readChallengeQuestionsFromYAML(locale);
-        } catch (IOException e) {
+        } catch (IdentityRecoveryException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
         }
@@ -157,12 +155,11 @@ public class ChallengeQuestionManager {
      * @param questions
      * @throws IdentityRecoveryException
      */
-    public void addChallengeQuestions(ChallengeQuestion[] questions) throws
-            IdentityRecoveryException {
+    public void addChallengeQuestions(ChallengeQuestion[] questions) throws IdentityRecoveryException {
 
         try {
             Utils.updateChallengeQuestionsYAML(Arrays.asList(questions));
-        } catch (IOException e) {
+        } catch (IdentityRecoveryException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXCEPTION_SET_CHALLENGE_QUESTIONS, null, e);
         }
@@ -176,14 +173,12 @@ public class ChallengeQuestionManager {
      * @param challengeQuestions
      * @throws IdentityRecoveryException
      */
-    public void deleteChallengeQuestions(ChallengeQuestion[] challengeQuestions)
-            throws IdentityRecoveryException {
+    public void deleteChallengeQuestions(ChallengeQuestion[] challengeQuestions) throws IdentityRecoveryException {
 
         try {
-            Utils.deleteChallangeQuestions(Arrays.asList(challengeQuestions));
-        } catch (IOException e) {
-            log.error("Error deleting challenge quesitons.");
-            throw new IdentityRecoveryException("Error when deleting challenge questions.", e);
+            Utils.deleteChallengeQuestions(Arrays.asList(challengeQuestions));
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityRecoveryServerException("Error when deleting challenge questions.", e);
         }
     }
 
@@ -252,8 +247,8 @@ public class ChallengeQuestionManager {
      * @return
      * @throws IdentityRecoveryException
      */
-    public ChallengeQuestion getUserChallengeQuestion(User user, String challengesUri) throws
-            IdentityRecoveryException {
+    public ChallengeQuestion getUserChallengeQuestion(User user, String challengesUri)
+            throws IdentityRecoveryException {
 
         validateUser(user);
 
@@ -322,7 +317,8 @@ public class ChallengeQuestionManager {
      * @param user
      * @return
      */
-    public List<String> getChallengeQuestionUris(User user) throws IdentityRecoveryException {
+    public List<String> getChallengeQuestionUris(User user)
+            throws IdentityRecoveryException {
 
         validateUser(user);
 
@@ -377,10 +373,10 @@ public class ChallengeQuestionManager {
     /**
      * @param user
      * @param userChallengeAnswers
-     * @throws IdentityRecoveryException
+     * @throws IdentityRecoveryServerException
      */
-    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws
-            IdentityRecoveryException {
+    public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers)
+            throws IdentityRecoveryException {
 
         validateUser(user);
 
@@ -392,7 +388,7 @@ public class ChallengeQuestionManager {
             // validate whether two questions from the same set has been answered.
             validateSecurityQuestionDuplicate(userChallengeAnswers);
 
-            // check whether the answered questions exist in the tenant domain
+            // check whether the answered questions exists
             checkChallengeQuestionExists(userChallengeAnswers);
 
             List<String> challengesUris = new ArrayList<String>();
@@ -466,8 +462,8 @@ public class ChallengeQuestionManager {
      * @param userChallengeAnswers
      * @return
      */
-    public boolean verifyChallengeAnswer(User user, UserChallengeAnswer[] userChallengeAnswers) throws
-            IdentityRecoveryException {
+    public boolean verifyChallengeAnswer(User user, UserChallengeAnswer[] userChallengeAnswers)
+            throws IdentityRecoveryException {
 
         validateUser(user);
 
@@ -562,7 +558,7 @@ public class ChallengeQuestionManager {
      * one question from each set)
      *
      * @param userChallengeAnswers
-     * @throws IdentityRecoveryException
+     * @throws IdentityRecoveryClientException
      */
     private void validateSecurityQuestionDuplicate(UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
@@ -595,7 +591,7 @@ public class ChallengeQuestionManager {
      * Check whether an answered challenge question actually exists.
      *
      * @param userChallengeAnswers
-     * @throws IdentityRecoveryClientException
+     * @throws IdentityRecoveryException
      */
     private void checkChallengeQuestionExists(UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
@@ -633,7 +629,7 @@ public class ChallengeQuestionManager {
         }
     }
 
-    private String validateLocale(String locale) throws IdentityRecoveryClientException {
+    private String validateLocale(String locale) throws IdentityRecoveryException {
         // if the locale is blank, we go with the default locale
         if (StringUtils.isBlank(locale)) {
             locale = LOCALE_EN_US;
@@ -648,7 +644,7 @@ public class ChallengeQuestionManager {
 
     }
 
-    private void validateUser(User user) throws IdentityRecoveryClientException {
+    private void validateUser(User user) throws IdentityRecoveryException {
         if (user == null || StringUtils.isBlank(user.getUniqueUserId())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, "Invalid User Data provided.");

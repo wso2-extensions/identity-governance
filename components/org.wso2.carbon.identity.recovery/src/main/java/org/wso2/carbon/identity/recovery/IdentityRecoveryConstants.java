@@ -65,7 +65,8 @@ public class IdentityRecoveryConstants {
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
     public static final String EXECUTE_ACTION = "ui.execute";
-    public static final String CHALLAENGE_QUESTION_FILE_LOCATION = "/conf/identity/challenge-questions";
+    public static final String CHALLAENGE_QUESTION_FOLDER_LOCATION = "/conf/identity/challenge-questions";
+    public static final String CARBON_HOME = "carbon.home";
 
     private IdentityRecoveryConstants() {
     }
