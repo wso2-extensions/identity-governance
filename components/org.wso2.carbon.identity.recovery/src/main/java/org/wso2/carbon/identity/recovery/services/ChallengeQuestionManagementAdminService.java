@@ -43,7 +43,7 @@ public class ChallengeQuestionManagementAdminService {
      * @return
      * @throws IdentityRecoveryException
      */
-    public ChallengeQuestion[] getChallengeQuestionsOfTenant() throws IdentityRecoveryException {
+    public ChallengeQuestion[] getChallengeQuestions() throws IdentityRecoveryException {
 
         List<ChallengeQuestion> challengeQuestionList;
         try {
@@ -110,7 +110,7 @@ public class ChallengeQuestionManagementAdminService {
      * @param challengeQuestions
      * @throws IdentityRecoveryException
      */
-    public void setChallengeQuestionsOfTenant(ChallengeQuestion[] challengeQuestions)
+    public void setChallengeQuestions(ChallengeQuestion[] challengeQuestions)
             throws IdentityRecoveryException {
 
         try {
@@ -129,7 +129,7 @@ public class ChallengeQuestionManagementAdminService {
      * @param challengeQuestions
      * @throws IdentityRecoveryException
      */
-    public void deleteChallengeQuestionsOfTenant(ChallengeQuestion[] challengeQuestions)
+    public void deleteChallengeQuestions(ChallengeQuestion[] challengeQuestions)
             throws IdentityRecoveryException {
 
         try {

@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,22 +36,21 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.mapping.ChallengeQuestionsFile;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Utility to provide recovery functionality.
@@ -64,6 +64,9 @@ public class Utils {
 
     //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+    public static final String CHALLANGE_QUESTIONS_FOLDER_PATH = System.getenv(IdentityRecoveryConstants.CARBON_HOME) +
+                                                                 IdentityRecoveryConstants.
+                                                                       CHALLAENGE_QUESTION_FOLDER_LOCATION;
 
     /**
      * @return
@@ -344,95 +347,117 @@ public class Utils {
         return UUID.randomUUID().toString();
     }
 
-    public static void updateChallengeQuestionsYAML(List<ChallengeQuestion> challengeQuestions) throws IOException {
-        char separator = ',';
-        File challengeQuestionsFile = new File(System.getenv("user.dir")
-                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
-        boolean created = challengeQuestionsFile.createNewFile();
-        if (log.isDebugEnabled() && created) {
-            log.debug("File does not exist. Hence creating file.");
-        }
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(challengeQuestionsFile), "UTF-8")) {
-            StringBuilder fileContentBuilder = new StringBuilder();
-            for (ChallengeQuestion challengeQuestion : challengeQuestions) {
-                String id = challengeQuestion.getQuestionId();
-                String question = challengeQuestion.getQuestion();
-                String questionSetID = challengeQuestion.getQuestionSetId();
-                String locale = challengeQuestion.getLocale();
-                StringBuilder lineBuilder = new StringBuilder();
-                String value = (lineBuilder.append(id).append(separator).append(question).append(separator)
-                                           .append(questionSetID).append(separator).append(locale)).toString();
+    public static void updateChallengeQuestionsYAML(List<ChallengeQuestion> challengeQuestions)
+            throws IdentityRecoveryException {
 
-                if (value.contains("\"")) {
-                    value = value.replace("\"", "\"\"");
-                }
-                fileContentBuilder.append(value);
-                fileContentBuilder.append("\n");
+        final boolean[] error = { false };
+        Map<String, List<ChallengeQuestion>> groupedByLocale =
+                challengeQuestions.stream().collect(
+                        Collectors.groupingBy(
+                                challengeQuestion -> challengeQuestion.getLocale()
+                        )
+                );
+        groupedByLocale.forEach((key, value) -> {
+            try {
+                updateChallengeQuestionsYAML(value, key);
+            } catch (IdentityRecoveryException e) {
+                log.error(String.format("Error while updating challenge questions from locale file %s", key));
+                error[0] = true;
             }
-            writer.append(fileContentBuilder.toString());
+        });
+
+        if (error[0]) {
+            throw new IdentityRecoveryException("Error while updating challenge questions");
         }
 
     }
 
-    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML() throws IOException {
-        String line;
-        String separator = ",";
-        List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
-        File challengeQuestionsFile = new File(System.getenv("user.dir")
-                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(new FileInputStream(challengeQuestionsFile), "UTF-8"))) {
-            while ((line = br.readLine()) != null) {
-                String[] challengeQuestionDetails = line.split(separator);
-                ChallengeQuestion challengeQuestion = new ChallengeQuestion();
-                challengeQuestion.setQuestionId(challengeQuestionDetails[0]);
-                challengeQuestion.setQuestion(challengeQuestionDetails[1]);
-                challengeQuestion.setQuestionSetId(challengeQuestionDetails[2]);
-                challengeQuestion.setLocale(challengeQuestionDetails[3]);
-                challengeQuestionList.add(challengeQuestion);
-            }
-        }
+    public static void updateChallengeQuestionsYAML(List<ChallengeQuestion> challengeQuestions, String locale)
+            throws IdentityRecoveryException {
 
-        return challengeQuestionList;
+        ChallengeQuestionsFile challengeQuestionFile = new ChallengeQuestionsFile();
+        challengeQuestionFile.setChallengeQuestionList(challengeQuestions);
+
+        FileUtil.writeConfigFiles(Paths.get(CHALLANGE_QUESTIONS_FOLDER_PATH + File.separator + locale + ".yaml"),
+                                  challengeQuestionFile);
+
     }
 
-    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML(String locale) throws IOException {
-        String line;
-        String separator = ",";
-        List<ChallengeQuestion> challengeQuestionList = new ArrayList<>();
-        File challengeQuestionsFile = new File(System.getenv("user.dir")
-                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
+    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML() throws IdentityRecoveryException {
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(new FileInputStream(challengeQuestionsFile), "UTF-8"))) {
-            while ((line = br.readLine()) != null) {
-                String[] challengeQuestionDetails = line.split(separator);
-                String questionLocale = challengeQuestionDetails[3];
-                if (questionLocale.equalsIgnoreCase(locale)) {
-                    continue;
-                }
-                ChallengeQuestion challengeQuestion = new ChallengeQuestion();
-                challengeQuestion.setQuestionId(challengeQuestionDetails[0]);
-                challengeQuestion.setQuestion(challengeQuestionDetails[1]);
-                challengeQuestion.setQuestionSetId(challengeQuestionDetails[2]);
-                challengeQuestion.setLocale(challengeQuestionDetails[3]);
-                challengeQuestionList.add(challengeQuestion);
-            }
+        List<ChallengeQuestion> challengeQuestionsInAllLocales = new ArrayList<>();
+        final boolean[] error = { false };
+        try {
+            Files.list(Paths.get(CHALLANGE_QUESTIONS_FOLDER_PATH))
+                 .forEach((path) -> {
+                     try {
+                         String locale = FilenameUtils.removeExtension(path.toAbsolutePath().toString());
+                         ChallengeQuestionsFile challengeQuestionFile =
+                                 FileUtil.readConfigFile(path, ChallengeQuestionsFile.class);
+                         challengeQuestionFile.getChallengeQuestionList().forEach(challengeQuestion -> {
+                             challengeQuestion.setLocale(locale);
+                         });
+                         challengeQuestionsInAllLocales.addAll(challengeQuestionFile.getChallengeQuestionList());
+                     } catch (IdentityRecoveryException e) {
+                         log.error(String.format("Error while reading challenge questions from locale file %s", path));
+                         error[0] = true;
+                     }
+                 });
+        } catch (IOException e) {
+            throw new IdentityRecoveryException("Error while reading challenge questions", e);
         }
 
-        return challengeQuestionList;
+        if (error[0]) {
+            throw new IdentityRecoveryException("Error while updating challenge questions");
+        }
+
+        return challengeQuestionsInAllLocales;
     }
 
-    public static void deleteChallangeQuestions(List<ChallengeQuestion> challengeQuestionList) throws IOException {
-        List<ChallengeQuestion> challengeQuestionFullList = readChallengeQuestionsFromYAML();
+    public static List<ChallengeQuestion> readChallengeQuestionsFromYAML(String locale)
+            throws IdentityRecoveryException {
+
+        ChallengeQuestionsFile challengeQuestionFile =
+                FileUtil.readConfigFile(Paths.get(CHALLANGE_QUESTIONS_FOLDER_PATH + File.separator + locale + ".yaml"),
+                                        ChallengeQuestionsFile.class);
+        challengeQuestionFile.getChallengeQuestionList().forEach(challengeQuestion -> {
+            challengeQuestion.setLocale(locale);
+        });
+
+        return challengeQuestionFile.getChallengeQuestionList();
+    }
+
+    public static void deleteChallengeQuestions(List<ChallengeQuestion> challengeQuestionList, String locale)
+            throws IdentityRecoveryException {
+        List<ChallengeQuestion> challengeQuestionFullList = readChallengeQuestionsFromYAML(locale);
         challengeQuestionFullList.removeAll(challengeQuestionList);
-        File challengeQuestionsFile = new File(System.getenv("user.dir")
-                                + IdentityRecoveryConstants.CHALLAENGE_QUESTION_FILE_LOCATION);
-        if (challengeQuestionsFile.exists()) {
-            boolean deleted = challengeQuestionsFile.delete();
+        updateChallengeQuestionsYAML(challengeQuestionFullList, locale);
+    }
+
+    public static void deleteChallengeQuestions(List<ChallengeQuestion> challengeQuestionList)
+            throws IdentityRecoveryException {
+
+        final boolean[] error = { false };
+        Map<String, List<ChallengeQuestion>> groupedByLocale =
+                challengeQuestionList.stream().collect(
+                        Collectors.groupingBy(
+                                challengeQuestion -> challengeQuestion.getLocale()
+                        )
+                );
+        groupedByLocale.forEach((key, value) -> {
+            try {
+                deleteChallengeQuestions(value, key);
+            } catch (IdentityRecoveryException e) {
+                log.error(String.format("Error while deleting challenge questions from locale file %s", key));
+                error[0] = true;
+            }
+        });
+
+        if (error[0]) {
+            throw new IdentityRecoveryException("Error while updating challenge questions");
         }
-        updateChallengeQuestionsYAML(challengeQuestionFullList);
+
     }
 
 }
