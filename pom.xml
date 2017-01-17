@@ -378,6 +378,11 @@
                 <version>${carbon.multitenancy.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wso2.carbon.multitenancy</groupId>
+                <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
+                <version>${carbon.multitenancy.version}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>

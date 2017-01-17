@@ -36,6 +36,7 @@ import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
@@ -616,6 +617,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             if (!TenantMgtUtil.isTenantAdminCreationOperation()) {
                 eventMgtService.handleEvent(identityMgtEvent);
             }
+
         } catch (IdentityEventException e) {
             String errorCode = e.getErrorCode();
 
