@@ -377,7 +377,7 @@ public class Utils {
             throws IdentityRecoveryException {
 
         ChallengeQuestionsFile challengeQuestionFile = new ChallengeQuestionsFile();
-        challengeQuestionFile.setChallengeQuestionList(challengeQuestions);
+        challengeQuestionFile.setChallengeQuestions(challengeQuestions);
 
         FileUtil.writeConfigFiles(Paths.get(CHALLANGE_QUESTIONS_FOLDER_PATH + File.separator + locale + ".yaml"),
                                   challengeQuestionFile);
@@ -395,10 +395,10 @@ public class Utils {
                          String locale = FilenameUtils.removeExtension(path.toAbsolutePath().toString());
                          ChallengeQuestionsFile challengeQuestionFile =
                                  FileUtil.readConfigFile(path, ChallengeQuestionsFile.class);
-                         challengeQuestionFile.getChallengeQuestionList().forEach(challengeQuestion -> {
+                         challengeQuestionFile.getChallengeQuestions().forEach(challengeQuestion -> {
                              challengeQuestion.setLocale(locale);
                          });
-                         challengeQuestionsInAllLocales.addAll(challengeQuestionFile.getChallengeQuestionList());
+                         challengeQuestionsInAllLocales.addAll(challengeQuestionFile.getChallengeQuestions());
                      } catch (IdentityRecoveryException e) {
                          log.error(String.format("Error while reading challenge questions from locale file %s", path));
                          error[0] = true;
@@ -421,11 +421,11 @@ public class Utils {
         ChallengeQuestionsFile challengeQuestionFile =
                 FileUtil.readConfigFile(Paths.get(CHALLANGE_QUESTIONS_FOLDER_PATH + File.separator + locale + ".yaml"),
                                         ChallengeQuestionsFile.class);
-        challengeQuestionFile.getChallengeQuestionList().forEach(challengeQuestion -> {
+        challengeQuestionFile.getChallengeQuestions().forEach(challengeQuestion -> {
             challengeQuestion.setLocale(locale);
         });
 
-        return challengeQuestionFile.getChallengeQuestionList();
+        return challengeQuestionFile.getChallengeQuestions();
     }
 
     public static void deleteChallengeQuestions(List<ChallengeQuestion> challengeQuestionList, String locale)
