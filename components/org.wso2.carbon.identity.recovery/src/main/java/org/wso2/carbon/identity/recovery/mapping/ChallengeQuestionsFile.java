@@ -25,16 +25,16 @@ import java.util.List;
  */
 public class ChallengeQuestionsFile {
 
-    private List<ChallengeQuestion> challengeQuestionList;
+    private List<ChallengeQuestion> challengeQuestions;
 
-    public List<ChallengeQuestion> getChallengeQuestionList() {
-        if (challengeQuestionList == null) {
+    public List<ChallengeQuestion> getChallengeQuestions() {
+        if (challengeQuestions == null) {
             return Collections.emptyList();
         }
-        return challengeQuestionList;
+        return challengeQuestions;
     }
 
-    public void setChallengeQuestionList(List<ChallengeQuestion> challengeQuestionList) {
-        this.challengeQuestionList = challengeQuestionList;
+    public void setChallengeQuestions(List<ChallengeQuestion> challengeQuestions) {
+        this.challengeQuestions = challengeQuestions;
     }
 }
