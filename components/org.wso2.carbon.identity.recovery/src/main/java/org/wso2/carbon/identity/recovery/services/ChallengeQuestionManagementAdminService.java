@@ -82,9 +82,10 @@ public class ChallengeQuestionManagementAdminService {
             log.error("User object provided is null.");
             throw new IdentityRecoveryClientException("User object provided is null.");
         }
+        checkCrossTenantAccess(user.getTenantDomain());
 
         String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(user.getUserName());
-        String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String tenantDomain = user.getTenantDomain();
         List<ChallengeQuestion> challengeQuestionList;
         try {
             String locale = getLocaleOfUser(user, tenantDomain);

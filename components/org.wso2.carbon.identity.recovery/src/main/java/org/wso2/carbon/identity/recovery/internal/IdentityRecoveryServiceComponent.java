@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -27,16 +28,23 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConnectorImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
+import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConnectorImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
+import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
+import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
+import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.stratos.common.exception.StratosException;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
+import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -80,10 +88,21 @@ public class IdentityRecoveryServiceComponent {
                     ChallengeQuestionManager.getInstance(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AccountConfirmationValidationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new UserSelfRegistrationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new UserEmailVerificationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new AdminForcedPasswordResetHandler(), null);
             bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
                     new RecoveryConnectorImpl(), null);
             bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
                     new SelfRegistrationConnectorImpl(), null);
+            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
+                    new UserEmailVerificationConnectorImpl(), null);
+            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
+                    new AdminForcedPasswordResetConnectorImpl(), null);
+
 
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);

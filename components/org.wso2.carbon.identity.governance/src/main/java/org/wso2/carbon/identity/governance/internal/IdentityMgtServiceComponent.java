@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.governance.listener.TenantCreationEventListener;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 /**
@@ -46,6 +47,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * @scr.reference name="IdentityProviderManager"
  * interface="org.wso2.carbon.idp.mgt.IdpManager" cardinality="1..1"
  * policy="dynamic" bind="setIdpManager" unbind="unsetIdpManager"
+ * @scr.reference name="RealmService"
+ * interface="org.wso2.carbon.user.core.service.RealmService"
+ * cardinality="1..1" policy="dynamic" bind="setRealmService"
+ * unbind="unsetRealmService"
  */
 public class IdentityMgtServiceComponent {
 
@@ -108,6 +113,16 @@ public class IdentityMgtServiceComponent {
     protected void setIdpManager(IdpManager idpManager) {
         IdentityMgtServiceDataHolder.getInstance().setIdpManager(idpManager);
     }
+    protected void setRealmService(RealmService realmService) {
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the Realm Service");
+        }
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(realmService);
+    }
 
+    protected void unsetRealmService(RealmService realmService) {
+        log.debug("UnSetting the Realm Service");
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+    }
 
 }

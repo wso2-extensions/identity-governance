@@ -21,10 +21,12 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
@@ -77,6 +79,10 @@ public class CaptchaComponent {
             captchaConnector = new PasswordRecoveryReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+
+            AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
+            context.getBundleContext().registerService(AuthenticationDataPublisher.class, failedLoginAttemptValidator
+                    , null);
 
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");

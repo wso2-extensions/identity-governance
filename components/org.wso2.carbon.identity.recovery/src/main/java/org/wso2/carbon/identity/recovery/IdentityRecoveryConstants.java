@@ -30,7 +30,11 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
@@ -41,6 +45,13 @@ public class IdentityRecoveryConstants {
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
+    public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
+    public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
+    public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
+    public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
+    public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
+
+
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
@@ -48,6 +59,8 @@ public class IdentityRecoveryConstants {
 
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
+    public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
+    public static final String EXECUTE_ACTION = "ui.execute";
 
 
     private IdentityRecoveryConstants() {
@@ -88,7 +101,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_SELF_SIGN_UP("20021", "Self sign up feature is disabled"),
         ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
         ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20022", "Error loading signup configs"),
-        ERROR_CODE_UNLOCK_USER_USER("20023", "Error while lock user"),
+        ERROR_CODE_UNLOCK_USER_USER("20023", "Error while unlock user"),
         ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
         ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE("20025", "Failed to retrieve user realm from tenant id : %s"),
         ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER("20026", "Failed to retrieve user store manager."),
@@ -129,6 +142,8 @@ public class IdentityRecoveryConstants {
 
     public static class ConnectorConfig {
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
+        public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
+        public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
         public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.Question.Password.Enable";
         public static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
@@ -141,10 +156,17 @@ public class IdentityRecoveryConstants {
                 ".Password.ReCaptcha.MaxFailedAttempts";
         public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
-        public static final String SELF_SIGN_UP_ROLES = "SelfRegistration.Roles";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
                 ".InternallyManage";
         public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
+
+        public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
+        public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE= "Recovery.AdminPasswordReset.Offline";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP= "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK= "Recovery.AdminPasswordReset.RecoveryLink";
     }
 
     public static class SQLQueries {
@@ -156,6 +178,10 @@ public class IdentityRecoveryConstants {
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
                 "SCENARIO = ? AND STEP = ?";
 
+        public static final String LOAD_RECOVERY_DATA_CASE_INSENSITIVE = "SELECT * FROM IDN_RECOVERY_DATA WHERE" +
+                " LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE= ? AND SCENARIO = ? AND " +
+                "STEP = ?";
+
         public static final String LOAD_RECOVERY_DATA_FROM_CODE = "SELECT * FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
 
@@ -164,8 +190,14 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID =?";
 
+        public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
+                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =?";
+
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ?";
 
     }
 

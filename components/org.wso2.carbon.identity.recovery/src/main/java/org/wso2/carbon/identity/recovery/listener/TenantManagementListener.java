@@ -49,6 +49,8 @@ public class TenantManagementListener implements TenantMgtListener {
             }
         } catch (IdentityRecoveryException e) {
             log.error("Error when trying to set default challenge question for tenant : " + tenantDomain, e);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
