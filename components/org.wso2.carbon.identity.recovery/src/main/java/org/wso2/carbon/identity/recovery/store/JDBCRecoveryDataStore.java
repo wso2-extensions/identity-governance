@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -58,10 +59,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
-
+        String sql;
         try {
-            //TODO should have two sqls based on caseSenstitiveUsername
-            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_CASE_INSENSITIVE;
+            }
 
             prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, user.getUserName());
@@ -105,7 +109,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
 
         try {
-            //TODO should have two sqls based on caseSenstitiveUsername
             String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_FROM_CODE;
 
             prepStmt = connection.prepareStatement(sql);
@@ -175,8 +178,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
 
         try {
-            //TODO should have two sqls based on caseSenstitiveUsername
-            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
+            }
 
             prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, user.getUserName());
@@ -207,10 +214,14 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         try {
-            String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES_CASE_INSENSITIVE;
+            }
 
             prepStmt = connection.prepareStatement(sql);
-            //TODO need to do based on caseSensitiveUserName
             prepStmt.setString(1, user.getUserName());
             prepStmt.setString(2, user.getUserStoreDomain());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));

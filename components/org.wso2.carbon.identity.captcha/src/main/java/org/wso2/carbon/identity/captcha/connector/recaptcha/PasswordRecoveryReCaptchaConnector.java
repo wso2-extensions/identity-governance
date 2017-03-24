@@ -26,20 +26,24 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.captcha.util.EnabledSecurityMechanism;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.servlet.ServletRequest;
@@ -50,7 +54,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Password Recovery reCaptcha Connector.
@@ -59,19 +62,15 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
     private static final Log log = LogFactory.getLog(PasswordRecoveryReCaptchaConnector.class);
 
-    private static final String CONNECTOR_NAME = "password.recovery.recaptcha";
-
     private static final String FAIL_ATTEMPTS_CLAIM = "http://wso2.org/claims/identity/failedPasswordRecoveryAttempts";
 
     private static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
 
-    private static final String ACCOUNT_RECOVERY_INITIATE_URL = "/account-recovery/questions/initiate";
+    private static final String ACCOUNT_SECURITY_QUESTION_URL = "/api/identity/recovery/v0.9/security-question";
 
-    private static final String ACCOUNT_RECOVERY_VERIFY_URL = "/account-recovery/questions/verify";
+    private static final String ACCOUNT_SECURITY_QUESTIONS_URL = "/api/identity/recovery/v0.9/security-questions";
 
-    private static final String ACCOUNT_RECOVERY_INITIATE_ALL_URL = "/account-recovery/questions/initiate-all";
-
-    private static final String ACCOUNT_RECOVERY_VERIFY_ALL_URL = "/account-recovery/questions/verify-all";
+    private static final String ACCOUNT_VALIDATE_ANSWER_URL = "/api/identity/recovery/v0.9/validate-answer";
 
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Question.Password" +
             ".ReCaptcha.Enable";
@@ -101,10 +100,9 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
         return !StringUtils.isBlank(path) &&
-                (CaptchaUtil.isPathAvailable(path, ACCOUNT_RECOVERY_INITIATE_URL) ||
-                        CaptchaUtil.isPathAvailable(path, ACCOUNT_RECOVERY_VERIFY_URL) ||
-                        CaptchaUtil.isPathAvailable(path, ACCOUNT_RECOVERY_INITIATE_ALL_URL) ||
-                        CaptchaUtil.isPathAvailable(path, ACCOUNT_RECOVERY_VERIFY_ALL_URL));
+                (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL) ||
+                        CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL) ||
+                        CaptchaUtil.isPathAvailable(path, ACCOUNT_VALIDATE_ANSWER_URL));
     }
 
     @Override
@@ -123,41 +121,45 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         String path = httpServletRequestWrapper.getRequestURI();
 
-        JsonObject requestObject;
-        try {
-            try (InputStream in = httpServletRequestWrapper.getInputStream()) {
-                requestObject = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-            }
-        } catch (IOException e) {
-            return preValidationResponse;
-        }
-
-        String tenantDomain = null;
-        String userStoreDomain = null;
-        String userName = null;
+        User user = new User();
         boolean initializationFlow = false;
-        if (CaptchaUtil.isPathAvailable(path, ACCOUNT_RECOVERY_INITIATE_URL) || CaptchaUtil.isPathAvailable(path,
-                ACCOUNT_RECOVERY_INITIATE_ALL_URL)) {
-            tenantDomain = requestObject.get("tenantDomain").getAsString();
-            userStoreDomain = requestObject.get("userStoreDomain").getAsString();
-            userName = requestObject.get("userName").getAsString();
+        if (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL)
+                || CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL)) {
+            user.setUserName(servletRequest.getParameter("username"));
+            if (StringUtils.isNotBlank(servletRequest.getParameter("realm"))) {
+                user.setUserStoreDomain(servletRequest.getParameter("realm"));
+            } else {
+                user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+            }
+            user.setTenantDomain(servletRequest.getParameter("tenant-domain"));
             initializationFlow = true;
         } else {
-            JsonObject userJson = requestObject.getAsJsonObject("user");
-            if (userJson != null) {
-                tenantDomain = userJson.get("tenantDomain").getAsString();
-                userStoreDomain = userJson.get("userStoreDomain").getAsString();
-                userName = userJson.get("userName").getAsString();
+            JsonObject requestObject;
+            try {
+                try (InputStream in = httpServletRequestWrapper.getInputStream()) {
+                    requestObject = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                }
+            } catch (IOException e) {
+                return preValidationResponse;
+            }
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            try {
+                UserRecoveryData userRecoveryData = userRecoveryDataStore.load(requestObject.get("key").getAsString());
+                if(userRecoveryData != null) {
+                    user = userRecoveryData.getUser();
+                }
+            } catch (IdentityRecoveryException e) {
+                return preValidationResponse;
             }
         }
 
-        if (StringUtils.isBlank(userName)) {
+        if (StringUtils.isBlank(user.getUserName())) {
             // Invalid Request
             return preValidationResponse;
         }
 
-        if (StringUtils.isBlank(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        if (StringUtils.isBlank(user.getTenantDomain())) {
+            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         }
 
         Property[] connectorConfigs;
@@ -165,7 +167,7 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
                             RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                             RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS},
-                    tenantDomain);
+                    user.getTenantDomain());
         } catch (IdentityGovernanceException e) {
             throw new CaptchaServerException("Unable to retrieve connector configs.", e);
         }
@@ -188,24 +190,20 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         if (StringUtils.isBlank(maxAttemptsStr) || !NumberUtils.isNumber(maxAttemptsStr)) {
             log.warn("Invalid configuration found in the PasswordRecoveryReCaptchaConnector for the tenant - " +
-                    tenantDomain);
+                    user.getTenantDomain());
             return preValidationResponse;
         }
         int maxFailedAttempts = Integer.parseInt(maxAttemptsStr);
 
-        if (!StringUtils.isBlank(userStoreDomain) && !"PRIMARY".equals(userStoreDomain)) {
-            userName = IdentityUtil.addDomainToName(userName, userStoreDomain);
-        }
-
         int tenantId;
         try {
-            tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         } catch (Exception e) {
             //Invalid tenant
             return preValidationResponse;
         }
 
-        Map<String, String> claimValues = CaptchaUtil.getClaimValues(userName, tenantDomain, tenantId,
+        Map<String, String> claimValues = CaptchaUtil.getClaimValues(user, tenantId,
                 new String[]{FAIL_ATTEMPTS_CLAIM, ACCOUNT_LOCKED_CLAIM});
 
         if (claimValues == null || claimValues.isEmpty()) {
@@ -222,24 +220,19 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             currentFailedAttempts = Integer.parseInt(claimValues.get(FAIL_ATTEMPTS_CLAIM));
         }
 
-        // TODO This need to be fixed before 5.3.0 Alpha release. Since response is committed from the CXF layer we
-        // can't set headers from the post validation section. Need to use javax.ws.rs.container
-        // .ContainerResponseFilter to handle this properly,
         HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
-        if (currentFailedAttempts >= maxFailedAttempts) {
+        if (currentFailedAttempts > maxFailedAttempts) {
             if (initializationFlow) {
                 httpServletResponse.setHeader("reCaptcha", "true");
+                httpServletResponse.setHeader("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
+                httpServletResponse.setHeader("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
             } else {
-                httpServletResponse.setHeader("reCaptcha", "conditional");
                 preValidationResponse.setCaptchaValidationRequired(true);
                 preValidationResponse.setMaxFailedLimitReached(true);
+                addPostValidationData(servletRequest);
             }
-            httpServletResponse.setHeader("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-            httpServletResponse.setHeader("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
-        } else if ((currentFailedAttempts + 1) == maxFailedAttempts) {
-            httpServletResponse.setHeader("reCaptcha", "conditional");
-            httpServletResponse.setHeader("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-            httpServletResponse.setHeader("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+        } else if (currentFailedAttempts == maxFailedAttempts && !initializationFlow) {
+            addPostValidationData(servletRequest);
         }
 
         return preValidationResponse;
@@ -260,7 +253,18 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     @Override
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        //TODO This will not executed since post validation will fixed in 5.3.0 Alpha release.
+        //This validation will happens through a CXF Filter
         return null;
+    }
+
+    private void addPostValidationData(ServletRequest servletRequest) {
+        EnabledSecurityMechanism enabledSecurityMechanism = new EnabledSecurityMechanism();
+        enabledSecurityMechanism.setMechanism("reCaptcha");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
+        properties.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+        enabledSecurityMechanism.setProperties(properties);
+        ((HttpServletRequest) servletRequest).getSession().setAttribute("enabled-security-mechanism",
+                enabledSecurityMechanism);
     }
 }

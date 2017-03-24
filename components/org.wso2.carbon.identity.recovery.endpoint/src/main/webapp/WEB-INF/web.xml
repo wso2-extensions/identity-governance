@@ -43,12 +43,7 @@
 
     <filter-mapping>
         <filter-name>CaptchaFilter</filter-name>
-        <url-pattern>/questions/initiate</url-pattern>
-        <url-pattern>/questions/initiate-all</url-pattern>
-        <url-pattern>/questions/verify</url-pattern>
-        <url-pattern>/questions/verify-all</url-pattern>
-        <url-pattern>/username/claims</url-pattern>
-        <url-pattern>/self/register</url-pattern>
+        <url-pattern>/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 

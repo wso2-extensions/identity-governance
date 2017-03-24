@@ -119,6 +119,7 @@
         if (deleteRowId != null) {
             int rowNo = Integer.parseInt(deleteRowId);
             ChallengeQuestion removed = tempChallenges.remove(rowNo);
+            updatedChallenges.remove(rowNo);
             deletedChallenges.add(removed);
         }
 
@@ -128,6 +129,7 @@
             ChallengeQuestion selected = tempChallenges.get(rowNo);
             if (StringUtils.isNotBlank(updatedQuestion)) {
                 selected.setQuestion(updatedQuestion);
+                updatedChallenges.get(rowNo).setQuestion(updatedQuestion);
             }
         }
 
@@ -381,16 +383,15 @@
                                     <input type="radio" name="localeMapping" id="localeNo" value="no"
                                            onchange="getQuestionIDs()">No</input>
 
-                                    <% if (StringUtils.isNotBlank(localeMapping) && StringUtils.equalsIgnoreCase("no", localeMapping)) {%>
-                                    <script>
-                                        setLocaleMappingCheckBox("no");
-                                    </script>
-                                    <%
-                                        }
-                                        if (StringUtils.isNotBlank(localeMapping) && StringUtils.equalsIgnoreCase("yes", localeMapping)) {
-                                    %>
+                                    <% if (StringUtils.isNotBlank(localeMapping) && StringUtils.equalsIgnoreCase("yes", localeMapping)) {%>
                                     <script>
                                         setLocaleMappingCheckBox("yes");
+                                    </script>
+                                    <%
+                                        } else  {
+                                    %>
+                                    <script>
+                                        setLocaleMappingCheckBox("no");
                                     </script>
                                     <%}%>
 
@@ -403,15 +404,9 @@
                                     </td>
                                     <td>
                                         <% if (StringUtils.isBlank(localeMapping) || StringUtils.equalsIgnoreCase("no", localeMapping)) {%>
-                                        <% if (StringUtils.isNotBlank(questionId)) { %>
-                                        <input size="70" name="questionId0" id="questionId0" class="text-box-big"
-                                               white-list-patterns="^[a-zA-Z0-9]+$"
-                                               value="<%=Encode.forHtmlAttribute(questionId)%>"/>
-                                        <%} else { %>
                                         <input size="70" name="questionId0" id="questionId0" class="text-box-big"
                                                white-list-patterns="^[a-zA-Z0-9]+$"/>
-                                        <% }
-                                        } else {%>
+                                        <%} else {%>
                                         <select id="questionId0" name="questionId0" class="leftCol-med">
                                             <%
                                                 List<String> questionIds = Utils.getUniqueQuestionIds(challenges, setName);
@@ -445,21 +440,11 @@
                                         <select id="questionLocale0" name="questionLocale0" class="leftCol-med">
                                             <%
                                                 for (Locale locale : Locale.getAvailableLocales()) {
-                                                    if (StringUtils.isNotBlank(questionLocale) && StringUtils.equalsIgnoreCase(Utils.getLocaleString(locale), questionLocale)) {
-                                            %>
-
-                                            <option value="<%=Encode.forHtmlAttribute(Utils.getLocaleString(locale))%>"
-                                                    selected="selected">
-                                                <%=Encode.forHtmlContent(locale.getDisplayName())%>
-                                            </option>
-                                            <%
-                                            } else {
                                             %>
                                             <option value="<%=Encode.forHtmlAttribute(Utils.getLocaleString(locale))%>">
                                                 <%=Encode.forHtmlContent(locale.getDisplayName())%>
                                             </option>
                                             <%
-                                                    }
                                                 }
                                             %>
                                         </select>

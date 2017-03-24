@@ -1,0 +1,285 @@
+swagger: '2.0'
+######################################################
+# Prolog
+######################################################
+info:
+  version: "0.9.0"
+  title: "WSO2 Identity Server Rest API - User"
+  description: |
+    This document specifies a **RESTful API** for WSO2 **Identity Server** .
+
+    It is written with [swagger 2](http://swagger.io/).
+
+  contact:
+    name: "WSO2"
+    url: "http://wso2.com/products/identity-server/"
+    email: "architecture@wso2.com"
+  license: 
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+
+######################################################
+# The fixed parts of the URLs of the API
+######################################################
+
+# The schemes supported by the API
+schemes: 
+  - https
+
+# The domain of the API.
+# This is configured by the customer during deployment.
+# The given host is just an example.
+host: apis.is.com
+
+# The base path of the API.
+# Will be prefixed to all paths.
+
+# if the tenant domain is carbon.super basepath can be /api/identity/user/v0.9 like this too.
+basePath: /t/{tenant-domain}/api/identity/user/v0.9
+
+# The following media types can be passed as input in message bodies of the API.
+# The actual media type must be specified in the Content-Type header field of the request.
+# The default is json, i.e. the Content-Type header is not needed to
+# be set, but supporting it serves extensibility.
+consumes: 
+  - application/json
+
+# The following media types may be passed as output in message bodies of the API.
+# The media type(s) consumable by the requestor is specified in the Accept header field
+# of the corresponding request. 
+# The actual media type returned will be specfied in the Content-Type header field 
+# of the of the response.
+# The default of the Accept header is json, i.e. there is not needed to
+# set the value, but supporting it serves extensibility.
+produces: 
+  - application/json
+paths:
+  # Endpoint uses to send recovery notificataion
+  /me:
+    post:
+      description: |
+         This API is used to user self registration. 
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING", "password": "P@ssw0rd2017","claims": [{"uri": "http://wso2.org/claims/givenname","value": "Isura" },{"uri": "http://wso2.org/claims/emailaddress","value": "isura@mail.com"},{"uri": "http://wso2.org/claims/lastname","value": "Karunaratne"},{"uri": "http://wso2.org/claims/mobile","value": "+947721584558"} ] },"properties": []}' "https://localhost:9443/api/identity/user/v0.9/me"
+            
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+
+      summary: |
+        Register User
+       
+      # This are the post parameters:
+      parameters:
+        -
+          name: user
+          in: body
+          description:  It can be sent optional property parameters over email based on email template.
+          required: true
+          schema:
+            $ref: '#/definitions/SelfUserRegistrationRequest'
+          
+
+      responses:
+        201:
+          description: Successful created
+          schema:
+            title: key
+            type: string          
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+          
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+
+        409:
+          description: Conflict
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - Self Register
+            
+  /validate-code:
+    post:
+      description: |
+         This API is used to validate code of self reigstered users
+      x-wso2-request: |
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","properties": []}' "https://localhost:9443/api/identity/user/v0.9/validate-code"
+            
+      x-wso2-response: |
+        "HTTP/1.1 202 Accepted"
+        
+      summary: |
+        Validate Code         
+       
+      # This are the post parameters:
+      parameters:
+        -
+          name: code
+          in: body
+          description:  Code retried after user self registration and optional property parameters
+          required: true
+          schema:
+            $ref: '#/definitions/CodeValidationRequest'
+      responses:
+        202:
+          description: Accepted
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+          
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - Self Register  
+
+  /resend-code:
+    post:
+      description: |
+         This API is used to resend confirmation code, if it is missing.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "isura","realm": "ENGINEERING"},"properties": []}' "https://localhost:9443/api/identity/user/v0.9/resend-code"
+            
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+      summary: |
+        Resend Code         
+       
+      # This are the post parameters:
+      parameters:
+        -
+          name: user
+          in: body
+          description:  It can be sent optional property parameters over email based on email template.
+          required: true
+          schema:
+            $ref: '#/definitions/ResendCodeRequest'
+          
+      responses:
+        200:
+          description: Successful 
+          schema:
+            title: key
+            type: string          
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+          
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - Self Register  
+definitions:
+#-----------------------------------------------------
+# The SelfRegistrationUser  Object
+#-----------------------------------------------------
+  SelfRegistrationUser:
+    type: object
+    properties:
+      username:
+        type: string
+      realm: 
+        type: string
+      password:
+        type: string
+      claims:
+        type: array
+        items:
+          $ref: '#/definitions/Claim'
+      
+#-----------------------------------------------------
+# The User  Object
+#-----------------------------------------------------
+  User:
+    type: object
+    properties:
+      username:
+        type: string
+      realm: 
+        type: string
+        
+#-----------------------------------------------------
+# The Error Response  object
+#-----------------------------------------------------      
+  Error:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      description:
+        type: string
+    
+
+#-----------------------------------------------------    
+# The Property  object
+#-----------------------------------------------------      
+  Property:
+    type: object
+    properties:
+      key:
+        type: string
+      value:
+        type: string    
+        
+#-----------------------------------------------------    
+# The Property  object
+#-----------------------------------------------------      
+  Claim:
+    type: object
+    properties:
+      uri:
+        type: string
+      value:
+        type: string      
+
+#-----------------------------------------------------    
+# The SelfRegistrationUser Registration Request
+#-----------------------------------------------------      
+  SelfUserRegistrationRequest:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/SelfRegistrationUser'
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'
+          
+        
+#-----------------------------------------------------    
+# The CodeValidationRequest  object
+#-----------------------------------------------------      
+  CodeValidationRequest:
+    type: object
+    properties:
+      code:
+        type: string
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'
+
+
+#-----------------------------------------------------    
+# The SelfRegistrationUser Registration Request
+#-----------------------------------------------------
+  ResendCodeRequest:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/User'
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'

@@ -24,12 +24,17 @@ import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtSer
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.connector.RecoveryConnectorImpl;
-import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConnectorImpl;
+import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
+import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
+import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
+import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
@@ -80,10 +85,21 @@ public class IdentityRecoveryServiceComponent {
                     ChallengeQuestionManager.getInstance(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AccountConfirmationValidationHandler(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new RecoveryConnectorImpl(), null);
-            bundleContext.registerService(IdentityGovernanceConnector.class.getName(),
-                    new SelfRegistrationConnectorImpl(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new UserSelfRegistrationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new UserEmailVerificationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new AdminForcedPasswordResetHandler(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new RecoveryConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new SelfRegistrationConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new UserEmailVerificationConfigImpl(), null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(),
+                    new AdminForcedPasswordResetConfigImpl(), null);
+
 
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);

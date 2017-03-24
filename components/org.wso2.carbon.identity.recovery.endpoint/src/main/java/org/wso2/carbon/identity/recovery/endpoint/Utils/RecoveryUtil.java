@@ -1,11 +1,13 @@
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
@@ -13,6 +15,7 @@ import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException;
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -22,11 +25,16 @@ import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecove
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class RecoveryUtil {
+    private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
+    private static final Log LOG = LogFactory.getLog(RecoveryUtil.class);
+
     public static NotificationPasswordRecoveryManager getNotificationBasedPwdRecoveryManager() {
         return (NotificationPasswordRecoveryManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(NotificationPasswordRecoveryManager.class, null);
@@ -204,7 +212,12 @@ public class RecoveryUtil {
     public static User getUser(UserDTO userDTO) {
         User user = new User();
         user.setTenantDomain(userDTO.getTenantDomain());
-        user.setUserStoreDomain(userDTO.getRealm());
+        if (StringUtils.isNotBlank(userDTO.getRealm())) {
+            user.setUserStoreDomain(userDTO.getRealm());
+        } else {
+            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+        }
+
         user.setUserName(userDTO.getUsername());
         return user;
     }
@@ -251,6 +264,25 @@ public class RecoveryUtil {
             return false;
         }
         return tenantId != MultitenantConstants.INVALID_TENANT_ID;
+    }
+
+    public static String[] getUserList(int tenantId, String username) {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        String[] userList = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        try {
+            if (realmService.getTenantUserRealm(tenantId) != null) {
+                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
+                        (tenantId).getUserStoreManager();
+                userList = userStoreManager.listUsers(username , 2) ;
+            }
+        } catch (Exception e) {
+            String msg = "Error retrieving the user-list for the tenant : " + tenantId;
+            RecoveryUtil.handleInternalServerError(msg, "500", LOG, e);
+        }
+        return userList;
     }
 
 }

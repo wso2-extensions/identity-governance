@@ -18,6 +18,8 @@
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+            <bean class="org.wso2.carbon.identity.recovery.endpoint.filter.ResponseValidationFilter" />
+            <bean class="org.wso2.carbon.identity.recovery.endpoint.Exceptions.RecoveryEndpointExceptionMapper"/>
         </jaxrs:providers>
     </jaxrs:server>
 </beans>

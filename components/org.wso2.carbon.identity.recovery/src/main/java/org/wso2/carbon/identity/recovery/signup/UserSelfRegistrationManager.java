@@ -26,17 +26,19 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.recovery.*;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
-import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -45,10 +47,12 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -90,14 +94,8 @@ public class UserSelfRegistrationManager {
                     .getUserName());
         }
 
-        boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
-
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
-
-        String roles = String.valueOf(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SELF_SIGN_UP_ROLES, user.getTenantDomain()));
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
@@ -117,51 +115,62 @@ public class UserSelfRegistrationManager {
             carbonContext.setTenantDomain(user.getTenantDomain());
 
 
-            Map<String, String> claimsMap = new HashMap<String, String>();
+            Map<String, String> claimsMap = new HashMap<>();
             for (Claim claim : claims) {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
 
+            //Set arbitrary properties to use in UserSelfRegistrationHandler
+            Utils.setArbitraryProperties(properties);
+
             try {
-                String[] userRoles = null;
-                if (StringUtils.isNotBlank(roles)) {
-                    userRoles = roles.split(IdentityRecoveryConstants.SIGN_UP_ROLE_SEPARATOR);
+
+                //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
+                if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
+                    Permission permission = new Permission("/permission/admin/login", IdentityRecoveryConstants.EXECUTE_ACTION);
+                    userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null, new Permission[]{permission});
                 }
-                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), password, userRoles,
-                        claimsMap, null);
+
+                String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
+
+                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                        password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
-                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
-            }
+                Throwable cause = e;
 
-            if (isAccountLockOnCreation) {
-                HashMap<String, String> userClaims = new HashMap<>();
-                //Need to lock user account
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
-                try {
-                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()), userClaims, null);
-                } catch (UserStoreException e) {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCK_USER_USER, user.getUserName(), e);
+                while (cause != null) {
+                    if (cause instanceof PolicyViolationException) {
+                        throw IdentityException.error(IdentityRecoveryClientException.class,
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
+                    }
+                    cause = cause.getCause();
+                }
+
+                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+                } else {
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
                 }
             }
 
-            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            userRecoveryDataStore.invalidate(user);
+            if (!isNotificationInternallyManage) {
+                UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+                userRecoveryDataStore.invalidate(user);
 
-            String secretKey = UUIDGenerator.generateUUID();
-            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                    .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+                String secretKey = UUIDGenerator.generateUUID();
+                UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                        .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
-            userRecoveryDataStore.store(recoveryDataDO);
-
-            if (isNotificationInternallyManage) {
-                triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(), secretKey, properties);
-            } else {
+                userRecoveryDataStore.store(recoveryDataDO);
                 notificationResponseBean.setKey(secretKey);
             }
 
+            //isNotificationInternallyManage == true,  will be handled in UserSelfRegistration Handler
+
+
         } finally {
+            Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
@@ -175,11 +184,11 @@ public class UserSelfRegistrationManager {
      * @throws IdentityRecoveryException
      */
     public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
-        boolean isUserConfirmed = false ;
+        boolean isUserConfirmed = false;
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                     user.getUserName());
+                    user.getUserName());
         }
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
@@ -189,37 +198,25 @@ public class UserSelfRegistrationManager {
         UserRecoveryData load =
                 userRecoveryDataStore.load(user);
 
-        if(load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())){
-            isUserConfirmed = true ;
+        if (load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())) {
+            isUserConfirmed = true;
         }
-        return isUserConfirmed ;
+        return isUserConfirmed;
 
     }
 
-    public void confirmUserSelfRegistration(User user, String code) throws IdentityRecoveryException {
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
-
-        if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
-        }
-
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
-
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
-        }
+    public void confirmUserSelfRegistration(String code) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
-        userRecoveryDataStore.load(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, code);
+        UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
+        User user = recoveryData.getUser();
+
+        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
+
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
         try {
@@ -240,6 +237,7 @@ public class UserSelfRegistrationManager {
             HashMap<String, String> userClaims = new HashMap<>();
             //Need to lock user account
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
             try {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
                         user.getUserStoreDomain()), userClaims, null);
@@ -282,12 +280,12 @@ public class UserSelfRegistrationManager {
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
 
-
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
 
-        if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret())) {
+        if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) || !RecoverySteps
+                .CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_OLD_CODE_NOT_FOUND, null);
         }
         //Invalid old code
@@ -300,7 +298,7 @@ public class UserSelfRegistrationManager {
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(), secretKey, properties);
+            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(), secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }

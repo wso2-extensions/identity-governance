@@ -75,17 +75,17 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 }
             boolean isAccountLocked = true ;
             try {
-                isAccountLocked = Boolean.parseBoolean(userStoreManager.getUserClaimValue(userName,ACCOUNT_LOCKED_CLAIM, null));
+                Map<String, String> values = userStoreManager.getUserClaimValues(userName, new String[]{
+                        ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                isAccountLocked = Boolean.parseBoolean(values.get(ACCOUNT_LOCKED_CLAIM));
             } catch (UserStoreException e) {
                 throw new IdentityEventException("Error while retrieving account lock claim value", e);
             }
             if (isAccountLocked && !isUserAccountConfirmed(user)) {
-                if (!isUserAccountConfirmed(user)) {
-                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
-                            IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
-                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                    throw new IdentityEventException("User : " + userName + " not confirmed yet.");
-                }
+                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
+                        IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                throw new IdentityEventException("User : " + userName + " not confirmed yet.");
             }
         }
     }

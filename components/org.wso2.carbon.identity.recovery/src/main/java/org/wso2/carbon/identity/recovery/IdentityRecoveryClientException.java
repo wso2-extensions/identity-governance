@@ -18,11 +18,6 @@
 
 package org.wso2.carbon.identity.recovery;
 
-import org.wso2.carbon.identity.base.IdentityException;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Used for creating checked exceptions that can be handled.
  */
@@ -37,4 +32,13 @@ public class IdentityRecoveryClientException extends IdentityRecoveryException {
     public IdentityRecoveryClientException(String errorDescription, Throwable cause) {
         super(errorDescription, cause);
     }
+
+    public IdentityRecoveryClientException(String errorCode, String message) {
+        super(errorCode, message);
+    }
+
+    public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable) {
+        super(errorCode, message, throwable);
+    }
+
 }

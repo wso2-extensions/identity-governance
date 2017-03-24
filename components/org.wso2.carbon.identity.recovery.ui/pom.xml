@@ -15,13 +15,11 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>identity-governance</artifactId>
-        <groupId>org.wso2.carbon.identity</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <groupId>org.wso2.carbon.identity.governance</groupId>
+        <version>1.0.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -52,15 +50,15 @@
             <artifactId>encoder</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity</groupId>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity</groupId>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.core.ui</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity</groupId>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.recovery.stub</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -85,8 +83,7 @@
                             org.wso2.carbon.identity.recovery.ui.*;version"${identity.governance.exp.pkg.version}"
                         </Export-Package>
                         <Import-Package>
-                            org.wso2.carbon.identity.recovery.stub;
-                            version="${identity.governance.imp.pkg.version.range}"
+                            org.wso2.carbon.identity.recovery.stub;version="${identity.governance.imp.pkg.version.range}"
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Carbon-Component>UIBundle</Carbon-Component>

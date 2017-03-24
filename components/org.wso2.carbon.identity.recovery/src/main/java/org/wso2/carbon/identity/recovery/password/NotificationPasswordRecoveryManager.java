@@ -31,7 +31,11 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
-import org.wso2.carbon.identity.recovery.*;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -42,9 +46,9 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -81,7 +85,7 @@ public class NotificationPasswordRecoveryManager {
                 .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE, null);
         }
 
         boolean isNotificationInternallyManage;
@@ -110,10 +114,10 @@ public class NotificationPasswordRecoveryManager {
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, user.getUserName());
         }
 
         userRecoveryDataStore.invalidate(user);
@@ -141,28 +145,25 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
-
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, userRecoveryData.getUser().getTenantDomain()));
-        if (!isRecoveryEnable) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_BASED_RECOVERY_NOT_ENABLE, null);
-        }
-
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
 
-
         int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(), userRecoveryData.getUser().getUserStoreDomain());
         try {
+
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
+                HashMap<String, String> userClaims = new HashMap<>();
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+                userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
+            }
         } catch (UserStoreException e) {
-            checkPasswordHistoryViolate(e);
+            checkPasswordValidity(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
@@ -170,14 +171,15 @@ public class NotificationPasswordRecoveryManager {
 
         boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().getTenantDomain()));
+        boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, userRecoveryData.getUser().getTenantDomain()));
 
 
-        //TODO need a configuration
-        if (isNotificationInternallyManaged) {
+        if (isNotificationInternallyManaged && isNotificationSendWhenSuccess) {
             try {
                 triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
                         .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
-            } catch (IdentityRecoveryException e) {
+            } catch (Exception e) {
                 log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
             }
         }
@@ -189,20 +191,20 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void checkPasswordHistoryViolate(UserStoreException e) throws IdentityRecoveryClientException {
+    private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
         Throwable cause = e.getCause();
         while (cause != null) {
             if (cause instanceof IdentityEventException) {
-                List<IdentityException.ErrorInfo> errorInfoList = ((IdentityEventException) cause)
-                        .getErrorInfoList();
-                if (errorInfoList.size() > 0) {
-                    IdentityException.ErrorInfo errorInfo = errorInfoList.get(0);
-                    if (errorInfo != null && StringUtils.equals(errorInfo.getErrorCode(), "22001")) {
-                        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                .ERROR_CODE_HISTORY_VIOLATE, null, e);
-                    }
+                String errorCode = ((IdentityEventException) cause).getErrorCode();
+                if (StringUtils.equals(errorCode, "22001")) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_HISTORY_VIOLATE, null, e);
                 }
-                break;
+            }
+
+            if (cause instanceof PolicyViolationException) {
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
             }
             cause = cause.getCause();
         }

@@ -21,12 +21,14 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
+import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -38,7 +40,7 @@ import org.wso2.carbon.user.core.service.RealmService;
  * bind="setCaptchaConnector"
  * unbind="unsetCaptchaConnector"
  * @scr.reference name="IdentityGovernanceConnectors"
- * interface="org.wso2.carbon.identity.governance.common.IdentityGovernanceConnector"
+ * interface="org.wso2.carbon.identity.governance.common.IdentityConnectorConfig"
  * cardinality="0..n" policy="dynamic"
  * bind="setIdentityGovernanceConnector"
  * unbind="unsetIdentityGovernanceConnector"
@@ -61,12 +63,12 @@ public class CaptchaComponent {
             // Initialize reCaptcha
             CaptchaUtil.buildReCaptchaFilterProperties();
 
-            // Initialize and register SSOLoginReCaptchaConnector
-            IdentityGovernanceConnector connector = new SSOLoginReCaptchaConnector();
-            ((SSOLoginReCaptchaConnector) connector).init(CaptchaDataHolder.getInstance()
+            // Initialize and register SSOLoginReCaptchaConfig
+            IdentityConnectorConfig connector = new SSOLoginReCaptchaConfig();
+            ((SSOLoginReCaptchaConfig) connector).init(CaptchaDataHolder.getInstance()
                     .getIdentityGovernanceService());
-            context.getBundleContext().registerService(IdentityGovernanceConnector.class, connector, null);
-            CaptchaDataHolder.getInstance().addCaptchaConnector((SSOLoginReCaptchaConnector) connector);
+            context.getBundleContext().registerService(IdentityConnectorConfig.class, connector, null);
+            CaptchaDataHolder.getInstance().addCaptchaConnector((SSOLoginReCaptchaConfig) connector);
 
             // Initialize and register PathBasedReCaptchaConnector
             CaptchaConnector captchaConnector = new SelfSignUpReCaptchaConnector();
@@ -77,6 +79,10 @@ public class CaptchaComponent {
             captchaConnector = new PasswordRecoveryReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+
+            AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
+            context.getBundleContext().registerService(AuthenticationDataPublisher.class, failedLoginAttemptValidator
+                    , null);
 
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");
@@ -103,18 +109,18 @@ public class CaptchaComponent {
         CaptchaDataHolder.getInstance().getCaptchaConnectors().remove(captchaConnector);
     }
 
-    protected void setIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
+    protected void setIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
 
-        if (identityGovernanceConnector instanceof CaptchaConnector && CaptchaDataHolder.getInstance()
-                .getCaptchaConnectors().contains(identityGovernanceConnector)) {
-            CaptchaDataHolder.getInstance().addCaptchaConnector((CaptchaConnector) identityGovernanceConnector);
+        if (identityConnectorConfig instanceof CaptchaConnector && CaptchaDataHolder.getInstance()
+                .getCaptchaConnectors().contains(identityConnectorConfig)) {
+            CaptchaDataHolder.getInstance().addCaptchaConnector((CaptchaConnector) identityConnectorConfig);
         }
     }
 
-    protected void unsetIdentityGovernanceConnector(IdentityGovernanceConnector identityGovernanceConnector) {
+    protected void unsetIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
 
-        if (identityGovernanceConnector instanceof CaptchaConnector) {
-            CaptchaDataHolder.getInstance().getCaptchaConnectors().remove(identityGovernanceConnector);
+        if (identityConnectorConfig instanceof CaptchaConnector) {
+            CaptchaDataHolder.getInstance().getCaptchaConnectors().remove(identityConnectorConfig);
         }
     }
 

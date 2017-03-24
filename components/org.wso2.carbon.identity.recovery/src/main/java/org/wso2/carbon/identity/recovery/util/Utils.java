@@ -27,15 +27,16 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
@@ -51,6 +52,58 @@ import java.util.Map;
 
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
+
+
+    //This is used to pass the arbitrary properties from self user manager to self user handler
+    private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
+            ThreadLocal<>();
+
+    //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
+    private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    /**
+     * @return
+     */
+    public static org.wso2.carbon.identity.recovery.model.Property[] getArbitraryProperties() {
+        if (arbitraryProperties.get() == null) {
+            return null;
+        }
+        return arbitraryProperties.get();
+    }
+
+    /**
+     * @param properties
+     */
+    public static void setArbitraryProperties(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+        arbitraryProperties.set(properties);
+    }
+
+    public static void clearArbitraryProperties() {
+        arbitraryProperties.remove();
+    }
+
+
+    /**
+     * @return
+     */
+    public static Claim getEmailVerifyTemporaryClaim() {
+        if (emailVerifyTemporaryClaim.get() == null) {
+            return null;
+        }
+        return emailVerifyTemporaryClaim.get();
+    }
+
+    /**
+     * @param claim
+     */
+    public static void setEmailVerifyTemporaryClaim(Claim claim) {
+        emailVerifyTemporaryClaim.set(claim);
+    }
+
+    public static void clearEmailVerifyTemporaryClaim() {
+        emailVerifyTemporaryClaim.remove();
+    }
+
 
     public static String getClaimFromUserStoreManager(User user, String claim)
             throws UserStoreException {
@@ -87,12 +140,9 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryServerException;
+
+        return IdentityException.error(
+                IdentityRecoveryServerException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -106,14 +156,8 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryServerException identityRecoveryServerException = new IdentityRecoveryServerException(errorDescription,
-                e);
-        IdentityRecoveryServerException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryServerException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryServerException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryServerException;
+        return IdentityException.error(
+                IdentityRecoveryServerException.class, error.getCode(), errorDescription, e);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
@@ -127,12 +171,7 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryClientException;
+        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
@@ -147,14 +186,7 @@ public class Utils {
             errorDescription = error.getMessage();
         }
 
-        IdentityRecoveryClientException identityRecoveryClientException = new IdentityRecoveryClientException(errorDescription,
-                e);
-        IdentityRecoveryClientException.ErrorInfo.ErrorInfoBuilder errorInfoBuilder = new IdentityRecoveryClientException
-                .ErrorInfo.ErrorInfoBuilder(errorDescription);
-        errorInfoBuilder.cause(e);
-        errorInfoBuilder.errorCode(error.getCode());
-        identityRecoveryClientException.addErrorInfo(errorInfoBuilder.build());
-        return identityRecoveryClientException;
+        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription, e);
     }
 
     /**
@@ -195,7 +227,9 @@ public class Utils {
         }
 
         if (userStoreManager != null) {
-            String oldValue = userStoreManager.getUserClaimValue(fullUserName, claim, null);
+            Map<String, String> values = userStoreManager.getUserClaimValues(fullUserName, new String[]{
+                    claim}, UserCoreConstants.DEFAULT_PROFILE);
+            String oldValue = values.get(claim);
             if (oldValue == null || !oldValue.equals(value)) {
                 Map<String, String> claimMap = new HashMap<String, String>();
                 claimMap.put(claim, value);
@@ -235,8 +269,20 @@ public class Utils {
         }
     }
 
+    public static String getConnectorConfig(String key, String tenantDomain) throws IdentityEventException {
+        try {
+            Property[] connectorConfigs;
+            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService();
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            return connectorConfigs[0].getValue();
+        } catch (IdentityGovernanceException e) {
+            throw new IdentityEventException("Error while getting connector configurations", e);
+        }
+    }
 
-    // challenge question related Utils
+
+    // challenge question related Util
     public static String getChallengeSetDirFromUri(String challengeSetUri) {
         if (StringUtils.isBlank(challengeSetUri)) {
             return challengeSetUri;
