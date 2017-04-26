@@ -48,8 +48,9 @@
         <url-pattern>/questions/verify</url-pattern>
         <url-pattern>/questions/verify-all</url-pattern>
         <url-pattern>/username/claims</url-pattern>
-        <url-pattern>/self/register</url-pattern>
+        <url-pattern>/me</url-pattern>
         <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 
     <session-config>
