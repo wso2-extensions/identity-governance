@@ -55,6 +55,7 @@ public class MeApiServiceImpl extends MeApiService {
         try {
             notificationResponseBean = userSelfRegistrationManager.registerUser(
                     Utils.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
+                    Utils.getRoles(selfUserRegistrationRequestDTO.getUser().getRoles()),
                     Utils.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
                     Utils.getProperties(selfUserRegistrationRequestDTO.getProperties()));
 

@@ -1,22 +1,15 @@
 package org.wso2.carbon.identity.user.endpoint;
 
-import org.wso2.carbon.identity.user.endpoint.dto.*;
-import org.wso2.carbon.identity.user.endpoint.MeApiService;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
+
+import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.factories.MeApiServiceFactory;
 
 import io.swagger.annotations.ApiParam;
-
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
-
-import java.util.List;
-
-import java.io.InputStream;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.Multipart;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.*;
 
 @Path("/me")
 @Consumes({ "application/json" })

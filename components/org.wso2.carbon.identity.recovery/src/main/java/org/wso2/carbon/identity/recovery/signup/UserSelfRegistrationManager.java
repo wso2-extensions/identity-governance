@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.signup;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -73,7 +74,8 @@ public class UserSelfRegistrationManager {
     }
 
 
-    public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
+    public NotificationResponseBean registerUser(User user, String password, String[] roles, Claim[] claims, Property[] properties) 
+    		throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -132,6 +134,7 @@ public class UserSelfRegistrationManager {
                 }
 
                 String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
+                userRoles = ArrayUtils.addAll(userRoles, roles);
 
                 userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
                         password, userRoles, claimsMap, null);
