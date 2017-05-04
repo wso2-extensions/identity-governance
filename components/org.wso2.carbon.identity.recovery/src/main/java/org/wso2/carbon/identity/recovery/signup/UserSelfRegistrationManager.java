@@ -20,8 +20,11 @@
 package org.wso2.carbon.identity.recovery.signup;
 
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -33,6 +36,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -50,10 +55,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
-
-import java.util.*;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -72,7 +73,12 @@ public class UserSelfRegistrationManager {
     public static UserSelfRegistrationManager getInstance() {
         return instance;
     }
-
+    
+    public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) 
+    		throws IdentityRecoveryException {
+    	String[] roles = new String[0];
+    	return registerUser(user, password, roles, claims, properties);
+    }
 
     public NotificationResponseBean registerUser(User user, String password, String[] roles, Claim[] claims, Property[] properties) 
     		throws IdentityRecoveryException {
@@ -133,8 +139,8 @@ public class UserSelfRegistrationManager {
                     userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null, new Permission[]{permission});
                 }
 
-                String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
-                userRoles = ArrayUtils.addAll(userRoles, roles);
+            	String[] userRoles = Arrays.copyOf(roles, roles.length + 1);
+                userRoles[userRoles.length -1] = IdentityRecoveryConstants.SELF_SIGNUP_ROLE;
 
                 userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
                         password, userRoles, claimsMap, null);

@@ -78,15 +78,21 @@ public class SelfRegistrationUserDTO {
 	public List<ClaimDTO> getClaims() {
 		return claims;
 	}
-
+	
+	@ApiModelProperty(value = "")
+	@JsonProperty("claims")
 	public void setClaims(List<ClaimDTO> claims) {
 		this.claims = claims;
 	}
-
+	
+	@ApiModelProperty(value = "")
+	@JsonProperty("roles")
 	public List<String> getRoles() {
 		return roles;
 	}
-
+	
+	@ApiModelProperty(value = "")
+	@JsonProperty("roles")
 	public void setRoles(List<String> roles) {
 		this.roles = roles;
 	}
@@ -100,6 +106,7 @@ public class SelfRegistrationUserDTO {
 		sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
 		sb.append("  realm: ").append(realm).append("\n");
 		sb.append("  password: ").append(password).append("\n");
+		sb.append("  roles: ").append(claims).append("\n");
 		sb.append("  claims: ").append(claims).append("\n");
 		sb.append("}\n");
 		return sb.toString();
