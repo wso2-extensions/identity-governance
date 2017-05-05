@@ -78,19 +78,19 @@ public class SelfRegistrationUserDTO {
 	public List<ClaimDTO> getClaims() {
 		return claims;
 	}
-	
+
 	@ApiModelProperty(value = "")
 	@JsonProperty("claims")
 	public void setClaims(List<ClaimDTO> claims) {
 		this.claims = claims;
 	}
-	
+
 	@ApiModelProperty(value = "")
 	@JsonProperty("roles")
 	public List<String> getRoles() {
 		return roles;
 	}
-	
+
 	@ApiModelProperty(value = "")
 	@JsonProperty("roles")
 	public void setRoles(List<String> roles) {
