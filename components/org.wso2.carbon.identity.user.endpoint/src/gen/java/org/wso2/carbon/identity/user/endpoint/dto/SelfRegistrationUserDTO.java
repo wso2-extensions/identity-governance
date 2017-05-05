@@ -11,104 +11,104 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "")
 public class SelfRegistrationUserDTO {
 
-	private String username = null;
+  private String username = null;
 
-	private String tenantDomain = null;
+  private String tenantDomain = null;
 
-	private String realm = null;
+  private String realm = null;
 
-	private String password = null;
+  private String password = null;
 
-	private List<ClaimDTO> claims = new ArrayList<ClaimDTO>();
+  private List<ClaimDTO> claims = new ArrayList<ClaimDTO>();
 
-	private List<String> roles = new ArrayList<String>();
+  private List<String> roles = new ArrayList<String>();
 
-	/**
+  /**
 	 **/
-	@ApiModelProperty(value = "")
-	@JsonProperty("username")
-	public String getUsername() {
-		return username;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("username")
+  public String getUsername() {
+    return username;
+  }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+  public void setUsername(String username) {
+    this.username = username;
+  }
 
-	/**
+  /**
 	 **/
-	@ApiModelProperty(value = "")
-	@JsonProperty("tenant-domain")
-	public String getTenantDomain() {
-		return tenantDomain;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("tenant-domain")
+  public String getTenantDomain() {
+    return tenantDomain;
+  }
 
-	public void setTenantDomain(String tenantDomain) {
-		this.tenantDomain = tenantDomain;
-	}
+  public void setTenantDomain(String tenantDomain) {
+    this.tenantDomain = tenantDomain;
+  }
 
-	/**
+  /**
 	 **/
-	@ApiModelProperty(value = "")
-	@JsonProperty("realm")
-	public String getRealm() {
-		return realm;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("realm")
+  public String getRealm() {
+    return realm;
+  }
 
-	public void setRealm(String realm) {
-		this.realm = realm;
-	}
+  public void setRealm(String realm) {
+    this.realm = realm;
+  }
 
-	/**
+  /**
 	 **/
-	@ApiModelProperty(value = "")
-	@JsonProperty("password")
-	public String getPassword() {
-		return password;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("password")
+  public String getPassword() {
+    return password;
+  }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+  public void setPassword(String password) {
+    this.password = password;
+  }
 
-	/**
+  /**
 	 **/
-	@ApiModelProperty(value = "")
-	@JsonProperty("claims")
-	public List<ClaimDTO> getClaims() {
-		return claims;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("claims")
+  public List<ClaimDTO> getClaims() {
+    return claims;
+  }
 
-	@ApiModelProperty(value = "")
-	@JsonProperty("claims")
-	public void setClaims(List<ClaimDTO> claims) {
-		this.claims = claims;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("claims")
+  public void setClaims(List<ClaimDTO> claims) {
+    this.claims = claims;
+  }
 
-	@ApiModelProperty(value = "")
-	@JsonProperty("roles")
-	public List<String> getRoles() {
-		return roles;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("roles")
+  public List<String> getRoles() {
+    return roles;
+  }
 
-	@ApiModelProperty(value = "")
-	@JsonProperty("roles")
-	public void setRoles(List<String> roles) {
-		this.roles = roles;
-	}
+  @ApiModelProperty(value = "")
+  @JsonProperty("roles")
+  public void setRoles(List<String> roles) {
+    this.roles = roles;
+  }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("class SelfRegistrationUserDTO {\n");
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class SelfRegistrationUserDTO {\n");
 
-		sb.append("  username: ").append(username).append("\n");
-		sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
-		sb.append("  realm: ").append(realm).append("\n");
-		sb.append("  password: ").append(password).append("\n");
-		sb.append("  roles: ").append(claims).append("\n");
-		sb.append("  claims: ").append(claims).append("\n");
-		sb.append("}\n");
-		return sb.toString();
-	}
+    sb.append("  username: ").append(username).append("\n");
+    sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
+    sb.append("  realm: ").append(realm).append("\n");
+    sb.append("  password: ").append(password).append("\n");
+    sb.append("  roles: ").append(claims).append("\n");
+    sb.append("  claims: ").append(claims).append("\n");
+    sb.append("}\n");
+    return sb.toString();
+  }
 }
