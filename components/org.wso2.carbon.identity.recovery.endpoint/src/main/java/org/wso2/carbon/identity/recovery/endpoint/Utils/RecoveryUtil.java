@@ -144,6 +144,7 @@ public class RecoveryUtil {
         claimDTO.setReadOnly(claim.isReadOnly());
         claimDTO.setRequired(claim.isRequired());
         claimDTO.setDisplayName(claim.getDisplayTag());
+        claimDTO.setValidationRegex(claim.getRegEx());
         return claimDTO;
     }
 

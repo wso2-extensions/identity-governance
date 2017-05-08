@@ -30,6 +30,9 @@ public class ClaimDTO  {
   private String dialect = null;
   
   
+  private String validationRegex = null;
+  
+  
   private Boolean required = null;
   
   
@@ -99,6 +102,18 @@ public class ClaimDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
+  @JsonProperty("validation-regex")
+  public String getValidationRegex() {
+    return validationRegex;
+  }
+  public void setValidationRegex(String validationRegex) {
+    this.validationRegex = validationRegex;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
   @JsonProperty("required")
   public Boolean getRequired() {
     return required;
@@ -131,6 +146,7 @@ public class ClaimDTO  {
     sb.append("  description: ").append(description).append("\n");
     sb.append("  displayName: ").append(displayName).append("\n");
     sb.append("  dialect: ").append(dialect).append("\n");
+    sb.append("  validationRegex: ").append(validationRegex).append("\n");
     sb.append("  required: ").append(required).append("\n");
     sb.append("  readOnly: ").append(readOnly).append("\n");
     sb.append("}\n");
