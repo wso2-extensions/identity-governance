@@ -96,6 +96,8 @@ public class UserSelfRegistrationManager {
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+        boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getSignUpConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
 
@@ -154,7 +156,7 @@ public class UserSelfRegistrationManager {
                 }
             }
 
-            if (!isNotificationInternallyManage) {
+            if (!isNotificationInternallyManage && isAccountLockOnCreation) {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
                 userRecoveryDataStore.invalidate(user);
 
