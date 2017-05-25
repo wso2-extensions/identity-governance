@@ -564,6 +564,8 @@ definitions:
         type: string
       dialect:
         type: string
+      validation-regex:
+        type: string
       required: 
         type: boolean     
       read-only:

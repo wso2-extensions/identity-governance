@@ -167,6 +167,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
         }
     }
 
