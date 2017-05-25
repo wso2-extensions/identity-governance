@@ -105,7 +105,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             try {
 
-                if (isNotificationInternallyManage) {
+                if (isNotificationInternallyManage && isAccountLockOnCreation) {
                     userRecoveryDataStore.invalidate(user);
                     String secretKey = UUIDGenerator.generateUUID();
                     UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
