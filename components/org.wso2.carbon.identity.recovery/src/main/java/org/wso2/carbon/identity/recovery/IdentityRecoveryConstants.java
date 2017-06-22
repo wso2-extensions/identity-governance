@@ -165,6 +165,8 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
 
         public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
+        public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
+        public static final String ASK_PASSWORD_EXPIRY_TIME = "AskPassword.ExpiryTime";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
 

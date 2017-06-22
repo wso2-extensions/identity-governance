@@ -44,6 +44,10 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
+                "Email verification code expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
+                "Ask password code expiry time");
         return nameMapping;
     }
 
@@ -56,6 +60,12 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Lock user account during user creation");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
+                "Set the number of minutes the email verification mail would be valid.(Negative value for infinite " +
+                        "validity)");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
+                "Set the number of minutes the ask password mail would be valid. (Negative value for infinite " +
+                        "validity)");
         return descriptionMapping;
     }
 
@@ -66,6 +76,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
 
         return properties.toArray(new String[properties.size()]);
     }
@@ -76,9 +88,15 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         String enableEmailVerification = "false";
         String enableEmailAccountLockOnCreation = "true";
         String enableNotificationInternallyManage = "true";
+        String emailVerificationCodeExpiry = "1440";
+        String askPasswordCodeExpiry = "1440";
 
         String emailVerificationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
+        String emailVerificationCodeExpiryProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
+        String askPasswordCodeExpiryProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
         String lockOnCreationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         String notificationInternallyManagedProperty = IdentityUtil.getProperty(
@@ -93,10 +111,20 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         if (StringUtils.isNotEmpty(notificationInternallyManagedProperty)) {
             enableNotificationInternallyManage = notificationInternallyManagedProperty;
         }
+        if (StringUtils.isNotEmpty(emailVerificationCodeExpiryProperty)) {
+            emailVerificationCodeExpiry = emailVerificationCodeExpiryProperty;
+        }
+        if (StringUtils.isNotEmpty(askPasswordCodeExpiryProperty)) {
+            askPasswordCodeExpiry = askPasswordCodeExpiryProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
                 enableEmailVerification);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
+                emailVerificationCodeExpiry);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
+                askPasswordCodeExpiry);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 enableEmailAccountLockOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,

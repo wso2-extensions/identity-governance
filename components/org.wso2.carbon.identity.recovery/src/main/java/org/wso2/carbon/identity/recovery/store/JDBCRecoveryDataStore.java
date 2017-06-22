@@ -7,6 +7,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -14,6 +15,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.sql.*;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
@@ -84,11 +86,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                int notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                        .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
-                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
-
-                if (System.currentTimeMillis() > expiryTime) {
+                if (isCodeExpired(user.getTenantDomain(), recoveryScenario, recoveryStep, createdTimeStamp)) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_EXPIRED_CODE, code);
                 }
@@ -122,22 +120,18 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 user.setTenantDomain(IdentityTenantUtil.getTenantDomain(resultSet.getInt("TENANT_ID")));
                 user.setUserStoreDomain(resultSet.getString("USER_DOMAIN"));
 
-                String recoveryScenario = resultSet.getString("SCENARIO");
-                String recoveryStep = resultSet.getString("STEP");
+                Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
+                Enum recoveryStep = RecoverySteps.valueOf(resultSet.getString("STEP"));
 
-                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, RecoveryScenarios.valueOf
-                        (recoveryScenario), RecoverySteps.valueOf(recoveryStep));
+                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep);
 
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                int notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                        .ConnectorConfig.EXPIRY_TIME, user.getTenantDomain())); //Notification expiry time in minutes
-                long expiryTime = createdTimeStamp + notificationExpiryTimeInMinutes * 60 * 1000L;
-
-                if (System.currentTimeMillis() > expiryTime) {
+                if (isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(), userRecoveryData
+                        .getRecoveryStep(), createdTimeStamp)) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_EXPIRED_CODE, code);
                 }
@@ -193,9 +187,17 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet = prepStmt.executeQuery();
 
             if (resultSet.next()) {
-                UserRecoveryData userRecoveryData = new UserRecoveryData(user, resultSet.getString("CODE"),
-                        RecoveryScenarios.valueOf(resultSet.getString("SCENARIO")), RecoverySteps.valueOf(resultSet
-                        .getString("STEP")));
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
+                RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
+                String code = resultSet.getString("CODE");
+                if (isCodeExpired(user.getTenantDomain(), scenario, step, timeCreated.getTime())) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_EXPIRED_CODE, code);
+                }
+
+                UserRecoveryData userRecoveryData =
+                        new UserRecoveryData(user, code, scenario, step);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
@@ -233,5 +235,28 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
         }
+    }
+
+    private boolean isCodeExpired(String tenantDomain, Enum recoveryScenario, Enum recoveryStep, long createdTimestamp)
+            throws IdentityRecoveryServerException {
+
+        int notificationExpiryTimeInMinutes;
+        if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) &&
+                RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryStep)) {
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME, tenantDomain));
+        } else if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, tenantDomain));
+        } else {
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.EXPIRY_TIME, tenantDomain));
+        }
+        if (notificationExpiryTimeInMinutes < 0) {
+            //make the code valid infinitely in case of negative value
+            notificationExpiryTimeInMinutes = Integer.MAX_VALUE;
+        }
+        long expiryTime = createdTimestamp + TimeUnit.MINUTES.toMillis(notificationExpiryTimeInMinutes);
+        return System.currentTimeMillis() > expiryTime;
     }
 }
