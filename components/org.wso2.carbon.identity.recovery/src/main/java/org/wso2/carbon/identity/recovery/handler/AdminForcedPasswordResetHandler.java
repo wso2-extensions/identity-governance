@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.Map;
@@ -52,6 +53,14 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         Map<String, Object> eventProperties = event.getEventProperties();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
                 .EventProperty.USER_STORE_MANAGER);
+
+        // If the user store doesn't allow / support claim update  and read, skip this handler.
+        if (!IdentityUtil.isSupportedByUserStore(userStoreManager, UserStoreConfigConstants.claimOperationsSupported)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Claim operations are not supported by the user store. Hence returning");
+            }
+            return;
+        }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
             handleClaimUpdate(eventProperties, userStoreManager);
