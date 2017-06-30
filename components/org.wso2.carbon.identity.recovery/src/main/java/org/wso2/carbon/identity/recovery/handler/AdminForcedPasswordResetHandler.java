@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import java.security.SecureRandom;
 import java.util.Map;
 import java.util.Random;
 
@@ -208,7 +209,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
     private String generateOTPValue() {
         char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-        Random rnd = new Random();
+        SecureRandom rnd = new SecureRandom();
         StringBuilder sb = new StringBuilder("");
         for (int i = 0; i < 6; i++) {
             sb.append(chars[rnd.nextInt(chars.length)]);
