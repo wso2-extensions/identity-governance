@@ -209,7 +209,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
     private String generateOTPValue() {
         char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-        Random rnd = new SecureRandom();
+        SecureRandom rnd = new SecureRandom();
         StringBuilder sb = new StringBuilder("");
         for (int i = 0; i < 6; i++) {
             sb.append(chars[rnd.nextInt(chars.length)]);
