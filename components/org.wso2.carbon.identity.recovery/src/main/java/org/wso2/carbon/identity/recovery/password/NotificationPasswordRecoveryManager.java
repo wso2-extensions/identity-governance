@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -143,6 +144,13 @@ public class NotificationPasswordRecoveryManager {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain() ;
+        String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
+
+        if(!StringUtils.equals(contextTenantDomain, userTenantDomain)){
+            throw new IdentityRecoveryClientException("invalid tenant domain: "+ userTenantDomain);
+        }
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
