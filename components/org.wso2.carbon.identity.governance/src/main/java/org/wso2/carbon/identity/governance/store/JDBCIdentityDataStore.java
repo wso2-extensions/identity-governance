@@ -82,8 +82,16 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             }
             try {
                 if (isUserExists) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Key:" + key + ", Value:" + value + " updated for user:" + userName + " in " +
+                                "JDBCIdentityDataStore");
+                    }
                     updateUserDataValue(userName, tenantId, key, value);
                 } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Key:" + key + ", Value:" + value + " added for user:" + userName + " in " +
+                                "JDBCIdentityDataStore");
+                    }
                     addUserDataValue(userName, tenantId, key, value);
                 }
             } catch (SQLException e) {
