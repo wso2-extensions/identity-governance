@@ -245,7 +245,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) &&
                 RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryStep)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME, tenantDomain));
+                    .ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, tenantDomain));
         } else if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, tenantDomain));

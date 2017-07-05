@@ -48,6 +48,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable Notification Internally Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable reCaptcha");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                "User self registration code expiry time");
         return nameMapping;
     }
 
@@ -62,6 +64,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Set false if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable captcha verification during self registration");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
+                        "value for infinite validity)");
         return descriptionMapping;
     }
 
@@ -73,7 +79,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
-
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         return properties.toArray(new String[properties.size()]);
     }
 
@@ -84,6 +90,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableAccountLockOnCreation = "true";
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
+        String verificationCodeExpiryTime = "1440";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -93,6 +100,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         String reCaptchaProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
+        String verificationCodeExpiryTimeProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -106,6 +115,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(reCaptchaProperty)) {
             enableSelfRegistrationReCaptcha = reCaptchaProperty;
         }
+        if (StringUtils.isNotEmpty(verificationCodeExpiryTimeProperty)) {
+            verificationCodeExpiryTime = verificationCodeExpiryTimeProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
@@ -115,6 +127,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 enableSelfRegistrationReCaptcha);
+        defaultProperties.put(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                verificationCodeExpiryTime);
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
