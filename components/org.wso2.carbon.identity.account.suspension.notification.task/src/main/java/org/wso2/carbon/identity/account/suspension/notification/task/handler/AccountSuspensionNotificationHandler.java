@@ -192,7 +192,16 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
         Calendar currentTime = Calendar.getInstance();
         Calendar triggerTime = Calendar.getInstance();
-        triggerTime.setTime(notificationTriggerTime);
+        // If notificationTriggerTimeProperty is not found or not in right format default to 20:00:00.
+        // In Calender.HOUR_OF_DAY (i.e. in 24-hour clock) it is 20.
+        if (notificationTriggerTime != null) {
+            triggerTime.setTime(notificationTriggerTime);
+        } else {
+            triggerTime.set(Calendar.HOUR_OF_DAY, 20);
+            triggerTime.set(Calendar.MINUTE, 0);
+            triggerTime.set(Calendar.SECOND, 0);
+        }
+
 
         // Convert times into seconds
         long currentSecond =

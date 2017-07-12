@@ -17,10 +17,9 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.exception.AccountSuspensionNotificationException;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
@@ -30,14 +29,12 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.Notifi
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.mgt.services.UserIdentityManagementAdminService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.Tenant;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,7 +144,7 @@ public class AccountValidatorThread implements Runnable {
     /**
      * Notify users about account inactivity via Email.
      */
-    private void notifyUsers(String tenantDomain, long suspensionDelay, long[] notificationDelays ) {
+    private void notifyUsers(String tenantDomain, long suspensionDelay, long[] notificationDelays) {
         EmailUtil util = new EmailUtil();
         for (long delay : notificationDelays) {
             List<NotificationReceiver> receivers = null;
@@ -156,7 +153,7 @@ public class AccountValidatorThread implements Runnable {
             } catch (AccountSuspensionNotificationException e) {
                 log.error("Error occurred while retrieving notification receivers", e);
             }
-            if (!receivers.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(receivers)) {
                 for (NotificationReceiver receiver : receivers) {
                     if (log.isDebugEnabled()) {
                         log.debug("Sending notification to: " + receiver.getUsername());

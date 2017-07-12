@@ -30,15 +30,15 @@ public class IdentityGovernanceException extends Exception {
     static {
 
         FAULT_CODE_MAP.put(
-                new Integer(IdentityGovernanceException.FAILURE),
+                FAILURE,
                 IdentityMgtConstants.ErrorMessage.FAILURE
         );
         FAULT_CODE_MAP.put(
-                new Integer(FAILED_AUTHENTICATION),
+                FAILED_AUTHENTICATION,
                 IdentityMgtConstants.ErrorMessage.FAILED_AUTHENTICATION
         );
         FAULT_CODE_MAP.put(
-                new Integer(FAILED_ENCRYPTION),
+                FAILED_ENCRYPTION,
                 IdentityMgtConstants.ErrorMessage.FAILED_ENCRYPTION
         );
     }
