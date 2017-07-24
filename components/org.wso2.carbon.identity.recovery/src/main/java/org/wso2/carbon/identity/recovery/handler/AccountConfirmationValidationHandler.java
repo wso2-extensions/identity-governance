@@ -61,7 +61,6 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-        String usernameWithDomain = UserCoreUtil.addDomainToName(userName, domainName);
 
         User user = new User();
         user.setUserName(userName);
