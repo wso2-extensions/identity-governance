@@ -125,5 +125,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         return null;
     }
 
+    @Override
+    public Map<String, String> getPropertyTypeMapping() {
+
+        return new HashMap<>();
+    }
 
 }

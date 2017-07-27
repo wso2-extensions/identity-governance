@@ -216,4 +216,10 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
         return null;
     }
+
+    @Override
+    public Map<String, String> getPropertyTypeMapping() {
+
+        return new HashMap<>();
+    }
 }

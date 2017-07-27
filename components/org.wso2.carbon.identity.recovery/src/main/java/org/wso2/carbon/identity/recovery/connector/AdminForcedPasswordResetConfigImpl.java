@@ -112,4 +112,10 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         return null;
     }
 
+    @Override
+    public Map<String, String> getPropertyTypeMapping() {
+
+        return new HashMap<>();
+    }
+
 }

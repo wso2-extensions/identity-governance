@@ -167,6 +167,13 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         return null;
     }
 
+    @Override
+    public Map<String, String> getPropertyTypeMapping() {
+
+        return new HashMap<>();
+
+    }
+
     private void startScheduler() {
 
         if(!Boolean.parseBoolean(configs.getModuleProperties().getProperty(NotificationConstants.

@@ -44,6 +44,7 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
             ConnectorConfig config =new ConnectorConfig();
             Map <String,String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
             Map <String,String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+            Map <String,String> propertyTypes = list.get(i).getPropertyTypeMapping();
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setCategory(list.get(i).getCategory());
             config.setSubCategory(list.get(i).getSubCategory());
@@ -56,6 +57,7 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
                         configProperties[j] = properties[k];
                         configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
                         configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        configProperties[j].setType(propertyTypes.get(configProperties[j].getName()));
                         break;
                     }
                 }

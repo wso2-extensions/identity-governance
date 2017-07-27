@@ -43,4 +43,6 @@ public interface IdentityConnectorConfig {
 
     Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
 
+    Map<String, String> getPropertyTypeMapping();
+
 }

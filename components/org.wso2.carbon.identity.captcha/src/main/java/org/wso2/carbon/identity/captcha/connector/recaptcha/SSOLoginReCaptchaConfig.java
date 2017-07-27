@@ -245,4 +245,10 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         return null;
     }
+
+    @Override
+    public Map<String, String> getPropertyTypeMapping() {
+
+        return new HashMap<>();
+    }
 }
