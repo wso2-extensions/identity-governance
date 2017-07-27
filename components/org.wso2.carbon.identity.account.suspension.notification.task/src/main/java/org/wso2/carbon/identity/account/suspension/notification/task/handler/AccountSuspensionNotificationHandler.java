@@ -106,7 +106,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
         nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert User In (days comma-separated list");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert Users before account locking in " +
+                "days (comma-separated list)");
         return nameMapping;
     }
 
