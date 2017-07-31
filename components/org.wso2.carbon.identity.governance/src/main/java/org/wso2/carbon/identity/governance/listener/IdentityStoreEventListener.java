@@ -187,6 +187,10 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " + userName);
+        }
+
         boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
         if (accountLocked) {
             IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
@@ -204,6 +208,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         if (!isEnable()) {
             return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("doPostGetUserClaimValues getting executed in the IdentityStoreEventListener for user: " +
+                    userName);
         }
 
         // No need to separately handle if identity `data store is user store based

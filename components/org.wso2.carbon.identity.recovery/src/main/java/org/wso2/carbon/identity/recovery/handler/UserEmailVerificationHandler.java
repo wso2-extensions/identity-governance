@@ -78,6 +78,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (!enable) {
             //Email Verification feature is disabled
+            if (log.isDebugEnabled()) {
+                log.debug("Email verification Handler is disabled in tenant: " + user.getTenantDomain());
+            }
             return;
         }
 
@@ -155,6 +158,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     }
 
     public void lockAccount(User user, UserStoreManager userStoreManager) throws IdentityEventException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Locking user account:" + user.getUserName());
+        }
         setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString(), userStoreManager, user);
     }
 
