@@ -82,6 +82,10 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
         if (!enable) {
             //Self signup feature is disabled
+
+            if (log.isDebugEnabled()) {
+                log.debug("Self signup feature is disabled in tenant: " + tenantDomain);
+            }
             return;
         }
 
@@ -103,8 +107,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            try {
 
+            try {
                 if (isNotificationInternallyManage && isAccountLockOnCreation) {
                     userRecoveryDataStore.invalidate(user);
                     String secretKey = UUIDGenerator.generateUUID();
@@ -124,6 +128,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                 try {
                     userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Locked user account: " + user.getUserName());
+                    }
                 } catch (UserStoreException e) {
                     throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
                 }
@@ -143,8 +150,12 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     }
 
 
-    private void triggerNotification(User user, String type, String code, Property[] props) throws
+    protected void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Sending self user registration notification user: " + user.getUserName());
+        }
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
