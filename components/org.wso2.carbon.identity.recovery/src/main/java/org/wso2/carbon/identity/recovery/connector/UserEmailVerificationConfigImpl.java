@@ -48,6 +48,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Email verification code expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
                 "Ask password code expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
+                "Temporary password generation extension class");
         return nameMapping;
     }
 
@@ -66,6 +68,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
                 "Set the number of minutes the ask password mail would be valid. (Negative value for infinite " +
                         "validity)");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
+                "Temporary password generation extension point in ask password feature)");
         return descriptionMapping;
     }
 
@@ -78,6 +82,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR);
 
         return properties.toArray(new String[properties.size()]);
     }
@@ -90,6 +95,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         String enableNotificationInternallyManage = "true";
         String emailVerificationCodeExpiry = "1440";
         String askPasswordCodeExpiry = "1440";
+        String askPasswordTempPassExtension = "org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator";
 
         String emailVerificationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
@@ -97,6 +103,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         String askPasswordCodeExpiryProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
+        String askPasswordTempPasswordProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR);
         String lockOnCreationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         String notificationInternallyManagedProperty = IdentityUtil.getProperty(
@@ -117,6 +125,9 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         if (StringUtils.isNotEmpty(askPasswordCodeExpiryProperty)) {
             askPasswordCodeExpiry = askPasswordCodeExpiryProperty;
         }
+        if (StringUtils.isNotBlank(askPasswordTempPasswordProperty)) {
+            askPasswordTempPassExtension = askPasswordTempPasswordProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
@@ -129,6 +140,8 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 enableEmailAccountLockOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
+                askPasswordTempPassExtension);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
