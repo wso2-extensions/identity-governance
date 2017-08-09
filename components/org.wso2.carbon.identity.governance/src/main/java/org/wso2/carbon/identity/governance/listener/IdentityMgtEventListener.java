@@ -82,19 +82,6 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         IdentityUtil.clearIdentityErrorMsg();
         IdentityUtil.threadLocalProperties.get().remove(RE_CAPTCHA_USER_DOMAIN);
 
-        if (!isUserExistsInDomain(userStoreManager, userName)) {
-            if (log.isDebugEnabled()) {
-                log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
-                        "user store domain :" + userStoreManager.getRealmConfiguration().getUserStoreProperty
-                        (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
-            }
-
-            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
-                    .ErrorCode.USER_DOES_NOT_EXIST);
-            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-            return true;
-        }
-
         // This is used set domain of the user when authentication is failed for an existing user. This is required
         // for re-captcha feature.
         IdentityUtil.threadLocalProperties.get().put(RE_CAPTCHA_USER_DOMAIN,
@@ -685,7 +672,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 if (userDomain.equals(userStoreDomain)) {
                     isExists = true;
                 }
-            } else if (IdentityUtil.getPrimaryDomainName().equals(userStoreDomain)) {
+            } else if (IdentityUtil.getPrimaryDomainName().equalsIgnoreCase(userStoreDomain)) {
                 isExists = true;
             }
         } else {
