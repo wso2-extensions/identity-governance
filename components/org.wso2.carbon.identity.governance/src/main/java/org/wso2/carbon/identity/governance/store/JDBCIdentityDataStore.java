@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance.store;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityException;
@@ -32,7 +33,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,6 +44,10 @@ import java.util.Map;
 public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
     private static Log log = LogFactory.getLog(JDBCIdentityDataStore.class);
+
+    private static final String QUERY_FILTER_STRING_ANY = "*";
+    private static final String SQL_FILTER_STRING_ANY = "%";
+    private static final char SQL_FILTER_CHAR_ESCAPE = '\\';
 
     @Override
     public void store(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
@@ -266,6 +273,62 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         }
     }
 
+    @Override
+    public List<String> list(String claimUri, String claimValue,
+                             org.wso2.carbon.user.core.UserStoreManager userStoreManager) throws IdentityException {
+
+        List<String> userNames = new ArrayList<>();
+
+        // This is to support LDAP like queries, so this will provide support for only leading or trailing '*'
+        // filters. if the query has multiple '*' s the filter will ignore all.
+        if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+            if ((claimValue.startsWith(QUERY_FILTER_STRING_ANY) &&
+                    !claimValue.substring(1).contains(QUERY_FILTER_STRING_ANY)) ||
+                    claimValue.endsWith(QUERY_FILTER_STRING_ANY) &&
+                            !claimValue.substring(0, claimValue.length() - 1).contains(QUERY_FILTER_STRING_ANY) &&
+                            claimValue.charAt(claimValue.length() - 2) != SQL_FILTER_CHAR_ESCAPE) {
+                claimValue = claimValue.replace(QUERY_FILTER_STRING_ANY, SQL_FILTER_STRING_ANY);
+            }
+        }
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+
+            // We are limiting users for current tenant and user store domain.
+            int tenantId = userStoreManager.getTenantId();
+            String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+
+            String query = SQLQuery.LIST_USERS_FROM_CLAIM;
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+                preparedStatement.setString(1, claimUri);
+                preparedStatement.setString(2, claimValue);
+                preparedStatement.setInt(3, tenantId);
+
+                // If the user has a domain, domain name is appended to the user name in the user name column. If
+                // we need to select user names only for current domain, we have to do a SQL like.
+                String userNameWithDomain;
+                if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                    userNameWithDomain = SQL_FILTER_STRING_ANY;
+                } else {
+                    userNameWithDomain = userStoreDomain + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+                }
+
+                preparedStatement.setString(4, userNameWithDomain);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    while (resultSet.next()) {
+                        userNames.add(resultSet.getString("USER_NAME"));
+                    }
+                }
+            }
+        } catch (SQLException | UserStoreException e) {
+            throw new IdentityException("Error occurred while retrieving users from claim URI: " + claimUri, e);
+        }
+
+        return userNames;
+    }
+
     /**
      * This class contains the SQL queries.
      * Schem:
@@ -295,6 +358,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 "TENANT_ID = ? AND USER_NAME = ?";
         public static final String DELETE_USER_DATA_CASE_INSENSITIVE = "DELETE FROM IDN_IDENTITY_USER_DATA WHERE " +
                 "TENANT_ID = ? AND LOWER(USER_NAME) = LOWER(?)";
+
+        static final String LIST_USERS_FROM_CLAIM =
+                "SELECT DISTINCT USER_NAME " +
+                "FROM IDN_IDENTITY_USER_DATA " +
+                "WHERE DATA_KEY = ? AND DATA_VALUE LIKE ? AND TENANT_ID = ? AND USER_NAME LIKE ?";
 
         private SQLQuery() {
         }
