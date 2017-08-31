@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 }
             boolean isAccountLocked = true ;
             try {
+                if (isAuthPolicyAccountExistCheck() && !isUserExistsInDomain(userStoreManager, userName)) {
+                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
+                            .ErrorCode.USER_DOES_NOT_EXIST);
+                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                    return;
+                }
                 Map<String, String> values = userStoreManager.getUserClaimValues(userName, new String[]{
                         ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
                 isAccountLocked = Boolean.parseBoolean(values.get(ACCOUNT_LOCKED_CLAIM));
@@ -115,6 +121,26 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " + e.getMessage(), e);
         }
         return userConfirmed ;
+    }
+
+    private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName)
+            throws IdentityEventException {
+
+        boolean isExists = false;
+        try {
+            if (userStoreManager.isExistingUser(userName)) {
+                isExists = true;
+            }
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error occurred while check user existence: " + userName, e);
+        }
+        return isExists;
+    }
+
+    private boolean isAuthPolicyAccountExistCheck() {
+        String authpolicy = IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist");
+        return authpolicy == null || Boolean.parseBoolean(IdentityUtil
+                .getProperty("AuthenticationPolicy.CheckAccountExist"));
     }
 
 }
