@@ -124,15 +124,11 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
     }
 
     private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName)
-            throws IdentityEventException {
+            throws UserStoreException {
 
         boolean isExists = false;
-        try {
-            if (userStoreManager.isExistingUser(userName)) {
-                isExists = true;
-            }
-        } catch (UserStoreException e) {
-            throw new IdentityEventException("Error occurred while check user existence: " + userName, e);
+        if (userStoreManager.isExistingUser(userName)) {
+            isExists = true;
         }
         return isExists;
     }
