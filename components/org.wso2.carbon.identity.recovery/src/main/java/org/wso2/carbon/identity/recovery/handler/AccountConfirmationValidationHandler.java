@@ -134,9 +134,8 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
     }
 
     private boolean isAuthPolicyAccountExistCheck() {
-        String authpolicy = IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist");
-        return authpolicy == null || Boolean.parseBoolean(IdentityUtil
-                .getProperty("AuthenticationPolicy.CheckAccountExist"));
+        String authPolicyAccountExistCheck = IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist");
+        return authPolicyAccountExistCheck == null || Boolean.parseBoolean(authPolicyAccountExistCheck);
     }
 
 }
