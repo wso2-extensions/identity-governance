@@ -21,6 +21,9 @@ import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This interface provides to plug module for preferred persistence store.
  */
@@ -74,4 +77,20 @@ public abstract class UserIdentityDataStore {
      * @param userStoreManager
      */
     public abstract void remove(String userName, UserStoreManager userStoreManager) throws IdentityException;
+
+    /**
+     * List users according to the given claim URI and value.
+     * @param claimUri Claim URI.
+     * @param claimValue Value for the given claim URI.
+     * @param userStoreManager UserStoreManager instance.
+     * @return List of user identifiers.
+     * @throws IdentityException Identity Exception.
+     */
+    public List<String> list(String claimUri, String claimValue,
+                             org.wso2.carbon.user.core.UserStoreManager userStoreManager) throws IdentityException {
+
+        // This method should be overridden by the sub classes. Adding a non-abstract method to give backward
+        // compatibility. Return an immutable empty list if sub classes do not have any overrides.
+        return Collections.emptyList();
+    }
 }
