@@ -23,7 +23,6 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -68,11 +67,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
         User user = getUser(eventProperties, userStoreManager);
 
-        String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
-
-        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
-                .USER_CLAIMS);
-
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION, user.getTenantDomain()));
 
@@ -84,6 +78,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
+        String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
+
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
+                .USER_CLAIMS);
+
         if (roleList != null) {
             List<String> roles = Arrays.asList(roleList);
             if (roles.contains(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
@@ -91,13 +90,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
             }
         }
-
-        boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
-
-        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
-
 
         if (IdentityEventConstants.Event.PRE_ADD_USER.equals(event.getEventName())) {
             if (claims == null || claims.isEmpty()) {
@@ -126,6 +118,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
+
+            boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
+                    (IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
+            boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
+                    (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                            user.getTenantDomain()));
+
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
             if (claim == null) {
                 return;
@@ -218,6 +217,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
     }
+
     protected void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
@@ -233,8 +233,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (props != null && props.length > 0) {
-            for (int i = 0; i < props.length; i++) {
-                properties.put(props[i].getKey(), props[i].getValue());
+            for (Property prop : props) {
+                properties.put(prop.getKey(), prop.getValue());
             }
         }
         if (StringUtils.isNotBlank(code)) {
