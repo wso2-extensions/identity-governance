@@ -54,7 +54,7 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {
-        if(identityEventService == null) {
+        if(identityGovernanceService == null) {
             throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
         }
         return identityGovernanceService;
