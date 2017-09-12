@@ -92,6 +92,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_ADD_USER.equals(event.getEventName())) {
+            Utils.clearEmailVerifyTemporaryClaim();
             if (claims == null || claims.isEmpty()) {
                 //Not required to handle in this handler
                 return;
@@ -99,7 +100,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Claim claim = new Claim();
                 claim.setClaimUri(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
                 claim.setValue(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
-                Utils.clearEmailVerifyTemporaryClaim();
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
 
@@ -107,7 +107,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Claim claim = new Claim();
                 claim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
                 claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
-                Utils.clearEmailVerifyTemporaryClaim();
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
 
