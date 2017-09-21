@@ -279,15 +279,11 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         List<String> userNames = new ArrayList<>();
 
-        // This is to support LDAP like queries, so this will provide support for only leading or trailing '*'
-        // filters. if the query has multiple '*' s the filter will ignore all.
         if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
-            if ((claimValue.startsWith(QUERY_FILTER_STRING_ANY) &&
-                    !claimValue.substring(1).contains(QUERY_FILTER_STRING_ANY)) ||
-                    claimValue.endsWith(QUERY_FILTER_STRING_ANY) &&
-                            !claimValue.substring(0, claimValue.length() - 1).contains(QUERY_FILTER_STRING_ANY) &&
-                            claimValue.charAt(claimValue.length() - 2) != SQL_FILTER_CHAR_ESCAPE) {
-                claimValue = claimValue.replace(QUERY_FILTER_STRING_ANY, SQL_FILTER_STRING_ANY);
+            // This is to support LDAP like queries. Value having only * is restricted except one *.
+            if (!claimValue.matches("(\\*)\\1+")) {
+                // Convert all the * to % except \*.
+                claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
             }
         }
 
