@@ -10,7 +10,11 @@ import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.Exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.user.endpoint.dto.*;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.user.api.Claim;
 
 import java.util.List;
@@ -128,7 +132,6 @@ public class Utils {
         User user = new User();
         user.setTenantDomain(userDTO.getTenantDomain());
         user.setUserStoreDomain(userDTO.getRealm());
-        user.setUserName(userDTO.getUsername());
         user.setUserName(userDTO.getUsername());
         return user;
     }
