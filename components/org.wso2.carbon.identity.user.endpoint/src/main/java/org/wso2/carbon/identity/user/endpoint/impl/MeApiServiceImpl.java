@@ -45,7 +45,7 @@ public class MeApiServiceImpl extends MeApiService {
             selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
 
-        if (StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
+        if (selfUserRegistrationRequestDTO != null && StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
             selfUserRegistrationRequestDTO.getUser().setRealm(IdentityUtil.getPrimaryDomainName());
         }
 
@@ -73,9 +73,13 @@ public class MeApiServiceImpl extends MeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+        if (notificationResponseBean != null) {
+            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+                return Response.status(Response.Status.CREATED).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+        } else {
             return Response.status(Response.Status.CREATED).build();
         }
-        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 }

@@ -19,16 +19,16 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.IObjectFactory;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
-import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.Util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
@@ -57,19 +57,44 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     private ResendCodeApiServiceImpl resendCodeApiService;
 
     @Test
-    public void testResendCodePost() throws Exception {
+    public void testResendCodePost() throws IdentityRecoveryException {
 
-        mockStatic(IdentityUtil.class);
-        mockStatic(Utils.class);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-        PowerMockito.when(IdentityUtil.class, (String) IdentityUtil.threadLocalProperties.get().
-                get(Constants.TENANT_NAME_FROM_CONTEXT)).thenReturn("TestTenant");
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
+        mockClasses();
         when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenReturn(notificationResponseBean);
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(null).getStatus(), 201);
     }
+
+    @Test
+    public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.resendConfirmationCode(
+                Utils.getUser(resendCodeRequestDTO().getUser()),
+                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
+        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
+    }
+
+    @Test
+    public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.resendConfirmationCode(
+                Utils.getUser(resendCodeRequestDTO().getUser()),
+                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
+        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
+    }
+
+    private void mockClasses() {
+
+        mockStatic(IdentityUtil.class);
+        mockStatic(Utils.class);
+        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
+        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
+    }
+
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {

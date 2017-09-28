@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.IObjectFactory;
@@ -27,6 +26,8 @@ import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
@@ -63,18 +64,40 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     private MeApiServiceImpl meApiService;
 
     @Test
-    public void testResendCodePost() throws Exception {
+    public void testMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenReturn(notificationResponseBean);
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+        when((String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT)).thenReturn("TestTenant");
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+        assertEquals(meApiService.mePost(null).getStatus(), 201);
+    }
+
+    @Test
+    public void testIdentityRecoveryExceptioninMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+    }
+
+    @Test
+    public void testIdentityRecoveryClientExceptioninMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+    }
+
+    private void mockClasses() {
 
         mockStatic(IdentityUtil.class);
         mockStatic(Utils.class);
-        PowerMockito.when(IdentityUtil.class, (String) IdentityUtil.threadLocalProperties.get().
-                get(Constants.TENANT_NAME_FROM_CONTEXT)).thenReturn("TestTenant");
         when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-
-        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
-                any(Property[].class))).thenReturn(notificationResponseBean);
-
-        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
     }
 
     @ObjectFactory
@@ -87,7 +110,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
 
         SelfRegistrationUserDTO selfRegistrationUserDTO = new SelfRegistrationUserDTO();
         selfRegistrationUserDTO.setUsername("TestUser");
-        selfRegistrationUserDTO.setRealm("TestRealm");
+        selfRegistrationUserDTO.setRealm(null);
         selfRegistrationUserDTO.setTenantDomain("TestTenantDomain");
         selfRegistrationUserDTO.setPassword("TestPassword");
         return selfRegistrationUserDTO;
