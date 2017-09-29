@@ -56,7 +56,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
 
-    @Test
+ /*   @Test
     public void testResendCodePost() throws Exception {
 
         mockStatic(IdentityUtil.class);
@@ -69,7 +69,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenReturn(notificationResponseBean);
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
-    }
+    }*/
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
