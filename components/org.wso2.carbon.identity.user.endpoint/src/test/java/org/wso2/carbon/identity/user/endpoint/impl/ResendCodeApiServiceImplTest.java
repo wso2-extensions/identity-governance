@@ -56,6 +56,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
 
+
     @Test
     public void testResendCodePost() throws IdentityRecoveryException {
 
@@ -87,6 +88,8 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
     }
 
+
+  
     private void mockClasses() {
 
         mockStatic(IdentityUtil.class);

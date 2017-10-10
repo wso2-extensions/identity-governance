@@ -30,9 +30,11 @@ import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
@@ -281,6 +283,46 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             throw new UserStoreException(INVALID_OPERATION + " This operation is not supported for Identity claims");
         }
         return true;
+    }
+
+    @Override
+    public boolean doPreGetUserList(String claimUri, String claimValue, List<String> returnUserNameList,
+                                    UserStoreManager userStoreManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("doPreGetUserList executed in the IdentityStoreEventListener for claim URI: " + claimUri +
+                    " and claim value: " + claimValue);
+        }
+
+        try {
+            List<String> userIds = identityDataStore.list(claimUri, claimValue, userStoreManager);
+
+            // If this is the primary domain, all the users will be retrieved since the primary domain is not appended
+            // to the user name in the IDN table. So we have to filter users belongs to primary in Java level.
+            String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+            if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                for (String userId : userIds) {
+                    if (!StringUtils.contains(userId, UserCoreConstants.DOMAIN_SEPARATOR) ||
+                            StringUtils.startsWith(userId, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME +
+                                    UserCoreConstants.DOMAIN_SEPARATOR)) {
+                        returnUserNameList.add(userId);
+                    }
+                }
+            } else {
+                returnUserNameList.addAll(userIds);
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Retrieved " + userIds.size() + " users for claim: " + claimUri);
+            }
+            return true;
+        } catch (IdentityException e) {
+            throw new UserStoreException("Error while listing the users for given claim: " + claimUri, e);
+        }
     }
 
     /**

@@ -74,6 +74,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 }
             boolean isAccountLocked = true ;
             try {
+                if (isAuthPolicyAccountExistCheck() && !isUserExistsInDomain(userStoreManager, userName)) {
+                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
+                            .ErrorCode.USER_DOES_NOT_EXIST);
+                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                    return;
+                }
                 Map<String, String> values = userStoreManager.getUserClaimValues(userName, new String[]{
                         ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
                 isAccountLocked = Boolean.parseBoolean(values.get(ACCOUNT_LOCKED_CLAIM));
@@ -115,6 +121,21 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " + e.getMessage(), e);
         }
         return userConfirmed ;
+    }
+
+    private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName)
+            throws UserStoreException {
+
+        boolean isExists = false;
+        if (userStoreManager.isExistingUser(userName)) {
+            isExists = true;
+        }
+        return isExists;
+    }
+
+    private boolean isAuthPolicyAccountExistCheck() {
+        String authPolicyAccountExistCheck = IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist");
+        return authPolicyAccountExistCheck == null || Boolean.parseBoolean(authPolicyAccountExistCheck);
     }
 
 }
