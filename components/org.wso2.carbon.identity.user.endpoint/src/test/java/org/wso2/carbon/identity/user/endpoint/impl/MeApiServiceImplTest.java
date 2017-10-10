@@ -70,8 +70,6 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
         when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
                 any(Property[].class))).thenReturn(notificationResponseBean);
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
-        when((String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT)).thenReturn("TestTenant");
-        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
         assertEquals(meApiService.mePost(null).getStatus(), 201);
     }
 
