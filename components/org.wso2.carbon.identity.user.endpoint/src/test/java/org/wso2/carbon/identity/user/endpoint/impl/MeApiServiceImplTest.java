@@ -62,7 +62,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
 
     @InjectMocks
     private MeApiServiceImpl meApiService;
-/*
+
     @Test
     public void testMePost() throws IdentityRecoveryException {
 
@@ -91,7 +91,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
         when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
                 any(Property[].class))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
-    }*/
+    }
 
     private void mockClasses() {
 
