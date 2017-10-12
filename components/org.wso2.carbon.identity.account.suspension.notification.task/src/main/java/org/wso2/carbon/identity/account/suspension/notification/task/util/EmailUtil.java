@@ -21,11 +21,14 @@ import org.apache.log4j.Logger;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.mgt.NotificationSender;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.HashMap;
 
@@ -51,10 +54,18 @@ public class EmailUtil {
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
                 CarbonContext.getThreadLocalCarbonContext().getTenantDomain());
         try {
-            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,
-                    CarbonContext.getThreadLocalCarbonContext().getUserRealm().getUserStoreManager());
+            UserStoreManager userStoreManager;
+            if(IdentityUtil.getPrimaryDomainName().equals(receiver.getUserStoreDomain())) {
+                userStoreManager = (UserStoreManager) CarbonContext.getThreadLocalCarbonContext().getUserRealm()
+                        .getUserStoreManager();
+            } else {
+                userStoreManager = ((UserStoreManager) CarbonContext.getThreadLocalCarbonContext().getUserRealm()
+                        .getUserStoreManager()).getSecondaryUserStoreManager(receiver.getUserStoreDomain());
+            }
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,userStoreManager);
         } catch (UserStoreException e) {
             log.error("Error while getting user store manager", e);
+            return;
         }
 
         properties.put("first-name", receiver.getFirstName());

@@ -54,7 +54,7 @@ public class NotificationReceiversRetrievalUtil {
                 userStoreSet.add(domain);
             }
 
-            while (realmConfiguration != null) {
+            do {
                 realmConfiguration = realmConfiguration.getSecondaryRealmConfig();
                 if (realmConfiguration != null) {
                     if (isEffectiveUserStore(realmConfiguration, false)) {
@@ -62,9 +62,8 @@ public class NotificationReceiversRetrievalUtil {
                                 .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
                     }
                 }
-                while (realmConfiguration != null)
-                    ;
-            }
+            } while (realmConfiguration != null);
+
         } catch (UserStoreException e) {
             throw new AccountSuspensionNotificationException("Error while getting the notification enabled user stores",
                     e);
