@@ -40,4 +40,7 @@ public class NotificationConstants {
     public final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
     public final static String LAST_LOGIN_TIME = "http://wso2.org/claims/lastLoginTime";
 
+    public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
+            ".org/claims/identity/failedPasswordRecoveryAttempts";
 }
