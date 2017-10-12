@@ -24,6 +24,7 @@
             <class name="org.wso2.carbon.identity.recovery.endpoint.SecurityQuestionApiServiceImplTest"/>
             <class name="org.wso2.carbon.identity.recovery.endpoint.ValidateAnswerApiServiceImplTest"/>
             <class name="org.wso2.carbon.identity.recovery.endpoint.RecoverPasswordApiServiceImplTest"/>
+            <class name="org.wso2.carbon.identity.recovery.endpoint.ValidateCodeApiServiceImplTest"/>
         </classes>
     </test>
 </suite>

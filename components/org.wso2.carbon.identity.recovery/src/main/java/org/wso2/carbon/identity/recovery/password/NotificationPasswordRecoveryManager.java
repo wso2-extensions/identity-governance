@@ -199,6 +199,35 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
+    /**
+     * Method to validate confirmation code of password reset flow.
+     * @param code confirmation code
+     * @param recoveryStep
+     * @throws IdentityRecoveryException
+     */
+    public void validateConfirmationCode(String code, String recoveryStep)
+            throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
+        if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
+            throw new IdentityRecoveryClientException("invalid tenant domain: " + userTenantDomain);
+        }
+        if (!recoveryStep.equals(userRecoveryData.getRecoveryStep().name())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
+        if (log.isDebugEnabled()) {
+            String msg = "Valid confirmation code for user: " + domainQualifiedName;
+            log.debug(msg);
+        }
+
+    }
+
     private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
         Throwable cause = e.getCause();
         while (cause != null) {
