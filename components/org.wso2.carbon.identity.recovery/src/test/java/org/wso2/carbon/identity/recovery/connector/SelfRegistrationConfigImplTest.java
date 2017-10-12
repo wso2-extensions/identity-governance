@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -45,154 +44,122 @@ public class SelfRegistrationConfigImplTest {
 
     @Test
     public void testGetName() {
-        assertEquals("self-sign-up", selfRegistrationConfigImpl.getName());
+        assertEquals(selfRegistrationConfigImpl.getName(), "self-sign-up");
     }
 
     @Test
     public void testGetFriendlyName() {
-        assertEquals("User Self Registration", selfRegistrationConfigImpl.getFriendlyName());
+        assertEquals(selfRegistrationConfigImpl.getFriendlyName(), "User Self Registration");
     }
 
     @Test
     public void testGetCategory() {
-        assertEquals("Account Management Policies", selfRegistrationConfigImpl.getCategory());
+        assertEquals(selfRegistrationConfigImpl.getCategory(), "Account Management Policies");
     }
 
     @Test
     public void testGetSubCategory() {
-        assertEquals("DEFAULT", selfRegistrationConfigImpl.getSubCategory());
+        assertEquals(selfRegistrationConfigImpl.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() {
-        assertEquals(0, selfRegistrationConfigImpl.getOrder());
+        assertEquals(selfRegistrationConfigImpl.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() {
-        Map<String, String> nameMappingExpected = selfRegistrationConfigImpl.getPropertyNameMapping();
-
-        Map<String, String> testNameMapping = new HashMap<String, String>();
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+        Map<String, String> nameMappingExpected = new HashMap<String, String>();
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable Self User Registration");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Enable Notification Internally Management");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable reCaptcha");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
-        assertEquals(testNameMapping, nameMappingExpected, "Both maps are equal");
+
+        Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
+
+        assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
     }
 
     @Test
     public void testGetPropertyDescriptionMapping() {
-        Map<String, String> descriptionMappingExpected = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
-
-        Map<String, String> testDescriptionMapping = new HashMap<>();
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+        Map<String, String> descriptionMappingExpected = new HashMap<>();
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable self user registration");
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account during user registration");
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable captcha verification during self registration");
-        testDescriptionMapping.put(
+        descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
 
-        assertEquals(testDescriptionMapping, descriptionMappingExpected, "Both maps are equal");
+        Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
+
+        assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
     }
 
     @Test
     public void testGetPropertyNames() {
-        String[] propertiesExpected = selfRegistrationConfigImpl.getPropertyNames();
+        List<String> propertiesExpected = new ArrayList<>();
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
 
-        List<String> testProperties = new ArrayList<>();
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
-        String[] testPropertiesArray = testProperties.toArray(new String[testProperties.size()]);
+        String[] properties = selfRegistrationConfigImpl.getPropertyNames();
 
-        for (int i = 0; i < testPropertiesArray.length; i++) {
-            assertEquals(testPropertiesArray[i], propertiesExpected[i]);
+        for (int i = 0; i < propertiesArrayExpected.length; i++) {
+            assertEquals(properties[i], propertiesArrayExpected[i]);
         }
     }
 
-    @DataProvider(name = "provideDefaultPropertyValues")
-    public Object[][] providePropertyValues() {
-        String tenantDomain_1;
-        String tenantDoamin_2;
-
-        tenantDomain_1 = null;
-        tenantDoamin_2 = "user2";
-
-        return new Object[][]{
-                {tenantDomain_1}, {tenantDoamin_2}
-        };
-    }
-
-    /**
-     * @param tenantDomain
-     * @throws IdentityGovernanceException
-     */
-    @Test(dataProvider = "provideDefaultPropertyValues")
-    public void testGetDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+    @Test
+    public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
         String testEnableSelfSignUp = "false";
         String testEnableAccountLockOnCreation = "true";
         String testEnableNotificationInternallyManage = "true";
         String testEnableSelfRegistrationReCaptcha = "true";
         String testVerificationCodeExpiryTime = "1440";
 
-        Map<String, String> testDefaultProperties = new HashMap<>();
-        testDefaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
-        testDefaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+        Map<String, String> propertiesExpected = new HashMap<>();
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 testEnableAccountLockOnCreation);
-        testDefaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
-        testDefaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 testEnableSelfRegistrationReCaptcha);
-        testDefaultProperties.put(
+        propertiesExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 testVerificationCodeExpiryTime);
 
-        Properties propertiesExpected = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);
-        Map<String, String> defaultPropertiesExpected = new HashMap<String, String>((Map) propertiesExpected);
-        assertEquals(testDefaultProperties, defaultPropertiesExpected, "Maps are equal");
+        String tenantDomain = "admin";
+        // Here tenantDomain parameter is not used by method itself
+        Properties properties = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);
+        Map<String, String> defaultProperties = new HashMap<String, String>((Map) properties);
+
+        assertEquals(defaultProperties, propertiesExpected, "Maps are not equal");
     }
 
-    @DataProvider(name = "defaultPropertyValues")
-    public Object[][] provideDefaultPropertyValues1() {
-        String tenantDomain1;
-        String tenantDomain2;
+    @Test
+    public void testGetDefaultProperties() throws IdentityGovernanceException {
+        String tenantDomain = "admin";
+        String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
-        tenantDomain1 = null;
-        tenantDomain2 = "user2";
-
-        String[] propertyNames1;
-        String[] propertyNames2;
-
-        propertyNames1 = null;
-        propertyNames2 = new String[]{"property_1", "property_2", "property_3"};
-        return new Object[][]{
-                {propertyNames1, tenantDomain1}, {propertyNames2, tenantDomain2}
-        };
-    }
-
-    /**
-     * @param propertyNames
-     * @param tenantDomain
-     * @throws IdentityGovernanceException
-     */
-    @Test(dataProvider = "defaultPropertyValues")
-    public void testGetDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
-        Map<String, String> defaultPropertyValuesExpected = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
-        assertEquals(null, defaultPropertyValuesExpected);
+        // Here tenantDomain and propertyNames parameters are not used by method itself
+        Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
+        assertEquals(defaultPropertyValues, null);
     }
 
 }

@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -45,114 +44,95 @@ public class RecoveryConfigImplTest {
 
     @Test
     public void testGetName() {
-        assertEquals("account-recovery", recoveryConfigImpl.getName());
+        assertEquals(recoveryConfigImpl.getName(), "account-recovery");
     }
 
     @Test
     public void testGetFriendlyName() {
-        assertEquals("Account Recovery", recoveryConfigImpl.getFriendlyName());
+        assertEquals(recoveryConfigImpl.getFriendlyName(), "Account Recovery");
     }
 
     @Test
     public void testGetCategory() {
-        assertEquals("Account Management Policies", recoveryConfigImpl.getCategory());
+        assertEquals(recoveryConfigImpl.getCategory(), "Account Management Policies");
     }
 
     @Test
     public void testGetSubCategory() {
-        assertEquals("DEFAULT", recoveryConfigImpl.getSubCategory());
+        assertEquals(recoveryConfigImpl.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() {
-        assertEquals(0, recoveryConfigImpl.getOrder());
+        assertEquals(recoveryConfigImpl.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() {
-        Map<String, String> nameMappingExpected = recoveryConfigImpl.getPropertyNameMapping();
-
-        Map<String, String> testNameMapping = new HashMap<>();
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
+        Map<String, String> nameMappingExpected = new HashMap<>();
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
                 "Notification Based Password Recovery");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
                 "Notification Internally Management");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
                 "Question Based Password Recovery");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
                 "Required For Password Recovery");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
 
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 "Notify when Recovery Success");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
                 "Notify when Questions Based Recovery Starts");
 
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Enable reCaptcha for Security Questions Based Password Recovery");
-        testNameMapping.put(IdentityRecoveryConstants.ConnectorConfig
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
 
-        assertEquals(testNameMapping, nameMappingExpected, "Hashmaps are equal");
+        Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
+
+        assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
     }
 
     @Test
     public void testGetPropertyDescriptionMapping() {
-        Map<String, String> descriptionMappingExpected = recoveryConfigImpl.getPropertyDescriptionMapping();
-
-        Map<String, String> testDescriptionMapping = new HashMap<String, String>();
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+        Map<String, String> descriptionMappingExpected = new HashMap<String, String>();
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
-        testDescriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Show captcha for challenge question based password recovery");
 
-        assertEquals(testDescriptionMapping, descriptionMappingExpected, "Hashmaps are equal");
+        Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
+
+        assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
     }
 
     @Test
     public void testGetPropertyNames() {
-        String[] propertiesExpected = recoveryConfigImpl.getPropertyNames();
+        List<String> propertiesExpected = new ArrayList<>();
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
 
-        List<String> testProperties = new ArrayList<>();
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
-        testProperties.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        String[] properties = recoveryConfigImpl.getPropertyNames();
 
-        String[] testPropertiesArray = testProperties.toArray(new String[testProperties.size()]);
-
-        for (int i = 0; i < testPropertiesArray.length; i++) {
-            assertEquals(testPropertiesArray[i], propertiesExpected[i]);
+        for (int i = 0; i < propertiesArrayExpected.length; i++) {
+            assertEquals(properties[i], propertiesArrayExpected[i]);
         }
     }
 
-    @DataProvider(name = "provideDefaultPropertyValues")
-    public Object[][] providePropertyValues() {
-        String tenantDomain_1;
-        String tenantDoamin_2;
-
-        tenantDomain_1 = null;
-        tenantDoamin_2 = "user";
-
-        return new Object[][]{
-                {tenantDomain_1}, {tenantDoamin_2}
-        };
-    }
-
-    /**
-     * @param tenantDomain
-     * @throws IdentityGovernanceException
-     */
-    @Test(dataProvider = "provideDefaultPropertyValues")
-    public void testGetDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
-
+    @Test
+    public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
         String testEnableNotificationBasedPasswordRecovery = "false";
         String testEnableQuestionBasedPasswordRecovery = "false";
         String testMinimumAnswers = "2";
@@ -164,60 +144,43 @@ public class RecoveryConfigImplTest {
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
 
-        Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+        Map<String, String> defaultPropertiesExpected = new HashMap<>();
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 testEnableNotificationBasedPasswordRecovery);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
                 testEnableQuestionBasedPasswordRecovery);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
                 testMinimumAnswers);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 testEnableRecoveryQuestionPasswordReCaptcha);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig
                         .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS,
                 testRecoveryQuestionPasswordReCaptchaMaxFailedAttempts);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
                 testEnableUsernameRecovery);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 testNotifySuccess);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
                 testNotifyStart);
 
-        Properties propertiesExpected = recoveryConfigImpl.getDefaultPropertyValues(tenantDomain);
-        Map<String, String> defaultPropertiesExpected = new HashMap<String, String>((Map) propertiesExpected);
-        assertEquals(defaultProperties, defaultPropertiesExpected, "Maps are equal");
+        String tenantDomain = "admin";
+        // Here tenantDomain parameter is not used by method itself
+        Properties properties = recoveryConfigImpl.getDefaultPropertyValues(tenantDomain);
+        Map<String, String> defaultProperties = new HashMap<String, String>((Map) properties);
+        assertEquals(defaultProperties, defaultPropertiesExpected, "Maps are not equal");
     }
 
-    @DataProvider(name = "defaultPropertyValues")
-    public Object[][] provideDefaultPropertyValues1() {
-        String tenantDomain1;
-        String tenantDomain2;
+    @Test
+    public void testGetDefaultProperties() throws IdentityGovernanceException {
+        String tenantDomain = "admin";
+        String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
-        tenantDomain1 = null;
-        tenantDomain2 = "admin";
-
-        String[] propertyNames1;
-        String[] propertyNames2;
-
-        propertyNames1 = null;
-        propertyNames2 = new String[]{"property_1", "property_2", "property_3"};
-        return new Object[][]{
-                {propertyNames1, tenantDomain1}, {propertyNames2, tenantDomain2}
-        };
-    }
-
-    /**
-     * @param propertyNames
-     * @param tenantDomain
-     * @throws IdentityGovernanceException
-     */
-    @Test(dataProvider = "defaultPropertyValues")
-    public void testGetDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
-        Map<String, String> defaultPropertyValuesExpected = recoveryConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
-        assertEquals(null, defaultPropertyValuesExpected);
+        // Here tenantDomain and propertyNames parameters are not used by method itself
+        Map<String, String> defaultPropertyValues = recoveryConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
+        assertEquals(defaultPropertyValues, null);
     }
 
 }
