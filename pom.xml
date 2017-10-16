@@ -407,6 +407,18 @@
                 <artifactId>powermock-module-testng</artifactId>
                 <version>${powermock.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-module-testng</artifactId>
+                <scope>test</scope>
+                <version>${mokito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-mockito</artifactId>
+                <scope>test</scope>
+                <version>${mokito.version}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
@@ -540,6 +552,8 @@
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.5.5</slf4j.api.version>
         <powermock.version>1.6.4</powermock.version>
+        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
+        <mokito.version>1.6.6</mokito.version>
 
     </properties>
 
