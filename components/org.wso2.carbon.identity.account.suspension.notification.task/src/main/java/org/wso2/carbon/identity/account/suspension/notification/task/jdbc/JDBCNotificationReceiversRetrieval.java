@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.DatabaseUtil;
@@ -103,9 +104,12 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     claims[0] = NotificationConstants.FIRST_NAME_CLAIM;
                     claims[1] = NotificationConstants.EMAIL_CLAIM;
                     claims[2] = NotificationConstants.LAST_LOGIN_TIME;
-                    Map<String, String> map = realmService
-                            .getTenantUserRealm(IdentityTenantUtil.getTenantId(tenantDomain)).
-                                    getUserStoreManager().getUserClaimValues(userName, claims, null);
+
+                    UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(IdentityTenantUtil
+                            .getTenantId(tenantDomain)).getUserStoreManager();
+
+                    Map<String, String> map = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
+                            (userName, userStoreDomain), claims, null);
 
                     NotificationReceiver receiver = new NotificationReceiver();
                     receiver.setEmail(map.get(NotificationConstants.EMAIL_CLAIM));

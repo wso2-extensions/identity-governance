@@ -50,8 +50,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
     public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
-        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this
-                .getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
+        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
+                this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
     }

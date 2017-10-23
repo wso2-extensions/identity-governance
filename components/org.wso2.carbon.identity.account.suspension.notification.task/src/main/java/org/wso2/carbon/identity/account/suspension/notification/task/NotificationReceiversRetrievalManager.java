@@ -45,10 +45,14 @@ public class NotificationReceiversRetrievalManager {
         List<NotificationReceiver> receivers = new ArrayList<>();
 
         for (String userStoreDomain : userStoreDomains) {
+            if (log.isDebugEnabled()) {
+                log.debug("Idle account suspension task enabled for user store: " + userStoreDomain + " in tenant: "
+                        + tenantDomain);
+            }
             NotificationReceiversRetrieval notificationReceiversRetrieval = NotificationReceiversRetrievalUtil
                     .getNotificationReceiversRetrievalForDomain(userStoreDomain, tenantDomain);
             if (notificationReceiversRetrieval != null) {
-                long lookupMin = 0;
+                long lookupMin;
                 try {
                     lookupMin = getCurrentExecutionTime(NotificationTaskDataHolder.getInstance().
                             getNotificationTriggerTime()).getTimeInMillis() - TimeUnit.DAYS.toMillis(delay+1);
@@ -57,8 +61,8 @@ public class NotificationReceiversRetrievalManager {
                             + "trigger time", e);
                 }
                 long lookupMax = lookupMin + TimeUnit.DAYS.toMillis(1);
-                List<NotificationReceiver> newReceivers = notificationReceiversRetrieval.getNotificationReceivers(lookupMin, lookupMax,
-                        delayForSuspension, tenantDomain);
+                List<NotificationReceiver> newReceivers = notificationReceiversRetrieval
+                        .getNotificationReceivers(lookupMin, lookupMax, delayForSuspension, tenantDomain);
                 receivers.addAll(newReceivers);
             }
         }

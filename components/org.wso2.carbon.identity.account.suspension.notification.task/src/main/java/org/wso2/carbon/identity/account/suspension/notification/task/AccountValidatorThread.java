@@ -29,15 +29,20 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.Notifi
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.mgt.services.UserIdentityManagementAdminService;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.Tenant;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AccountValidatorThread implements Runnable {
 
@@ -49,6 +54,10 @@ public class AccountValidatorThread implements Runnable {
 
     @Override
     public void run() {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Idle account suspension task started.");
+        }
 
         RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
@@ -69,6 +78,10 @@ public class AccountValidatorThread implements Runnable {
     }
 
     private void handleTask(String tenantDomain) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Handling idle account suspension task for tenant: " + tenantDomain);
+        }
 
         Property[] identityProperties;
         try {
@@ -124,13 +137,21 @@ public class AccountValidatorThread implements Runnable {
                 }
             }
 
+            if (log.isDebugEnabled()) {
+                if (isEnabled) {
+                    log.debug("Account suspension task is enabled for : " + tenantDomain);
+                } else {
+                    log.debug("Account suspension task is not enabled for : " + tenantDomain);
+                }
+            }
+
             if (!isEnabled) {
                 return;
             }
 
             notifyUsers(tenantDomain, suspensionDelay, notificationDelays);
 
-            disableAccounts(tenantDomain, suspensionDelay);
+            lockAccounts(tenantDomain, suspensionDelay);
 
         } catch (IdentityGovernanceException e) {
             log.error("Error occurred while loading governance configuration for tenants", e);
@@ -156,7 +177,8 @@ public class AccountValidatorThread implements Runnable {
             if (CollectionUtils.isNotEmpty(receivers)) {
                 for (NotificationReceiver receiver : receivers) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Sending notification to: " + receiver.getUsername());
+                        log.debug("Sending notification to: " + IdentityUtil.addDomainToName(receiver.getUsername(),
+                                receiver.getUserStoreDomain()) + "@" + tenantDomain);
                     }
                     util.sendEmail(receiver);
                 }
@@ -169,7 +191,7 @@ public class AccountValidatorThread implements Runnable {
      *
      * @throws IdentityException
      */
-    private void disableAccounts(String tenantDomain, long suspensionDelay) throws IdentityException {
+    private void lockAccounts(String tenantDomain, long suspensionDelay) throws IdentityException {
         List<NotificationReceiver> receivers = null;
         try {
             receivers = NotificationReceiversRetrievalManager.getReceivers(suspensionDelay, tenantDomain,
@@ -179,22 +201,40 @@ public class AccountValidatorThread implements Runnable {
             throw IdentityException.error("Error occurred while retrieving users for account disable", e);
         }
         if (receivers.size() > 0) {
-            try {
-                PrivilegedCarbonContext.startTenantFlow();
-                PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
-                privilegedCarbonContext.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
-                privilegedCarbonContext.setTenantDomain(tenantDomain);
-
-                UserIdentityManagementAdminService userIdentityManagementAdminService = new UserIdentityManagementAdminService();
-                // Iterate through all the receivers and disable them
-                for (NotificationReceiver receiver : receivers) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Disabling user " + receiver.getUsername());
-                    }
-                    userIdentityManagementAdminService.disableUserAccount(receiver.getUsername(), "email");
+            for (NotificationReceiver receiver : receivers) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Locking idle account: " + IdentityUtil.addDomainToName(receiver.getUsername(),
+                            receiver.getUserStoreDomain()) + "@" + tenantDomain);
                 }
-            } finally {
-                PrivilegedCarbonContext.endTenantFlow();
+                RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
+                int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+
+                UserRealm userRealm;
+                try {
+                    userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+                } catch (UserStoreException e) {
+                    throw new IdentityException("Failed retrieve the user realm for tenant: " + tenantDomain, e);
+                }
+
+                UserStoreManager userStoreManager;
+                try {
+                    userStoreManager = userRealm.getUserStoreManager();
+                } catch (org.wso2.carbon.user.core.UserStoreException e) {
+                    throw new IdentityException("Failed retrieve the user store manager for tenant: " + tenantDomain,
+                            e);
+                }
+
+                Map<String, String> updatedClaims = new HashMap<>();
+                updatedClaims.put(NotificationConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                updatedClaims.put(NotificationConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
+                try {
+                    userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(receiver.getUsername(),
+                            receiver.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
+                } catch (org.wso2.carbon.user.core.UserStoreException e) {
+                    throw new IdentityException("Failed to update claim values for user: " + IdentityUtil
+                            .addDomainToName(receiver.getUsername(), receiver.getUserStoreDomain()) + " in tenant: " +
+                            tenantDomain);
+                }
             }
         }
     }
