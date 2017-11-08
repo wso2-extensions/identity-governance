@@ -30,6 +30,8 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants.EventName;
+import org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
@@ -115,12 +117,13 @@ public class FailLoginAttemptValidator extends AbstractEventHandler implements A
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
-        HttpServletRequest request = (HttpServletRequest) event.getEventProperties().get("request");
-        AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get("context");
-        Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties().get("params");
+        HttpServletRequest request = (HttpServletRequest) event.getEventProperties().get(EventProperty.REQUEST);
+        AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get(EventProperty.CONTEXT);
+        Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties()
+                .get(EventProperty.PARAMS);
         String eventName = event.getEventName();
 
-        if ("AUTHENTICATION_STEP_FAILURE".equalsIgnoreCase(eventName)) {
+        if (EventName.AUTHENTICATION_STEP_FAILURE.name().equals(eventName)) {
             publishAuthenticationStepFailure(request, context, unmodifiableParamMap);
         }
     }
