@@ -214,6 +214,13 @@ public class UserSelfRegistrationManager {
         UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
         User user = recoveryData.getUser();
 
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userTenantDomain = user.getTenantDomain();
+        if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT, contextTenantDomain);
+        }
+
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
