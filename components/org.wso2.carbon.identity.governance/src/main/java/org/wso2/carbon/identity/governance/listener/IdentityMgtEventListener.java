@@ -611,7 +611,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 if (StringUtils.equals(errorCode, "22001")|| StringUtils.equals(errorCode, "40001")
                         || StringUtils.equals(errorCode, "40002")
                         || UserCoreConstants.ErrorCode.USER_IS_LOCKED.equals(errorCode)
-                        || IdentityCoreConstants.USER_ACCOUNT_DISABLED_ERROR_CODE.equals(errorCode)) {
+                        || IdentityCoreConstants.USER_ACCOUNT_DISABLED_ERROR_CODE.equals(errorCode)
+                        || IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE.equals(errorCode)) {
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }
