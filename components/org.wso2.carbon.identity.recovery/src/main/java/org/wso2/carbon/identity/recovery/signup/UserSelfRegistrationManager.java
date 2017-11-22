@@ -216,7 +216,7 @@ public class UserSelfRegistrationManager {
 
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = user.getTenantDomain();
-        if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
+        if (!StringUtils.equalsIgnoreCase(contextTenantDomain, userTenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT, contextTenantDomain);
         }
