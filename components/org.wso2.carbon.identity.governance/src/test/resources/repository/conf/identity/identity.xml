@@ -121,11 +121,6 @@
     </OpenID>
 
     <OAuth>
-        <AppInfoCacheTimeout>-1</AppInfoCacheTimeout>
-        <AuthorizationGrantCacheTimeout>-1</AuthorizationGrantCacheTimeout>
-        <SessionDataCacheTimeout>-1</SessionDataCacheTimeout>
-        <ClaimCacheTimeout>-1</ClaimCacheTimeout>
-
         <!--
             Default values for OAuth1RequestTokenUrl, OAuth1AccessTokenUrl, OAuth1AuthorizeUrl
             OAuth2AuthzEPUrl, OAuth2TokenEPUrl and OAuth2UserInfoEPUrl are built in following format
@@ -165,8 +160,6 @@
         <RefreshTokenValidityPeriod>84600</RefreshTokenValidityPeriod>
         <!-- Timestamp skew in seconds -->
         <TimestampSkew>300</TimestampSkew>
-        <!-- Enable OAuth caching -->
-        <EnableOAuthCache>false</EnableOAuthCache>
         <!-- Enable renewal of refresh token for refresh_token grant -->
         <RenewRefreshTokenForRefreshGrant>true</RenewRefreshTokenForRefreshGrant>
         <!-- Process the token before storing it in database, e.g. encrypting -->
@@ -294,8 +287,6 @@
     </MultifactorAuthentication>
 
     <SSOService>
-        <PersistanceCacheTimeout>157680000</PersistanceCacheTimeout>
-        <SessionIndexCacheTimeout>157680000</SessionIndexCacheTimeout>
         <EntityId>${carbon.host}</EntityId>
         <!--
             Default value for IdentityProviderURL is  built in following format
