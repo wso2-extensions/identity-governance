@@ -21,23 +21,30 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.AccountValidatorThread;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +70,15 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
             UserStoreManager userStoreManager = (UserStoreManager) eventProperties
                     .get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+
+            // If the user store doesn't allow / support claim update  and read, skip this handler.
+            if (!IdentityUtil.isSupportedByUserStore(userStoreManager, UserStoreConfigConstants.claimOperationsSupported)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Claim operations are not supported by the user store. Hence returning");
+                }
+                return;
+            }
+
             if (!(Boolean) eventProperties.get(IdentityEventConstants.EventProperty.OPERATION_STATUS)) {
                 return;
             }

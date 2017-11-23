@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -61,6 +62,14 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+
+        // If the user store doesn't allow / support claim update  and read, skip this handler.
+        if (!IdentityUtil.isSupportedByUserStore(userStoreManager, UserStoreConfigConstants.claimOperationsSupported)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Claim operations are not supported by the user store. Hence returning");
+            }
+            return;
+        }
 
         User user = new User();
         user.setUserName(userName);
