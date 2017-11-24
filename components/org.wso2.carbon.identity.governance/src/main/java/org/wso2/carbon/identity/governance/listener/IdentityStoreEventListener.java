@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
-    private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
+    private static final Log log = LogFactory.getLog(IdentityStoreEventListener.class);
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
