@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
@@ -83,6 +84,8 @@ public class IdentityRecoveryServiceComponent {
                     UserSelfRegistrationManager.getInstance(), null);
             bundleContext.registerService(ChallengeQuestionManager.class.getName(),
                     ChallengeQuestionManager.getInstance(), null);
+            bundleContext.registerService(ResendConfirmationManager.class.getName(),
+                    ResendConfirmationManager.getInstance(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
