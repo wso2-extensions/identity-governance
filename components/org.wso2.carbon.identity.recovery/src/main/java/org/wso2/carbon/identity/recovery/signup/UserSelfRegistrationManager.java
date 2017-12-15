@@ -198,7 +198,7 @@ public class UserSelfRegistrationManager {
         }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData load =
-                userRecoveryDataStore.load(user);
+                userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
 
         if (load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())) {
             isUserConfirmed = true;
@@ -291,7 +291,7 @@ public class UserSelfRegistrationManager {
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
 
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) || !RecoverySteps
                 .CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
