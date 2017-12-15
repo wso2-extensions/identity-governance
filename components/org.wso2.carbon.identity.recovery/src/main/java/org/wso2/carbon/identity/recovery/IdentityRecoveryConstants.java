@@ -117,7 +117,12 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found"),
         ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20033", "Error loading signup configs"),
         ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims"),
-        ERROR_CODE_POLICY_VIOLATION("20035", "Password Policy Violate")
+        ERROR_CODE_POLICY_VIOLATION("20035", "Password Policy Violate"),
+        ERROR_CODE_PROVIDED_CONFIRMATION_CODE_NOT_VALID("20036", "Provided confirmation code %s is not valid"),
+        ERROR_CODE_CONFIRMATION_CODE_NOT_PROVIDED("20037", "Confirmation code is not provided for user %s."),
+        ERROR_CODE_RECOVERY_SCENARIO_NOT_PROVIDED("20038", "Recovery Scenario is not provided for user %s."),
+        ERROR_CODE_RECOVERY_STEP_NOT_PROVIDED("20039", "Recovery Step is not provided for user %s."),
+        ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED("20040", "Notification Type is not provided for user %s.")
         ;
 
 

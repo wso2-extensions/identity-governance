@@ -37,6 +37,9 @@ public interface UserRecoveryDataStore {
     UserRecoveryData load(User user) throws
             IdentityRecoveryException;
 
+    UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws
+            IdentityRecoveryException;
+
     void invalidate(String code) throws
             IdentityRecoveryException;
 
