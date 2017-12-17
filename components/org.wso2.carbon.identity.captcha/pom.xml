@@ -86,6 +86,11 @@
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.event</artifactId>
+            <version>5.10.47-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -144,6 +149,7 @@
                             org.wso2.carbon.identity.core.handler;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
+                        <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>
             </plugin>
