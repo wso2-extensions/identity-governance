@@ -74,6 +74,10 @@
             <artifactId>powermock-api-mockito</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.event.handler.accountlock</groupId>
+            <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -104,7 +108,11 @@
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}"
+                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.handler.event.account.lock.service;
+                            version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.handler.event.account.lock.exception;
+                            version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>

@@ -18,8 +18,9 @@
 
 package org.wso2.carbon.identity.captcha.internal;
 
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
@@ -47,6 +48,8 @@ public class CaptchaDataHolder {
     private IdentityGovernanceService identityGovernanceService;
 
     private RealmService realmService;
+
+    private AccountLockService accountLockService;
 
     private List<CaptchaConnector> captchaConnectors = new ArrayList<>();
 
@@ -154,5 +157,13 @@ public class CaptchaDataHolder {
             throw new RuntimeException("Realm Service is not available. Component did not start correctly.");
         }
         return realmService;
+    }
+
+    public AccountLockService getAccountLockService() {
+        return accountLockService;
+    }
+
+    public void setAccountLockService(AccountLockService accountLockService) {
+        this.accountLockService = accountLockService;
     }
 }

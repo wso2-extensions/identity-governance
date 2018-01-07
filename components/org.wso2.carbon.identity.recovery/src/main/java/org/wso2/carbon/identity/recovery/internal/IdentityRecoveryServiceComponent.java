@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
@@ -64,6 +65,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * @scr.reference name="IdentityEventService"
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
+ * @scr.reference name="AccountLockService"
+ * interface="org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService"
+ * cardinality="1..1" policy="dynamic" bind="setAccountLockService"
+ * unbind="unsetAccountLockService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -182,6 +187,14 @@ public class IdentityRecoveryServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("Unsetting Identity Resource Mgt service.");
         }
+    }
+
+    protected void setAccountLockService(AccountLockService accountLockService) {
+        dataHolder.getInstance().setAccountLockService(accountLockService);
+    }
+
+    protected void unsetAccountLockService(AccountLockService accountLockService) {
+        dataHolder.getInstance().setAccountLockService(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {

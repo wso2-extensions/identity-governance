@@ -325,6 +325,12 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.identity.event.handler.accountlock</groupId>
+                <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
+                <version>${carbon.identity.account.lock.handler.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-frontend-jaxrs</artifactId>
                 <version>${cxf-bundle.version}</version>
@@ -526,6 +532,11 @@
         <carbon.identity.framework.version>5.8.105</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
+
+        <!--Carbon Identity Extension Versions-->
+        <carbon.identity.account.lock.handler.version>1.1.12</carbon.identity.account.lock.handler.version>
+        <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
+        </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>

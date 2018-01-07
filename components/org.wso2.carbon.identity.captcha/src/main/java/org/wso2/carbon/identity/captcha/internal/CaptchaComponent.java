@@ -22,14 +22,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
+import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -53,6 +54,10 @@ import org.wso2.carbon.user.core.service.RealmService;
  * interface="org.wso2.carbon.user.core.service.RealmService"
  * cardinality="1..1" policy="dynamic" bind="setRealmService"
  * unbind="unsetRealmService"
+ * @scr.reference name="AccountLockService"
+ * interface="org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService"
+ * cardinality="1..1" policy="dynamic" bind="setAccountLockService"
+ * unbind="unsetAccountLockService"
  */
 public class CaptchaComponent {
 
@@ -142,5 +147,15 @@ public class CaptchaComponent {
     protected void unsetRealmService(RealmService realmService) {
 
         CaptchaDataHolder.getInstance().setRealmService(null);
+    }
+
+    protected void setAccountLockService(AccountLockService accountLockService) {
+
+        CaptchaDataHolder.getInstance().setAccountLockService(accountLockService);
+    }
+
+    protected void unsetAccountLockService(AccountLockService accountLockService) {
+
+        CaptchaDataHolder.getInstance().setAccountLockService(null);
     }
 }

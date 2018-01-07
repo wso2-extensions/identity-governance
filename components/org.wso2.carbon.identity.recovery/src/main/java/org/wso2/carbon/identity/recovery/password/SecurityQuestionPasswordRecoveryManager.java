@@ -581,20 +581,18 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
         }
 
-        Map<String, String> claimValues = null;
+        if (Utils.isAccountLocked(user)) {
+            return;
+        }
+
+        Map<String, String> claimValues;
         try {
-            claimValues = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
-                            user.getUserStoreDomain()),
-                    new String[]{IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM,
-                            IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM},
-                    UserCoreConstants.DEFAULT_PROFILE);
+            claimValues = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(), user
+                    .getUserStoreDomain()), new String[]{IdentityRecoveryConstants
+                    .PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
-        }
-
-        if (Boolean.parseBoolean(claimValues.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM))) {
-            return;
         }
 
         int currentAttempts = 0;
@@ -607,6 +605,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         if ((currentAttempts + 1) >= maxAttempts) {
             updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
             updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
+            updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_UNLOCK_TIME_CLAIM, "0");
             try {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
                         user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
