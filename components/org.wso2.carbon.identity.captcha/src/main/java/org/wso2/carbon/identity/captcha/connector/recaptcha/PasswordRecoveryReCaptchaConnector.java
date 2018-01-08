@@ -210,7 +210,9 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
                 return preValidationResponse;
             }
         } catch (AccountLockServiceException e) {
-            throw new CaptchaServerException("Error while validating if account is locked", e);
+            throw new CaptchaServerException("Error while validating if account is locked for user: " + user
+                    .getUserName() + " of user store domain: " + user.getUserStoreDomain() + " and tenant domain: " +
+                    user.getTenantDomain(), e);
         }
 
         Map<String, String> claimValues = CaptchaUtil.getClaimValues(user, tenantId, new String[]{FAIL_ATTEMPTS_CLAIM});
