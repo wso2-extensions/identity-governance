@@ -24,13 +24,14 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;

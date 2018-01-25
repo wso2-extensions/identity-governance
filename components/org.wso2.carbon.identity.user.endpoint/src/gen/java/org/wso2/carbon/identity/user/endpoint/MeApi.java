@@ -6,8 +6,9 @@ import org.wso2.carbon.identity.user.endpoint.factories.MeApiServiceFactory;
 
 import io.swagger.annotations.ApiParam;
 
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ExportedUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 
 import java.util.List;
 
@@ -26,15 +27,31 @@ public class MeApi  {
 
    private final MeApiService delegate = MeApiServiceFactory.getMeApi();
 
+    @GET
+    
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @io.swagger.annotations.ApiOperation(value = "Export self user information", notes = "Returns the personal information of the authenticated user", response = ExportedUserDTO.class)
+    @io.swagger.annotations.ApiResponses(value = { 
+        @io.swagger.annotations.ApiResponse(code = 200, message = "successful operation"),
+        
+        @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized request") })
+
+    public Response getMe()
+    {
+    return delegate.getMe();
+    }
     @POST
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "This API is used to user self registration. \n", response = String.class)
+    @io.swagger.annotations.ApiOperation(value = "Register User\n", notes = "This API is used to user self registration.\n", response = String.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 201, message = "Successful created"),
         
         @io.swagger.annotations.ApiResponse(code = 400, message = "Bad Request"),
+        
+        @io.swagger.annotations.ApiResponse(code = 409, message = "Conflict"),
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 

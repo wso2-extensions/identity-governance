@@ -15,33 +15,20 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.user.endpoint.Exceptions;
+package org.wso2.carbon.identity.user.endpoint.exceptions;
 
-
-import org.wso2.carbon.identity.user.endpoint.Constants;
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-public class ConflictException extends WebApplicationException {
+public class UserEndpointExceptionMapper extends WebApplicationExceptionMapper{
 
-    private String message;
+    public Response toResponse(WebApplicationException ex) {
 
-    public ConflictException(ErrorDTO errorDTO) {
-        super(Response.status(Response.Status.CONFLICT)
-                .entity(errorDTO)
-                .header(Constants.HEADER_CONTENT_TYPE, Constants.DEFAULT_RESPONSE_CONTENT_TYPE)
-                .build());
-        message = errorDTO.getDescription();
-    }
-
-    public ConflictException() {
-        super(Response.Status.CONFLICT);
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
+        if (ex instanceof BadRequestException || ex instanceof ConflictException) {
+            this.setPrintStackTrace(false);
+        }
+        return super.toResponse(ex);
     }
 }

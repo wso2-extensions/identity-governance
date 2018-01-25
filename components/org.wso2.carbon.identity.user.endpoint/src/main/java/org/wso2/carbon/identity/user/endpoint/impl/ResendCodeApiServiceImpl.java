@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
-import org.wso2.carbon.identity.user.endpoint.Util.Utils;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 
 import javax.ws.rs.core.Response;

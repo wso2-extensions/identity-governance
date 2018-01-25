@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.user.endpoint.Exceptions;
+package org.wso2.carbon.identity.user.endpoint.exceptions;
 
 
 import org.wso2.carbon.identity.user.endpoint.Constants;
@@ -24,20 +24,20 @@ import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-public class BadRequestException extends WebApplicationException {
+public class ConflictException extends WebApplicationException {
 
     private String message;
 
-    public BadRequestException(ErrorDTO errorDTO) {
-        super(Response.status(Response.Status.BAD_REQUEST)
+    public ConflictException(ErrorDTO errorDTO) {
+        super(Response.status(Response.Status.CONFLICT)
                 .entity(errorDTO)
                 .header(Constants.HEADER_CONTENT_TYPE, Constants.DEFAULT_RESPONSE_CONTENT_TYPE)
                 .build());
         message = errorDTO.getDescription();
     }
 
-    public BadRequestException() {
-        super(Response.Status.BAD_REQUEST);
+    public ConflictException() {
+        super(Response.Status.CONFLICT);
     }
 
     @Override

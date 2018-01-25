@@ -41,6 +41,11 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.user.export.core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.user.endpoint</artifactId>
             <version>${project.version}</version>
             <type>war</type>
@@ -68,7 +73,7 @@
                                     <type>war</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
-                                    <destFileName>api#identity#user#v0.9.war</destFileName>
+                                    <destFileName>api#identity#user#v1.0.war</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -91,7 +96,7 @@
                                     <directory>resources</directory>
                                     <includes>
                                         <include>p2.inf</include>
-                                        <include>api#identity#user#v0.9.war</include>
+                                        <include>api#identity#user#v1.0.war</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -120,6 +125,7 @@
                             </adviceFile>
                             <bundles>
                                 <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery</bundleDef>
+                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.user.export.core</bundleDef>
                             </bundles>
                             <importFeatures>
                             </importFeatures>

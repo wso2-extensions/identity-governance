@@ -30,7 +30,7 @@ public class ValidateCodeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "This API is used to validate code of self reigstered users\n", response = void.class)
+    @io.swagger.annotations.ApiOperation(value = "Validate Code\n", notes = "This API is used to validate code of self registered users\n", response = void.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 202, message = "Accepted"),
         
