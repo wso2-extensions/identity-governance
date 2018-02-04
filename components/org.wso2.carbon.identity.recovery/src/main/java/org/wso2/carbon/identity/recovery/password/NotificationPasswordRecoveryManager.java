@@ -148,8 +148,8 @@ public class NotificationPasswordRecoveryManager {
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain() ;
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
 
-        if(!StringUtils.equals(contextTenantDomain, userTenantDomain)){
-            throw new IdentityRecoveryClientException("invalid tenant domain: "+ userTenantDomain);
+        if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
+            throw new IdentityRecoveryClientException("invalid tenant domain: " + userTenantDomain);
         }
         //if return data from load method, it means the code is validated. Otherwise it returns exceptions
 
