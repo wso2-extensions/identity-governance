@@ -145,7 +145,7 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
 
-        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain() ;
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
 
         if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
