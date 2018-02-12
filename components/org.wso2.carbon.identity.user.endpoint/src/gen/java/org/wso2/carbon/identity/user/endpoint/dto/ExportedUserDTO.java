@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.wso2.carbon.identity.user.endpoint.dto.BasicProfileDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ConsentReceiptDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SecurityDTO;
 
 import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.*;
@@ -23,6 +24,9 @@ public class ExportedUserDTO  {
   
   
   private List<ConsentReceiptDTO> consents = new ArrayList<ConsentReceiptDTO>();
+  
+  
+  private SecurityDTO security = null;
 
   
   /**
@@ -49,6 +53,18 @@ public class ExportedUserDTO  {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("security")
+  public SecurityDTO getSecurity() {
+    return security;
+  }
+  public void setSecurity(SecurityDTO security) {
+    this.security = security;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -57,6 +73,7 @@ public class ExportedUserDTO  {
     
     sb.append("  basic: ").append(basic).append("\n");
     sb.append("  consents: ").append(consents).append("\n");
+    sb.append("  security: ").append(security).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

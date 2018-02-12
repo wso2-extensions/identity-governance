@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.user.export.core.service.UserInformationProvider
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockUserInformationProvider implements UserInformationProvider {
+public class MockUserInformationProvider extends AbstractUserInformationProvider {
 
     private static final Log log = LogFactory.getLog(MockUserInformationProvider.class);
 

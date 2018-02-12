@@ -107,7 +107,7 @@ paths:
         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/me"
 
       x-wso2-response: |
-        {"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
+        {"security":{"challengeQuestions":["City where you were born ?","Model of your first car ?"]},"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin,Application/aaaa","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
       tags:
       - User Export
       summary: Export self user information
@@ -236,7 +236,7 @@ paths:
         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/pi-info/YWRtaW4%3D"
 
       x-wso2-response: |
-        {"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
+        {"security":{"challengeQuestions":["City where you were born ?","Model of your first car ?"]},"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin,Application/aaaa","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
       tags:
       - User Export
       summary: Export user information by ID
@@ -383,9 +383,11 @@ definitions:
     type: object
     properties:
       claimUri:
-        type: integer
+        type: string
+        description: 'Claim Uri'
       value:
         type: string
+        description: 'Claim value'
 
 #-----------------------------------------------------
 # The Consent Receipt  object
@@ -473,6 +475,8 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ConsentReceipt'
+      security:
+        $ref: '#/definitions/Security'
 
 #-----------------------------------------------------
 # The piiController  object
@@ -609,7 +613,7 @@ definitions:
       $ref: '#/definitions/UserSearchEntry'
 
 #-----------------------------------------------------
-# User Search response object
+# User Search entry object
 #-----------------------------------------------------
 
   UserSearchEntry:
@@ -619,3 +623,23 @@ definitions:
         type: 'string'
       userId:
         type: 'string'
+
+#-----------------------------------------------------
+# Security category response of user
+#-----------------------------------------------------
+
+  Security:
+    type: object
+    properties:
+      challengeQuestions:
+        $ref: '#/definitions/ChallengeQuestions'
+
+#-----------------------------------------------------
+# Challenge questions of user
+#-----------------------------------------------------
+
+  ChallengeQuestions:
+    type: array
+    description: 'Challenge questions configured for the user.'
+    items:
+      type: string

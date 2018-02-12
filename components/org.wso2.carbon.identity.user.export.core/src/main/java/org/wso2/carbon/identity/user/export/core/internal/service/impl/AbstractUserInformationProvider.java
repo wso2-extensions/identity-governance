@@ -16,19 +16,12 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.user.export.core.service;
+package org.wso2.carbon.identity.user.export.core.internal.service.impl;
 
-import org.wso2.carbon.identity.core.handler.IdentityHandler;
-import org.wso2.carbon.identity.user.export.core.UserExportException;
-import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
+import org.wso2.carbon.identity.core.handler.AbstractIdentityHandler;
+import org.wso2.carbon.identity.user.export.core.service.UserInformationProvider;
 
-/**
- * Provider of a type of user information.
- */
-public interface UserInformationProvider extends IdentityHandler {
+public abstract class AbstractUserInformationProvider extends AbstractIdentityHandler implements
+        UserInformationProvider {
 
-    UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId) throws
-            UserExportException;
-
-    String getType();
 }

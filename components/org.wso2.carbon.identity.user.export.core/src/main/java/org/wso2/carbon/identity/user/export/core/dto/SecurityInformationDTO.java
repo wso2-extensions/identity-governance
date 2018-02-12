@@ -16,19 +16,32 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.user.export.core.service;
+package org.wso2.carbon.identity.user.export.core.dto;
 
-import org.wso2.carbon.identity.core.handler.IdentityHandler;
-import org.wso2.carbon.identity.user.export.core.UserExportException;
-import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Provider of a type of user information.
+ * Security related information of the user.
  */
-public interface UserInformationProvider extends IdentityHandler {
+public class SecurityInformationDTO {
 
-    UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId) throws
-            UserExportException;
+    private List<String> challengeQuestions = new ArrayList<>();
 
-    String getType();
+    public List<String> getChallengeQuestions() {
+
+        return challengeQuestions;
+    }
+
+    public void setChallengeQuestions(List<String> challengeQuestions) {
+
+        this.challengeQuestions = challengeQuestions;
+    }
+
+    public void addChallengeQuestion(String question) {
+
+        this.challengeQuestions.add(question);
+    }
 }
