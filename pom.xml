@@ -125,6 +125,7 @@
         <module>components/org.wso2.carbon.identity.password.history</module>
         <module>components/org.wso2.carbon.identity.password.policy</module>
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
+        <module>components/org.wso2.carbon.identity.user.export.core</module>
 
         <module>service-stubs/identity</module>
 
@@ -249,6 +250,17 @@
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.core</artifactId>
                 <version>${carbon.kernel.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
+                <version>${apache.felix.scr.ds.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.eclipse.osgi</groupId>
+                <artifactId>org.eclipse.osgi.services</artifactId>
+                <version>${equinox.osgi.services.version}</version>
             </dependency>
 
             <!--Carbon Identity Framework Dependencies-->
@@ -387,6 +399,12 @@
                 <version>${slf4j.api.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.api.version}</version>
+                <scope>test</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.jacoco</groupId>
@@ -422,6 +440,25 @@
                 <artifactId>powermock-api-mockito</artifactId>
                 <scope>test</scope>
                 <version>${mokito.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2database.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wso2.carbon.consent.mgt</groupId>
+                <artifactId>org.wso2.carbon.consent.mgt.core</artifactId>
+                <version>${carbon.consent.mgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.user.export.core</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -522,6 +559,8 @@
         <commons-logging.version>1.2</commons-logging.version>
         <commons-logging.osgi.version.range>[1.2,2.0)</commons-logging.osgi.version.range>
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
+        <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
+        <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
 
         <!--Carbon Kernel Version-->
         <carbon.kernel.version>4.4.17</carbon.kernel.version>
@@ -538,6 +577,9 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
+        <carbon.consent.mgt.version>1.0.0</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version.range>[1.0.0, 2.0.0)</carbon.consent.mgt.version.range>
+
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
@@ -553,6 +595,8 @@
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
         <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
+        <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
+        <carbon.consent.mgt.version>1.0.0</carbon.consent.mgt.version>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
@@ -563,7 +607,11 @@
         <powermock.version>1.6.4</powermock.version>
         <mokito.version>1.6.6</mokito.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
-   
+
+        <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
+
+        <h2database.version>1.4.196</h2database.version>
+
     </properties>
 
 </project>

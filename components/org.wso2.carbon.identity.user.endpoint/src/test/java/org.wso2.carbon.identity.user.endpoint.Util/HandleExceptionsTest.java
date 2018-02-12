@@ -19,10 +19,10 @@
 package org.wso2.carbon.identity.user.endpoint.Util;
 
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.UserEndpointExceptionMapper;
+import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.InternalServerErrorException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.UserEndpointExceptionMapper;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
