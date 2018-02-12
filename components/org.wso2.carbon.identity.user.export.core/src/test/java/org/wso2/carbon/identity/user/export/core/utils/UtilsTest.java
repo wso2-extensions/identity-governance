@@ -42,6 +42,7 @@ public class UtilsTest {
     public static final String CONSENT_PURPOSE = "test-purpose";
     public static final String CONSENT_TERMINATION = "days:50";
     public static final String PII_CATEGORY = "test-category";
+    public static int  PII_CATEGORY_ID = 1;
     public static final String SPI_CATEGORY = "test-category";
     public static final String PII_CATEGORY_VALIDITY = "days:50";
     public static final String PURPOSE_CATEGORY = "test-purpose-category";
@@ -81,7 +82,7 @@ public class UtilsTest {
 
         consentPurpose.setConsentType(CONSENT_TYPE);
 
-        PIICategoryValidity piiCategory = new PIICategoryValidity(PII_CATEGORY, PII_CATEGORY_VALIDITY);
+        PIICategoryValidity piiCategory = new PIICategoryValidity(PII_CATEGORY_ID, PII_CATEGORY_VALIDITY);
         List<PIICategoryValidity> piiCategories = new ArrayList<>();
         piiCategories.add(piiCategory);
         consentPurpose.setPiiCategory(piiCategories);
@@ -153,8 +154,6 @@ public class UtilsTest {
         Assert.assertEquals(consentReceiptDTO.getServices().get(0).getPurposes().get(0).getPrimaryPurpose(), Boolean.TRUE);
 
         Assert.assertEquals(consentReceiptDTO.getServices().get(0).getPurposes().get(0).getPiiCategory().size(), 1);
-        Assert.assertEquals(consentReceiptDTO.getServices().get(0).getPurposes().get(0).getPiiCategory().get(0)
-                .getPiiCategory(), PII_CATEGORY);
         Assert.assertEquals(consentReceiptDTO.getServices().get(0).getPurposes().get(0).getPiiCategory().get(0)
                 .getValidity(), PII_CATEGORY_VALIDITY);
 
