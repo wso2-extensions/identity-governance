@@ -49,11 +49,13 @@ public class UserInformationServiceImpl implements UserInformationService {
 
         Map<String, Object> userInformation = new HashMap<>();
         for (UserInformationProvider userInformationProvider : userInformationProviders) {
-            UserInformationDTO retainedUserInformation = userInformationProvider.getRetainedUserInformation(username,
-                    userStoreDomain, tenantId);
-            if (retainedUserInformation != null && retainedUserInformation.isInformationAvailable()) {
-                String type = userInformationProvider.getType();
-                userInformation.put(type, retainedUserInformation.getData());
+            if (userInformationProvider.isEnabled()) {
+                UserInformationDTO retainedUserInformation = userInformationProvider.getRetainedUserInformation
+                        (username, userStoreDomain, tenantId);
+                if (retainedUserInformation != null && retainedUserInformation.isInformationAvailable()) {
+                    String type = userInformationProvider.getType();
+                    userInformation.put(type, retainedUserInformation.getData());
+                }
             }
         }
         return userInformation;

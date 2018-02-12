@@ -46,16 +46,18 @@ import java.util.List;
  */
 @Component(
         name = "org.wso2.carbon.user.export.consent",
-        immediate = true
+        immediate = true,
+        service = UserInformationProvider.class
 )
-public class ConsentInformationProvider implements UserInformationProvider {
+public class ConsentInformationProvider extends AbstractUserInformationProvider {
 
     private static final Log log = LogFactory.getLog(ConsentInformationProvider.class);
     private ConsentManager consentManager;
     private RealmService realmService;
 
     @Override
-    public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId) throws UserExportException {
+    public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId)
+            throws UserExportException {
 
         try {
             List<ConsentReceiptDTO> receipts = new ArrayList<>();
@@ -101,6 +103,7 @@ public class ConsentInformationProvider implements UserInformationProvider {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetRealmService")
     public void setRealmService(RealmService realmService) {
+
         if (log.isDebugEnabled()) {
             log.info("Setting the Realm Service");
         }
@@ -108,6 +111,7 @@ public class ConsentInformationProvider implements UserInformationProvider {
     }
 
     public void unsetRealmService(RealmService realmService) {
+
         if (log.isDebugEnabled()) {
             log.info("Unsetting the Realm Service");
         }
@@ -121,6 +125,7 @@ public class ConsentInformationProvider implements UserInformationProvider {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetConsentManager")
     public void setConsentManager(ConsentManager consentManager) {
+
         if (log.isDebugEnabled()) {
             log.debug("Setting the ConsentManager Service");
         }
@@ -128,6 +133,7 @@ public class ConsentInformationProvider implements UserInformationProvider {
     }
 
     public void unsetConsentManager(ConsentManager consentManager) {
+
         if (log.isDebugEnabled()) {
             log.debug("Unsetting the ConsentManager Service");
         }

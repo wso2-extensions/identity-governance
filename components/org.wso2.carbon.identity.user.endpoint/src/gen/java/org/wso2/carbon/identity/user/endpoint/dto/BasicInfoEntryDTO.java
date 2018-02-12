@@ -15,27 +15,29 @@ public class BasicInfoEntryDTO  {
   
   
   
-  private Integer claimUri = null;
+  private String claimUri = null;
   
   
   private String value = null;
 
   
   /**
+   * Claim Uri
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Claim Uri")
   @JsonProperty("claimUri")
-  public Integer getClaimUri() {
+  public String getClaimUri() {
     return claimUri;
   }
-  public void setClaimUri(Integer claimUri) {
+  public void setClaimUri(String claimUri) {
     this.claimUri = claimUri;
   }
 
   
   /**
+   * Claim value
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Claim value")
   @JsonProperty("value")
   public String getValue() {
     return value;

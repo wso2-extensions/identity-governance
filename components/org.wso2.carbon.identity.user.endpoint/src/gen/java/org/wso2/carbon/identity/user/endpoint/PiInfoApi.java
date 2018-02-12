@@ -30,7 +30,7 @@ public class PiInfoApi  {
     @Path("/{userId}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Export user information by ID", notes = "Returns the personal information of a single user", response = ExportedUserDTO.class)
+    @io.swagger.annotations.ApiOperation(value = "Export user information by ID", notes = "Returns the personal information of a single user with the given userId", response = ExportedUserDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "successful operation"),
         
@@ -38,7 +38,7 @@ public class PiInfoApi  {
         
         @io.swagger.annotations.ApiResponse(code = 404, message = "User not found") })
 
-    public Response getUserById(@ApiParam(value = "ID of user to return",required=true ) @PathParam("userId")  String userId)
+    public Response getUserById(@ApiParam(value = "ID of user to get user information",required=true ) @PathParam("userId")  String userId)
     {
     return delegate.getUserById(userId);
     }
@@ -54,7 +54,7 @@ public class PiInfoApi  {
         
         @io.swagger.annotations.ApiResponse(code = 404, message = "User not found") })
 
-    public Response searchUserByName(@ApiParam(value = "ID of user to return",required=true) @QueryParam("username")  String username)
+    public Response searchUserByName(@ApiParam(value = "username pattern to search for userId",required=true) @QueryParam("username")  String username)
     {
     return delegate.searchUserByName(username);
     }
