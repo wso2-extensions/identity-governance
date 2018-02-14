@@ -20,6 +20,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -69,6 +70,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * interface="org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService"
  * cardinality="1..1" policy="dynamic" bind="setAccountLockService"
  * unbind="unsetAccountLockService"
+ * @scr.reference name="ConsentManager"
+ * interface="org.wso2.carbon.consent.mgt.core.ConsentManager"
+ * cardinality="1..1" policy="dynamic" bind="setConsentMgtService"
+ * unbind="unsetConsentMgtService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -195,6 +200,26 @@ public class IdentityRecoveryServiceComponent {
 
     protected void unsetAccountLockService(AccountLockService accountLockService) {
         dataHolder.getInstance().setAccountLockService(null);
+    }
+
+    /**
+     * Sets Consent Manager OSGI Service.
+     *
+     * @param consentManager Consent Manager.
+     */
+    protected void setConsentMgtService(ConsentManager consentManager) {
+
+        dataHolder.getInstance().setConsentManager(consentManager);
+    }
+
+    /**
+     * Unset Consent Manager OSGI service.
+     *
+     * @param consentManager Consent Manager.
+     */
+    protected void unsetConsentMgtService(ConsentManager consentManager) {
+
+        dataHolder.getInstance().setConsentManager(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {

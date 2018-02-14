@@ -24,6 +24,7 @@
             <class name="org.wso2.carbon.identity.recovery.connector.RecoveryConfigImplTest" />
             <class name="org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImplTest" />
             <class name="org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImplTest" />
+            <class name="org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManagerTest"/>
         </classes>
     </test>
 </suite>

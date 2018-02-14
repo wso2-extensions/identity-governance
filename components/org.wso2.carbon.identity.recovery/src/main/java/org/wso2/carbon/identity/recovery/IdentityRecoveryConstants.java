@@ -124,7 +124,9 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_RECOVERY_SCENARIO_NOT_PROVIDED("20038", "Recovery Scenario is not provided for user %s."),
         ERROR_CODE_RECOVERY_STEP_NOT_PROVIDED("20039", "Recovery Step is not provided for user %s."),
         ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED("20040", "Notification Type is not provided for user %s."),
-        ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: %s.")
+        ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: " +
+                "%s."),
+        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
         ;
 
 
@@ -235,5 +237,24 @@ public class IdentityRecoveryConstants {
                 "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
 
 
+    }
+
+    public static class Consent {
+
+        public static final String COLLECTION_METHOD_SELF_REGISTRATION = "Web Form - Self Registration";
+        public static final String DEFAULT_JURISDICTION = "Global";
+        public static final String LANGUAGE_ENGLISH = "en";
+        public static final String CONSENT = "consent";
+        public static final String SERVICES = "services";
+        public static final String PURPOSES = "purposes";
+        public static final String POLICY_URL = CONSENT + ".policyURL";
+        public static final String JURISDICTION = CONSENT + ".jurisdiction";
+        public static final String LANGUAGE = CONSENT + "language";
+        public static final String PII_CATEGORY = "piiCategory";
+        public static final String PII_CATEGORY_ID = "piiCategoryId";
+        public static final String EXPLICIT_CONSENT_TYPE = "EXPLICIT";
+        public static final String PURPOSE_ID = "purposeId";
+        public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
+        public static final String RESIDENT_IDP = "Resident IDP";
     }
 }

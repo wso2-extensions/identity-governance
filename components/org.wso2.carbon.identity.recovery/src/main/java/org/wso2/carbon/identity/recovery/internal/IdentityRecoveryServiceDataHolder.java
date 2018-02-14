@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.internal;
 
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -34,7 +35,7 @@ public class IdentityRecoveryServiceDataHolder {
     private IdpManager idpManager;
     private RegistryResourceMgtService resourceMgtService;
     private AccountLockService accountLockService;
-
+    private ConsentManager consentManager;
     public static IdentityRecoveryServiceDataHolder getInstance() {
         return instance;
     }
@@ -92,6 +93,26 @@ public class IdentityRecoveryServiceDataHolder {
 
     public AccountLockService getAccountLockService() {
         return accountLockService;
+    }
+
+    /**
+     * Sets consent Manager OSGI service
+     *
+     * @param consentManager Consent Manager
+     */
+    public void setConsentManager(ConsentManager consentManager) {
+
+        this.consentManager = consentManager;
+    }
+
+    /**
+     * Get Consent Manager OSGI service.
+     *
+     * @return ConsentManager
+     */
+    public ConsentManager getConsentManager() {
+
+        return consentManager;
     }
 
     public void setAccountLockService(AccountLockService accountLockService) {
