@@ -19,12 +19,21 @@
 
 package org.wso2.carbon.identity.recovery.signup;
 
-
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
+import org.wso2.carbon.consent.mgt.core.model.PIICategoryValidity;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptPurposeInput;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -34,6 +43,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
@@ -43,6 +53,8 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
+import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -63,17 +75,33 @@ public class UserSelfRegistrationManager {
 
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
 
-
     private UserSelfRegistrationManager() {
 
     }
 
     public static UserSelfRegistrationManager getInstance() {
+
         return instance;
     }
 
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
+
+        String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
+        String policyUrl = getPropertyValue(properties, IdentityRecoveryConstants.Consent.POLICY_URL);
+        String jurisdiction = getPropertyValue(properties, IdentityRecoveryConstants.Consent.JURISDICTION);
+        String language = getPropertyValue(properties, IdentityRecoveryConstants.Consent.LANGUAGE);
+        String tenantDomain = user.getTenantDomain();
+
+        if (StringUtils.isEmpty(jurisdiction)) {
+            jurisdiction = IdentityRecoveryConstants.Consent.DEFAULT_JURISDICTION;
+        }
+        if (StringUtils.isEmpty(language)) {
+            language = IdentityRecoveryConstants.Consent.LANGUAGE_ENGLISH;
+        }
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -116,7 +144,6 @@ public class UserSelfRegistrationManager {
             carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             carbonContext.setTenantDomain(user.getTenantDomain());
 
-
             Map<String, String> claimsMap = new HashMap<>();
             for (Claim claim : claims) {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
@@ -155,6 +182,7 @@ public class UserSelfRegistrationManager {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
                 }
             }
+            addUserConsent(user, consent, policyUrl, jurisdiction, language, tenantDomain);
 
             if (!isNotificationInternallyManage && isAccountLockOnCreation) {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -170,12 +198,36 @@ public class UserSelfRegistrationManager {
 
             //isNotificationInternallyManage == true,  will be handled in UserSelfRegistration Handler
 
-
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Adds user consent.
+     *
+     * @param user         User.
+     * @param consent      Consent String.
+     * @param policyUrl    Policy URL.
+     * @param jurisdiction Jurisdiction.
+     * @param language     Language
+     * @param tenantDomain Tenant Domain.
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException.
+     */
+    public void addUserConsent(User user, String consent, String policyUrl, String jurisdiction, String language,
+                               String tenantDomain) throws IdentityRecoveryServerException {
+
+        if (StringUtils.isNotEmpty(consent)) {
+            try {
+                addConsent(consent, user.getUserName(), tenantDomain, policyUrl,
+                        jurisdiction, language);
+            } catch (ConsentManagementException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_USER_CONSENT,
+                        user.getUserName(), e);
+            }
+        }
     }
 
     /**
@@ -186,6 +238,7 @@ public class UserSelfRegistrationManager {
      * @throws IdentityRecoveryException
      */
     public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
+
         boolean isUserConfirmed = false;
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -288,7 +341,6 @@ public class UserSelfRegistrationManager {
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
-
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
@@ -315,7 +367,6 @@ public class UserSelfRegistrationManager {
         return notificationResponseBean;
 
     }
-
 
     private void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
@@ -344,4 +395,135 @@ public class UserSelfRegistrationManager {
                     .getUserName(), e);
         }
     }
+
+    private void addConsent(String consent, String username, String tenantDomain, String policyUrl, String
+            jurisdiction, String language) throws ConsentManagementException {
+
+        ConsentManager consentManager = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
+        ReceiptInput receiptInput = new ReceiptInput();
+        receiptInput.setCollectionMethod(IdentityRecoveryConstants.Consent.COLLECTION_METHOD_SELF_REGISTRATION);
+        receiptInput.setJurisdiction(jurisdiction);
+        receiptInput.setLanguage(language);
+        receiptInput.setPolicyUrl(policyUrl);
+        receiptInput.setPiiPrincipalId(username);
+
+        ReceiptServiceInput receiptServiceInput = new ReceiptServiceInput();
+        try {
+            setIDPData(tenantDomain, receiptServiceInput);
+        } catch (IdentityProviderManagementException e) {
+            throw new ConsentManagementException("Error while retrieving identity provider data", "Error while " +
+                    "setting IDP data", e);
+        }
+        receiptServiceInput.setTenantDomain(tenantDomain);
+        List<ReceiptPurposeInput> receiptPurposeInputList = buildPurposes(consent);
+        receiptServiceInput.setPurposes(receiptPurposeInputList);
+
+        List<ReceiptServiceInput> receiptServiceInputList = new ArrayList<>();
+        receiptServiceInputList.add(receiptServiceInput);
+        receiptInput.setServices(receiptServiceInputList);
+        receiptInput.setProperties(new HashMap<String, String>());
+        consentManager.addConsent(receiptInput);
+    }
+
+    private void setIDPData(String tenantDomain, ReceiptServiceInput receiptServiceInput)
+            throws IdentityProviderManagementException {
+
+        IdentityProviderManager idpManager = IdentityProviderManager.getInstance();
+        IdentityProvider residentIdP = idpManager.getResidentIdP(tenantDomain);
+
+        receiptServiceInput.setService(residentIdP.getHomeRealmId()); // set resident IDP
+        receiptServiceInput.setSpDisplayName(residentIdP.getDisplayName());
+
+        if (StringUtils.isNotEmpty(residentIdP.getIdentityProviderDescription())) {
+            receiptServiceInput.setSpDescription(residentIdP.getIdentityProviderDescription());
+        } else {
+            receiptServiceInput.setSpDescription(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+        }
+        if (StringUtils.isNotEmpty(residentIdP.getDisplayName())) {
+            receiptServiceInput.setSpDescription(residentIdP.getDisplayName());
+        } else {
+            receiptServiceInput.setSpDisplayName(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+        }
+    }
+
+    private String getPropertyValue(Property[] properties, String key) {
+
+        String propertyValue = "";
+        if (properties != null && StringUtils.isNotEmpty(key)) {
+            for (int index = 0; index < properties.length; index++) {
+                Property property = properties[index];
+                if (key.equalsIgnoreCase(property.getKey())) {
+                    propertyValue = property.getValue();
+                    ArrayUtils.removeElement(properties, property);
+                    break;
+                }
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Returning value for key : " + key + " - " + propertyValue);
+        }
+        return propertyValue;
+    }
+
+    private List<ReceiptPurposeInput> buildPurposes(String consent) {
+
+        List<ReceiptPurposeInput> receiptPurposeInputList = new ArrayList<>();
+        JSONObject services = new JSONObject(consent);
+        JSONArray servicesArray = (JSONArray) services.get(IdentityRecoveryConstants.Consent.SERVICES);
+        JSONObject purposes = (JSONObject) servicesArray.get(0);
+        JSONArray purposesArray = (JSONArray) purposes.get(IdentityRecoveryConstants.Consent.PURPOSES);
+
+        for (int index = 0; index < purposesArray.length(); index++) {
+            JSONObject purpose = (JSONObject) purposesArray.get(index);
+            ReceiptPurposeInput receiptPurposeInput = buildReceiptPurposeInput(purpose);
+            if (log.isDebugEnabled()) {
+                log.debug("Added a purpose with ID " + receiptPurposeInput.getPurposeId());
+            }
+            receiptPurposeInputList.add(receiptPurposeInput);
+        }
+        return receiptPurposeInputList;
+    }
+
+    private List<PIICategoryValidity> getPIICategoryValidities(JSONObject purpose) {
+
+        List<PIICategoryValidity> piiCategoryIds = new ArrayList<>();
+        JSONArray piiCategoryValidities = purpose.getJSONArray(IdentityRecoveryConstants.Consent.PII_CATEGORY);
+        for (int piiCategoryIndex = 0; piiCategoryIndex < piiCategoryValidities.length(); piiCategoryIndex++) {
+            JSONObject piiCategory = (JSONObject) piiCategoryValidities.get(piiCategoryIndex);
+            piiCategoryIds.add(new PIICategoryValidity(piiCategory.getInt(
+                    IdentityRecoveryConstants.Consent.PII_CATEGORY_ID),
+                    IdentityRecoveryConstants.Consent.INFINITE_TERMINATION));
+            if (log.isDebugEnabled()) {
+                log.debug("piiCategory with ID " +
+                        piiCategory.getInt(IdentityRecoveryConstants.Consent.PII_CATEGORY_ID + " added"));
+            }
+        }
+        return piiCategoryIds;
+    }
+
+    private ReceiptPurposeInput buildReceiptPurposeInput(JSONObject purpose) {
+
+        Integer purposeId = purpose.getInt(IdentityRecoveryConstants.Consent.PURPOSE_ID);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Building a purpose with ID : " + purposeId);
+        }
+        ReceiptPurposeInput receiptPurposeInput = new ReceiptPurposeInput();
+        receiptPurposeInput.setConsentType(IdentityRecoveryConstants.Consent.EXPLICIT_CONSENT_TYPE);
+        receiptPurposeInput.setPrimaryPurpose(true);
+        receiptPurposeInput.setPurposeId(purposeId);
+        receiptPurposeInput.setTermination(IdentityRecoveryConstants.Consent.INFINITE_TERMINATION);
+        receiptPurposeInput.setThirdPartyDisclosure(false);
+        List<Integer> purposeCategoryIds = new ArrayList<>();
+        // Fixed value
+        purposeCategoryIds.add(1);
+        List<PIICategoryValidity> piiCategoryValidities = getPIICategoryValidities(purpose);
+        receiptPurposeInput.setPiiCategory(piiCategoryValidities);
+        receiptPurposeInput.setPurposeCategoryId(purposeCategoryIds);
+        if (log.isDebugEnabled()) {
+            log.debug("Successfully built purpose with ID : " + purposeId);
+        }
+        return receiptPurposeInput;
+    }
+
 }

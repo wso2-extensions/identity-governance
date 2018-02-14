@@ -49,6 +49,14 @@
             <artifactId>org.wso2.carbon.identity.mgt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.json.wso2</groupId>
+            <artifactId>json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.consent.mgt</groupId>
+            <artifactId>org.wso2.carbon.consent.mgt.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
@@ -113,6 +121,7 @@
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                             org.wso2.carbon.identity.handler.event.account.lock.exception;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.wso2.carbon.consent.mgt.core;version="${carbon.consent.mgt.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
