@@ -39,7 +39,6 @@ import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
-import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
 import org.wso2.carbon.user.api.Claim;
 
 import java.nio.file.Paths;
@@ -48,7 +47,6 @@ import java.util.List;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
