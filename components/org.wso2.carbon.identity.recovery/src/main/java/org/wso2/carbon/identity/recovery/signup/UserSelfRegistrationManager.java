@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
@@ -33,7 +34,9 @@ import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptPurposeInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -41,6 +44,9 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
@@ -60,11 +66,14 @@ import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -83,7 +92,6 @@ public class UserSelfRegistrationManager {
 
         return instance;
     }
-
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
@@ -368,6 +376,86 @@ public class UserSelfRegistrationManager {
 
     }
 
+    /**
+     * Checks whether the given tenant domain of a username is valid / exists or not.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if the tenant domain of the user is valid / available, else false.
+     */
+    public boolean isValidTenantDomain(String tenantDomain) throws IdentityRecoveryException {
+
+        boolean isValidTenant = false;
+        try {
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            isValidTenant = userRealm != null;
+
+        } catch (CarbonException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting user realm for user " + tenantDomain);
+            }
+            // In a case of a non existing tenant.
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        }
+        return isValidTenant;
+    }
+
+    /**
+     * Returns whether a given username is already taken by a user or not.
+     *
+     * @param username Username.
+     * @return True if the username is already taken, else false.
+     */
+    public boolean isUsernameAlreadyTaken(String username) throws IdentityRecoveryException {
+
+        boolean isUsernameAlreadyTaken = true;
+        String tenantDomain = MultitenantUtils.getTenantDomain(username);
+        try {
+            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            if (userRealm != null) {
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername);
+            }
+        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        }
+        return isUsernameAlreadyTaken;
+    }
+
+    /**
+     * Checks whether self registration is enabled or not for a given tenant domain
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if self registration is enabled for a tenant domain. If not returns false.
+     */
+    public boolean isSelfRegistrationEnabled(String tenantDomain) throws IdentityRecoveryException {
+
+        String selfSignUpEnalbed = getIDPProperty(tenantDomain,
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+        return Boolean.parseBoolean(selfSignUpEnalbed);
+    }
+
+    private String getIDPProperty(String tenantDomain, String propertyName) throws
+            IdentityRecoveryException {
+
+        String propertyValue = "";
+        try {
+            org.wso2.carbon.identity.application.common.model.Property[] configuration =
+                    IdentityRecoveryServiceDataHolder.getInstance().getIdentityGovernanceService().
+                            getConfiguration(new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP},
+                                    tenantDomain);
+            for (org.wso2.carbon.identity.application.common.model.Property configProperty : configuration) {
+                if (configProperty != null && propertyName.equalsIgnoreCase(configProperty.getName())) {
+                    propertyValue = configProperty.getValue();
+                }
+            }
+        } catch (IdentityGovernanceException e) {
+            throw new IdentityRecoveryException("Error while retrieving resident identity provider for tenant : "
+                    + tenantDomain, e);
+        }
+        return propertyValue;
+    }
+
     private void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
 
@@ -526,4 +614,10 @@ public class UserSelfRegistrationManager {
         return receiptPurposeInput;
     }
 
+    private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
+
+        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
+                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
+                tenantDomain);
+    }
 }

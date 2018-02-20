@@ -11,6 +11,7 @@
             <bean class="org.wso2.carbon.identity.user.endpoint.PiInfoApi"/>
             <bean class="org.wso2.carbon.identity.user.endpoint.ResendCodeApi"/>
             <bean class="org.wso2.carbon.identity.user.endpoint.ValidateCodeApi"/>
+            <bean class="org.wso2.carbon.identity.user.endpoint.ValidateUsernameApi"/>
             
         </jaxrs:serviceBeans>
         <jaxrs:providers>
