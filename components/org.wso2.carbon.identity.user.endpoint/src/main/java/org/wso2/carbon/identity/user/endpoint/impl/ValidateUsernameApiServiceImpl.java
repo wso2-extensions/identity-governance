@@ -36,44 +36,44 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
     @Override
     public Response validateUsernamePost(UsernameValidationRequestDTO user) {
 
-        if (StringUtils.isNotEmpty(user.getUsername())) {
-            try {
-                String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
-                UserSelfRegistrationManager userSelfRegistrationManager = Utils
-                        .getUserSelfRegistrationManager();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(String.format("Validating username for user %s", user.getUsername()));
-                }
-                UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
+        if (StringUtils.isEmpty(user.getUsername())) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Username cannot be empty.").build();
+        }
 
-                if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
-                    logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ",
-                            tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-                    responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-                } else if (!userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
-                    logDebug(String.format("Self registration is not enabled for tenant domain : %s . Hence returning code",
-                            tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
-                    responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes
-                            .ERROR_CODE_SELF_REGISTRATION_DISABLED));
-                } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(user.getUsername())) {
-                    logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
-                            user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
-                    responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
-                } else {
-                    logDebug(String.format("username : %s is avilable for self registration. Hence returning code %s: ",
-                            user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
-                    responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
-                }
-                return Response.ok().entity(responseDTO).build();
-            } catch (IdentityRecoveryException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Error while checking username validity for user " + user.getUsername(), e);
-                }
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error while checking user " +
-                        "existence").build();
+        try {
+            String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
+            UserSelfRegistrationManager userSelfRegistrationManager = Utils
+                    .getUserSelfRegistrationManager();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Validating username for user %s", user.getUsername()));
             }
-        } else {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Username cannot be empty").build();
+            UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
+
+            if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
+                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ",
+                        tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
+                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
+            } else if (!userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
+                logDebug(String.format("Self registration is not enabled for tenant domain : %s . Hence returning code",
+                        tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
+                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes
+                        .ERROR_CODE_SELF_REGISTRATION_DISABLED));
+            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(user.getUsername())) {
+                logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
+                        user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
+                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
+            } else {
+                logDebug(String.format("username : %s is avilable for self registration. Hence returning code %s: ",
+                        user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
+                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
+            }
+            return Response.ok().entity(responseDTO).build();
+        } catch (IdentityRecoveryException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error while checking username validity for user " + user.getUsername(), e);
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error while checking user " +
+                    "existence").build();
         }
     }
 
