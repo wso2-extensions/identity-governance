@@ -62,7 +62,7 @@ public class UtilsTest {
         PiiController piiController = new PiiController(PII_CONTROLLER_NAME, false, PII_CONTROLLER_CONTACT,
                 PII_CONTROLLER_EMAIL, PII_CONTROLLER_PHONE, PII_CONTROLLER_URL, new Address(ADDRESS_COUNTRY,
                 ADDRESS_LOCALITY, ADDRESS_REGION, ADDRESS_OFFICE_BOX_NUMBER, ADDRESS_POSTAL_CODE,
-                ADDRESS_STREET_ADDRESS), null);
+                ADDRESS_STREET_ADDRESS));
         List<PiiController> piiControllers = new ArrayList<>();
         piiControllers.add(piiController);
         receipt.setPiiControllers(piiControllers);
