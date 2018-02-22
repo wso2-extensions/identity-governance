@@ -81,7 +81,7 @@ public class Utils {
         consentReceiptDTO.setPiiControllers(receipt.getPiiControllers().stream().map(piiController -> {
             PiiControllerDTO piiControllerDTO = new PiiControllerDTO();
             AddressDTO addressDTO = new AddressDTO();
-            consentReceiptDTO.setPublicKey(piiController.getPublicKey());
+            consentReceiptDTO.setPublicKey(receipt.getPublicKey());
             addressDTO.setAddressCountry(piiController.getAddress().getAddressCountry());
             addressDTO.setAddressLocality(piiController.getAddress().getAddressLocality());
             addressDTO.setAddressRegion(piiController.getAddress().getAddressRegion());
