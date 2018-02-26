@@ -57,8 +57,15 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
     }
 
     String consentData =
-            "{\"services\":[{\"purposes\":[{\"purposeId\":\"3\",\"piiCategory\":[{\"piiCategoryId\":\"1\"}]," +
-                    "\"purposeCategoryId\":[1]}]}]}";
+            "{\"jurisdiction\":\"someJurisdiction\",\"collectionMethod\":\"Web Form - Self Registration\"," +
+                    "\"language\":\"en\",\"piiPrincipalId\":\"DOMAIN/testuser\",\"services\":" +
+                    "[{\"tenantDomain\":\"wso2.com\",\"serviceDisplayName\":\"Resident IDP\"," +
+                    "\"serviceDescription\":\"Resident IDP\",\"purposes\":[{\"purposeId\":3,\"purposeCategoryId\":[1]," +
+                    "\"consentType\":\"EXPLICIT\",\"piiCategory\":[{\"piiCategoryId\":1," +
+                    "\"validity\":\"DATE_UNTIL:INDEFINITE\"}],\"primaryPurpose\":true," +
+                    "\"termination\":\"DATE_UNTIL:INDEFINITE\",\"thirdPartyDisclosure\":false}],\"tenantId\":1}]," +
+                    "\"policyURL\":\"somePolicyUrl\",\"tenantId\":1,\"properties\":{}}";
+
 
     @Test
     public void testAddConsent() throws Exception {
@@ -69,11 +76,11 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
         PowerMockito.when(identityProviderManager.getResidentIdP(Matchers.anyString())).thenReturn(identityProvider);
         ConsentManager consentManager = new MyConsentManager(new ConsentManagerConfigurationHolder());
         IdentityRecoveryServiceDataHolder.getInstance().setConsentManager(consentManager);
-        User user = new User();
-        userSelfRegistrationManager.addUserConsent(user, consentData, "", "", "", "");
-        Assert.assertEquals(IdentityRecoveryConstants.Consent.COLLECTION_METHOD_SELF_REGISTRATION, resultReceipt.getCollectionMethod());
-        Assert.assertEquals("", resultReceipt.getJurisdiction());
-        Assert.assertEquals("", resultReceipt.getLanguage());
+        userSelfRegistrationManager.addUserConsent(consentData, "wso2.com");
+        Assert.assertEquals(IdentityRecoveryConstants.Consent.COLLECTION_METHOD_SELF_REGISTRATION,
+                resultReceipt.getCollectionMethod());
+        Assert.assertEquals("someJurisdiction", resultReceipt.getJurisdiction());
+        Assert.assertEquals("en", resultReceipt.getLanguage());
         Assert.assertNotNull(resultReceipt.getServices());
         Assert.assertEquals(1, resultReceipt.getServices().size());
         Assert.assertNotNull(resultReceipt.getServices().get(0).getPurposes());
