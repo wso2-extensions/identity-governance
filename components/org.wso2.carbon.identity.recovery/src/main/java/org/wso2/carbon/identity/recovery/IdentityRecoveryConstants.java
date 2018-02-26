@@ -247,9 +247,6 @@ public class IdentityRecoveryConstants {
         public static final String CONSENT = "consent";
         public static final String SERVICES = "services";
         public static final String PURPOSES = "purposes";
-        public static final String POLICY_URL = CONSENT + ".policyURL";
-        public static final String JURISDICTION = CONSENT + ".jurisdiction";
-        public static final String LANGUAGE = CONSENT + "language";
         public static final String PII_CATEGORY = "piiCategory";
         public static final String PII_CATEGORY_ID = "piiCategoryId";
         public static final String EXPLICIT_CONSENT_TYPE = "EXPLICIT";

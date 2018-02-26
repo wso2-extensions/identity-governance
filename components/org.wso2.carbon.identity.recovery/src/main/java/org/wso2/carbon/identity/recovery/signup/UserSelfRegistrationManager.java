@@ -19,6 +19,8 @@
 
 package org.wso2.carbon.identity.recovery.signup;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -96,17 +98,8 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
-        String policyUrl = getPropertyValue(properties, IdentityRecoveryConstants.Consent.POLICY_URL);
-        String jurisdiction = getPropertyValue(properties, IdentityRecoveryConstants.Consent.JURISDICTION);
-        String language = getPropertyValue(properties, IdentityRecoveryConstants.Consent.LANGUAGE);
         String tenantDomain = user.getTenantDomain();
 
-        if (StringUtils.isEmpty(jurisdiction)) {
-            jurisdiction = IdentityRecoveryConstants.Consent.DEFAULT_JURISDICTION;
-        }
-        if (StringUtils.isEmpty(language)) {
-            language = IdentityRecoveryConstants.Consent.LANGUAGE_ENGLISH;
-        }
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
@@ -190,7 +183,7 @@ public class UserSelfRegistrationManager {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
                 }
             }
-            addUserConsent(user, consent, policyUrl, jurisdiction, language, tenantDomain);
+            addUserConsent(consent, tenantDomain);
 
             if (!isNotificationInternallyManage && isAccountLockOnCreation) {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -216,24 +209,25 @@ public class UserSelfRegistrationManager {
     /**
      * Adds user consent.
      *
-     * @param user         User.
      * @param consent      Consent String.
-     * @param policyUrl    Policy URL.
-     * @param jurisdiction Jurisdiction.
-     * @param language     Language
      * @param tenantDomain Tenant Domain.
      * @throws IdentityRecoveryServerException IdentityRecoveryServerException.
      */
-    public void addUserConsent(User user, String consent, String policyUrl, String jurisdiction, String language,
-                               String tenantDomain) throws IdentityRecoveryServerException {
+    public void addUserConsent(String consent, String tenantDomain) throws IdentityRecoveryServerException {
 
         if (StringUtils.isNotEmpty(consent)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Adding consent to tenant domain : %s : %s", tenantDomain, consent));
+            }
             try {
-                addConsent(consent, user.getUserName(), tenantDomain, policyUrl,
-                        jurisdiction, language);
+                addConsent(consent, tenantDomain);
             } catch (ConsentManagementException e) {
                 throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_USER_CONSENT,
-                        user.getUserName(), e);
+                        "", e);
+            }
+        } else {
+            if(log.isDebugEnabled()) {
+                log.debug("Consent string is empty. Hence not adding consent");
             }
         }
     }
@@ -484,32 +478,25 @@ public class UserSelfRegistrationManager {
         }
     }
 
-    private void addConsent(String consent, String username, String tenantDomain, String policyUrl, String
-            jurisdiction, String language) throws ConsentManagementException {
+    private void addConsent(String consent, String tenantDomain) throws ConsentManagementException, IdentityRecoveryServerException {
 
+        Gson gson = new Gson();
+        ReceiptInput receiptInput = gson.fromJson(consent, ReceiptInput.class);
         ConsentManager consentManager = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
-        ReceiptInput receiptInput = new ReceiptInput();
-        receiptInput.setCollectionMethod(IdentityRecoveryConstants.Consent.COLLECTION_METHOD_SELF_REGISTRATION);
-        receiptInput.setJurisdiction(jurisdiction);
-        receiptInput.setLanguage(language);
-        receiptInput.setPolicyUrl(policyUrl);
-        receiptInput.setPiiPrincipalId(username);
 
-        ReceiptServiceInput receiptServiceInput = new ReceiptServiceInput();
+        if (receiptInput.getServices().size() < 0) {
+            throw new IdentityRecoveryServerException("A service should be available in a receipt");
+        }
+        // There should be a one receipt
+        ReceiptServiceInput receiptServiceInput = receiptInput.getServices().get(0);
+        receiptServiceInput.setTenantDomain(tenantDomain);
         try {
             setIDPData(tenantDomain, receiptServiceInput);
         } catch (IdentityProviderManagementException e) {
             throw new ConsentManagementException("Error while retrieving identity provider data", "Error while " +
                     "setting IDP data", e);
         }
-        receiptServiceInput.setTenantDomain(tenantDomain);
-        List<ReceiptPurposeInput> receiptPurposeInputList = buildPurposes(consent);
-        receiptServiceInput.setPurposes(receiptPurposeInputList);
-
-        List<ReceiptServiceInput> receiptServiceInputList = new ArrayList<>();
-        receiptServiceInputList.add(receiptServiceInput);
-        receiptInput.setServices(receiptServiceInputList);
-        receiptInput.setProperties(new HashMap<String, String>());
+        receiptInput.setTenantDomain(tenantDomain);
         consentManager.addConsent(receiptInput);
     }
 
@@ -519,18 +506,28 @@ public class UserSelfRegistrationManager {
         IdentityProviderManager idpManager = IdentityProviderManager.getInstance();
         IdentityProvider residentIdP = idpManager.getResidentIdP(tenantDomain);
 
-        receiptServiceInput.setService(residentIdP.getHomeRealmId()); // set resident IDP
-        receiptServiceInput.setSpDisplayName(residentIdP.getDisplayName());
-
-        if (StringUtils.isNotEmpty(residentIdP.getIdentityProviderDescription())) {
-            receiptServiceInput.setSpDescription(residentIdP.getIdentityProviderDescription());
-        } else {
-            receiptServiceInput.setSpDescription(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+        if (StringUtils.isEmpty(receiptServiceInput.getService())) {
+            if (log.isDebugEnabled()) {
+                log.debug("No service name found. Hence adding resident IDP home realm ID");
+            }
+            receiptServiceInput.setService(residentIdP.getHomeRealmId());
         }
-        if (StringUtils.isNotEmpty(residentIdP.getDisplayName())) {
-            receiptServiceInput.setSpDescription(residentIdP.getDisplayName());
-        } else {
-            receiptServiceInput.setSpDisplayName(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+        if (StringUtils.isEmpty(receiptServiceInput.getTenantDomain())) {
+            receiptServiceInput.setTenantDomain(tenantDomain);
+        }
+        if (StringUtils.isEmpty(receiptServiceInput.getSpDescription())) {
+            if (StringUtils.isNotEmpty(residentIdP.getIdentityProviderDescription())) {
+                receiptServiceInput.setSpDescription(residentIdP.getIdentityProviderDescription());
+            } else {
+                receiptServiceInput.setSpDescription(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+            }
+        }
+        if (StringUtils.isEmpty(receiptServiceInput.getSpDisplayName())) {
+            if (StringUtils.isNotEmpty(residentIdP.getDisplayName())) {
+                receiptServiceInput.setSpDisplayName(residentIdP.getDisplayName());
+            } else {
+                receiptServiceInput.setSpDisplayName(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+            }
         }
     }
 
@@ -551,67 +548,6 @@ public class UserSelfRegistrationManager {
             log.debug("Returning value for key : " + key + " - " + propertyValue);
         }
         return propertyValue;
-    }
-
-    private List<ReceiptPurposeInput> buildPurposes(String consent) {
-
-        List<ReceiptPurposeInput> receiptPurposeInputList = new ArrayList<>();
-        JSONObject services = new JSONObject(consent);
-        JSONArray servicesArray = (JSONArray) services.get(IdentityRecoveryConstants.Consent.SERVICES);
-        JSONObject purposes = (JSONObject) servicesArray.get(0);
-        JSONArray purposesArray = (JSONArray) purposes.get(IdentityRecoveryConstants.Consent.PURPOSES);
-
-        for (int index = 0; index < purposesArray.length(); index++) {
-            JSONObject purpose = (JSONObject) purposesArray.get(index);
-            ReceiptPurposeInput receiptPurposeInput = buildReceiptPurposeInput(purpose);
-            if (log.isDebugEnabled()) {
-                log.debug("Added a purpose with ID " + receiptPurposeInput.getPurposeId());
-            }
-            receiptPurposeInputList.add(receiptPurposeInput);
-        }
-        return receiptPurposeInputList;
-    }
-
-    private List<PIICategoryValidity> getPIICategoryValidities(JSONObject purpose) {
-
-        List<PIICategoryValidity> piiCategoryIds = new ArrayList<>();
-        JSONArray piiCategoryValidities = purpose.getJSONArray(IdentityRecoveryConstants.Consent.PII_CATEGORY);
-        for (int piiCategoryIndex = 0; piiCategoryIndex < piiCategoryValidities.length(); piiCategoryIndex++) {
-            JSONObject piiCategory = (JSONObject) piiCategoryValidities.get(piiCategoryIndex);
-            piiCategoryIds.add(new PIICategoryValidity(piiCategory.getInt(
-                    IdentityRecoveryConstants.Consent.PII_CATEGORY_ID),
-                    IdentityRecoveryConstants.Consent.INFINITE_TERMINATION));
-            if (log.isDebugEnabled()) {
-                log.debug("piiCategory with ID " +
-                        piiCategory.getInt(IdentityRecoveryConstants.Consent.PII_CATEGORY_ID + " added"));
-            }
-        }
-        return piiCategoryIds;
-    }
-
-    private ReceiptPurposeInput buildReceiptPurposeInput(JSONObject purpose) {
-
-        Integer purposeId = purpose.getInt(IdentityRecoveryConstants.Consent.PURPOSE_ID);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Building a purpose with ID : " + purposeId);
-        }
-        ReceiptPurposeInput receiptPurposeInput = new ReceiptPurposeInput();
-        receiptPurposeInput.setConsentType(IdentityRecoveryConstants.Consent.EXPLICIT_CONSENT_TYPE);
-        receiptPurposeInput.setPrimaryPurpose(true);
-        receiptPurposeInput.setPurposeId(purposeId);
-        receiptPurposeInput.setTermination(IdentityRecoveryConstants.Consent.INFINITE_TERMINATION);
-        receiptPurposeInput.setThirdPartyDisclosure(false);
-        List<Integer> purposeCategoryIds = new ArrayList<>();
-        // Fixed value
-        purposeCategoryIds.add(1);
-        List<PIICategoryValidity> piiCategoryValidities = getPIICategoryValidities(purpose);
-        receiptPurposeInput.setPiiCategory(piiCategoryValidities);
-        receiptPurposeInput.setPurposeCategoryId(purposeCategoryIds);
-        if (log.isDebugEnabled()) {
-            log.debug("Successfully built purpose with ID : " + purposeId);
-        }
-        return receiptPurposeInput;
     }
 
     private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
