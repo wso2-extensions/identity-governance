@@ -126,6 +126,7 @@
         <module>components/org.wso2.carbon.identity.password.policy</module>
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
         <module>components/org.wso2.carbon.identity.user.export.core</module>
+        <module>components/org.wso2.carbon.identity.piicontroller</module>
 
         <module>service-stubs/identity</module>
 
@@ -135,6 +136,7 @@
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
+        <module>features/org.wso2.carbon.identity.piicontroller.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.feature</module>
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
@@ -325,6 +327,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.password.policy</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.piicontroller</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
