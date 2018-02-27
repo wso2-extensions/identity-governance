@@ -30,6 +30,8 @@
     <filter-mapping>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
         <url-pattern>*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 
     <filter>
@@ -56,6 +58,8 @@
     <filter-mapping>
         <filter-name>ContentTypeBasedCachePreventionFilter</filter-name>
         <url-pattern>*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 
     <listener>
@@ -86,6 +90,7 @@
         <filter-name>CaptchaFilter</filter-name>
         <url-pattern>/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 
     <session-config>
