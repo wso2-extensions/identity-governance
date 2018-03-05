@@ -591,10 +591,10 @@ public class UserSelfRegistrationManager {
         return isValidUsername;
     }
 
-    /**
+    /** This is similar to username validation in UserstoreManager
      * @param userName
      * @return
-     * @throws 
+     * @throws
      */
     private boolean checkUserNameValid(String userName, RealmConfiguration realmConfig) {
 
@@ -623,12 +623,12 @@ public class UserSelfRegistrationManager {
             regularExpression = regularExpression.trim();
         }
 
-        return regularExpression == null || regularExpression.equals("")
-                || isFormatCorrect(regularExpression, userName);
+        return StringUtils.isEmpty(regularExpression) || isFormatCorrect(regularExpression, userName);
 
     }
 
     /**
+     * Validate with regex
      * @param regularExpression
      * @param attribute
      * @return
