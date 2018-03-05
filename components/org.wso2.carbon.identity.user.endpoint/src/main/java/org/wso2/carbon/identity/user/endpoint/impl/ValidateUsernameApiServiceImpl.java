@@ -62,6 +62,10 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
                         user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
                 responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
+            } else if (!userSelfRegistrationManager.isMatchUserNameRegex(tenantDomain, user.getUsername())) {
+                logDebug(String.format("%s is an invalid user name. Hence returning code %s: ",
+                        user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
+                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
             } else {
                 logDebug(String.format("username : %s is avilable for self registration. Hence returning code %s: ",
                         user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
