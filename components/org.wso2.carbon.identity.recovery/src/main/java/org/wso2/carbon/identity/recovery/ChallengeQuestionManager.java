@@ -28,7 +28,6 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOCALE_EN_US;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -49,6 +48,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOCALE_EN_US;
 
 /**
  * OSGi Service to handle functionality related to challenge question management and verification.
@@ -770,7 +771,8 @@ public class ChallengeQuestionManager {
             List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
             boolean isQuestionAvailable = false;
             for (ChallengeQuestion availableQuestion : challengeQuestions) {
-                if (StringUtils.equals(availableQuestion.getQuestion(), challengeQuestion.getQuestion())) {
+                if (StringUtils.equals(availableQuestion.getQuestion().trim(), challengeQuestion.getQuestion().trim()
+                )) {
                     isQuestionAvailable = true;
                 }
             }
