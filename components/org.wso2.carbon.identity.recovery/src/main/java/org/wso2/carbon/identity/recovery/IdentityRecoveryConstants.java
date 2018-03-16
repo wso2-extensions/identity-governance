@@ -77,7 +77,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
-        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found"),
+        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
