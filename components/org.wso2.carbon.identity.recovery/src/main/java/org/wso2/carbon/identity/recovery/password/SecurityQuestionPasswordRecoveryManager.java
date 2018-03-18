@@ -323,7 +323,9 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
             if (userChallengeAnswer == null) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
+                String error = "Challenge answers cannot be found for user: " + userRecoveryData.getUser();
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                                          .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, error);
             }
 
             String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
@@ -399,8 +401,10 @@ public class SecurityQuestionPasswordRecoveryManager {
                     //Validate whether user answered all the requested questions
 
                 } else {
+                    String error = "Could not find requested challenge questions for user: " + userRecoveryData
+                            .getUser();
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, null);
+                            .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, error);
                 }
                 ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
 
