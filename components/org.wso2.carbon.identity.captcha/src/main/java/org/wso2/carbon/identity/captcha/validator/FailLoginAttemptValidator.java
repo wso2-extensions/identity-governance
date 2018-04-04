@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.captcha.validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.context.SessionContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
@@ -29,9 +28,14 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.core.bean.context.MessageContext;
-import org.wso2.carbon.identity.core.handler.AbstractIdentityMessageHandler;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.data.publisher.application.authentication.AbstractAuthenticationDataPublisher;
+import org.wso2.carbon.identity.data.publisher.application.authentication.model.AuthenticationData;
+import org.wso2.carbon.identity.data.publisher.application.authentication.model.SessionData;
+import org.wso2.carbon.identity.event.IdentityEventConstants.EventName;
+import org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,18 +44,13 @@ import java.util.Map;
 /**
  * FailLoginAttemptValidator.
  */
-public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler implements AuthenticationDataPublisher {
+public class FailLoginAttemptValidator extends AbstractAuthenticationDataPublisher {
 
     private static Log log = LogFactory.getLog(FailLoginAttemptValidator.class);
 
     @Override
     public String getName() {
-        return "FailLoginAttemptValidator";
-    }
-
-    @Override
-    public boolean canHandle(MessageContext messageContext) {
-        return true;
+        return "failLoginAttemptValidator";
     }
 
     @Override
@@ -116,4 +115,53 @@ public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler im
                                           Map<String, Object> map) {
 
     }
+
+    @Override
+    public void doPublishAuthenticationStepSuccess(AuthenticationData authenticationData) {
+
+    }
+
+    @Override
+    public void doPublishAuthenticationStepFailure(AuthenticationData authenticationData) {
+
+    }
+
+    @Override
+    public void doPublishAuthenticationSuccess(AuthenticationData authenticationData) {
+
+    }
+
+    @Override
+    public void doPublishAuthenticationFailure(AuthenticationData authenticationData) {
+
+    }
+
+    @Override
+    public void doPublishSessionCreation(SessionData sessionData) {
+
+    }
+
+    @Override
+    public void doPublishSessionUpdate(SessionData sessionData) {
+
+    }
+
+    @Override
+    public void doPublishSessionTermination(SessionData sessionData) {
+
+    }
+
+    @Override
+    public void handleEvent(Event event) throws IdentityEventException {
+        HttpServletRequest request = (HttpServletRequest) event.getEventProperties().get(EventProperty.REQUEST);
+        AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get(EventProperty.CONTEXT);
+        Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties()
+                .get(EventProperty.PARAMS);
+        String eventName = event.getEventName();
+
+        if (EventName.AUTHENTICATION_STEP_FAILURE.name().equals(eventName)) {
+            publishAuthenticationStepFailure(request, context, unmodifiableParamMap);
+        }
+    }
+
 }
