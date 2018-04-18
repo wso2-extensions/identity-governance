@@ -46,13 +46,12 @@ public class FailLoginAttemptValidator extends AbstractEventHandler {
 
     @Override
     public String getName() {
-
         return "failLoginAttemptValidator";
     }
 
+
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
-
         AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get(EventProperty.CONTEXT);
         Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties()
                 .get(EventProperty.PARAMS);
