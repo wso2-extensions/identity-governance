@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.wso2.carbon.identity.recovery.store;
 
 import org.apache.commons.lang.StringUtils;
@@ -211,6 +227,48 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         }
         return null;
     }
+
+    @Override
+    public UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws IdentityRecoveryException {
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
+
+        try {
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
+            }
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, user.getUserName());
+            prepStmt.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
+                RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
+                String code = resultSet.getString("CODE");
+
+                UserRecoveryData userRecoveryData =
+                        new UserRecoveryData(user, code, scenario, step);
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
+                }
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        return null;
+    }
+
 
     @Override
     public void invalidate(User user) throws IdentityRecoveryException {

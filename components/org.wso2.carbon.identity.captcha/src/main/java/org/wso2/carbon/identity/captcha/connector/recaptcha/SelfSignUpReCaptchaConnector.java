@@ -146,6 +146,10 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     private Property[] getConnectorConfigs(ServletRequest servletRequest) throws Exception {
 
         String tenantDomain = servletRequest.getParameter("tenantDomain");
+        // This is because from swagger def we expect tenant domain as "tenant-domain"
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = servletRequest.getParameter("tenant-domain");
+        }
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }

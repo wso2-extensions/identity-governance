@@ -45,6 +45,7 @@ public class IdentityRecoveryConstants {
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
@@ -76,7 +77,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
-        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found"),
+        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
@@ -117,7 +118,15 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_MULTIPLE_USERS_MATCHING("20032", "Multiple users found"),
         ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS("20033", "Error loading signup configs"),
         ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS("20034", "Error occurred while updating user claims"),
-        ERROR_CODE_POLICY_VIOLATION("20035", "Password Policy Violate")
+        ERROR_CODE_POLICY_VIOLATION("20035", "Password Policy Violate"),
+        ERROR_CODE_PROVIDED_CONFIRMATION_CODE_NOT_VALID("20036", "Provided confirmation code %s is not valid"),
+        ERROR_CODE_CONFIRMATION_CODE_NOT_PROVIDED("20037", "Confirmation code is not provided for user %s."),
+        ERROR_CODE_RECOVERY_SCENARIO_NOT_PROVIDED("20038", "Recovery Scenario is not provided for user %s."),
+        ERROR_CODE_RECOVERY_STEP_NOT_PROVIDED("20039", "Recovery Step is not provided for user %s."),
+        ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED("20040", "Notification Type is not provided for user %s."),
+        ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: " +
+                "%s."),
+        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
         ;
 
 
@@ -228,5 +237,21 @@ public class IdentityRecoveryConstants {
                 "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
 
 
+    }
+
+    public static class Consent {
+
+        public static final String COLLECTION_METHOD_SELF_REGISTRATION = "Web Form - Self Registration";
+        public static final String DEFAULT_JURISDICTION = "Global";
+        public static final String LANGUAGE_ENGLISH = "en";
+        public static final String CONSENT = "consent";
+        public static final String SERVICES = "services";
+        public static final String PURPOSES = "purposes";
+        public static final String PII_CATEGORY = "piiCategory";
+        public static final String PII_CATEGORY_ID = "piiCategoryId";
+        public static final String EXPLICIT_CONSENT_TYPE = "EXPLICIT";
+        public static final String PURPOSE_ID = "purposeId";
+        public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
+        public static final String RESIDENT_IDP = "Resident IDP";
     }
 }

@@ -90,7 +90,8 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
                         IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                throw new IdentityEventException("User : " + userName + " not confirmed yet.");
+                throw new IdentityEventException(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE,
+                        "User : " + userName + " not confirmed yet.");
             }
         }
     }

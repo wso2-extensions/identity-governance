@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
-import org.wso2.carbon.identity.user.endpoint.Util.Utils;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 
 import javax.ws.rs.core.Response;
@@ -63,9 +63,13 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+        if (notificationResponseBean != null) {
+            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+                return Response.status(Response.Status.CREATED).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+        } else {
             return Response.status(Response.Status.CREATED).build();
         }
-        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 }

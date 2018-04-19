@@ -30,7 +30,7 @@ public class ResendCodeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "", notes = "This API is used to resend confirmation code, if it is missing.\n", response = String.class)
+    @io.swagger.annotations.ApiOperation(value = "Resend Code\n", notes = "This API is used to resend confirmation code, if it is missing.\n", response = String.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Successful"),
         

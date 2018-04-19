@@ -20,13 +20,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
@@ -63,6 +66,14 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * @scr.reference name="IdentityEventService"
  * interface="org.wso2.carbon.identity.event.services.IdentityEventService" cardinality="1..1"
  * policy="dynamic" bind="setIdentityEventService" unbind="unsetIdentityEventService"
+ * @scr.reference name="AccountLockService"
+ * interface="org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService"
+ * cardinality="1..1" policy="dynamic" bind="setAccountLockService"
+ * unbind="unsetAccountLockService"
+ * @scr.reference name="ConsentManager"
+ * interface="org.wso2.carbon.consent.mgt.core.ConsentManager"
+ * cardinality="1..1" policy="dynamic" bind="setConsentMgtService"
+ * unbind="unsetConsentMgtService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -83,6 +94,8 @@ public class IdentityRecoveryServiceComponent {
                     UserSelfRegistrationManager.getInstance(), null);
             bundleContext.registerService(ChallengeQuestionManager.class.getName(),
                     ChallengeQuestionManager.getInstance(), null);
+            bundleContext.registerService(ResendConfirmationManager.class.getName(),
+                    ResendConfirmationManager.getInstance(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
@@ -179,6 +192,34 @@ public class IdentityRecoveryServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("Unsetting Identity Resource Mgt service.");
         }
+    }
+
+    protected void setAccountLockService(AccountLockService accountLockService) {
+        dataHolder.getInstance().setAccountLockService(accountLockService);
+    }
+
+    protected void unsetAccountLockService(AccountLockService accountLockService) {
+        dataHolder.getInstance().setAccountLockService(null);
+    }
+
+    /**
+     * Sets Consent Manager OSGI Service.
+     *
+     * @param consentManager Consent Manager.
+     */
+    protected void setConsentMgtService(ConsentManager consentManager) {
+
+        dataHolder.getInstance().setConsentManager(consentManager);
+    }
+
+    /**
+     * Unset Consent Manager OSGI service.
+     *
+     * @param consentManager Consent Manager.
+     */
+    protected void unsetConsentMgtService(ConsentManager consentManager) {
+
+        dataHolder.getInstance().setConsentManager(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {

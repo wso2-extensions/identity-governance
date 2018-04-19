@@ -39,7 +39,7 @@ import java.util.Map;
 
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
-    private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
+    private static final Log log = LogFactory.getLog(IdentityStoreEventListener.class);
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
@@ -50,8 +50,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
     public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
-        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this
-                .getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
+        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
+                this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
     }

@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -28,9 +29,12 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
-import org.wso2.carbon.identity.user.endpoint.Util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.Map;
 import javax.ws.rs.core.Response;
 
 public class MeApiServiceImpl extends MeApiService {
@@ -38,14 +42,32 @@ public class MeApiServiceImpl extends MeApiService {
     private static final Log LOG = LogFactory.getLog(MeApiServiceImpl.class);
 
     @Override
+    public Response getMe() {
+
+        String username = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String userStoreDomain = UserCoreUtil.extractDomainFromName(username);
+        username = UserCoreUtil.removeDomainFromName(username);
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        Map userAttributes;
+        try {
+            userAttributes = Utils.getUserInformationService().getRetainedUserInformation(username, userStoreDomain,
+                    tenantId);
+        } catch (UserExportException e) {
+            return Response.serverError().entity(e.getMessage()).build();
+        }
+        return Response.ok().status(Response.Status.OK).entity(userAttributes).build();
+    }
+
+    @Override
     public Response mePost(SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO) {
+
         String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
 
-        if(StringUtils.isNotBlank(tenantFromContext)) {
+        if (StringUtils.isNotBlank(tenantFromContext)) {
             selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
 
-        if (StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
+        if (selfUserRegistrationRequestDTO != null && StringUtils.isBlank(selfUserRegistrationRequestDTO.getUser().getRealm())) {
             selfUserRegistrationRequestDTO.getUser().setRealm(IdentityUtil.getPrimaryDomainName());
         }
 
@@ -57,7 +79,6 @@ public class MeApiServiceImpl extends MeApiService {
                     Utils.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
                     Utils.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
                     Utils.getProperties(selfUserRegistrationRequestDTO.getProperties()));
-
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while registering self up user ", e);
@@ -73,9 +94,14 @@ public class MeApiServiceImpl extends MeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+        if (notificationResponseBean != null) {
+            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+                return Response.status(Response.Status.CREATED).build();
+            }
+            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+        } else {
             return Response.status(Response.Status.CREATED).build();
         }
-        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 }
+

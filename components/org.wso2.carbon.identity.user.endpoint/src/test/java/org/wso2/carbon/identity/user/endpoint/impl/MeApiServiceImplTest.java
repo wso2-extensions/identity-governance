@@ -19,25 +19,29 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.IObjectFactory;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
+import org.wso2.carbon.base.CarbonBaseConstants;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
-import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
-import org.wso2.carbon.identity.user.endpoint.Constants;
-import org.wso2.carbon.identity.user.endpoint.Util.Utils;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
-import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.user.api.Claim;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +57,7 @@ import static org.testng.Assert.assertEquals;
 @PrepareForTest({IdentityUtil.class, Utils.class})
 public class MeApiServiceImplTest extends PowerMockTestCase {
 
+    private static final String USERNAME = "dummyUser";
     @Mock
     private UserSelfRegistrationManager userSelfRegistrationManager;
 
@@ -63,18 +68,56 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     private MeApiServiceImpl meApiService;
 
     @Test
-    public void testResendCodePost() throws Exception {
+    public void testMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenReturn(notificationResponseBean);
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+        assertEquals(meApiService.mePost(null).getStatus(), 201);
+    }
+
+    @Test
+    public void testIdentityRecoveryExceptionInMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+    }
+
+    @Test
+    public void testIdentityRecoveryClientExceptionInMePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+                any(Property[].class))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
+        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
+    }
+
+    @Test
+    public void testMeGet() throws UserExportException {
+
+        mockClasses();
+        try {
+            String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
+            System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
+            when(Utils.getUserInformationService()).thenReturn(new MockUserInformationService());
+
+            assertEquals(meApiService.getMe().getStatus(), 200);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    private void mockClasses() {
 
         mockStatic(IdentityUtil.class);
         mockStatic(Utils.class);
-        PowerMockito.when(IdentityUtil.class, (String) IdentityUtil.threadLocalProperties.get().
-                get(Constants.TENANT_NAME_FROM_CONTEXT)).thenReturn("TestTenant");
         when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-
-        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
-                any(Property[].class))).thenReturn(notificationResponseBean);
-
-        assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
     }
 
     @ObjectFactory
@@ -83,11 +126,11 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
         return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
-    private SelfRegistrationUserDTO buildSelfregistartion() {
+    private SelfRegistrationUserDTO buildSelfRegistartion() {
 
         SelfRegistrationUserDTO selfRegistrationUserDTO = new SelfRegistrationUserDTO();
         selfRegistrationUserDTO.setUsername("TestUser");
-        selfRegistrationUserDTO.setRealm("TestRealm");
+        selfRegistrationUserDTO.setRealm(null);
         selfRegistrationUserDTO.setTenantDomain("TestTenantDomain");
         selfRegistrationUserDTO.setPassword("TestPassword");
         return selfRegistrationUserDTO;
@@ -114,11 +157,11 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
         SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO = new SelfUserRegistrationRequestDTO();
         List<ClaimDTO> listClaimDTO = new ArrayList<>();
         listClaimDTO.add(buildClaimDTO());
-        buildSelfregistartion().setClaims(listClaimDTO);
-        List<PropertyDTO> listpropertyDTOs = new ArrayList<>();
-        listpropertyDTOs.add(buildSelfUserRegistrationRequestDTO());
-        selfUserRegistrationRequestDTO.setProperties(listpropertyDTOs);
-        selfUserRegistrationRequestDTO.setUser(buildSelfregistartion());
+        buildSelfRegistartion().setClaims(listClaimDTO);
+        List<PropertyDTO> listPropertyDTOs = new ArrayList<>();
+        listPropertyDTOs.add(buildSelfUserRegistrationRequestDTO());
+        selfUserRegistrationRequestDTO.setProperties(listPropertyDTOs);
+        selfUserRegistrationRequestDTO.setUser(buildSelfRegistartion());
         return selfUserRegistrationRequestDTO;
     }
 }

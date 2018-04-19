@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -316,34 +317,12 @@ public class Utils {
 
     public static boolean isAccountLocked(User user) throws IdentityRecoveryException {
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        UserRealm userRealm;
         try {
-            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
-        } catch (UserStoreException e) {
+            return IdentityRecoveryServiceDataHolder.getInstance().getAccountLockService().isAccountLocked(user
+                    .getUserName(), user.getTenantDomain(), user.getUserStoreDomain());
+        } catch (AccountLockServiceException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
-        }
-
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
-        }
-
-        try {
-            Map<String, String> values = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user
-                    .getUserName(), user.getUserStoreDomain()), new String[]{
-                    IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
-            boolean accountLock = Boolean.parseBoolean(values.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM));
-            return accountLock;
-        } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
+                    .ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS, user.getUserName(), e);
         }
     }
 
