@@ -19,7 +19,6 @@
 
 package org.wso2.carbon.identity.recovery.password;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,12 +63,13 @@ public class NotificationPasswordRecoveryManager {
     }
 
     public static NotificationPasswordRecoveryManager getInstance() {
+
         return instance;
     }
 
-
     public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[] properties)
             throws IdentityRecoveryException {
+
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -139,7 +139,6 @@ public class NotificationPasswordRecoveryManager {
         return notificationResponseBean;
     }
 
-
     public void updatePassword(String code, String password, Property[] properties) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -159,13 +158,16 @@ public class NotificationPasswordRecoveryManager {
         }
 
         int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
-        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(), userRecoveryData.getUser().getUserStoreDomain());
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
         try {
 
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
-            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(userRecoveryData.getRecoveryScenario())) {
+            if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals
+                    (userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
+                    equals(userRecoveryData.getRecoveryScenario())) {
                 HashMap<String, String> userClaims = new HashMap<>();
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
@@ -178,17 +180,19 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.invalidate(code);
 
         boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().
+                        getTenantDomain()));
         boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, userRecoveryData.getUser().getTenantDomain()));
-
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+                        userRecoveryData.getUser().getTenantDomain()));
 
         if (isNotificationInternallyManaged && isNotificationSendWhenSuccess) {
             try {
                 triggerNotification(userRecoveryData.getUser(), IdentityRecoveryConstants
                         .NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, null, properties);
             } catch (Exception e) {
-                log.warn("Error while sending password reset success notification to user :" + userRecoveryData.getUser().getUserName());
+                log.warn("Error while sending password reset success notification to user :" + userRecoveryData.
+                        getUser().getUserName());
             }
         }
 
@@ -229,6 +233,7 @@ public class NotificationPasswordRecoveryManager {
     }
 
     private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
+
         Throwable cause = e.getCause();
         while (cause != null) {
             if (cause instanceof IdentityEventException) {
@@ -277,5 +282,33 @@ public class NotificationPasswordRecoveryManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
+
+    }
+
+    /**
+     * Method to validate confirmation code of password reset flow.
+     *
+     * @param code         confirmation code
+     * @param recoveryStep recovery step
+     * @throws IdentityRecoveryException
+     */
+    public void validateConfirmationCode(String code, String recoveryStep) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
+        if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
+            throw new IdentityRecoveryClientException("Invalid tenant domain: " + userTenantDomain);
+        }
+        if (StringUtils.isNotBlank(recoveryStep) && !recoveryStep.equals(userRecoveryData.getRecoveryStep().name())) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
+        if (log.isDebugEnabled()) {
+            log.debug("Valid confirmation code for user: " + domainQualifiedName);
+        }
+
     }
 }
