@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.0.35-SNAPSHOT</version>
+        <version>1.1.12-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -49,6 +49,14 @@
             <artifactId>org.wso2.carbon.identity.mgt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.json.wso2</groupId>
+            <artifactId>json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.consent.mgt</groupId>
+            <artifactId>org.wso2.carbon.consent.mgt.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
@@ -65,6 +73,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-testng</artifactId>
             <scope>test</scope>
@@ -73,6 +85,10 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.event.handler.accountlock</groupId>
+            <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
         </dependency>
     </dependencies>
 
@@ -104,7 +120,12 @@
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.idp.mgt;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}"
+                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.handler.event.account.lock.service;
+                            version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.handler.event.account.lock.exception;
+                            version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.wso2.carbon.consent.mgt.core;version="${carbon.consent.mgt.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>

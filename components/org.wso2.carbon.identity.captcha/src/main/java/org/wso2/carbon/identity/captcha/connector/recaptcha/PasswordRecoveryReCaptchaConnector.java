@@ -40,20 +40,21 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Password Recovery reCaptcha Connector.
@@ -203,15 +204,21 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             return preValidationResponse;
         }
 
-        Map<String, String> claimValues = CaptchaUtil.getClaimValues(user, tenantId,
-                new String[]{FAIL_ATTEMPTS_CLAIM, ACCOUNT_LOCKED_CLAIM});
+        try {
+            if (CaptchaDataHolder.getInstance().getAccountLockService().isAccountLocked(user.getUserName(), user
+                    .getTenantDomain(), user.getUserStoreDomain())) {
+                return preValidationResponse;
+            }
+        } catch (AccountLockServiceException e) {
+            throw new CaptchaServerException("Error while validating if account is locked for user: " + user
+                    .getUserName() + " of user store domain: " + user.getUserStoreDomain() + " and tenant domain: " +
+                    user.getTenantDomain(), e);
+        }
+
+        Map<String, String> claimValues = CaptchaUtil.getClaimValues(user, tenantId, new String[]{FAIL_ATTEMPTS_CLAIM});
 
         if (claimValues == null || claimValues.isEmpty()) {
             // Invalid user
-            return preValidationResponse;
-        }
-
-        if (Boolean.parseBoolean(claimValues.get(ACCOUNT_LOCKED_CLAIM))) {
             return preValidationResponse;
         }
 

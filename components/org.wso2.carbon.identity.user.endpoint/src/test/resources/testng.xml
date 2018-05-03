@@ -25,6 +25,7 @@
             <class name="org.wso2.carbon.identity.user.endpoint.impl.ValidateCodeApiServiceImplTest" />
             <class name="org.wso2.carbon.identity.user.endpoint.impl.ResendCodeApiServiceImplTest" />
             <class name="org.wso2.carbon.identity.user.endpoint.impl.MeApiServiceImplTest" />
+            <class name="org.wso2.carbon.identity.user.endpoint.impl.PiInfoApiServiceImplTest" />
         </classes>
     </test>
 </suite>

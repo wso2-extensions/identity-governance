@@ -199,7 +199,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData recoveryData;
         try {
-            recoveryData = userRecoveryDataStore.load(user);
+            recoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while loading recovery data for user ", e);
         }

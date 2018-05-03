@@ -1,21 +1,22 @@
 /*
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package org.wso2.carbon.identity.user.endpoint.Util;
+package org.wso2.carbon.identity.user.endpoint.util;
 
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -24,15 +25,18 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.BadRequestException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.ConflictException;
-import org.wso2.carbon.identity.user.endpoint.Exceptions.InternalServerErrorException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.export.core.UserExportException;
+import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.List;
 
@@ -188,6 +192,28 @@ public class Utils {
             properties[i] = property;
         }
         return properties;
+    }
+
+    public static UserInformationService getUserInformationService() throws UserExportException {
+
+        try {
+            return (UserInformationService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(UserInformationService.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if the UserInformationService is not registered properly.
+            throw new UserExportException("Error while retrieving UserInformationService.", e);
+        }
+    }
+
+    public static RealmService getRealmService() throws UserExportException {
+
+        try {
+            return (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(RealmService.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if the RealmService is not registered properly.
+            throw new UserExportException("Error while retrieving RealmService.", e);
+        }
     }
 
 }

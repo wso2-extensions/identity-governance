@@ -19,12 +19,26 @@
 
 package org.wso2.carbon.identity.recovery.signup;
 
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
+import org.wso2.carbon.consent.mgt.core.model.PIICategoryValidity;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptPurposeInput;
+import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.util.AnonymousSessionUtil;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -32,8 +46,12 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
@@ -43,16 +61,21 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
+import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -63,17 +86,23 @@ public class UserSelfRegistrationManager {
 
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
 
-
     private UserSelfRegistrationManager() {
 
     }
 
     public static UserSelfRegistrationManager getInstance() {
+
         return instance;
     }
 
-
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
+
+        String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
+        String tenantDomain = user.getTenantDomain();
+
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -116,7 +145,6 @@ public class UserSelfRegistrationManager {
             carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             carbonContext.setTenantDomain(user.getTenantDomain());
 
-
             Map<String, String> claimsMap = new HashMap<>();
             for (Claim claim : claims) {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
@@ -155,6 +183,7 @@ public class UserSelfRegistrationManager {
                     throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
                 }
             }
+            addUserConsent(consent, tenantDomain);
 
             if (!isNotificationInternallyManage && isAccountLockOnCreation) {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -170,12 +199,37 @@ public class UserSelfRegistrationManager {
 
             //isNotificationInternallyManage == true,  will be handled in UserSelfRegistration Handler
 
-
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Adds user consent.
+     *
+     * @param consent      Consent String.
+     * @param tenantDomain Tenant Domain.
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException.
+     */
+    public void addUserConsent(String consent, String tenantDomain) throws IdentityRecoveryServerException {
+
+        if (StringUtils.isNotEmpty(consent)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Adding consent to tenant domain : %s : %s", tenantDomain, consent));
+            }
+            try {
+                addConsent(consent, tenantDomain);
+            } catch (ConsentManagementException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_USER_CONSENT,
+                        "", e);
+            }
+        } else {
+            if(log.isDebugEnabled()) {
+                log.debug("Consent string is empty. Hence not adding consent");
+            }
+        }
     }
 
     /**
@@ -186,6 +240,7 @@ public class UserSelfRegistrationManager {
      * @throws IdentityRecoveryException
      */
     public boolean isUserConfirmed(User user) throws IdentityRecoveryException {
+
         boolean isUserConfirmed = false;
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -198,7 +253,7 @@ public class UserSelfRegistrationManager {
         }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData load =
-                userRecoveryDataStore.load(user);
+                userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
 
         if (load == null || !RecoveryScenarios.SELF_SIGN_UP.equals(load.getRecoveryScenario())) {
             isUserConfirmed = true;
@@ -288,10 +343,9 @@ public class UserSelfRegistrationManager {
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
-
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(user);
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
 
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) || !RecoverySteps
                 .CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
@@ -316,6 +370,85 @@ public class UserSelfRegistrationManager {
 
     }
 
+    /**
+     * Checks whether the given tenant domain of a username is valid / exists or not.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if the tenant domain of the user is valid / available, else false.
+     */
+    public boolean isValidTenantDomain(String tenantDomain) throws IdentityRecoveryException {
+
+        boolean isValidTenant = false;
+        try {
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            isValidTenant = userRealm != null;
+
+        } catch (CarbonException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting user realm for user " + tenantDomain);
+            }
+            // In a case of a non existing tenant.
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        }
+        return isValidTenant;
+    }
+
+    /**
+     * Returns whether a given username is already taken by a user or not.
+     *
+     * @param username Username.
+     * @return True if the username is already taken, else false.
+     */
+    public boolean isUsernameAlreadyTaken(String username) throws IdentityRecoveryException {
+
+        boolean isUsernameAlreadyTaken = true;
+        String tenantDomain = MultitenantUtils.getTenantDomain(username);
+        try {
+            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            if (userRealm != null) {
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername);
+            }
+        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        }
+        return isUsernameAlreadyTaken;
+    }
+
+    /**
+     * Checks whether self registration is enabled or not for a given tenant domain
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if self registration is enabled for a tenant domain. If not returns false.
+     */
+    public boolean isSelfRegistrationEnabled(String tenantDomain) throws IdentityRecoveryException {
+
+        String selfSignUpEnalbed = getIDPProperty(tenantDomain,
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+        return Boolean.parseBoolean(selfSignUpEnalbed);
+    }
+
+    private String getIDPProperty(String tenantDomain, String propertyName) throws
+            IdentityRecoveryException {
+
+        String propertyValue = "";
+        try {
+            org.wso2.carbon.identity.application.common.model.Property[] configuration =
+                    IdentityRecoveryServiceDataHolder.getInstance().getIdentityGovernanceService().
+                            getConfiguration(new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP},
+                                    tenantDomain);
+            for (org.wso2.carbon.identity.application.common.model.Property configProperty : configuration) {
+                if (configProperty != null && propertyName.equalsIgnoreCase(configProperty.getName())) {
+                    propertyValue = configProperty.getValue();
+                }
+            }
+        } catch (IdentityGovernanceException e) {
+            throw new IdentityRecoveryException("Error while retrieving resident identity provider for tenant : "
+                    + tenantDomain, e);
+        }
+        return propertyValue;
+    }
 
     private void triggerNotification(User user, String type, String code, Property[] props) throws
             IdentityRecoveryException {
@@ -343,5 +476,84 @@ public class UserSelfRegistrationManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
+    }
+
+    private void addConsent(String consent, String tenantDomain) throws ConsentManagementException, IdentityRecoveryServerException {
+
+        Gson gson = new Gson();
+        ReceiptInput receiptInput = gson.fromJson(consent, ReceiptInput.class);
+        ConsentManager consentManager = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
+
+        if (receiptInput.getServices().size() < 0) {
+            throw new IdentityRecoveryServerException("A service should be available in a receipt");
+        }
+        // There should be a one receipt
+        ReceiptServiceInput receiptServiceInput = receiptInput.getServices().get(0);
+        receiptServiceInput.setTenantDomain(tenantDomain);
+        try {
+            setIDPData(tenantDomain, receiptServiceInput);
+        } catch (IdentityProviderManagementException e) {
+            throw new ConsentManagementException("Error while retrieving identity provider data", "Error while " +
+                    "setting IDP data", e);
+        }
+        receiptInput.setTenantDomain(tenantDomain);
+        consentManager.addConsent(receiptInput);
+    }
+
+    private void setIDPData(String tenantDomain, ReceiptServiceInput receiptServiceInput)
+            throws IdentityProviderManagementException {
+
+        IdentityProviderManager idpManager = IdentityProviderManager.getInstance();
+        IdentityProvider residentIdP = idpManager.getResidentIdP(tenantDomain);
+
+        if (StringUtils.isEmpty(receiptServiceInput.getService())) {
+            if (log.isDebugEnabled()) {
+                log.debug("No service name found. Hence adding resident IDP home realm ID");
+            }
+            receiptServiceInput.setService(residentIdP.getHomeRealmId());
+        }
+        if (StringUtils.isEmpty(receiptServiceInput.getTenantDomain())) {
+            receiptServiceInput.setTenantDomain(tenantDomain);
+        }
+        if (StringUtils.isEmpty(receiptServiceInput.getSpDescription())) {
+            if (StringUtils.isNotEmpty(residentIdP.getIdentityProviderDescription())) {
+                receiptServiceInput.setSpDescription(residentIdP.getIdentityProviderDescription());
+            } else {
+                receiptServiceInput.setSpDescription(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+            }
+        }
+        if (StringUtils.isEmpty(receiptServiceInput.getSpDisplayName())) {
+            if (StringUtils.isNotEmpty(residentIdP.getDisplayName())) {
+                receiptServiceInput.setSpDisplayName(residentIdP.getDisplayName());
+            } else {
+                receiptServiceInput.setSpDisplayName(IdentityRecoveryConstants.Consent.RESIDENT_IDP);
+            }
+        }
+    }
+
+    private String getPropertyValue(Property[] properties, String key) {
+
+        String propertyValue = "";
+        if (properties != null && StringUtils.isNotEmpty(key)) {
+            for (int index = 0; index < properties.length; index++) {
+                Property property = properties[index];
+                if (key.equalsIgnoreCase(property.getKey())) {
+                    propertyValue = property.getValue();
+                    ArrayUtils.removeElement(properties, property);
+                    break;
+                }
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Returning value for key : " + key + " - " + propertyValue);
+        }
+        return propertyValue;
+    }
+
+    private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
+
+        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
+                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
+                tenantDomain);
     }
 }
