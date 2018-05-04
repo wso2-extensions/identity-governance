@@ -64,7 +64,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                "Enable Notification Internally Management");
+                "Internal Notification Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Email verification code expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,

@@ -64,7 +64,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Enable Notification Internally Management");
+                "Internal Notification Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
