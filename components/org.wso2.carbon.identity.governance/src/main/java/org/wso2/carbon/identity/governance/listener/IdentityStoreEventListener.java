@@ -166,6 +166,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 userIdentityDataMap = new HashMap<>();
             } else {
                 userIdentityDataMap = userIdentityClaims.getUserIdentityDataMap();
+                claims.putAll(userIdentityDataMap);
             }
 
             return storeInIdentityDataStore(userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
