@@ -64,11 +64,10 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
             UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
 
             if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
-                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ",
-                        tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
+                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ", tenantDomain,
+                        SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
                 responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-            } else if (!skipSelfSignUpEnabledCheck && !userSelfRegistrationManager
-                    .isSelfRegistrationEnabled(tenantDomain)) {
+            } else if (!skipSelfSignUpEnabledCheck && !userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
                 logDebug(String.format("Self registration is not enabled for tenant domain : %s . Hence returning code",
                         tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
                 responseDTO.setStatusCode(
