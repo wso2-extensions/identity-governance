@@ -58,22 +58,23 @@ paths:
   /me:
     post:
       description: |
-         This API is used to user self registration.
+         This API is used for user self registration.
       x-wso2-request: |
-        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING", "password": "P@ssw0rd2017","claims": [{"uri": "http://wso2.org/claims/givenname","value": "Isura" },{"uri": "http://wso2.org/claims/emailaddress","value": "isura@mail.com"},{"uri": "http://wso2.org/claims/lastname","value": "Karunaratne"},{"uri": "http://wso2.org/claims/mobile","value": "+947721584558"} ] },"properties": []}' "https://localhost:9443/api/identity/user/v1.0/me"
-
+        curl -X POST -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json" -d '{"user": {"username": "<username>","realm": "<user_store>", "password": "<password>","claims": [{"uri": "<claim_URI>","value": "<claim_value>" },{"uri": "<claim_URI2>","value": "<claim_value2>"},{"uri": "<claim_URI3>","value": "<claim_value3>"},{"uri": "<claim_URI4>","value": "<claim_value4>"} ] },"properties": []}' "https://localhost:9443/api/identity/user/v1.0/me"
+      x-wso2-curl: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "kim","realm": "PRIMARY", "password": "Password12!","claims": [{"uri": "http://wso2.org/claims/givenname","value": "kim" },{"uri": "http://wso2.org/claims/emailaddress","value": "kim.anderson@gmail.com"},{"uri": "http://wso2.org/claims/lastname","value": "Anderson"},{"uri": "http://wso2.org/claims/mobile","value": "+947721584558"} ] },"properties": []}' "https://localhost:9443/api/identity/user/v1.0/me"
       x-wso2-response: |
         "HTTP/1.1 201 Created"
 
       summary: |
-        Register User
+        Register user
 
       # This are the post parameters:
       parameters:
         -
           name: user
           in: body
-          description:  It can be sent optional property parameters over email based on email template.
+          description:  Sends optional property parameters over email based on an email template.
           required: true
           schema:
             $ref: '#/definitions/SelfUserRegistrationRequest'
@@ -81,7 +82,7 @@ paths:
 
       responses:
         201:
-          description: Successful created
+          description: Successfully created
           schema:
             title: key
             type: string
@@ -104,20 +105,21 @@ paths:
 
     get:
       x-wso2-request: |
+        curl -X GET -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/me"
+      x-wso2-curl: |
         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/me"
-
       x-wso2-response: |
         {"security":{"challengeQuestions":["City where you were born ?","Model of your first car ?"]},"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin,Application/aaaa","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
       tags:
       - User Export
       summary: Export self user information
-      description: Returns the personal information of the authenticated user
+      description: This API is used to retrieve the personal information of the authenticated user.
       operationId: getMe
       produces:
       - application/json
       responses:
         200:
-          description: successful operation
+          description: Successful operation
           schema:
             $ref: '#/definitions/ExportedUser'
         401:
@@ -126,22 +128,24 @@ paths:
   /validate-code:
     post:
       description: |
-         This API is used to validate code of self registered users
+         This API is used to validate the code used by self registered users.
       x-wso2-request: |
+       curl -k -v -X POST -H "Authorization: <Base64Encoded_access_token>" -H "Content-Type: application/json" -d '{ "code": "<validation_code>","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
+      x-wso2-curl: |
         curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
 
       x-wso2-response: |
         "HTTP/1.1 202 Accepted"
 
       summary: |
-        Validate Code
+        Validate code
 
       # This are the post parameters:
       parameters:
         -
           name: code
           in: body
-          description:  Code retried after user self registration and optional property parameters
+          description:  The validation code retrieved after user self registration, and optional property parameters.
           required: true
           schema:
             $ref: '#/definitions/CodeValidationRequest'
@@ -163,8 +167,10 @@ paths:
   /validate-username:
     post:
       description: |
-         This API is used to validate a given username
+         This API is used to check whether a given username is available for self registration.
       x-wso2-request: |
+        curl -k -v -X POST -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json" -d '{ "username": "<username>","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-username"
+      x-wso2-curl: |
         curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "username": "john@wso2.com","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-username"
 
       x-wso2-response: |
@@ -172,9 +178,9 @@ paths:
 
 
       summary: |
-        Check whether a given username is avaiable or not for self registration
+        Validate username
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: username
@@ -203,21 +209,22 @@ paths:
   /resend-code:
     post:
       description: |
-         This API is used to resend confirmation code, if it is missing.
+         This API is used to resend the confirmation code if it is missing.
       x-wso2-request: |
-        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "isura","realm": "ENGINEERING"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
-
+        curl -X POST -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json" -d '{"user":{"username": "<username>","realm": "<user_store_name>"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
+      x-wso2-curl: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "kim","realm": "PRIMARY"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
       x-wso2-response: |
         "HTTP/1.1 201 Created"
       summary: |
-        Resend Code
+        Resend code
 
       # This are the post parameters:
       parameters:
         -
           name: user
           in: body
-          description:  It can be sent optional property parameters over email based on email template.
+          description: Sends optional property parameters over email based on an email template.
           required: true
           schema:
             $ref: '#/definitions/ResendCodeRequest'
@@ -243,26 +250,28 @@ paths:
   /pi-info:
     get:
       x-wso2-request: |
+        curl -X GET -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/pi-info?username=<username>"
+      x-wso2-curl: |
         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/pi-info?username=admin"
 
       x-wso2-response: |
         [{"username":"admin","userId":"YWRtaW4%3D"}]
       tags:
       - User Export
-      summary: Search userId by username
-      description: Returns userId of the username to use in /pi-info endpoint
+      summary: Search user ID by username
+      description: Returns the user ID of the given username. This ID can be used with the /pi-info endpoint.
       operationId: searchUserByName
       produces:
       - application/json
       parameters:
       - name: username
         in: query
-        description: username pattern to search for userId
+        description: Username pattern used to search for the user ID.
         required: true
         type: string
       responses:
         200:
-          description: successful operation
+          description: Successful operation
           schema:
             $ref: '#/definitions/UserSearchResponse'
         401:
@@ -273,26 +282,27 @@ paths:
   /pi-info/{userId}:
     get:
       x-wso2-request: |
+        curl -X GET -H "Authorization: Basic <Base64Encoded_access_token>" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/pi-info/<Base64&URLEncoded_username>"
+      x-wso2-curl: |
         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/user/v1.0/pi-info/YWRtaW4%3D"
-
       x-wso2-response: |
         {"security":{"challengeQuestions":["City where you were born ?","Model of your first car ?"]},"consents":[{"version":"KI-CR-v1.1.0","jurisdiction":"global","consentTimestamp":1518061604295,"collectionMethod":"string","consentReceiptID":"e83fa396-f80e-4835-9d79-754ce3f6ef93","publicKey":null,"language":"string","piiPrincipalId":"admin","tenantDomain":"carbon.super","state":"ACTIVE","piiControllers":[{"piiController":"sample","contact":"sample","address":{"addressCountry":"USA","addressLocality":"Mountain View","addressRegion":"CA","postOfficeBoxNumber":"233","postalCode":"94043","streetAddress":"1600 Amphitheatre Pkwy"},"email":"sample@abc.com","phone":"+01433444333","onBehalf":false,"piiControllerUrl":"https://sample.piicontroller.url"}],"policyUrl":"string","services":[{"service":"travelocity","tenantDomain":"carbon.super","purposes":[{"purpose":"test-purpose","purposeCategory":["test-purpose-category"],"consentType":"explicit","piiCategory":[{"piiCategory":"test-category","validity":"string"}],"primaryPurpose":true,"termination":"string","thirdPartyDisclosure":false,"thirdPartyName":null}]}],"sensitive":true,"spiCat":["test-category"]}],"basic":{"http://wso2.org/claims/userid":"a42b7c0a-ae21-46c9-bb78-3bfeb8e7625c","http://wso2.org/claims/username":"admin","http://wso2.org/claims/created":"2018-02-08T14:34:06Z","http://wso2.org/claims/role":"Internal/everyone,admin,Application/aaaa","http://wso2.org/claims/fullname":"admin","http://wso2.org/claims/modified":"2018-02-08T14:34:06Z","http://wso2.org/claims/emailaddress":"admin@wso2.com","http://wso2.org/claims/lastname":"admin","http://wso2.org/claims/givenname":"admin"}}
       tags:
       - User Export
       summary: Export user information by ID
-      description: Returns the personal information of a single user with the given userId
+      description: This API is used to retrieve the personal information of a single user using the given user ID.
       operationId: getUserById
       produces:
       - application/json
       parameters:
       - name: userId
         in: path
-        description: ID of user to get user information
+        description: Unique Identifier of user. First encode the user's username using the Base64 Encoder. Then encode the Base64 Encoded username using the URL Encoder. Use the result you get as the user ID.
         required: true
         type: string
       responses:
         200:
-          description: successful operation
+          description: Successful operation
           schema:
             $ref: '#/definitions/ExportedUser'
         401:
