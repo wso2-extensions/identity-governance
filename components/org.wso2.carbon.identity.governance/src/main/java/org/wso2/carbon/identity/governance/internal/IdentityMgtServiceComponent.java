@@ -65,8 +65,9 @@ public class IdentityMgtServiceComponent {
                     listener, null);
             context.getBundleContext().registerService(UserOperationEventListener.class,
                     new IdentityStoreEventListener(), null);
-            context.getBundleContext().registerService(IdentityGovernanceService.class, new
-                    IdentityGovernanceServiceImpl(), null);
+            IdentityGovernanceServiceImpl identityGovernanceService = new IdentityGovernanceServiceImpl();
+            context.getBundleContext().registerService(IdentityGovernanceService.class, identityGovernanceService, null);
+            IdentityMgtServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
             context.getBundleContext().registerService(TenantMgtListener.class.getName(),
                     new TenantCreationEventListener(), null);
             if (log.isDebugEnabled()) {
