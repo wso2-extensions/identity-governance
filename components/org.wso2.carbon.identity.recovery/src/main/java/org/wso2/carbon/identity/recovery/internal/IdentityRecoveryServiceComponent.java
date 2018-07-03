@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -38,6 +39,7 @@ import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHa
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
+import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
@@ -112,6 +114,9 @@ public class IdentityRecoveryServiceComponent {
                     new UserEmailVerificationConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     new AdminForcedPasswordResetConfigImpl(), null);
+            // Registering missing challenge question handler as a post authn handler
+            PostAuthenticationHandler postAuthnMissingChallengeQuestions = new PostAuthnMissingChallengeQuestionsHandler();
+            bundleContext.registerService(PostAuthenticationHandler.class.getName(), postAuthnMissingChallengeQuestions, null);
 
 
         } catch (Exception e) {
