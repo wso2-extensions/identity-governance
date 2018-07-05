@@ -285,6 +285,12 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -591,7 +597,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.11.261</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.20</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -600,8 +606,8 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
-        <carbon.consent.mgt.version>1.0.31</carbon.consent.mgt.version>
-        <carbon.consent.mgt.version.range>[1.0.0, 2.0.0)</carbon.consent.mgt.version.range>
+        <carbon.consent.mgt.version>2.0.0</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version.range>[1.0.0, 3.0.0)</carbon.consent.mgt.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
