@@ -26,19 +26,17 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
-import org.wso2.carbon.base.CarbonBaseConstants;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthnHandlerFlowStatus;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.mgt.util.Utils;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -49,7 +47,6 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -75,22 +72,16 @@ import static org.testng.Assert.assertNotNull;
 public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
     private static final String CHALLENGE_QUESTIONS_REQUESTED = "challengeQuestionsRequested";
-
     @Mock
     private HttpServletRequest httpServletRequest;
-
     @Mock
     private HttpServletResponse httpServletResponse;
-
     @Mock
     private IdentityProviderManager identityProviderManager;
-
     @Mock
     private IdentityRecoveryServiceDataHolder frameworkServiceDataHolder;
-
     @Mock
     private ChallengeQuestionManager challengeQuestionManager;
-
     @Mock
     private ConfigurationFacade configurationFacade;
 
@@ -101,6 +92,7 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
     @BeforeMethod
     public void setup() {
+
         // initialize all the @Mock objects
         MockitoAnnotations.initMocks(this);
         // mock all the statics
@@ -115,29 +107,29 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
     @Test(description = "Test get instance method")
     public void testGetInstance() {
+
         testSingleton(
                 PostAuthnMissingChallengeQuestionsHandler.getInstance(),
                 PostAuthnMissingChallengeQuestionsHandler.getInstance()
         );
     }
 
-
     @DataProvider(name = "forceChallengeQuestionSettings")
     public Object[][] forceChallengeQuestionSettings() {
+
         return new Object[][]{
                 {"false"},
                 {"random_text"},
                 {null},
-
         };
     }
 
     @Test(dataProvider = "forceChallengeQuestionSettings", description = "Test the functionality of the setting to " +
             "force challenge questions")
     public void testSettingTheOptionToForceChallengeQuestions(String setting) throws Exception {
+
         AuthenticationContext context = spy(new AuthenticationContext());
         when(context.getTenantDomain()).thenReturn("carbon.super");
-
         IdentityProvider residentIdp = spy(new IdentityProvider());
         IdentityProviderProperty[] idpProperties = new IdentityProviderProperty[1];
         IdentityProviderProperty idpProp = new IdentityProviderProperty();
@@ -149,14 +141,11 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
             idpProp.setValue("true");
         }
         idpProperties[0] = idpProp;
-
         residentIdp.setIdpProperties(idpProperties);
         when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
-
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
         String expectedResult;
         if (setting == null) {
             setting = "null";
@@ -176,81 +165,66 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
                 break;
         }
         assertEquals(flowStatus.name(), expectedResult);
-
     }
 
     @Test(description = "Test the behaviour of the handler if the user is null")
     public void testForNullUser() throws Exception {
+
         AuthenticationContext context = spy(new AuthenticationContext());
         when(context.getTenantDomain()).thenReturn("carbon.super");
-
         IdentityProvider residentIdp = spy(new IdentityProvider());
         IdentityProviderProperty[] idpProperties = new IdentityProviderProperty[1];
         IdentityProviderProperty idpProp = new IdentityProviderProperty();
         idpProp.setName(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
-
         residentIdp.setIdpProperties(idpProperties);
         when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
-
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(null);
-
         context.setSequenceConfig(sequenceConfig);
-
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
         String expectedResult = PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED.name();
         assertEquals(flowStatus.name(), expectedResult);
     }
 
     @Test(description = "Test the flow for the user who has already given the challenge questions")
     public void testAlreadyChallengeQuestionProvidedUserFlow() throws Exception {
+
         AuthenticationContext context = spy(new AuthenticationContext());
         when(context.getTenantDomain()).thenReturn("carbon.super");
-
         IdentityProvider residentIdp = spy(new IdentityProvider());
         IdentityProviderProperty[] idpProperties = new IdentityProviderProperty[1];
         IdentityProviderProperty idpProp = new IdentityProviderProperty();
         idpProp.setName(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
-
         residentIdp.setIdpProperties(idpProperties);
         when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
-
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
-
         context.setSequenceConfig(sequenceConfig);
-
         when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
         when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
-
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
-
         UserRealm userRealm = mock(UserRealm.class);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
         when(frameworkServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-
         Map<String, String> claimsMap = new HashMap<>();
         claimsMap.put(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, "dummy_data");
         when(userStoreManager.getUserClaimValues("admin", new String[]{IdentityRecoveryConstants
                 .CHALLENGE_QUESTION_URI}, UserCoreConstants.DEFAULT_PROFILE)).thenReturn(claimsMap);
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
         String expectedResult = PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED.name();
         assertEquals(flowStatus.name(), expectedResult);
     }
@@ -258,45 +232,36 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
     @Test(description = "Test the flow of challenge question post authentication handler before requesting challenge " +
             "questions from the user")
     public void testBeforeRequestingChallengeQuestionFlow() throws Exception {
+
         AuthenticationContext context = spy(new AuthenticationContext());
         when(context.getTenantDomain()).thenReturn("carbon.super");
-
         IdentityProvider residentIdp = spy(new IdentityProvider());
         IdentityProviderProperty[] idpProperties = new IdentityProviderProperty[1];
         IdentityProviderProperty idpProp = new IdentityProviderProperty();
         idpProp.setName(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
-
         residentIdp.setIdpProperties(idpProperties);
         when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
-
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
-
         context.setSequenceConfig(sequenceConfig);
-
         when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
         when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
-
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
-
         UserRealm userRealm = mock(UserRealm.class);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
         when(frameworkServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-
         Map<String, String> claimsMap = new HashMap<>();
         when(userStoreManager.getUserClaimValues("admin", new String[]{IdentityRecoveryConstants
                 .CHALLENGE_QUESTION_URI}, UserCoreConstants.DEFAULT_PROFILE)).thenReturn(claimsMap);
-
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
         ChallengeQuestion challengeQuestion = spy(new ChallengeQuestion());
         challengeQuestion.setQuestionSetId("dummy_set");
@@ -305,15 +270,11 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         challengeQuestions.add(challengeQuestion);
         when(challengeQuestionManager.getAllChallengeQuestions("carbon.super")).thenReturn(challengeQuestions);
         when(ChallengeQuestionManager.getInstance()).thenReturn(challengeQuestionManager);
-
         doNothing().doThrow(Exception.class).when(httpServletResponse).sendRedirect((String) any());
-
         when(configurationFacade.getAuthenticationEndpointURL()).thenReturn("");
         when(ConfigurationFacade.getInstance()).thenReturn(configurationFacade);
-
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
         String expectedResult = PostAuthnHandlerFlowStatus.INCOMPLETE.name();
         assertEquals(flowStatus.name(), expectedResult);
     }
@@ -324,45 +285,33 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
         AuthenticationContext context = spy(new AuthenticationContext());
         when(context.getTenantDomain()).thenReturn("carbon.super");
-
         IdentityProvider residentIdp = spy(new IdentityProvider());
         IdentityProviderProperty[] idpProperties = new IdentityProviderProperty[1];
         IdentityProviderProperty idpProp = new IdentityProviderProperty();
         idpProp.setName(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
-
         residentIdp.setIdpProperties(idpProperties);
         when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
-
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
-
         context.setSequenceConfig(sequenceConfig);
-
-
         when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
         when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-
-
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
-
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
-
         UserRealm userRealm = mock(UserRealm.class);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
         when(frameworkServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-
         Map<String, String> claimsMap = new HashMap<>();
         when(userStoreManager.getUserClaimValues("admin", new String[]{IdentityRecoveryConstants
                 .CHALLENGE_QUESTION_URI}, UserCoreConstants.DEFAULT_PROFILE)).thenReturn(claimsMap);
-
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
         ChallengeQuestion challengeQuestion = spy(new ChallengeQuestion());
         challengeQuestion.setQuestionSetId("dummy_set");
@@ -371,12 +320,9 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         challengeQuestions.add(challengeQuestion);
         when(challengeQuestionManager.getAllChallengeQuestions("carbon.super")).thenReturn(challengeQuestions);
         when(ChallengeQuestionManager.getInstance()).thenReturn(challengeQuestionManager);
-
         doNothing().doThrow(Exception.class).when(httpServletResponse).sendRedirect((String) any());
-
         when(configurationFacade.getAuthenticationEndpointURL()).thenReturn("");
         when(ConfigurationFacade.getInstance()).thenReturn(configurationFacade);
-
         when(context.getParameter(CHALLENGE_QUESTIONS_REQUESTED)).thenReturn(true);
         Vector<String> set = new Vector<>();
         set.add("Q-dummy_question");
@@ -384,27 +330,17 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         Enumeration<String> paramNames = new Vector(set).elements();
         when(httpServletRequest.getParameterNames()).thenReturn(paramNames);
         when(httpServletRequest.getParameter(anyString())).thenReturn("dummy_question");
-
-
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
         String expectedResult = PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED.name();
         assertEquals(flowStatus.name(), expectedResult);
     }
 
     public static void testSingleton(Object instance, Object anotherInstance) {
+
         assertNotNull(instance);
         assertNotNull(anotherInstance);
         assertEquals(instance, anotherInstance);
-    }
-
-    public static void initPrivilegedCarbonContext() throws Exception {
-        System.setProperty(
-                CarbonBaseConstants.CARBON_HOME,
-                Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString()
-        );
-        PrivilegedCarbonContext.startTenantFlow();
     }
 
 }

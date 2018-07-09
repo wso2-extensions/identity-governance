@@ -223,16 +223,13 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         try {
             String userName = user.getUserName();
             int tenantId = Utils.getTenantId(MultitenantUtils.getTenantDomain(userName));
-
             UserStoreManager userStoreManager =
                     IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
                             .getTenantUserRealm(tenantId)
                             .getUserStoreManager();
-
             Map<String, String> claimsMap = userStoreManager
                     .getUserClaimValues(userName, new String[]{IdentityRecoveryConstants.CHALLENGE_QUESTION_URI},
                             UserCoreConstants.DEFAULT_PROFILE);
-
             String claimValue = claimsMap.get(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
             return claimValue != null;
 
@@ -275,7 +272,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         try {
             ChallengeQuestionManager.getInstance().setChallengesOfUser(user, userChallengeAnswers);
         } catch (IdentityRecoveryException e) {
-            log.error("Unable to save challenge question answers", e);
+            log.error("Unable to save challenge question answers for user : " + user.getUserName(), e);
         }
     }
 
@@ -328,7 +325,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
     }
 
     /**
-     * Returns URL encoded String with challenge questions of the given user
+     * Returns a URL-encoded string of challenge questions for the given user
      *
      * @param user Authenticated User.
      * @return UTF-8 encoded URL with challenge questions.
