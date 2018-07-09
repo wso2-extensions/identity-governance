@@ -79,8 +79,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Enable reCaptcha for Security Questions Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable Force to " +
-                "Add Challenge Questions");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable forced " +
+                "challenge questions");
         return nameMapping;
     }
 
@@ -92,8 +92,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Show captcha for challenge question based password recovery");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
-                "This setting will force to get answers to challenge questions while the user logs in if not" +
-                        " provided answers already.");
+                "Force users to provide answers to challenge questions during log-in");
         return descriptionMapping;
     }
 

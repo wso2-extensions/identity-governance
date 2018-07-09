@@ -91,7 +91,7 @@ public class RecoveryConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable " +
-                "Force to Add Challenge Questions");
+                "forced challenge questions");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -106,8 +106,7 @@ public class RecoveryConfigImplTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Show captcha for challenge question based password recovery");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
-                "This setting will force to get answers to challenge questions while the user logs in if not" +
-                        " provided answers already.");
+                "Force users to provide answers to challenge questions during log-in");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");

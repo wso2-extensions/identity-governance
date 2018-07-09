@@ -115,8 +115,10 @@ public class IdentityRecoveryServiceComponent {
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     new AdminForcedPasswordResetConfigImpl(), null);
             // Registering missing challenge question handler as a post authn handler
-            PostAuthenticationHandler postAuthnMissingChallengeQuestions = new PostAuthnMissingChallengeQuestionsHandler();
-            bundleContext.registerService(PostAuthenticationHandler.class.getName(), postAuthnMissingChallengeQuestions, null);
+            PostAuthenticationHandler postAuthnMissingChallengeQuestions =
+                    PostAuthnMissingChallengeQuestionsHandler.getInstance();
+            bundleContext.registerService(PostAuthenticationHandler.class.getName(),
+                    postAuthnMissingChallengeQuestions, null);
 
 
         } catch (Exception e) {

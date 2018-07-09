@@ -18,6 +18,8 @@
  */
 package org.wso2.carbon.identity.recovery.handler.request;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
@@ -49,7 +51,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +61,7 @@ import java.util.Map;
 
 /**
  * This class will check whether the challenge questions are set for the user.
- * Also, It will force users to add answers to challenge questions is challenge questions are not
+ * Also, It will force users to add answers to challenge questions if challenge questions are not
  * already answered
  **/
 
@@ -68,17 +72,18 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
     private static final String CHALLENGE_QUESTION_ANSWER_PREFIX = "A-";
 
     private static final Log log = LogFactory.getLog(PostAuthnMissingChallengeQuestionsHandler.class);
-    private static volatile PostAuthnMissingChallengeQuestionsHandler instance;
+    private static volatile PostAuthnMissingChallengeQuestionsHandler instance =
+            new PostAuthnMissingChallengeQuestionsHandler();
 
     public static PostAuthnMissingChallengeQuestionsHandler getInstance() {
-        if (instance == null) {
-            synchronized (PostAuthnMissingChallengeQuestionsHandler.class) {
-                if (instance == null) {
-                    instance = new PostAuthnMissingChallengeQuestionsHandler();
-                }
-            }
-        }
+
         return instance;
+    }
+
+    /**
+     * To avoid creation of multiple instances of this handler.
+     */
+    private PostAuthnMissingChallengeQuestionsHandler() {
     }
 
     @Override
@@ -103,7 +108,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             return PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED;
 
         } else if (forceChallengeQuestionSetting.equals("true")) {
-            // Execute the post authentication handler logic is the relevant setting is enabled at resident IDP
+            // Execute the post authentication handler logic if the relevant setting is enabled at resident IDP
             AuthenticatedUser user = getAuthenticatedUser(authenticationContext);
 
             // Return from PostAuthnMissingChallengeQuestionsHandler if no authenticated user found
@@ -194,7 +199,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             residentIdp = IdentityProviderManager.getInstance().getResidentIdP(tenantDomain);
             IdentityProviderProperty[] idpProps = residentIdp.getIdpProperties();
             for (IdentityProviderProperty property : idpProps) {
-                if (property.getName().equals(key)) {
+                if (StringUtils.equals(property.getName(), key)) {
                     return property.getValue();
                 }
             }
@@ -202,7 +207,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             return null;
         } catch (IdentityProviderManagementException e) {
             log.error("Resident IdP value not found. Error while retrieving resident IdP property " +
-                    "for force challenge password ", e);
+                    "for force challenge question ", e);
             return null;
         }
     }
@@ -224,7 +229,6 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                             .getTenantUserRealm(tenantId)
                             .getUserStoreManager();
 
-
             Map<String, String> claimsMap = userStoreManager
                     .getUserClaimValues(userName, new String[]{IdentityRecoveryConstants.CHALLENGE_QUESTION_URI},
                             UserCoreConstants.DEFAULT_PROFILE);
@@ -233,10 +237,12 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             return claimValue != null;
 
         } catch (IdentityException e) {
-            log.error("Identity exception occurred for user :" + user.getUserName(), e);
+            log.error("Identity exception occurred while retrieving tenant ID for the user :" + user.getUserName(),
+                    e);
 
         } catch (UserStoreException e) {
-            log.error("User store exception occurred for user :" + user.getUserName(), e);
+            log.error("User store exception occurred while retrieving user store for the user :" + user.getUserName(),
+                    e);
         }
         return false;
     }
@@ -251,8 +257,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         String tenantDomain = MultitenantUtils.getTenantDomain(user.getUserName());
 
         try {
-            return ChallengeQuestionManager.getInstance().getAllChallengeQuestions
-                    (tenantDomain);
+            return ChallengeQuestionManager.getInstance().getAllChallengeQuestions(tenantDomain);
         } catch (IdentityRecoveryServerException e) {
             log.error("Identity recovery server error occurred for user:" + user.getUserName(), e);
             return null;
@@ -275,22 +280,19 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
     }
 
     /**
-     * Returns array of UserChallengeAnswer from the servlet request parameters from the front-end
+     * Returns an array of UserChallengeAnswer from constructed from the servlet request parameters
      *
      * @param servletRequest HTTP Servlet Request.
-     * @return Array of UserChallengeAnswer.
+     * @return challengeQuestionList.
      */
     private UserChallengeAnswer[] retrieveChallengeQuestionAnswers(HttpServletRequest servletRequest,
                                                                    List<ChallengeQuestion> list) {
         Map<String, String> questionsMap = new HashMap<>();
         Map<String, String> answersMap = new HashMap<>();
         List<UserChallengeAnswer> questionsAndAnswers = new ArrayList<>();
-        List<String> paramNamesList = new ArrayList<>();
 
         Enumeration<String> paramNames = servletRequest.getParameterNames();
-        while (paramNames.hasMoreElements()) {
-            paramNamesList.add(paramNames.nextElement());
-        }
+        List<String> paramNamesList = Collections.list(paramNames);
 
         for (String requestParam : paramNamesList) {
             if (requestParam.contains(SELECTED_CHALLENGE_QUESTION_PREFIX)) {
@@ -307,11 +309,18 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         for (String questionKey : questionsMap.keySet()) {
             String challengeQuestion = questionsMap.get(questionKey);
             for (ChallengeQuestion question : list) {
-                if (question.getQuestion().equals(challengeQuestion)) {
+                if (StringUtils.equals(question.getQuestion(), challengeQuestion)) {
                     UserChallengeAnswer questionAndAnswer = new UserChallengeAnswer();
                     questionAndAnswer.setQuestion(question);
-                    questionAndAnswer.setAnswer(answersMap.get(questionKey));
-                    questionsAndAnswers.add(questionAndAnswer);
+                    if (StringUtils.isEmpty(answersMap.get(questionKey))) {
+                        if (log.isDebugEnabled()) {
+                            log.info("Answer not found for challenge question " + question + ", hence not adding " +
+                                    "challenge question");
+                        }
+                    } else {
+                        questionAndAnswer.setAnswer(answersMap.get(questionKey));
+                        questionsAndAnswers.add(questionAndAnswer);
+                    }
                 }
             }
         }
@@ -325,12 +334,14 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
      * @return UTF-8 encoded URL with challenge questions.
      */
     private String getUrlEncodedChallengeQuestionsString(AuthenticatedUser user) throws UnsupportedEncodingException {
+
         StringBuilder challengeQuestionData = new StringBuilder();
         List<ChallengeQuestion> challengeQuestionList = getChallengeQuestions(user);
 
-        if (challengeQuestionList == null) {
+        if (CollectionUtils.isEmpty(challengeQuestionList)) {
             if (log.isDebugEnabled()) {
-                log.debug("Challenge Questions for found for tenant domain of the user: " + user.getUserName());
+                log.debug("Challenge questions not found for the user: " + user.getUserName() + " in tenant domain: "
+                        + user.getTenantDomain());
             }
             return null;
         } else {
@@ -343,7 +354,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                         (questionString).append("|").append(questionLocale).append("&");
             }
         }
-        return java.net.URLEncoder.encode(challengeQuestionData.toString(), "UTF-8");
+        return java.net.URLEncoder.encode(challengeQuestionData.toString(), StandardCharsets.UTF_8.name());
     }
 
     /**
@@ -363,13 +374,13 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         try {
             encodedData = getUrlEncodedChallengeQuestionsString(user);
         } catch (UnsupportedEncodingException e) {
-            log.error("Error occurred while encoding Challenge question data as URL", e);
+            log.error("Error occurred while URL-encoding the challenge question data", e);
         }
 
-        if (encodedData == null || "".equals(encodedData)) {
+        if (StringUtils.isBlank(encodedData)) {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to get challenge questions for user : " + user.getUserName() + " for " +
-                        "tenant domain :" + authenticationContext.getTenantDomain());
+                        "tenant domain : " + authenticationContext.getTenantDomain());
             }
             return PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED;
         }
@@ -384,7 +395,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             return PostAuthnHandlerFlowStatus.INCOMPLETE;
 
         } catch (IOException e) {
-            log.error("Cannot redirect Error while redirecting", e);
+            log.error("Error occurred while redirecting to challenge questions page", e);
             return PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED;
         }
     }

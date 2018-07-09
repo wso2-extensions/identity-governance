@@ -74,7 +74,6 @@ import static org.testng.Assert.assertNotNull;
         .class, ChallengeQuestionManager.class, HttpServletResponse.class, ConfigurationFacade.class})
 public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
-
     private static final String CHALLENGE_QUESTIONS_REQUESTED = "challengeQuestionsRequested";
 
     @Mock
@@ -231,10 +230,8 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
         context.setSequenceConfig(sequenceConfig);
 
-
         when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
         when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-
 
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
@@ -253,7 +250,6 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
                 .CHALLENGE_QUESTION_URI}, UserCoreConstants.DEFAULT_PROFILE)).thenReturn(claimsMap);
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
-
 
         String expectedResult = PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED.name();
         assertEquals(flowStatus.name(), expectedResult);
@@ -283,10 +279,8 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
         context.setSequenceConfig(sequenceConfig);
 
-
         when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
         when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-
 
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
