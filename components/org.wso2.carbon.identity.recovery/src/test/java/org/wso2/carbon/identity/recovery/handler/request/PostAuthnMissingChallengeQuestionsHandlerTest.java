@@ -70,7 +70,6 @@ import static org.testng.Assert.assertNotNull;
 @PrepareForTest({IdentityProviderManager.class, MultitenantUtils.class, Utils.class, IdentityRecoveryServiceDataHolder
         .class, ChallengeQuestionManager.class, HttpServletResponse.class, ConfigurationFacade.class})
 public class PostAuthnMissingChallengeQuestionsHandlerTest {
-
     private static final String CHALLENGE_QUESTIONS_REQUESTED = "challengeQuestionsRequested";
     @Mock
     private HttpServletRequest httpServletRequest;
