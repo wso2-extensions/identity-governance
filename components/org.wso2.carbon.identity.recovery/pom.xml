@@ -130,15 +130,7 @@
                             org.wso2.carbon.identity.handler.event.account.lock.exception;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                             org.wso2.carbon.consent.mgt.core;version="${carbon.consent.mgt.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.config;
-                            version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.context;
-                            version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.exception;
-                            version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.handler.request;
-                            version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.model;
+                            org.wso2.carbon.identity.application.authentication.framework.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.model;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
