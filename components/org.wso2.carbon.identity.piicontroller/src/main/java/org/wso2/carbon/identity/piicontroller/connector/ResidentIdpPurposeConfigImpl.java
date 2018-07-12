@@ -35,13 +35,14 @@ public class ResidentIdpPurposeConfigImpl implements IdentityConnectorConfig {
     private IdentityGovernanceService identityGovernanceService;
     private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurpose";
     private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurpose";
-    public static final String PURPOSE_MANAGEMENT = "Purpose Management";
-    public static final String ADD_PURPOSE = "Add Purpose";
-    public static final String VIEW_PURPOSES = "View Purposes";
-    private String consentPurposeURL = "../consent/add-purpose.jsp?purposeGroup=test&purposeGroupType=grpType" +
-            "&callback=../idpmgt/idp-mgt-edit-local.jsp";
-    private static String consentListURL = "../consent/list-purposes.jsp?purposeGroup=test&purposeGroupType=grpType" +
-            "&callback=../idpmgt/idp-mgt-edit-local.jsp";
+    private static final String PURPOSE_MANAGEMENT = "Purpose Management";
+    private static final String SYSTEM_PURPOSE_GROUP = "SYSTEM";
+    private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SELF-SIGNUP";
+    private static final String callback = "../idpmgt/idp-mgt-edit-local.jsp";
+    private String consentPurposeURL = "../consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+    private static String consentListURL = "../consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
 
     @Override
     public String getName() {
