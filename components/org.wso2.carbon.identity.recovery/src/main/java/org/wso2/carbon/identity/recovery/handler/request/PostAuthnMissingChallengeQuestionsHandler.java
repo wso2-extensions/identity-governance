@@ -45,6 +45,7 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -94,7 +95,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         if (log.isDebugEnabled()) {
             log.debug("Post authentication handling for missing security questions has started");
         }
-        String forceChallengeQuestionConfig = getResidentIdpProperty(authenticationContext.getTenantDomain(),
+        String forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext).getTenantDomain(),
                 IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
@@ -207,7 +208,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
      */
     private boolean isChallengeQuestionsProvided(AuthenticatedUser user) {
         try {
-            String userName = user.getUserName();
+            String userName = UserCoreUtil.addDomainToName(user.getUserName(),user.getUserStoreDomain()) ;
             int tenantId = Utils.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager =
                     IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
@@ -217,7 +218,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                     .getUserClaimValues(userName, new String[]{IdentityRecoveryConstants.CHALLENGE_QUESTION_URI},
                             UserCoreConstants.DEFAULT_PROFILE);
             String claimValue = claimsMap.get(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
-            return StringUtils.isBlank(claimValue);
+            return StringUtils.isNotBlank(claimValue);
 
         } catch (IdentityException | UserStoreException e) {
             log.error("Exception occurred while retrieving tenant ID for the user :" + user.getUserName(), e);
