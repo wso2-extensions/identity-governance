@@ -62,7 +62,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
                 "Notification Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
-                "Notification Internally Management");
+                "Internal Notification Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
                 "Question Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
@@ -79,6 +79,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Enable reCaptcha for Security Questions Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable forced " +
+                "challenge questions");
         return nameMapping;
     }
 
@@ -89,6 +91,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Set false if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Show captcha for challenge question based password recovery");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
+                "Force users to provide answers to challenge questions during sign in");
         return descriptionMapping;
     }
 
@@ -106,6 +110,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         return properties.toArray(new String[properties.size()]);
     }
 
@@ -122,6 +127,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String expiryTime = "1440";
         String notifySuccess = "false";
         String notifyStart = "false";
+        String enableForceChallengeQuestions = "false";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -142,6 +148,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         String notifyStartProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
+        String forceChallengeQuestionsProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
 
         if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
             enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
@@ -173,6 +181,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(notifyStartProperty)) {
             notifyStart = notifyStartProperty;
         }
+        if (StringUtils.isNotEmpty(forceChallengeQuestionsProperty)) {
+            enableForceChallengeQuestions = forceChallengeQuestionsProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -195,6 +206,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 notifySuccess);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
                 notifyStart);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
+                enableForceChallengeQuestions);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
