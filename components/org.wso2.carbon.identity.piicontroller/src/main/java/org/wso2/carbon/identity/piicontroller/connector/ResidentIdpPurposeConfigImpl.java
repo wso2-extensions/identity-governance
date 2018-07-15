@@ -38,10 +38,10 @@ public class ResidentIdpPurposeConfigImpl implements IdentityConnectorConfig {
     private static final String PURPOSE_MANAGEMENT = "Purpose Management";
     private static final String SYSTEM_PURPOSE_GROUP = "SYSTEM";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SELF-SIGNUP";
-    private static final String callback = "../idpmgt/idp-mgt-edit-local.jsp";
-    private String consentPurposeURL = "../consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp";
+    private String consentPurposeURL = "/carbon/consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
-    private static String consentListURL = "../consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
 
     @Override
