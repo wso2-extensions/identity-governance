@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -46,7 +47,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 
 import java.util.HashMap;
 
@@ -94,7 +94,7 @@ public class NotificationPasswordRecoveryManager {
             isNotificationInternallyManage = Boolean.parseBoolean(Utils.getRecoveryConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
         } else {
-            isNotificationInternallyManage = notify.booleanValue();
+            isNotificationInternallyManage = notify;
         }
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -105,8 +105,17 @@ public class NotificationPasswordRecoveryManager {
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, user
-                        .getUserName());
+                if (log.isDebugEnabled()) {
+                    log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
+                }
+                boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty
+                        (IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
+
+                if (notifyUserExistence) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, user
+                            .getUserName());
+                }
+                return new NotificationResponseBean(user);
             }
 
         } catch (UserStoreException e) {
