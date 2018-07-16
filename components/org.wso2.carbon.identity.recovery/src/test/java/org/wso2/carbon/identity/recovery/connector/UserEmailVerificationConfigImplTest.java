@@ -36,6 +36,15 @@ import static org.testng.Assert.assertEquals;
 public class UserEmailVerificationConfigImplTest {
 
     private UserEmailVerificationConfigImpl userEmailVerificationConfig;
+    private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurposeJITProvisioning";
+    private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
+    private static final String SYSTEM_PURPOSE_GROUP = "JIT";
+    private static final String JIT_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp";
+    private String consentPurposeURL = "/carbon/consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE + "&callback=" + callback;
 
     @BeforeTest
     public void init() {
@@ -82,7 +91,8 @@ public class UserEmailVerificationConfigImplTest {
                 "Ask password code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension class");
-
+        nameMappingExpected.put(ADD_PURPOSE_PROPERTY_KEY, "Add Just In Time provisioning purposes");
+        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "List Just In Time provisioning purposes");
         Map<String, String> nameMapping = userEmailVerificationConfig.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -105,6 +115,8 @@ public class UserEmailVerificationConfigImplTest {
                         "validity)");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension point in ask password feature)");
+        descriptionMappingExpected.put(ADD_PURPOSE_PROPERTY_KEY, "Add Just In Time provisioning purposes");
+        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "List Just In Time provisioning purposes");
 
         Map<String, String> descriptionMapping = userEmailVerificationConfig.getPropertyDescriptionMapping();
 
@@ -150,6 +162,8 @@ public class UserEmailVerificationConfigImplTest {
                 testEnableNotificationInternallyManage);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 testAskPasswordTempPassExtension);
+        defaultPropertiesExpected.put(ADD_PURPOSE_PROPERTY_KEY, consentPurposeURL);
+        defaultPropertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself

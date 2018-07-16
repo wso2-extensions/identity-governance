@@ -30,6 +30,15 @@ import java.util.Properties;
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "self-sign-up";
+    private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurposeSelfSignUp";
+    private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
+    private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
+    private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp";
+    private String consentPurposeURL = "/carbon/consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
 
     @Override
     public String getName() {
@@ -69,6 +78,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
+        nameMapping.put(ADD_PURPOSE_PROPERTY_KEY, "Add Self-Sign-Up Purposes");
+        nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "List Self-Sign-Up Purposes");
         return nameMapping;
     }
 
@@ -87,6 +98,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
+        descriptionMapping.put(ADD_PURPOSE_PROPERTY_KEY, "Add Self-Sign-Up Purposes");
+        descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "List Self-Sign-Up Purposes");
         return descriptionMapping;
     }
 
@@ -99,6 +112,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        properties.add(ADD_PURPOSE_PROPERTY_KEY);
+        properties.add(LIST_PURPOSE_PROPERTY_KEY);
         return properties.toArray(new String[properties.size()]);
     }
 
@@ -149,6 +164,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 verificationCodeExpiryTime);
+        defaultProperties.put(ADD_PURPOSE_PROPERTY_KEY, consentPurposeURL);
+        defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL);
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
