@@ -19,9 +19,8 @@
 
 package org.wso2.carbon.identity.recovery.username;
 
-
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -150,7 +149,7 @@ public class NotificationUsernameRecoveryManager {
             isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
         } else {
-            isNotificationInternallyManaged = notify.booleanValue();
+            isNotificationInternallyManaged = notify;
         }
 
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
@@ -163,9 +162,20 @@ public class NotificationUsernameRecoveryManager {
             } else {
                 return userName;
             }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("No valid user found for the given criteria");
+            }
+            boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
+
+            if (notifyUserExistence) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_NO_VALID_USERNAME, null);
+            } else {
+                return null;
+            }
         }
-        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                .ERROR_CODE_NO_VALID_USERNAME, null);
     }
 
 
@@ -238,8 +248,7 @@ public class NotificationUsernameRecoveryManager {
                                 log.debug("There are no users for " + claim.getClaimURI() + " with the value : " + claim
                                         .getClaimValue()+ " in the previously filtered user list");
                             }
-                            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+                            return null;
                         }
                     } else {
                         resultedUserList = matchedUserList;
@@ -253,8 +262,7 @@ public class NotificationUsernameRecoveryManager {
                         log.debug("There are no matching users for " + claim.getClaimURI() + " with the value : " + claim
                                 .getClaimValue());
                     }
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
+                    return null;
                 }
             }
         }

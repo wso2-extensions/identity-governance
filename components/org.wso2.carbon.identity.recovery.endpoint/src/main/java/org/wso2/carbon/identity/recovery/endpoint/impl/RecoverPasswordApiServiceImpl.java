@@ -53,7 +53,6 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             if (ArrayUtils.isEmpty(userList)) {
                 String msg = "Unable to find an user with username: " + user.getUsername() + " in the system.";
                 LOG.error(msg);
-                RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY);
             } else if (userList.length == 1) {
                 recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(userList[0]));
             } else {

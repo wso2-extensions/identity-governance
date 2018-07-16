@@ -24,6 +24,7 @@ import org.wso2.carbon.consent.mgt.core.connector.PIIController;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.piicontroller.connector.ConsentMgtConfigImpl;
+import org.wso2.carbon.identity.piicontroller.connector.ResidentIdpPurposeConfigImpl;
 
 /**
  * @scr.component name="IdentityPIIControllerServiceComponent" immediate="true"
@@ -41,7 +42,10 @@ public class IdentityPIIControllerServiceComponent {
         try {
             BundleContext bundleContext = context.getBundleContext();
             ConsentMgtConfigImpl consentMgtConfig = new ConsentMgtConfigImpl(identityGovernanceService);
+            ResidentIdpPurposeConfigImpl purposeMgtConfig = new ResidentIdpPurposeConfigImpl();
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), consentMgtConfig,
+                    null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(), purposeMgtConfig,
                     null);
             bundleContext.registerService(PIIController.class.getName(), consentMgtConfig, null);
         } catch (Throwable e) {
