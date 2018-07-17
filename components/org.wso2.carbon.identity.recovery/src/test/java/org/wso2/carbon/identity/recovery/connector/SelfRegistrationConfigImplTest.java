@@ -36,6 +36,16 @@ import static org.testng.Assert.assertEquals;
 public class SelfRegistrationConfigImplTest {
 
     private SelfRegistrationConfigImpl selfRegistrationConfigImpl;
+    private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurposeSelfSignUp";
+    private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
+    private static final String PURPOSE_MANAGEMENT = "Purpose Management";
+    private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
+    private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp";
+    private String consentPurposeURL = "/carbon/consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE + "&callback=" + callback;
 
     @BeforeTest
     public void Init() {
@@ -80,7 +90,8 @@ public class SelfRegistrationConfigImplTest {
                 "Enable reCaptcha");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
-
+        nameMappingExpected.put(ADD_PURPOSE_PROPERTY_KEY, "Add Self-Sign-Up Purposes");
+        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "List Self-Sign-Up Purposes");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -101,7 +112,8 @@ public class SelfRegistrationConfigImplTest {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
-
+        descriptionMappingExpected.put(ADD_PURPOSE_PROPERTY_KEY, "Add Self-Sign-Up Purposes");
+        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "List Self-Sign-Up Purposes");
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -143,7 +155,8 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 testVerificationCodeExpiryTime);
-
+        propertiesExpected.put(ADD_PURPOSE_PROPERTY_KEY, consentPurposeURL);
+        propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL);
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
         Properties properties = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);
