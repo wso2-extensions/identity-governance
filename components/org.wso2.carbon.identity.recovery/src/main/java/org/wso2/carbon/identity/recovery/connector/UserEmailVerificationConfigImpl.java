@@ -21,6 +21,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,15 +33,15 @@ import java.util.Properties;
 public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "user-email-verification";
-    private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurposeJITProvisioning";
+    private static String category = "Account Management Policies";
+    private static String friendlyName = "User Onboarding";
     private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
     private static final String SYSTEM_PURPOSE_GROUP = "JIT";
     private static final String JIT_PURPOSE_GROUP_TYPE = "SYSTEM";
-    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp";
-    private String consentPurposeURL = "/carbon/consent/add-purpose.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + category +
+            "&subCategory=" + friendlyName;
     private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE + "&callback=" + callback;
+            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
@@ -47,12 +50,12 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public String getFriendlyName() {
-        return "User Onboarding";
+        return friendlyName;
     }
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return category;
     }
 
     @Override
@@ -80,8 +83,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 "Ask password code expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension class");
-        nameMapping.put(ADD_PURPOSE_PROPERTY_KEY, "Add Just In Time provisioning purposes");
-        nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "List Just In Time provisioning purposes");
+        nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Just In Time Provisioning purposes");
         return nameMapping;
     }
 
@@ -102,8 +104,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                         "validity)");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension point in ask password feature)");
-        descriptionMapping.put(ADD_PURPOSE_PROPERTY_KEY, "Add Just In Time provisioning purposes");
-        descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "List Just In Time provisioning purposes");
+        descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage JIT purposes");
 
         return descriptionMapping;
     }
@@ -118,7 +119,6 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR);
-        properties.add(ADD_PURPOSE_PROPERTY_KEY);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
 
         return properties.toArray(new String[properties.size()]);
@@ -179,8 +179,13 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 askPasswordTempPassExtension);
-        defaultProperties.put(ADD_PURPOSE_PROPERTY_KEY, consentPurposeURL);
-        defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL);
+        try {
+            defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
+                    (callback, StandardCharsets
+                            .UTF_8.name()));
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityGovernanceException("Error while url encoding callback url: " + callback, e);
+        }
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
