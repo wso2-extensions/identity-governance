@@ -17,7 +17,6 @@
  */
 package org.wso2.carbon.identity.recovery.connector;
 
-import org.opensaml.xml.signature.G;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
@@ -40,18 +39,19 @@ import static org.testng.Assert.assertEquals;
 public class UserEmailVerificationConfigImplTest {
 
     private UserEmailVerificationConfigImpl userEmailVerificationConfig;
-    private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
-    private static String category = "Account Management Policies";
-    private static String friendlyName = "User Onboarding";
+    private static final String CATEGORY = "Account Management Policies";
+    private static final String FRIENDLY_NAME = "User Onboarding";
     private static final String SYSTEM_PURPOSE_GROUP = "JIT";
     private static final String JIT_PURPOSE_GROUP_TYPE = "SYSTEM";
-    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + category +
-            "&subCategory=" + friendlyName;
-    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE;
+    private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?CATEGORY=" + CATEGORY +
+            "&subCategory=" + FRIENDLY_NAME;
+    private static final String CONSENT_LIST_URL = "/carbon/consent/list-purposes.jsp?purposeGroup=" +
+            SYSTEM_PURPOSE_GROUP + "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE;
 
     @BeforeTest
     public void init() {
+
         userEmailVerificationConfig = new UserEmailVerificationConfigImpl();
     }
 
@@ -62,12 +62,12 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetFriendlyName() {
-        assertEquals(userEmailVerificationConfig.getFriendlyName(), friendlyName);
+        assertEquals(userEmailVerificationConfig.getFriendlyName(), FRIENDLY_NAME);
     }
 
     @Test
     public void testGetCategory() {
-        assertEquals(userEmailVerificationConfig.getCategory(), category);
+        assertEquals(userEmailVerificationConfig.getCategory(), CATEGORY);
     }
 
     @Test
@@ -165,11 +165,10 @@ public class UserEmailVerificationConfigImplTest {
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 testAskPasswordTempPassExtension);
         try {
-            defaultPropertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
-                    (callback, StandardCharsets
-                            .UTF_8.name()));
+            defaultPropertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, CONSENT_LIST_URL + "&callback=" + URLEncoder.encode
+                    (CALLBACK_URL, StandardCharsets.UTF_8.name()));
         } catch (UnsupportedEncodingException e) {
-            throw new IdentityGovernanceException("Error while url encoding callback url: " + callback, e);
+            throw new IdentityGovernanceException("Error while url encoding callback url: " + CALLBACK_URL, e);
         }
 
         String tenantDomain = "admin";

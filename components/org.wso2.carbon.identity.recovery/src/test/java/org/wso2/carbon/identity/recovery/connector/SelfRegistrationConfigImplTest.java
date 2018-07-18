@@ -40,18 +40,15 @@ import static org.testng.Assert.assertEquals;
 public class SelfRegistrationConfigImplTest {
 
     private SelfRegistrationConfigImpl selfRegistrationConfigImpl;
-    private static String category = "Account Management Policies";
-    private static String friendlyName = "User Self Registration";
-    private final String ADD_PURPOSE_PROPERTY_KEY = "_url_addPurposeSelfSignUp";
-    private final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
-    private static final String PURPOSE_MANAGEMENT = "Purpose Management";
+    private static final String CATEGORY = "Account Management Policies";
+    private static final String FRIENDLY_NAME = "User Self Registration";
+    private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
     private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
-    private static final String callback = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + category +
-            "&subCategory=" + friendlyName;
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?CATEGORY=" + CATEGORY +
+            "&subCategory=" + FRIENDLY_NAME;
     private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
-
     @BeforeTest
     public void Init() {
         selfRegistrationConfigImpl = new SelfRegistrationConfigImpl();
@@ -160,9 +157,9 @@ public class SelfRegistrationConfigImplTest {
                 testVerificationCodeExpiryTime);
         try {
             propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + (URLEncoder.encode
-                    (callback, StandardCharsets.UTF_8.name())));
+                    (CALLBACK_URL, StandardCharsets.UTF_8.name())));
         } catch (UnsupportedEncodingException e) {
-            throw new IdentityGovernanceException("Error while encoding callback url: " + callback, e);
+            throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
@@ -178,7 +175,8 @@ public class SelfRegistrationConfigImplTest {
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
         // Here tenantDomain and propertyNames parameters are not used by method itself
-        Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
+        Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames,
+                tenantDomain);
         assertEquals(defaultPropertyValues, null);
     }
 
