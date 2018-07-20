@@ -91,12 +91,18 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                                              HttpServletResponse httpServletResponse,
                                              AuthenticationContext authenticationContext)
             throws PostAuthenticationFailedException {
+        String forceChallengeQuestionConfig = "";
 
         if (log.isDebugEnabled()) {
             log.debug("Post authentication handling for missing security questions has started");
         }
-        String forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext).getTenantDomain(),
-                IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        try {
+            forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext).
+                    getTenantDomain(), IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        } catch (Exception e) {
+            log.error("Error occurred while extracting resident IDP property for Force Missing Challenge Question " +
+                    "feature", e);
+        }
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
             // Exit post authentication handler if the value for the resident IDP setting not found
@@ -208,7 +214,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
      */
     private boolean isChallengeQuestionsProvided(AuthenticatedUser user) {
         try {
-            String userName = UserCoreUtil.addDomainToName(user.getUserName(),user.getUserStoreDomain()) ;
+            String userName = UserCoreUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             int tenantId = Utils.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager =
                     IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
