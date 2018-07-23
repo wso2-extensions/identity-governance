@@ -91,6 +91,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                                              HttpServletResponse httpServletResponse,
                                              AuthenticationContext authenticationContext)
             throws PostAuthenticationFailedException {
+
         String forceChallengeQuestionConfig = "";
 
         if (log.isDebugEnabled()) {
@@ -100,8 +101,7 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext).
                     getTenantDomain(), IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         } catch (Exception e) {
-            log.error("Error occurred while extracting resident IDP property for Force Missing Challenge Question " +
-                    "feature", e);
+            log.error("Error occurred while retrieving resident IDP property for forced challenge questions", e);
         }
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
