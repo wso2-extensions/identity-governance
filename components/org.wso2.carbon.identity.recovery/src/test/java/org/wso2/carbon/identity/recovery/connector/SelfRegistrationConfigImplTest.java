@@ -45,7 +45,7 @@ public class SelfRegistrationConfigImplTest {
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
     private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
-    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?CATEGORY=" + CATEGORY +
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
     private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
