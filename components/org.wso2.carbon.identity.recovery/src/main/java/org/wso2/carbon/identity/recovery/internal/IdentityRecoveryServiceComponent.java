@@ -22,6 +22,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -76,6 +77,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * interface="org.wso2.carbon.consent.mgt.core.ConsentManager"
  * cardinality="1..1" policy="dynamic" bind="setConsentMgtService"
  * unbind="unsetConsentMgtService"
+ * @scr.reference name="ConsentUtilityService"
+ * interface="org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService"
+ * cardinality="1..1" policy="dynamic" bind="setConsentUtilityService"
+ * unbind="unsetConsentUtilityService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -227,6 +232,26 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetConsentMgtService(ConsentManager consentManager) {
 
         dataHolder.getInstance().setConsentManager(null);
+    }
+
+    /**
+     * Set consent Utility Service to data holder
+     *
+     * @param utilityService
+     */
+    protected void setConsentUtilityService(ConsentUtilityService utilityService) {
+
+        dataHolder.setConsentUtilityService(utilityService);
+    }
+
+    /**
+     * Unset Consent Utility Service
+     *
+     * @param utilityService
+     */
+    protected void unsetConsentUtilityService(ConsentUtilityService utilityService) {
+
+        dataHolder.setConsentUtilityService(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
