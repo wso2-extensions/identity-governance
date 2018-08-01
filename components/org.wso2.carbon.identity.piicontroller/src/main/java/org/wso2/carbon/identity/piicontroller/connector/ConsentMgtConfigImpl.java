@@ -52,7 +52,7 @@ import static org.wso2.carbon.consent.mgt.core.constant.ConsentConstants.PIICont
 public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIController {
 
     private static Log log = LogFactory.getLog(ConsentMgtConfigImpl.class);
-    private static final String DISPLAY_NAME_PII_CONTROLLER = "Name";
+    private static final String DISPLAY_NAME_PII_CONTROLLER = "Controller Name";
     private static final String DISPLAY_NAME_CONTACT = "Contact Name";
     private static final String DISPLAY_NAME_EMAIL = "Email Address";
     private static final String DISPLAY_NAME_PHONE = "Phone Number";
@@ -65,21 +65,21 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
     private static final String DISPLAY_NAME_POSTAL_CODE = "Postal Code";
     private static final String DISPLAY_NAME_STREET_ADDRESS = "Street Address";
 
-    private static final String DISPLAY_DESCRIPTION_PII_CONTROLLER = "Name of the first PII Controller who collects " +
+    private static final String DISPLAY_DESCRIPTION_PII_CONTROLLER = "Name of the first Controller who collects " +
             "the data";
-    private static final String DISPLAY_DESCRIPTION_CONTACT = "Contact name of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_EMAIL = "Contact email address of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_PHONE = "Contact phone number of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_ON_BEHALF = "A PII Processor acting on behalf of a PII Controller" +
-            " or PII Processor";
-    private static final String DISPLAY_DESCRIPTION_PII_CONTROLLER_URL = "A URL for contacting the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_ADDRESS_COUNTRY = "Country of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_ADDRESS_LOCALITY = "Locality of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_ADDRESS_REGION = "Region of the PII Controller";
+    private static final String DISPLAY_DESCRIPTION_CONTACT = "Contact name of the Controller";
+    private static final String DISPLAY_DESCRIPTION_EMAIL = "Contact email address of the Controller";
+    private static final String DISPLAY_DESCRIPTION_PHONE = "Contact phone number of the Controller";
+    private static final String DISPLAY_DESCRIPTION_ON_BEHALF = "A user information (PII) Processor acting on behalf " +
+                                                                "of a Controller or PII Processor";
+    private static final String DISPLAY_DESCRIPTION_PII_CONTROLLER_URL = "A URL for contacting the Controller";
+    private static final String DISPLAY_DESCRIPTION_ADDRESS_COUNTRY = "Country of the Controller";
+    private static final String DISPLAY_DESCRIPTION_ADDRESS_LOCALITY = "Locality of the Controller";
+    private static final String DISPLAY_DESCRIPTION_ADDRESS_REGION = "Region of the Controller";
     private static final String DISPLAY_DESCRIPTION_POST_OFFICE_BOX_NUMBER = "Post Office Box Number of the" +
-            " PII Controller";
-    private static final String DISPLAY_DESCRIPTION_POSTAL_CODE = "Postal Code of the PII Controller";
-    private static final String DISPLAY_DESCRIPTION_STREET_ADDRESS = "Street Address of the PII Controller";
+            " Controller";
+    private static final String DISPLAY_DESCRIPTION_POSTAL_CODE = "Postal Code of the Controller";
+    private static final String DISPLAY_DESCRIPTION_STREET_ADDRESS = "Street Address of the Controller";
     private static final String EMPTY = "";
     private IdentityGovernanceService identityGovernanceService;
 
