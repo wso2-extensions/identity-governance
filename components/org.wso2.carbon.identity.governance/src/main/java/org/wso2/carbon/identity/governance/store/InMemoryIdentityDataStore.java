@@ -68,6 +68,13 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                                     " to : " + userName.toLowerCase());
                         }
                         userName = userName.toLowerCase();
+                    } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(
+                            (org.wso2.carbon.user.core.UserStoreManager) userStoreManager)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Case insensitive username for cache key is used. Changing username from : "
+                                    + userName + " to : " + userName.toLowerCase());
+                        }
+                        userName = userName.toLowerCase();
                     }
                 }
 
@@ -118,6 +125,13 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                         if (log.isDebugEnabled()) {
                             log.debug("Case insensitive user store found. Changing username from : " + userName +
                                     " to : " + userName.toLowerCase());
+                        }
+                        userName = userName.toLowerCase();
+                    } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(
+                            (org.wso2.carbon.user.core.UserStoreManager) userStoreManager)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Case insensitive username for cache key is used. Changing username from : "
+                                    + userName + " to : " + userName.toLowerCase());
                         }
                         userName = userName.toLowerCase();
                     }
@@ -173,6 +187,13 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                     if (log.isDebugEnabled()) {
                         log.debug("Case insensitive user store found. Changing username from : " + userName + " to : " +
                                 userName.toLowerCase());
+                    }
+                    userName = userName.toLowerCase();
+                } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(
+                        (org.wso2.carbon.user.core.UserStoreManager) userStoreManager)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Case insensitive username for cache key is used. Changing username from : "
+                                + userName + " to : " + userName.toLowerCase());
                     }
                     userName = userName.toLowerCase();
                 }
