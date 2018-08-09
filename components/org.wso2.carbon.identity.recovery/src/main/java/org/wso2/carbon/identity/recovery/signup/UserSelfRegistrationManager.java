@@ -79,6 +79,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 /**
  * Manager class which can be used to recover passwords using a notification
  */
