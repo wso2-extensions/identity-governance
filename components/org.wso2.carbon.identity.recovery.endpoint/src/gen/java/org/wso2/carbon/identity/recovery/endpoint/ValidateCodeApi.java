@@ -1,5 +1,9 @@
 package org.wso2.carbon.identity.recovery.endpoint;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 import org.wso2.carbon.identity.recovery.endpoint.ValidateCodeApiService;
 import org.wso2.carbon.identity.recovery.endpoint.factories.ValidateCodeApiServiceFactory;
@@ -22,6 +26,7 @@ import javax.ws.rs.*;
 @Consumes({ "application/json" })
 @Produces({ "application/json" })
 @io.swagger.annotations.Api(value = "/validate-code", description = "the validate-code API")
+
 public class ValidateCodeApi  {
 
    private final ValidateCodeApiService delegate = ValidateCodeApiServiceFactory.getValidateCodeApi();
