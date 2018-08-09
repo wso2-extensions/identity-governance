@@ -15,6 +15,7 @@
  */
 package org.wso2.carbon.identity.user.endpoint.impl;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,16 +23,19 @@ import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.ValidateUsernameApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
 
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
+    private static final String SKIP_SIGN_UP_ENABLE_CHECK_KEY = "skipSignUpEnableCheck";
 
     @Override
     public Response validateUsernamePost(UsernameValidationRequestDTO user) {
@@ -42,6 +46,16 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
 
         try {
             String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
+            List<PropertyDTO> propertyDTOList = user.getProperties();
+            boolean skipSelfSignUpEnabledCheck = false;
+
+            if (CollectionUtils.isNotEmpty(propertyDTOList)) {
+                for (PropertyDTO propertyDTO : propertyDTOList) {
+                    if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
+                        skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
+                    }
+                }
+            }
             UserSelfRegistrationManager userSelfRegistrationManager = Utils
                     .getUserSelfRegistrationManager();
             if (LOG.isDebugEnabled()) {
@@ -50,14 +64,14 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
             UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
 
             if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
-                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ",
-                        tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
+                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ", tenantDomain,
+                        SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
                 responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-            } else if (!userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
+            } else if (!skipSelfSignUpEnabledCheck && !userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
                 logDebug(String.format("Self registration is not enabled for tenant domain : %s . Hence returning code",
                         tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
-                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes
-                        .ERROR_CODE_SELF_REGISTRATION_DISABLED));
+                responseDTO.setStatusCode(
+                        Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
             } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(user.getUsername())) {
                 logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
                         user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));

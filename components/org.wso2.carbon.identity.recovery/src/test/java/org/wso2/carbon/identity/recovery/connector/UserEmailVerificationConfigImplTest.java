@@ -22,6 +22,9 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +39,19 @@ import static org.testng.Assert.assertEquals;
 public class UserEmailVerificationConfigImplTest {
 
     private UserEmailVerificationConfigImpl userEmailVerificationConfig;
+    private static final String CATEGORY = "Account Management Policies";
+    private static final String FRIENDLY_NAME = "User Onboarding";
+    private static final String SYSTEM_PURPOSE_GROUP = "JIT";
+    private static final String JIT_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
+            "&subCategory=" + FRIENDLY_NAME;
+    private static final String CONSENT_LIST_URL = "/carbon/consent/list-purposes.jsp?purposeGroup=" +
+            SYSTEM_PURPOSE_GROUP + "&purposeGroupType=" + JIT_PURPOSE_GROUP_TYPE;
 
     @BeforeTest
     public void init() {
+
         userEmailVerificationConfig = new UserEmailVerificationConfigImpl();
     }
 
@@ -49,12 +62,12 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetFriendlyName() {
-        assertEquals(userEmailVerificationConfig.getFriendlyName(), "User Onboarding");
+        assertEquals(userEmailVerificationConfig.getFriendlyName(), FRIENDLY_NAME);
     }
 
     @Test
     public void testGetCategory() {
-        assertEquals(userEmailVerificationConfig.getCategory(), "Account Management Policies");
+        assertEquals(userEmailVerificationConfig.getCategory(), CATEGORY);
     }
 
     @Test
@@ -75,14 +88,14 @@ public class UserEmailVerificationConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                "Enable Notification Internally Management");
+                "Internal Notification Management");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Email verification code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
                 "Ask password code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension class");
-
+        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Just In Time Provisioning purposes");
         Map<String, String> nameMapping = userEmailVerificationConfig.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -105,6 +118,7 @@ public class UserEmailVerificationConfigImplTest {
                         "validity)");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension point in ask password feature)");
+        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage JIT purposes");
 
         Map<String, String> descriptionMapping = userEmailVerificationConfig.getPropertyDescriptionMapping();
 
@@ -150,6 +164,12 @@ public class UserEmailVerificationConfigImplTest {
                 testEnableNotificationInternallyManage);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 testAskPasswordTempPassExtension);
+        try {
+            defaultPropertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, CONSENT_LIST_URL + "&callback=" + URLEncoder.encode
+                    (CALLBACK_URL, StandardCharsets.UTF_8.name()));
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityGovernanceException("Error while url encoding callback url: " + CALLBACK_URL, e);
+        }
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself

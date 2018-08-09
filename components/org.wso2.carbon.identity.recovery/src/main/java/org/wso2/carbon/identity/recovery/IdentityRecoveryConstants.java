@@ -77,7 +77,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
-        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found"),
+        ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
@@ -126,8 +126,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED("20040", "Notification Type is not provided for user %s."),
         ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: " +
                 "%s."),
-        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
-        ;
+        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),;
 
 
         private final String code;
@@ -155,10 +154,12 @@ public class IdentityRecoveryConstants {
 
     public static class ConnectorConfig {
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
+        public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
         public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.Question.Password.Enable";
+        public static final String FORCE_ADD_PW_RECOVERY_QUESTION = "Recovery.Question.Password.Forced.Enable";
         public static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
         public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.Question.Password.Separator";
         public static final String QUESTION_MIN_NO_ANSWER = "Recovery.Question.Password.MinAnswers";
@@ -167,7 +168,7 @@ public class IdentityRecoveryConstants {
                 ".ReCaptcha.Enable";
         public static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
                 ".Password.ReCaptcha.MaxFailedAttempts";
-        public static final String ENABLE_SELF_SIGNUP= "SelfRegistration.Enable";
+        public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
                 ".InternallyManage";
@@ -175,16 +176,16 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "SelfRegistration" +
                 ".VerificationCode.ExpiryTime";
 
-        public static final String ENABLE_EMIL_VERIFICATION= "EmailVerification.Enable";
+        public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
 
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE= "Recovery.AdminPasswordReset.Offline";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP= "Recovery.AdminPasswordReset.OTP";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK= "Recovery.AdminPasswordReset.RecoveryLink";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK = "Recovery.AdminPasswordReset.RecoveryLink";
     }
 
     public static class SQLQueries {
