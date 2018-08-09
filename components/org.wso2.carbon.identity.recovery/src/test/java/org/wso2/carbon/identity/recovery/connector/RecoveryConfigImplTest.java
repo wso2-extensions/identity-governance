@@ -73,7 +73,7 @@ public class RecoveryConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
                 "Notification Based Password Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
-                "Notification Internally Management");
+                "Internal Notification Management");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
                 "Question Based Password Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
@@ -90,6 +90,8 @@ public class RecoveryConfigImplTest {
                 "Enable reCaptcha for Security Questions Based Password Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable " +
+                "forced challenge questions");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -103,7 +105,8 @@ public class RecoveryConfigImplTest {
                 "Set false if the client application handles notification sending");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
                 "Show captcha for challenge question based password recovery");
-
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
+                "Force users to provide answers to challenge questions during sign in");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -122,6 +125,8 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
 
         String[] properties = recoveryConfigImpl.getPropertyNames();
@@ -143,6 +148,7 @@ public class RecoveryConfigImplTest {
         String testExpiryTime = "1440";
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
+        String testForceChallengeQuestions = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -165,6 +171,8 @@ public class RecoveryConfigImplTest {
                 testNotifySuccess);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
                 testNotifyStart);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
+                testForceChallengeQuestions);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself

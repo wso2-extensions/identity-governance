@@ -19,7 +19,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.1.14-SNAPSHOT</version>
+    <version>1.1.31-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -285,6 +285,12 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -310,6 +316,11 @@
                         <artifactId>org.wso2.carbon.registry.indexing</artifactId>
                     </exclusion>
                 </exclusions>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
 
@@ -584,6 +595,7 @@
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
+        <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
 
         <!--Carbon Kernel Version-->
         <carbon.kernel.version>4.4.17</carbon.kernel.version>
@@ -591,7 +603,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.11.56</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.93</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -600,8 +612,8 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
-        <carbon.consent.mgt.version>1.0.31</carbon.consent.mgt.version>
-        <carbon.consent.mgt.version.range>[1.0.0, 2.0.0)</carbon.consent.mgt.version.range>
+        <carbon.consent.mgt.version>2.0.6</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version.range>[1.0.0, 3.0.0)</carbon.consent.mgt.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>

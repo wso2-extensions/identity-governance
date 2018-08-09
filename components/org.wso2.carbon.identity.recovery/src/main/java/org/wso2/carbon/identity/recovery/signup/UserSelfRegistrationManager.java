@@ -29,6 +29,7 @@ import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
+import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -36,6 +37,8 @@ import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
+import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -73,6 +76,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
+
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -82,6 +87,8 @@ public class UserSelfRegistrationManager {
     private static final Log log = LogFactory.getLog(UserSelfRegistrationManager.class);
 
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
+    private static final String PURPOSE_GROUP_SELF_REGISTER = "SELF-SIGNUP";
+    private static final String PURPOSE_GROUP_TYPE_SYSTEM = "SYSTEM";
 
     private UserSelfRegistrationManager() {
 
@@ -149,6 +156,7 @@ public class UserSelfRegistrationManager {
 
             //Set arbitrary properties to use in UserSelfRegistrationHandler
             Utils.setArbitraryProperties(properties);
+            validateAndFilterFromReceipt(consent, claimsMap);
 
             try {
 
@@ -223,9 +231,56 @@ public class UserSelfRegistrationManager {
                         "", e);
             }
         } else {
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("Consent string is empty. Hence not adding consent");
             }
+        }
+    }
+
+    private void validateAndFilterFromReceipt(String consent, Map<String, String> claimsMap) throws
+            IdentityRecoveryServerException {
+
+        if (StringUtils.isEmpty(consent)) {
+            return;
+        }
+        ConsentManager consentManager = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
+        try {
+            List<Purpose> purposes = consentManager.listPurposes(PURPOSE_GROUP_SELF_REGISTER,
+                    PURPOSE_GROUP_TYPE_SYSTEM, 0, 0);
+            Gson gson = new Gson();
+            ReceiptInput receiptInput = gson.fromJson(consent, ReceiptInput.class);
+            validateUserConsent(receiptInput, purposes);
+            filterClaimsFromReceipt(receiptInput, claimsMap);
+        } catch (ConsentManagementException e) {
+            throw new IdentityRecoveryServerException("Error while retrieving System purposes for self registration",
+                    e);
+
+        }
+    }
+
+    private void validateUserConsent(ReceiptInput receiptInput, List<Purpose> purposes) throws
+            IdentityRecoveryServerException {
+
+        ConsentUtilityService consentUtilityService =
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentUtilityService();
+        try {
+            consentUtilityService.validateReceiptPIIs(receiptInput, purposes);
+        } catch (ConsentUtilityServiceException e) {
+            throw new IdentityRecoveryServerException("Receipt validation failed against purposes", e);
+        }
+
+    }
+
+    private void filterClaimsFromReceipt(ReceiptInput receiptInput, Map<String, String> claims) throws
+            IdentityRecoveryServerException {
+
+        ConsentUtilityService consentUtilityService =
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentUtilityService();
+        try {
+            Set<String> filteredKeys = consentUtilityService.filterPIIsFromReceipt(claims.keySet(), receiptInput);
+            claims.keySet().retainAll(filteredKeys);
+        } catch (ConsentUtilityServiceException e) {
+            throw new IdentityRecoveryServerException("Receipt validation failed against purposes", e);
         }
     }
 
