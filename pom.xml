@@ -620,13 +620,13 @@
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <jackson-jaxrs-json-provider.version>2.4.2</jackson-jaxrs-json-provider.version>
-        <jackson-databind.version>2.9.4</jackson-databind.version>
+        <jackson-jaxrs-json-provider.version>2.9.6</jackson-jaxrs-json-provider.version>
+        <jackson-databind.version>2.9.6</jackson-databind.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
         <cxf-bundle.version>3.1.13</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
         <spring-web.version>4.1.6.RELEASE</spring-web.version>
-        <swagger-jaxrs.version>1.5.2</swagger-jaxrs.version>
+        <swagger-jaxrs.version>1.5.20</swagger-jaxrs.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
