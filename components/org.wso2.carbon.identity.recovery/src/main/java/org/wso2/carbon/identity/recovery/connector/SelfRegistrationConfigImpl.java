@@ -21,6 +21,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +33,15 @@ import java.util.Properties;
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "self-sign-up";
+    private static final String CATEGORY = "Account Management Policies";
+    private static final String FRIENDLY_NAME = "User Self Registration";
+    private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
+    private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
+    private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
+            "&subCategory=" + FRIENDLY_NAME;
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
@@ -38,12 +50,12 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public String getFriendlyName() {
-        return "User Self Registration";
+        return FRIENDLY_NAME;
     }
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return CATEGORY;
     }
 
     @Override
@@ -64,11 +76,12 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Enable Notification Internally Management");
+                "Internal Notification Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
+        nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         return nameMapping;
     }
 
@@ -87,6 +100,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
+        descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
         return descriptionMapping;
     }
 
@@ -99,6 +113,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        properties.add(LIST_PURPOSE_PROPERTY_KEY);
         return properties.toArray(new String[properties.size()]);
     }
 
@@ -149,6 +164,12 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 verificationCodeExpiryTime);
+        try {
+            defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
+                    (CALLBACK_URL, StandardCharsets.UTF_8.name()));
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
+        }
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;

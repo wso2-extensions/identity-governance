@@ -31,21 +31,20 @@ import java.util.Properties;
 
 public class IdentityGovernanceAdminService extends AbstractAdmin {
 
-    IdentityGovernanceService identityGovernanceService;
-
     public ConnectorConfig[] getConnectorList() throws IdentityGovernanceException {
 
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        identityGovernanceService = new IdentityGovernanceServiceImpl();
+        IdentityGovernanceService identityGovernanceService = IdentityMgtServiceDataHolder.getInstance()
+                .getIdentityGovernanceService();
         List<IdentityConnectorConfig> list = IdentityMgtServiceDataHolder.getInstance()
                 .getIdentityGovernanceConnectorList();
         Property[] properties = identityGovernanceService.getConfiguration(tenantDomain);
         ConnectorConfig[] configs = new ConnectorConfig[list.size()];
         String[] connectorProperties;
-        for (int i=0; i<list.size();i++) {
-            ConnectorConfig config =new ConnectorConfig();
-            Map <String,String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
-            Map <String,String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+        for (int i = 0; i < list.size(); i++) {
+            ConnectorConfig config = new ConnectorConfig();
+            Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
+            Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setCategory(list.get(i).getCategory());
             config.setSubCategory(list.get(i).getSubCategory());
@@ -82,9 +81,11 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         return configs;
     }
 
-    public void updateConfigurations (Property[] configurations) throws IdentityGovernanceException {
+    public void updateConfigurations(Property[] configurations) throws IdentityGovernanceException {
+
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        identityGovernanceService = new IdentityGovernanceServiceImpl();
+        IdentityGovernanceService identityGovernanceService = IdentityMgtServiceDataHolder.getInstance()
+                .getIdentityGovernanceService();
         Map<String, String> confMap = new HashMap<>();
         for (Property configuration : configurations) {
             confMap.put(configuration.getName(), configuration.getValue());

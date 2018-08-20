@@ -19,9 +19,13 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +40,15 @@ import static org.testng.Assert.assertEquals;
 public class SelfRegistrationConfigImplTest {
 
     private SelfRegistrationConfigImpl selfRegistrationConfigImpl;
-
+    private static final String CATEGORY = "Account Management Policies";
+    private static final String FRIENDLY_NAME = "User Self Registration";
+    private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
+    private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
+    private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
+    private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
+            "&subCategory=" + FRIENDLY_NAME;
+    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
     @BeforeTest
     public void Init() {
         selfRegistrationConfigImpl = new SelfRegistrationConfigImpl();
@@ -75,12 +87,12 @@ public class SelfRegistrationConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Enable Notification Internally Management");
+                "Internal Notification Management");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
                 "Enable reCaptcha");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
-
+        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -101,7 +113,7 @@ public class SelfRegistrationConfigImplTest {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
-
+        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -143,7 +155,12 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 testVerificationCodeExpiryTime);
-
+        try {
+            propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + (URLEncoder.encode
+                    (CALLBACK_URL, StandardCharsets.UTF_8.name())));
+        } catch (UnsupportedEncodingException e) {
+            throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
+        }
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
         Properties properties = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);
@@ -158,7 +175,8 @@ public class SelfRegistrationConfigImplTest {
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
         // Here tenantDomain and propertyNames parameters are not used by method itself
-        Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
+        Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames,
+                tenantDomain);
         assertEquals(defaultPropertyValues, null);
     }
 
