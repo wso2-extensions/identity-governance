@@ -92,17 +92,20 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
                                              AuthenticationContext authenticationContext)
             throws PostAuthenticationFailedException {
 
-        String forceChallengeQuestionConfig = "";
-
         if (log.isDebugEnabled()) {
             log.debug("Post authentication handling for missing security questions has started");
         }
-        try {
-            forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext).
-                    getTenantDomain(), IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
-        } catch (Exception e) {
-            log.error("Error occurred while retrieving resident IDP property for forced challenge questions", e);
+
+        if (authenticationContext == null || authenticationContext.getSequenceConfig() == null
+                || authenticationContext.getSequenceConfig().getAuthenticatedUser() == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Authentication context or sequence config or authenticated user is null.");
+            }
+            return PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED;
         }
+
+        String forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext)
+                .getTenantDomain(), IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
             // Exit post authentication handler if the value for the resident IDP setting not found
