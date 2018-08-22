@@ -126,7 +126,7 @@ public class ClaimDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("readOnly")
+  @JsonProperty("read-only")
   public Boolean getReadOnly() {
     return readOnly;
   }
