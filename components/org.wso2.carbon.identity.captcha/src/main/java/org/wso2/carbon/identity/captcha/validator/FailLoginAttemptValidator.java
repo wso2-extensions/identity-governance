@@ -27,6 +27,9 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.handler.AbstractIdentityMessageHandler;
+import org.wso2.carbon.identity.core.model.IdentityEventListenerConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants.EventName;
 import org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty;
@@ -83,6 +86,18 @@ public class FailLoginAttemptValidator extends AbstractEventHandler {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isEnabled(MessageContext messageContext) {
+        IdentityEventListenerConfig identityEventListenerConfig = IdentityUtil.readEventListenerProperty
+                (AbstractIdentityMessageHandler.class.getName(), this.getClass().getName());
+
+        if (identityEventListenerConfig == null) {
+            return false;
+        }
+
+        return Boolean.parseBoolean(identityEventListenerConfig.getEnable());
     }
 
 }
