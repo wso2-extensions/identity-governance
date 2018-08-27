@@ -47,8 +47,6 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +56,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class will check whether the challenge questions are set for the user.
@@ -104,8 +104,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             return PostAuthnHandlerFlowStatus.UNSUCCESS_COMPLETED;
         }
 
-        String forceChallengeQuestionConfig = getResidentIdpProperty(getAuthenticatedUser(authenticationContext)
-                .getTenantDomain(), IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        String forceChallengeQuestionConfig = getResidentIdpProperty(authenticationContext.getTenantDomain(),
+                IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
             // Exit post authentication handler if the value for the resident IDP setting not found
