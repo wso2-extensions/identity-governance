@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.validator;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,7 +65,11 @@ public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler im
     public void publishAuthenticationStepFailure(HttpServletRequest httpServletRequest,
                                                  AuthenticationContext authenticationContext, Map<String, Object> map) {
 
-        if ("BasicAuthenticator".equals(authenticationContext.getCurrentAuthenticator()) && map != null && map.get
+        String currentAuthenticator = authenticationContext.getCurrentAuthenticator();
+        if (StringUtils.isBlank(currentAuthenticator) && MapUtils.isNotEmpty(map)) {
+            currentAuthenticator = (String) map.get(FrameworkConstants.AUTHENTICATOR);
+        }
+        if ("BasicAuthenticator".equals(currentAuthenticator) && map != null && map.get
                 (FrameworkConstants.AnalyticsAttributes.USER) != null) {
 
             if (map.get(FrameworkConstants.AnalyticsAttributes.USER) instanceof User) {
