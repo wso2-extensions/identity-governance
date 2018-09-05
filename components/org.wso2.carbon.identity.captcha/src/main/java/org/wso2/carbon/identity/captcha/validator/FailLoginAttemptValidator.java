@@ -56,17 +56,28 @@ public class FailLoginAttemptValidator extends AbstractEventHandler {
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
-        AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get(EventProperty.CONTEXT);
-        Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties()
-                .get(EventProperty.PARAMS);
-        String eventName = event.getEventName();
 
-        if (EventName.AUTHENTICATION_STEP_FAILURE.name().equals(eventName)) {
-            publishAuthenticationStepFailure(context, unmodifiableParamMap);
-            if (log.isDebugEnabled() && event != null) {
-                log.debug(this.getName() + " received event : " + event.getEventName());
+        boolean isEnabled = isFailLoginAttemptValidatorEnabled(event);
+
+        if (!isEnabled) {
+            return;
+        }
+
+        if (event.getEventProperties().get(EventProperty.CONTEXT) instanceof AuthenticationContext &&
+                event.getEventProperties().get(EventProperty.PARAMS) instanceof Map) {
+            AuthenticationContext context = (AuthenticationContext) event.getEventProperties().get(EventProperty.CONTEXT);
+            Map<String, Object> unmodifiableParamMap = (Map<String, Object>) event.getEventProperties()
+                    .get(EventProperty.PARAMS);
+            String eventName = event.getEventName();
+
+            if (EventName.AUTHENTICATION_STEP_FAILURE.name().equals(eventName)) {
+                publishAuthenticationStepFailure(context, unmodifiableParamMap);
+                if (log.isDebugEnabled() && event != null) {
+                    log.debug(this.getName() + " received event : " + event.getEventName());
+                }
             }
         }
+
     }
 
     protected void publishAuthenticationStepFailure(AuthenticationContext authenticationContext, Map<String, Object> map) {
@@ -108,4 +119,14 @@ public class FailLoginAttemptValidator extends AbstractEventHandler {
         return Boolean.parseBoolean(identityEventListenerConfig.getEnable());
     }
 
+    private boolean isFailLoginAttemptValidatorEnabled(Event event) throws IdentityEventException {
+
+        boolean isEnabled = false;
+
+        String handlerEnabled = this.configs.getModuleProperties().getProperty(CaptchaConstants.
+                FAIL_LOGIN_ATTEMPT_VALIDATOR_ENABLED);
+        isEnabled = Boolean.parseBoolean(handlerEnabled);
+
+        return isEnabled;
+    }
 }
