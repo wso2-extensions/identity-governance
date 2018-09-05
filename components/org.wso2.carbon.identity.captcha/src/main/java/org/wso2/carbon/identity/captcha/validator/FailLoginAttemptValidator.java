@@ -62,6 +62,9 @@ public class FailLoginAttemptValidator extends AbstractEventHandler {
 
         if (EventName.AUTHENTICATION_STEP_FAILURE.name().equals(eventName)) {
             publishAuthenticationStepFailure(context, unmodifiableParamMap);
+            if (log.isDebugEnabled() && event != null) {
+                log.debug(this.getName() + " received event : " + event.getEventName());
+            }
         }
     }
 
