@@ -65,9 +65,14 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Internal Notification Management");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
                 "Question Based Password Recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
+                "reCaptcha for Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
                 "Required For Password Recovery");
+
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
+                "reCaptcha for Username Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
@@ -102,10 +107,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
@@ -128,6 +135,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String notifySuccess = "false";
         String notifyStart = "false";
         String enableForceChallengeQuestions = "false";
+        String enablePasswordRecoveryReCaptcha = "true";
+        String enableUsernameRecoveryReCaptcha = "true";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -150,6 +159,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         String forceChallengeQuestionsProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        String passwordRecoveryReCaptcha = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.
+                PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
+        String userNameRecoveryReCaptcha = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.
+                USERNAME_RECOVERY_RECAPTCHA_ENABLE);
 
         if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
             enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
@@ -184,12 +197,20 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(forceChallengeQuestionsProperty)) {
             enableForceChallengeQuestions = forceChallengeQuestionsProperty;
         }
+        if (StringUtils.isNotEmpty(passwordRecoveryReCaptcha)) {
+            enablePasswordRecoveryReCaptcha = passwordRecoveryReCaptcha;
+        }
+        if (StringUtils.isNotEmpty(userNameRecoveryReCaptcha)) {
+            enableUsernameRecoveryReCaptcha = userNameRecoveryReCaptcha;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 enableNotificationBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
                 enableQuestionBasedPasswordRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
+                enablePasswordRecoveryReCaptcha);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
                 minimumAnswers);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
@@ -199,6 +220,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 recoveryQuestionPasswordReCaptchaMaxFailedAttempts);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
                 enableUsernameRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
+                enableUsernameRecoveryReCaptcha);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, expiryTime);

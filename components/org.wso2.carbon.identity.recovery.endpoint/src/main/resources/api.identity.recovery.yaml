@@ -445,6 +445,45 @@ paths:
       tags:
         - Username Recovery
 
+  /get-recaptcha:
+      get:
+        description: |
+         return the reCaptcha information if its supported for the given tenant.
+        x-wso2-request: |
+           curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/get-recaptcha?tenant-domain=carbon.super"
+
+        x-wso2-response: |
+
+
+        summary: |
+         Get ReCaptcha
+
+        parameters:
+          -
+            name: tenant-domain
+            in: query
+            description: tenant domain. Default `carbon.super`
+            required: false
+            type: string
+
+
+        responses:
+          200:
+            description: Successful response
+
+          400:
+            description: Bad Request
+            schema:
+               $ref: '#/definitions/Error'
+
+          500:
+            description: Server Error
+            schema:
+               $ref: '#/definitions/Error'
+        tags:
+          - Password Recovery
+          - Username Recovery
+
 definitions:
 #-----------------------------------------------------
 # The User  Object

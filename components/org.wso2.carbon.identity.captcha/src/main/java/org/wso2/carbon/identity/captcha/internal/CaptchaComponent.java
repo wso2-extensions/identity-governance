@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.ForgotUserNameReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
@@ -82,6 +83,11 @@ public class CaptchaComponent {
 
             // Initialize and register PasswordRecoveryReCaptchaConnector
             captchaConnector = new PasswordRecoveryReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+
+            // Initialize and register ForgotUserNameReCaptchaConnector
+            captchaConnector = new ForgotUserNameReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
 

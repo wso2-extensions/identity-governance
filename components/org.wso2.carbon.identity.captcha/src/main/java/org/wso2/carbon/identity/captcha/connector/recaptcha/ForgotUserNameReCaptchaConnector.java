@@ -1,21 +1,3 @@
-/*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
 package org.wso2.carbon.identity.captcha.connector.recaptcha;
 
 import org.apache.commons.lang.StringUtils;
@@ -27,7 +9,6 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -37,18 +18,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/**
- * ReCaptcha Page Based Connector.
- */
-public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
+public class ForgotUserNameReCaptchaConnector extends AbstractReCaptchaConnector {
 
-    private static final Log log = LogFactory.getLog(SelfSignUpReCaptchaConnector.class);
+    private static final Log log = LogFactory.getLog(ForgotUserNameReCaptchaConnector.class);
 
     private static final String SELF_REGISTRATION_INITIATE_URL = "/api/identity/recovery/v0.9/claims";
 
-    private static final String SELF_REGISTRATION_URL = "/api/identity/user/v0.9/me";
+    private static final String RECOVER_USERNAME_INITIATE_URL = "api/identity/recovery/v0.9/recover-username";
 
-    private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
+    private final String PROPERTY_ENABLE_RECAPTCHA = "Recovery.Username.ReCaptcha.Enable";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -60,7 +38,8 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     @Override
     public int getPriority() {
-        return 10;
+
+        return 0;
     }
 
     @Override
@@ -72,10 +51,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        boolean isUsernameRecovery = Boolean.parseBoolean(((HttpServletRequest) servletRequest).getParameter("isUsernameRecovery"));
+        boolean isUsernameRecovery = Boolean.parseBoolean(((HttpServletRequest) servletRequest).
+                getParameter("isUsernameRecovery"));
 
-        if (StringUtils.isBlank(path) || (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
-                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL)) || isUsernameRecovery) {
+        if (StringUtils.isBlank(path) || !CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_INITIATE_URL) &&
+                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) || !isUsernameRecovery) {
             return false;
         }
 
@@ -98,7 +78,6 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         return Boolean.parseBoolean(enable);
-
     }
 
     @Override
@@ -141,7 +120,6 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        //No validation at this stage.
         return null;
     }
 
@@ -162,5 +140,4 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
         return connectorConfigs;
     }
-
 }
