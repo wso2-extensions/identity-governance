@@ -494,6 +494,11 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson-databind.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
+                <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
+                <version>${identity.data.publisher.authentication.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -596,6 +601,7 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
+        <identity.data.publisher.authentication.version>5.1.9-SNAPSHOT</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
         <carbon.kernel.version>4.4.17</carbon.kernel.version>
@@ -603,7 +609,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.12.93</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.142-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 

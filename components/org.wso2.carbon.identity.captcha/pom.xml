@@ -87,8 +87,12 @@
             <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.identity.event.handler.accountlock</groupId>
-            <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.event</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
+            <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
         </dependency>
     </dependencies>
 
@@ -132,6 +136,7 @@
 
                             javax.servlet.*; version="${imp.pkg.version.javax.servlet}",
 
+                            org.wso2.carbon.identity.event.*,
                             org.wso2.carbon.identity.governance.*;
                             version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*; version="${carbon.kernel.package.import.version.range}",
