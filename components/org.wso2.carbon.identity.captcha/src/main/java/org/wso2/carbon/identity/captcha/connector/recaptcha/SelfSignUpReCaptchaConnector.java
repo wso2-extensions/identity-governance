@@ -27,7 +27,6 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -72,10 +71,13 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        boolean isUsernameRecovery = Boolean.parseBoolean(((HttpServletRequest) servletRequest).getParameter("isUsernameRecovery"));
-
         if (StringUtils.isBlank(path) || (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
-                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL)) || isUsernameRecovery) {
+                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL))) {
+            return false;
+        }
+
+        String isUsernameRecovery = servletRequest.getParameter("isUsernameRecovery");
+        if (isUsernameRecovery != null) {
             return false;
         }
 

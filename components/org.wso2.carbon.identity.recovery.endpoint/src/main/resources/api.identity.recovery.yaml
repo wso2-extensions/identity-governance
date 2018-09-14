@@ -445,7 +445,7 @@ paths:
       tags:
         - Username Recovery
 
-  /get-recaptcha:
+  /recaptcha:
       get:
         description: |
          return the reCaptcha information if its supported for the given tenant.
@@ -454,6 +454,8 @@ paths:
 
         x-wso2-response: |
 
+
+        operationId: getRecaptcha
 
         summary: |
          Get ReCaptcha
@@ -466,6 +468,59 @@ paths:
             required: false
             type: string
 
+          -
+            name: recovery-type
+            in: query
+            description: username recovery or password recovery
+            required: true
+            type: string
+
+        responses:
+          200:
+            description: Successful response
+
+          400:
+            description: Bad Request
+            schema:
+               $ref: '#/definitions/Error'
+
+          500:
+            description: Server Error
+            schema:
+               $ref: '#/definitions/Error'
+        tags:
+          - Password Recovery
+          - Username Recovery
+
+      post:
+        description: |
+         return true or false after verify the captcha response.
+        x-wso2-request: |
+           curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/verify-recaptcha"
+
+        x-wso2-response: |
+
+
+        operationId: verifyRecaptcha
+
+        summary: |
+         Verify ReCaptcha
+
+        parameters:
+        -
+          name: g-recaptcha-response
+          in: body
+          description: recaptcha response from google.
+          required: true
+          schema:
+            $ref: '#/definitions/CaptchaResponseToken'
+
+        -
+          name: tenant-domain
+          in: query
+          description: tenant domain. Default `carbon.super`
+          required: false
+          type: string
 
         responses:
           200:
@@ -699,6 +754,16 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Property'
+#-----------------------------------------------------
+
+#-----------------------------------------------------
+# Captcha Response Token object
+#-----------------------------------------------------
+  CaptchaResponseToken:
+    type: object
+    properties:
+      token:
+        type: string
 #-----------------------------------------------------
 
 
