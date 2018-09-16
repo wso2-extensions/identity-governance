@@ -66,7 +66,7 @@ public class RecaptchaApiServiceImpl extends RecaptchaApiService {
                     header("reCaptchaKey", reCaptchaSiteKey).
                     header("reCaptchaAPI", reCaptchaAPIUrl).build();
         } else {
-            return Response.ok().entity("ReCaptcha is disabled").header("reCaptcha", reCaptchaEnabled).build();
+            return Response.ok().entity("ReCaptcha is disabled").build();
         }
     }
 
@@ -128,7 +128,7 @@ public class RecaptchaApiServiceImpl extends RecaptchaApiService {
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             }
         }
-        return Response.ok().entity("ReCaptcha is disabled").header("reCaptcha", reCaptchaEnabled).build();
+        return Response.ok().entity("ReCaptcha is disabled").build();
     }
 
     private Properties getCaptchaConfigs() {
