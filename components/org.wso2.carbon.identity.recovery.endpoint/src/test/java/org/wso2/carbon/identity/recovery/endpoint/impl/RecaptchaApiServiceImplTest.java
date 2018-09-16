@@ -1,6 +1,8 @@
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -10,7 +12,11 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
-public class RecaptchaApiServiceImplTest {
+/**
+ * Unit tests for RecaptchaApiServiceImplTest.java
+ */
+@PrepareForTest({IdentityGovernanceService.class})
+public class RecaptchaApiServiceImplTest extends PowerMockTestCase {
 
     @Test
     public void testGetRecaptcha() throws IdentityGovernanceException {
