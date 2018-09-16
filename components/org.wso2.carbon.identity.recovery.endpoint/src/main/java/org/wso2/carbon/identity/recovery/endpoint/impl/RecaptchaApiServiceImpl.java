@@ -170,9 +170,8 @@ public class RecaptchaApiServiceImpl extends RecaptchaApiService {
 
         Property[] connectorConfigs = new Property[0];
 
-        PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
-        IdentityGovernanceService identityGovernanceService = (IdentityGovernanceService) privilegedCarbonContext.
-                getOSGiService(IdentityGovernanceService.class, null);
+        IdentityGovernanceService identityGovernanceService = getIdentityGovernanceService();
+
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{RECOVERY_RECAPTCHA_ENABLE},
                     tenantDomain);
@@ -191,5 +190,13 @@ public class RecaptchaApiServiceImpl extends RecaptchaApiService {
             }
         }
         return Boolean.parseBoolean(enable);
+    }
+
+    protected IdentityGovernanceService getIdentityGovernanceService() {
+
+        PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
+        IdentityGovernanceService identityGovernanceService = (IdentityGovernanceService) privilegedCarbonContext.
+                getOSGiService(IdentityGovernanceService.class, null);
+        return identityGovernanceService;
     }
 }

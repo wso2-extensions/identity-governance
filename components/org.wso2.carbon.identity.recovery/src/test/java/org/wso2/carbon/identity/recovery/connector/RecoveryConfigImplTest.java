@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -79,6 +80,8 @@ public class RecoveryConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
                 "Required For Password Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
+                "Enable reCaptcha for Username Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
 
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
@@ -116,11 +119,13 @@ public class RecoveryConfigImplTest {
     public void testGetPropertyNames() {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
@@ -149,10 +154,14 @@ public class RecoveryConfigImplTest {
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
         String testForceChallengeQuestions = "false";
+        String enablePasswordRecoveryReCaptcha = "true";
+        String enableUsernameRecoveryReCaptcha = "true";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 testEnableNotificationBasedPasswordRecovery);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
+                enablePasswordRecoveryReCaptcha);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
                 testEnableQuestionBasedPasswordRecovery);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
@@ -164,6 +173,8 @@ public class RecoveryConfigImplTest {
                 testRecoveryQuestionPasswordReCaptchaMaxFailedAttempts);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
                 testEnableUsernameRecovery);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
+                enableUsernameRecoveryReCaptcha);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);

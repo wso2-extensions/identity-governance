@@ -58,6 +58,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
                 "Notification Based Password Recovery");
@@ -67,9 +68,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Question Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
                 "reCaptcha for Password Recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
+                "Question Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
                 "Required For Password Recovery");
-
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
                 "reCaptcha for Username Recovery");
@@ -106,8 +108,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
@@ -207,10 +209,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 enableNotificationBasedPasswordRecovery);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
-                enableQuestionBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
                 enablePasswordRecoveryReCaptcha);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+                enableQuestionBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
                 minimumAnswers);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
