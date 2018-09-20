@@ -506,7 +506,7 @@ paths:
            curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"token": "xsfwewfcavfrwafrawva"}' "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha"
 
         x-wso2-response: |
-          "HTTP/1.1 200 OK"
+          {"success":true}
 
         operationId: verifyCaptcha
 

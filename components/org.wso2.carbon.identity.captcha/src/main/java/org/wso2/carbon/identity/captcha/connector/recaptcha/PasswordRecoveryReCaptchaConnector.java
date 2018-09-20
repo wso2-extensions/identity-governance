@@ -118,7 +118,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         if (forgotPasswordRecaptchaEnabled &&
                 (CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTION_URL) ||
-                        CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL))) {
+                        CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL) ||
+                        CaptchaUtil.isPathAvailable(pathUrl, RECOVER_PASSWORD_URL))) {
             preValidationResponse.setCaptchaValidationRequired(true);
         }
 
