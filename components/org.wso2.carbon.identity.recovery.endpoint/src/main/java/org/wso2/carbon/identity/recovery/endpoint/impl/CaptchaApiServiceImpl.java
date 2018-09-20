@@ -83,7 +83,6 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
         HttpResponse response = RecoveryUtil.makeCaptchaVerificationHttpRequest(reCaptchaResponse, properties);
         HttpEntity entity = response.getEntity();
-
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
         InputStream in = null;
         try {

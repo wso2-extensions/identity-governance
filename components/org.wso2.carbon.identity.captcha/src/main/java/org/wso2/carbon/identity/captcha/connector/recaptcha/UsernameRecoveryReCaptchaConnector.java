@@ -34,14 +34,14 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * This class handle the username recovery ReCaptcha.
+ */
 public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final Log log = LogFactory.getLog(UsernameRecoveryReCaptchaConnector.class);
-
     private static final String RECOVER_USERNAME_URL = "/api/identity/recovery/v0.9/recover-username/";
-
     private final String PROPERTY_USERNAME_RECAPTCHA_ENABLE = "Recovery.Username.ReCaptcha.Enable";
-
     private IdentityGovernanceService identityGovernanceService;
 
     @Override
@@ -60,12 +60,13 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
+        Property[] connectorConfigs;
+        String enable = null;
 
         if (StringUtils.isBlank(path) || !(CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL))) {
             return false;
         }
 
-        Property[] connectorConfigs;
         try {
             connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
                     PROPERTY_USERNAME_RECAPTCHA_ENABLE);
@@ -77,7 +78,6 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             return false;
         }
 
-        String enable = null;
         for (Property connectorConfig : connectorConfigs) {
             if ((PROPERTY_USERNAME_RECAPTCHA_ENABLE).equals(connectorConfig.getName())) {
                 enable = connectorConfig.getValue();
@@ -91,9 +91,7 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             throws CaptchaException {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
-
         HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
 
         if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)) {
@@ -111,7 +109,6 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         if (StringUtils.isBlank(reCaptchaResponse)) {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
-
         return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
     }
 

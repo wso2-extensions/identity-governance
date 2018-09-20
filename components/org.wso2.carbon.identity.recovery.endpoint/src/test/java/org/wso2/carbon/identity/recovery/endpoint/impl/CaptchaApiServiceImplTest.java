@@ -54,14 +54,14 @@ public class CaptchaApiServiceImplTest extends PowerMockTestCase {
         Path path = Paths.get("src/test/resources", "repository", "conf", "identity",
                 CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
         Properties sampleProperties = new Properties();
-
         if (Files.exists(path)) {
             try (Reader in = new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8)) {
                 sampleProperties.load(in);
             } catch (IOException e) {
-                throw new IOException("Unable to read the captcha configuration file.",e);
+                throw new IOException("Unable to read the captcha configuration file.", e);
             }
         }
+
         mockStatic(RecoveryUtil.class);
         when(RecoveryUtil.getValidatedCaptchaConfigs()).thenReturn(sampleProperties);
         when(RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(Mockito.anyString(), Mockito.anyString())).

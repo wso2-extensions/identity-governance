@@ -330,6 +330,12 @@ public class RecoveryUtil {
      */
     public static boolean checkCaptchaEnabledResidentIdpConfiguration(String tenantDomain, String recoveryType) {
 
+        String recoveryReCaptchaType = null;
+        org.wso2.carbon.identity.application.common.model.Property[] connectorConfigs =
+                new org.wso2.carbon.identity.application.common.model.Property[0];
+        IdentityGovernanceService identityGovernanceService = RecoveryUtil.getIdentityGovernanceService();
+        String enable = null;
+
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         } else if (!RecoveryUtil.isValidTenantDomain(tenantDomain)) {
@@ -337,19 +343,12 @@ public class RecoveryUtil {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
         }
 
-        String recoveryReCaptchaType = null;
-
         if (recoveryType.equals("username-recovery")) {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE;
         } else if (recoveryType.equals("password-recovery")) {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE;
         }
-
-        org.wso2.carbon.identity.application.common.model.Property[] connectorConfigs =
-                new org.wso2.carbon.identity.application.common.model.Property[0];
-
-        IdentityGovernanceService identityGovernanceService = RecoveryUtil.getIdentityGovernanceService();
-
+        
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{recoveryReCaptchaType},
                     tenantDomain);
@@ -361,7 +360,6 @@ public class RecoveryUtil {
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
 
-        String enable = null;
         for (org.wso2.carbon.identity.application.common.model.Property connectorConfig : connectorConfigs) {
             if (recoveryReCaptchaType != null && recoveryReCaptchaType.equals(connectorConfig.getName())) {
                 enable = connectorConfig.getValue();
@@ -379,7 +377,6 @@ public class RecoveryUtil {
 
         Path path = Paths.get(getCarbonHomeDirectory().toString(), "repository", "conf", "identity",
                 CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
-
         Properties properties = new Properties();
 
         if (Files.exists(path)) {
@@ -408,22 +405,18 @@ public class RecoveryUtil {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL))) {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY))) {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL))) {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-
         return properties;
     }
 
@@ -447,18 +440,16 @@ public class RecoveryUtil {
     public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
                                                                   Properties properties) {
 
+        HttpResponse response = null;
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
-
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(reCaptchaVerifyUrl);
-
         List<BasicNameValuePair> params = Arrays.asList(
                 new BasicNameValuePair("secret", reCaptchaSecretKey),
                 new BasicNameValuePair("response", reCaptchaResponse.getToken()));
         httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
-        HttpResponse response = null;
         try {
             response = httpclient.execute(httppost);
         } catch (IOException e) {

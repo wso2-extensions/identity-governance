@@ -111,7 +111,6 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-
         boolean forgotPasswordRecaptchaEnabled = checkReCaptchaEnabledForForgotPassoword(servletRequest,
                 FORGOT_PASSWORD_RECAPTCHA_ENABLE);
         String pathUrl = ((HttpServletRequest) servletRequest).getRequestURI();
