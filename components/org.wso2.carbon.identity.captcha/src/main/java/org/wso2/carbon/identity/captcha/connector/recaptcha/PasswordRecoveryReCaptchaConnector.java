@@ -73,10 +73,14 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
     private static final String ACCOUNT_VALIDATE_ANSWER_URL = "/api/identity/recovery/v0.9/validate-answer";
 
+    private static final String RECOVER_PASSWORD_URL = "/api/identity/recovery/v0.9/recover-password";
+
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Question.Password" +
             ".ReCaptcha.Enable";
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
             ".Password.ReCaptcha.MaxFailedAttempts";
+
+    private final String FORGOT_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Password.ReCaptcha.Enable";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -94,16 +98,13 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            return false;
-        }
-
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
         return !StringUtils.isBlank(path) &&
                 (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL) ||
                         CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL) ||
-                        CaptchaUtil.isPathAvailable(path, ACCOUNT_VALIDATE_ANSWER_URL));
+                        CaptchaUtil.isPathAvailable(path, ACCOUNT_VALIDATE_ANSWER_URL) ||
+                        CaptchaUtil.isPathAvailable(path, RECOVER_PASSWORD_URL));
     }
 
     @Override
@@ -111,6 +112,22 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
+        boolean forgotPasswordRecaptchaEnabled = checkReCaptchaEnabledForForgotPassoword(servletRequest,
+                FORGOT_PASSWORD_RECAPTCHA_ENABLE);
+        String pathUrl = ((HttpServletRequest) servletRequest).getRequestURI();
+
+        if (forgotPasswordRecaptchaEnabled &&
+                (CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTION_URL) ||
+                        CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL))) {
+            preValidationResponse.setCaptchaValidationRequired(true);
+        }
+
+        // Handle recover with Email option.
+        if (pathUrl.equals(RECOVER_PASSWORD_URL)) {
+            return preValidationResponse;
+        }
+
+        // Handle recover with security questions option.
         HttpServletRequest httpServletRequestWrapper;
         try {
             httpServletRequestWrapper = new CaptchaHttpServletRequestWrapper((HttpServletRequest) servletRequest);
@@ -276,5 +293,28 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         enabledSecurityMechanism.setProperties(properties);
         ((HttpServletRequest) servletRequest).getSession().setAttribute("enabled-security-mechanism",
                 enabledSecurityMechanism);
+    }
+
+    private boolean checkReCaptchaEnabledForForgotPassoword(ServletRequest servletRequest, String propertyName) {
+
+        Property[] connectorConfigs;
+        try {
+            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
+                    propertyName);
+        } catch (Exception e) {
+            // Can happen due to invalid tenant/ invalid configuration
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load connector configuration.", e);
+            }
+            return false;
+        }
+
+        String enable = null;
+        for (Property connectorConfig : connectorConfigs) {
+            if ((propertyName).equals(connectorConfig.getName())) {
+                enable = connectorConfig.getValue();
+            }
+        }
+        return Boolean.parseBoolean(enable);
     }
 }

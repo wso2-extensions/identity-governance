@@ -156,6 +156,8 @@ public class RecoveryConfigImplTest {
         String testForceChallengeQuestions = "false";
         String enablePasswordRecoveryReCaptcha = "true";
         String enableUsernameRecoveryReCaptcha = "true";
+        String enablePasswordRecoveryReCaptcha = "false";
+        String enableUsernameRecoveryReCaptcha = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,

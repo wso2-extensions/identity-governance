@@ -15,7 +15,7 @@
             <bean class="org.wso2.carbon.identity.recovery.endpoint.SetPasswordApi"/>
             <bean class="org.wso2.carbon.identity.recovery.endpoint.ValidateAnswerApi"/>
             <bean class="org.wso2.carbon.identity.recovery.endpoint.ValidateCodeApi"/>
-            <bean class="org.wso2.carbon.identity.recovery.endpoint.RecaptchaApi"/>
+            <bean class="org.wso2.carbon.identity.recovery.endpoint.CaptchaApi"/>
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>

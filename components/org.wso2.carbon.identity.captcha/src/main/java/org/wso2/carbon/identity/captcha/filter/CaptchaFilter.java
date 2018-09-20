@@ -29,6 +29,9 @@ import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -37,9 +40,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Captcha filter.
@@ -61,6 +61,10 @@ public class CaptchaFilter implements Filter {
             throws IOException, ServletException {
 
         try {
+
+            if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+                return;
+            }
 
             List<CaptchaConnector> captchaConnectors = CaptchaDataHolder.getInstance().getCaptchaConnectors();
 

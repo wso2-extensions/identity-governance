@@ -9,22 +9,22 @@ import javax.validation.constraints.NotNull;
 
 
 @ApiModel(description = "")
-public class CaptchaResponseTokenDTO  {
+public class ReCaptchaVerificationResponseDTO  {
   
   
   
-  private String token = null;
+  private Boolean success = null;
 
   
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("token")
-  public String getToken() {
-    return token;
+  @JsonProperty("success")
+  public Boolean getSuccess() {
+    return success;
   }
-  public void setToken(String token) {
-    this.token = token;
+  public void setSuccess(Boolean success) {
+    this.success = success;
   }
 
   
@@ -32,9 +32,9 @@ public class CaptchaResponseTokenDTO  {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class CaptchaResponseTokenDTO {\n");
+    sb.append("class ReCaptchaVerificationResponseDTO {\n");
     
-    sb.append("  token: ").append(token).append("\n");
+    sb.append("  success: ").append(success).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

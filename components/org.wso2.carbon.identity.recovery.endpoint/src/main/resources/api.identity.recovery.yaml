@@ -445,20 +445,18 @@ paths:
       tags:
         - Username Recovery
 
-  /recaptcha:
+  /captcha:
       get:
         description: |
-         return the reCaptcha information if its supported for the given tenant.
+          return the reCaptcha information if its supported for the given tenant.
         x-wso2-request: |
-           curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/recaptcha?tenant-domain=carbon.super&recovery-type=username-recovery"
-
+          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha&recovery-type=username-recovery"
         x-wso2-response: |
-          "HTTP/1.1 200 OK"
-
-        operationId: getRecaptcha
+          {"reCaptchaEnabled":true,"reCaptchaKey":"6LctLW4UAAAA5YWxy93f7yBQlzMh_RdkmUxd-J","reCaptchaAPI":"https://www.google.com/recaptcha/api.js"}
+        operationId: getCaptcha
 
         summary: |
-         Get ReCaptcha
+         Get Captcha
 
         parameters:
           -
@@ -466,6 +464,13 @@ paths:
             in: query
             description: tenant domain. Default `carbon.super`
             required: false
+            type: string
+
+          -
+            name: captcha-type
+            in: query
+            description: type of captcha
+            required: true
             type: string
 
           -
@@ -478,6 +483,8 @@ paths:
         responses:
           200:
             description: Successful response
+            schema:
+              $ref: '#/definitions/ReCaptchaProperties'
 
           400:
             description: Bad Request
@@ -496,24 +503,24 @@ paths:
         description: |
          return true or false after verify the captcha response.
         x-wso2-request: |
-           curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"token": "xsfwewfcavfrwafrawva"}' "https://localhost:9443/api/identity/recovery/v0.9/recaptcha?tenant-domain=carbon.super"
+           curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"token": "xsfwewfcavfrwafrawva"}' "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha"
 
         x-wso2-response: |
           "HTTP/1.1 200 OK"
 
-        operationId: verifyRecaptcha
+        operationId: verifyCaptcha
 
         summary: |
-         Verify ReCaptcha
+         Verify Captcha
 
         parameters:
         -
-          name: g-recaptcha-response
+          name: reCaptcha-response
           in: body
           description: recaptcha response from google.
           required: true
           schema:
-            $ref: '#/definitions/CaptchaResponseToken'
+            $ref: '#/definitions/ReCaptchaResponseToken'
 
         -
           name: tenant-domain
@@ -522,9 +529,18 @@ paths:
           required: false
           type: string
 
+        -
+          name: captcha-type
+          in: query
+          description: type of captcha
+          required: true
+          type: string
+
         responses:
           200:
             description: Successful response
+            schema:
+              $ref: '#/definitions/ReCaptchaVerificationResponse'
 
           400:
             description: Bad Request
@@ -757,12 +773,36 @@ definitions:
 #-----------------------------------------------------
 
 #-----------------------------------------------------
-# Captcha Response Token object
+# ReCaptcha Response Token object
 #-----------------------------------------------------
-  CaptchaResponseToken:
+  ReCaptchaResponseToken:
     type: object
     properties:
       token:
+        type: string
+#-----------------------------------------------------
+
+#-----------------------------------------------------
+# ReCaptcha verification response object
+#-----------------------------------------------------
+  ReCaptchaVerificationResponse:
+    type: object
+    properties:
+      success:
+        type: boolean
+#-----------------------------------------------------
+
+#-----------------------------------------------------
+# ReCaptcha Properties object
+#-----------------------------------------------------
+  ReCaptchaProperties:
+    type: object
+    properties:
+      reCaptchaEnabled:
+        type: boolean
+      reCaptchaKey:
+        type: string
+      reCaptchaAPI:
         type: string
 #-----------------------------------------------------
 
