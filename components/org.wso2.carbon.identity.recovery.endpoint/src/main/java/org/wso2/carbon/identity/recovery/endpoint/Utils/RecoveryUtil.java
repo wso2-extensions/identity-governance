@@ -82,6 +82,11 @@ public class RecoveryUtil {
                 .getOSGiService(UserSelfRegistrationManager.class, null);
     }
 
+    /**
+     * To get identity governance service
+     *
+     * @return IdentityGovernanceService
+     */
     public static IdentityGovernanceService getIdentityGovernanceService() {
 
         return (IdentityGovernanceService) PrivilegedCarbonContext.getThreadLocalCarbonContext().
@@ -343,20 +348,20 @@ public class RecoveryUtil {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
         }
 
-        if (recoveryType.equals("username-recovery")) {
+        if (Constants.USERNAME_RECOVERY.equals(recoveryType)) {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE;
-        } else if (recoveryType.equals("password-recovery")) {
+        } else if (Constants.PASSWORD_RECOVERY.equals(recoveryType)) {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE;
         }
-        
+
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{recoveryReCaptchaType},
                     tenantDomain);
         } catch (IdentityGovernanceException e) {
-            LOG.error(String.format("Error while retrieving resident Idp configurations for tenet %s. ", tenantDomain)
+            LOG.error(String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain)
                     , e);
             RecoveryUtil.handleBadRequest(
-                    String.format("Error while retrieving resident Idp configurations for tenet %s. ", tenantDomain),
+                    String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
 
@@ -375,8 +380,7 @@ public class RecoveryUtil {
      */
     public static Properties getValidatedCaptchaConfigs() {
 
-        Path path = Paths.get(getCarbonHomeDirectory().toString(), "repository", "conf", "identity",
-                CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
+        Path path = Paths.get(IdentityUtil.getIdentityConfigDirPath(), CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
         Properties properties = new Properties();
 
         if (Files.exists(path)) {
@@ -418,16 +422,6 @@ public class RecoveryUtil {
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return properties;
-    }
-
-    /**
-     * Get the carbon home path
-     *
-     * @return Path
-     */
-    private static Path getCarbonHomeDirectory() {
-
-        return Paths.get(System.getProperty(CaptchaConstants.CARBON_HOME));
     }
 
     /**
