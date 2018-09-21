@@ -64,8 +64,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Notification Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
                 "Internal Notification Management");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
-                "Question Based Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
                 "reCaptcha for Password Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
