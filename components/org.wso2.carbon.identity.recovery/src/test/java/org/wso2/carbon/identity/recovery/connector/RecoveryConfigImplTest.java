@@ -154,8 +154,6 @@ public class RecoveryConfigImplTest {
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
         String testForceChallengeQuestions = "false";
-        String enablePasswordRecoveryReCaptcha = "true";
-        String enableUsernameRecoveryReCaptcha = "true";
         String enablePasswordRecoveryReCaptcha = "false";
         String enableUsernameRecoveryReCaptcha = "false";
 

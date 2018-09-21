@@ -137,8 +137,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String notifySuccess = "false";
         String notifyStart = "false";
         String enableForceChallengeQuestions = "false";
-        String enablePasswordRecoveryReCaptcha = "true";
-        String enableUsernameRecoveryReCaptcha = "true";
+        String enablePasswordRecoveryReCaptcha = "false";
+        String enableUsernameRecoveryReCaptcha = "false";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
