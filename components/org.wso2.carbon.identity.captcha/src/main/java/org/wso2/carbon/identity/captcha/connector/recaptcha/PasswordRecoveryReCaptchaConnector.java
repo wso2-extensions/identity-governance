@@ -295,6 +295,13 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
                 enabledSecurityMechanism);
     }
 
+    /**
+     * Check ReCaptcha configuration in management console for password recovery.
+     *
+     * @param servletRequest
+     * @param propertyName
+     * @return
+     */
     private boolean checkReCaptchaEnabledForForgotPassoword(ServletRequest servletRequest, String propertyName) {
 
         Property[] connectorConfigs;
