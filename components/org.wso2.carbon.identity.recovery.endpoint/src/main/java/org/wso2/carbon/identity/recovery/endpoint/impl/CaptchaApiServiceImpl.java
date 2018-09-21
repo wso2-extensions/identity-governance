@@ -44,11 +44,12 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
     private static final String SUCCESS = "success";
     private static final Log log = LogFactory.getLog(CaptchaApiServiceImpl.class);
+    private final String RECAPTCHA = "ReCaptcha";
 
     @Override
     public Response getCaptcha(String captchaType, String recoveryType, String tenantDomain) {
 
-        if (!captchaType.equals("ReCaptcha")) {
+        if (!captchaType.equals(RECAPTCHA)) {
             RecoveryUtil.handleBadRequest(String.format("Invalid captcha type : %s", captchaType), Constants.INVALID);
         }
 
@@ -70,7 +71,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
     @Override
     public Response verifyCaptcha(ReCaptchaResponseTokenDTO reCaptchaResponse, String captchaType, String tenantDomain) {
 
-        if (!captchaType.equals("ReCaptcha")) {
+        if (!captchaType.equals(RECAPTCHA)) {
             RecoveryUtil.handleBadRequest(String.format("Invalid captcha type : %s", captchaType), Constants.INVALID);
         }
 
@@ -84,28 +85,21 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         HttpResponse response = RecoveryUtil.makeCaptchaVerificationHttpRequest(reCaptchaResponse, properties);
         HttpEntity entity = response.getEntity();
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
-        InputStream in = null;
+
         try {
             if (entity == null) {
                 RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             } else {
-                in = entity.getContent();
-                JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(SUCCESS).getAsBoolean());
+                try (InputStream in = entity.getContent()) {
+                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(SUCCESS).getAsBoolean());
+                }
             }
         } catch (IOException e) {
             log.error("Unable to read the verification response.", e);
             RecoveryUtil.handleBadRequest("Unable to read the verification response.",
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException e) {
-                log.warn("Unable to close the inputStream.", e);
-            }
         }
         return Response.ok(reCaptchaVerificationResponseDTO).build();
     }

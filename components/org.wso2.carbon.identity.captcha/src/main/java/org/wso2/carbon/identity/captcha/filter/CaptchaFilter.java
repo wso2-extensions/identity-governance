@@ -63,6 +63,7 @@ public class CaptchaFilter implements Filter {
         try {
 
             if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
+                filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
 

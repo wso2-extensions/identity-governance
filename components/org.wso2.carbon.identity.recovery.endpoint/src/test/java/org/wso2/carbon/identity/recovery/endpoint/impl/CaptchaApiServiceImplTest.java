@@ -40,7 +40,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
- * Unit tests for CaptchaApiServiceImplTest.java
+ * Unit tests for CaptchaApiServiceImpl.java
  */
 @PrepareForTest({IdentityGovernanceService.class, RecoveryUtil.class})
 public class CaptchaApiServiceImplTest extends PowerMockTestCase {

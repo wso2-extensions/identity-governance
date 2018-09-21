@@ -116,6 +116,7 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
+        //No need post validation.
         return null;
     }
 }
