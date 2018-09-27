@@ -429,9 +429,8 @@ public class CaptchaUtil {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
-        Property[] connectorConfigs;
-        connectorConfigs = identityGovernanceService.getConfiguration(new String[]{PROPERTY_ENABLE_RECAPTCHA},
-                tenantDomain);
+        Property[] connectorConfigs = identityGovernanceService.getConfiguration(
+                new String[]{PROPERTY_ENABLE_RECAPTCHA}, tenantDomain);
 
         return connectorConfigs;
     }

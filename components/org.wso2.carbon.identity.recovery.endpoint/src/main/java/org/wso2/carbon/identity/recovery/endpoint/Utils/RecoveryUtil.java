@@ -91,7 +91,6 @@ public class RecoveryUtil {
 
         return (IdentityGovernanceService) PrivilegedCarbonContext.getThreadLocalCarbonContext().
                 getOSGiService(IdentityGovernanceService.class, null);
-
     }
 
     /**
@@ -439,8 +438,7 @@ public class RecoveryUtil {
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(reCaptchaVerifyUrl);
-        List<BasicNameValuePair> params = Arrays.asList(
-                new BasicNameValuePair("secret", reCaptchaSecretKey),
+        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", reCaptchaSecretKey),
                 new BasicNameValuePair("response", reCaptchaResponse.getToken()));
         httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
