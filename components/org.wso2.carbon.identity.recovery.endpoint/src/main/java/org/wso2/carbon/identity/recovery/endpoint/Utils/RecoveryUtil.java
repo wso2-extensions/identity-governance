@@ -3,18 +3,37 @@ package org.wso2.carbon.identity.recovery.endpoint.Utils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionsResponse;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException;
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.recovery.endpoint.dto.*;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateAllQuestionResponseDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.LinkDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.QuestionDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.SecurityAnswerDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -27,9 +46,17 @@ import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryMa
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
+import java.util.Properties;
 
 public class RecoveryUtil {
     private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
@@ -53,6 +80,17 @@ public class RecoveryUtil {
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(UserSelfRegistrationManager.class, null);
+    }
+
+    /**
+     * To get identity governance service
+     *
+     * @return IdentityGovernanceService
+     */
+    public static IdentityGovernanceService getIdentityGovernanceService() {
+
+        return (IdentityGovernanceService) PrivilegedCarbonContext.getThreadLocalCarbonContext().
+                getOSGiService(IdentityGovernanceService.class, null);
     }
 
     /**
@@ -286,4 +324,130 @@ public class RecoveryUtil {
         return userList;
     }
 
+    /**
+     * Return enable status of provided account recovery ReCaptcha by checking the corresponding resident Idp
+     * configurations.
+     *
+     * @param tenantDomain tenant domain name, default is carbon-super
+     * @param recoveryType Account recovery type. i.e username-recovery or password-recovery
+     * @return true or false for given recovery type
+     */
+    public static boolean checkCaptchaEnabledResidentIdpConfiguration(String tenantDomain, String recoveryType) {
+
+        String recoveryReCaptchaType = null;
+        org.wso2.carbon.identity.application.common.model.Property[] connectorConfigs =
+                new org.wso2.carbon.identity.application.common.model.Property[0];
+        IdentityGovernanceService identityGovernanceService = RecoveryUtil.getIdentityGovernanceService();
+        String enable = null;
+
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        } else if (!RecoveryUtil.isValidTenantDomain(tenantDomain)) {
+            RecoveryUtil.handleBadRequest(String.format("Invalid tenant domain : %s", tenantDomain),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
+        }
+
+        if (Constants.USERNAME_RECOVERY.equals(recoveryType)) {
+            recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE;
+        } else if (Constants.PASSWORD_RECOVERY.equals(recoveryType)) {
+            recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE;
+        }
+
+        try {
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{recoveryReCaptchaType},
+                    tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            LOG.error(String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain)
+                    , e);
+            RecoveryUtil.handleBadRequest(
+                    String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+
+        for (org.wso2.carbon.identity.application.common.model.Property connectorConfig : connectorConfigs) {
+            if (recoveryReCaptchaType != null && recoveryReCaptchaType.equals(connectorConfig.getName())) {
+                enable = connectorConfig.getValue();
+            }
+        }
+        return Boolean.parseBoolean(enable);
+    }
+
+    /**
+     * By reading the captcha-config file get the ReCaptcha properties.
+     *
+     * @return Properties
+     */
+    public static Properties getValidatedCaptchaConfigs() {
+
+        Path path = Paths.get(IdentityUtil.getIdentityConfigDirPath(), CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
+        Properties properties = new Properties();
+
+        if (Files.exists(path)) {
+            try (Reader in = new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8)) {
+                properties.load(in);
+            } catch (IOException e) {
+                LOG.error(String.format("Error while loading '%s' configuration file",
+                        CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME), e);
+                RecoveryUtil.handleBadRequest(String.format("Error while loading '%s' configuration file",
+                        CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME),
+                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+            }
+        }
+        return validateCaptchaConfigs(properties);
+    }
+
+    /**
+     * Validate the captcha config properties
+     *
+     * @param properties captcha configuration properties
+     * @return validated properties
+     */
+    private static Properties validateCaptchaConfigs(Properties properties) {
+
+        if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY))) {
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL))) {
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY))) {
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL))) {
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        return properties;
+    }
+
+    /**
+     * Make HTTP call for ReCaptcha Verification with the provided ReCaptcha response token
+     *
+     * @param reCaptchaResponse ReCaptcha response token
+     * @param properties        ReCaptcha properties
+     * @return httpResponse
+     */
+    public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
+                                                                  Properties properties) {
+
+        HttpResponse response = null;
+        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
+        String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
+        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
+        HttpPost httppost = new HttpPost(reCaptchaVerifyUrl);
+        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", reCaptchaSecretKey),
+                new BasicNameValuePair("response", reCaptchaResponse.getToken()));
+        httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
+        try {
+            response = httpclient.execute(httppost);
+        } catch (IOException e) {
+            RecoveryUtil.handleBadRequest(String.format("Unable to get the verification response : %s", e.getMessage()),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        return response;
+    }
 }

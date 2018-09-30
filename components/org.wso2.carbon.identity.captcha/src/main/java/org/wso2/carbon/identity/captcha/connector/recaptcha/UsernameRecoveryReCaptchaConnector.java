@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
-import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
@@ -36,18 +35,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * ReCaptcha Page Based Connector.
+ * This class handle the username recovery ReCaptcha.
  */
-public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
+public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnector {
 
-    private static final Log log = LogFactory.getLog(SelfSignUpReCaptchaConnector.class);
-
-    private static final String SELF_REGISTRATION_INITIATE_URL = "/api/identity/recovery/v0.9/claims";
-
-    private static final String SELF_REGISTRATION_URL = "/api/identity/user/v0.9/me";
-
-    private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
-
+    private static final Log log = LogFactory.getLog(UsernameRecoveryReCaptchaConnector.class);
+    private static final String RECOVER_USERNAME_URL = "/api/identity/recovery/v0.9/recover-username/";
+    private final String PROPERTY_USERNAME_RECAPTCHA_ENABLE = "Recovery.Username.ReCaptcha.Enable";
     private IdentityGovernanceService identityGovernanceService;
 
     @Override
@@ -58,28 +52,24 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     @Override
     public int getPriority() {
-        return 10;
+
+        return 5;
     }
 
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
-
-        if (StringUtils.isBlank(path) || (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
-                !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL))) {
-            return false;
-        }
-
-        String isUsernameRecovery = servletRequest.getParameter("isUsernameRecovery");
-        if (isUsernameRecovery != null) {
-            return false;
-        }
-
         Property[] connectorConfigs;
+        String enable = null;
+
+        if (StringUtils.isBlank(path) || !(CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL))) {
+            return false;
+        }
+
         try {
             connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
-                    PROPERTY_ENABLE_RECAPTCHA);
+                    PROPERTY_USERNAME_RECAPTCHA_ENABLE);
         } catch (Exception e) {
             // Can happen due to invalid tenant/ invalid configuration
             if (log.isDebugEnabled()) {
@@ -88,38 +78,26 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        String enable = null;
         for (Property connectorConfig : connectorConfigs) {
-            if ((PROPERTY_ENABLE_RECAPTCHA).equals(connectorConfig.getName())) {
+            if ((PROPERTY_USERNAME_RECAPTCHA_ENABLE).equals(connectorConfig.getName())) {
                 enable = connectorConfig.getValue();
             }
         }
-
         return Boolean.parseBoolean(enable);
-
     }
 
     @Override
     public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        // reCaptcha is required for all requests.
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
-
         HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
 
-        if (CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL)) {
-            httpServletResponse.setHeader("reCaptcha", "true");
-        } else {
+        if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)) {
             httpServletResponse.setHeader("reCaptcha", "conditional");
             preValidationResponse.setCaptchaValidationRequired(true);
-            preValidationResponse.setMaxFailedLimitReached(true);
         }
-        httpServletResponse.setHeader("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-        httpServletResponse.setHeader("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
-
         return preValidationResponse;
     }
 
@@ -131,7 +109,6 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         if (StringUtils.isBlank(reCaptchaResponse)) {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
-
         return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
     }
 
@@ -139,7 +116,7 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        //No validation at this stage.
+        //No need post validation.
         return null;
     }
 }
