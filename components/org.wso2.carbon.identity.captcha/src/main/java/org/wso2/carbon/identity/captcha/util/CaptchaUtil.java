@@ -41,6 +41,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
@@ -63,6 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.servlet.ServletRequest;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
@@ -405,4 +407,31 @@ public class CaptchaUtil {
                 .CAPTCHA_CONFIG_FILE_NAME + " file.";
     }
 
+    /**
+     * Retrieving resident Idp configuration property for provided property
+     *
+     * @param servletRequest
+     * @param identityGovernanceService
+     * @param PROPERTY_ENABLE_RECAPTCHA
+     * @return
+     * @throws Exception
+     */
+    public static Property[] getConnectorConfigs(ServletRequest servletRequest,
+                                                 IdentityGovernanceService identityGovernanceService,
+                                                 String PROPERTY_ENABLE_RECAPTCHA) throws Exception {
+
+        String tenantDomain = servletRequest.getParameter("tenantDomain");
+        // This is because from swagger def we expect tenant domain as "tenant-domain"
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = servletRequest.getParameter("tenant-domain");
+        }
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
+        Property[] connectorConfigs = identityGovernanceService.getConfiguration(
+                new String[]{PROPERTY_ENABLE_RECAPTCHA}, tenantDomain);
+
+        return connectorConfigs;
+    }
 }

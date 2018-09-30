@@ -30,4 +30,7 @@ public final class Constants {
     public static final String ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY = "20015";
     public static final String ERROR_CODE_MULTIPLE_USERS_MATCHING = "20015";
 
+    // Recovery type
+    public static final String USERNAME_RECOVERY = "username-recovery";
+    public static final String PASSWORD_RECOVERY = "password-recovery";
 }
