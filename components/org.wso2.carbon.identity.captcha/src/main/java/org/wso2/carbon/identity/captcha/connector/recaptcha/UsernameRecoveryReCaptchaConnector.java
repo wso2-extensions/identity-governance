@@ -41,7 +41,7 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
     private static final Log log = LogFactory.getLog(UsernameRecoveryReCaptchaConnector.class);
     private static final String RECOVER_USERNAME_URL = "/api/identity/recovery/v0.9/recover-username/";
-    private final String PROPERTY_USERNAME_RECAPTCHA_ENABLE = "Recovery.Username.ReCaptcha.Enable";
+    private final String PROPERTY_USERNAME_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Username.Enable";
     private IdentityGovernanceService identityGovernanceService;
 
     @Override

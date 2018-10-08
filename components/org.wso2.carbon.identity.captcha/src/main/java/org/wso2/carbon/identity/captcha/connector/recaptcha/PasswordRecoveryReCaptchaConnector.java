@@ -80,7 +80,7 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     private static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
             ".Password.ReCaptcha.MaxFailedAttempts";
 
-    private final String FORGOT_PASSWORD_RECAPTCHA_ENABLE = "Recovery.Password.ReCaptcha.Enable";
+    private final String FORGOT_PASSWORD_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Password.Enable";
 
     private IdentityGovernanceService identityGovernanceService;
 
