@@ -19,6 +19,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDT
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
 
@@ -37,6 +38,12 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
 
         User user = new User();
         user.setUserName(username);
+
+        if (StringUtils.isNotBlank(realm)) {
+            user.setUserStoreDomain(realm);
+        } else {
+            user.setUserStoreDomain(UserStoreConfigConstants.PRIMARY);
+        }
 
         if (StringUtils.isBlank(tenantDomain)) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
