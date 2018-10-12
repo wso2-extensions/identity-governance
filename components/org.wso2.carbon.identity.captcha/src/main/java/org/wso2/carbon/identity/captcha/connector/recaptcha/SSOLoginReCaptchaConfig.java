@@ -76,10 +76,6 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            return false;
-        }
-
         String userName = servletRequest.getParameter("username");
         if (StringUtils.isBlank(userName)) {
             return false;

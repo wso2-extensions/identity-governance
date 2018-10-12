@@ -27,10 +27,8 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -66,10 +64,6 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            return false;
-        }
-
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
         if (StringUtils.isBlank(path) || (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
@@ -77,9 +71,15 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
+        String isUsernameRecovery = servletRequest.getParameter("isUsernameRecovery");
+        if (isUsernameRecovery != null) {
+            return false;
+        }
+
         Property[] connectorConfigs;
         try {
-            connectorConfigs = getConnectorConfigs(servletRequest);
+            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
+                    PROPERTY_ENABLE_RECAPTCHA);
         } catch (Exception e) {
             // Can happen due to invalid tenant/ invalid configuration
             if (log.isDebugEnabled()) {
@@ -142,23 +142,4 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         //No validation at this stage.
         return null;
     }
-
-    private Property[] getConnectorConfigs(ServletRequest servletRequest) throws Exception {
-
-        String tenantDomain = servletRequest.getParameter("tenantDomain");
-        // This is because from swagger def we expect tenant domain as "tenant-domain"
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = servletRequest.getParameter("tenant-domain");
-        }
-        if (StringUtils.isBlank(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-
-        Property[] connectorConfigs;
-        connectorConfigs = identityGovernanceService.getConfiguration(new String[]{PROPERTY_ENABLE_RECAPTCHA},
-                tenantDomain);
-
-        return connectorConfigs;
-    }
-
 }

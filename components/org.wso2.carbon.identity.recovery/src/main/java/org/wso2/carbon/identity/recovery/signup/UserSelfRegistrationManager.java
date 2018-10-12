@@ -20,27 +20,25 @@
 package org.wso2.carbon.identity.recovery.signup;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
-import org.wso2.carbon.consent.mgt.core.model.PIICategoryValidity;
+import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
-import org.wso2.carbon.consent.mgt.core.model.ReceiptPurposeInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
+import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -65,17 +63,22 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Set;
+
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -85,6 +88,8 @@ public class UserSelfRegistrationManager {
     private static final Log log = LogFactory.getLog(UserSelfRegistrationManager.class);
 
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
+    private static final String PURPOSE_GROUP_SELF_REGISTER = "SELF-SIGNUP";
+    private static final String PURPOSE_GROUP_TYPE_SYSTEM = "SYSTEM";
 
     private UserSelfRegistrationManager() {
 
@@ -152,6 +157,7 @@ public class UserSelfRegistrationManager {
 
             //Set arbitrary properties to use in UserSelfRegistrationHandler
             Utils.setArbitraryProperties(properties);
+            validateAndFilterFromReceipt(consent, claimsMap);
 
             try {
 
@@ -226,9 +232,56 @@ public class UserSelfRegistrationManager {
                         "", e);
             }
         } else {
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("Consent string is empty. Hence not adding consent");
             }
+        }
+    }
+
+    private void validateAndFilterFromReceipt(String consent, Map<String, String> claimsMap) throws
+            IdentityRecoveryServerException {
+
+        if (StringUtils.isEmpty(consent)) {
+            return;
+        }
+        ConsentManager consentManager = IdentityRecoveryServiceDataHolder.getInstance().getConsentManager();
+        try {
+            List<Purpose> purposes = consentManager.listPurposes(PURPOSE_GROUP_SELF_REGISTER,
+                    PURPOSE_GROUP_TYPE_SYSTEM, 0, 0);
+            Gson gson = new Gson();
+            ReceiptInput receiptInput = gson.fromJson(consent, ReceiptInput.class);
+            validateUserConsent(receiptInput, purposes);
+            filterClaimsFromReceipt(receiptInput, claimsMap);
+        } catch (ConsentManagementException e) {
+            throw new IdentityRecoveryServerException("Error while retrieving System purposes for self registration",
+                    e);
+
+        }
+    }
+
+    private void validateUserConsent(ReceiptInput receiptInput, List<Purpose> purposes) throws
+            IdentityRecoveryServerException {
+
+        ConsentUtilityService consentUtilityService =
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentUtilityService();
+        try {
+            consentUtilityService.validateReceiptPIIs(receiptInput, purposes);
+        } catch (ConsentUtilityServiceException e) {
+            throw new IdentityRecoveryServerException("Receipt validation failed against purposes", e);
+        }
+
+    }
+
+    private void filterClaimsFromReceipt(ReceiptInput receiptInput, Map<String, String> claims) throws
+            IdentityRecoveryServerException {
+
+        ConsentUtilityService consentUtilityService =
+                IdentityRecoveryServiceDataHolder.getInstance().getConsentUtilityService();
+        try {
+            Set<String> filteredKeys = consentUtilityService.filterPIIsFromReceipt(claims.keySet(), receiptInput);
+            claims.keySet().retainAll(filteredKeys);
+        } catch (ConsentUtilityServiceException e) {
+            throw new IdentityRecoveryServerException("Receipt validation failed against purposes", e);
         }
     }
 
@@ -556,4 +609,87 @@ public class UserSelfRegistrationManager {
                         .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
                 tenantDomain);
     }
+
+    /**
+     * Checks whether the given tenant domain of a username is valid / exists or not.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if the tenant domain of the user is valid / available, else false.
+     */
+    public boolean isMatchUserNameRegex(String tenantDomain, String username) throws IdentityRecoveryException {
+
+        boolean isValidUsername;
+        String userDomain = IdentityUtil.extractDomainFromName(username);
+        try {
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            RealmConfiguration realmConfiguration = userRealm.getUserStoreManager().getSecondaryUserStoreManager
+                    (userDomain).getRealmConfiguration();
+            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+            isValidUsername = checkUserNameValid(tenantAwareUsername, realmConfiguration);
+
+        } catch (CarbonException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting user realm for user " + tenantDomain);
+            }
+            // In a case of a non existing tenant.
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting user store configuration for tenant: " + tenantDomain + ", domain: " +
+                        userDomain);
+            }
+            // In a case of a non existing tenant.
+            throw new IdentityRecoveryException("Error while retrieving user store configuration for: " + userDomain, e);
+        }
+        return isValidUsername;
+    }
+
+    /** This is similar to username validation in UserstoreManager
+     * @param userName
+     * @return
+     * @throws
+     */
+    private boolean checkUserNameValid(String userName, RealmConfiguration realmConfig) {
+
+        if (userName == null || CarbonConstants.REGISTRY_SYSTEM_USERNAME.equals(userName)) {
+            return false;
+        }
+
+        userName = userName.trim();
+
+        if (userName.length() < 1) {
+            return false;
+        }
+
+        String regularExpression = realmConfig
+                .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX);
+
+        if (MultitenantUtils.isEmailUserName()) {
+            regularExpression = realmConfig
+                    .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_WITH_EMAIL_JS_REG_EX);
+            if (regularExpression == null) {
+                regularExpression = UserCoreConstants.RealmConfig.EMAIL_VALIDATION_REGEX;
+            }
+        }
+
+        if (regularExpression != null) {
+            regularExpression = regularExpression.trim();
+        }
+
+        return StringUtils.isEmpty(regularExpression) || isFormatCorrect(regularExpression, userName);
+
+    }
+
+    /**
+     * Validate with regex
+     * @param regularExpression
+     * @param attribute
+     * @return
+     */
+    private boolean isFormatCorrect(String regularExpression, String attribute) {
+        Pattern p2 = Pattern.compile(regularExpression);
+        Matcher m2 = p2.matcher(attribute);
+        return m2.matches();
+    }
+
 }

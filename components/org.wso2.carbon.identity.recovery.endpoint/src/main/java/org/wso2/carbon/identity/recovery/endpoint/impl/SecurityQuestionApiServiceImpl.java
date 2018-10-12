@@ -19,6 +19,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.InitiateQuestionResponseDT
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
 
@@ -38,6 +39,12 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
         User user = new User();
         user.setUserName(username);
 
+        if (StringUtils.isNotBlank(realm)) {
+            user.setUserStoreDomain(realm);
+        } else {
+            user.setUserStoreDomain(UserStoreConfigConstants.PRIMARY);
+        }
+
         if (StringUtils.isBlank(tenantDomain)) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         } else {
@@ -52,7 +59,6 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
             if (ArrayUtils.isEmpty(userList)) {
                 String msg = "Unable to find an user with username: " + username + " in the system.";
                 LOG.error(msg);
-                RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY);
             } else if (userList.length == 1) {
                 user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
             } else {

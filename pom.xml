@@ -19,7 +19,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.1.12-SNAPSHOT</version>
+    <version>1.1.42-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -285,6 +285,12 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -310,6 +316,11 @@
                         <artifactId>org.wso2.carbon.registry.indexing</artifactId>
                     </exclusion>
                 </exclusions>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
 
@@ -483,6 +494,11 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson-databind.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
+                <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
+                <version>${identity.data.publisher.authentication.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -584,6 +600,8 @@
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
+        <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
+        <identity.data.publisher.authentication.version>5.1.10</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
         <carbon.kernel.version>4.4.17</carbon.kernel.version>
@@ -591,7 +609,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.11.56</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.166</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -600,26 +618,27 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
-        <carbon.consent.mgt.version>1.0.31</carbon.consent.mgt.version>
-        <carbon.consent.mgt.version.range>[1.0.0, 2.0.0)</carbon.consent.mgt.version.range>
+        <carbon.consent.mgt.version>2.0.6</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version.range>[1.0.0, 3.0.0)</carbon.consent.mgt.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <jackson-jaxrs-json-provider.version>2.4.2</jackson-jaxrs-json-provider.version>
-        <jackson-databind.version>2.9.4</jackson-databind.version>
+        <jackson-jaxrs-json-provider.version>2.9.6</jackson-jaxrs-json-provider.version>
+        <jackson-databind.version>2.9.6</jackson-databind.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
-        <cxf-bundle.version>3.1.13</cxf-bundle.version>
+        <cxf-bundle.version>3.1.16</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
         <spring-web.version>4.1.6.RELEASE</spring-web.version>
-        <swagger-jaxrs.version>1.5.2</swagger-jaxrs.version>
+        <swagger-jaxrs.version>1.5.20</swagger-jaxrs.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
         <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
         <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
+        <carbon.identity.package.import.version.range>[5.0.0, 6.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>

@@ -670,7 +670,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                     .RealmConfig.PROPERTY_DOMAIN_NAME);
 
             if (userDomain != null) {
-                if (userDomain.equals(userStoreDomain)) {
+                if (userDomain.equalsIgnoreCase(userStoreDomain)) {
                     isExists = true;
                 }
             } else if (IdentityUtil.getPrimaryDomainName().equalsIgnoreCase(userStoreDomain)) {

@@ -21,6 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -39,6 +41,7 @@ import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
+import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
@@ -75,6 +78,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
  * interface="org.wso2.carbon.consent.mgt.core.ConsentManager"
  * cardinality="1..1" policy="dynamic" bind="setConsentMgtService"
  * unbind="unsetConsentMgtService"
+ * @scr.reference name="ConsentUtilityService"
+ * interface="org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService"
+ * cardinality="1..1" policy="dynamic" bind="setConsentUtilityService"
+ * unbind="unsetConsentUtilityService"
  */
 public class IdentityRecoveryServiceComponent {
 
@@ -115,8 +122,11 @@ public class IdentityRecoveryServiceComponent {
                     new AdminForcedPasswordResetConfigImpl(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new CodeInvalidationHandler(), null);
-
-
+            // Registering missing challenge question handler as a post authn handler
+            PostAuthenticationHandler postAuthnMissingChallengeQuestions =
+                    PostAuthnMissingChallengeQuestionsHandler.getInstance();
+            bundleContext.registerService(PostAuthenticationHandler.class.getName(),
+                    postAuthnMissingChallengeQuestions, null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -223,6 +233,26 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetConsentMgtService(ConsentManager consentManager) {
 
         dataHolder.getInstance().setConsentManager(null);
+    }
+
+    /**
+     * Set consent Utility Service to data holder
+     *
+     * @param utilityService
+     */
+    protected void setConsentUtilityService(ConsentUtilityService utilityService) {
+
+        dataHolder.setConsentUtilityService(utilityService);
+    }
+
+    /**
+     * Unset Consent Utility Service
+     *
+     * @param utilityService
+     */
+    protected void unsetConsentUtilityService(ConsentUtilityService utilityService) {
+
+        dataHolder.setConsentUtilityService(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
