@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
+import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
@@ -119,13 +120,13 @@ public class IdentityRecoveryServiceComponent {
                     new UserEmailVerificationConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     new AdminForcedPasswordResetConfigImpl(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new CodeInvalidationHandler(), null);
             // Registering missing challenge question handler as a post authn handler
             PostAuthenticationHandler postAuthnMissingChallengeQuestions =
                     PostAuthnMissingChallengeQuestionsHandler.getInstance();
             bundleContext.registerService(PostAuthenticationHandler.class.getName(),
                     postAuthnMissingChallengeQuestions, null);
-
-
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
