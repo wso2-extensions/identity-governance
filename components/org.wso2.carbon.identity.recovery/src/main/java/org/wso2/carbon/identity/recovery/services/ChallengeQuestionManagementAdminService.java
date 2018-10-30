@@ -189,7 +189,7 @@ public class ChallengeQuestionManagementAdminService {
 
         // TODO externalize the authorization logic
         if (tenantAwareUserName != null && !tenantAwareUserName.equals(loggedInName)) {
-            boolean isAuthorized = isUserAuthorized(tenantAwareUserName, tenantDomain);
+            boolean isAuthorized = isUserAuthorized(loggedInName, tenantDomain);
             if (!isAuthorized) {
                 throw new IdentityRecoveryClientException
                         ("Unauthorized access!! Possible elevation of privilege attack. " + "User " + loggedInName +
@@ -228,7 +228,7 @@ public class ChallengeQuestionManagementAdminService {
 
         // TODO externalize authorization
         if (tenantAwareUserName != null && !tenantAwareUserName.equals(loggedInName)) {
-            boolean isAuthorized = isUserAuthorized(tenantAwareUserName, tenantDomain);
+            boolean isAuthorized = isUserAuthorized(loggedInName, tenantDomain);
             if (!isAuthorized) {
                 throw new IdentityRecoveryClientException(
                         "Unauthorized access!! Possible violation of confidentiality. " + "User " + loggedInName +
