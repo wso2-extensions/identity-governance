@@ -25,17 +25,18 @@ import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
-import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.AuthorizationManager;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.List;
@@ -96,7 +97,6 @@ public class ChallengeQuestionManagementAdminService {
         }
     }
 
-
     /**
      * Get all tenant questions of a locale in a tenant domain
      *
@@ -121,7 +121,6 @@ public class ChallengeQuestionManagementAdminService {
         }
     }
 
-
     /**
      * Set challenge questions for a tenant domain
      *
@@ -141,7 +140,6 @@ public class ChallengeQuestionManagementAdminService {
         }
     }
 
-
     /**
      * Set challenge questions for a tenant domain
      *
@@ -160,7 +158,6 @@ public class ChallengeQuestionManagementAdminService {
             throw new IdentityRecoveryException(String.format(errorMsg, tenantDomain), e);
         }
     }
-
 
     /**
      * Set challenge question answers for a user
@@ -188,7 +185,7 @@ public class ChallengeQuestionManagementAdminService {
         String loggedInName = CarbonContext.getThreadLocalCarbonContext().getUsername();
 
         // TODO externalize the authorization logic
-        if (tenantAwareUserName != null && !tenantAwareUserName.equals(loggedInName)) {
+        if (tenantAwareUserName != null && !isValidUser(user.getUserStoreDomain(), tenantAwareUserName, loggedInName)) {
             boolean isAuthorized = isUserAuthorized(loggedInName, tenantDomain);
             if (!isAuthorized) {
                 throw new IdentityRecoveryClientException
@@ -227,7 +224,7 @@ public class ChallengeQuestionManagementAdminService {
         String loggedInName = CarbonContext.getThreadLocalCarbonContext().getUsername();
 
         // TODO externalize authorization
-        if (tenantAwareUserName != null && !tenantAwareUserName.equals(loggedInName)) {
+        if (tenantAwareUserName != null && !isValidUser(user.getUserStoreDomain(), tenantAwareUserName, loggedInName)) {
             boolean isAuthorized = isUserAuthorized(loggedInName, tenantDomain);
             if (!isAuthorized) {
                 throw new IdentityRecoveryClientException(
@@ -281,4 +278,50 @@ public class ChallengeQuestionManagementAdminService {
 
     }
 
+    /**
+     * Compare and verify whether the logged in user and user in the payload are same.
+     *
+     * @param userDomain    user store domain of the user in the payload.
+     * @param tenantAwareUserName   tenant aware username of the user in the payload
+     * @param loggedInName  user name of the logged in user
+     * @return  true/false
+     */
+    private boolean isValidUser(String userDomain, String tenantAwareUserName, String loggedInName) {
+
+        String loggedInUserDomain = UserCoreUtil.getDomainFromThreadLocal();
+        if (StringUtils.isEmpty(loggedInUserDomain)) {
+            loggedInUserDomain = UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
+        }
+        if (StringUtils.isEmpty(userDomain)) {
+            userDomain = UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
+        }
+        String domainAppendedUsername = appendDomainToUserName(tenantAwareUserName, userDomain);
+        String domainAppendedLoggedInName = appendDomainToUserName(loggedInName, loggedInUserDomain);
+        int tenantId = CarbonContext.getThreadLocalCarbonContext().getTenantId();
+        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreCaseSensitive(loggedInUserDomain, tenantId);
+
+        if (isUsernameCaseSensitive) {
+            return domainAppendedUsername.equals(domainAppendedLoggedInName);
+        } else {
+            return domainAppendedUsername.equalsIgnoreCase(domainAppendedLoggedInName);
+        }
+    }
+
+    /**
+     * Convert the domain name into uppercase if exists  or append if not.
+     *
+     * @param username      username of the user
+     * @param domainName    user store domain of the user
+     * @return domain name appended username as a string
+     */
+    private String appendDomainToUserName(String username, String domainName) {
+
+        int domainSeparatorIndex = username.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
+        if (domainSeparatorIndex > 0) {
+            String existingDomainName = username.substring(0, domainSeparatorIndex);
+            return username.replace(existingDomainName, existingDomainName.toUpperCase());
+        } else {
+            return UserCoreUtil.addDomainToName(username, domainName);
+        }
+    }
 }
