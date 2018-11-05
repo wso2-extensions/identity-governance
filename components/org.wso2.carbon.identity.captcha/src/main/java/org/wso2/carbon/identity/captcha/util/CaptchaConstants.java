@@ -43,6 +43,8 @@ public class CaptchaConstants {
 
     public static final String FAIL_LOGIN_ATTEMPT_VALIDATOR_ENABLED = "failLoginAttemptValidator.enable";
 
+    public static final String RE_CAPTCHA_FAILED_REDIRECT_URLS = "recaptcha.failed.redirect.urls";
+
     public static final class ReCaptchaConnectorPropertySuffixes {
 
         public static final String ENABLE = ".enable";
