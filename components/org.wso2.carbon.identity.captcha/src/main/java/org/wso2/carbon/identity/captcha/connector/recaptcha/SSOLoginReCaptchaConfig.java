@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.captcha.connector.recaptcha;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.caching.impl.DataHolder;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
@@ -36,10 +37,13 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
@@ -129,7 +133,18 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
             // Add parameters which need to send back in case of failure.
-            preValidationResponse.setOnCaptchaFailRedirectUrls(Collections.singletonList(ON_FAIL_REDIRECT_URL));
+            List<String> failedRedirectUrls = new ArrayList<>();
+            failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
+            String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
+            if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
+                String[] urls = failedRedirectUrlStr.split(",");
+                for (String url : urls) {
+                    if (StringUtils.isNotBlank(url)) {
+                        failedRedirectUrls.add(url);
+                    }
+                }
+            }
+            preValidationResponse.setOnCaptchaFailRedirectUrls(failedRedirectUrls);
             Map<String, String> params = new HashMap<>();
             params.put("reCaptcha", "true");
             params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());

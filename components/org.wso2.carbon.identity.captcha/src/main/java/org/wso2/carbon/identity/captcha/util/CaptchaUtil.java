@@ -92,6 +92,12 @@ public class CaptchaUtil {
             boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
                     .RE_CAPTCHA_ENABLED));
 
+            String reCaptchaFailedRedirectUrls = String.valueOf(properties.getProperty(CaptchaConstants.
+                    RE_CAPTCHA_FAILED_REDIRECT_URLS));
+            if (StringUtils.isNotBlank(reCaptchaFailedRedirectUrls)) {
+                CaptchaDataHolder.getInstance().setReCaptchaErrorRedirectUrls(reCaptchaFailedRedirectUrls);
+            }
+
             if (reCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
                 setReCaptchaConfigs(properties);
