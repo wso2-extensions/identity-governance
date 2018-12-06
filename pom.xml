@@ -127,6 +127,8 @@
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
         <module>components/org.wso2.carbon.identity.user.export.core</module>
         <module>components/org.wso2.carbon.identity.piicontroller</module>
+        <module>components/org.wso2.carbon.identity.user.session</module>
+        <module>components/org.wso2.carbon.identity.user.session.endpoint</module>
 
         <module>service-stubs/identity</module>
 
@@ -595,6 +597,7 @@
         <commons-codec.wso2.osgi.version.range>[1.4.0,2.0.0)</commons-codec.wso2.osgi.version.range>
         <commons-io.wso2.version>2.4.0.wso2v1</commons-io.wso2.version>
         <commons.io.wso2.osgi.version.range>[2.4.0,3.0.0)</commons.io.wso2.osgi.version.range>
+
         <commons-logging.version>1.2</commons-logging.version>
         <commons-logging.osgi.version.range>[1.2,2.0)</commons-logging.osgi.version.range>
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
