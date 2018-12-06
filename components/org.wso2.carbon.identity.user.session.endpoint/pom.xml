@@ -70,17 +70,7 @@
                             <directory>src/main/webapp</directory>
                         </resource>
                     </webResources>
-                    <warName>api#identity#auth</warName>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.wso2.maven.plugins</groupId>
-                <artifactId>swagger2cxf-maven-plugin</artifactId>
-                <version>1.0-SNAPSHOT</version>
-                <configuration>
-                    <inputSpec>
-                        /home/chuhaashanan/Documents/final/gov/identity-governance/components/org.wso2.carbon.identity.user.session.endpoint/src/main/resources/api.user.session.yaml
-                    </inputSpec>
+                    <warName>api#identity#user</warName>
                 </configuration>
             </plugin>
 
