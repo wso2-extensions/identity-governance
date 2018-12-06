@@ -43,6 +43,7 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
@@ -126,7 +127,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED("20040", "Notification Type is not provided for user %s."),
         ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: " +
                 "%s."),
-        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),;
+        ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
+        ERROR_CODE_PUBLISH_EVENT("20043", "Error while publishing event %s.");
 
 
         private final String code;
