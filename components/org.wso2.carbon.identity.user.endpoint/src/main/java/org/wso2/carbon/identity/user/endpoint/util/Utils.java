@@ -25,16 +25,19 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
+import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.exceptions.NotAcceptableException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.NotFoundException;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
+import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -122,6 +125,56 @@ public class Utils {
     public static ConflictException buildConflictException(String description, String code) {
         ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_CONFLICT_MESSAGE_DEFAULT, code, description);
         return new ConflictException(errorDTO);
+    }
+
+    /**
+     * Throws a NotAcceptableException handling the error code and the message
+     *
+     * @param msg  detailed message of the exception
+     * @param code error code
+     * @throws NotAcceptableException
+     */
+    public static void handleNotAcceptable(String msg, String code) throws NotAcceptableException {
+
+        throw  buildNotAcceptableException(msg, code);
+    }
+
+    /**
+     * Returns a new NotAcceptableException
+     *
+     * @param description detailed message
+     * @param code        error code
+     * @return an instance of NotAcceptableException
+     */
+    public static NotAcceptableException buildNotAcceptableException(String description, String code) {
+
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_NOT_ACCEPTABLE_MESSAGE_DEFAULT, code, description);
+        return new NotAcceptableException(errorDTO);
+    }
+
+    /**
+     * Throws a NotFoundException handling the error code and the message
+     *
+     * @param msg  detailed message of the exception
+     * @param code error code
+     * @throws NotFoundException
+     */
+    public static void handleNotFound(String msg, String code) throws NotFoundException {
+
+        throw  buildNotFoundException(msg, code);
+    }
+
+    /**
+     * Returns a new NotFoundException
+     *
+     * @param description detailed message of the exception
+     * @param code        error code
+     * @return
+     */
+    public static NotFoundException buildNotFoundException(String description, String code) {
+
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_NOT_FOUND_MESSAGE_DEFAULT, code, description);
+        return new NotFoundException(errorDTO);
     }
 
     /**
@@ -213,6 +266,22 @@ public class Utils {
         } catch (NullPointerException e) {
             // Catching NPE since getOSGiService can throw NPE if the RealmService is not registered properly.
             throw new UserExportException("Error while retrieving RealmService.", e);
+        }
+    }
+
+    /**
+     * Returns the OSGI service implementation of UsernameUpdateService {@link UsernameUpdateService}
+     *
+     * @return UsernameUpdateService {@link UsernameUpdateService} instance
+     */
+    public static UsernameUpdateService getUsernameUpdateService() {
+
+        try {
+            return (UsernameUpdateService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(UsernameUpdateService.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if the UsernameUpdateService is not registered properly.
+            throw new InternalServerErrorException("Error while retrieving UsernameUpdateService.", e);
         }
     }
 

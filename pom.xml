@@ -120,13 +120,14 @@
         <module>components/org.wso2.carbon.identity.recovery</module>
         <module>components/org.wso2.carbon.identity.recovery.ui</module>
         <module>components/org.wso2.carbon.identity.recovery.endpoint</module>
-        <module>components/org.wso2.carbon.identity.user.endpoint</module>
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
         <module>components/org.wso2.carbon.identity.password.policy</module>
         <module>components/org.wso2.carbon.identity.account.suspension.notification.task</module>
         <module>components/org.wso2.carbon.identity.user.export.core</module>
         <module>components/org.wso2.carbon.identity.piicontroller</module>
+        <module>components/org.wso2.carbon.identity.user.rename.core</module>
+        <module>components/org.wso2.carbon.identity.user.endpoint</module>
 
         <module>service-stubs/identity</module>
 
@@ -220,6 +221,11 @@
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
                 <version>${commons-logging.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons-collections.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -323,6 +329,11 @@
                 <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.application.common</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!--Carbon Identity Extension Dependencies-->
             <dependency>
@@ -370,6 +381,12 @@
                 <artifactId>org.wso2.carbon.identity.handler.event.account.lock</artifactId>
                 <version>${carbon.identity.account.lock.handler.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.user.rename.core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.apache.cxf</groupId>
@@ -476,6 +493,12 @@
                 <artifactId>h2</artifactId>
                 <version>${h2database.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.testutil</artifactId>
+                <scope>test</scope>
+                <version>${carbon.identity.framework.version}</version>
             </dependency>
 
             <dependency>
@@ -600,6 +623,7 @@
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <equinox.osgi.services.version>3.5.100.v20160504-1419</equinox.osgi.services.version>
+        <commons-collections.version>3.2.2.wso2v1</commons-collections.version>
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
         <identity.data.publisher.authentication.version>5.1.10</identity.data.publisher.authentication.version>
 
