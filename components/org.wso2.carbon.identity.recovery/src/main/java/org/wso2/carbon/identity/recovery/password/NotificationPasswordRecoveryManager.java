@@ -70,6 +70,9 @@ public class NotificationPasswordRecoveryManager {
     public NotificationResponseBean sendRecoveryNotification(User user, String type, Boolean notify, Property[] properties)
             throws IdentityRecoveryException {
 
+        publishEvent(user, String.valueOf(notify), null, null, properties,
+                IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION);
+
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : " +
@@ -145,6 +148,8 @@ public class NotificationPasswordRecoveryManager {
             notificationResponseBean.setKey(secretKey);
         }
 
+        publishEvent(user, String.valueOf(notify), null, null, properties,
+                IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION);
         return notificationResponseBean;
     }
 
@@ -155,6 +160,9 @@ public class NotificationPasswordRecoveryManager {
 
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
+
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD);
 
         if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
             throw new IdentityRecoveryClientException("invalid tenant domain: " + userTenantDomain);
@@ -169,18 +177,25 @@ public class NotificationPasswordRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(userRecoveryData.getUser().getTenantDomain());
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                 userRecoveryData.getUser().getUserStoreDomain());
+
+        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().
+                        getTenantDomain()));
         try {
 
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
             userStoreManager.updateCredentialByAdmin(domainQualifiedName, password);
+            HashMap<String, String> userClaims = new HashMap<>();
             if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals
                     (userRecoveryData.getRecoveryScenario()) || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
                     equals(userRecoveryData.getRecoveryScenario())) {
-                HashMap<String, String> userClaims = new HashMap<>();
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
-                userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
             }
+            if (isNotificationInternallyManaged) {
+                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            }
+            userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         } catch (UserStoreException e) {
             checkPasswordValidity(e);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
@@ -188,9 +203,6 @@ public class NotificationPasswordRecoveryManager {
 
         userRecoveryDataStore.invalidate(code);
 
-        boolean isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, userRecoveryData.getUser().
-                        getTenantDomain()));
         boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                         userRecoveryData.getUser().getTenantDomain()));
@@ -204,6 +216,9 @@ public class NotificationPasswordRecoveryManager {
                         getUser().getUserName());
             }
         }
+
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
 
         if (log.isDebugEnabled()) {
             String msg = "Password is updated for  user: " + domainQualifiedName;
@@ -261,6 +276,42 @@ public class NotificationPasswordRecoveryManager {
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
+        }
+
+    }
+
+    private void publishEvent(User user, String notify, String code, String password, Property[] metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
+
+        if (StringUtils.isNotBlank(notify)) {
+            properties.put(IdentityRecoveryConstants.NOTIFY, notify);
+        }
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while publishing event " + eventName + " for user " + user);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
         }
 
     }
