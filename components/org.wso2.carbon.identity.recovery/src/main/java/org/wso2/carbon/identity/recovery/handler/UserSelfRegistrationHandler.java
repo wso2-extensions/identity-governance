@@ -116,7 +116,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                             .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
                     userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM.toString(),
+                    triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM,
                             secretKey, Utils.getArbitraryProperties());
                 }
             } catch (IdentityRecoveryException e) {

@@ -48,6 +48,8 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 /**
@@ -98,6 +100,20 @@ public class NotificationPasswordRecoveryManager {
                     (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
         } else {
             isNotificationInternallyManage = notify;
+        }
+
+        // Callback URL validation
+        String callbackURL = null;
+        try {
+            callbackURL = Utils.getCallbackURL(properties);
+            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, user.getTenantDomain(),
+                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            }
+        } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    callbackURL);
         }
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -160,6 +176,20 @@ public class NotificationPasswordRecoveryManager {
 
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
+
+        // Callback URL validation
+        String callbackURL = null;
+        try {
+            callbackURL = Utils.getCallbackURL(properties);
+            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, userTenantDomain,
+                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            }
+        } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    callbackURL);
+        }
 
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD);

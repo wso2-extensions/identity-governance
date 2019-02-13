@@ -81,6 +81,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration code expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
+                "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         return nameMapping;
     }
@@ -100,6 +102,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
                         "value for infinite validity)");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
+                "User self registration callback URL regex");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
         return descriptionMapping;
     }
@@ -113,6 +117,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         return properties.toArray(new String[properties.size()]);
     }
@@ -125,6 +130,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
+        String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -136,6 +142,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         String verificationCodeExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -151,6 +159,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(verificationCodeExpiryTimeProperty)) {
             verificationCodeExpiryTime = verificationCodeExpiryTimeProperty;
+        }
+        if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
+            selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
 
         Map<String, String> defaultProperties = new HashMap<>();
@@ -170,6 +181,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         } catch (UnsupportedEncodingException e) {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX, selfRegistrationCallbackRegex);
+
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;

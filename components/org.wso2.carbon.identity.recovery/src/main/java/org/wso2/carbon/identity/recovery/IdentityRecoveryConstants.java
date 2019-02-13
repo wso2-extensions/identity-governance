@@ -65,6 +65,9 @@ public class IdentityRecoveryConstants {
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
     public static final String EXECUTE_ACTION = "ui.execute";
+    public static final String UTF_8 = "UTF-8";
+    public static final String CALLBACK = "callback";
+    public static final String DEFAULT_CALLBACK_REGEX = ".*";
 
 
     private IdentityRecoveryConstants() {
@@ -128,7 +131,9 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS("20041", "Error while validating account lock status of user: " +
                 "%s."),
         ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
-        ERROR_CODE_PUBLISH_EVENT("20043", "Error while publishing event %s.");
+        ERROR_CODE_PUBLISH_EVENT("20043", "Error while publishing event %s."),
+        ERROR_CODE_CALLBACK_URL_NOT_VALID("20044", "Configured callback URL does not match with the provided callback"
+                + " URL: %s in the request.");
 
 
         private final String code;
@@ -170,6 +175,7 @@ public class IdentityRecoveryConstants {
                 ".ReCaptcha.Enable";
         public static final String RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS = "Recovery.Question" +
                 ".Password.ReCaptcha.MaxFailedAttempts";
+        public static final String RECOVERY_CALLBACK_REGEX = "Recovery.CallbackRegex";
         public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
@@ -177,6 +183,7 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
         public static final String SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "SelfRegistration" +
                 ".VerificationCode.ExpiryTime";
+        public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
 
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";

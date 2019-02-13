@@ -44,6 +44,10 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -366,6 +370,30 @@ public class Utils {
         user.setTenantDomain(tenantDomain);
 
         return user;
+    }
+
+    public static boolean validateCallbackURL(String callbackURL, String tenantDomain, String callbackRegexType)
+            throws IdentityEventException {
+
+        String callbackRegex = getConnectorConfig(callbackRegexType, tenantDomain);
+        if (callbackRegex != null && callbackURL.matches(callbackRegex)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static String getCallbackURL(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException, URISyntaxException {
+
+        String callbackURL = null;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
+                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                break;
+            }
+        }
+        URI uri = new URI(callbackURL);
+        return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null).toString();
     }
 
 }

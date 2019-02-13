@@ -72,6 +72,8 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +109,20 @@ public class UserSelfRegistrationManager {
 
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
+        // Callback URL validation
+        String callbackURL = null;
+        try {
+            callbackURL = Utils.getCallbackURL(properties);
+            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                    IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            }
+        } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    callbackURL);
         }
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
@@ -477,9 +493,9 @@ public class UserSelfRegistrationManager {
      */
     public boolean isSelfRegistrationEnabled(String tenantDomain) throws IdentityRecoveryException {
 
-        String selfSignUpEnalbed = getIDPProperty(tenantDomain,
+        String selfSignUpEnabled = getIDPProperty(tenantDomain,
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
-        return Boolean.parseBoolean(selfSignUpEnalbed);
+        return Boolean.parseBoolean(selfSignUpEnabled);
     }
 
     private String getIDPProperty(String tenantDomain, String propertyName) throws
