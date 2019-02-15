@@ -31,8 +31,6 @@ public class VerificationInitiatingRequestDTO {
     private String verificationMethod = null;
     private List<PropertyDTO> properties = new ArrayList<PropertyDTO>();
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("user")
     public UserDTO getUser() {
@@ -45,8 +43,6 @@ public class VerificationInitiatingRequestDTO {
         this.user = user;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("claim")
     public ClaimDTO getClaim() {
@@ -74,8 +70,6 @@ public class VerificationInitiatingRequestDTO {
         this.verificationMethod = verificationMethod;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("properties")
     public List<PropertyDTO> getProperties() {

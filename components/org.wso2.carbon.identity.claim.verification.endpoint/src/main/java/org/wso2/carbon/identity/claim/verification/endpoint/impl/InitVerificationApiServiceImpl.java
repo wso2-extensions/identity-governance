@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.claim.verification.endpoint.impl;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
@@ -93,10 +94,19 @@ public class InitVerificationApiServiceImpl extends InitVerificationApiService {
                     user, claim, verificationInitiatingRequest.getVerificationMethod(),
                     ClaimVerificationEndpointUtils.getPropertiesToMap(verificationInitiatingRequest.getProperties()));
         } catch (ClaimVerificationException e) {
-            String msg = "Error while initiating claim verification.";
-            LOG.error(msg, e);
-            ClaimVerificationEndpointUtils.handleInternalServerError(
-                    ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
+
+            if (e instanceof ClaimVerificationBadRequestException) {
+                if (LOG.isDebugEnabled()) {
+                    String msg = "Malformed request received for claim verification initiation. ";
+                    LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
+                }
+                ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
+            } else {
+                String msg = "Error while initiating claim verification.";
+                LOG.error(msg, e);
+                ClaimVerificationEndpointUtils.handleInternalServerError(
+                        ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
+            }
         }
 
         return Response.ok().entity(ClaimVerificationEndpointUtils.getInitVerificationResponse(confirmationCode))

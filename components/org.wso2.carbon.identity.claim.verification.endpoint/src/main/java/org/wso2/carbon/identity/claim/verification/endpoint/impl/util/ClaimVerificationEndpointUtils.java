@@ -103,8 +103,7 @@ public class ClaimVerificationEndpointUtils {
     }
 
     /**
-     * Used to concert a List of PropertyDTO to a
-     * map of properties with String key value pairs.
+     * Used to concert a List of PropertyDTO to a map of properties with String key value pairs.
      *
      * @param propertyDTOList List of PropertyDTO.
      * @return Returns a map of properties with String key value pairs.
@@ -123,7 +122,6 @@ public class ClaimVerificationEndpointUtils {
 
     /**
      * Used to get a ValidationResponseDTO.
-     *
      *
      * @param isValidationSuccess boolean value stating whether claim validation was successful.
      * @param isAdditionalValidationRequired boolean value stating whether further validation is required.
@@ -222,6 +220,7 @@ public class ClaimVerificationEndpointUtils {
 
     /**
      * Used to throw a BadRequestException with a default error message.
+     * Sends a bad request response to the sender.
      *
      * @param code Error code.
      * @param description Error description.
@@ -335,6 +334,4 @@ public class ClaimVerificationEndpointUtils {
 
         return errorDTO;
     }
-
 }
-

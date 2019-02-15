@@ -42,7 +42,7 @@ public class ConfirmationRequestDTO {
     }
 
     /**
-     * Verification status of the claim(SUCESS/FAILURE).
+     * Verification status of the claim(SUCCESS/FAILURE).
      **/
     @ApiModelProperty(value = "Verification status of the claim(SUCESS/FAILURE).")
     @JsonProperty("status")

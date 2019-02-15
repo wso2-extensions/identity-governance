@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.claim.verification.endpoint.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
-import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationFailureException;
+import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.endpoint.RevokeApiService;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.RevocationRequestDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointConstants;
@@ -42,9 +42,10 @@ public class RevokeApiServiceImpl extends RevokeApiService {
                     revocationRequest.getCode());
         } catch (ClaimVerificationException e) {
 
-            if (e instanceof ClaimVerificationFailureException) {
+            if (e instanceof ClaimVerificationBadRequestException) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(e.getErrorCode() + ":" + e.getMessage(), e);
+                    String msg = "Malformed request received for claim verification revocation. ";
+                    LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
                 }
                 ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
             } else {

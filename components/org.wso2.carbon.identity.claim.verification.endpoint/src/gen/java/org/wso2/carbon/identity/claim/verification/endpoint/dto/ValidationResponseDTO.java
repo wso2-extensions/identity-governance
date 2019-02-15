@@ -62,8 +62,6 @@ public class ValidationResponseDTO {
         this.properties = properties;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("link")
     public LinkDTO getLink() {

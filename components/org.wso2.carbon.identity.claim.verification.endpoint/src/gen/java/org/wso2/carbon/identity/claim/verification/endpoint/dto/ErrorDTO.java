@@ -27,8 +27,6 @@ public class ErrorDTO {
     private String message = null;
     private String description = null;
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("code")
     public String getCode() {
@@ -41,8 +39,6 @@ public class ErrorDTO {
         this.code = code;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("message")
     public String getMessage() {
@@ -55,8 +51,6 @@ public class ErrorDTO {
         this.message = message;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("description")
     public String getDescription() {

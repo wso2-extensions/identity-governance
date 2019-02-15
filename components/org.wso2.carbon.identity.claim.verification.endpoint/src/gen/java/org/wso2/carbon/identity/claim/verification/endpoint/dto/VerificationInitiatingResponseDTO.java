@@ -41,8 +41,6 @@ public class VerificationInitiatingResponseDTO {
         this.code = code;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("link")
     public LinkDTO getLink() {

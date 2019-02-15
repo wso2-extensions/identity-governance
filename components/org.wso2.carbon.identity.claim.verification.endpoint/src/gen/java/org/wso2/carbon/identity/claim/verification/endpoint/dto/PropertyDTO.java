@@ -30,8 +30,6 @@ public class PropertyDTO {
     private String key = null;
     private String value = null;
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("key")
     public String getKey() {
@@ -44,8 +42,6 @@ public class PropertyDTO {
         this.key = key;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("value")
     public String getValue() {

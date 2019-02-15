@@ -19,7 +19,7 @@ package org.wso2.carbon.identity.claim.verification.endpoint.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
-import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationFailureException;
+import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.endpoint.ConfirmApiService;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.ConfirmationRequestDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointConstants;
@@ -60,9 +60,10 @@ public class ConfirmApiServiceImpl extends ConfirmApiService {
                     confirmationRequest.getCode(), isValidationSuccess);
         } catch (ClaimVerificationException e) {
 
-            if (e instanceof ClaimVerificationFailureException) {
+            if (e instanceof ClaimVerificationBadRequestException) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(e.getErrorCode() + ":" + e.getMessage(), e);
+                    String msg = "Malformed request received for claim verification confirmation. ";
+                    LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
                 }
                 ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
             } else {
@@ -75,5 +76,4 @@ public class ConfirmApiServiceImpl extends ConfirmApiService {
 
         return Response.ok().build();
     }
-
 }

@@ -27,8 +27,6 @@ public class LinkDTO {
     private String rel = StringUtils.EMPTY;
     private String uri = StringUtils.EMPTY;
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("rel")
     public String getRel() {
@@ -41,8 +39,6 @@ public class LinkDTO {
         this.rel = rel;
     }
 
-    /**
-     **/
     @ApiModelProperty(value = "")
     @JsonProperty("uri")
     public String getUri() {

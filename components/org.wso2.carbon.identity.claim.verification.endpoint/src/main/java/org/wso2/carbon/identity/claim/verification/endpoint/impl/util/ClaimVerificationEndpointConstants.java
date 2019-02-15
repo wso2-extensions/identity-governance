@@ -30,7 +30,6 @@ public class ClaimVerificationEndpointConstants {
     public static final String STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT = "Internal server error";
     public static final String STATUS_BAD_REQUEST_MESSAGE_DEFAULT = "Bad Request";
 
-
     public static final String ERROR_CODE_UNEXPECTED_ERROR = "18013";
     public static final String ERROR_CODE_NO_MATCHING_USER_FOUND = "20014";
     public static final String ERROR_CODE_MULTIPLE_MATCHING_USERS_FOUND = "20015";
@@ -42,5 +41,4 @@ public class ClaimVerificationEndpointConstants {
     public static final String CLAIM_VALIDATION_SUCCESS = "SUCCESS";
     public static final String CLAIM_VALIDATION_FAILURE = "FAILURE";
     public static final String CLAIM_VALIDATION_PENDING = "PENDING";
-
 }
