@@ -16,7 +16,6 @@
 
 package org.wso2.carbon.identity.claim.verification.endpoint.impl;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
@@ -27,7 +26,6 @@ import org.wso2.carbon.identity.claim.verification.endpoint.InitVerificationApiS
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.VerificationInitiatingRequestDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointConstants;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointUtils;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import javax.ws.rs.core.Response;
@@ -48,45 +46,7 @@ public class InitVerificationApiServiceImpl extends InitVerificationApiService {
 
         User user = ClaimVerificationEndpointUtils.getUser(verificationInitiatingRequest.getUser(),
                 tenantDomainFromContext);
-
-        int tenantIdFromContext = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        String[] userList = ClaimVerificationEndpointUtils.getUserList(tenantIdFromContext, user.getUsername());
-
-        // Validate incoming user data.
-        if (ArrayUtils.isEmpty(userList)) {
-            String msg = "Unable to find an user with username: " + user.getUsername() + " in the system.";
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(msg);
-            }
-            ClaimVerificationEndpointUtils.handleBadRequest(
-                    ClaimVerificationEndpointConstants.ERROR_CODE_NO_MATCHING_USER_FOUND, msg);
-        } else if (userList.length == 1) {
-            user.setRealm(IdentityUtil.extractDomainFromName(userList[0]));
-        } else {
-            String msg = "There are multiple users with username: " + user.getUsername() + " in the system, " +
-                    "please send the correct user-store domain along with the username.";
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(msg);
-            }
-            ClaimVerificationEndpointUtils.handleBadRequest(
-                    ClaimVerificationEndpointConstants.ERROR_CODE_MULTIPLE_MATCHING_USERS_FOUND, msg);
-        }
-
         Claim claim = ClaimVerificationEndpointUtils.getClaim(verificationInitiatingRequest.getClaim());
-        org.wso2.carbon.user.api.Claim claimMetaData =
-                ClaimVerificationEndpointUtils.getClaimMetaData(tenantIdFromContext, claim.getClaimUri());
-
-        // Validate incoming claim data.
-        if (claimMetaData == null) {
-            String msg = "Unable to find a claim with claim uri: " + claim.getClaimUri() + " in the system.";
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(msg);
-            }
-            ClaimVerificationEndpointUtils.handleBadRequest(
-                    ClaimVerificationEndpointConstants.ERROR_CODE_NO_MATCHING_USER_FOUND, msg);
-        }
-        claim.setClaimDisplayTag(claimMetaData.getDisplayTag());
 
         String confirmationCode = "";
         try {

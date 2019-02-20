@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.verification.core.ClaimVerificationHandler;
-import org.wso2.carbon.identity.claim.verification.core.internal.ClaimVerificationServiceDataHolder;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.ClaimDTO;
@@ -35,10 +34,6 @@ import org.wso2.carbon.identity.claim.verification.endpoint.dto.VerificationInit
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.exception.BadRequestException;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.exception.InternalServerErrorException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.claim.ClaimManager;
-import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,7 +61,7 @@ public class ClaimVerificationEndpointUtils {
     /**
      * Used to get a User object from a UserDTO.
      *
-     * @param userDTO User DTO.
+     * @param userDTO      User DTO.
      * @param tenantDomain Tenant domain of the user.
      * @return Returns a User object.
      */
@@ -123,9 +118,9 @@ public class ClaimVerificationEndpointUtils {
     /**
      * Used to get a ValidationResponseDTO.
      *
-     * @param isValidationSuccess boolean value stating whether claim validation was successful.
+     * @param isValidationSuccess            boolean value stating whether claim validation was successful.
      * @param isAdditionalValidationRequired boolean value stating whether further validation is required.
-     * @param code conformation code.
+     * @param code                           conformation code.
      * @return Returns a ValidationResponseDTO object.
      */
     public static ValidationResponseDTO getValidationResponse(boolean isValidationSuccess,
@@ -170,59 +165,10 @@ public class ClaimVerificationEndpointUtils {
     }
 
     /**
-     * Used to get the list of users for a matching username and a tenantId.
-     *
-     * @param tenantId TenantId of the users' tenant domain.
-     * @param username Username of the user.
-     * @return Returns a user list for the matching parameters passed.
-     */
-    public static String[] getUserList(int tenantId, String username) {
-
-        String[] userList = null;
-
-        try {
-            UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-            userList = userStoreManager.listUsers(username, 2);
-            return userList;
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving the user-list for the tenant: " + tenantId + " and user: " + username, e);
-            handleInternalServerError(ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR,
-                    ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_USER_DATA);
-        }
-
-        return userList;
-    }
-
-    /**
-     * Used to get claim metadata for a claim in a specific tenant domain.
-     *
-     * @param tenantId Tenant id of the tenant domain.
-     * @param claimUri A claim uri
-     * @return Returns a Claim object with claim metadata.
-     */
-    public static org.wso2.carbon.user.api.Claim getClaimMetaData(int tenantId, String claimUri) {
-
-        org.wso2.carbon.user.api.Claim claimMetaData = null;
-
-        try {
-            ClaimManager claimManager = getClaimManager(tenantId);
-            claimMetaData = claimManager.getClaim(claimUri);
-            return claimMetaData;
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving the claim meta date for the tenant: " + tenantId + " and claim uri: "
-                    + claimUri, e);
-            handleInternalServerError(ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR,
-                    ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_CLAIM_DATA);
-        }
-
-        return claimMetaData;
-    }
-
-    /**
      * Used to throw a BadRequestException with a default error message.
      * Sends a bad request response to the sender.
      *
-     * @param code Error code.
+     * @param code        Error code.
      * @param description Error description.
      */
     public static void handleBadRequest(String code, String description) {
@@ -236,7 +182,7 @@ public class ClaimVerificationEndpointUtils {
     /**
      * Used to throw a InternalServerErrorException with a default error message.
      *
-     * @param code Error code.
+     * @param code        Error code.
      * @param description Error description.
      */
     public static void handleInternalServerError(String code, String description) {
@@ -272,57 +218,6 @@ public class ClaimVerificationEndpointUtils {
         property.setValue(value);
 
         return property;
-    }
-
-    private static UserStoreManager getUserStoreManager(int tenantId) {
-
-        UserStoreManager userStoreManager = null;
-        RealmService realmService = ClaimVerificationServiceDataHolder.getInstance().getRealmService();
-
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
-                if (userStoreManager == null) {
-                    throw new UserStoreException(ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_USER_DATA);
-                }
-                return userStoreManager;
-            } else {
-                throw new UserStoreException(ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_USER_DATA);
-            }
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving UserStoreManager for tenantId : " + tenantId, e);
-
-            // Not sending exact error message as error is sent to a third party, potentially disclosing unwanted
-            // information.
-            handleInternalServerError(ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR,
-                    ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_USER_DATA);
-        }
-
-        return userStoreManager;
-    }
-
-    private static ClaimManager getClaimManager(int tenantId) {
-
-        ClaimManager claimManager = null;
-        RealmService realmService = ClaimVerificationServiceDataHolder.getInstance().getRealmService();
-
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
-                if (claimManager == null) {
-                    throw new UserStoreException(ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_CLAIM_DATA);
-                }
-                return claimManager;
-            } else {
-                throw new UserStoreException(ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_CLAIM_DATA);
-            }
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving ClaimManager for tenant : " + tenantId, e);
-            handleInternalServerError(ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR,
-                    ClaimVerificationEndpointConstants.ERROR_WHILE_RETRIEVING_CLAIM_DATA);
-        }
-
-        return claimManager;
     }
 
     private static ErrorDTO getErrorResponse(String code, String message, String description) {
