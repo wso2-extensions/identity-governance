@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.claim.verification.endpoint.dto.ValidationRespon
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.VerificationInitiatingResponseDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.exception.BadRequestException;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.exception.InternalServerErrorException;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.util.ArrayList;
@@ -69,9 +70,9 @@ public class ClaimVerificationEndpointUtils {
 
         User user = new User();
         if (StringUtils.isNotBlank(tenantDomain)) {
-            user.setTenantDomain(tenantDomain);
+            user.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
         } else {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            user.setTenantId(MultitenantConstants.SUPER_TENANT_ID);
         }
         if (StringUtils.isNotBlank(userDTO.getRealm())) {
             user.setRealm(userDTO.getRealm());
