@@ -68,7 +68,7 @@ public class IdentityRecoveryConstants {
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
-
+    public static final String IS_USER_PORTAL_URL = "isUserPortalURL";
 
     private IdentityRecoveryConstants() {
     }

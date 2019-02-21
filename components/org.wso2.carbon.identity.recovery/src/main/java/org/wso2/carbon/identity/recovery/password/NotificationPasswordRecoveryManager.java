@@ -181,8 +181,9 @@ public class NotificationPasswordRecoveryManager {
         String callbackURL = null;
         try {
             callbackURL = Utils.getCallbackURL(properties);
-            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, userTenantDomain,
-                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+            boolean isUserPortalURL = Utils.isUserPortalURL(properties);
+            if (!isUserPortalURL && StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL,
+                    userTenantDomain, IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
             }
