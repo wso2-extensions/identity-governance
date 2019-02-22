@@ -409,6 +409,10 @@ public class Utils {
      */
     public static boolean isUserPortalURL(org.wso2.carbon.identity.recovery.model.Property[] properties) {
 
+        if (properties == null) {
+            return false;
+        }
+
         for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
             if (IdentityRecoveryConstants.IS_USER_PORTAL_URL.equals(property.getKey())) {
                 return Boolean.parseBoolean(property.getValue());
