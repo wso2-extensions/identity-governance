@@ -130,11 +130,11 @@ public class ClaimVerificationEndpointUtils {
         ValidationResponseDTO validationResponseDTO = new ValidationResponseDTO();
 
         if (!isValidationSuccess) {
-            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILURE);
+            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILED);
             validationResponseDTO.setProperties(new ArrayList<>());
             validationResponseDTO.setLink(getLink(ClaimVerificationEndpointConstants.API_URI_EP_INIT_VERIFICATION));
         } else if (!isAdditionalValidationRequired) {
-            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESS);
+            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESSFUL);
             validationResponseDTO.setProperties(new ArrayList<>());
             validationResponseDTO.setLink(getEmptyLink());
         } else {

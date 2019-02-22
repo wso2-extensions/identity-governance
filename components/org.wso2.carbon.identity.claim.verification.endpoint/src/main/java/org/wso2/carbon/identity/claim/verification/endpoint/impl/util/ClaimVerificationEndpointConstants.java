@@ -36,7 +36,7 @@ public class ClaimVerificationEndpointConstants {
     public static final String ERROR_WHILE_RETRIEVING_USER_DATA = "Error while retrieving user data.";
     public static final String ERROR_WHILE_RETRIEVING_CLAIM_DATA = "Error while retrieving claim data.";
 
-    public static final String CLAIM_VALIDATION_SUCCESS = "SUCCESS";
-    public static final String CLAIM_VALIDATION_FAILURE = "FAILURE";
+    public static final String CLAIM_VALIDATION_SUCCESSFUL = "SUCCESSFUL";
+    public static final String CLAIM_VALIDATION_FAILED = "FAILED";
     public static final String CLAIM_VALIDATION_PENDING = "PENDING";
 }
