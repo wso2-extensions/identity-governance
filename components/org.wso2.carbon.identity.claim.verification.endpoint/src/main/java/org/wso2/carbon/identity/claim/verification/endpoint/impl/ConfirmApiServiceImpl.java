@@ -38,16 +38,16 @@ public class ConfirmApiServiceImpl extends ConfirmApiService {
     public Response confirmPost(ConfirmationRequestDTO confirmationRequest) {
 
         boolean isValidationSuccess = false;
-        if (ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESS.equalsIgnoreCase(
+        if (ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESSFUL.equalsIgnoreCase(
                 confirmationRequest.getStatus())) {
             isValidationSuccess = true;
-        } else if (ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILURE.equalsIgnoreCase(
+        } else if (ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILED.equalsIgnoreCase(
                 confirmationRequest.getStatus())) {
             isValidationSuccess = false;
         } else {
             String msg = String.format("Sent validation status: %s is not a acceptable status. Use %s or %s .",
-                    confirmationRequest.getStatus(), ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESS,
-                    ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILURE);
+                    confirmationRequest.getStatus(), ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESSFUL,
+                    ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILED);
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }

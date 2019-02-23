@@ -223,7 +223,7 @@ definitions:
         description: Confirmation code related to the claim verification request.
         type: string
       status:
-        description: Verification status of the claim(SUCESS/FAILURE).
+        description: Verification status of the claim(SUCCESSFUL/FAILED).
         type: string
 
   #-----------------------------------------------------
