@@ -62,9 +62,9 @@ public class ValidateApiServiceImpl extends ValidateApiService {
 
             }
         }
-        ValidationResponseDTO validationResponseDTO = ClaimVerificationEndpointUtils.getValidationResponse(
-                validationResponse.isValidationSuccess(), validationRequest.getRequireAdditionalValidation(),
-                validationResponse.getCode());
+        ValidationResponseDTO validationResponseDTO =
+                ClaimVerificationEndpointUtils.getValidationResponse(validationResponse,
+                        validationRequest.getRequireAdditionalValidation());
 
         return Response.ok().entity(validationResponseDTO).build();
     }

@@ -30,13 +30,9 @@ public class ClaimVerificationEndpointConstants {
     public static final String STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT = "Internal server error";
     public static final String STATUS_BAD_REQUEST_MESSAGE_DEFAULT = "Bad Request";
 
-    public static final String ERROR_CODE_UNEXPECTED_ERROR = "18013";
-    public static final String ERROR_CODE_NO_MATCHING_VALIDATION_STATUS_FOUND = "20016";
-
-    public static final String ERROR_WHILE_RETRIEVING_USER_DATA = "Error while retrieving user data.";
-    public static final String ERROR_WHILE_RETRIEVING_CLAIM_DATA = "Error while retrieving claim data.";
+    public static final String ERROR_CODE_UNEXPECTED_ERROR = "CV0018";
+    public static final String ERROR_CODE_NO_MATCHING_VALIDATION_STATUS_FOUND = "CV0019";
 
     public static final String CLAIM_VALIDATION_SUCCESSFUL = "SUCCESSFUL";
     public static final String CLAIM_VALIDATION_FAILED = "FAILED";
-    public static final String CLAIM_VALIDATION_PENDING = "PENDING";
 }

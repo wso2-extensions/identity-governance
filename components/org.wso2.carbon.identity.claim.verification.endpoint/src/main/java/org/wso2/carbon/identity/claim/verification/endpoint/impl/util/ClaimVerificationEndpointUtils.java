@@ -24,6 +24,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.verification.core.ClaimVerificationHandler;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
+import org.wso2.carbon.identity.claim.verification.core.model.ValidationResponse;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.LinkDTO;
@@ -119,29 +120,29 @@ public class ClaimVerificationEndpointUtils {
     /**
      * Used to get a ValidationResponseDTO.
      *
-     * @param isValidationSuccess            boolean value stating whether claim validation was successful.
+     * @param validationResponse             validationResponse ValidationResponse object consisting claim validation
+     *                                       data.
      * @param isAdditionalValidationRequired boolean value stating whether further validation is required.
-     * @param code                           conformation code.
      * @return Returns a ValidationResponseDTO object.
      */
-    public static ValidationResponseDTO getValidationResponse(boolean isValidationSuccess,
-                                                              boolean isAdditionalValidationRequired, String code) {
+    public static ValidationResponseDTO getValidationResponse(ValidationResponse validationResponse,
+                                                              boolean isAdditionalValidationRequired) {
 
         ValidationResponseDTO validationResponseDTO = new ValidationResponseDTO();
 
-        if (!isValidationSuccess) {
-            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_FAILED);
+        if (!validationResponse.isValidationSuccess()) {
+            validationResponseDTO.setStatus(validationResponse.getVerificationStatus());
             validationResponseDTO.setProperties(new ArrayList<>());
             validationResponseDTO.setLink(getLink(ClaimVerificationEndpointConstants.API_URI_EP_INIT_VERIFICATION));
         } else if (!isAdditionalValidationRequired) {
-            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_SUCCESSFUL);
+            validationResponseDTO.setStatus(validationResponse.getVerificationStatus());
             validationResponseDTO.setProperties(new ArrayList<>());
             validationResponseDTO.setLink(getEmptyLink());
         } else {
-            validationResponseDTO.setStatus(ClaimVerificationEndpointConstants.CLAIM_VALIDATION_PENDING);
+            validationResponseDTO.setStatus(validationResponse.getVerificationStatus());
 
             List<PropertyDTO> propertyList = new ArrayList<>();
-            propertyList.add(getProperty("code", code));
+            propertyList.add(getProperty("code", validationResponse.getCode()));
 
             validationResponseDTO.setProperties(propertyList);
             validationResponseDTO.setLink(getLink(ClaimVerificationEndpointConstants.API_URI_EP_CONFIRM));
