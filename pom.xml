@@ -128,6 +128,8 @@
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
+        <module>components/org.wso2.carbon.identity.claim.verification.core</module>
+        <module>components/org.wso2.carbon.identity.claim.verification.endpoint</module>
 
         <module>service-stubs/identity</module>
 
