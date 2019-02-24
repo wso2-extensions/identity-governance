@@ -27,6 +27,9 @@ import java.util.Properties;
 
 import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ConnectorConfig;
 
+/**
+ * IdentityConnectorConfig for email claim verifier. Holds required properties.
+ */
 public class EmailClaimVerifierConfigImpl implements IdentityConnectorConfig {
 
     @Override
