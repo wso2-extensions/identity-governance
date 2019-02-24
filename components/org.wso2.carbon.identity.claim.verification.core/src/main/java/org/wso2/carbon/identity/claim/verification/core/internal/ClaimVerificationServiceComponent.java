@@ -58,15 +58,13 @@ public class ClaimVerificationServiceComponent {
         try {
             BundleContext bundleContext = componentContext.getBundleContext();
 
-            bundleContext.registerService(ClaimVerifier.class.getName(), new EmailClaimVerifier(),
-                    null);
+            bundleContext.registerService(ClaimVerifier.class.getName(), new EmailClaimVerifier(), null);
+
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     new EmailClaimVerifierConfigImpl(), null);
 
             bundleContext.registerService(ClaimVerificationHandler.class.getName(),
-                    new ClaimVerificationHandlerImpl() {
-                    }, null);
-
+                    new ClaimVerificationHandlerImpl(), null);
         } catch (Throwable e) {
             LOG.error("Error while activating ClaimVerificationServiceComponent.", e);
         }

@@ -162,7 +162,7 @@ public class ClaimVerificationCoreConstants {
     }
 
     /**
-     * Constants related to EmailClaimVerifier connector config
+     * Constants related to EmailClaimVerifier identity connector config.
      */
     public static class ConnectorConfig {
 
