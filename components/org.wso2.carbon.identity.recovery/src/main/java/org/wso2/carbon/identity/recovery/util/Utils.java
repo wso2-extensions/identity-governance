@@ -392,8 +392,33 @@ public class Utils {
                 break;
             }
         }
-        URI uri = new URI(callbackURL);
-        return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null).toString();
+
+        if (StringUtils.isNotBlank(callbackURL)) {
+            URI uri = new URI(callbackURL);
+            callbackURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null)
+                    .toString();
+        }
+        return callbackURL;
+    }
+
+    /**
+     * Extracts the boolean value of 'isUserPortalURL' from the properties.
+     *
+     * @param properties from the request
+     * @return the boolean value of 'isUserPortalURL'
+     */
+    public static boolean isUserPortalURL(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
+        if (properties == null) {
+            return false;
+        }
+
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.IS_USER_PORTAL_URL.equals(property.getKey())) {
+                return Boolean.parseBoolean(property.getValue());
+            }
+        }
+        return false;
     }
 
 }
