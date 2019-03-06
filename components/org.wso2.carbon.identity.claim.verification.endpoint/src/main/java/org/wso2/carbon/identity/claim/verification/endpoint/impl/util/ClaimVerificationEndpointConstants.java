@@ -24,8 +24,7 @@ public class ClaimVerificationEndpointConstants {
     public static final String API_URI = "/api/identity/claim-verification/v1.0";
     public static final String API_URI_EP_VALIDATE = "validate";
     public static final String API_URI_EP_CONFIRM = "confirm";
-    public static final String API_URI_EP_INIT_VERIFICATION = "init-verification";
-    public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
+    public static final String API_URI_EP_INIT_VERIFICATION = "init";
 
     public static final String STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT = "Internal server error";
     public static final String STATUS_BAD_REQUEST_MESSAGE_DEFAULT = "Bad Request";

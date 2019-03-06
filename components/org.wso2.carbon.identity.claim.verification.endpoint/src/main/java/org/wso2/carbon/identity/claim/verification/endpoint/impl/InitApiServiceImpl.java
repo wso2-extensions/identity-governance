@@ -33,9 +33,9 @@ import javax.ws.rs.core.Response;
 /**
  * Implementation of the init-verification endpoint.
  */
-public class InitVerificationApiServiceImpl extends InitVerificationApiService {
+public class InitApiServiceImpl extends InitApiService {
 
-    private static final Log LOG = LogFactory.getLog(InitVerificationApiServiceImpl.class);
+    private static final Log LOG = LogFactory.getLog(InitApiServiceImpl.class);
 
     @Override
     public Response initPost(VerificationInitiatingRequestDTO verificationInitiatingRequest) {

@@ -21,7 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.claim.verification.core.ClaimVerificationHandler;
+import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerificationService;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
 import org.wso2.carbon.identity.claim.verification.core.model.ValidationResponse;
@@ -54,10 +54,10 @@ public class ClaimVerificationEndpointUtils {
      *
      * @return Returns the ClaimVerificationHandler service.
      */
-    public static ClaimVerificationHandler getClaimVerificationHandler() {
+    public static ClaimVerificationService getClaimVerificationHandler() {
 
-        return (ClaimVerificationHandler) PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                .getOSGiService(ClaimVerificationHandler.class, null);
+        return (ClaimVerificationService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getOSGiService(ClaimVerificationService.class, null);
     }
 
     /**
@@ -141,6 +141,7 @@ public class ClaimVerificationEndpointUtils {
         } else {
             validationResponseDTO.setStatus(validationResponse.getVerificationStatus());
 
+            // TODO: 3/7/19 Why a property map is required? can't use the code value?
             List<PropertyDTO> propertyList = new ArrayList<>();
             propertyList.add(getProperty("code", validationResponse.getCode()));
 
