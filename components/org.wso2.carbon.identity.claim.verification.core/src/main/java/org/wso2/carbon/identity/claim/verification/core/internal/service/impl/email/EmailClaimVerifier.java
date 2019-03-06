@@ -13,43 +13,51 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package org.wso2.carbon.identity.claim.verification.core.verifier.emailclaimverifier;
+// TODO: 3/6/19 [Review Required] Changed package name from "emailclaimverifier" to "email"
+package org.wso2.carbon.identity.claim.verification.core.internal.service.impl.email;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
-import org.wso2.carbon.identity.claim.verification.core.internal.ClaimVerificationServiceDataHolder;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
+import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifier;
 import org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreUtils;
-import org.wso2.carbon.identity.claim.verification.core.verifier.ClaimVerifier;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.CodeType;
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ConnectorConfig;
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.CodeType;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ConnectorConfig;
 
 /**
  * Claim verifier for email claims.
  */
+@Component(
+        name = "org.wso2.carbon.identity.claim.verifier.email",
+        immediate = true,
+        service = ClaimVerifier.class
+)
 public class EmailClaimVerifier implements ClaimVerifier {
 
     private static final Log LOG = LogFactory.getLog(EmailClaimVerifier.class);
-
-    private final String IDENTIFIER = "EmailClaimVerifier";
 
     private final String PROPERTY_SEND_TO = "send-to";
     private final String PROPERTY_NONCE_VALUE = "nonce-value";
@@ -57,7 +65,18 @@ public class EmailClaimVerifier implements ClaimVerifier {
     private final String PROPERTY_CLAIM_VALUE = "claim-value";
     private final String PROPERTY_VALIDATION_URL = "validation-url";
     private final String PROPERTY_TEMPLATE_TYPE = "TEMPLATE_TYPE";
-    private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailVerification";
+    private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailConfirm";
+    private final String PROPERTY_VERIFICATION_METHOD = "verification-method";
+
+    private IdentityEventService identityEventService;
+    private IdentityGovernanceService identityGovernanceService;
+    private RealmService realmService;
+
+    @Override
+    public String getId() {
+
+        return "EmailClaimVerifier";
+    }
 
     @Override
     public void sendNotification(User user, Claim claim, Map<String, String> properties) throws
@@ -66,13 +85,13 @@ public class EmailClaimVerifier implements ClaimVerifier {
         verifyRequiredPropertyExists(properties, PROPERTY_VALIDATION_URL);
         verifyRequiredPropertyExists(properties, PROPERTY_NONCE_VALUE);
 
-        String claimName = ClaimVerificationCoreUtils.getClaimMetaData(user.getTenantId(), claim.getClaimUri())
-                .getDisplayTag();
+        String claimName = ClaimVerificationCoreUtils.getClaimMetaData(user.getTenantId(), claim.getClaimUri(),
+                getRealmService()).getDisplayTag();
 
         // Build email notification.
         Map<String, Object> notificationProps = new HashMap<>();
         notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,
-                ClaimVerificationCoreUtils.getUserStoreManager(user.getTenantId()));
+                ClaimVerificationCoreUtils.getUserStoreManager(user.getTenantId(), getRealmService()));
         notificationProps.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
         notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getRealm());
         notificationProps.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
@@ -86,7 +105,7 @@ public class EmailClaimVerifier implements ClaimVerifier {
 
         Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, notificationProps);
         try {
-            ClaimVerificationServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             String msg = "Error occurred while sending email-claim verification email to: " + user.getUsername();
             LOG.error(msg, e);
@@ -102,9 +121,15 @@ public class EmailClaimVerifier implements ClaimVerifier {
     }
 
     @Override
-    public boolean canHandle(String verificationMethod) throws ClaimVerificationException {
+    public boolean canHandle(Map<String, String> properties) throws ClaimVerificationException {
 
-        return IDENTIFIER.equalsIgnoreCase(verificationMethod);
+        // This e-mail verifier will only engage if the property, "verification-method" is present and equals to the
+        // value "EmailClaimVerifier", which is this verifier's identifier value.
+        if (!properties.containsKey(PROPERTY_VERIFICATION_METHOD) ||
+                !getId().equalsIgnoreCase(properties.get(PROPERTY_VERIFICATION_METHOD))) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -119,6 +144,99 @@ public class EmailClaimVerifier implements ClaimVerifier {
             return getCodeValidityPeriod(tenantId, ConnectorConfig.VALIDATION_STEP_CODE_EXPIRY_TIME);
         } else {
             return getCodeValidityPeriod(tenantId, ConnectorConfig.CONFIRMATION_STEP_EXPIRY_TIME);
+        }
+    }
+
+    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+
+        this.identityEventService = null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityEventService is unset in claim verification service");
+        }
+    }
+
+    protected void unsetIdentityGovernanceService(IdentityGovernanceService idpManager) {
+
+        this.identityGovernanceService = null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityGovernanceService is unset in claim verification service");
+        }
+    }
+
+    protected void unsetRealmService(RealmService realmService) {
+
+        this.realmService = null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("RealmService is unset in claim verification service");
+        }
+    }
+
+    protected RealmService getRealmService() {
+
+        if (this.realmService == null) {
+            throw new RuntimeException("RealmService not available. Component is not started properly.");
+        }
+        return realmService;
+    }
+
+    @Reference(
+            name = "realm.service",
+            service = org.wso2.carbon.user.core.service.RealmService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetRealmService"
+    )
+    protected void setRealmService(RealmService realmService) {
+
+        this.realmService = realmService;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("RealmService is set in claim verification service");
+        }
+    }
+
+    protected IdentityEventService getIdentityEventService() {
+
+        if (this.identityEventService == null) {
+            throw new RuntimeException("IdentityEventService not available. Component is not started properly.");
+        }
+        return this.identityEventService;
+    }
+
+    @Reference(
+            name = "IdentityEventService",
+            service = org.wso2.carbon.identity.event.services.IdentityEventService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityEventService"
+    )
+    protected void setIdentityEventService(IdentityEventService identityEventService) {
+
+        this.identityEventService = identityEventService;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityEventService is set in claim verification service");
+        }
+    }
+
+    protected IdentityGovernanceService getIdentityGovernanceService() {
+
+        if (this.identityGovernanceService == null) {
+            throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
+        }
+        return this.identityGovernanceService;
+    }
+
+    @Reference(
+            name = "IdentityGovernanceService",
+            service = org.wso2.carbon.identity.governance.IdentityGovernanceService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityGovernanceService"
+    )
+    protected void setIdentityGovernanceService(IdentityGovernanceService idpManager) {
+
+        this.identityGovernanceService = idpManager;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityGovernanceService is set in claim verification service");
         }
     }
 
@@ -152,8 +270,7 @@ public class EmailClaimVerifier implements ClaimVerifier {
      */
     private int getCodeValidityPeriod(int tenantId, String confProperty) throws ClaimVerificationException {
 
-        IdentityGovernanceService identityGovernanceService =
-                ClaimVerificationServiceDataHolder.getInstance().getIdentityGovernanceService();
+        IdentityGovernanceService identityGovernanceService = getIdentityGovernanceService();
         try {
             Property[] properties = identityGovernanceService.getConfiguration(new String[]{confProperty},
                     IdentityTenantUtil.getTenantDomain(tenantId));

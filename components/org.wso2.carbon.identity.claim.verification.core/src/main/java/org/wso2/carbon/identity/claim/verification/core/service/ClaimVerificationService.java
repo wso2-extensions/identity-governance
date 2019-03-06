@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.claim.verification.core;
+package org.wso2.carbon.identity.claim.verification.core.service;
 
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
@@ -26,19 +26,19 @@ import java.util.Map;
 /**
  * Interface for implementing the claim verification core.
  */
-public interface ClaimVerificationHandler {
+public interface ClaimVerificationService {
 
     /**
      * Used to initiate the claim verification process.
      *
-     * @param user               User of the claim.
-     * @param claim              The claim.
-     * @param verificationMethod Identifier for the claim verifier to be used for claim verification.
-     * @param properties         Additional properties that may be required by the claim verifier.
+     * @param user       User of the claim.
+     * @param claim      The claim.
+     * @param properties Additional properties that may be required by the claim verifier.
      * @return Confirmation code to be used for the claim validation step.
      * @throws ClaimVerificationException
      */
-    String initVerification(User user, Claim claim, String verificationMethod, Map<String, String> properties) throws ClaimVerificationException;
+    String initVerification(User user, Claim claim, Map<String, String> properties)
+            throws ClaimVerificationException;
 
     /**
      * Used to initiate claim validation. Used when additional validation is not required.
