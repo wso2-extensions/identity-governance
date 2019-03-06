@@ -18,15 +18,15 @@ package org.wso2.carbon.identity.claim.verification.endpoint.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
-import org.wso2.carbon.identity.claim.verification.endpoint.InitVerificationApiService;
+import org.wso2.carbon.identity.claim.verification.endpoint.InitApiService;
 import org.wso2.carbon.identity.claim.verification.endpoint.dto.VerificationInitiatingRequestDTO;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointConstants;
 import org.wso2.carbon.identity.claim.verification.endpoint.impl.util.ClaimVerificationEndpointUtils;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import javax.ws.rs.core.Response;
 
@@ -38,14 +38,10 @@ public class InitVerificationApiServiceImpl extends InitVerificationApiService {
     private static final Log LOG = LogFactory.getLog(InitVerificationApiServiceImpl.class);
 
     @Override
-    public Response initVerificationPost(VerificationInitiatingRequestDTO verificationInitiatingRequest) {
-
-        String tenantDomainFromContext =
-                (String) IdentityUtil.threadLocalProperties.get().get(ClaimVerificationEndpointConstants
-                        .TENANT_NAME_FROM_CONTEXT);
+    public Response initPost(VerificationInitiatingRequestDTO verificationInitiatingRequest) {
 
         User user = ClaimVerificationEndpointUtils.getUser(verificationInitiatingRequest.getUser(),
-                tenantDomainFromContext);
+                getTenantDomainFromContext());
         Claim claim = ClaimVerificationEndpointUtils.getClaim(verificationInitiatingRequest.getClaim());
 
         String confirmationCode = "";
@@ -71,5 +67,10 @@ public class InitVerificationApiServiceImpl extends InitVerificationApiService {
 
         return Response.ok().entity(ClaimVerificationEndpointUtils.getInitVerificationResponse(confirmationCode))
                 .build();
+    }
+
+    private String getTenantDomainFromContext() {
+
+        return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
     }
 }
