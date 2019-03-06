@@ -47,8 +47,9 @@ public class InitApiServiceImpl extends InitApiService {
         String confirmationCode = "";
         try {
             confirmationCode = ClaimVerificationEndpointUtils.getClaimVerificationHandler().initVerification(
-                    user, claim, verificationInitiatingRequest.getVerificationMethod(),
-                    ClaimVerificationEndpointUtils.getPropertiesToMap(verificationInitiatingRequest.getProperties()));
+                    user, claim,
+                    ClaimVerificationEndpointUtils.getPropertiesToMap(verificationInitiatingRequest.getProperties())
+            );
         } catch (ClaimVerificationException e) {
 
             if (e instanceof ClaimVerificationBadRequestException) {
