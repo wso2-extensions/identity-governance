@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
-import org.wso2.carbon.identity.claim.verification.core.internal.ClaimVerificationServiceDataHolder;
 import org.wso2.carbon.identity.claim.verification.core.store.ClaimVerificationStore;
 import org.wso2.carbon.identity.claim.verification.core.store.JDBCClaimVerificationStore;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -31,7 +30,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.security.SecureRandom;
 
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
 
 /**
  * Contains utils used for claim verification.
@@ -97,11 +96,11 @@ public class ClaimVerificationCoreUtils {
      * @param username Username of the user.
      * @return User list for the matching parameters passed.
      */
-    public static String[] getUserList(int tenantId, String username) throws ClaimVerificationException {
+    public static String[] getUserList(int tenantId, String username, RealmService realmService) throws ClaimVerificationException {
 
         String[] userList;
         try {
-            UserStoreManager userStoreManager = getUserStoreManager(tenantId);
+            UserStoreManager userStoreManager = getUserStoreManager(tenantId, realmService);
             userList = userStoreManager.listUsers(username, 2);
             return userList;
         } catch (UserStoreException e) {
@@ -117,13 +116,14 @@ public class ClaimVerificationCoreUtils {
      * @param claimUri A claim uri
      * @return org.wso2.carbon.user.api.Claim object with claim metadata.
      */
-    public static org.wso2.carbon.user.api.Claim getClaimMetaData(int tenantId, String claimUri) throws
+    public static org.wso2.carbon.user.api.Claim getClaimMetaData(int tenantId, String claimUri,
+                                                                  RealmService realmService) throws
             ClaimVerificationException {
 
         org.wso2.carbon.user.api.Claim claimMetaData;
 
         try {
-            ClaimManager claimManager = getClaimManager(tenantId);
+            ClaimManager claimManager = getClaimManager(tenantId, realmService);
             claimMetaData = claimManager.getClaim(claimUri);
             return claimMetaData;
         } catch (UserStoreException e) {
@@ -140,11 +140,9 @@ public class ClaimVerificationCoreUtils {
      * @return UserStoreManager.
      * @throws ClaimVerificationException
      */
-    public static UserStoreManager getUserStoreManager(int tenantId) throws ClaimVerificationException {
+    public static UserStoreManager getUserStoreManager(int tenantId, RealmService realmService) throws ClaimVerificationException {
 
         UserStoreManager userStoreManager;
-        RealmService realmService = ClaimVerificationServiceDataHolder.getInstance().getRealmService();
-
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
                 userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
@@ -168,11 +166,9 @@ public class ClaimVerificationCoreUtils {
      * @return ClaimManager.
      * @throws ClaimVerificationException
      */
-    public static ClaimManager getClaimManager(int tenantId) throws ClaimVerificationException {
+    public static ClaimManager getClaimManager(int tenantId, RealmService realmService) throws ClaimVerificationException {
 
         ClaimManager claimManager;
-        RealmService realmService = ClaimVerificationServiceDataHolder.getInstance().getRealmService();
-
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
                 claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();

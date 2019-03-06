@@ -14,18 +14,18 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.claim.verification.core.util;
+package org.wso2.carbon.identity.claim.verification.core.constant;
 
 /**
  * Contains constants used for claim verification.
  */
 public class ClaimVerificationCoreConstants {
 
+    public static final String PROP_IS_RETRY_ATTEMPT = "IS_CLAIM_VERIFICATION_RETRY_ATTEMPT";
+
     private ClaimVerificationCoreConstants() {
 
     }
-
-    public static final String PROP_IS_RETRY_ATTEMPT = "IS_CLAIM_VERIFICATION_RETRY_ATTEMPT";
 
     /**
      * Claim verification related error codes and messages.
@@ -50,7 +50,8 @@ public class ClaimVerificationCoreConstants {
         ERROR_MSG_CLEARING_CLAIM_DATA("CV0016", "Error when clearing claim data."),
         ERROR_MSG_ADD_CLAIM_TO_USER_STORE("CV0017", "Error when adding claim to userstore."),
         ERROR_MSG_UNEXPECTED_ERROR("CV0018", "Unexpected Error."),
-        ERROR_MSG_NO_MATCHING_VALIDATION_STATUS_FOUND("CV0019", "No matching validation status found.");
+        ERROR_MSG_NO_MATCHING_VALIDATION_STATUS_FOUND("CV0019", "No matching validation status found."),
+        ERROR_MSG_MISSING_MANDATORY_PROPERTIES("CV0020", "Missing mandatory properties.");
 
         private final String code;
         private final String message;
@@ -117,7 +118,7 @@ public class ClaimVerificationCoreConstants {
                 "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED) VALUES (?,?,?,?,?,?,?)";
 
         public static final String STORE_CLAIM_DATA = "INSERT INTO IDN_PENDING_CLAIM_DATA " +
-                "(USER_NAME, USER_DOMAIN, TENANT_ID, CLAIM_ID, CLAIM_VALUE,VERIFICATION_STATUS) VALUES (?,?,?,?,?,?)";
+                "(USER_NAME, USER_DOMAIN, TENANT_ID, CLAIM_ID, CLAIM_VALUE, VERIFICATION_STATUS) VALUES (?,?,?,?,?,?)";
 
         public static final String UPDATE_CLAIM_VERIFICATION_STATUS = "UPDATE IDN_PENDING_CLAIM_DATA " +
                 "SET VERIFICATION_STATUS= ? WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
@@ -150,9 +151,9 @@ public class ClaimVerificationCoreConstants {
         public static final String LOAD_CLAIM_DATA_CASE_INSENSITIVE = "SELECT * FROM IDN_PENDING_CLAIM_DATA WHERE " +
                 "LOWER(USER_NAME) = LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? AND CLAIM_ID = ?";
 
-        public static final String GET_CLAIM_ID = "SELECT ID FROM IDN_CLAIM WHERE AND CLAIM_URI = ? AND TENANT_ID = ?";
+        public static final String GET_CLAIM_ID = "SELECT ID FROM IDN_CLAIM WHERE CLAIM_URI = ? AND TENANT_ID = ?";
 
-        public static final String GET_CLAIM_URI = "SELECT CLAIM_URI FROM IDN_CLAIM WHERE AND ID = ? AND TENANT_ID = ?";
+        public static final String GET_CLAIM_URI = "SELECT CLAIM_URI FROM IDN_CLAIM WHERE ID = ? AND TENANT_ID = ?";
 
         public static final String DELETE_CLAIM_DATA = "DELETE FROM IDN_PENDING_CLAIM_DATA WHERE USER_NAME = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID = ? AND CLAIM_ID = ?";
@@ -162,22 +163,13 @@ public class ClaimVerificationCoreConstants {
     }
 
     /**
-     * Constants related to EmailClaimVerifier identity connector config.
-     */
-    public static class ConnectorConfig {
-
-        public static final String VALIDATION_STEP_CODE_EXPIRY_TIME =
-                "EmailClaimVerification.Validation.Step.Code.ExpiryTime";
-        public static final String CONFIRMATION_STEP_EXPIRY_TIME =
-                "EmailClaimVerification.Confirmation.Step.Code.ExpiryTime";
-    }
-
-    /**
      * Confirmation code types.
      */
     public static class CodeType {
 
         public static final String VALIDATION = "CODE_TYPE_VALIDATION";
+
         public static final String CONFIRMATION = "CODE_TYPE_CONFIRMATION";
     }
+
 }
