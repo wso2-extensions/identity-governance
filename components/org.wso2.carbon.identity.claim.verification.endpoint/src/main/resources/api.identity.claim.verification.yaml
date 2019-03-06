@@ -22,28 +22,28 @@ info:
 
 # The schemes supported by the API
 schemes:
-- https
+  - https
 
 basePath: /t/{tenant-domain}/api/identity/claim-verification/v1.0
 
 consumes:
-- application/json
+  - application/json
 produces:
-- application/json
+  - application/json
 
 paths:
   # Endpoint to initiate the claim verification process.
-  "/init-verification":
+  "/init":
     post:
       description: |
         This API is used to initiate the claim verification process. It will notify the relevant parties that a claim verification has been requested.
       parameters:
-      - name: VerificationInitiatingRequest
-        in: body
-        description:  Request object for initiating the claim verification process.
-        required: true
-        schema:
-          $ref: '#/definitions/VerificationInitiatingRequest'
+        - name: VerificationInitiatingRequest
+          in: body
+          description:  Request object for initiating the claim verification process.
+          required: true
+          schema:
+            $ref: '#/definitions/VerificationInitiatingRequest'
       responses:
         200:
           description: Success response along with the confirmation code to invoke next request.
@@ -68,12 +68,12 @@ paths:
       description: |
         This API is used to invoke the available validation mechanism to validate given claim value.
       parameters:
-      - name: ValidationRequest
-        in: body
-        description:  Request object containing data for the validation process.
-        required: true
-        schema:
-          $ref: '#/definitions/ValidationRequest'
+        - name: ValidationRequest
+          in: body
+          description:  Request object containing data for the validation process.
+          required: true
+          schema:
+            $ref: '#/definitions/ValidationRequest'
       responses:
         200:
           description: Ok
@@ -98,12 +98,12 @@ paths:
       description: |
         This API is used to confirm the new claim value after validating it.
       parameters:
-      - name: ConfirmationRequest
-        in: body
-        description:  Request object to finalize the process which states whether the verification was successful or not.
-        required: true
-        schema:
-          $ref: '#/definitions/ConfirmationRequest'
+        - name: ConfirmationRequest
+          in: body
+          description:  Request object to finalize the process which states whether the verification was successful or not.
+          required: true
+          schema:
+            $ref: '#/definitions/ConfirmationRequest'
       responses:
         200:
           description: Ok
@@ -126,12 +126,12 @@ paths:
       description: |
         This API is used to terminate the verification process.
       parameters:
-      - name: RevocationRequest
-        in: body
-        description:  Request object to terminate the verification process.
-        required: true
-        schema:
-          $ref: '#/definitions/RevocationRequest'
+        - name: RevocationRequest
+          in: body
+          description:  Request object to terminate the verification process.
+          required: true
+          schema:
+            $ref: '#/definitions/RevocationRequest'
       responses:
         200:
           description: Ok
@@ -154,11 +154,14 @@ definitions:
   #-----------------------------------------------------
   ValidationRequest:
     type: object
+    required:
+      - code
+      - requireAdditionalValidation
     properties:
       code:
         description: Confirmation code related to the claim verification request.
         type: string
-      require-additional-validation:
+      requireAdditionalValidation:
         description: States whether or not to end the process from current request.
         type: boolean
       properties:
@@ -188,14 +191,15 @@ definitions:
   #-----------------------------------------------------
   VerificationInitiatingRequest:
     type: object
+    required:
+      - user
+      - claim
+      - properties
     properties:
       user:
         $ref: '#/definitions/User'
       claim:
         $ref: '#/definitions/Claim'
-      verification-method:
-        description: Verifier that should be used to verify the claim.
-        type: string
       properties:
         type: array
         items:
@@ -218,6 +222,9 @@ definitions:
   #-----------------------------------------------------
   ConfirmationRequest:
     type: object
+    required:
+      - code
+      - status
     properties:
       code:
         description: Confirmation code related to the claim verification request.
@@ -231,6 +238,8 @@ definitions:
   #-----------------------------------------------------
   RevocationRequest:
     type: object
+    required:
+      - code
     properties:
       code:
         description: Confirmation code related to the claim revocation request.
@@ -268,7 +277,7 @@ definitions:
     description: Claim that is requested for verification.
     type: object
     properties:
-      claim-uri:
+      claimUri:
         description: Claim uri of the claim that the value needs to be set.
         type: string
       value:
