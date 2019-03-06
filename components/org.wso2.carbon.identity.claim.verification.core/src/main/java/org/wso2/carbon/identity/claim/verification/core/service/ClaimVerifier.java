@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package org.wso2.carbon.identity.claim.verification.core.verifier;
+package org.wso2.carbon.identity.claim.verification.core.service;
 
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
@@ -51,11 +51,10 @@ public interface ClaimVerifier {
     /**
      * Used to check if the verifier can handler a particular claim verification request.
      *
-     * @param verificationMethod Verification method.
      * @return Returns true is the verifier can handle the claim verification request else returns false.
      * @throws ClaimVerificationException
      */
-    boolean canHandle(String verificationMethod) throws ClaimVerificationException;
+    boolean canHandle(Map<String, String> properties) throws ClaimVerificationException;
 
     /**
      * Used to notify the verifier that the claim verification process is being terminated.
@@ -75,4 +74,12 @@ public interface ClaimVerifier {
      * @throws ClaimVerificationException
      */
     int getConfirmationCodeValidityPeriod(String codeType, int tenantId) throws ClaimVerificationException;
+
+    /**
+     * Used to get the identifier value for the claim verifier.
+     *
+     * @return Identifier value for this claim verifier.
+     * @throws ClaimVerificationException
+     */
+    String getId();
 }
