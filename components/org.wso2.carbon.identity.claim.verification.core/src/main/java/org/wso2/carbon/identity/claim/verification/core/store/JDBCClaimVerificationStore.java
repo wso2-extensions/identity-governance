@@ -33,10 +33,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ClaimVerificationStatus;
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.ErrorMessages;
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.SQLQueries;
-import static org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreConstants.Step;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ClaimVerificationStatus;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.SQLQueries;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.Step;
 
 /**
  * JDBC based DB access class for claim verification.
@@ -62,6 +62,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
         try {
+            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(SQLQueries.STORE_CODE_DATA);
             prepStmt.setString(1, codeData.getUser().getUsername());
             prepStmt.setString(2, codeData.getUser().getRealm().toUpperCase());
@@ -71,7 +72,6 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.setString(6, String.valueOf(codeData.getStep()));
             prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
             prepStmt.execute();
-            connection.setAutoCommit(false);
             connection.commit();
         } catch (SQLException e) {
             String msg = "Error while storing confirmation code data.";
@@ -89,6 +89,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
         try {
+            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(SQLQueries.STORE_CLAIM_DATA);
             prepStmt.setString(1, claimData.getUser().getUsername());
             prepStmt.setString(2, claimData.getUser().getRealm().toUpperCase());
@@ -97,7 +98,6 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.setString(5, claimData.getClaimValue());
             prepStmt.setString(6, String.valueOf(claimData.getVerificationStatus()));
             prepStmt.execute();
-            connection.setAutoCommit(false);
             connection.commit();
         } catch (SQLException e) {
             String msg = "Error while storing claim data.";

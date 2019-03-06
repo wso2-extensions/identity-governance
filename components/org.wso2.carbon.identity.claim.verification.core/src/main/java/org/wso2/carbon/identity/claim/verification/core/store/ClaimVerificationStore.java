@@ -20,6 +20,7 @@ import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificat
 import org.wso2.carbon.identity.claim.verification.core.model.ClaimData;
 import org.wso2.carbon.identity.claim.verification.core.model.ConfirmationCodeData;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
+// TODO: 3/6/19 [Review Required] A pluggable DAO required?
 
 /**
  * Interface for implementing the persistence layer for claim verification.
