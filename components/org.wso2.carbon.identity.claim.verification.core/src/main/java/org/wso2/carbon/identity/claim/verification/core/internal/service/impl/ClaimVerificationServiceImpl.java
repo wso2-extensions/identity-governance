@@ -68,6 +68,12 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
     protected RealmService realmService;
 
     @Override
+    public List<ClaimVerifier> getAvailableClaimVerifiers() throws ClaimVerificationException {
+
+        return claimVerifiers;
+    }
+
+    @Override
     public String initVerification(User user, Claim claim, Map<String, String> properties)
             throws ClaimVerificationException {
 
@@ -75,13 +81,14 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         validateProperties(properties);
         // TODO: 3/6/19 [Review Required] claim verifier selection is based on the properties at /init and in the
         //  rest of the life cycle, identified by an identifier.
-        ClaimVerifier claimVerifier = getClaimVerifierByProperties(properties);
         ClaimVerificationStore claimVerificationStore = ClaimVerificationCoreUtils.getClaimVerificationStore();
 
         // Validate incoming user data.
         validateUser(user);
 
         int claimId = claimVerificationStore.loadClaimId(claim.getClaimUri(), user.getTenantId());
+
+        ClaimVerifier claimVerifier = getClaimVerifierByProperties(properties);
 
         // Validate incoming claim data.
         validateClaimData(claim, claimId, user.getTenantId());

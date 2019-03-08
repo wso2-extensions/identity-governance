@@ -21,6 +21,7 @@ import org.wso2.carbon.identity.claim.verification.core.model.Claim;
 import org.wso2.carbon.identity.claim.verification.core.model.User;
 import org.wso2.carbon.identity.claim.verification.core.model.ValidationResponse;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -82,4 +83,12 @@ public interface ClaimVerificationService {
      * @throws ClaimVerificationException
      */
     void revokeVerification(String code) throws ClaimVerificationException;
+
+    /**
+     * Used to retrieve all the available claim verifiers.
+     *
+     * @return A list with all available claim verifiers.
+     * @throws ClaimVerificationException
+     */
+    List<ClaimVerifier> getAvailableClaimVerifiers() throws ClaimVerificationException;
 }
