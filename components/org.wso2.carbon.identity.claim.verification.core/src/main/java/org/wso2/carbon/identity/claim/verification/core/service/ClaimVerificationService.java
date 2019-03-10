@@ -23,7 +23,8 @@ import org.wso2.carbon.identity.claim.verification.core.model.ValidationResponse
 
 import java.util.List;
 import java.util.Map;
-
+// TODO: 3/8/19 Only allow local claims? Or validate the mapped local claim for external claims?. If so, a validation
+//  needed for this.
 /**
  * Interface for implementing the claim verification core.
  */

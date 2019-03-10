@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.claim.verification.core.model.User;
 import org.wso2.carbon.identity.claim.verification.core.model.ValidationResponse;
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerificationService;
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifier;
+import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifierResolver;
 import org.wso2.carbon.identity.claim.verification.core.store.ClaimVerificationStore;
 import org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -40,7 +41,7 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -61,26 +62,22 @@ import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVer
 )
 public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
-    protected static final List<ClaimVerifier> claimVerifiers = new ArrayList<>();
     private static final Log LOG = LogFactory.getLog(ClaimVerificationServiceImpl.class);
     private static final String CLAIM_VERIFICATION = "CLAIM_VERIFICATION";
     private static final String SCENARIO_APPENDER = "-";
     protected RealmService realmService;
+    protected List<ClaimVerifierResolver> claimVerifierResolvers;
 
     @Override
     public List<ClaimVerifier> getAvailableClaimVerifiers() throws ClaimVerificationException {
 
-        return claimVerifiers;
+        return getClaimVerifierResolver().getAvailableClaimVerifiers();
     }
 
     @Override
     public String initVerification(User user, Claim claim, Map<String, String> properties)
             throws ClaimVerificationException {
 
-        // Validate incoming properties
-        validateProperties(properties);
-        // TODO: 3/6/19 [Review Required] claim verifier selection is based on the properties at /init and in the
-        //  rest of the life cycle, identified by an identifier.
         ClaimVerificationStore claimVerificationStore = ClaimVerificationCoreUtils.getClaimVerificationStore();
 
         // Validate incoming user data.
@@ -88,7 +85,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         int claimId = claimVerificationStore.loadClaimId(claim.getClaimUri(), user.getTenantId());
 
-        ClaimVerifier claimVerifier = getClaimVerifierByProperties(properties);
+        ClaimVerifier claimVerifier = getClaimVerifierByClaimUri(claim.getClaimUri());
 
         // Validate incoming claim data.
         validateClaimData(claim, claimId, user.getTenantId());
@@ -257,31 +254,9 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         claimVerificationStore.clearClaimData(getClaimId(codeData), codeData.getUser());
     }
 
-    @Reference(
-            name = "claim.verifier",
-            service = ClaimVerifier.class,
-            cardinality = ReferenceCardinality.MULTIPLE,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetClaimVerifier"
-    )
-    protected void setClaimVerifier(ClaimVerifier claimVerifier) {
+    protected ClaimVerifierResolver getClaimVerifierResolver() {
 
-        if (claimVerifier != null) {
-            this.claimVerifiers.add(claimVerifier);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Claim verifier:" + claimVerifier.getClass().getSimpleName() + " is set in claim " +
-                        "verification service.");
-            }
-        }
-    }
-
-    protected void unsetClaimVerifier(ClaimVerifier claimVerifier) {
-
-        this.claimVerifiers.remove(claimVerifier);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Claim verifier:" + claimVerifier.getClass().getSimpleName() + " is unset in claim " +
-                    "verification service.");
-        }
+        return this.claimVerifierResolvers.get(this.claimVerifierResolvers.size() - 1);
     }
 
     protected void unsetRealmService(RealmService realmService) {
@@ -312,6 +287,32 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         this.realmService = realmService;
         if (LOG.isDebugEnabled()) {
             LOG.debug("RealmService is set in claim verification service");
+        }
+    }
+
+    @Reference(
+            name = "claim.verifier.resolver",
+            service = ClaimVerifierResolver.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimVerifierResolver"
+    )
+    protected void setClaimVerifierResolvers(ClaimVerifierResolver claimVerifierResolver) {
+
+        claimVerifierResolvers.add(claimVerifierResolver);
+        claimVerifierResolvers.sort(Comparator.comparingInt(ClaimVerifierResolver::getPriority));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ClaimVerifierResolver with priority: " + claimVerifierResolver.getPriority() + " is set in " +
+                    "claim verification service");
+        }
+    }
+
+    protected void unsetClaimVerifierResolver(ClaimVerifierResolver claimVerifierResolver) {
+
+        this.claimVerifierResolvers.remove(claimVerifierResolver);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ClaimVerifierResolver with priority: " + claimVerifierResolver.getPriority() + " is unset " +
+                    "in claim verification service");
         }
     }
 
@@ -387,16 +388,10 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
      * @return ClaimVerifier.
      * @throws ClaimVerificationException
      */
-    private ClaimVerifier getClaimVerifierByProperties(Map<String, String> properties)
+    private ClaimVerifier getClaimVerifierByClaimUri(String localClaimUri)
             throws ClaimVerificationException {
 
-        for (ClaimVerifier claimVerifier : this.claimVerifiers) {
-            if (claimVerifier.canHandle(properties)) {
-                return claimVerifier;
-            }
-        }
-        throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                ErrorMessages.ERROR_MSG_NO_MATCHING_CLAIM_VERIFIER_FOUND);
+        return getClaimVerifierResolver().resolveClaimUri(localClaimUri);
     }
 
     /**
@@ -407,13 +402,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
      */
     private ClaimVerifier getClaimVerifierById(String id) throws ClaimVerificationException {
 
-        for (ClaimVerifier claimVerifier : this.claimVerifiers) {
-            if (claimVerifier.getId().equals(id)) {
-                return claimVerifier;
-            }
-        }
-        throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                ErrorMessages.ERROR_MSG_NO_MATCHING_CLAIM_VERIFIER_FOUND);
+        return getClaimVerifierResolver().resolveClaimVerifierId(id);
     }
 
     /**
@@ -561,18 +550,5 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         String msg = "Invalid step received to get codeType. step:" + String.valueOf(step);
         LOG.error(msg);
         throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_UNEXPECTED_ERROR);
-    }
-
-    private void validateProperties(Map<String, String> properties) throws ClaimVerificationBadRequestException {
-
-        /*
-          Selection of the verification method in the init stage is based on the received properties, thus the
-          properties parameter is mandatory.
-         */
-        if (properties == null) {
-            LOG.debug("Invalid value received for the mandatory parameter, properties: " + properties);
-            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                    ErrorMessages.ERROR_MSG_MISSING_MANDATORY_PROPERTIES);
-        }
     }
 }
