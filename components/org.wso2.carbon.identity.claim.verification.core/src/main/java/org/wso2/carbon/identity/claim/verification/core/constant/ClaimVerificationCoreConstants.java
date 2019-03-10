@@ -51,7 +51,7 @@ public class ClaimVerificationCoreConstants {
         ERROR_MSG_ADD_CLAIM_TO_USER_STORE("CV0017", "Error when adding claim to userstore."),
         ERROR_MSG_UNEXPECTED_ERROR("CV0018", "Unexpected Error."),
         ERROR_MSG_NO_MATCHING_VALIDATION_STATUS_FOUND("CV0019", "No matching validation status found."),
-        ERROR_MSG_MISSING_MANDATORY_PROPERTIES("CV0020", "Missing mandatory properties.");
+        ERROR_MSG_RESOLVING_CLAIM_VERIFIER("CV0020", "Error when resolving a verifier for the claim.");
 
         private final String code;
         private final String message;
@@ -170,6 +170,16 @@ public class ClaimVerificationCoreConstants {
         public static final String VALIDATION = "CODE_TYPE_VALIDATION";
 
         public static final String CONFIRMATION = "CODE_TYPE_CONFIRMATION";
+    }
+
+    /**
+     * Claim meta data attributes related to the claim verification.
+     */
+    public static class VerificationClaimMetaData {
+
+        public static final String VERIFIABLE_PROPERTY = "Verifiable";
+
+        public static final String VERIFICATION_METHOD_PROPERTY = "VerificationMethod";
     }
 
 }
