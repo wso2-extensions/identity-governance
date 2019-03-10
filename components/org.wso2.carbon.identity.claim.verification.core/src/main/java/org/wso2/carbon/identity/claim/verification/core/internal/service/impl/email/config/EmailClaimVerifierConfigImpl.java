@@ -32,7 +32,7 @@ import static org.wso2.carbon.identity.claim.verification.core.constant.EmailCla
  * IdentityConnectorConfig for email claim verifier. Holds required properties.
  */
 @Component(
-        name = "org.wso2.carbon.identity.claim.verifier.email.config",
+        name = "org.wso2.carbon.identity.claim.verification.verifier.email.config",
         immediate = true,
         service = IdentityConnectorConfig.class
 )
