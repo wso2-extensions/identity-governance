@@ -63,6 +63,8 @@ public class EmailClaimVerifier implements ClaimVerifier {
 
     private static final Log LOG = LogFactory.getLog(EmailClaimVerifier.class);
 
+    private final String ID = "EmailClaimVerifier";
+
     private final String PROPERTY_SEND_TO = "send-to";
     private final String PROPERTY_NONCE_VALUE = "nonce-value";
     private final String PROPERTY_CLAIM_NAME = "claim-name";
@@ -82,7 +84,7 @@ public class EmailClaimVerifier implements ClaimVerifier {
     @Override
     public String getId() {
 
-        return "EmailClaimVerifier";
+        return ID;
     }
 
     @Override
