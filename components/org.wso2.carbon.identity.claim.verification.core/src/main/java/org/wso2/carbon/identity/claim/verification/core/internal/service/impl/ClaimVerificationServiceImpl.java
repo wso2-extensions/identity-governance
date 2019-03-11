@@ -41,6 +41,7 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
     private static final String CLAIM_VERIFICATION = "CLAIM_VERIFICATION";
     private static final String SCENARIO_APPENDER = "-";
     protected RealmService realmService;
-    protected List<ClaimVerifierResolver> claimVerifierResolvers;
+    protected List<ClaimVerifierResolver> claimVerifierResolvers = new ArrayList<>();
 
     @Override
     public List<ClaimVerifier> getAvailableClaimVerifiers() throws ClaimVerificationException {
