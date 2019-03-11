@@ -101,7 +101,7 @@ public interface ClaimVerificationStore {
      * @return Claim id.
      * @throws ClaimVerificationException
      */
-    int loadClaimId(String claimUri, int tenantId) throws ClaimVerificationException;
+    int loadLocalClaimId(String claimUri, int tenantId) throws ClaimVerificationException;
 
     /**
      * Used to load the claim URI.
@@ -111,7 +111,7 @@ public interface ClaimVerificationStore {
      * @return Claim URI.
      * @throws ClaimVerificationException
      */
-    String loadClaimUri(int claimId, int tenantId) throws ClaimVerificationException;
+    String loadLocalClaimUri(int claimId, int tenantId) throws ClaimVerificationException;
 
     /**
      * Used to load claim data.
