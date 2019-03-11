@@ -25,6 +25,10 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
@@ -51,7 +55,7 @@ import static org.wso2.carbon.identity.claim.verification.core.constant.EmailCla
  * Claim verifier for email claims.
  */
 @Component(
-        name = "org.wso2.carbon.identity.claim.verifier.email",
+        name = "org.wso2.carbon.identity.claim.verification.verifier.email",
         immediate = true,
         service = ClaimVerifier.class
 )
@@ -68,9 +72,12 @@ public class EmailClaimVerifier implements ClaimVerifier {
     private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailConfirm";
     private final String PROPERTY_VERIFICATION_METHOD = "verification-method";
 
+    private final String CLAIM_PROPERTY_DISPLAY_NAME = "DisplayName";
+
     private IdentityEventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private RealmService realmService;
+    private ClaimMetadataManagementService claimMetadataManagementService;
 
     @Override
     public String getId() {
@@ -85,32 +92,43 @@ public class EmailClaimVerifier implements ClaimVerifier {
         verifyRequiredPropertyExists(properties, PROPERTY_VALIDATION_URL);
         verifyRequiredPropertyExists(properties, PROPERTY_NONCE_VALUE);
 
-        String claimName = ClaimVerificationCoreUtils.getClaimMetaData(user.getTenantId(), claim.getClaimUri(),
-                getRealmService()).getDisplayTag();
-
-        // Build email notification.
-        Map<String, Object> notificationProps = new HashMap<>();
-        notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,
-                ClaimVerificationCoreUtils.getUserStoreManager(user.getTenantId(), getRealmService()));
-        notificationProps.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
-        notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getRealm());
-        notificationProps.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
-                IdentityTenantUtil.getTenantDomain(user.getTenantId()));
-        notificationProps.put(PROPERTY_SEND_TO, claim.getClaimValue());
-        notificationProps.put(PROPERTY_CLAIM_NAME, claimName);
-        notificationProps.put(PROPERTY_NONCE_VALUE, properties.get(PROPERTY_NONCE_VALUE));
-        notificationProps.put(PROPERTY_CLAIM_VALUE, claim.getClaimValue());
-        notificationProps.put(PROPERTY_VALIDATION_URL, properties.get(PROPERTY_VALIDATION_URL));
-        notificationProps.put(PROPERTY_TEMPLATE_TYPE, PROPERTY_TEMPLATE_TYPE_VALUE);
-
-        Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, notificationProps);
+//        String claimName = ClaimVerificationCoreUtils.getClaimMetaData(user.getTenantId(), claim.getClaimUri(),
+//                getRealmService()).getDisplayTag();
         try {
-            getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            String msg = "Error occurred while sending email-claim verification email to: " + user.getUsername();
+            String claimName = getLocalClaimDisplayName(user, claim);
+
+            // Build email notification.
+            LOG.debug("Building the e-mail notification.");
+            Map<String, Object> notificationProps = new HashMap<>();
+            notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER,
+                    ClaimVerificationCoreUtils.getUserStoreManager(user.getTenantId(), getRealmService()));
+            notificationProps.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUsername());
+            notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getRealm());
+            notificationProps.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
+                    IdentityTenantUtil.getTenantDomain(user.getTenantId()));
+            notificationProps.put(PROPERTY_SEND_TO, claim.getClaimValue());
+            notificationProps.put(PROPERTY_CLAIM_NAME, claimName);
+            notificationProps.put(PROPERTY_NONCE_VALUE, properties.get(PROPERTY_NONCE_VALUE));
+            notificationProps.put(PROPERTY_CLAIM_VALUE, claim.getClaimValue());
+            notificationProps.put(PROPERTY_VALIDATION_URL, properties.get(PROPERTY_VALIDATION_URL));
+            notificationProps.put(PROPERTY_TEMPLATE_TYPE, PROPERTY_TEMPLATE_TYPE_VALUE);
+
+            Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, notificationProps);
+            try {
+                LOG.debug("Sending the e-mail notification.");
+                getIdentityEventService().handleEvent(identityMgtEvent);
+            } catch (IdentityEventException e) {
+                String msg = "Error occurred while sending email-claim verification email to: " + user.getUsername();
+                LOG.error(msg, e);
+                throw ClaimVerificationCoreUtils.getClaimVerificationException(
+                        ErrorMessages.ERROR_MSG_SENDING_NOTIFICATION, e);
+            }
+        } catch (ClaimMetadataException e) {
+            String msg = "Error occurred while retrieving the local claim for the tenant domain: "
+                    + getTenantDomainFromId(user.getTenantId());
             LOG.error(msg, e);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
-                    ErrorMessages.ERROR_MSG_SENDING_NOTIFICATION, e);
+                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_SENDING_NOTIFICATION, e);
         }
     }
 
@@ -240,6 +258,59 @@ public class EmailClaimVerifier implements ClaimVerifier {
         }
     }
 
+    protected void unsetClaimMetadataManagementService(ClaimMetadataManagementService claimMetadataManagementService) {
+
+        this.claimMetadataManagementService = null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ClaimMetadataManagementService is unset in claim " +
+                    "verification service.");
+        }
+    }
+
+    protected ClaimMetadataManagementService getClaimMetadataManagementService() {
+
+        if (this.claimMetadataManagementService == null) {
+            throw new RuntimeException("ClaimMetadataManagementService not available. Component is not started " +
+                    "properly.");
+        }
+        return this.claimMetadataManagementService;
+    }
+
+    @Reference(
+            name = "claim.metadata.management.service",
+            service = ClaimMetadataManagementService.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimMetadataManagementService"
+    )
+    protected void setClaimMetadataManagementService(ClaimMetadataManagementService claimMetadataManagementService) {
+
+        if (claimMetadataManagementService != null) {
+            this.claimMetadataManagementService = claimMetadataManagementService;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("ClaimMetadataManagementService is set in claim " +
+                        "verification service.");
+            }
+        }
+    }
+
+    private String getLocalClaimDisplayName(User user, Claim claim)
+            throws ClaimMetadataException, ClaimVerificationBadRequestException {
+
+        LocalClaim localClaim =
+                ClaimVerificationCoreUtils.getLocalClaimFromService(getClaimMetadataManagementService(),
+                        getTenantDomainFromId(user.getTenantId()), claim.getClaimUri());
+
+        if (localClaim == null) {
+            String msg = "Could not find a matching local claim for the claim uri: " + claim.getClaimUri();
+            LOG.error(msg);
+            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
+                    ErrorMessages.ERROR_MSG_SENDING_NOTIFICATION);
+        }
+
+        return localClaim.getClaimProperties().get(CLAIM_PROPERTY_DISPLAY_NAME);
+    }
+
     /**
      * Used to verify that a required property exists, if it does not, throws an exception.
      *
@@ -287,5 +358,16 @@ public class EmailClaimVerifier implements ClaimVerifier {
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ErrorMessages.ERROR_MSG_READING_CONFIGURATION, e);
         }
+    }
+
+    /**
+     * Used to retrieve tenant domain value from the given tenant id.
+     *
+     * @param tenantId Tenant Id.
+     * @return Corresponding tenant domain value for the tenant id.
+     */
+    private String getTenantDomainFromId(int tenantId) {
+
+        return IdentityTenantUtil.getTenantDomain(tenantId);
     }
 }

@@ -51,10 +51,9 @@ import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVer
 )
 public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 
+    private static final Log LOG = LogFactory.getLog(ClaimVerifierResolverImpl.class);
     private final List<ClaimVerifier> claimVerifiers = new ArrayList<>();
     protected ClaimMetadataManagementService claimMetadataManagementService;
-
-    private static final Log LOG = LogFactory.getLog(ClaimVerifierResolverImpl.class);
 
     /**
      * {@inheritDoc}
@@ -130,64 +129,35 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
     public ClaimVerifier resolveClaimUri(String localClaimUri) throws ClaimVerificationException {
 
         try {
-            List<LocalClaim> localClaims = claimMetadataManagementService.getLocalClaims(getTenantDomain());
+            LocalClaim localClaim = ClaimVerificationCoreUtils.getLocalClaimFromService(claimMetadataManagementService,
+                    getTenantDomain(), localClaimUri);
 
-            for (LocalClaim localClaim : localClaims) {
-                if (localClaim.getClaimURI().equals(localClaimUri)) {
+            if (localClaim == null) {
+                String msg = "Could not find a matching local claim for the claim uri: " + localClaimUri;
+                LOG.error(msg);
+                throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
+                        ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
+            }
 
-                    validateLocalClaim(localClaim);
+            Map<String, String> claimProperties = localClaim.getClaimProperties();
 
-                    Map<String, String> claimProperties = localClaim.getClaimProperties();
+            validateLocalClaimProperties(claimProperties, localClaim);
 
-                    for (ClaimVerifier claimVerifier : claimVerifiers) {
-                        if (claimVerifier.getId().equals(claimProperties.get(VERIFICATION_METHOD_PROPERTY))) {
-                            return claimVerifier;
-                        }
-                    }
-                    String msg = "Could not find a matching claim verifier for the claim: " + localClaimUri + " with " +
-                            "the verification method: " + claimProperties.get(VERIFICATION_METHOD_PROPERTY);
-                    LOG.error(msg);
-                    throw ClaimVerificationCoreUtils.getClaimVerificationException(
-                            ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
+            for (ClaimVerifier claimVerifier : claimVerifiers) {
+                if (claimVerifier.getId().equals(claimProperties.get(VERIFICATION_METHOD_PROPERTY))) {
+                    return claimVerifier;
                 }
             }
-            String msg = "Could not find a matching local claim for the claim uri: " + localClaimUri;
+            String msg = "Could not find a matching claim verifier for the claim: " + localClaimUri + " with " +
+                    "the verification method: " + claimProperties.get(VERIFICATION_METHOD_PROPERTY);
             LOG.error(msg);
-            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
+            throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
         } catch (ClaimMetadataException e) {
-            String msg = "Error occurred while retrieving local claims for the tenant domain: " + getTenantDomain();
+            String msg = "Error occurred while retrieving the local claim for the tenant domain: " + getTenantDomain();
             LOG.error(msg, e);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER, e);
-        }
-    }
-
-    private void validateLocalClaim(LocalClaim localClaim) throws ClaimVerificationBadRequestException {
-
-        Map<String, String> claimProperties = localClaim.getClaimProperties();
-
-        String msg;
-        boolean isInvalidLocalClaim = false;
-
-        if (!claimProperties.keySet().contains(VERIFIABLE_PROPERTY)
-                || !claimProperties.keySet().contains(VERIFICATION_METHOD_PROPERTY)) {
-            msg = "The claim: " + localClaim.getClaimURI() + ", does not contain mandatory properties: "
-                    + VERIFIABLE_PROPERTY + ", " + VERIFICATION_METHOD_PROPERTY + " to " +
-                    "resolve a claim verifier.";
-            LOG.error(msg);
-            isInvalidLocalClaim = true;
-        }
-
-        if (!Boolean.parseBoolean(claimProperties.get(VERIFIABLE_PROPERTY))) {
-            msg = "The claim: " + localClaim.getClaimURI() + " is not verifiable.";
-            LOG.error(msg);
-            isInvalidLocalClaim = true;
-        }
-
-        if (isInvalidLocalClaim) {
-            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
         }
     }
 
@@ -251,6 +221,34 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         if (LOG.isDebugEnabled()) {
             LOG.debug("ClaimMetadataManagementService is unset in claim " +
                     "verification service.");
+        }
+    }
+
+    private void validateLocalClaimProperties(Map<String, String> claimProperties, LocalClaim localClaim)
+            throws ClaimVerificationBadRequestException {
+
+        String errMsg = null;
+
+        // Verifiable property can be unavailable in the db, if it has not been configured previously.
+        if (!claimProperties.keySet().contains(VERIFIABLE_PROPERTY)
+                && !Boolean.parseBoolean(claimProperties.get(VERIFIABLE_PROPERTY))) {
+            errMsg = "The claim: " + localClaim.getClaimURI() + " is not verifiable.";
+            LOG.error(errMsg);
+        } else {
+            // TODO: 3/11/19 [Review Required] verifiable and verification method claims will only be available in
+            //  the db once they are used at the first run.
+            // It is mandatory to have the property, "verification method" for a verifiable claim.
+            if (!claimProperties.keySet().contains(VERIFICATION_METHOD_PROPERTY)) {
+                errMsg = "The claim: " + localClaim.getClaimURI() + ", does not contain mandatory property: "
+                        + VERIFICATION_METHOD_PROPERTY + " to " +
+                        "resolve a claim verifier.";
+                LOG.error(errMsg);
+            }
+        }
+
+        if (errMsg != null) {
+            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
+                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
         }
     }
 

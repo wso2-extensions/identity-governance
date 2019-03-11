@@ -18,6 +18,9 @@ package org.wso2.carbon.identity.claim.verification.core.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.store.ClaimVerificationStore;
@@ -29,6 +32,7 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
 
@@ -109,29 +113,29 @@ public class ClaimVerificationCoreUtils {
         }
     }
 
-    /**
-     * Used to get claim metadata for a claim in a specific tenant domain.
-     *
-     * @param tenantId Tenant id of the tenant domain.
-     * @param claimUri A claim uri
-     * @return org.wso2.carbon.user.api.Claim object with claim metadata.
-     */
-    public static org.wso2.carbon.user.api.Claim getClaimMetaData(int tenantId, String claimUri,
-                                                                  RealmService realmService) throws
-            ClaimVerificationException {
-
-        org.wso2.carbon.user.api.Claim claimMetaData;
-
-        try {
-            ClaimManager claimManager = getClaimManager(tenantId, realmService);
-            claimMetaData = claimManager.getClaim(claimUri);
-            return claimMetaData;
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving the claim meta date for the tenant: " + tenantId + " and claim uri: "
-                    + claimUri, e);
-            throw getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
-        }
-    }
+//    /**
+//     * Used to get claim metadata for a claim in a specific tenant domain.
+//     *
+//     * @param tenantId Tenant id of the tenant domain.
+//     * @param claimUri A claim uri
+//     * @return org.wso2.carbon.user.api.Claim object with claim metadata.
+//     */
+//    public static org.wso2.carbon.user.api.Claim getClaimMetaData(int tenantId, String claimUri,
+//                                                                  RealmService realmService) throws
+//            ClaimVerificationException {
+//
+//        org.wso2.carbon.user.api.Claim claimMetaData;
+//
+//        try {
+//            ClaimManager claimManager = getClaimManager(tenantId, realmService);
+//            claimMetaData = claimManager.getClaim(claimUri);
+//            return claimMetaData;
+//        } catch (UserStoreException e) {
+//            LOG.error("Error retrieving the claim meta date for the tenant: " + tenantId + " and claim uri: "
+//                    + claimUri, e);
+//            throw getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
+//        }
+//    }
 
     /**
      * Retrieve the user store manager for a tenant.
@@ -159,31 +163,31 @@ public class ClaimVerificationCoreUtils {
         }
     }
 
-    /**
-     * Retrieve the claim manager for a tenant.
-     *
-     * @param tenantId Tenant id.
-     * @return ClaimManager.
-     * @throws ClaimVerificationException
-     */
-    public static ClaimManager getClaimManager(int tenantId, RealmService realmService) throws ClaimVerificationException {
-
-        ClaimManager claimManager;
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
-                if (claimManager == null) {
-                    throw new UserStoreException();
-                }
-                return claimManager;
-            } else {
-                throw new UserStoreException();
-            }
-        } catch (UserStoreException e) {
-            LOG.error("Error retrieving ClaimManager for tenant : " + tenantId, e);
-            throw getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
-        }
-    }
+//    /**
+//     * Retrieve the claim manager for a tenant.
+//     *
+//     * @param tenantId Tenant id.
+//     * @return ClaimManager.
+//     * @throws ClaimVerificationException
+//     */
+//    public static ClaimManager getClaimManager(int tenantId, RealmService realmService) throws ClaimVerificationException {
+//
+//        ClaimManager claimManager;
+//        try {
+//            if (realmService.getTenantUserRealm(tenantId) != null) {
+//                claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
+//                if (claimManager == null) {
+//                    throw new UserStoreException();
+//                }
+//                return claimManager;
+//            } else {
+//                throw new UserStoreException();
+//            }
+//        } catch (UserStoreException e) {
+//            LOG.error("Error retrieving ClaimManager for tenant : " + tenantId, e);
+//            throw getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
+//        }
+//    }
 
     /**
      * Build a new ClaimVerificationException.
@@ -231,5 +235,28 @@ public class ClaimVerificationCoreUtils {
             ErrorMessages details, Throwable exception) {
 
         return new ClaimVerificationBadRequestException(details.getCode(), details.getMessage(), exception);
+    }
+
+    /**
+     * Retrieve {@link LocalClaim} for the given local claim URI from the claim meta-data service.
+     *
+     * @param claimMetadataManagementService {@link ClaimMetadataManagementService}.
+     * @param tenantDomain                   Tenant domain.
+     * @param localClaimUri                  URI of the local claim.
+     * @return {@link LocalClaim} object.
+     * @throws ClaimMetadataException
+     */
+    public static LocalClaim getLocalClaimFromService(ClaimMetadataManagementService claimMetadataManagementService,
+                                                      String tenantDomain, String localClaimUri)
+            throws ClaimMetadataException {
+
+        List<LocalClaim> localClaims = claimMetadataManagementService.getLocalClaims(tenantDomain);
+
+        for (LocalClaim localClaim : localClaims) {
+            if (localClaim.getClaimURI().equals(localClaimUri)) {
+                return localClaim;
+            }
+        }
+        return null;
     }
 }
