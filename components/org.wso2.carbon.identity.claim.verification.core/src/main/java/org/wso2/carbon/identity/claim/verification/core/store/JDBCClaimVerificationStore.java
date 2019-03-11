@@ -146,13 +146,13 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
     }
 
     @Override
-    public int loadClaimId(String claimUri, int tenantId) throws ClaimVerificationException {
+    public int loadLocalClaimId(String claimUri, int tenantId) throws ClaimVerificationException {
 
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         int claimId = -1;
-        String sql = SQLQueries.GET_CLAIM_ID;
+        String sql = SQLQueries.GET_LOCAL_CLAIM_ID;
 
         try {
             prepStmt = connection.prepareStatement(sql);
@@ -175,13 +175,13 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
     }
 
     @Override
-    public String loadClaimUri(int claimId, int tenantId) throws ClaimVerificationException {
+    public String loadLocalClaimUri(int claimId, int tenantId) throws ClaimVerificationException {
 
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         String claimUri = null;
-        String sql = SQLQueries.GET_CLAIM_URI;
+        String sql = SQLQueries.GET_LOCAL_CLAIM_URI;
 
         try {
             prepStmt = connection.prepareStatement(sql);

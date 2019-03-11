@@ -41,7 +41,7 @@ public class ClaimVerificationCoreConstants {
         ERROR_MSG_RETRIEVING_CLAIM_DATA("CV0007", "Error when retrieving claim data."),
         ERROR_MSG_NO_MATCHING_USER_FOUND("CV0008", "No matching user found for received user details."),
         ERROR_MSG_MULTIPLE_MATCHING_USERS_FOUND("CV3009", "Multiple users found for received user details."),
-        ERROR_MSG_NO_MATCHING_CLAIM_FOUND("CV0010", "No matching claim found for received claim uri."),
+        ERROR_MSG_NO_MATCHING_LOCAL_CLAIM_FOUND("CV0010", "No matching local claim found for received claim uri."),
         ERROR_MSG_NO_MATCHING_CLAIM_VERIFIER_FOUND("CV0011", "No matching claim verifier found."),
         ERROR_MSG_REQUIRED_PROPERTY_NOT_FOUND("CV0012", "Required property not found."),
         ERROR_MSG_UPDATING_DATA("CV0013", "Error when updating data."),
@@ -151,9 +151,11 @@ public class ClaimVerificationCoreConstants {
         public static final String LOAD_CLAIM_DATA_CASE_INSENSITIVE = "SELECT * FROM IDN_PENDING_CLAIM_DATA WHERE " +
                 "LOWER(USER_NAME) = LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? AND CLAIM_ID = ?";
 
-        public static final String GET_CLAIM_ID = "SELECT ID FROM IDN_CLAIM WHERE CLAIM_URI = ? AND TENANT_ID = ?";
+        public static final String GET_LOCAL_CLAIM_ID = "SELECT ID FROM IDN_CLAIM WHERE CLAIM_URI = ? AND TENANT_ID =" +
+                " ? AND DIALECT_ID = 1";
 
-        public static final String GET_CLAIM_URI = "SELECT CLAIM_URI FROM IDN_CLAIM WHERE ID = ? AND TENANT_ID = ?";
+        public static final String GET_LOCAL_CLAIM_URI = "SELECT CLAIM_URI FROM IDN_CLAIM WHERE ID = ? AND  TENANT_ID" +
+                " = ? AND DIALECT_ID = 1";
 
         public static final String DELETE_CLAIM_DATA = "DELETE FROM IDN_PENDING_CLAIM_DATA WHERE USER_NAME = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID = ? AND CLAIM_ID = ?";

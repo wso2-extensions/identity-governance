@@ -84,12 +84,14 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         // Validate incoming user data.
         validateUser(user);
 
-        int claimId = claimVerificationStore.loadClaimId(claim.getClaimUri(), user.getTenantId());
-
-        ClaimVerifier claimVerifier = getClaimVerifierByClaimUri(claim.getClaimUri());
+        // Claim verification strictly requires incoming claim data to be a local claim.
+        int claimId = claimVerificationStore.loadLocalClaimId(claim.getClaimUri(), user.getTenantId());
 
         // Validate incoming claim data.
         validateClaimData(claim, claimId, user.getTenantId());
+
+        ClaimVerifier claimVerifier = getClaimVerifierByClaimUri(claim.getClaimUri());
+
 
         ClaimData claimData = new ClaimData(user, claimId, claim.getClaimValue(), ClaimVerificationStatus.INITIATED);
 
@@ -377,7 +379,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         int claimId = getClaimId(codeData);
         Claim claim = new Claim();
-        claim.setClaimUri(claimVerificationStore.loadClaimUri(claimId, codeData.getUser().getTenantId()));
+        claim.setClaimUri(claimVerificationStore.loadLocalClaimUri(claimId, codeData.getUser().getTenantId()));
         claim.setClaimValue(claimVerificationStore.loadClaimData(claimId, codeData.getUser()).getClaimValue());
 
         return claim;
@@ -457,12 +459,13 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
     private void validateClaimData(Claim claim, int claimId, int tenantId) throws ClaimVerificationException {
 
         if (claimId == -1) {
-            String msg = "Unable to find a claim with claim uri: " + claim.getClaimUri() + " and tenantId:" + tenantId;
+            String msg =
+                    "Unable to find a local claim with claim uri: " + claim.getClaimUri() + " and tenantId:" + tenantId;
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }
             throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                    ErrorMessages.ERROR_MSG_NO_MATCHING_CLAIM_FOUND);
+                    ErrorMessages.ERROR_MSG_NO_MATCHING_LOCAL_CLAIM_FOUND);
         }
     }
 
@@ -519,7 +522,8 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
                 ClaimVerificationCoreUtils.getUserStoreManager(codeData.getUser().getTenantId(), getRealmService());
         String usernameWithRealm = IdentityUtil.addDomainToName(codeData.getUser().getUsername(),
                 codeData.getUser().getRealm());
-        String claimUri = claimVerificationStore.loadClaimUri(getClaimId(codeData), codeData.getUser().getTenantId());
+        String claimUri = claimVerificationStore.loadLocalClaimUri(
+                getClaimId(codeData), codeData.getUser().getTenantId());
         ClaimData claimData = claimVerificationStore.loadClaimData(getClaimId(codeData), codeData.getUser());
         try {
             userStoreManager.setUserClaimValue(usernameWithRealm, claimUri, claimData.getClaimValue(), null);
