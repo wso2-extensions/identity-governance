@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.VerificationClaimMetaData.VERIFIABLE_PROPERTY;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.VerificationClaimMetaData.VERIFICATION_METHOD_PROPERTY;
 
 /**
@@ -141,8 +140,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 
             Map<String, String> claimProperties = localClaim.getClaimProperties();
 
-            validateLocalClaimProperties(claimProperties, localClaim);
-
+//            validateLocalClaimProperties(claimProperties, localClaim);
             for (ClaimVerifier claimVerifier : claimVerifiers) {
                 if (claimVerifier.getId().equals(claimProperties.get(VERIFICATION_METHOD_PROPERTY))) {
                     return claimVerifier;
@@ -230,20 +228,14 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         String errMsg = null;
 
         // Verifiable property can be unavailable in the db, if it has not been configured previously.
-        if (!claimProperties.keySet().contains(VERIFIABLE_PROPERTY)
-                && !Boolean.parseBoolean(claimProperties.get(VERIFIABLE_PROPERTY))) {
-            errMsg = "The claim: " + localClaim.getClaimURI() + " is not verifiable.";
+        // TODO: 3/11/19 [Review Required] vverification method claims will only be available in
+        //  the db once they are used at the first run.
+        // It is mandatory to have the property, "verification method" for a verifiable claim.
+        if (!claimProperties.keySet().contains(VERIFICATION_METHOD_PROPERTY)) {
+            errMsg = "The claim: " + localClaim.getClaimURI() + ", does not contain mandatory property: "
+                    + VERIFICATION_METHOD_PROPERTY + " to " +
+                    "resolve a claim verifier.";
             LOG.error(errMsg);
-        } else {
-            // TODO: 3/11/19 [Review Required] verifiable and verification method claims will only be available in
-            //  the db once they are used at the first run.
-            // It is mandatory to have the property, "verification method" for a verifiable claim.
-            if (!claimProperties.keySet().contains(VERIFICATION_METHOD_PROPERTY)) {
-                errMsg = "The claim: " + localClaim.getClaimURI() + ", does not contain mandatory property: "
-                        + VERIFICATION_METHOD_PROPERTY + " to " +
-                        "resolve a claim verifier.";
-                LOG.error(errMsg);
-            }
         }
 
         if (errMsg != null) {

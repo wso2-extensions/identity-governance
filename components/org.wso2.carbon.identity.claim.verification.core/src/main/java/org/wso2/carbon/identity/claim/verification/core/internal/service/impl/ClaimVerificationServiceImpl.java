@@ -166,6 +166,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         claimVerificationStore.invalidateConfirmationCode(codeData.getCode());
 
         Claim claim = getClaim(codeData, claimVerificationStore);
+
         // Call claim verifier.
         boolean isVerified = claimVerifier.isVerified(codeData.getUser(), claim, properties);
         ValidationResponse validationResponse = new ValidationResponse();
@@ -526,6 +527,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
                 getClaimId(codeData), codeData.getUser().getTenantId());
         ClaimData claimData = claimVerificationStore.loadClaimData(getClaimId(codeData), codeData.getUser());
         try {
+            // Set the user claim value using the default profile.
             userStoreManager.setUserClaimValue(usernameWithRealm, claimUri, claimData.getClaimValue(), null);
         } catch (UserStoreException e) {
             String msg = "Error when adding claim to userstore for user:" + codeData.getUser().getUsername() +
