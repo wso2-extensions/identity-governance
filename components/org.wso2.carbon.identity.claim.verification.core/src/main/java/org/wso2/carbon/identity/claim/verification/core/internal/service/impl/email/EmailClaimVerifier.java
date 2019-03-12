@@ -71,7 +71,8 @@ public class EmailClaimVerifier implements ClaimVerifier {
     private final String PROPERTY_CLAIM_VALUE = "claim-value";
     private final String PROPERTY_VALIDATION_URL = "validation-url";
     private final String PROPERTY_TEMPLATE_TYPE = "TEMPLATE_TYPE";
-    private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailConfirm";
+    //private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailConfirm";
+    private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailVerification";
     private final String PROPERTY_VERIFICATION_METHOD = "verification-method";
 
     private final String CLAIM_PROPERTY_DISPLAY_NAME = "DisplayName";
