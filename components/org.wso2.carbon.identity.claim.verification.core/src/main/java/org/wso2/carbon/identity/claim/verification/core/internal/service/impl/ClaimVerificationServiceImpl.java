@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerificatio
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifier;
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifierResolver;
 import org.wso2.carbon.identity.claim.verification.core.store.ClaimVerificationStore;
+import org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationConfigParser;
 import org.wso2.carbon.identity.claim.verification.core.util.ClaimVerificationCoreUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -52,6 +53,7 @@ import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVer
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.PROP_IS_RETRY_ATTEMPT;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.Step;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.VerificationConfigs.CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR;
 
 /**
  * The claim verification core. Handles all necessary actions for the claim verification process.
@@ -68,6 +70,12 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
     private static final String SCENARIO_APPENDER = "-";
     protected RealmService realmService;
     protected List<ClaimVerifierResolver> claimVerifierResolvers = new ArrayList<>();
+    private ClaimVerificationConfigParser claimVerificationConfigParser;
+
+    public ClaimVerificationServiceImpl() {
+
+        initConfigParser();
+    }
 
     @Override
     public List<ClaimVerifier> getAvailableClaimVerifiers() throws ClaimVerificationException {
@@ -91,7 +99,6 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         validateClaimData(claim, claimId, user.getTenantId());
 
         ClaimVerifier claimVerifier = getClaimVerifierByClaimUri(claim.getClaimUri());
-
 
         ClaimData claimData = new ClaimData(user, claimId, claim.getClaimValue(), ClaimVerificationStatus.INITIATED);
 
@@ -123,6 +130,9 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         } else {
             claimVerificationStore.storeClaimData(claimData);
         }
+
+        // Retrieve claim verifier configurations and populate properties.
+        populatePropertiesFromConfigFile(properties, claimVerifier);
 
         // Call claim verifier.
         claimVerifier.sendNotification(user, claim, properties);
@@ -318,6 +328,38 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             LOG.debug("ClaimVerifierResolver with priority: " + claimVerifierResolver.getPriority() + " is unset " +
                     "in claim verification service");
         }
+    }
+
+    private void populatePropertiesFromConfigFile(Map<String, String> properties, ClaimVerifier claimVerifier) {
+
+        Map<String, Object> claimVerifierConfigs = claimVerificationConfigParser.getClaimVerifierConfigs(
+                ClaimVerificationCoreUtils.getTenantDomainFromContext(), claimVerifier.getId());
+
+        claimVerifierConfigs.forEach((key, val) -> {
+            String configName =
+                    key.substring(getConfigNameStartIndex(key));
+
+            // Properties can override config file configurations.
+            if (!properties.keySet().contains(configName)) {
+                if (val instanceof String) {
+                    properties.put(configName, (String) val);
+                    LOG.debug("Added the new config value: " + val + "for the configuration: " + key);
+                }
+                LOG.debug("Skip adding non-string config value: " + val + "for the configuration: " + key);
+            }
+        });
+    }
+
+    private int getConfigNameStartIndex(String key) {
+
+        // ::{configName} => Index of the first character is the key.lastIndexOf(domain)
+        return key.lastIndexOf(CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR)
+                + (CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR.length());
+    }
+
+    private void initConfigParser() {
+
+        claimVerificationConfigParser = new ClaimVerificationConfigParser();
     }
 
     /**
