@@ -18,11 +18,13 @@ package org.wso2.carbon.identity.claim.verification.core.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
+import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationRuntimeException;
 import org.wso2.carbon.identity.claim.verification.core.store.ClaimVerificationStore;
 import org.wso2.carbon.identity.claim.verification.core.store.JDBCClaimVerificationStore;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -238,6 +240,31 @@ public class ClaimVerificationCoreUtils {
     }
 
     /**
+     * Build a new {@link ClaimVerificationRuntimeException}.
+     *
+     * @param details   ErrorMessages enum.
+     * @param exception Throwable cause.
+     * @return ClaimVerificationBadRequestException.
+     */
+    public static ClaimVerificationRuntimeException getClaimVerificationRuntimeException(
+            ErrorMessages details, Throwable exception) {
+
+        return new ClaimVerificationRuntimeException(details.getCode(), details.getMessage(), exception);
+    }
+
+    /**
+     * Build a new {@link ClaimVerificationRuntimeException}.
+     *
+     * @param details   ErrorMessages enum.
+     * @return ClaimVerificationBadRequestException.
+     */
+    public static ClaimVerificationRuntimeException getClaimVerificationRuntimeException(
+            ErrorMessages details) {
+
+        return new ClaimVerificationRuntimeException(details.getCode(), details.getMessage());
+    }
+
+    /**
      * Retrieve {@link LocalClaim} for the given local claim URI from the claim meta-data service.
      *
      * @param claimMetadataManagementService {@link ClaimMetadataManagementService}.
@@ -258,5 +285,10 @@ public class ClaimVerificationCoreUtils {
             }
         }
         return null;
+    }
+
+    public static String getTenantDomainFromContext() {
+
+        return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
     }
 }
