@@ -179,9 +179,26 @@ public class ClaimVerificationCoreConstants {
      */
     public static class VerificationClaimMetaData {
 
-        public static final String VERIFIABLE_PROPERTY = "Verifiable";
-
         public static final String VERIFICATION_METHOD_PROPERTY = "VerificationMethod";
     }
 
+    /**
+     * Constants related to the Claim Verification Configurations.
+     */
+    public static class VerificationConfigs {
+
+        // Name of the claim verifier config file.
+        public static final String CLAIM_VERIFICATION_CONFIG_FILE = "claim-verification-config.xml";
+
+        // Local name of the elements.
+        public static final String CLAIM_VERIFICATION_CONFIG_ELEMENT_NAME_TENANT = "Tenant";
+        public static final String CLAIM_VERIFICATION_CONFIG_ELEMENT_NAME_CLAIM_VERIFIER = "ClaimVerifier";
+
+        // Attribute names of the elements.
+        public static final String CLAIM_VERIFICATION_CONFIG_ELEMENT_ATTRIBUTE_TENANT_DOMAIN = "domain";
+        public static final String CLAIM_VERIFICATION_CONFIG_ELEMENT_ATTRIBUTE_CLAIM_VERIFIER_ID = "id";
+
+        // Domain separator value
+        public static final String CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR = "::";
+    }
 }
