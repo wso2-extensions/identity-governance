@@ -22,7 +22,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
@@ -74,7 +73,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 //    public boolean isVerifiable(String localClaimUri) throws ClaimVerificationException {
 //
 //        try {
-//            List<LocalClaim> localClaims = claimMetadataManagementService.getLocalClaims(getTenantDomain());
+//            List<LocalClaim> localClaims = claimMetadataManagementService.getLocalClaims(getTenantDomainFromContext());
 //
 //            for (LocalClaim localClaim : localClaims) {
 //                if (localClaim.getClaimURI().equals(localClaimUri)) {
@@ -88,7 +87,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 //            }
 //            return false;
 //        } catch (ClaimMetadataException e) {
-//            String msg = "Error occurred while retrieving local claims for the tenant domain: " + getTenantDomain();
+//            String msg = "Error occurred while retrieving local claims for the tenant domain: " + getTenantDomainFromContext();
 //            LOG.error(msg, e);
 //            throw ClaimVerificationCoreUtils.getClaimVerificationException(
 //                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER, e);
@@ -129,7 +128,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 
         try {
             LocalClaim localClaim = ClaimVerificationCoreUtils.getLocalClaimFromService(claimMetadataManagementService,
-                    getTenantDomain(), localClaimUri);
+                    ClaimVerificationCoreUtils.getTenantDomainFromContext(), localClaimUri);
 
             if (localClaim == null) {
                 String msg = "Could not find a matching local claim for the claim uri: " + localClaimUri;
@@ -152,7 +151,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
         } catch (ClaimMetadataException e) {
-            String msg = "Error occurred while retrieving the local claim for the tenant domain: " + getTenantDomain();
+            String msg = "Error occurred while retrieving the local claim for the tenant domain: " + ClaimVerificationCoreUtils.getTenantDomainFromContext();
             LOG.error(msg, e);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER, e);
@@ -244,8 +243,4 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         }
     }
 
-    private String getTenantDomain() {
-
-        return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-    }
 }
