@@ -179,7 +179,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         if (claimVerifier != null) {
             this.claimVerifiers.add(claimVerifier);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Claim verifier:" + claimVerifier.getClass().getSimpleName() + " is set in claim " +
+                LOG.debug("Claim verifier: " + claimVerifier.getClass().getSimpleName() + " is set in claim " +
                         "verification service.");
             }
         }
@@ -189,7 +189,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 
         this.claimVerifiers.remove(claimVerifier);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Claim verifier:" + claimVerifier.getClass().getSimpleName() + " is unset in claim " +
+            LOG.debug("Claim verifier: " + claimVerifier.getClass().getSimpleName() + " is unset in claim " +
                     "verification service.");
         }
     }

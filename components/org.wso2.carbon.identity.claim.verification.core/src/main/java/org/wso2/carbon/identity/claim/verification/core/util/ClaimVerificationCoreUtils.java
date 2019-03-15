@@ -71,7 +71,7 @@ public class ClaimVerificationCoreUtils {
 
         if (characterCount <= minCharacterCount) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Sent character count less than accepted minimum:" + minCharacterCount +
+                LOG.debug("Sent character count less than accepted minimum: " + minCharacterCount +
                         ". Defaulting to min character count.");
             }
             characterCount = minCharacterCount;
