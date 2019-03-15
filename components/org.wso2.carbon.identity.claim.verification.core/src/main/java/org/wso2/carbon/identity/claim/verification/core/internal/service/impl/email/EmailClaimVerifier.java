@@ -339,7 +339,7 @@ public class EmailClaimVerifier implements ClaimVerifier {
                     IdentityTenantUtil.getTenantDomain(tenantId));
 
             if (ArrayUtils.isEmpty(properties)) {
-                String msg = "Required property:" + confProperty + " not found in configuration.";
+                String msg = "Required property: " + confProperty + " not found in configuration.";
                 LOG.error(msg);
                 throw ClaimVerificationCoreUtils.getClaimVerificationException(
                         ErrorMessages.ERROR_MSG_READING_CONFIGURATION);

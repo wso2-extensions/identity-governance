@@ -136,7 +136,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
                 codeData = new ConfirmationCodeData(user, code, scenario, step, timeCreated);
             }
         } catch (SQLException e) {
-            String msg = "Error while loading confirmation code data for code:" + code;
+            String msg = "Error while loading confirmation code data for code: " + code;
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_DATA, e);
         } finally {
@@ -164,7 +164,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
                 claimId = resultSet.getInt("ID");
             }
         } catch (SQLException e) {
-            String msg = "Error while loading claimId for claimUri:" + claimUri + " and tenantId:" + tenantId;
+            String msg = "Error while loading claimId for claimUri: " + claimUri + " and tenantId: " + tenantId;
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
@@ -193,7 +193,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
                 claimUri = resultSet.getString("CLAIM_URI");
             }
         } catch (SQLException e) {
-            String msg = "Error while loading claimUri for claimId:" + claimId + " and tenantId:" + tenantId;
+            String msg = "Error while loading claimUri for claimId: " + claimId + " and tenantId: " + tenantId;
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ErrorMessages.ERROR_MSG_RETRIEVING_CLAIM_DATA, e);
@@ -227,8 +227,8 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String msg = "Error while invalidating confirmation code for user:" + codeData.getUser().getUsername() +
-                    " in userStore:" + codeData.getUser().getRealm() + "in tenantId:" + codeData.getUser().getTenantId();
+            String msg = "Error while invalidating confirmation code for user: " + codeData.getUser().getUsername() +
+                    " in userStore: " + codeData.getUser().getRealm() + "in tenantId: " + codeData.getUser().getTenantId();
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_INVALIDATING_CODE,
                     e);
@@ -251,7 +251,7 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String msg = "Error while invalidating confirmation code:" + code;
+            String msg = "Error while invalidating confirmation code: " + code;
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_INVALIDATING_CODE,
                     e);
@@ -285,9 +285,9 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String msg = "Error while updating claim verification status for claimId:" + claimData.getClaimId() +
-                    "and user:" + claimData.getUser().getUsername() + " in userStore:" + claimData.getUser().getRealm()
-                    + "in tenantId:" + claimData.getUser().getTenantId();
+            String msg = "Error while updating claim verification status for claimId: " + claimData.getClaimId() +
+                    "and user: " + claimData.getUser().getUsername() + " in userStore: " + claimData.getUser().getRealm()
+                    + "in tenantId: " + claimData.getUser().getTenantId();
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_UPDATING_DATA, e);
         } finally {
@@ -321,9 +321,9 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String msg = "Error while updating claim data for claimId:" + claimData.getClaimId() + "and user:" +
-                    claimData.getUser().getUsername() + " in userStore:" + claimData.getUser().getRealm() +
-                    "in tenantId:" + claimData.getUser().getTenantId();
+            String msg = "Error while updating claim data for claimId: " + claimData.getClaimId() + "and user: " +
+                    claimData.getUser().getUsername() + " in userStore: " + claimData.getUser().getRealm() +
+                    "in tenantId: " + claimData.getUser().getTenantId();
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_UPDATING_DATA, e);
         } finally {
@@ -355,8 +355,8 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
             prepStmt.execute();
             connection.commit();
         } catch (SQLException e) {
-            String msg = "Error while clearing claim data for claimId:" + claimId + "user:" + user.getUsername() +
-                    " in userStore:" + user.getRealm() + "in tenantId:" + user.getTenantId();
+            String msg = "Error while clearing claim data for claimId: " + claimId + "user: " + user.getUsername() +
+                    " in userStore: " + user.getRealm() + "in tenantId: " + user.getTenantId();
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ErrorMessages.ERROR_MSG_CLEARING_CLAIM_DATA, e);
@@ -403,8 +403,8 @@ public class JDBCClaimVerificationStore implements ClaimVerificationStore {
                 loadedClaimData = new ClaimData(loadedUser, loadedClaimId, loadedClaimValue, loadedVerificationStatus);
             }
         } catch (SQLException e) {
-            String msg = "Error while loading claim data for claimId:" + claimId + " and user:" + user.getUsername() +
-                    " in userStore:" + user.getRealm() + "in tenantId:" + user.getTenantId();
+            String msg = "Error while loading claim data for claimId: " + claimId + " and user: " + user.getUsername() +
+                    " in userStore: " + user.getRealm() + "in tenantId: " + user.getTenantId();
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_RETRIEVING_DATA, e);
         } finally {

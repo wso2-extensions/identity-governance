@@ -380,14 +380,14 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             if (codeData.getStep() != Step.CLAIM_VALIDATION
                     && codeData.getStep() != Step.CLAIM_CONFIRMATION) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Invalid code. Step verification failed. code:" + codeData.getCode());
+                    LOG.debug("Invalid code. Step verification failed. code: " + codeData.getCode());
                 }
                 throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
                         ErrorMessages.ERROR_MSG_INVALID_CONFIRMATION_CODE);
             }
         } else if (step != codeData.getStep()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Invalid code. Step verification failed. code:" + codeData.getCode());
+                LOG.debug("Invalid code. Step verification failed. code: " + codeData.getCode());
             }
             throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
                     ErrorMessages.ERROR_MSG_INVALID_CONFIRMATION_CODE);
@@ -395,7 +395,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         if (codeValidityPeriod < 0) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Code:" + codeData.getCode() + "has an unlimited validity period.");
+                LOG.debug("Code: " + codeData.getCode() + " has an unlimited validity period.");
             }
             return;
         }
@@ -405,7 +405,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         if (System.currentTimeMillis() > expiryTime) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Expired code. code:" + codeData.getCode());
+                LOG.debug("Expired code. code: " + codeData.getCode());
             }
             throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
                     ErrorMessages.ERROR_MSG_EXPIRED_CONFIRMATION_CODE);
@@ -467,7 +467,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         if (ArrayUtils.isEmpty(userList)) {
             String msg = "Unable to find an user for username: " + user.getUsername()
-                    + ", userStore:" + user.getRealm() + "and tenantId:" + user.getTenantId();
+                    + ", userStore: " + user.getRealm() + "and tenantId: " + user.getTenantId();
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }
@@ -478,8 +478,8 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             user.setRealm(IdentityUtil.extractDomainFromName(userList[0]));
         } else if (userList.length > 1) {
             String msg =
-                    "Found multiple users for username: " + user.getUsername() + ", userStore:" + user.getRealm() +
-                            "and tenantId:" + user.getTenantId();
+                    "Found multiple users for username: " + user.getUsername() + ", userStore: " + user.getRealm() +
+                            "and tenantId: " + user.getTenantId();
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }
@@ -488,8 +488,8 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         }
 
         if (LOG.isDebugEnabled()) {
-            String msg = "Found user for username: " + user.getUsername() + ", userStore:" + user.getRealm() + "and " +
-                    "tenantId:" + user.getTenantId();
+            String msg = "Found user for username: " + user.getUsername() + ", userStore: " + user.getRealm() + "and " +
+                    "tenantId: " + user.getTenantId();
             LOG.debug(msg);
         }
     }
@@ -506,7 +506,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
 
         if (claimId == -1) {
             String msg =
-                    "Unable to find a local claim with claim uri: " + claim.getClaimUri() + " and tenantId:" + tenantId;
+                    "Unable to find a local claim with claim uri: " + claim.getClaimUri() + " and tenantId: " + tenantId;
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }
@@ -575,9 +575,9 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             // Set the user claim value using the default profile.
             userStoreManager.setUserClaimValue(usernameWithRealm, claimUri, claimData.getClaimValue(), null);
         } catch (UserStoreException e) {
-            String msg = "Error when adding claim to userstore for user:" + codeData.getUser().getUsername() +
-                    " in userStore:" + codeData.getUser().getRealm() + "in tenantId:" + codeData.getUser().getTenantId()
-                    + " and claimUri:" + claimUri;
+            String msg = "Error when adding claim to userstore for user: " + codeData.getUser().getUsername() +
+                    " in userStore: " + codeData.getUser().getRealm() + "in tenantId: " + codeData.getUser().getTenantId()
+                    + " and claimUri: " + claimUri;
             LOG.error(msg);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ErrorMessages.ERROR_MSG_ADD_CLAIM_TO_USER_STORE, e);
@@ -599,7 +599,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             return CodeType.CONFIRMATION;
         }
 
-        String msg = "Invalid step received to get codeType. step:" + String.valueOf(step);
+        String msg = "Invalid step received to get codeType. step: " + String.valueOf(step);
         LOG.error(msg);
         throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_UNEXPECTED_ERROR);
     }
