@@ -106,6 +106,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
         ClaimData loadedClaimData = claimVerificationStore.loadClaimData(claimId, user);
         if (loadedClaimData != null) {
 
+            // Invalidate existing confirmation code data for the retry attempt.
             Enum verificationStatus;
             if (loadedClaimData.getVerificationStatus() == ClaimVerificationStatus.INITIATED) {
                 verificationStatus = Step.CLAIM_VALIDATION;
@@ -117,9 +118,10 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
                     getScenarioForCodeData(claimId, claimVerifier.getId()), verificationStatus);
             claimVerificationStore.invalidateConfirmationCode(codeData);
 
+            // Update existing claim data for the retry attempt if requires.
             if ((loadedClaimData.getVerificationStatus() !=
                     ClaimVerificationStatus.INITIATED) ||
-                    loadedClaimData.getClaimValue().equals(claimData.getClaimValue())) {
+                    !loadedClaimData.getClaimValue().equals(claimData.getClaimValue())) {
                 claimVerificationStore.updateClaimData(claimData);
             }
 
@@ -131,12 +133,13 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             claimVerificationStore.storeClaimData(claimData);
         }
 
-        // Retrieve claim verifier configurations and populate properties.
+        // Retrieve claim verifier configurations and populate properties if not already overridden in the request.
         populatePropertiesFromConfigFile(properties, claimVerifier);
 
         // Call claim verifier.
         claimVerifier.sendNotification(user, claim, properties);
 
+        // Generate a confirmation code for the validation scenario and store code data.
         String confirmationCode = ClaimVerificationCoreUtils.getConfirmationCode();
         ConfirmationCodeData codeData = new ConfirmationCodeData(user, confirmationCode,
                 getScenarioForCodeData(claimId, claimVerifier.getId()), Step.CLAIM_VALIDATION);

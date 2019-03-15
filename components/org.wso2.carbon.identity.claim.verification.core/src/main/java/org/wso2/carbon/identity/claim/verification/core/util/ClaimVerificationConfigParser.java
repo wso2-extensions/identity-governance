@@ -120,7 +120,6 @@ public class ClaimVerificationConfigParser {
 
         // key -> {tenant-domain}::ClaimVerifiers::{claim-verifier}::config::{config-name}
         StringBuilder sb = new StringBuilder();
-        // TODO: 3/14/19 Not getting tenantDomain from the User object but from the context
         addNewClaimVerificationConfigDomain(sb, tenantDomain);
         addNewClaimVerificationConfigDomain(sb, "ClaimVerifiers");
         addNewClaimVerificationConfigDomain(sb, claimVerifierId);
@@ -248,6 +247,7 @@ public class ClaimVerificationConfigParser {
                     ERROR_MSG_READING_CONFIGURATION);
         }
 
+        // Domain separator value is not allowed in a resolved local name.
         if (resolvedLocalName.contains(CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR)) {
             log.error("Error resolving attribute value: " + resolvedLocalName + " as the local name in the " +
                     "element: " + elementIdentifier + ". Resolved local name cannot contain the " +
