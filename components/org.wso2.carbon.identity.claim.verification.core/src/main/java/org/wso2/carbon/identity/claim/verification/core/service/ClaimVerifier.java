@@ -49,14 +49,6 @@ public interface ClaimVerifier {
     boolean isVerified(User user, Claim claim, Map<String, String> properties) throws ClaimVerificationException;
 
     /**
-     * Used to check if the verifier can handler a particular claim verification request.
-     *
-     * @return Returns true is the verifier can handle the claim verification request else returns false.
-     * @throws ClaimVerificationException
-     */
-    boolean canHandle(Map<String, String> properties) throws ClaimVerificationException;
-
-    /**
      * Used to notify the verifier that the claim verification process is being terminated.
      *
      * @param user  User of the claim.
