@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementServic
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants;
-import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifier;
 import org.wso2.carbon.identity.claim.verification.core.service.ClaimVerifierResolver;
@@ -36,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_MISSING_CLAIM_VERIFIERS;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.VerificationClaimMetaData.VERIFICATION_METHOD_PROPERTY;
 
 /**
@@ -62,38 +62,6 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         return 1;
     }
 
-//    /**
-//     * Used to validate the verifiability of the local claim with this resolver.
-//     *
-//     * @param localClaimUri Id value of the claim.
-//     * @return True if the claim is verifiable. False otherwise.
-//     * @throws ClaimVerificationException
-//     */
-//    @Override
-//    public boolean isVerifiable(String localClaimUri) throws ClaimVerificationException {
-//
-//        try {
-//            List<LocalClaim> localClaims = claimMetadataManagementService.getLocalClaims(getTenantDomainFromContext());
-//
-//            for (LocalClaim localClaim : localClaims) {
-//                if (localClaim.getClaimURI().equals(localClaimUri)) {
-//                    Map<String, String> claimProperties = localClaim.getClaimProperties();
-//                    if (claimProperties.keySet().contains(VERIFIABLE_PROPERTY)
-//                            && Boolean.parseBoolean(claimProperties.get(VERIFIABLE_PROPERTY))) {
-//                        return true;
-//                    }
-//                    break;
-//                }
-//            }
-//            return false;
-//        } catch (ClaimMetadataException e) {
-//            String msg = "Error occurred while retrieving local claims for the tenant domain: " + getTenantDomainFromContext();
-//            LOG.error(msg, e);
-//            throw ClaimVerificationCoreUtils.getClaimVerificationException(
-//                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER, e);
-//        }
-//    }
-
     /**
      * Used to resolve a claim verifier for the given claim verifier id value, from the available claim verifiers.
      *
@@ -104,7 +72,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
     @Override
     public ClaimVerifier resolveClaimVerifierId(String claimVerifierId) throws ClaimVerificationException {
 
-        for (ClaimVerifier claimVerifier : claimVerifiers) {
+        for (ClaimVerifier claimVerifier : getClaimVerifiers()) {
             if (claimVerifier.getId().equals(claimVerifierId)) {
                 return claimVerifier;
             }
@@ -139,8 +107,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
 
             Map<String, String> claimProperties = localClaim.getClaimProperties();
 
-//            validateLocalClaimProperties(claimProperties, localClaim);
-            for (ClaimVerifier claimVerifier : claimVerifiers) {
+            for (ClaimVerifier claimVerifier : getClaimVerifiers()) {
                 if (claimVerifier.getId().equals(claimProperties.get(VERIFICATION_METHOD_PROPERTY))) {
                     return claimVerifier;
                 }
@@ -151,7 +118,8 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
         } catch (ClaimMetadataException e) {
-            String msg = "Error occurred while retrieving the local claim for the tenant domain: " + ClaimVerificationCoreUtils.getTenantDomainFromContext();
+            String msg =
+                    "Error occurred while retrieving the local claim for the tenant domain: " + ClaimVerificationCoreUtils.getTenantDomainFromContext();
             LOG.error(msg, e);
             throw ClaimVerificationCoreUtils.getClaimVerificationException(
                     ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER, e);
@@ -164,7 +132,7 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
     @Override
     public List<ClaimVerifier> getAvailableClaimVerifiers() {
 
-        return this.claimVerifiers;
+        return getClaimVerifiers();
     }
 
     @Reference(
@@ -221,26 +189,12 @@ public class ClaimVerifierResolverImpl implements ClaimVerifierResolver {
         }
     }
 
-    private void validateLocalClaimProperties(Map<String, String> claimProperties, LocalClaim localClaim)
-            throws ClaimVerificationBadRequestException {
+    protected List<ClaimVerifier> getClaimVerifiers() {
 
-        String errMsg = null;
-
-        // Verifiable property can be unavailable in the db, if it has not been configured previously.
-        // TODO: 3/11/19 [Review Required] vverification method claims will only be available in
-        //  the db once they are used at the first run.
-        // It is mandatory to have the property, "verification method" for a verifiable claim.
-        if (!claimProperties.keySet().contains(VERIFICATION_METHOD_PROPERTY)) {
-            errMsg = "The claim: " + localClaim.getClaimURI() + ", does not contain mandatory property: "
-                    + VERIFICATION_METHOD_PROPERTY + " to " +
-                    "resolve a claim verifier.";
-            LOG.error(errMsg);
+        if (this.claimVerifiers.isEmpty()) {
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_CLAIM_VERIFIERS);
         }
-
-        if (errMsg != null) {
-            throw ClaimVerificationCoreUtils.getClaimVerificationBadRequestException(
-                    ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_RESOLVING_CLAIM_VERIFIER);
-        }
+        return claimVerifiers;
     }
 
 }

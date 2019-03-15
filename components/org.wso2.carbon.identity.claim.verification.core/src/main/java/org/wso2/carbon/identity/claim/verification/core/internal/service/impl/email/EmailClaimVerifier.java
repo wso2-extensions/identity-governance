@@ -50,6 +50,7 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.CodeType;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_MISSING_REQUIRED_SERVICES;
 import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ClaimVerifierConfig.EMAIL_VERIFIER_PROPERTY_TEMPLATE;
 import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ClaimVerifierConfig.EMAIL_VERIFIER_PROPERTY_VALIDATION_URL;
 import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ConnectorConfig;
@@ -184,7 +185,9 @@ public class EmailClaimVerifier implements ClaimVerifier {
     protected RealmService getRealmService() {
 
         if (this.realmService == null) {
-            throw new RuntimeException("RealmService not available. Component is not started properly.");
+            LOG.error("RealmService not available. Component is not started properly.");
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_REQUIRED_SERVICES);
+
         }
         return realmService;
     }
@@ -207,7 +210,9 @@ public class EmailClaimVerifier implements ClaimVerifier {
     protected IdentityEventService getIdentityEventService() {
 
         if (this.identityEventService == null) {
-            throw new RuntimeException("IdentityEventService not available. Component is not started properly.");
+            LOG.error("IdentityEventService not available. Component is not started properly.");
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_REQUIRED_SERVICES);
+
         }
         return this.identityEventService;
     }
@@ -230,7 +235,9 @@ public class EmailClaimVerifier implements ClaimVerifier {
     protected IdentityGovernanceService getIdentityGovernanceService() {
 
         if (this.identityGovernanceService == null) {
-            throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
+            LOG.error("IdentityGovernanceService not available. Component is not started properly.");
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_REQUIRED_SERVICES);
+
         }
         return this.identityGovernanceService;
     }
@@ -262,8 +269,9 @@ public class EmailClaimVerifier implements ClaimVerifier {
     protected ClaimMetadataManagementService getClaimMetadataManagementService() {
 
         if (this.claimMetadataManagementService == null) {
-            throw new RuntimeException("ClaimMetadataManagementService not available. Component is not started " +
+            LOG.error("ClaimMetadataManagementService not available. Component is not started " +
                     "properly.");
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_REQUIRED_SERVICES);
         }
         return this.claimMetadataManagementService;
     }
