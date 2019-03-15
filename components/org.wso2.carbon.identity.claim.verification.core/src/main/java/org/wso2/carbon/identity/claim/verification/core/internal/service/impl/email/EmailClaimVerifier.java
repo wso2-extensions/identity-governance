@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementServic
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants;
+import org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationBadRequestException;
 import org.wso2.carbon.identity.claim.verification.core.exception.ClaimVerificationException;
 import org.wso2.carbon.identity.claim.verification.core.model.Claim;
@@ -49,7 +50,13 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.CodeType;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ClaimVerifierConfig.EMAIL_VERIFIER_PROPERTY_TEMPLATE;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ClaimVerifierConfig.EMAIL_VERIFIER_PROPERTY_VALIDATION_URL;
 import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.ConnectorConfig;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.MessageParameter.EMAIL_VERIFIER_PARAMETER_NONCE_VALUE;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_NONCE_VALUE;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_TEMPLATE_TYPE;
+import static org.wso2.carbon.identity.claim.verification.core.constant.EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_VALIDATION_URL;
 
 /**
  * Claim verifier for email claims.
@@ -64,16 +71,6 @@ public class EmailClaimVerifier implements ClaimVerifier {
     private static final Log LOG = LogFactory.getLog(EmailClaimVerifier.class);
 
     private final String ID = "EmailClaimVerifier";
-
-    private final String PROPERTY_SEND_TO = "send-to";
-    private final String PROPERTY_NONCE_VALUE = "nonce-value";
-    private final String PROPERTY_CLAIM_NAME = "claim-name";
-    private final String PROPERTY_CLAIM_VALUE = "claim-value";
-    private final String PROPERTY_VALIDATION_URL = "validation-url";
-    private final String PROPERTY_TEMPLATE_TYPE = "TEMPLATE_TYPE";
-    //private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailConfirm";
-    private final String PROPERTY_TEMPLATE_TYPE_VALUE = "emailVerification";
-    private final String PROPERTY_VERIFICATION_METHOD = "verification-method";
 
     private final String CLAIM_PROPERTY_DISPLAY_NAME = "DisplayName";
 
@@ -92,11 +89,10 @@ public class EmailClaimVerifier implements ClaimVerifier {
     public void sendNotification(User user, Claim claim, Map<String, String> properties) throws
             ClaimVerificationException {
 
-        verifyRequiredPropertyExists(properties, PROPERTY_VALIDATION_URL);
-        verifyRequiredPropertyExists(properties, PROPERTY_NONCE_VALUE);
+        verifyRequiredPropertyExists(properties, EMAIL_VERIFIER_PARAMETER_NONCE_VALUE);
+        verifyRequiredPropertyExists(properties, EMAIL_VERIFIER_PROPERTY_TEMPLATE);
+        verifyRequiredPropertyExists(properties, EMAIL_VERIFIER_PROPERTY_VALIDATION_URL);
 
-//        String claimName = ClaimVerificationCoreUtils.getClaimMetaData(user.getTenantId(), claim.getClaimUri(),
-//                getRealmService()).getDisplayTag();
         try {
             String claimName = getLocalClaimDisplayName(user, claim);
 
@@ -109,12 +105,17 @@ public class EmailClaimVerifier implements ClaimVerifier {
             notificationProps.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getRealm());
             notificationProps.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN,
                     IdentityTenantUtil.getTenantDomain(user.getTenantId()));
-            notificationProps.put(PROPERTY_SEND_TO, claim.getClaimValue());
-            notificationProps.put(PROPERTY_CLAIM_NAME, claimName);
-            notificationProps.put(PROPERTY_NONCE_VALUE, properties.get(PROPERTY_NONCE_VALUE));
-            notificationProps.put(PROPERTY_CLAIM_VALUE, claim.getClaimValue());
-            notificationProps.put(PROPERTY_VALIDATION_URL, properties.get(PROPERTY_VALIDATION_URL));
-            notificationProps.put(PROPERTY_TEMPLATE_TYPE, PROPERTY_TEMPLATE_TYPE_VALUE);
+            notificationProps.put(EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_SEND_TO, claim.getClaimValue());
+            notificationProps.put(EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_CLAIM_NAME, claimName);
+            notificationProps.put(EmailClaimVerifierConstants.NotificationProperty.NOTIFICATION_PROPERTY_CLAIM_VALUE, claim.getClaimValue());
+
+            // Naming consistence for event notifications and verifier configurations.
+            notificationProps.put(
+                    NOTIFICATION_PROPERTY_TEMPLATE_TYPE, properties.get(EMAIL_VERIFIER_PROPERTY_TEMPLATE));
+            notificationProps.put(
+                    NOTIFICATION_PROPERTY_VALIDATION_URL, properties.get(EMAIL_VERIFIER_PROPERTY_VALIDATION_URL));
+            notificationProps.put(
+                    NOTIFICATION_PROPERTY_NONCE_VALUE, properties.get(EMAIL_VERIFIER_PARAMETER_NONCE_VALUE));
 
             Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, notificationProps);
             try {
@@ -138,18 +139,6 @@ public class EmailClaimVerifier implements ClaimVerifier {
     @Override
     public boolean isVerified(User user, Claim claim, Map<String, String> properties) throws ClaimVerificationException {
 
-        return true;
-    }
-
-    @Override
-    public boolean canHandle(Map<String, String> properties) throws ClaimVerificationException {
-
-        // This e-mail verifier will only engage if the property, "verification-method" is present and equals to the
-        // value "EmailClaimVerifier", which is this verifier's identifier value.
-        if (!properties.containsKey(PROPERTY_VERIFICATION_METHOD) ||
-                !getId().equalsIgnoreCase(properties.get(PROPERTY_VERIFICATION_METHOD))) {
-            return false;
-        }
         return true;
     }
 
@@ -325,7 +314,7 @@ public class EmailClaimVerifier implements ClaimVerifier {
             ClaimVerificationBadRequestException {
 
         if (!properties.containsKey(property) || StringUtils.isBlank(properties.get(property))) {
-            String msg = "Required property not found. Property:" + property;
+            String msg = "Required property not found. Property: " + property;
             if (LOG.isDebugEnabled()) {
                 LOG.debug(msg);
             }
