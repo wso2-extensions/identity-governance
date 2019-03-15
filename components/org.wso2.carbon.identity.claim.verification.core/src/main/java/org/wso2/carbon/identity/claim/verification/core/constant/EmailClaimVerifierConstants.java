@@ -28,4 +28,34 @@ public class EmailClaimVerifierConstants {
         public static final String CONFIRMATION_STEP_EXPIRY_TIME =
                 "EmailClaimVerification.Confirmation.Step.Code.ExpiryTime";
     }
+
+    /**
+     * Configurations for the e-mail claim verifier.
+     */
+    public static class ClaimVerifierConfig {
+
+        public static final String EMAIL_VERIFIER_PROPERTY_TEMPLATE = "EmailTemplate";
+        public static final String EMAIL_VERIFIER_PROPERTY_VALIDATION_URL = "ValidationUrl";
+    }
+
+    /**
+     * Request/Response parameters for the e-mail claim verifier.
+     */
+    public static class MessageParameter {
+
+        public static final String EMAIL_VERIFIER_PARAMETER_NONCE_VALUE = "NonceValue";
+    }
+
+    /**
+     * Properties can be used as placeholders in the email template.
+     */
+    public static class NotificationProperty {
+
+        public static final String NOTIFICATION_PROPERTY_SEND_TO = "send-to";
+        public static final String NOTIFICATION_PROPERTY_NONCE_VALUE = "nonce-value";
+        public static final String NOTIFICATION_PROPERTY_CLAIM_NAME = "claim-name";
+        public static final String NOTIFICATION_PROPERTY_CLAIM_VALUE = "claim-value";
+        public static final String NOTIFICATION_PROPERTY_TEMPLATE_TYPE = "TEMPLATE_TYPE";
+        public static final String NOTIFICATION_PROPERTY_VALIDATION_URL = "validation-url";
+    }
 }
