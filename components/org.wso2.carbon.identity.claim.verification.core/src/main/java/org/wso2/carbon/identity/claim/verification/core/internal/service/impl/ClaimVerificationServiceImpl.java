@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ClaimVerificationStatus;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.CodeType;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages;
+import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.ErrorMessages.ERROR_MSG_MISSING_REQUIRED_SERVICES;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.PROP_IS_RETRY_ATTEMPT;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.Step;
 import static org.wso2.carbon.identity.claim.verification.core.constant.ClaimVerificationCoreConstants.VerificationConfigs.CLAIM_VERIFICATION_CONFIG_DOMAIN_SEPARATOR;
@@ -287,7 +288,8 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
     protected RealmService getRealmService() {
 
         if (this.realmService == null) {
-            throw new RuntimeException("RealmService not available. Component is not started properly.");
+            LOG.debug("RealmService not available. Component is not started properly.");
+            throw ClaimVerificationCoreUtils.getClaimVerificationRuntimeException(ERROR_MSG_MISSING_REQUIRED_SERVICES);
         }
         return realmService;
     }
@@ -599,7 +601,7 @@ public class ClaimVerificationServiceImpl implements ClaimVerificationService {
             return CodeType.CONFIRMATION;
         }
 
-        String msg = "Invalid step received to get codeType. step: " + String.valueOf(step);
+        String msg = "Invalid step received to get codeType. step: " + step;
         LOG.error(msg);
         throw ClaimVerificationCoreUtils.getClaimVerificationException(ErrorMessages.ERROR_MSG_UNEXPECTED_ERROR);
     }

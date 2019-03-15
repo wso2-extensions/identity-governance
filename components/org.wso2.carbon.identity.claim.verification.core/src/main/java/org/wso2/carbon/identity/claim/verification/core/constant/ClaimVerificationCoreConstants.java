@@ -42,16 +42,16 @@ public class ClaimVerificationCoreConstants {
         ERROR_MSG_NO_MATCHING_USER_FOUND("CV0008", "No matching user found for received user details."),
         ERROR_MSG_MULTIPLE_MATCHING_USERS_FOUND("CV3009", "Multiple users found for received user details."),
         ERROR_MSG_NO_MATCHING_LOCAL_CLAIM_FOUND("CV0010", "No matching local claim found for received claim uri."),
-        ERROR_MSG_NO_MATCHING_CLAIM_VERIFIER_FOUND("CV0011", "No matching claim verifier found."),
-        ERROR_MSG_REQUIRED_PROPERTY_NOT_FOUND("CV0012", "Required property not found."),
-        ERROR_MSG_UPDATING_DATA("CV0013", "Error when updating data."),
-        ERROR_MSG_INVALID_CONFIRMATION_CODE("CV0014", "Invalid confirmation code."),
-        ERROR_MSG_EXPIRED_CONFIRMATION_CODE("CV0015", "Expired confirmation code."),
-        ERROR_MSG_CLEARING_CLAIM_DATA("CV0016", "Error when clearing claim data."),
-        ERROR_MSG_ADD_CLAIM_TO_USER_STORE("CV0017", "Error when adding claim to userstore."),
-        ERROR_MSG_UNEXPECTED_ERROR("CV0018", "Unexpected Error."),
-        ERROR_MSG_NO_MATCHING_VALIDATION_STATUS_FOUND("CV0019", "No matching validation status found."),
-        ERROR_MSG_RESOLVING_CLAIM_VERIFIER("CV0020", "Error when resolving a verifier for the claim.");
+        ERROR_MSG_REQUIRED_PROPERTY_NOT_FOUND("CV0011", "Required property not found."),
+        ERROR_MSG_UPDATING_DATA("CV0012", "Error when updating data."),
+        ERROR_MSG_INVALID_CONFIRMATION_CODE("CV0013", "Invalid confirmation code."),
+        ERROR_MSG_EXPIRED_CONFIRMATION_CODE("CV0014", "Expired confirmation code."),
+        ERROR_MSG_CLEARING_CLAIM_DATA("CV0015", "Error when clearing claim data."),
+        ERROR_MSG_ADD_CLAIM_TO_USER_STORE("CV0016", "Error when adding claim to userstore."),
+        ERROR_MSG_UNEXPECTED_ERROR("CV0017", "Unexpected Error."),
+        ERROR_MSG_RESOLVING_CLAIM_VERIFIER("CV0018", "Error when resolving a verifier for the claim."),
+        ERROR_MSG_MISSING_CLAIM_VERIFIERS("CV0019", "Claim verifiers are missing."),
+        ERROR_MSG_MISSING_REQUIRED_SERVICES("CV0020", "Required services are unavailable.");
 
         private final String code;
         private final String message;
