@@ -621,7 +621,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.12.261</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.305</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -641,7 +641,7 @@
         <jackson-jaxrs-json-provider.version>2.9.7</jackson-jaxrs-json-provider.version>
         <jackson-databind.version>2.9.7</jackson-databind.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
-        <cxf-bundle.version>3.2.6</cxf-bundle.version>
+        <cxf-bundle.version>3.2.8</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
         <spring-web.version>4.1.6.RELEASE</spring-web.version>
         <swagger-jaxrs.version>1.5.20</swagger-jaxrs.version>
