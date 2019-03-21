@@ -42,7 +42,7 @@ public class ForgetMeToolExecutor {
     private static final String SCRIPT_NAME_BASH = "forgetme.sh";
     private static final String SCRIPT_NAME_WINDOWS = "forgetme.bat";
     private static final String SYSTEM_PROPERTY_OS_NAME = "os.name";
-    private static final String USER_STORE_EXTENSION_CONF_RELATIVE_PATH = "ext/user-store/conf";
+    private static final String USER_STORE_EXTENSION_CONF_RELATIVE_PATH = "extensions/user-store/conf";
 
     /**
      * Executes ForgetMeTool to update the existing username of the user.
