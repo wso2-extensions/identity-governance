@@ -237,11 +237,6 @@
                 <artifactId>synapse-core</artifactId>
                 <version>${synapse-core.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.cxf</groupId>
-                <artifactId>cxf-bundle</artifactId>
-                <version>${cxf-bundle.version}</version>
-            </dependency>
 
             <!--Carbon Kernel Dependencies-->
             <dependency>
@@ -424,6 +419,11 @@
                 <version>${swagger-jaxrs.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>${javax.ws.rs-api.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
@@ -462,18 +462,6 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${testng.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
@@ -633,7 +621,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.12.261</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.305</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -650,13 +638,14 @@
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.scr.plugin.version>1.7.2</maven.scr.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <jackson-jaxrs-json-provider.version>2.9.6</jackson-jaxrs-json-provider.version>
-        <jackson-databind.version>2.9.6</jackson-databind.version>
+        <jackson-jaxrs-json-provider.version>2.9.7</jackson-jaxrs-json-provider.version>
+        <jackson-databind.version>2.9.7</jackson-databind.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
-        <cxf-bundle.version>3.1.16</cxf-bundle.version>
+        <cxf-bundle.version>3.2.8</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
         <spring-web.version>4.1.6.RELEASE</spring-web.version>
         <swagger-jaxrs.version>1.5.20</swagger-jaxrs.version>
+        <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
