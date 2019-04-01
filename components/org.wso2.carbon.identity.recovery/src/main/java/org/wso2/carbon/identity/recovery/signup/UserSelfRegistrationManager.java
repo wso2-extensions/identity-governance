@@ -189,10 +189,6 @@ public class UserSelfRegistrationManager {
                         password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
-                if (StringUtils.isNotEmpty(e.getMessage()) && e.getMessage().contains("31301")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
-                            ERROR_CODE_USERNAME_POLICY_VIOLATED, user.getUserName(), e);
-                }
                 Throwable cause = e;
 
                 while (cause != null) {
@@ -203,11 +199,7 @@ public class UserSelfRegistrationManager {
                     cause = cause.getCause();
                 }
 
-                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
-                } else {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
-                }
+                return handleClientException(user, e);
             }
             addUserConsent(consent, tenantDomain);
 
@@ -230,6 +222,38 @@ public class UserSelfRegistrationManager {
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    private NotificationResponseBean handleClientException(User user, UserStoreException e) throws
+            IdentityRecoveryException {
+
+        if (StringUtils.isEmpty(e.getMessage())) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("31301")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USERNAME_POLICY_VIOLATED, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("PasswordInvalidAsk")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_PASSWORD_POLICY_VIOLATED, StringUtils.EMPTY, e);
+        }
+
+        if (e.getMessage().contains("UserAlreadyExisting:")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("Invalid Domain")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
+        }
+
+        throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
     }
 
     /**
