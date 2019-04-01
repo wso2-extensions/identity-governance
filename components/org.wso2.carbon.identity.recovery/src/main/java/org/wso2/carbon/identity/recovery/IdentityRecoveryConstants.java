@@ -134,7 +134,9 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PUBLISH_EVENT("20043", "Error while publishing event %s."),
         ERROR_CODE_CALLBACK_URL_NOT_VALID("20044", "Configured callback URL does not match with the provided callback"
                 + " URL: %s in the request."),
-        ERROR_CODE_USERNAME_POLICY_VIOLATED("20045", "Provided username '%s' violates the policy.");
+        ERROR_CODE_USERNAME_POLICY_VIOLATED("20045", "Provided username %s violates the policy."),
+        ERROR_CODE_PASSWORD_POLICY_VIOLATED("20046", "Provided password violates the policy."),
+        ERROR_CODE_DOMAIN_VIOLATED("20047", "Invalid domain %s provided.");
 
 
         private final String code;
