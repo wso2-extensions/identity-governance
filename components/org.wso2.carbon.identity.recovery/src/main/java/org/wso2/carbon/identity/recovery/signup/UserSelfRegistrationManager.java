@@ -189,6 +189,10 @@ public class UserSelfRegistrationManager {
                         password, userRoles, claimsMap, null);
 
             } catch (UserStoreException e) {
+                if (StringUtils.isNotEmpty(e.getMessage()) && e.getMessage().contains("31301")) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                            ERROR_CODE_USERNAME_POLICY_VIOLATED, user.getUserName(), e);
+                }
                 Throwable cause = e;
 
                 while (cause != null) {
