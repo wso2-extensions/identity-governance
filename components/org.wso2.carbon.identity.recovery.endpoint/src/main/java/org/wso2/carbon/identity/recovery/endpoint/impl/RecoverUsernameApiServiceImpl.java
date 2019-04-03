@@ -48,6 +48,13 @@ public class RecoverUsernameApiServiceImpl extends RecoverUsernameApiService {
         } catch (IdentityRecoveryException e) {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
+            if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
+                    throwable.getMessage())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(throwable.getMessage());
+                }
+                return Response.ok().build();
+            }
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
