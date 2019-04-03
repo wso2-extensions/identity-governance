@@ -128,6 +128,8 @@
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
+        <module>components/org.wso2.carbon.identity.claim.verification.core</module>
+        <!--module>components/org.wso2.carbon.identity.claim.verification.endpoint</module-->
 
         <module>service-stubs/identity</module>
 
@@ -332,6 +334,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.application.common</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.claim.metadata.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
 
