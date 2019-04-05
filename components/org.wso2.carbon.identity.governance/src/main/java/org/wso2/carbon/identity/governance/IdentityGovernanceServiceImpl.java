@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -30,8 +31,10 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
@@ -120,6 +123,38 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             configMap[index] = property;
             index++;
         }
+
+        List<IdentityConnectorConfig> list = getConnectorList();
+        String[] connectorProperties;
+
+        ArrayList<Property> propertiesToAdd = new ArrayList<>();
+        for (IdentityConnectorConfig aList : list) {
+            connectorProperties = aList.getPropertyNames();
+            for (String connectorProperty : connectorProperties) {
+                boolean propertyExists = false;
+                for (Property property : configMap) {
+                    if (connectorProperty.equals(property.getName())) {
+                        propertyExists = true;
+                        break;
+                    }
+                }
+                if (!propertyExists) {
+                    Property newProperty = new Property();
+                    newProperty.setName(connectorProperty);
+                    newProperty.setDescription(aList.getPropertyDescriptionMapping().get(connectorProperty));
+                    newProperty.setDisplayName(aList.getPropertyNameMapping().get(connectorProperty));
+                    Properties defaultPropertyValues = aList.getDefaultPropertyValues(tenantDomain);
+                    newProperty.setValue(String.valueOf(defaultPropertyValues.get(connectorProperty)));
+                    updateConfiguration(tenantDomain, Collections.singletonMap(newProperty.getName(), newProperty.getValue()));
+                    propertiesToAdd.add(newProperty);
+                }
+            }
+        }
+
+        if (propertiesToAdd.size() > 0) {
+            configMap = (Property[]) ArrayUtils.addAll(configMap, propertiesToAdd.toArray(new Property[0]));
+        }
+
         return configMap;
     }
 
