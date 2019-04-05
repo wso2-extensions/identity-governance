@@ -586,6 +586,16 @@ public class UserSelfRegistrationManager {
         }
         // There should be a one receipt
         ReceiptServiceInput receiptServiceInput = receiptInput.getServices().get(0);
+
+        // Handle the scenario, where all the purposes are having optional PII attributes and then the user register
+        // without giving consent to any of the purposes.
+        if (receiptServiceInput.getPurposes().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Consent does not contain any purposes. Hence not adding consent");
+            }
+            return;
+        }
+
         receiptServiceInput.setTenantDomain(tenantDomain);
         try {
             setIDPData(tenantDomain, receiptServiceInput);
