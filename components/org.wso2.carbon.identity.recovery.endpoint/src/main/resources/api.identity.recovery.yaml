@@ -53,7 +53,7 @@ consumes:
 produces: 
   - application/json
 paths:
-  # Endpoint used to send recovery notification
+  # The endpoint that is used to send recovery notifications.
   /recover-password:
     post:
       description: |
@@ -108,7 +108,7 @@ paths:
         - Password Recovery
         - Notification
             
-    # Endpoint used to reset user password
+    # The endpoint that is used to reset the user password.
   /set-password:
 
     post:
@@ -191,7 +191,7 @@ paths:
         - Password Recovery
 
 
-   # Endpoint used to initiate password reset with security questions
+   # The endpoint that is used to initiate password reset with security questions.
   /security-question:
      get:
       description: |
@@ -248,7 +248,7 @@ paths:
         - Password Recovery
         - Security Question
 
-   # Endpoint used to initiate password reset with security questions
+   # The endpoint that is used to initiate password reset with security questions.
   /security-questions:
      get:
       description: |
@@ -657,7 +657,7 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 #-----------------------------------------------------
-# The InitiateAllQuestionResponse Response object
+# The InitiateAllQuestionResponse response object
 #-----------------------------------------------------
   InitiateAllQuestionResponse:
     type: object
@@ -672,7 +672,7 @@ definitions:
         $ref: '#/definitions/Link'
 
 #-----------------------------------------------------
-# The InitiateQuestionResponse Response object
+# The InitiateQuestionResponse response object
 #-----------------------------------------------------
   InitiateQuestionResponse:
     type: object
