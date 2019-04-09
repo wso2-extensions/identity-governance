@@ -163,15 +163,12 @@ public class NotificationUsernameRecoveryManager {
                 return userName;
             }
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("No valid user found for the given criteria");
-            }
             boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
                     IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
 
             if (notifyUserExistence) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_NO_VALID_USERNAME, null);
+                        .ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND, null);
             } else {
                 return null;
             }
@@ -273,8 +270,6 @@ public class NotificationUsernameRecoveryManager {
             if (log.isDebugEnabled()) {
                 log.debug("There are more than one user in the result set : "  + Arrays.toString(resultedUserList));
             }
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
         }
         return userName;
     }
