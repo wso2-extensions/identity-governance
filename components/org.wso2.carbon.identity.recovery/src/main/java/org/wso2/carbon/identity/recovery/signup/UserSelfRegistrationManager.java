@@ -190,7 +190,6 @@ public class UserSelfRegistrationManager {
 
             } catch (UserStoreException e) {
                 Throwable cause = e;
-
                 while (cause != null) {
                     if (cause instanceof PolicyViolationException) {
                         throw IdentityException.error(IdentityRecoveryClientException.class,
@@ -198,6 +197,7 @@ public class UserSelfRegistrationManager {
                     }
                     cause = cause.getCause();
                 }
+                Utils.checkPasswordPatternViolation(e, user);
 
                 return handleClientException(user, e);
             }

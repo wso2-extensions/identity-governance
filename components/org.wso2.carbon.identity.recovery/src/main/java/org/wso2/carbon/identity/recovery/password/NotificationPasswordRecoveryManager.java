@@ -45,11 +45,8 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
-import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -231,7 +228,7 @@ public class NotificationPasswordRecoveryManager {
             }
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         } catch (UserStoreException e) {
-            checkPasswordValidity(e, tenantId);
+            checkPasswordValidity(e, userRecoveryData.getUser());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
@@ -261,12 +258,8 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void checkPasswordValidity(UserStoreException e, int tenantId) throws IdentityRecoveryClientException {
+    private void checkPasswordValidity(UserStoreException e, User user) throws IdentityRecoveryClientException {
 
-        String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
-                .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL_BY_ADMIN.getCode(), UserCoreErrorConstants.ErrorMessages
-                .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode(), UserCoreErrorConstants.ErrorMessages
-                .ERROR_CODE_INVALID_PASSWORD.getCode()};
         Throwable cause = e.getCause();
         while (cause != null) {
             if (cause instanceof IdentityEventException) {
@@ -282,22 +275,10 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                         cause.getMessage(), e);
             }
-
-            if (StringUtils.isNotBlank(e.getMessage()) && StringUtils.indexOfAny(e.getMessage(),
-                    pwdPatternViolations) >= 0) {
-                UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-                RealmConfiguration realmConfig = ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
-                        .getRealmConfiguration();
-
-                String errorMessage = String.format(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD
-                                .getMessage(),
-                        realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
-
-                throw IdentityException.error(IdentityRecoveryClientException.class,
-                        UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode(), errorMessage, e);
-            }
             cause = cause.getCause();
         }
+        Utils.checkPasswordPatternViolation(e, user);
+
     }
 
     private void triggerNotification(User user, String type, String code, Property[] metaProperties) throws
@@ -367,19 +348,6 @@ public class NotificationPasswordRecoveryManager {
                     eventName, e);
         }
 
-    }
-
-    private UserStoreManager getUserStoreManager(int tenantId) throws IdentityRecoveryClientException {
-
-        UserStoreManager userStoreManager;
-        try {
-            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
-                    getTenantUserRealm(tenantId).getUserStoreManager();
-        } catch (UserStoreException userStoreException) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
-                    null, userStoreException);
-        }
-        return userStoreManager;
     }
 
     /**

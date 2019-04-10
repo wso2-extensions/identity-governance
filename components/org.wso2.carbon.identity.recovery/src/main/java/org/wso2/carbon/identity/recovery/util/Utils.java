@@ -38,9 +38,12 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -65,6 +68,13 @@ public class Utils {
 
     //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    //Error messages that are caused by password pattern violations
+    private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
+            .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL_BY_ADMIN.getCode(), UserCoreErrorConstants.ErrorMessages
+            .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode()};
+
+    private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
 
     /**
      * @return
@@ -421,4 +431,54 @@ public class Utils {
         return false;
     }
 
+    /**
+     * Check if the exception contains a password pattern violation message and act accordingly
+     *
+     * @param exception An UserStoreException
+     * @throws IdentityRecoveryClientException If exception's message contains a password pattern violation message
+     */
+    public static void checkPasswordPatternViolation(UserStoreException exception, User user)
+            throws IdentityRecoveryClientException {
+
+        if (StringUtils.isBlank(exception.getMessage())) {
+            return;
+        }
+        RealmConfiguration realmConfig = getRealmConfiguration(user);
+        String passwordErrorMessage = realmConfig.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG);
+        String exceptionMessage = exception.getMessage();
+        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) && StringUtils
+                .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
+                .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
+
+            String errorMessage = String.format(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD
+                            .getMessage(),
+                    realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
+
+            throw IdentityException.error(IdentityRecoveryClientException.class,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), errorMessage, exception);
+        }
+    }
+
+    /**
+     * Get RealmConfiguration by tenantId
+     *
+     * @param user User
+     * @return realmConfiguration RealmConfiguration of the given tenant
+     * @throws IdentityRecoveryClientException If fails
+     */
+    private static RealmConfiguration getRealmConfiguration(User user) throws IdentityRecoveryClientException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        UserStoreManager userStoreManager;
+        try {
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+        } catch (UserStoreException userStoreException) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
+                    null, userStoreException);
+        }
+
+        return ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
+                .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
+    }
 }
