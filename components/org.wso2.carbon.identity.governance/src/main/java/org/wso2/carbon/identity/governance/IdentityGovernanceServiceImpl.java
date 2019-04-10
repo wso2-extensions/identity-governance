@@ -124,12 +124,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             index++;
         }
 
-        List<IdentityConnectorConfig> list = getConnectorList();
+        List<IdentityConnectorConfig> identityConnectorConfigs = getConnectorList();
         String[] connectorProperties;
 
         ArrayList<Property> propertiesToAdd = new ArrayList<>();
-        for (IdentityConnectorConfig aList : list) {
-            connectorProperties = aList.getPropertyNames();
+        for (IdentityConnectorConfig identityConnectorConfig : identityConnectorConfigs) {
+            connectorProperties = identityConnectorConfig.getPropertyNames();
             for (String connectorProperty : connectorProperties) {
                 boolean propertyExists = false;
                 for (Property property : configMap) {
@@ -141,9 +141,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 if (!propertyExists) {
                     Property newProperty = new Property();
                     newProperty.setName(connectorProperty);
-                    newProperty.setDescription(aList.getPropertyDescriptionMapping().get(connectorProperty));
-                    newProperty.setDisplayName(aList.getPropertyNameMapping().get(connectorProperty));
-                    Properties defaultPropertyValues = aList.getDefaultPropertyValues(tenantDomain);
+                    newProperty.setDescription(identityConnectorConfig.getPropertyDescriptionMapping().get(connectorProperty));
+                    newProperty.setDisplayName(identityConnectorConfig.getPropertyNameMapping().get(connectorProperty));
+                    Properties defaultPropertyValues = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
                     newProperty.setValue(String.valueOf(defaultPropertyValues.get(connectorProperty)));
                     updateConfiguration(tenantDomain, Collections.singletonMap(newProperty.getName(), newProperty.getValue()));
                     propertiesToAdd.add(newProperty);
