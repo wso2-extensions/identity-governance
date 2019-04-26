@@ -27,9 +27,13 @@ import org.wso2.carbon.identity.account.suspension.notification.task.util.EmailU
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -235,6 +239,12 @@ public class AccountValidatorThread implements Runnable {
                             .addDomainToName(receiver.getUsername(), receiver.getUserStoreDomain()) + " in tenant: " +
                             tenantDomain);
                 }
+
+                User user = new User();
+                user.setUserName(receiver.getUsername());
+                user.setTenantDomain(tenantDomain);
+                user.setUserStoreDomain(receiver.getUserStoreDomain());
+                triggerNotification(user);
             }
         }
     }
@@ -246,5 +256,21 @@ public class AccountValidatorThread implements Runnable {
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
         return properties.toArray(new String[properties.size()]);
+    }
+
+    private void triggerNotification(User user) throws IdentityException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_ACCOUNT_SUSPENSION, properties);
+        try {
+            NotificationTaskDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw new IdentityException("Failed to trigger an account suspension notification for user :  " +
+                    user.toFullQualifiedUsername(), e);
+        }
     }
 }
