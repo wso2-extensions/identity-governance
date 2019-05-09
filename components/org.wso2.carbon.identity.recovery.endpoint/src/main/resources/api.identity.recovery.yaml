@@ -27,7 +27,7 @@ schemes:
   - https
 
 # The domain of the API.
-# This is configured by the user during deployment.
+# This is configured by the system administrator during deployment.
 # The given host is just an example.
 host: apis.is.com
 
