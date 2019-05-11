@@ -123,8 +123,17 @@ public class SecurityQuestionPasswordRecoveryManager {
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
-                        domainQualifiedUsername);
+
+                boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
+
+                if (notifyUserExistence) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                            domainQualifiedUsername);
+                } else {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, user.getUserName());
+                }
             }
 
         } catch (UserStoreException e) {
