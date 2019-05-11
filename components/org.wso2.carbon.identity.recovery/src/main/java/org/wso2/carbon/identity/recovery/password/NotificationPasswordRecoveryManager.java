@@ -124,9 +124,7 @@ public class NotificationPasswordRecoveryManager {
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
-                }
+                log.error("No user found for recovery with username: " + user.toFullQualifiedUsername());
                 boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty
                         (IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
 
