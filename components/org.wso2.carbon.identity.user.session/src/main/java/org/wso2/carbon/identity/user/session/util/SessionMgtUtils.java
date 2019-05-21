@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.user.session.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.authentication.framework.services.SessionManagementService;
 import org.wso2.carbon.identity.user.session.constant.SessionConstants;
 import org.wso2.carbon.identity.user.session.exception.SessionManagementClientException;
 import org.wso2.carbon.identity.user.session.exception.SessionManagementServerException;

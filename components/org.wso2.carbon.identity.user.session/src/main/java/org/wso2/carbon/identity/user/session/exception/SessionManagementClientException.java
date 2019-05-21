@@ -23,19 +23,7 @@ package org.wso2.carbon.identity.user.session.exception;
  */
 public class SessionManagementClientException extends SessionManagementException {
 
-    public SessionManagementClientException() {
-    }
-
     public SessionManagementClientException(String message, String errorCode) {
         super(message, errorCode);
     }
-
-    public SessionManagementClientException(String message, String errorCode, Throwable cause) {
-        super(message, errorCode, cause);
-    }
-
-    public SessionManagementClientException(Throwable cause) {
-        super(cause);
-    }
-
 }

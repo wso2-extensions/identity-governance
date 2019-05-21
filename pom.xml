@@ -128,8 +128,6 @@
         <module>components/org.wso2.carbon.identity.user.export.core</module>
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.session</module>
-        <module>components/org.wso2.carbon.identity.user.session.endpoint</module>
-
         <module>service-stubs/identity</module>
 
         <module>features/org.wso2.carbon.identity.recovery.server.feature</module>
@@ -450,12 +448,6 @@
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-mockito</artifactId>
                 <scope>test</scope>
                 <version>${mokito.version}</version>
@@ -466,13 +458,6 @@
                 <scope>test</scope>
                 <version>${mokito.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
@@ -612,7 +597,7 @@
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.12.166</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.12.237-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 

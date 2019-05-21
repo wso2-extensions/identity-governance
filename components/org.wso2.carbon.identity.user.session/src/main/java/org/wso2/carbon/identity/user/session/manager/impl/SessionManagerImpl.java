@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.user.session.manager.impl;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.database.utils.jdbc.JdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
@@ -34,10 +32,10 @@ import org.wso2.carbon.identity.user.session.constant.SessionConstants;
 import org.wso2.carbon.identity.user.session.dao.UserSessionDAO;
 import org.wso2.carbon.identity.user.session.dao.impl.UserSessionDAOImpl;
 import org.wso2.carbon.identity.user.session.exception.SessionManagementException;
-import org.wso2.carbon.identity.user.session.model.UserSession;
-import org.wso2.carbon.identity.user.session.util.SessionMgtUtils;
 import org.wso2.carbon.identity.user.session.manager.SessionManager;
+import org.wso2.carbon.identity.user.session.model.UserSession;
 import org.wso2.carbon.identity.user.session.util.JdbcUtils;
+import org.wso2.carbon.identity.user.session.util.SessionMgtUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,11 +113,11 @@ public class SessionManagerImpl implements SessionManager {
     /**
      * Method to get userId.
      *
-     * @param userName
-     * @param tenant
-     * @param userDomain
-     * @return
-     * @throws SessionManagementException
+     * @param userName   UserName
+     * @param tenant     User's tenant
+     * @param userDomain User's user domain
+     * @return  UserId
+     * @throws SessionManagementException if an error occurs when retrieving the user id list from the database.
      */
     private String getUserId(String userName, String tenant, String userDomain) throws SessionManagementException {
         String userId;
@@ -143,9 +141,9 @@ public class SessionManagerImpl implements SessionManager {
     /**
      * Method to get userIds in a sessionId.
      *
-     * @param sessionId
-     * @return
-     * @throws SessionManagementException
+     * @param sessionId Id of session
+     * @return UserIds in the session
+     * @throws SessionManagementException if an error occurs when retrieving the user id list from the database.
      */
     private List<String> getUserIDList(String sessionId) throws SessionManagementException {
         JdbcTemplate jdbcTemplate = JdbcUtils.getNewTemplate();
@@ -167,7 +165,7 @@ public class SessionManagerImpl implements SessionManager {
      *
      * @param userIdList Id of the user
      * @return the list of session ids
-     * @throws SessionManagementException if an error occurs when retrieving the session id list from the database
+     * @throws SessionManagementException if an error occurs when retrieving the session id list from the database.
      */
     private List<String> getSessionID(List<String> userIdList) throws SessionManagementException {
 
@@ -190,9 +188,9 @@ public class SessionManagerImpl implements SessionManager {
     /**
      * Method to get sessions of given userId list.
      *
-     * @param userIdList
-     * @return
-     * @throws SessionManagementException
+     * @param userIdList List of user ids.
+     * @return Usersessions
+     * @throws SessionManagementException if an error occurs when retrieving sessionId from the database.
      */
     private UserSession[] getSessionofUserIdList(List<String> userIdList) throws SessionManagementException {
 
@@ -221,7 +219,7 @@ public class SessionManagerImpl implements SessionManager {
      *
      * @param userId Id of user
      * @return UserSession[]
-     * @throws SessionManagementException
+     * @throws SessionManagementException if an error occurs when retrieving the sessions from the database.
      */
     private UserSession[] getSessionofUserId(String userId) throws SessionManagementException {
         JdbcTemplate jdbcTemplate = JdbcUtils.getNewTemplate();
@@ -244,9 +242,9 @@ public class SessionManagerImpl implements SessionManager {
     /**
      * Method to get active sessions from given sessionId list.
      *
-     * @param sessionIdList
-     * @return UserSession[]
-     * @throws SessionManagementException
+     * @param sessionIdList List of sessionIds
+     * @return UserSession[] Usersessions
+     * @throws SessionManagementException if an error occurs when retrieving the UserSessions.
      */
     private UserSession[] getActiveSessionList(List<String> sessionIdList) throws SessionManagementException {
 

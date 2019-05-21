@@ -46,7 +46,9 @@ public class SessionConstants {
         ERROR_CODE_UNEXPECTED("SM_00010", "Unexpected Error"),
         ERROR_CODE_SESSION_ID_INVALID("SM_00011", "Invalid session Id: %s"),
         ERROR_CODE_SESSION_ALREADY_TERMINATED("SM_00012", "Session already terminated"),
-        ERROR_CODE_USER_NOT_AUTHORIZED("SM_00013", "User: %s is not authorized to perform this operation.");
+        ERROR_CODE_USER_NOT_AUTHORIZED("SM_00013", "User: %s is not authorized to perform this operation."),
+        ERROR_CODE_NO_AUTH_USER_FOUND("SM_00014", "No authenticated user found to " +
+                                              "perform the operation");
 
         private final String code;
         private final String message;
