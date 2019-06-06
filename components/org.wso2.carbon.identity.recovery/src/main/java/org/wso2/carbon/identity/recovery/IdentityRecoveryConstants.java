@@ -133,7 +133,11 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_ADD_USER_CONSENT("20042", "Error while adding consent for user %s."),
         ERROR_CODE_PUBLISH_EVENT("20043", "Error while publishing event %s."),
         ERROR_CODE_CALLBACK_URL_NOT_VALID("20044", "Configured callback URL does not match with the provided callback"
-                + " URL: %s in the request.");
+                + " URL: %s in the request."),
+        ERROR_CODE_USERNAME_POLICY_VIOLATED("20045", "Provided username %s violates the policy."),
+        ERROR_CODE_PASSWORD_POLICY_VIOLATED("20046", "Provided password violates the policy."),
+        ERROR_CODE_DOMAIN_VIOLATED("20047", "Invalid domain %s provided."),
+        ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found.");
 
 
         private final String code;

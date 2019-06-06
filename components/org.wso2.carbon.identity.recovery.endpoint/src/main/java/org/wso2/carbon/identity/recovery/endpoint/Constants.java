@@ -33,4 +33,8 @@ public final class Constants {
     // Recovery type
     public static final String USERNAME_RECOVERY = "username-recovery";
     public static final String PASSWORD_RECOVERY = "password-recovery";
+
+    public static final String ERROR_MESSAGE_EMAIL_NOT_FOUND =
+            "Email notification sending failed. Sending email address is not configured for the user.";
+
 }

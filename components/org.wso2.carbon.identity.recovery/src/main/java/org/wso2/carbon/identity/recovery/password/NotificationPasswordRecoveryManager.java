@@ -228,7 +228,7 @@ public class NotificationPasswordRecoveryManager {
             }
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         } catch (UserStoreException e) {
-            checkPasswordValidity(e);
+            checkPasswordValidity(e, userRecoveryData.getUser());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
@@ -258,7 +258,7 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void checkPasswordValidity(UserStoreException e) throws IdentityRecoveryClientException {
+    private void checkPasswordValidity(UserStoreException e, User user) throws IdentityRecoveryClientException {
 
         Throwable cause = e.getCause();
         while (cause != null) {
@@ -272,10 +272,13 @@ public class NotificationPasswordRecoveryManager {
 
             if (cause instanceof PolicyViolationException) {
                 throw IdentityException.error(IdentityRecoveryClientException.class,
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), cause.getMessage(), e);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        cause.getMessage(), e);
             }
             cause = cause.getCause();
         }
+        Utils.checkPasswordPatternViolation(e, user);
+
     }
 
     private void triggerNotification(User user, String type, String code, Property[] metaProperties) throws

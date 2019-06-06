@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.ChallengeQuestionResponse;
@@ -116,21 +117,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
         }
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        UserStoreManager userStoreManager;
-        try {
-            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
-                    getTenantUserRealm(tenantId).getUserStoreManager();
-            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
-                        domainQualifiedUsername);
-            }
-
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
-        }
-
+        verifyUserExists(user);
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
@@ -231,32 +218,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
 
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        UserStoreManager userStoreManager;
-        try {
-            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
-                    getTenantUserRealm(tenantId).getUserStoreManager();
-            String domainQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
-                }
-                boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
-                        IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
-
-                if (notifyUserExistence) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
-                            domainQualifiedUsername);
-                } else {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, user.getUserName());
-                }
-            }
-
-        } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
-        }
-
+        verifyUserExists(user);
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
@@ -293,24 +255,23 @@ public class SecurityQuestionPasswordRecoveryManager {
             ids = getRandomQuestionIds(ids, minNoOfQuestionsToAnswer);
         }
 
-        ChallengeQuestion questions[] = new ChallengeQuestion[ids.length];
+        ChallengeQuestion[] questions = new ChallengeQuestion[ids.length];
 
-        String allChallengeQuestions = null;
+        StringBuilder allChallengeQuestions = new StringBuilder();
         for (int i = 0; i < ids.length; i++) {
             questions[i] = challengeQuestionManager.getUserChallengeQuestion(user, ids[i]);
             if (i == 0) {
-                allChallengeQuestions = ids[0];
+                allChallengeQuestions.append(ids[0]);
             } else {
-                allChallengeQuestions = allChallengeQuestions + challengeQuestionSeparator + ids[i];
+                allChallengeQuestions.append(challengeQuestionSeparator).append(ids[i]);
             }
-
         }
-        ChallengeQuestionsResponse challengeQuestionResponse = new ChallengeQuestionsResponse(questions);
 
+        ChallengeQuestionsResponse challengeQuestionResponse = new ChallengeQuestionsResponse(questions);
         String secretKey = UUIDGenerator.generateUUID();
         UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .QUESTION_BASED_PWD_RECOVERY, RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION);
-        recoveryData.setRemainingSetIds(allChallengeQuestions);
+        recoveryData.setRemainingSetIds(allChallengeQuestions.toString());
 
         challengeQuestionResponse.setCode(secretKey);
         userRecoveryDataStore.store(recoveryData);
@@ -641,6 +602,36 @@ public class SecurityQuestionPasswordRecoveryManager {
                 throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                         .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
             }
+        }
+    }
+
+    private void verifyUserExists(User user) throws IdentityRecoveryClientException, IdentityRecoveryServerException {
+
+        UserStoreManager userStoreManager;
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+            String domainQualifiedUsername =
+                    IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+
+            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
+                }
+                boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
+                if (notifyUserExistence) {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                            domainQualifiedUsername);
+                } else {
+                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, user.getUserName());
+                }
+            }
+
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
     }
 }

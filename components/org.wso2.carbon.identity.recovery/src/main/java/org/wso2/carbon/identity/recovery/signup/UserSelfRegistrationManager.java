@@ -190,7 +190,6 @@ public class UserSelfRegistrationManager {
 
             } catch (UserStoreException e) {
                 Throwable cause = e;
-
                 while (cause != null) {
                     if (cause instanceof PolicyViolationException) {
                         throw IdentityException.error(IdentityRecoveryClientException.class,
@@ -198,12 +197,9 @@ public class UserSelfRegistrationManager {
                     }
                     cause = cause.getCause();
                 }
+                Utils.checkPasswordPatternViolation(e, user);
 
-                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
-                } else {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
-                }
+                return handleClientException(user, e);
             }
             addUserConsent(consent, tenantDomain);
 
@@ -226,6 +222,38 @@ public class UserSelfRegistrationManager {
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    private NotificationResponseBean handleClientException(User user, UserStoreException e) throws
+            IdentityRecoveryException {
+
+        if (StringUtils.isEmpty(e.getMessage())) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("31301")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USERNAME_POLICY_VIOLATED, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("PasswordInvalidAsk")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_PASSWORD_POLICY_VIOLATED, StringUtils.EMPTY, e);
+        }
+
+        if (e.getMessage().contains("UserAlreadyExisting:")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("Invalid Domain")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
+        }
+
+        throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
     }
 
     /**
@@ -558,6 +586,16 @@ public class UserSelfRegistrationManager {
         }
         // There should be a one receipt
         ReceiptServiceInput receiptServiceInput = receiptInput.getServices().get(0);
+
+        // Handle the scenario, where all the purposes are having optional PII attributes and then the user register
+        // without giving consent to any of the purposes.
+        if (receiptServiceInput.getPurposes().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Consent does not contain any purposes. Hence not adding consent");
+            }
+            return;
+        }
+
         receiptServiceInput.setTenantDomain(tenantDomain);
         try {
             setIDPData(tenantDomain, receiptServiceInput);
