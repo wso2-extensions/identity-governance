@@ -123,8 +123,9 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     users.add(receiver);
                 }
             }
-
+            dbConnection.commit();
         } catch (SQLException e) {
+            DatabaseUtil.rollBack(dbConnection);
             if (log.isDebugEnabled()) {
                 log.debug("Using sql : " + sqlStmt);
             }

@@ -52,6 +52,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
         try {
+            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
@@ -62,9 +63,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
             prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt.execute();
-            connection.setAutoCommit(false);
             connection.commit();
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollBack(connection);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);

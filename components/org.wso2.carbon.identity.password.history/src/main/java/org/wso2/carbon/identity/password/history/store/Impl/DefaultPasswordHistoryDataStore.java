@@ -133,6 +133,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             connection.commit();
 
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollBack(connection);
             throw new IdentityPasswordHistoryException("Error while removing password history date from user :" +
                     user.getUserName(), e);
         } finally {
@@ -173,6 +174,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             }
 
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollBack(connection);
             throw new IdentityPasswordHistoryException("Error while validating password history", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
