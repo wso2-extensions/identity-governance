@@ -109,8 +109,7 @@ public class ClaimVerificationEndpointUtils {
 
         Map<String, String> properties = new HashMap<>();
 
-        for (PropertyDTO propertyDTO :
-                propertyDTOList) {
+        for (PropertyDTO propertyDTO : propertyDTOList) {
             properties.put(propertyDTO.getKey(), propertyDTO.getValue());
         }
 
