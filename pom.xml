@@ -566,7 +566,7 @@
     <properties>
         <!--Carbon Identity Governance Version-->
         <identity.governance.exp.pkg.version>${project.version}</identity.governance.exp.pkg.version>
-        <identity.governance.imp.pkg.version.range>[1.0.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[1.2.0, 2.0.0)</identity.governance.imp.pkg.version.range>
 
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
 
@@ -574,8 +574,8 @@
         <osgi.service.component.imp.pkg.version.range>[1.2.0, 2.0.0)</osgi.service.component.imp.pkg.version.range>
 
         <!--Orbit Version-->
-        <axis2.wso2.version>1.6.1.wso2v12</axis2.wso2.version>
-        <axiom.wso2.version>1.2.11.wso2v10</axiom.wso2.version>
+        <axis2.wso2.version>1.6.1.wso2v37</axis2.wso2.version>
+        <axiom.wso2.version>1.2.11.wso2v16</axiom.wso2.version>
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
@@ -605,12 +605,13 @@
         <identity.data.publisher.authentication.version>5.1.10</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.4.17</carbon.kernel.version>
-        <carbon.kernel.package.import.version.range>[4.4.0, 5.0.0)</carbon.kernel.package.import.version.range>
+        <carbon.kernel.version>4.5.0-m1</carbon.kernel.version>
+        <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
+        <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.12.370</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.13.0</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -619,8 +620,11 @@
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 
-        <carbon.consent.mgt.version>2.0.6</carbon.consent.mgt.version>
-        <carbon.consent.mgt.version.range>[1.0.0, 3.0.0)</carbon.consent.mgt.version.range>
+        <carbon.consent.mgt.version>2.1.0</carbon.consent.mgt.version>
+        <carbon.consent.mgt.version.range>[2.1.0, 3.0.0)</carbon.consent.mgt.version.range>
+
+        <carbon.multitenancy.version>4.7.0</carbon.multitenancy.version>
+        <carbon.multitenancy.imp.pkg.version.range>[4.7.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
 
         <!--Maven Plugin Version-->
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
@@ -637,10 +641,6 @@
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
-        <carbon.multitenancy.imp.pkg.version.range>[4.5.0, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
-        <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
-        <carbon.multitenancy.version>4.6.0</carbon.multitenancy.version>
-        <carbon.identity.package.import.version.range>[5.0.0, 6.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
@@ -652,11 +652,8 @@
         <mokito.version>1.6.6</mokito.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
 
-        <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
-
         <h2database.version>1.4.196</h2database.version>
-
-    <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
+        <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
     </properties>
 
 </project>
