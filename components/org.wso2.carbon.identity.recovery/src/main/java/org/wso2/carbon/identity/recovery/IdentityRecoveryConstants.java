@@ -137,7 +137,9 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_USERNAME_POLICY_VIOLATED("20045", "Provided username %s violates the policy."),
         ERROR_CODE_PASSWORD_POLICY_VIOLATED("20046", "Provided password violates the policy."),
         ERROR_CODE_DOMAIN_VIOLATED("20047", "Invalid domain %s provided."),
-        ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found.");
+        ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found."),
+        ERROR_CODE_INVALID_CHALLENGE_QUESTION("20049", "Invalid Challenge Question Input."),
+        ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS("20050", "Error while removing challenge questions of user '%s.'");
 
 
         private final String code;

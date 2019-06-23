@@ -145,6 +145,26 @@ public class Utils {
 
     }
 
+
+    public static void removeClaimFromUserStoreManager(User user, String[] claims)
+            throws UserStoreException {
+
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        if (realmService.getTenantUserRealm(tenantId) != null) {
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        }
+
+        if (userStoreManager != null) {
+            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+        }
+
+    }
+
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
                                                                                 error, String data)
             throws IdentityRecoveryServerException {
