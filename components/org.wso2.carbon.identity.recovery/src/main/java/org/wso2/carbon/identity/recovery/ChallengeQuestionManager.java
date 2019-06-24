@@ -958,7 +958,9 @@ public class ChallengeQuestionManager {
             List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
             boolean isQuestionAvailable = false;
             for (ChallengeQuestion availableQuestion : challengeQuestions) {
-                if (StringUtils.equals(availableQuestion.getQuestion().trim(), challengeQuestion.getQuestion().trim()
+                if (StringUtils.equals(availableQuestion.getQuestionSetId(), challengeQuestion.getQuestionSetId().trim())
+                        && StringUtils.equals(availableQuestion.getQuestion().trim(),
+                        challengeQuestion.getQuestion().trim()
                 )) {
                     isQuestionAvailable = true;
                 }
