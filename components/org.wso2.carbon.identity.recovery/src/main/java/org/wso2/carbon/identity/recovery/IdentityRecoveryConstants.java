@@ -139,7 +139,18 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DOMAIN_VIOLATED("20047", "Invalid domain %s provided."),
         ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found."),
         ERROR_CODE_INVALID_CHALLENGE_QUESTION("20049", "Invalid Challenge Question Input."),
-        ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS("20050", "Error while removing challenge questions of user '%s.'");
+        ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE("20050", "Empty Challenge question value provided."),
+        ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS("20051", "Error while removing challenge questions of user '%s."),
+        ERROR_CODE_CHALLENG_ANSWER_MISSING("20052", "Challenge question missing in the user challenge " +
+                "answer."),
+        ERROR_CODE_DUPLICATE_ANSWERS("20053", "Validation Error. Cannot answer two questions from the same question " +
+                "set claim uri"),
+        ERROR_CODE_INVALID_LOCALE("20054", "Invalid Locale value provided : %s"),
+        ERROR_CODE_INVALID_CHALLENGE("20055", "Attributes of Challenge question to be set" +
+                " cannot be empty."),
+        ERROR_CODE_INVALID_CHALLENGE_PATH("20055", "%s contains non alpha-numeric characters."),
+        ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
+                ".");
 
 
         private final String code;

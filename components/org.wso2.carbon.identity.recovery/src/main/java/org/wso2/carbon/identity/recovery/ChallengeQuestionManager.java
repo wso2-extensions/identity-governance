@@ -49,6 +49,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENG_ANSWER_MISSING;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOCALE_EN_US;
 
 /**
@@ -562,8 +564,8 @@ public class ChallengeQuestionManager {
                 Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
         }
     }
 
@@ -614,8 +616,8 @@ public class ChallengeQuestionManager {
                 setUserChallengesURI(user, challengesUris, separator);
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
         }
     }
 
@@ -658,8 +660,8 @@ public class ChallengeQuestionManager {
         try {
             Utils.removeClaimFromUserStoreManager(user, challengesUris.toArray(new String[challengesUris.size()]));
         } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
         }
     }
 
@@ -921,9 +923,9 @@ public class ChallengeQuestionManager {
             }
 
             if (tmpMap.contains(challengeQuestion.getQuestionSetId())) {
-                String errMsg = "Validation Error. Cannot answer two questions from the same question set claim uri";
-                log.error(errMsg);
-                throw new IdentityRecoveryClientException(errMsg);
+                log.error(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS.getMessage());
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS, null);
             }
             tmpMap.add(challengeQuestion.getQuestionSetId());
         }
@@ -944,13 +946,11 @@ public class ChallengeQuestionManager {
             ChallengeQuestion challengeQuestion = challengeAnswer.getQuestion();
             // if challenge question details are missing in the challenge answer we can't proceed further
             if (challengeQuestion == null) {
-                String errorMsg = "Challenge question missing in the user challenge answer.";
-                throw new IdentityRecoveryClientException(errorMsg);
+                Utils.handleClientException(ERROR_CODE_CHALLENG_ANSWER_MISSING, null);
             }
 
             if (StringUtils.isBlank(challengeQuestion.getQuestion())) {
-                String errorMsg = "Invalid. Empty Challenge question provided.";
-                throw new IdentityRecoveryClientException(errorMsg);
+                Utils.handleClientException(ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, null);
             }
 
             String locale = validateLocale(challengeQuestion.getLocale());
@@ -990,7 +990,8 @@ public class ChallengeQuestionManager {
         // validate locale input string
         if (locale.matches(IdentityRecoveryConstants.Questions.BLACKLIST_REGEX)) {
             log.error("Invalid locale value provided : " + locale);
-            throw new IdentityRecoveryClientException("Invalid Locale value provided : " + locale);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_LOCALE,
+                    locale);
         }
 
         return locale;
@@ -1013,8 +1014,8 @@ public class ChallengeQuestionManager {
 
         if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
                 StringUtils.isBlank(questionLocale)) {
-            throw new IdentityRecoveryClientException
-                    ("Invalid Challenge Question. Attributes of Challenge question to be set cannot be empty.");
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
+                    null);
         }
 
 
@@ -1028,8 +1029,8 @@ public class ChallengeQuestionManager {
         String questionId = question.getQuestionId();
 
         if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId)) {
-            throw new IdentityRecoveryClientException
-                    ("Invalid Challenge Question. Attributes of Challenge question cannot be empty.");
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
+                    null);
         }
         validateChallengePathParams(setId, questionId);
     }
@@ -1046,9 +1047,9 @@ public class ChallengeQuestionManager {
 
     private void validateChallengePathParam(String pathParam, String pathParamName) throws
             IdentityRecoveryClientException {
-        String errorMsg = "%s contains non alpha-numeric characters.";
         if (StringUtils.isBlank(pathParam) || !StringUtils.isAlphanumeric(pathParam)) {
-            throw new IdentityRecoveryClientException(String.format(errorMsg, pathParamName));
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_INVALID_CHALLENGE_PATH, pathParamName);
         }
     }
 
@@ -1062,14 +1063,16 @@ public class ChallengeQuestionManager {
                 locale = userLocale;
             }
         } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
+            String errorMsg = String.format(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_ERROR_RETRIVING_CLAIM.getMessage(),
                     tenantAwareUserName, tenantDomain);
             log.error(errorMsg);
-            throw new IdentityRecoveryServerException(errorMsg, e);
+            throw IdentityException.error(IdentityRecoveryServerException.class, IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ERROR_RETRIVING_CLAIM.getCode(), errorMsg, e);
         }
-
         return locale;
     }
+
 
 
 }
