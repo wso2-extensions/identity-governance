@@ -47,6 +47,7 @@ import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -207,6 +208,22 @@ public class Utils {
         }
 
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
+    }
+
+    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                                                                error, String data, int    status)
+            throws IdentityRecoveryClientException {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(error.getMessage(), data);
+        } else {
+            errorDescription = error.getMessage();
+        }
+        IdentityRecoveryClientException e = IdentityException.error(IdentityRecoveryClientException.class, error.getCode
+                (), errorDescription);
+        e.setStatusCode(status);
+        return e;
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,

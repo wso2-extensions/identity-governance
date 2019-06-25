@@ -86,7 +86,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
-        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
+         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
@@ -149,6 +149,11 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CHALLENGE("20055", "Attributes of Challenge question to be set" +
                 " cannot be empty."),
         ERROR_CODE_INVALID_CHALLENGE_PATH("20055", "%s contains non alpha-numeric characters."),
+        ERROR_CODE_ERROR_DELETING_CHALLENGE_SET("20056", "Error when deleting challenge question set %s."),
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTIONS("20057", "Registry exception while deleting " +
+                "challenge question of locale %s in set %s"),
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20058", "Registry exception while deleting challenge" +
+                " question %s of the set %s"),
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 ".");
 
