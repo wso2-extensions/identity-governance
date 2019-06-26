@@ -211,7 +211,7 @@ public class Utils {
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data, int    status)
+                                                                                error, String data, int status)
             throws IdentityRecoveryClientException {
 
         String errorDescription;
@@ -220,10 +220,8 @@ public class Utils {
         } else {
             errorDescription = error.getMessage();
         }
-        IdentityRecoveryClientException e = IdentityException.error(IdentityRecoveryClientException.class, error.getCode
-                (), errorDescription);
-        e.setStatusCode(status);
-        return e;
+        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription,
+                status);
     }
 
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,

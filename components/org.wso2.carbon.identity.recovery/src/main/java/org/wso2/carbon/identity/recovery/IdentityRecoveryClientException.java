@@ -18,23 +18,12 @@
 
 package org.wso2.carbon.identity.recovery;
 
-import javax.ws.rs.core.Response;
-
 /**
  * Used for creating checked exceptions that can be handled.
  */
 public class IdentityRecoveryClientException extends IdentityRecoveryException {
 
     private static final long serialVersionUID = -8248805950312129249L;
-    private int statusCode;
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
 
     public IdentityRecoveryClientException(String errorDescription) {
         super(errorDescription);
@@ -52,19 +41,12 @@ public class IdentityRecoveryClientException extends IdentityRecoveryException {
         super(errorCode, message, throwable);
     }
 
-    public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable, int statusCode) {
-        super(errorCode, message, throwable);
-        this.statusCode = statusCode;
+    public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable, int httpStatusCode) {
+        super(errorCode, message, throwable, httpStatusCode);
     }
 
-    public IdentityRecoveryClientException(String errorCode, String message, int statusCode) {
-        super(errorCode, message);
-        this.statusCode = statusCode;
-    }
-
-    public IdentityRecoveryClientException(String errorCode, int statusCode) {
-        super(errorCode);
-        this.statusCode = statusCode;
+    public IdentityRecoveryClientException(String errorCode, String message, int httpStatusCode) {
+        super(errorCode, message, httpStatusCode);
     }
 
 }

@@ -47,6 +47,14 @@ public class IdentityRecoveryException extends IdentityException {
         super(errorCode, message, throwable);
         this.setErrorCode(errorCode);
     }
+
+    public IdentityRecoveryException(String errorCode, String message, Throwable throwable, int httpStatusCode) {
+        super(errorCode, message, httpStatusCode, throwable);
+    }
+
+    public IdentityRecoveryException(String errorCode, String message, int httpStatusCode) {
+        super(errorCode, message, httpStatusCode);
+    }
     
     public String getErrorDescription() {
 
