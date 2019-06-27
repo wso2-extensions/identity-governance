@@ -41,12 +41,4 @@ public class IdentityRecoveryClientException extends IdentityRecoveryException {
         super(errorCode, message, throwable);
     }
 
-    public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable, int httpStatusCode) {
-        super(errorCode, message, throwable, httpStatusCode);
-    }
-
-    public IdentityRecoveryClientException(String errorCode, String message, int httpStatusCode) {
-        super(errorCode, message, httpStatusCode);
-    }
-
 }

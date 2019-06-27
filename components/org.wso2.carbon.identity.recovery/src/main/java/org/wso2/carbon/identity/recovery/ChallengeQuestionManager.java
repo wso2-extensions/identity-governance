@@ -921,14 +921,13 @@ public class ChallengeQuestionManager {
             if (challengeQuestion == null) {
                 String errorMsg = "Challenge question details not provided with the challenge answers.";
                 throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, errorMsg,
-                        400);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, errorMsg);
             }
 
             if (tmpMap.contains(challengeQuestion.getQuestionSetId())) {
                 log.error(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS.getMessage());
                 throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS, null, 400);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS, null);
             }
             tmpMap.add(challengeQuestion.getQuestionSetId());
         }
@@ -949,11 +948,11 @@ public class ChallengeQuestionManager {
             ChallengeQuestion challengeQuestion = challengeAnswer.getQuestion();
             // if challenge question details are missing in the challenge answer we can't proceed further
             if (challengeQuestion == null) {
-                Utils.handleClientException(ERROR_CODE_CHALLENG_ANSWER_MISSING, null, 400);
+                Utils.handleClientException(ERROR_CODE_CHALLENG_ANSWER_MISSING, null);
             }
 
             if (StringUtils.isBlank(challengeQuestion.getQuestion())) {
-                Utils.handleClientException(ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE, null, 400);
+                Utils.handleClientException(ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE, null);
             }
 
             String locale = validateLocale(challengeQuestion.getLocale());
@@ -974,7 +973,7 @@ public class ChallengeQuestionManager {
                         "Challenge question answered is not registered with %s domain.";
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND,
-                        String.format(error, tenantDomain), 400);
+                        String.format(error, tenantDomain));
             }
         }
     }
@@ -994,7 +993,7 @@ public class ChallengeQuestionManager {
         if (locale.matches(IdentityRecoveryConstants.Questions.BLACKLIST_REGEX)) {
             log.error("Invalid locale value provided : " + locale);
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_LOCALE,
-                    locale, 400);
+                    locale);
         }
 
         return locale;
@@ -1004,8 +1003,7 @@ public class ChallengeQuestionManager {
     private void validateUser(User user) throws IdentityRecoveryClientException {
         if (user == null || StringUtils.isBlank(user.getUserName())) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, "Invalid User Data provided.",
-                    400);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER, "Invalid User Data provided.");
         }
     }
 
@@ -1019,7 +1017,7 @@ public class ChallengeQuestionManager {
         if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
                 StringUtils.isBlank(questionLocale)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
-                    null, 400);
+                    null);
         }
 
 
@@ -1034,7 +1032,7 @@ public class ChallengeQuestionManager {
 
         if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
-                    null, 400);
+                    null);
         }
         validateChallengePathParams(setId, questionId);
     }
@@ -1053,7 +1051,7 @@ public class ChallengeQuestionManager {
             IdentityRecoveryClientException {
         if (StringUtils.isBlank(pathParam) || !StringUtils.isAlphanumeric(pathParam)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_INVALID_CHALLENGE_PATH, pathParamName, 400);
+                    .ERROR_CODE_INVALID_CHALLENGE_PATH, pathParamName);
         }
     }
 

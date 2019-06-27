@@ -210,20 +210,6 @@ public class Utils {
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription);
     }
 
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data, int status)
-            throws IdentityRecoveryClientException {
-
-        String errorDescription;
-        if (StringUtils.isNotBlank(data)) {
-            errorDescription = String.format(error.getMessage(), data);
-        } else {
-            errorDescription = error.getMessage();
-        }
-        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription,
-                status);
-    }
-
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
                                                                         String data,
                                                                         Throwable e)
