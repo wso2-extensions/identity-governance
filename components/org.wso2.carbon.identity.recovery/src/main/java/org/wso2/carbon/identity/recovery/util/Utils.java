@@ -163,7 +163,6 @@ public class Utils {
         if (userStoreManager != null) {
             userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
         }
-
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
