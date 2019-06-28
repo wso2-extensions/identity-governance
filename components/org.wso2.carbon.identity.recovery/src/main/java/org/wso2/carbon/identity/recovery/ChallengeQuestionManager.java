@@ -49,6 +49,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENG_ANSWER_MISSING;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CHALLENGE_SET;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOCALE_EN_US;
 
 /**
@@ -278,14 +282,71 @@ public class ChallengeQuestionManager {
             for (ChallengeQuestion question : challengeQuestions) {
                 if (isChallengeQuestionExists(question, tenantDomain)) {
                     String questionPath = getQuestionPath(question);
-                    String locale = question.getLocale();
-                    resourceMgtService.deleteIdentityResource(questionPath, tenantDomain, locale);
+                    if (StringUtils.isNotEmpty(question.getLocale())) {
+                        String locale = question.getLocale();
+                        resourceMgtService.deleteIdentityResource(questionPath, tenantDomain, locale);
+                    } else {
+                        resourceMgtService.deleteIdentityResource(questionPath, tenantDomain);
+                    }
                 }
             }
         } catch (IdentityRuntimeException e) {
             log.error("Error deleting challenge quesitons in " + tenantDomain);
             throw new IdentityRecoveryException("Error when deleting challenge questions.", e);
         }
+    }
+
+    /**
+     * Delete challenge question set from a tenant registry.
+     *
+     * @param challengeQuestionUri
+     * @param locale
+     * @param tenantDomain
+     * @throws IdentityRecoveryException
+     */
+    public void deleteChallengeQuestionSet(String challengeQuestionUri, String locale, String tenantDomain)
+            throws IdentityRecoveryException {
+        try {
+            tenantDomain = validateTenantDomain(tenantDomain);
+            if (isChallengeQuestionSetExists(challengeQuestionUri, tenantDomain)) {
+                String questionSetPath = getQuestionSetPath(challengeQuestionUri);
+                if (StringUtils.isEmpty(locale)) {
+                    resourceMgtService.deleteIdentityResource(questionSetPath, tenantDomain);
+                } else {
+                    deleteChallengeQuestionsByLocale(questionSetPath, tenantDomain, locale);
+                }
+            }
+        } catch (IdentityRuntimeException e) {
+            log.error("Error deleting challenge set in " + tenantDomain);
+            throw Utils.handleServerException(ERROR_CODE_ERROR_DELETING_CHALLENGE_SET, challengeQuestionUri, e);
+        }
+    }
+
+    /**
+     *
+     * @param questionSetPath
+     * @param tenantDomain
+     * @param locale
+     */
+    private void deleteChallengeQuestionsByLocale(String questionSetPath, String tenantDomain, String locale) throws IdentityRecoveryServerException {
+
+        try {
+            Collection questionIdCollection = (Collection) resourceMgtService.getIdentityResource
+                    (getQuestionSetPath(questionSetPath), tenantDomain);
+            // iterate each question to find the one with correct locale
+            for (String questionIdPath : questionIdCollection.getChildren()) {
+                Resource questionResource = resourceMgtService.getIdentityResource(questionIdPath,
+                        tenantDomain, locale);
+                if (questionResource != null) {
+                    resourceMgtService.deleteIdentityResource(questionIdPath, tenantDomain, locale);
+                }
+            }
+
+        } catch (RegistryException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTIONS, locale, e);
+        }
+
     }
 
     /**
@@ -314,12 +375,7 @@ public class ChallengeQuestionManager {
                         .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
             }
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
-
-            if (StringUtils.isEmpty(challengeQuestionSeparator)) {
-                challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
-            }
+            String challengeQuestionSeparator = getChallengeSeparator();
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
@@ -366,12 +422,7 @@ public class ChallengeQuestionManager {
 
         if (challengeValue != null) {
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
-
-            if (StringUtils.isEmpty(challengeQuestionSeparator)) {
-                challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
-            }
+            String challengeQuestionSeparator = getChallengeSeparator();
 
             String[] challengeValues = challengeValue.split(challengeQuestionSeparator);
             if (challengeValues != null && challengeValues.length == 2) {
@@ -433,12 +484,7 @@ public class ChallengeQuestionManager {
 
         if (claimValue != null) {
 
-            String challengeQuestionSeparator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
-
-            if (StringUtils.isEmpty(challengeQuestionSeparator)) {
-                challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
-            }
+            String challengeQuestionSeparator = getChallengeSeparator();
 
             if (claimValue.contains(challengeQuestionSeparator)) {
                 challengesUris = claimValue.split(challengeQuestionSeparator);
@@ -482,25 +528,20 @@ public class ChallengeQuestionManager {
 
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
-            String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                    .QUESTION_CHALLENGE_SEPARATOR);
-
-            if (StringUtils.isEmpty(separator)) {
-                separator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
-            }
+            String separator = getChallengeSeparator();
 
             if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
                 for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
                     if (userChallengeAnswer.getQuestion().getQuestionSetId() != null && userChallengeAnswer.getQuestion().getQuestion() !=
                             null && userChallengeAnswer.getAnswer() != null) {
                         String oldValue = Utils.
-                                getClaimFromUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+                                    getClaimFromUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim());
 
                         if (oldValue != null && oldValue.contains(separator)) {
                             String oldAnswer = oldValue.split(separator)[1];
                             if (!oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
                                 String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
-                                        Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                                            Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
                                 Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
                                         claimValue);
                             }
@@ -525,8 +566,129 @@ public class ChallengeQuestionManager {
                 Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_QUESTION_OF_USER, user.getUserName(), e);
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+        }
+    }
+
+    private String getChallengeSeparator() {
+        String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .QUESTION_CHALLENGE_SEPARATOR);
+
+        if (StringUtils.isEmpty(separator)) {
+            separator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
+        }
+        return separator;
+    }
+
+    /**
+     * @param user
+     * @param userChallengeAnswer
+     * @throws IdentityException
+     */
+    public void setChallengeOfUser(User user, UserChallengeAnswer userChallengeAnswer) throws IdentityRecoveryException {
+
+        validateUser(user);
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Setting user challenge question answers in %s's profile.", user.toString()));
+        }
+
+        try {
+            String tenantDomain = StringUtils.isBlank(user.getTenantDomain()) ?
+                    MultitenantConstants.SUPER_TENANT_DOMAIN_NAME : user.getTenantDomain();
+
+            // validate whether two questions from the same set has been answered.
+            validateSecurityQuestionDuplicate(new UserChallengeAnswer[]{userChallengeAnswer});
+
+            // check whether the answered questions exist in the tenant domain
+            checkChallengeQuestionExists(new UserChallengeAnswer[]{userChallengeAnswer}, tenantDomain);
+
+            Set<String> challengesUris = new HashSet<>(getChallengeQuestionUris(user));
+            String separator = getChallengeSeparator();
+
+            if (userChallengeAnswer.getQuestion().getQuestionSetId() != null && userChallengeAnswer.getQuestion().getQuestion() !=
+                    null && userChallengeAnswer.getAnswer() != null) {
+                String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
+                        Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
+                        claimValue);
+                challengesUris.add(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+
+                setUserChallengesURI(user, challengesUris, separator);
+            }
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+        }
+    }
+
+    private void setUserChallengesURI(User user, Set<String> challengesUris, String separator) throws UserStoreException {
+        String challengesUrisValue = getUserChallengesUriValue(challengesUris, separator);
+        Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
+    }
+
+    private void setUserChallengesURI(User user, Set<String> challengesUris) throws UserStoreException {
+        setUserChallengesURI(user, challengesUris, getChallengeSeparator());
+    }
+
+    private String getUserChallengesUriValue(Set<String> challengesUris, String separator) {
+        String challengesUrisValue = StringUtils.EMPTY;
+        for (String challengesUri : challengesUris) {
+            if (StringUtils.EMPTY.equals(challengesUrisValue)) {
+                challengesUrisValue = challengesUri;
+            } else {
+                challengesUrisValue = challengesUrisValue +
+                        separator + challengesUri;
+            }
+        }
+        return challengesUrisValue;
+    }
+
+    /**
+     * @param user
+     * @throws IdentityException
+     */
+    public void removeChallengeAnswersOfUser(User user) throws
+            IdentityRecoveryException {
+
+        validateUser(user);
+        if (log.isDebugEnabled()) {
+            log.debug("Removing Challenge question answers from the user profile.");
+        }
+
+        List<String> challengesUris = getChallengeQuestionUris(user);
+        challengesUris.add(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
+        try {
+            Utils.removeClaimFromUserStoreManager(user, challengesUris.toArray(new String[challengesUris.size()]));
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(
+                    ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+        }
+    }
+
+    /**
+     * @param user
+     * @throws IdentityException
+     */
+    public void removeChallengeAnswerOfUser(User user, String questionURI) throws
+            IdentityRecoveryException {
+
+        validateUser(user);
+        if (log.isDebugEnabled()) {
+            log.debug("Removing a Challenge answer from the user profile.");
+        }
+
+        Set<String> challengesUris = new HashSet<>(getChallengeQuestionUris(user));
+        if (challengesUris.contains(questionURI)) {
+            try {
+                Utils.removeClaimFromUserStoreManager(user, new String[]{questionURI});
+                challengesUris.remove(questionURI);
+                setUserChallengesURI(user, challengesUris);
+            } catch (UserStoreException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_GETTING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+            }
         }
     }
 
@@ -625,7 +787,7 @@ public class ChallengeQuestionManager {
 
     /**
      * Check whether a challenge question exists in the tenant domain. Here we check whether a question exists with the
-     * given questionSetID, questionID and locale.
+     * given questionSetID, questionID and locale, if provided.
      *
      * @param challengeQuestion
      * @param tenantDomain
@@ -634,12 +796,31 @@ public class ChallengeQuestionManager {
      */
     private boolean isChallengeQuestionExists(ChallengeQuestion challengeQuestion, String tenantDomain)
             throws IdentityRecoveryClientException {
-        validateChallengeQuestionAttributes(challengeQuestion);
-
-        String locale = validateLocale(challengeQuestion.getLocale());
+        validateChallengeQuestionMandatoryParams(challengeQuestion);
         String questionPath = getQuestionPath(challengeQuestion);
 
-        return (resourceMgtService.getIdentityResource(questionPath, tenantDomain, locale) != null);
+        if (StringUtils.isNotEmpty(challengeQuestion.getLocale())) {
+            String locale = validateLocale(challengeQuestion.getLocale());
+            return (resourceMgtService.getIdentityResource(questionPath, tenantDomain, locale) != null);
+        }
+        return (resourceMgtService.getIdentityResource(questionPath, tenantDomain) != null);
+    }
+
+    /**
+     * Check whether a challenge question set exists in the tenant domain.
+     * Here we check whether a question set exists with questionSetID.
+     *
+     * @param questionSetID
+     * @param tenantDomain
+     * @return
+     * @throws IdentityRecoveryClientException
+     */
+    private boolean isChallengeQuestionSetExists(String questionSetID, String tenantDomain)
+            throws IdentityRecoveryClientException {
+        validateChallengeSetURI(questionSetID);
+        String questionPath = getQuestionSetPath(questionSetID);
+
+        return (resourceMgtService.getIdentityResource(questionPath, tenantDomain) != null);
     }
 
     /**
@@ -702,10 +883,20 @@ public class ChallengeQuestionManager {
         String questionSetIdUri = challengeQuestion.getQuestionSetId();
         String questionId = challengeQuestion.getQuestionId();
 
+        return getQuestionSetPath(questionSetIdUri) + RegistryConstants.PATH_SEPARATOR + questionId;
+    }
+
+    /**
+     * Get the relative path to the parent directory of the challenge question resource.
+     *
+     * @param questionSetIdUri
+     * @return Path to the parent of challenge question relative to the root of the registry.
+     */
+    private String getQuestionSetPath(String questionSetIdUri) {
+
         String questionSetId = Utils.getChallengeSetDirFromUri(questionSetIdUri);
 
-        return QUESTIONS_BASE_PATH + RegistryConstants.PATH_SEPARATOR + questionSetId +
-                RegistryConstants.PATH_SEPARATOR + questionId;
+        return QUESTIONS_BASE_PATH + RegistryConstants.PATH_SEPARATOR + questionSetId;
     }
 
 
@@ -734,9 +925,9 @@ public class ChallengeQuestionManager {
             }
 
             if (tmpMap.contains(challengeQuestion.getQuestionSetId())) {
-                String errMsg = "Validation Error. Cannot answer two questions from the same question set claim uri";
-                log.error(errMsg);
-                throw new IdentityRecoveryClientException(errMsg);
+                log.error(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS.getMessage());
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DUPLICATE_ANSWERS, null);
             }
             tmpMap.add(challengeQuestion.getQuestionSetId());
         }
@@ -757,13 +948,11 @@ public class ChallengeQuestionManager {
             ChallengeQuestion challengeQuestion = challengeAnswer.getQuestion();
             // if challenge question details are missing in the challenge answer we can't proceed further
             if (challengeQuestion == null) {
-                String errorMsg = "Challenge question missing in the user challenge answer.";
-                throw new IdentityRecoveryClientException(errorMsg);
+                Utils.handleClientException(ERROR_CODE_CHALLENG_ANSWER_MISSING, null);
             }
 
             if (StringUtils.isBlank(challengeQuestion.getQuestion())) {
-                String errorMsg = "Invalid. Empty Challenge question provided.";
-                throw new IdentityRecoveryClientException(errorMsg);
+                Utils.handleClientException(ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE, null);
             }
 
             String locale = validateLocale(challengeQuestion.getLocale());
@@ -771,7 +960,9 @@ public class ChallengeQuestionManager {
             List<ChallengeQuestion> challengeQuestions = getAllChallengeQuestions(tenantDomain, locale);
             boolean isQuestionAvailable = false;
             for (ChallengeQuestion availableQuestion : challengeQuestions) {
-                if (StringUtils.equals(availableQuestion.getQuestion().trim(), challengeQuestion.getQuestion().trim()
+                if (StringUtils.equals(availableQuestion.getQuestionSetId(), challengeQuestion.getQuestionSetId().trim())
+                        && StringUtils.equals(availableQuestion.getQuestion().trim(),
+                        challengeQuestion.getQuestion().trim()
                 )) {
                     isQuestionAvailable = true;
                 }
@@ -801,7 +992,8 @@ public class ChallengeQuestionManager {
         // validate locale input string
         if (locale.matches(IdentityRecoveryConstants.Questions.BLACKLIST_REGEX)) {
             log.error("Invalid locale value provided : " + locale);
-            throw new IdentityRecoveryClientException("Invalid Locale value provided : " + locale);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_LOCALE,
+                    locale);
         }
 
         return locale;
@@ -824,19 +1016,42 @@ public class ChallengeQuestionManager {
 
         if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId) || StringUtils.isBlank(questionText) ||
                 StringUtils.isBlank(questionLocale)) {
-            throw new IdentityRecoveryClientException
-                    ("Invalid Challenge Question. Attributes of Challenge question to be set cannot be empty.");
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
+                    null);
         }
 
 
+        validateChallengePathParams(setId, questionId);
+    }
+
+    private void validateChallengeQuestionMandatoryParams(ChallengeQuestion question) throws
+            IdentityRecoveryClientException {
+
+        String setId = question.getQuestionSetId();
+        String questionId = question.getQuestionId();
+
+        if (StringUtils.isBlank(setId) || StringUtils.isBlank(questionId)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHALLENGE,
+                    null);
+        }
+        validateChallengePathParams(setId, questionId);
+    }
+
+    private void validateChallengePathParams(String setId, String questionId) throws IdentityRecoveryClientException {
+        validateChallengeSetURI(setId);
+        validateChallengePathParam(questionId, "QuestionId");
+    }
+
+    private void validateChallengeSetURI(String setId) throws IdentityRecoveryClientException {
         String challengeSetDir = Utils.getChallengeSetDirFromUri(setId);
-        String errorMsg = "%s contains non alpha-numeric characters.";
-        if (StringUtils.isBlank(challengeSetDir) || !StringUtils.isAlphanumeric(challengeSetDir)) {
-            throw new IdentityRecoveryClientException(String.format(errorMsg, "ChallengeSetId"));
-        }
+        validateChallengePathParam(challengeSetDir, "ChallengeSetId");
+    }
 
-        if (!StringUtils.isAlphanumeric(questionId)) {
-            throw new IdentityRecoveryClientException(String.format(errorMsg, "QuestionId"));
+    private void validateChallengePathParam(String pathParam, String pathParamName) throws
+            IdentityRecoveryClientException {
+        if (StringUtils.isBlank(pathParam) || !StringUtils.isAlphanumeric(pathParam)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_INVALID_CHALLENGE_PATH, pathParamName);
         }
     }
 
@@ -850,14 +1065,14 @@ public class ChallengeQuestionManager {
                 locale = userLocale;
             }
         } catch (UserStoreException e) {
-            String errorMsg = String.format("Error when retrieving the locale claim of user '%s' of '%s' domain.",
+            String errorMsg = String.format(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_ERROR_RETRIVING_CLAIM.getMessage(),
                     tenantAwareUserName, tenantDomain);
             log.error(errorMsg);
-            throw new IdentityRecoveryServerException(errorMsg, e);
+            throw IdentityException.error(IdentityRecoveryServerException.class, IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ERROR_RETRIVING_CLAIM.getCode(), errorMsg, e);
         }
-
         return locale;
     }
-
 
 }

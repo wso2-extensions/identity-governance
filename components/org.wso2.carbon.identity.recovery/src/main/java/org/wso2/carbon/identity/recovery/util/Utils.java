@@ -47,6 +47,7 @@ import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -142,6 +143,26 @@ public class Utils {
             }
         }
         return claimValue;
+
+    }
+
+
+    public static void removeClaimFromUserStoreManager(User user, String[] claims)
+            throws UserStoreException {
+
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        if (realmService.getTenantUserRealm(tenantId) != null) {
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        }
+
+        if (userStoreManager != null) {
+            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+        }
 
     }
 
