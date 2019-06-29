@@ -45,6 +45,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -165,6 +166,37 @@ public class ChallengeQuestionManager {
         return questions;
     }
 
+    /**
+     * Get all challenge questions set URIs registered for a tenant.
+     *
+     * @param tenantDomain
+     * @return
+     * @throws IdentityRecoveryServerException
+     */
+    public List<String> getAllChallengeQuestionSetsURIs(String tenantDomain) throws
+            IdentityRecoveryServerException {
+
+        tenantDomain = validateTenantDomain(tenantDomain);
+        List<String> challengeQuestions = new ArrayList<>();
+
+        try {
+            Resource questionCollection = resourceMgtService.getIdentityResource(QUESTIONS_BASE_PATH, tenantDomain);
+            if (questionCollection != null) {
+                Collection questionSetCollection = (Collection) resourceMgtService.getIdentityResource(
+                        QUESTIONS_BASE_PATH, tenantDomain);
+
+                for (String questionSetId : questionSetCollection.getChildren()) {
+                    challengeQuestions.add(questionSetId.replace(QUESTIONS_BASE_PATH, IdentityRecoveryConstants
+                            .WSO2CARBON_CLAIM_DIALECT));
+                }
+            }
+            return challengeQuestions;
+        } catch (RegistryException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS, null, e);
+        }
+
+    }
 
     /**
      * Get challenge questions available for a user.
