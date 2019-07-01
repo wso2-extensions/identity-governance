@@ -78,8 +78,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
             for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
                 if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
-                        ()) || IdentityApplicationConstants.NAME.equals(authenticatorConfig.getName()) ||
-                        IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
+                        ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
                                 .getName())) {
                     configsToSave.add(authenticatorConfig);
                 }
