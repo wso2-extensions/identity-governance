@@ -57,6 +57,8 @@
                                     <includes>
                                         <include>conf/captcha-config.properties</include>
                                         <include>p2.inf</include>
+                                        <include>conf/captcha-config.properties.j2</include>
+                                        <include>conf/*.json</include>
                                     </includes>
                                 </resource>
                             </resources>

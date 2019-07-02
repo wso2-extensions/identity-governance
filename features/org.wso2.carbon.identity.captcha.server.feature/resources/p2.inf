@@ -1,2 +1,12 @@
 instructions.configure = \
 org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/captcha-config.properties,target:${installFolder}/../../conf/identity/captcha-config.properties,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources/conf); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources/conf/templates); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources/conf/templates/repository); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources/conf/templates/repository/conf); \
+org.eclipse.equinox.p2.touchpoint.natives.mkdir(path:${installFolder}/../../../repository/resources/conf/templates/repository/conf/identity); \
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/captcha-config.properties.j2,target:${installFolder}/../../resources/conf/templates/repository/conf/identity/captcha-config.properties.j2,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/org.wso2.carbon.identity.captcha.server.feature.default.json,target:${installFolder}/../../resources/conf/org.wso2.carbon.identity.captcha.server.feature.default.json,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/org.wso2.carbon.identity.captcha.server_${feature.version}/conf/org.wso2.carbon.identity.captcha.server.feature.validator.json,target:${installFolder}/../../resources/conf/org.wso2.carbon.identity.captcha.server.feature.validator.json,overwrite:true);\
