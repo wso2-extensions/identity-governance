@@ -153,11 +153,11 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_LOCALE("20054", "Invalid Locale value provided : %s"),
         ERROR_CODE_INVALID_CHALLENGE("20055", "Attributes of Challenge question to be set" +
                 " cannot be empty."),
-        ERROR_CODE_INVALID_CHALLENGE_PATH("20055", "%s contains non alpha-numeric characters."),
-        ERROR_CODE_ERROR_DELETING_CHALLENGE_SET("20056", "Error when deleting challenge question set %s."),
-        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTIONS("20057", "Registry exception while deleting " +
+        ERROR_CODE_INVALID_CHALLENGE_PATH("20056", "%s contains non alpha-numeric characters."),
+        ERROR_CODE_ERROR_DELETING_CHALLENGE_SET("20057", "Error when deleting challenge question set %s."),
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTIONS("20058", "Registry exception while deleting " +
                 "challenge question of locale %s in set %s"),
-        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20058", "Registry exception while deleting challenge" +
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
                 " question %s of the set %s"),
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 ".");
