@@ -323,8 +323,8 @@ public class Utils {
             return challengeSetUri;
         }
 
-        int index = challengeSetUri.lastIndexOf("/");
-        return challengeSetUri.substring(index + 1);
+        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" );
+        return components.length > 1 ? components[1] : components[0];
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
