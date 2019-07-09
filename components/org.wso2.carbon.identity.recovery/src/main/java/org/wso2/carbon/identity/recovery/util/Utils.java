@@ -47,6 +47,7 @@ import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -143,6 +144,25 @@ public class Utils {
         }
         return claimValue;
 
+    }
+
+
+    public static void removeClaimFromUserStoreManager(User user, String[] claims)
+            throws UserStoreException {
+
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        if (realmService.getTenantUserRealm(tenantId) != null) {
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        }
+
+        if (userStoreManager != null) {
+            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+        }
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -303,8 +323,8 @@ public class Utils {
             return challengeSetUri;
         }
 
-        int index = challengeSetUri.lastIndexOf("/");
-        return challengeSetUri.substring(index + 1);
+        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" );
+        return components.length > 1 ? components[1] : components[0];
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
@@ -395,6 +415,9 @@ public class Utils {
     public static String getCallbackURL(org.wso2.carbon.identity.recovery.model.Property[] properties)
             throws UnsupportedEncodingException, URISyntaxException {
 
+        if (properties == null) {
+            return null;
+        }
         String callbackURL = null;
         for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
             if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {

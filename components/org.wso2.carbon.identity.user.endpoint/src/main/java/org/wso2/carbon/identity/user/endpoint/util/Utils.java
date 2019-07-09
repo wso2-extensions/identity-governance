@@ -22,12 +22,18 @@ import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
@@ -283,6 +289,43 @@ public class Utils {
             // Catching NPE since getOSGiService can throw NPE if the UsernameUpdateService is not registered properly.
             throw new InternalServerErrorException("Error while retrieving UsernameUpdateService.", e);
         }
+    }
+
+    /**
+     * Returns the OSGI service implementation of ResendConfirmationManager. {@link ResendConfirmationManager}
+     *
+     * @return ResendConfirmationManager {@link ResendConfirmationManager} instance.
+     */
+    public static ResendConfirmationManager getResendConfirmationManager() {
+
+        try {
+            return (ResendConfirmationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(ResendConfirmationManager.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if ResendConfirmationManager is not registered properly.
+            throw new InternalServerErrorException("Error while retrieving ResendConfirmationManager.", e);
+        }
+    }
+
+    /**
+     * Gets user recovery data for a specific user.
+     *
+     * @param resendCodeRequestDTO resendCodeRequestDTO.
+     * @return User recovery data.
+     */
+    public static UserRecoveryData getUserRecoveryData(ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = null;
+        try {
+            userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    Utils.getUser(resendCodeRequestDTO.getUser()));
+        } catch (IdentityRecoveryException e) {
+            throw new InternalServerErrorException("Error in loading user recovery data for "
+                    + Utils.getUser(resendCodeRequestDTO.getUser()), e);
+        }
+
+        return userRecoveryData;
     }
 
 }

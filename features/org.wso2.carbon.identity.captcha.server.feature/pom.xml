@@ -21,7 +21,7 @@
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
         <relativePath>../../pom.xml</relativePath>
-        <version>1.1.68-SNAPSHOT</version>
+        <version>1.2.9-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -57,6 +57,8 @@
                                     <includes>
                                         <include>conf/captcha-config.properties</include>
                                         <include>p2.inf</include>
+                                        <include>conf/captcha-config.properties.j2</include>
+                                        <include>conf/*.json</include>
                                     </includes>
                                 </resource>
                             </resources>

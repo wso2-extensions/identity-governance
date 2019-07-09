@@ -30,12 +30,17 @@ public class IdentityRecoveryConstants {
     public static final String LINE_SEPARATOR = "!";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET = "resendPasswordReset";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET = "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
+            "resendAdminForcedPasswordResetWithOTP";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
+    public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
@@ -86,7 +91,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
-        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
+         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
@@ -137,7 +142,25 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_USERNAME_POLICY_VIOLATED("20045", "Provided username %s violates the policy."),
         ERROR_CODE_PASSWORD_POLICY_VIOLATED("20046", "Provided password violates the policy."),
         ERROR_CODE_DOMAIN_VIOLATED("20047", "Invalid domain %s provided."),
-        ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found.");
+        ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND("20048", "No or more than one valid user found."),
+        ERROR_CODE_INVALID_CHALLENGE_QUESTION("20049", "Invalid Challenge Question Input."),
+        ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE("20050", "Empty Challenge question value provided."),
+        ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS("20051", "Error while removing challenge questions of user '%s."),
+        ERROR_CODE_CHALLENG_ANSWER_MISSING("20052", "Challenge question missing in the user challenge " +
+                "answer."),
+        ERROR_CODE_DUPLICATE_ANSWERS("20053", "Validation Error. Cannot answer two questions from the same question " +
+                "set claim uri"),
+        ERROR_CODE_INVALID_LOCALE("20054", "Invalid Locale value provided : %s"),
+        ERROR_CODE_INVALID_CHALLENGE("20055", "Attributes of Challenge question to be set" +
+                " cannot be empty."),
+        ERROR_CODE_INVALID_CHALLENGE_PATH("20056", "%s contains non alpha-numeric characters."),
+        ERROR_CODE_ERROR_DELETING_CHALLENGE_SET("20057", "Error when deleting challenge question set %s."),
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTIONS("20058", "Registry exception while deleting " +
+                "challenge question of locale %s in set %s"),
+        ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
+                " question %s of the set %s"),
+        ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
+                ".");
 
 
         private final String code;
