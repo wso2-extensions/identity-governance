@@ -415,6 +415,9 @@ public class Utils {
     public static String getCallbackURL(org.wso2.carbon.identity.recovery.model.Property[] properties)
             throws UnsupportedEncodingException, URISyntaxException {
 
+        if (properties == null) {
+            return null;
+        }
         String callbackURL = null;
         for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
             if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
