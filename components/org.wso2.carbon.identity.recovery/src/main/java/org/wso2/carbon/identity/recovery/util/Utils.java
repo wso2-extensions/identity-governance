@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -500,5 +501,54 @@ public class Utils {
 
         return ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
                 .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
+    }
+
+    public static boolean isAccountStateClaimExisting(String tenantDomain) throws IdentityEventException {
+
+        org.wso2.carbon.user.api.UserRealm userRealm = null;
+        ClaimManager claimManager = null;
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        if (realmService != null) {
+            //Get tenant's user realm.
+            try {
+                int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+                userRealm = realmService.getTenantUserRealm(tenantId);
+
+            } catch (UserStoreException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Error while retriving user realm in account disable handler", e);
+                }
+                throw new IdentityEventException("Error while retriving user realm in Utils");
+            }
+        }
+        if (userRealm != null) {
+            //Get claim manager for manipulating attributes.
+            try {
+                claimManager = (ClaimManager) userRealm.getClaimManager();
+            } catch (UserStoreException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Error while retriving claim manager in Utils", e);
+                }
+                throw new IdentityEventException("Error while retriving claim manager in Utils");
+            }
+        }
+
+        boolean isExist = false;
+        try {
+            if (claimManager != null) {
+                Claim claim = claimManager.getClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+                if (claim != null) {
+                    isExist = true;
+                }
+            }
+        } catch (UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while checking accountState claim  from claimManager", e);
+            }
+            throw new IdentityEventException("Error while checking accountState claim  from claimManager");
+
+        }
+        return isExist;
     }
 }

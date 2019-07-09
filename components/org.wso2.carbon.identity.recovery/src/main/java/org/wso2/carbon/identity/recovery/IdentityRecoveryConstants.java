@@ -59,6 +59,11 @@ public class IdentityRecoveryConstants {
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
+    public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
+    public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
+    public static final String PENDING_ASK_PASSWORD = "PENDING_AP";
+    public static final String PENDING_EMAIL_VERIFICATION = "PENDING_EV";
+    public static final String ACCOUNT_STATE_UNLOCKED = "UNLOCKED";
 
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +

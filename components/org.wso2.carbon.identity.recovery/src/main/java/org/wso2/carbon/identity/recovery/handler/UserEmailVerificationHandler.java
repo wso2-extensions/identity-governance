@@ -125,11 +125,17 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                             user.getTenantDomain()));
 
             Claim claim = Utils.getEmailVerifyTemporaryClaim();
+            boolean isAccountClaimExist = Utils.isAccountStateClaimExisting(user.getTenantDomain());
+
             if (claim == null) {
                 return;
                 //Not required to handle in this handler
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
                 if (isNotificationInternallyManage) {
+                    if (isAccountClaimExist) {
+                        setUserClaim (IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                                IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
+                    }
                     initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString());
                 }
 
@@ -139,6 +145,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 }
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
                 if (isNotificationInternallyManage) {
+                    if (isAccountClaimExist) {
+                        setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                                IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
+                    }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString());
                 }
             }
