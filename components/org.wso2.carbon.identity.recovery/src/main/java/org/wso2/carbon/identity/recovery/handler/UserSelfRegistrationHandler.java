@@ -126,6 +126,10 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 HashMap<String, String> userClaims = new HashMap<>();
                 //Need to lock user account
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                if (Utils.isAccountStateClaimExisting(tenantDomain)) {
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+                }
                 try {
                     userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
                     if (log.isDebugEnabled()) {
