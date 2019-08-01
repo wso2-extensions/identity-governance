@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
-        <version>1</version>
+        <version>1.2</version>
     </parent>
 
     <scm>
@@ -587,13 +587,13 @@
         <identity.data.publisher.authentication.version>5.1.10</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.5.0-m1</carbon.kernel.version>
+        <carbon.kernel.version>4.5.0-m3</carbon.kernel.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.13.4</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.13.42-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.7.0, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
