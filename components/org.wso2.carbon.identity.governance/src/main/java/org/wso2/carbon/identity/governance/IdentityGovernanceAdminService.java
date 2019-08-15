@@ -23,9 +23,11 @@ import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class IdentityGovernanceAdminService extends AbstractAdmin {
 
@@ -49,14 +51,28 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
             config.setOrder(list.get(i).getOrder());
             connectorProperties = list.get(i).getPropertyNames();
             Property[] configProperties = new Property[connectorProperties.length];
-            for (int j=0; j<connectorProperties.length;j++) {
-                for (int k = 0; k < properties.length; k++) {
-                    if (connectorProperties[j].equals(properties[k].getName())) {
-                        configProperties[j] = properties[k];
+            for (int j = 0; j < connectorProperties.length; j++) {
+                String connectorProperty = connectorProperties[j];
+                boolean propertyExists = false;
+                for (Property property : properties) {
+                    if (connectorProperty.equals(property.getName())) {
+                        configProperties[j] = property;
                         configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
                         configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        propertyExists = true;
                         break;
                     }
+                }
+                if (!propertyExists) {
+                    Property newProperty = new Property();
+                    newProperty.setName(connectorProperty);
+                    newProperty.setDescription(list.get(i).getPropertyDescriptionMapping().get(connectorProperty));
+                    newProperty.setDisplayName(list.get(i).getPropertyNameMapping().get(connectorProperty));
+                    Properties defaultPropertyValues = list.get(i).getDefaultPropertyValues(tenantDomain);
+                    newProperty.setValue(String.valueOf(defaultPropertyValues.get(connectorProperty)));
+                    identityGovernanceService.updateConfiguration(tenantDomain,
+                            Collections.singletonMap(newProperty.getName(), newProperty.getValue()));
+                    configProperties[j] = newProperty;
                 }
             }
             config.setProperties(configProperties);
