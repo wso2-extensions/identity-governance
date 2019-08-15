@@ -46,7 +46,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
         immediate = true)
 public class CaptchaComponent {
 
-    private static Log log = LogFactory.getLog(CaptchaComponent.class);
+    private static final Log log = LogFactory.getLog(CaptchaComponent.class);
 
     @Activate
     protected void activate(ComponentContext context) {

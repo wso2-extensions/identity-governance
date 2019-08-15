@@ -44,7 +44,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
         immediate = true)
 public class IdentityMgtServiceComponent {
 
-    private static Log log = LogFactory.getLog(IdentityMgtServiceComponent.class);
+    private static final Log log = LogFactory.getLog(IdentityMgtServiceComponent.class);
 
     private static IdentityMgtEventListener listener = null;
 

@@ -35,7 +35,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
         immediate = true)
 public class IdentityPIIControllerServiceComponent {
 
-    private static Log log = LogFactory.getLog(IdentityPIIControllerServiceComponent.class);
+    private static final Log log = LogFactory.getLog(IdentityPIIControllerServiceComponent.class);
 
     private IdentityGovernanceService identityGovernanceService;
 

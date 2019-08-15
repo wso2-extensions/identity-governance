@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class FailLoginAttemptValidationHandler extends AbstractEventHandler {
 
-    private static Log log = LogFactory.getLog(FailLoginAttemptValidationHandler.class);
+    private static final Log log = LogFactory.getLog(FailLoginAttemptValidationHandler.class);
 
     @Override
     public String getName() {

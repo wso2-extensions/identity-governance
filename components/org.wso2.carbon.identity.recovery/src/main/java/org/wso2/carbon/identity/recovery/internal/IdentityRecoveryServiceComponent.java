@@ -62,7 +62,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
         immediate = true)
 public class IdentityRecoveryServiceComponent {
 
-    private static Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);
+    private static final Log log = LogFactory.getLog(IdentityRecoveryServiceComponent.class);
 
     private IdentityRecoveryServiceDataHolder dataHolder = IdentityRecoveryServiceDataHolder.getInstance();
 
