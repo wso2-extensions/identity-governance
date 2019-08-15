@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
 
-    private static Log log = LogFactory.getLog(UserStoreBasedIdentityDataStore.class);
+    private static final Log log = LogFactory.getLog(UserStoreBasedIdentityDataStore.class);
     private static final String TRUE_STRING = "TRUE";
     private static final String FALSE_STRING = "FALSE";
     private static ThreadLocal<String> userStoreInvoked = new ThreadLocal<String>() {

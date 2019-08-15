@@ -51,7 +51,7 @@ import static org.wso2.carbon.consent.mgt.core.constant.ConsentConstants.PIICont
  */
 public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIController {
 
-    private static Log log = LogFactory.getLog(ConsentMgtConfigImpl.class);
+    private static final Log log = LogFactory.getLog(ConsentMgtConfigImpl.class);
     private static final String DISPLAY_NAME_PII_CONTROLLER = "Controller Name";
     private static final String DISPLAY_NAME_CONTACT = "Contact Name";
     private static final String DISPLAY_NAME_EMAIL = "Email Address";

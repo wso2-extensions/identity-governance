@@ -42,7 +42,7 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
     private static final String IDENTITY_GOVERNANCE_DATA_CACHE = "IDENTITY_GOVERNANCE_DATA_CACHE";
 
 
-    private static Log log = LogFactory.getLog(InMemoryIdentityDataStore.class);
+    private static final Log log = LogFactory.getLog(InMemoryIdentityDataStore.class);
 
     protected Cache<String, UserIdentityClaim> getCache() {
         CacheManager manager = Caching.getCacheManagerFactory().getCacheManager(InMemoryIdentityDataStore.IDENTITY_GOVERNANCE_DATA_CACHE_MANAGER);
