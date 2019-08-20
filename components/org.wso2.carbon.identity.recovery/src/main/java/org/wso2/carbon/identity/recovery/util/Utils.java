@@ -22,6 +22,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
@@ -30,6 +31,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -78,6 +80,16 @@ public class Utils {
             .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode()};
 
     private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
+
+    /**
+     * Get an instance of the NotificationChannelManager.
+     *
+     * @return Instance of the NotificationChannelManager
+     */
+    public static NotificationChannelManager getNotificationChannelManager() {
+        return (NotificationChannelManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getOSGiService(NotificationChannelManager.class, null);
+    }
 
     /**
      * @return

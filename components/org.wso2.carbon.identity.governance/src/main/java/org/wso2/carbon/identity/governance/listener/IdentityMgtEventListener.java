@@ -21,7 +21,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -30,6 +29,10 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.TenantManager;
@@ -193,16 +196,72 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("post add user is called in IdentityMgtEventListener");
         }
+
         String eventName = IdentityEventConstants.Event.POST_ADD_USER;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
         properties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
         properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profile);
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
+
+        // Get additional event properties.
+        properties = addEventProperties(userName, properties);
         handleEvent(userName, userStoreManager, eventName, properties);
         return true;
     }
 
+    /**
+     * Add identity claim values to event properties.
+     *
+     * @param username Username
+     * @param properties Event properties
+     * @return Event properties with additional properties added to the event
+     */
+    private HashMap<String, Object> addEventProperties(String username,HashMap<String, Object> properties) {
+
+        String[] requiredClaims = {
+                IdentityMgtConstants.Claim.PREFERED_CHANNEL_CLAIM,
+                NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(),
+                NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl()
+        };
+        // Get the identity claims map.
+        Map<String, String> userIdentityDataMap = getUserIdentityDataMap(username);
+        if (userIdentityDataMap != null && !userIdentityDataMap.isEmpty()) {
+            for (String claim : requiredClaims) {
+                String value = userIdentityDataMap.get(claim);
+                if (StringUtils.isNotEmpty(value)) {
+                    properties.put(claim, value);
+                }
+            }
+        }
+        return properties;
+    }
+
+    /**
+     * Get the identity claim map for the user.
+     *
+     * @param username Username
+     * @return User identity claims map
+     */
+    private Map<String, String> getUserIdentityDataMap(String username) {
+
+        if (IdentityUtil.threadLocalProperties != null) {
+            UserIdentityClaim userIdentityClaims = (UserIdentityClaim) IdentityUtil.threadLocalProperties.get()
+                    .get(IdentityMgtConstants.USER_IDENTITY_CLAIMS);
+
+            // If user identity claims are null, no identity claims available for the user.
+            if (userIdentityClaims == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No identity claims for user : " + username);
+                }
+                return null;
+            } else {
+                return userIdentityClaims.getUserIdentityDataMap();
+            }
+        } else {
+            return null;
+        }
+    }
 
     public boolean doPreUpdateCredential(String userName, Object newCredential,
                                          Object oldCredential,

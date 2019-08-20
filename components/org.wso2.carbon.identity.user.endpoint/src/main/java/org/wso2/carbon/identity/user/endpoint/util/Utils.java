@@ -18,10 +18,12 @@
 
 package org.wso2.carbon.identity.user.endpoint.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -47,6 +49,7 @@ import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class Utils {
@@ -328,4 +331,20 @@ public class Utils {
         return userRecoveryData;
     }
 
+    /**
+     * Create a map of properties.
+     *
+     * @param propertyDTOS Property DTOs in the API request {@link PropertyDTO}
+     * @return Map of properties
+     */
+    public static HashMap<String, String> getPropertiesMap(List<PropertyDTO> propertyDTOS) {
+
+        HashMap<String, String> propertiesMap = new HashMap<>();
+        if (propertyDTOS != null && propertyDTOS.size() > 0) {
+            for (PropertyDTO property : propertyDTOS) {
+                propertiesMap.put(property.getKey(), property.getValue());
+            }
+        }
+        return propertiesMap;
+    }
 }
