@@ -123,37 +123,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             index++;
         }
 
-        List<IdentityConnectorConfig> identityConnectorConfigs = getConnectorList();
-        String[] connectorProperties;
-
-        ArrayList<Property> propertiesToAdd = new ArrayList<>();
-        for (IdentityConnectorConfig identityConnectorConfig : identityConnectorConfigs) {
-            connectorProperties = identityConnectorConfig.getPropertyNames();
-            for (String connectorProperty : connectorProperties) {
-                boolean propertyExists = false;
-                for (Property property : configMap) {
-                    if (connectorProperty.equals(property.getName())) {
-                        propertyExists = true;
-                        break;
-                    }
-                }
-                if (!propertyExists) {
-                    Property newProperty = new Property();
-                    newProperty.setName(connectorProperty);
-                    newProperty.setDescription(identityConnectorConfig.getPropertyDescriptionMapping().get(connectorProperty));
-                    newProperty.setDisplayName(identityConnectorConfig.getPropertyNameMapping().get(connectorProperty));
-                    Properties defaultPropertyValues = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
-                    newProperty.setValue(String.valueOf(defaultPropertyValues.get(connectorProperty)));
-                    updateConfiguration(tenantDomain, Collections.singletonMap(newProperty.getName(), newProperty.getValue()));
-                    propertiesToAdd.add(newProperty);
-                }
-            }
-        }
-
-        if (propertiesToAdd.size() > 0) {
-            configMap = (Property[]) ArrayUtils.addAll(configMap, propertiesToAdd.toArray(new Property[0]));
-        }
-
         return configMap;
     }
 
