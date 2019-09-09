@@ -53,20 +53,17 @@ public class InitVerificationApiServiceImpl extends InitVerificationApiService {
             confirmationCode = ClaimVerificationEndpointUtils.getClaimVerificationHandler().initVerification(
                     user, claim, verificationInitiatingRequest.getVerificationMethod(),
                     ClaimVerificationEndpointUtils.getPropertiesToMap(verificationInitiatingRequest.getProperties()));
-        } catch (ClaimVerificationException e) {
-
-            if (e instanceof ClaimVerificationBadRequestException) {
-                if (LOG.isDebugEnabled()) {
-                    String msg = "Malformed request received for claim verification initiation. ";
-                    LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
-                }
-                ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
-            } else {
-                String msg = "Error while initiating claim verification.";
-                LOG.error(msg, e);
-                ClaimVerificationEndpointUtils.handleInternalServerError(
-                        ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
+        } catch (ClaimVerificationBadRequestException e) {
+            if (LOG.isDebugEnabled()) {
+                String msg = "Malformed request received for claim verification initiation. ";
+                LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
             }
+            ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
+        } catch (ClaimVerificationException e) {
+            String msg = "Error while initiating claim verification.";
+            LOG.error(msg, e);
+            ClaimVerificationEndpointUtils.handleInternalServerError(
+                    ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
         }
 
         return Response.ok().entity(ClaimVerificationEndpointUtils.getInitVerificationResponse(confirmationCode))

@@ -58,20 +58,17 @@ public class ConfirmApiServiceImpl extends ConfirmApiService {
         try {
             ClaimVerificationEndpointUtils.getClaimVerificationHandler().confirmVerification(
                     confirmationRequest.getCode(), isValidationSuccess);
-        } catch (ClaimVerificationException e) {
-
-            if (e instanceof ClaimVerificationBadRequestException) {
-                if (LOG.isDebugEnabled()) {
-                    String msg = "Malformed request received for claim verification confirmation. ";
-                    LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
-                }
-                ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
-            } else {
-                String msg = "Error while finalizing claim verification.";
-                LOG.error(msg, e);
-                ClaimVerificationEndpointUtils.handleInternalServerError(
-                        ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
+        } catch (ClaimVerificationBadRequestException e) {
+            if (LOG.isDebugEnabled()) {
+                String msg = "Malformed request received for claim verification confirmation. ";
+                LOG.debug(msg + e.getErrorCode() + ":" + e.getMessage(), e);
             }
+            ClaimVerificationEndpointUtils.handleBadRequest(e.getErrorCode(), e.getMessage());
+        } catch (ClaimVerificationException e) {
+            String msg = "Error while finalizing claim verification.";
+            LOG.error(msg, e);
+            ClaimVerificationEndpointUtils.handleInternalServerError(
+                    ClaimVerificationEndpointConstants.ERROR_CODE_UNEXPECTED_ERROR, msg);
         }
 
         return Response.ok().build();
