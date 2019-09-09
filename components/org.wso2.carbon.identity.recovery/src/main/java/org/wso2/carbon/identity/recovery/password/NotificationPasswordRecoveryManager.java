@@ -169,7 +169,7 @@ public class NotificationPasswordRecoveryManager {
         return notificationResponseBean;
     }
 
-    public void updatePassword(String code, String password, Property[] properties) throws IdentityRecoveryException {
+    public void updatePassword(String code, String password, Property[] properties) throws IdentityRecoveryException, IdentityEventException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
@@ -225,6 +225,10 @@ public class NotificationPasswordRecoveryManager {
             }
             if (isNotificationInternallyManaged) {
                 userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                if (Utils.isAccountStateClaimExisting(userTenantDomain)) {
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+                }
             }
             userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         } catch (UserStoreException e) {
@@ -376,4 +380,5 @@ public class NotificationPasswordRecoveryManager {
         }
 
     }
+
 }

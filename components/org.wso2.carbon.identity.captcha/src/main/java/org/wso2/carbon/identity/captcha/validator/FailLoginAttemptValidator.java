@@ -51,7 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 @Deprecated
 public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler implements AuthenticationDataPublisher {
 
-    private static Log log = LogFactory.getLog(FailLoginAttemptValidator.class);
+    private static final Log log = LogFactory.getLog(FailLoginAttemptValidator.class);
 
     @Override
     public String getName() {

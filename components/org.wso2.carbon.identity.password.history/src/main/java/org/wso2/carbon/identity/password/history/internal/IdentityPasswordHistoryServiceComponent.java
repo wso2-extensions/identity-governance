@@ -34,7 +34,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
         immediate = true)
 public class IdentityPasswordHistoryServiceComponent {
 
-    private static Log log = LogFactory.getLog(IdentityPasswordHistoryServiceComponent.class);
+    private static final Log log = LogFactory.getLog(IdentityPasswordHistoryServiceComponent.class);
 
     @Activate
     protected void activate(ComponentContext context) {

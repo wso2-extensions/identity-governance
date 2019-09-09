@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
-    private static Log log = LogFactory.getLog(JDBCIdentityDataStore.class);
+    private static final Log log = LogFactory.getLog(JDBCIdentityDataStore.class);
 
     private static final String QUERY_FILTER_STRING_ANY = "*";
     private static final String SQL_FILTER_STRING_ANY = "%";

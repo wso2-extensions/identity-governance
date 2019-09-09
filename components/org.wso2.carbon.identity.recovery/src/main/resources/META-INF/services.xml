@@ -34,7 +34,7 @@
             <parameter name="AuthorizationAction" locked="true">/permission/admin/login</parameter>
         </operation>
         <operation name="setChallengeQuestionsOfTenant">
-            <parameter name="AuthorizationAction" locked="true">/permission/admin/configure/security/questions</parameter>
+            <parameter name="AuthorizationAction" locked="true">/permission/admin/configure/security/questions, /permission/admin/manage/identity/challenge</parameter>
         </operation>
         <operation name="deleteChallengeQuestionsOfTenant">
             <parameter name="AuthorizationAction" locked="true">/permission/admin/manage/identity</parameter>

@@ -46,7 +46,7 @@ import java.util.List;
  */
 public class ChallengeQuestionManagementAdminService {
 
-    private static Log log = LogFactory.getLog(ChallengeQuestionManagementAdminService.class);
+    private static final Log log = LogFactory.getLog(ChallengeQuestionManagementAdminService.class);
     private ChallengeQuestionManager questionManager = ChallengeQuestionManager.getInstance();
 
     /**
