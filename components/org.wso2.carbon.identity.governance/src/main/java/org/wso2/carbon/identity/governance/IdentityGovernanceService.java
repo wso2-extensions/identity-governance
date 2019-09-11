@@ -17,6 +17,7 @@
 package org.wso2.carbon.identity.governance;
 
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 
 import java.util.List;
@@ -33,5 +34,13 @@ public interface IdentityGovernanceService {
 
     List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException;
 
+    List<ConnectorConfig> getConnectorListWithConfigs(String tenantDomain) throws IdentityGovernanceException;
 
+    Map<String, List<ConnectorConfig>> getCategorizedConnectorListWithConfigs(String tenantDomain) throws IdentityGovernanceException;
+
+    List<ConnectorConfig> getConnectorListWithConfigsByCategory(String tenantDomain,
+                                                                String category) throws IdentityGovernanceException;
+
+    ConnectorConfig getConnectorListWithConfig(String tenantDomain,
+                                                                String connectorName) throws IdentityGovernanceException;
 }

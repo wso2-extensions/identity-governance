@@ -23,6 +23,8 @@ import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,35 +36,7 @@ public class IdentityGovernanceAdminService extends AbstractAdmin {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         IdentityGovernanceService identityGovernanceService = IdentityMgtServiceDataHolder.getInstance()
                 .getIdentityGovernanceService();
-        List<IdentityConnectorConfig> list = IdentityMgtServiceDataHolder.getInstance()
-                .getIdentityGovernanceConnectorList();
-        Property[] properties = identityGovernanceService.getConfiguration(tenantDomain);
-        ConnectorConfig[] configs = new ConnectorConfig[list.size()];
-        String[] connectorProperties;
-        for (int i = 0; i < list.size(); i++) {
-            ConnectorConfig config = new ConnectorConfig();
-            Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
-            Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
-            config.setFriendlyName(list.get(i).getFriendlyName());
-            config.setCategory(list.get(i).getCategory());
-            config.setSubCategory(list.get(i).getSubCategory());
-            config.setOrder(list.get(i).getOrder());
-            connectorProperties = list.get(i).getPropertyNames();
-            Property[] configProperties = new Property[connectorProperties.length];
-            for (int j = 0; j < connectorProperties.length; j++) {
-                for (int k = 0; k < properties.length; k++) {
-                    if (connectorProperties[j].equals(properties[k].getName())) {
-                        configProperties[j] = properties[k];
-                        configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
-                        configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
-                        break;
-                    }
-                }
-            }
-            config.setProperties(configProperties);
-            configs[i] = config;
-        }
-        return configs;
+        return identityGovernanceService.getConnectorListWithConfigs(tenantDomain).toArray(new ConnectorConfig[0]);
     }
 
     public void updateConfigurations(Property[] configurations) throws IdentityGovernanceException {

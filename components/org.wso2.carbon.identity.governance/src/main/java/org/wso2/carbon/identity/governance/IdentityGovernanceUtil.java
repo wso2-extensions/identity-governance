@@ -42,7 +42,7 @@ public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
-    public static void saveConnectorDefaultProperties (IdentityConnectorConfig identityConnectorConfig,
+    public static void saveConnectorDefaultProperties(IdentityConnectorConfig identityConnectorConfig,
                                                        String tenantDomain) throws IdentityGovernanceException{
 
         Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
