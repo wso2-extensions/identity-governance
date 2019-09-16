@@ -41,6 +41,6 @@ public interface IdentityGovernanceService {
     List<ConnectorConfig> getConnectorListWithConfigsByCategory(String tenantDomain,
                                                                 String category) throws IdentityGovernanceException;
 
-    ConnectorConfig getConnectorListWithConfig(String tenantDomain,
-                                                                String connectorName) throws IdentityGovernanceException;
+    ConnectorConfig getConnectorWithConfigs(String tenantDomain,
+                                            String connectorName) throws IdentityGovernanceException;
 }

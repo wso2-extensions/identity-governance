@@ -225,8 +225,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         return categorizedConnectorListWithConfigs;
     }
 
-    public ConnectorConfig getConnectorListWithConfig(String tenantDomain,
-                                                      String connectorName) throws IdentityGovernanceException {
+    public ConnectorConfig getConnectorWithConfigs(String tenantDomain,
+                                                   String connectorName) throws IdentityGovernanceException {
 
         List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
 

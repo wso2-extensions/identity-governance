@@ -33,16 +33,15 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.Arrays;
 
 public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
-    public static synchronized void saveConnectorDefaultProperties(IdentityConnectorConfig identityConnectorConfig,
+    public static void saveConnectorDefaultProperties(IdentityConnectorConfig identityConnectorConfig,
                                                       String tenantDomain) throws IdentityGovernanceException {
 
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
@@ -51,7 +50,7 @@ public class IdentityGovernanceUtil {
             IdentityProvider residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
             IdentityProviderProperty[] idpProperties = residentIdp.getIdpProperties();
             String[] connectorPropertiesNames = identityConnectorConfig.getPropertyNames();
-            List<IdentityProviderProperty> propertiesToAdd = new ArrayList<>(Arrays.asList(idpProperties));
+            List<IdentityProviderProperty> propertiesToAdd = new ArrayList<>();
             for (String connectorPropertyName : connectorPropertiesNames) {
                 boolean propertyExists = false;
                 for (IdentityProviderProperty property : idpProperties) {
@@ -72,22 +71,14 @@ public class IdentityGovernanceUtil {
                 }
             }
 
-            for (IdentityProviderProperty idpProperty : idpProperties) {
-                String propertyName = idpProperty.getName();
-                if ((identityConnectorConfig.getName() + "." +
-                        IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
-                    }
-                    return;
-                }
-            }
-            if (propertiesToAdd.size() > idpProperties.length) {
+            // If the property list size is greater than 0, add the new properties to the database.
+            if (propertiesToAdd.size() > 0) {
                 IdentityProviderProperty property = new IdentityProviderProperty();
                 property.setName(identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
                         .ALREADY_WRITTEN_PROPERTY_KEY);
                 property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
                 propertiesToAdd.add(property);
+                propertiesToAdd.addAll(Arrays.asList(idpProperties));
                 residentIdp.setIdpProperties(propertiesToAdd.toArray(new IdentityProviderProperty[0]));
                 FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
                 List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
