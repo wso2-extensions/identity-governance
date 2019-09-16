@@ -73,11 +73,22 @@ public class IdentityGovernanceUtil {
 
             // If the property list size is greater than 0, add the new properties to the database.
             if (propertiesToAdd.size() > 0) {
-                IdentityProviderProperty property = new IdentityProviderProperty();
-                property.setName(identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
-                        .ALREADY_WRITTEN_PROPERTY_KEY);
-                property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
-                propertiesToAdd.add(property);
+                String alreadyWrittenPropertyName =
+                        identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
+                                .ALREADY_WRITTEN_PROPERTY_KEY;
+                boolean alreadyWrittenPropertyExists = false;
+                for (IdentityProviderProperty property : idpProperties) {
+                    if (alreadyWrittenPropertyName.equals(property.getName())) {
+                        alreadyWrittenPropertyExists = true;
+                        break;
+                    }
+                }
+                if (!alreadyWrittenPropertyExists) {
+                    IdentityProviderProperty property = new IdentityProviderProperty();
+                    property.setName(alreadyWrittenPropertyName);
+                    property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
+                    propertiesToAdd.add(property);
+                }
                 propertiesToAdd.addAll(Arrays.asList(idpProperties));
                 residentIdp.setIdpProperties(propertiesToAdd.toArray(new IdentityProviderProperty[0]));
                 FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
