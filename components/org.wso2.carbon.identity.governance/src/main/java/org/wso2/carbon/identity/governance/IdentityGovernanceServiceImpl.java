@@ -39,12 +39,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
 
-    /**
-     * Store the configurations of a tenant in cache and database
-     *
-     * @param tenantDomain         Domain name of the tenant
-     * @param configurationDetails Configurations belong to the tenant
-     */
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
 
@@ -92,12 +86,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     }
 
-    /**
-     * Get the configurations of a tenant from cache or database
-     *
-     * @param tenantDomain Domain name of the tenant
-     * @return Configurations belong to the tenant
-     */
     @Override
     public Property[] getConfiguration(String tenantDomain) throws IdentityGovernanceException {
 
