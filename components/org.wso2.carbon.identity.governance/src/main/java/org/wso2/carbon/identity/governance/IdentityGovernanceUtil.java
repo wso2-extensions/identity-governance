@@ -33,29 +33,24 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.Arrays;
 
 public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
-    public static void saveConnectorDefaultProperties (IdentityConnectorConfig identityConnectorConfig,
-                                                       String tenantDomain) throws IdentityGovernanceException{
+    public static void saveConnectorDefaultProperties(IdentityConnectorConfig identityConnectorConfig,
+                                                      String tenantDomain) throws IdentityGovernanceException {
 
-        Properties connectorProperties = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
 
         try {
-            Enumeration enuKeys = connectorProperties.keys();
             IdentityProvider residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
             IdentityProviderProperty[] idpProperties = residentIdp.getIdpProperties();
-            List<String> idpPropertyKeys = new ArrayList<>();
-            List<IdentityProviderProperty> propertyList = new ArrayList<>();
             String[] connectorPropertiesNames = identityConnectorConfig.getPropertyNames();
-            List<IdentityProviderProperty> propertiesToAdd = new ArrayList<>(Arrays.asList(idpProperties));
+            List<IdentityProviderProperty> propertiesToAdd = new ArrayList<>();
             for (String connectorPropertyName : connectorPropertiesNames) {
                 boolean propertyExists = false;
                 for (IdentityProviderProperty property : idpProperties) {
@@ -73,66 +68,44 @@ public class IdentityGovernanceUtil {
                     Properties defaultPropertyValues = identityConnectorConfig.getDefaultPropertyValues(tenantDomain);
                     newProperty.setValue(String.valueOf(defaultPropertyValues.get(connectorPropertyName)));
                     propertiesToAdd.add(newProperty);
-                    residentIdp.setIdpProperties(
-                            propertiesToAdd.toArray(new IdentityProviderProperty[propertiesToAdd.size()]));
-                    FederatedAuthenticatorConfig[] authenticatorConfigs =
-                            residentIdp.getFederatedAuthenticatorConfigs();
-                    List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
-                    for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
-                        if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME
-                                .equals(authenticatorConfig.getName
-                                        ()) ||
-                                IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
-                                        .getName())) {
-                            configsToSave.add(authenticatorConfig);
-                        }
-                    }
-                    residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
-                            FederatedAuthenticatorConfig[configsToSave.size()]));
-                    identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
                 }
             }
 
-            for (IdentityProviderProperty idpProperty : idpProperties) {
-                String propertyName = idpProperty.getName();
-                if ((identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY).equals(propertyName)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Identity management property saving skipped for tenant : " + tenantDomain);
+            // If the property list size is greater than 0, add the new properties to the database.
+            if (propertiesToAdd.size() > 0) {
+                String alreadyWrittenPropertyName =
+                        identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
+                                .ALREADY_WRITTEN_PROPERTY_KEY;
+                boolean alreadyWrittenPropertyExists = false;
+                for (IdentityProviderProperty property : idpProperties) {
+                    if (alreadyWrittenPropertyName.equals(property.getName())) {
+                        alreadyWrittenPropertyExists = true;
+                        break;
                     }
-                    return;
                 }
-                idpPropertyKeys.add(idpProperty.getName());
-                propertyList.add(idpProperty);
-            }
-            while (enuKeys.hasMoreElements()) {
-                String key = (String) enuKeys.nextElement();
-                String value = connectorProperties.getProperty(key);
-                IdentityProviderProperty property = new IdentityProviderProperty();
-                property.setName(key);
-                property.setValue(value);
-                propertyList.add(property);
-            }
-            IdentityProviderProperty property = new IdentityProviderProperty();
-            property.setName(identityConnectorConfig.getName() + "." + IdentityEventConstants.PropertyConfig
-                    .ALREADY_WRITTEN_PROPERTY_KEY);
-            property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
-            propertyList.add(property);
-            residentIdp.setIdpProperties(propertyList.toArray(new IdentityProviderProperty[propertyList.size()]));
-            FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
-            List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
-            for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
-                if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
-                        ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
-                                .getName())) {
-                    configsToSave.add(authenticatorConfig);
+                if (!alreadyWrittenPropertyExists) {
+                    IdentityProviderProperty property = new IdentityProviderProperty();
+                    property.setName(alreadyWrittenPropertyName);
+                    property.setValue(IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_VALUE);
+                    propertiesToAdd.add(property);
                 }
-            }
-            residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
-                    FederatedAuthenticatorConfig[configsToSave.size()]));
+                propertiesToAdd.addAll(Arrays.asList(idpProperties));
+                residentIdp.setIdpProperties(propertiesToAdd.toArray(new IdentityProviderProperty[0]));
+                FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
+                List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
+                for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
+                    if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
+                            ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
+                            .getName())) {
+                        configsToSave.add(authenticatorConfig);
+                    }
+                }
+                residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new FederatedAuthenticatorConfig[0]));
 
-            identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
-            if (log.isDebugEnabled()) {
-                log.debug("New resident IDP properties for tenant : " + tenantDomain + " written to database");
+                identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
+                if (log.isDebugEnabled()) {
+                    log.debug("New resident IDP properties for tenant : " + tenantDomain + " written to database");
+                }
             }
 
         } catch (IdentityProviderManagementException e) {
