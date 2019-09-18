@@ -625,7 +625,7 @@
         <carbon.consent.mgt.version>2.2.4</carbon.consent.mgt.version>
         <carbon.consent.mgt.version.range>[2.2.4, 3.0.0)</carbon.consent.mgt.version.range>
 
-        <carbon.multitenancy.version>4.7.10</carbon.multitenancy.version>
+        <carbon.multitenancy.version>4.7.11</carbon.multitenancy.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.7.4, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
 
         <!--Maven Plugin Version-->
