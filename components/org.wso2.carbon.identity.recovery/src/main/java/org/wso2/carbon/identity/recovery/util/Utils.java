@@ -48,10 +48,11 @@ import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -411,6 +412,28 @@ public class Utils {
             return true;
         }
         return false;
+    }
+
+    public static String getCallbackURLFromRegistration(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException, MalformedURLException {
+
+        if (properties == null) {
+            return null;
+        }
+        String callbackURL = null;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
+                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                break;
+            }
+        }
+
+        if (StringUtils.isNotBlank(callbackURL)) {
+                URL url = new URL(callbackURL);
+                callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
+                        .toString();
+        }
+        return callbackURL;
     }
 
     public static String getCallbackURL(org.wso2.carbon.identity.recovery.model.Property[] properties)

@@ -73,6 +73,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -114,13 +115,13 @@ public class UserSelfRegistrationManager {
         // Callback URL validation
         String callbackURL = null;
         try {
-            callbackURL = Utils.getCallbackURL(properties);
+            callbackURL = Utils.getCallbackURLFromRegistration(properties);
             if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
                     IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
             }
-        } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
+        } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
                     callbackURL);
         }
