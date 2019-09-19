@@ -17,10 +17,12 @@
 package org.wso2.carbon.identity.governance.bean;
 
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.apache.axis2.databinding.annotation.IgnoreNullElement;
 
 public class ConnectorConfig {
 
     private String friendlyName;
+    @IgnoreNullElement
     private String name;
     private String category;
     private String subCategory;

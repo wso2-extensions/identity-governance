@@ -41,6 +41,10 @@
             <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
