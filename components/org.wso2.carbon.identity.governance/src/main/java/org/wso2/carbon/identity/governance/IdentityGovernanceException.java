@@ -16,10 +16,12 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.wso2.carbon.identity.core.ConnectorException;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class IdentityGovernanceException extends Exception {
+public class IdentityGovernanceException extends ConnectorException {
 
     public static final int FAILURE = 0;
     public static final int FAILED_AUTHENTICATION = 1;

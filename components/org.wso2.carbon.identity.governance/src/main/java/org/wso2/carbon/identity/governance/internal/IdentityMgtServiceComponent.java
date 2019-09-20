@@ -17,27 +17,25 @@ package org.wso2.carbon.identity.governance.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.ComponentContext;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
-import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
-import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
-import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
-import org.wso2.carbon.identity.governance.listener.TenantCreationEventListener;
-import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
-import org.wso2.carbon.user.core.listener.UserOperationEventListener;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.identity.core.ConnectorConfig;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
+import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
+import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.user.core.listener.UserOperationEventListener;
+import org.wso2.carbon.user.core.service.RealmService;
 
 @Component(
         name = "org.wso2.carbon.identity.governance.internal.IdentityMgtServiceComponent",
@@ -60,8 +58,7 @@ public class IdentityMgtServiceComponent {
             context.getBundleContext().registerService(IdentityGovernanceService.class, identityGovernanceService,
                     null);
             IdentityMgtServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
-            context.getBundleContext().registerService(TenantMgtListener.class.getName(), new
-                    TenantCreationEventListener(), null);
+
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
             }
@@ -94,11 +91,6 @@ public class IdentityMgtServiceComponent {
         IdentityMgtServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
     }
 
-    protected void unsetIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
-
-        IdentityMgtServiceDataHolder.getInstance().unsetIdentityGovernanceConnector(identityConnectorConfig);
-    }
-
     @Reference(
             name = "idp.mgt.event.listener.service",
             service = org.wso2.carbon.identity.governance.common.IdentityConnectorConfig.class,
@@ -108,13 +100,21 @@ public class IdentityMgtServiceComponent {
     protected void setIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
 
         IdentityMgtServiceDataHolder.getInstance().addIdentityGovernanceConnector(identityConnectorConfig);
+
         try {
-            IdentityGovernanceUtil.saveConnectorDefaultProperties(identityConnectorConfig, MultitenantConstants
-                    .SUPER_TENANT_DOMAIN_NAME);
-        } catch (IdentityGovernanceException e) {
-            log.error("Error while saving super tenant configurations for " + identityConnectorConfig.getName() + "" +
-                    ".", e);
+            BundleContext bundleContext = FrameworkUtil.getBundle(IdentityMgtServiceComponent.class).getBundleContext();
+
+            bundleContext.registerService(ConnectorConfig.class.getName(), identityConnectorConfig, null);
+        } catch (Throwable e) {
+            log.error(
+                    "Error while re-registering the service " + identityConnectorConfig.getClass().getName() + " as " +
+                            ConnectorConfig.class.getName());
         }
+    }
+
+    protected void unsetIdentityGovernanceConnector(IdentityConnectorConfig identityConnectorConfig) {
+
+        IdentityMgtServiceDataHolder.getInstance().unsetIdentityGovernanceConnector(identityConnectorConfig);
     }
 
     protected void unsetIdpManager(IdpManager idpManager) {
