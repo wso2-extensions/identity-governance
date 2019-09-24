@@ -16,31 +16,16 @@
 
 package org.wso2.carbon.identity.governance.common;
 
+import org.wso2.carbon.identity.core.ConnectorConfig;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 
 import java.util.Map;
 import java.util.Properties;
 
-public interface IdentityConnectorConfig {
+public interface IdentityConnectorConfig extends ConnectorConfig {
 
-    String getName();
+    Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException;
 
-    String getFriendlyName();
-
-    String getCategory();
-
-    String getSubCategory();
-
-    int getOrder();
-
-    Map<String, String> getPropertyNameMapping();
-
-    Map<String, String> getPropertyDescriptionMapping();
-
-    String[] getPropertyNames();
-
-    Properties getDefaultPropertyValues (String tenantDomain) throws IdentityGovernanceException;
-
-    Map<String, String> getDefaultPropertyValues (String[] propertyNames, String tenantDomain) throws IdentityGovernanceException;
-
+    Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
+            IdentityGovernanceException;
 }

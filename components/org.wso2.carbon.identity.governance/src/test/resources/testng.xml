@@ -25,7 +25,6 @@
         <classes>
             <class name="org.wso2.carbon.identity.governance.listener.IdentityMgtEventListenerTest"></class>
             <class name="org.wso2.carbon.identity.governance.listener.IdentityStoreEventListenerTest"></class>
-            <class name="org.wso2.carbon.identity.governance.listener.TenantCreationEventListenerTest"></class>
         </classes>
     </test>
 </suite>

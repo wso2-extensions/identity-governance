@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.ConnectorException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -41,8 +42,9 @@ public class IdentityGovernanceUtil {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceUtil.class);
 
+    @Deprecated
     public static void saveConnectorDefaultProperties(IdentityConnectorConfig identityConnectorConfig,
-                                                      String tenantDomain) throws IdentityGovernanceException {
+                                                      String tenantDomain) throws ConnectorException {
 
         IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
 
