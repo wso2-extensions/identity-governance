@@ -1,5 +1,5 @@
 {
-  "identity.recaptcha.enabled": false,
-  "identity.recaptcha.api_url": "https://www.google.com/recaptcha/api.js",
-  "identity.recaptcha.verify_url": "https://www.google.com/recaptcha/api/siteverify"
+  "recaptcha.enabled": false,
+  "recaptcha.api_url": "https://www.google.com/recaptcha/api.js",
+  "recaptcha.verify_url": "https://www.google.com/recaptcha/api/siteverify"
 }
