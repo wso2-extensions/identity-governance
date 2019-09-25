@@ -34,7 +34,10 @@ recaptcha.site.key={{recaptcha.site_key}}
 recaptcha.secret.key={{recaptcha.secret_key}}
 
 # login.do URL paths
-recaptcha.failed.redirect.urls={{recaptcha.redirect.urls}}
+{% if recaptcha.redirect_urls is defined %}
+recaptcha.failed.redirect.urls={{recaptcha.redirect_urls}}
+{% endif %}
 
 # reCaptcha failed redirect urls
 #recaptcha.failed.redirect.urls=
+[]
