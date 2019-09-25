@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,11 +38,11 @@ import static org.testng.Assert.assertEquals;
 /**
  * Unit tests for RecoveryUtils.java
  */
-@PrepareForTest({IdentityGovernanceService.class, PrivilegedCarbonContext.class})
+@PrepareForTest({ IdentityGovernanceService.class, PrivilegedCarbonContext.class })
 public class RecoveryUtilsTest {
 
     @Test(description = "To test the getValidatedCaptchaConfigs method.")
-    public void testGetValidatedCaptchaConfigs() throws IOException {
+    public void testGetValidatedCaptchaConfigs() throws IdentityRecoveryException {
 
         Path path = Paths.get("src/test/resources", "repository", "conf", "identity",
                 CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
@@ -51,7 +52,7 @@ public class RecoveryUtilsTest {
             try (Reader in = new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8)) {
                 sampleProperties.load(in);
             } catch (IOException e) {
-                throw new IOException(e);
+                throw new IdentityRecoveryException("Unable to read captcha config file.", e);
             }
         }
 
