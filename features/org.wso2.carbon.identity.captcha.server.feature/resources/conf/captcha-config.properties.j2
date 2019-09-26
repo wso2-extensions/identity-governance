@@ -19,19 +19,25 @@
 # Google reCAPTCHA settings
 
 # Enable Google reCAPTCHA
-recaptcha.enabled={{identity.recaptcha.enabled}}
+recaptcha.enabled={{recaptcha.enabled}}
 
 # reCaptcha API URL
-recaptcha.api.url={{identity.recaptcha.api_url}}
+recaptcha.api.url={{recaptcha.api_url}}
 
 # reCaptcha verification URL
-recaptcha.verify.url={{identity.recaptcha.verify_url}}
+recaptcha.verify.url={{recaptcha.verify_url}}
 
 # reCaptcha site key
-recaptcha.site.key={{identity.recaptcha.site_key}}
+recaptcha.site.key={{recaptcha.site_key}}
 
 # reCaptcha secret key
-recaptcha.secret.key={{identity.recaptcha.secret_key}}
+recaptcha.secret.key={{recaptcha.secret_key}}
+
+# login.do URL paths
+{% if recaptcha.redirect_urls is defined %}
+recaptcha.failed.redirect.urls={{recaptcha.redirect_urls}}
+{% endif %}
 
 # reCaptcha failed redirect urls
 #recaptcha.failed.redirect.urls=
+[]
