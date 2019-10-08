@@ -30,10 +30,17 @@ import org.wso2.carbon.identity.mgt.NotificationSender;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 public class EmailUtil {
     private static final Logger log = Logger.getLogger(EmailUtil.class);
+    private static final String DATE_FORMAT = "dd-MM-yyyy";
+    private static final String REMAINING_DATES ="remaining-days";
 
     private NotificationSender notificationSender;
 
@@ -68,6 +75,13 @@ public class EmailUtil {
             return;
         }
 
+        try {
+            String remainingDates = calculateRemainingDays(receiver.getExpireDate(), DATE_FORMAT);
+            properties.put(REMAINING_DATES, remainingDates);
+        } catch (ParseException e) {
+            log.error("Error while calculating remaining days", e);
+        }
+
         properties.put("first-name", receiver.getFirstName());
         properties.put("suspension-date", receiver.getExpireDate());
         properties.put("TEMPLATE_TYPE", "idleAccountReminder");
@@ -79,5 +93,25 @@ public class EmailUtil {
             log.error("Error occurred while sending email to: " + receiver.getUsername(), e);
         }
 
+    }
+
+    /**
+     * Calculates remaining days for suspension using current date and suspension date.
+     * @param suspensionDate
+     * @param dateFormat
+     * @return remaining days as String
+     * @throws ParseException
+     */
+    private String calculateRemainingDays(String suspensionDate, String dateFormat) throws ParseException {
+
+        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+        Date date = sdf.parse(suspensionDate);
+
+        Calendar suspensionDateCalendar = Calendar.getInstance();
+        suspensionDateCalendar.setTime(date);
+        Calendar currentDateCalendar = Calendar.getInstance();
+
+        long diff = suspensionDateCalendar.getTimeInMillis() - currentDateCalendar.getTimeInMillis();
+        return String.valueOf(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
     }
 }
