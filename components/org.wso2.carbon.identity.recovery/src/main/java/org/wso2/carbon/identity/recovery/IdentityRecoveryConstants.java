@@ -53,6 +53,8 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
+    public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
+            "http://wso2.org/claims/identity/failedLoginLockoutCount";
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";

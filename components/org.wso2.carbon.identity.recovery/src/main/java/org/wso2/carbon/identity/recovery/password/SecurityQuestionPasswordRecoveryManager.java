@@ -73,6 +73,10 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX = "account.lock.handler.On.Failure.Max.Attempts";
 
+    private static final String PROPERTY_ACCOUNT_LOCK_TIME = "account.lock.handler.Time";
+
+    private static final String PROPERTY_LOGIN_FAIL_TIMEOUT_RATIO = "account.lock.handler.login.fail.timeout.ratio";
+
     private static SecurityQuestionPasswordRecoveryManager instance = new SecurityQuestionPasswordRecoveryManager();
 
     private SecurityQuestionPasswordRecoveryManager() {
@@ -317,6 +321,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 boolean verified = challengeQuestionManager.verifyUserChallengeAnswer(userRecoveryData.getUser(),
                         userChallengeAnswer[0]);
                 if (verified) {
+                    boolean resetFailedLoginCount = false;
                     userRecoveryDataStore.invalidate(code);
                     String remainingSetIds = userRecoveryData.getRemainingSetIds();
                     ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
@@ -345,13 +350,14 @@ public class SecurityQuestionPasswordRecoveryManager {
                         }
 
                     } else {
+                        resetFailedLoginCount = true;
                         recoveryData.setRecoveryStep(RecoverySteps.UPDATE_PASSWORD);
                         challengeQuestionResponse.setStatus(IdentityRecoveryConstants.RECOVERY_STATUS_COMPLETE);
                     }
 
                     userRecoveryDataStore.store(recoveryData);
                     // Reset password recovery failed attempts
-                    resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
+                    resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser(), resetFailedLoginCount);
 
                     return challengeQuestionResponse;
                 } else {
@@ -391,7 +397,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 }
 
                 // Reset password recovery failed attempts
-                resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser());
+                resetRecoveryPasswordFailedAttempts(userRecoveryData.getUser(), true);
 
                 userRecoveryDataStore.invalidate(code);
                 ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
@@ -473,8 +479,8 @@ public class SecurityQuestionPasswordRecoveryManager {
             connectorConfigs = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService()
                     .getConfiguration(
-                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX},
-                            tenantDomain);
+                            new String[]{PROPERTY_ACCOUNT_LOCK_ON_FAILURE, PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX,
+                                    PROPERTY_ACCOUNT_LOCK_TIME, PROPERTY_LOGIN_FAIL_TIMEOUT_RATIO}, tenantDomain);
         } catch (Exception e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS, null, e);
@@ -482,7 +488,8 @@ public class SecurityQuestionPasswordRecoveryManager {
         return connectorConfigs;
     }
 
-    private void resetRecoveryPasswordFailedAttempts(User user) throws IdentityRecoveryException {
+    private void resetRecoveryPasswordFailedAttempts(User user, boolean resetFailedLoginLockOutCount)
+            throws IdentityRecoveryException {
 
         Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
 
@@ -513,6 +520,9 @@ public class SecurityQuestionPasswordRecoveryManager {
         }
 
         Map<String, String> updatedClaims = new HashMap<>();
+        if (resetFailedLoginLockOutCount) {
+            updatedClaims.put(IdentityRecoveryConstants.FAILED_LOGIN_LOCKOUT_COUNT_CLAIM, "0");
+        }
         updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
         try {
             userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
@@ -528,6 +538,8 @@ public class SecurityQuestionPasswordRecoveryManager {
         Property[] connectorConfigs = getConnectorConfigs(user.getTenantDomain());
 
         int maxAttempts = 0;
+        long unlockTimePropertyValue = 0;
+        double unlockTimeRatio = 1;
         for (Property connectorConfig : connectorConfigs) {
             if ((PROPERTY_ACCOUNT_LOCK_ON_FAILURE.equals(connectorConfig.getName())) &&
                     !Boolean.parseBoolean(connectorConfig.getValue())) {
@@ -535,6 +547,15 @@ public class SecurityQuestionPasswordRecoveryManager {
             } else if (PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX.equals(connectorConfig.getName())
                     && NumberUtils.isNumber(connectorConfig.getValue())) {
                 maxAttempts = Integer.parseInt(connectorConfig.getValue());
+            } else if (PROPERTY_ACCOUNT_LOCK_TIME.equals(connectorConfig.getName())
+                    && NumberUtils.isNumber(connectorConfig.getValue())) {
+                unlockTimePropertyValue = Integer.parseInt(connectorConfig.getValue());
+            } else if (PROPERTY_LOGIN_FAIL_TIMEOUT_RATIO.equals(connectorConfig.getName())
+                    && NumberUtils.isNumber(connectorConfig.getValue())) {
+                double value = Double.parseDouble(connectorConfig.getValue());
+                if (value > 0) {
+                    unlockTimeRatio = value;
+                }
             }
         }
 
@@ -564,8 +585,10 @@ public class SecurityQuestionPasswordRecoveryManager {
         Map<String, String> claimValues;
         try {
             claimValues = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(), user
-                    .getUserStoreDomain()), new String[]{IdentityRecoveryConstants
-                    .PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                            .getUserStoreDomain()), new String[]{
+                            IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM,
+                            IdentityRecoveryConstants.FAILED_LOGIN_LOCKOUT_COUNT_CLAIM},
+                    UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
                     .ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS, null, e);
@@ -577,11 +600,24 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM));
         }
 
+        int failedLoginLockoutCountValue = 0;
+        if (NumberUtils.isNumber(claimValues.get(IdentityRecoveryConstants.FAILED_LOGIN_LOCKOUT_COUNT_CLAIM))) {
+            failedLoginLockoutCountValue =
+                    Integer.parseInt(claimValues.get(IdentityRecoveryConstants.FAILED_LOGIN_LOCKOUT_COUNT_CLAIM));
+        }
+
         Map<String, String> updatedClaims = new HashMap<>();
         if ((currentAttempts + 1) >= maxAttempts) {
+            // Calculate the incremental unlock-time-interval in milli seconds.
+            unlockTimePropertyValue = (long) (unlockTimePropertyValue * 1000 * 60 * Math.pow
+                    (unlockTimeRatio, failedLoginLockoutCountValue));
+            // Calculate unlock-time by adding current-time and unlock-time-interval in milli seconds.
+            long unlockTime = System.currentTimeMillis() + unlockTimePropertyValue;
             updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
             updatedClaims.put(IdentityRecoveryConstants.PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM, "0");
-            updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_UNLOCK_TIME_CLAIM, "0");
+            updatedClaims.put(IdentityRecoveryConstants.ACCOUNT_UNLOCK_TIME_CLAIM, String.valueOf(unlockTime));
+            updatedClaims.put(IdentityRecoveryConstants.FAILED_LOGIN_LOCKOUT_COUNT_CLAIM,
+                    String.valueOf(failedLoginLockoutCountValue + 1));
             try {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
                         user.getUserStoreDomain()), updatedClaims, UserCoreConstants.DEFAULT_PROFILE);
