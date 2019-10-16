@@ -127,6 +127,7 @@
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
+        <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
 
         <module>service-stubs/identity</module>
 
@@ -148,6 +149,31 @@
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>javax.servlet</artifactId>
                 <version>${equinox.javax.servlet.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.event.output.adapter.core</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.event.output.adapter.email</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.event.publisher.core</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>configuration-mgt</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
+                <version>${carbon.identity.framework.version}</version>
             </dependency>
 
             <!--Orbit Dependencies-->
@@ -658,6 +684,18 @@
 
         <!-- Pax Logging Version -->
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
+
+
+        <org.apache.olingo.version>1.1.0</org.apache.olingo.version>
+        <com.fasterxml.jackson.jaxrs-json-provider-version>2.9.7</com.fasterxml.jackson.jaxrs-json-provider-version>
+        <com.fasterxml.jackson.annotation.version>2.9.8</com.fasterxml.jackson.annotation.version>
+        <com.fasterxml.jackson.version>2.9.7</com.fasterxml.jackson.version>
+        <springframework.spring-web.version>5.1.1.RELEASE</springframework.spring-web.version>
+        <io.swagger.version>1.5.20</io.swagger.version>
+        <maven.buildnumber.plugin.version>1.4</maven.buildnumber.plugin.version>
+        <carbon.identity.framework.version>5.14.94</carbon.identity.framework.version>
+        <carbon.analytics.common.version>5.2.12-SNAPSHOT</carbon.analytics.common.version>
+        <carbon.analytics.common.version.range>[5.2.10,6.0.0)</carbon.analytics.common.version.range>
     </properties>
 
 </project>
