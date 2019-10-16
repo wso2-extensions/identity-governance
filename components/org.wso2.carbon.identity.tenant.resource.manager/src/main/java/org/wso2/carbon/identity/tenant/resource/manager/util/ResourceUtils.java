@@ -9,7 +9,6 @@ import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResource
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementClientException;
-import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementRuntimeException;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementServerException;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 
@@ -63,38 +62,6 @@ public class ResourceUtils {
 
         String message = populateMessageWithData(error, data);
         return new TenantResourceManagementServerException(message, error.getCode(), e);
-    }
-
-    /**
-     * This method can be used to generate a TenantResourceManagementRuntimeException from
-     * TenantResourceConstants.ErrorMessages object when an exception is thrown.
-     *
-     * @param error TenantResourceConstants.ErrorMessages.
-     * @param data  data to replace if message needs to be replaced.
-     * @param e     Parent exception.
-     * @return TenantResourceManagementRuntimeException
-     */
-    public static TenantResourceManagementRuntimeException handleRuntimeException(TenantResourceConstants.ErrorMessages error,
-            String data, Throwable e) {
-
-        String message = populateMessageWithData(error, data);
-        return new TenantResourceManagementRuntimeException(message, error.getCode(), e);
-    }
-
-    /**
-     * This method can be used to generate a TenantResourceManagementRuntimeException from TenantResourceConstants
-     * .ErrorMessages
-     * object when an exception is thrown.
-     *
-     * @param error TenantResourceConstants.ErrorMessages.
-     * @param data  data to replace if message needs to be replaced.
-     * @return TenantResourceManagementRuntimeException
-     */
-    public static TenantResourceManagementRuntimeException handleRuntimeException(TenantResourceConstants.ErrorMessages error,
-            String data) {
-
-        String message = populateMessageWithData(error, data);
-        return new TenantResourceManagementRuntimeException(message, error.getCode());
     }
 
     /**

@@ -38,7 +38,6 @@ import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantR
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.FOR_TENANT_ID;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceFile;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceManager;
-import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleRuntimeException;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleServerException;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.isConfigurationManagementRestAPIEnabled;
 
