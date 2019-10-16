@@ -16,5 +16,29 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.exception;
 
+/**
+ * Base exception for tenant resource configuration management feature.
+ */
 public class TenantResourceManagementException extends  Exception {
+
+    private String errorCode;
+
+    public TenantResourceManagementException(String message, String code, Throwable e) {
+
+        super(message, e);
+        this.errorCode = code;
+
+    }
+
+    public TenantResourceManagementException(String message, String code) {
+
+        super(message);
+        this.errorCode = code;
+    }
+
+    public String getErrorCode() {
+
+        return errorCode;
+    }
+
 }

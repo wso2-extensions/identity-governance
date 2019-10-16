@@ -16,6 +16,9 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.constants;
 
+/**
+ * Constants related to tenant resource management.
+ */
 public class TenantResourceConstants {
 
     private TenantResourceConstants() {

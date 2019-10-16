@@ -16,14 +16,18 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.exception;
 
+/**
+ * This class is used to define the client side errors which needs to be handled.
+ */
 public class TenantResourceManagementClientException extends TenantResourceManagementException {
-
 
     public TenantResourceManagementClientException(String message, String code, Throwable e) {
 
+        super(message, code, e);
     }
 
     public TenantResourceManagementClientException(String message, String code) {
 
+        super(message, code);
     }
 }

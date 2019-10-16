@@ -148,9 +148,6 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                 log.error(handleServerException(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,
                         eventPublisherConfiguration.getEventPublisherName() + FOR_TENANT_ID + tenantId, e));
-            } finally {
-                PrivilegedCarbonContext.endTenantFlow();
-
             }
         }
     }

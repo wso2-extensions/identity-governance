@@ -122,7 +122,7 @@
                             .range}",
                             org.wso2.carbon.event.publisher.core.*; version="${carbon.analytics.common.version
                             .range}",
-                            org.wso2.carbon.event.stream.core; version="${carbon.analytics.common.version
+                            org.wso2.carbon.event.stream.core.*; version="${carbon.analytics.common.version
                             .range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.framework
                             .imp.pkg.version.range}",
