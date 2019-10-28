@@ -16,7 +16,8 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.util;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
@@ -36,6 +37,8 @@ import java.util.List;
  */
 public class ResourceUtils {
 
+    private static final Log log = LogFactory.getLog(ResourceUtils.class);
+
     /**
      * This method can be used to generate a TenantResourceManagementClientException from
      * ConfigurationConstants.ErrorMessages object when no exception is thrown.
@@ -45,14 +48,14 @@ public class ResourceUtils {
      * @return TenantResourceManagementClientException.
      */
     public static TenantResourceManagementClientException handleClientException(TenantResourceConstants.ErrorMessages error,
-            String data) {
+            String ...data) {
 
         String message = populateMessageWithData(error, data);
         return new TenantResourceManagementClientException(message, error.getCode());
     }
 
     public static TenantResourceManagementClientException handleClientException(TenantResourceConstants.ErrorMessages error,
-            String data, Throwable e) {
+            Throwable e, String ...data) {
 
         String message = populateMessageWithData(error, data);
         return new TenantResourceManagementClientException(message, error.getCode(), e);
@@ -67,16 +70,17 @@ public class ResourceUtils {
      * @return TenantResourceManagementServerException.
      */
     public static TenantResourceManagementServerException handleServerException(TenantResourceConstants.ErrorMessages error,
-            String data) {
+            String ...data) {
 
         String message = populateMessageWithData(error, data);
         return new TenantResourceManagementServerException(message, error.getCode());
     }
 
     public static TenantResourceManagementServerException handleServerException(TenantResourceConstants.ErrorMessages error,
-            String data, Throwable e) {
+            Throwable e, String ...data) {
+        String message;
+            message = populateMessageWithData(error, data);
 
-        String message = populateMessageWithData(error, data);
         return new TenantResourceManagementServerException(message, error.getCode(), e);
     }
 
@@ -101,17 +105,25 @@ public class ResourceUtils {
             }
         }
 
-        if (fileList.size() > 1 || fileList.isEmpty()) {
+        if (fileList.size() > 1) {
+            if (log.isDebugEnabled()) {
+                log.debug("More then one file with the name: " + eventPublisherName);
+            }
+            return null;
+        } else if(fileList.isEmpty()){
+            if (log.isDebugEnabled()) {
+                log.debug("No file with the name: " + eventPublisherName);
+            }
             return null;
         } else {
             return fileList.get(0);
         }
     }
 
-    private static String populateMessageWithData(TenantResourceConstants.ErrorMessages error, String data) {
+    private static String populateMessageWithData(TenantResourceConstants.ErrorMessages error, String[] data) {
 
         String message;
-        if (StringUtils.isNotBlank(data)) {
+        if (data.length != 0) {
             message = String.format(error.getMessage(), data);
         } else {
             message = error.getMessage();

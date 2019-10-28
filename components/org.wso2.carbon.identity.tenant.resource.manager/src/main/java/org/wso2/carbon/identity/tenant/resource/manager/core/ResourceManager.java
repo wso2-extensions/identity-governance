@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.core;
 
+import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
 
 /**
@@ -26,10 +27,10 @@ public interface ResourceManager {
     /**
      * This API is used to add an EventPublisher for a particular tenant.
      *
-     * @param eventPublisherName Event Publisher Name.
+     * @param resourceFile Event Publisher file.
      * @throws TenantResourceManagementException
      */
-    void addEventPublisherConfiguration(String eventPublisherName)
+    void addEventPublisherConfiguration(ResourceFile resourceFile)
             throws TenantResourceManagementException;
 
 
