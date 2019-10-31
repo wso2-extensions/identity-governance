@@ -68,14 +68,10 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             }
         }
 
-        if (notificationResponseBean != null) {
-            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
-                return Response.status(Response.Status.CREATED).build();
-            }
-            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
-        } else {
+        if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
             return Response.status(Response.Status.CREATED).build();
         }
+        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 
     private String validateRecoveryScenarioPropertyList(List<PropertyDTO> recoveryScenarioProperty) {
