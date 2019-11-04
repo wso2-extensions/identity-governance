@@ -213,7 +213,7 @@ paths:
       x-wso2-request: |
         curl -X POST -H "Authorization: Basic <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{"user":{"username": "<username>","realm": "<user_store_name>"},"properties": [{"key": "RecoveryScenario","value": "[RECOVERY SCENARIO]"}]}' "https://localhost:9443/api/identity/user/v0.9/resend-code"
       x-wso2-curl: |
-        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "kim","realm": "PRIMARY"},"properties": [{"key":"RecoveryScenario","value":"SELF_SIGN_UP"}]}'"https://localhost:9443/api/identity/user/v9\0.9/resend-code"
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "kim","realm": "PRIMARY"},"properties": [{"key":"RecoveryScenario","value":"SELF_SIGN_UP"}]}'"https://localhost:9443/api/identity/user/v9/0.9/resend-code"
       x-wso2-response: |
         "HTTP/1.1 201 Created"
       summary: |
