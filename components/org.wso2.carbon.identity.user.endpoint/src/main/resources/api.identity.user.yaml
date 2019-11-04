@@ -209,9 +209,9 @@ paths:
   /resend-code:
     post:
       description: |
-         This API is used to resend the confirmation code if it is missing.
+        This API is used to resend the confirmation code if it is missing.
       x-wso2-request: |
-         curl -X POST -H "Authorization: Basic <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{"user":{"username": "<username>","realm": "<user_store_name>"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
+        curl -X POST -H "Authorization: Basic <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{"user":{"username": "<username>","realm": "<user_store_name>"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
       x-wso2-curl: |
         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user":{"username": "kim","realm": "PRIMARY"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/resend-code"
       x-wso2-response: |
