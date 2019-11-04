@@ -69,7 +69,9 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -745,6 +747,78 @@ public class UserSelfRegistrationManager {
         Pattern p2 = Pattern.compile(regularExpression);
         Matcher m2 = p2.matcher(attribute);
         return m2.matches();
+    }
+
+    /**
+     * Pre validate password against the policies defined in the Identity Server during password recovery instance.
+     *
+     * @param confirmationKey Confirmation code for password recovery.
+     * @param password Password to be pre-validated against the policies defined in IS.
+     * @throws IdentityEventException
+     * @throws IdentityRecoveryException
+     */
+    public void preValidatePasswordWithConfirmationKey(String confirmationKey, String password) throws
+            IdentityEventException, IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData recoveryData = userRecoveryDataStore.load(confirmationKey);
+        User user = recoveryData.getUser();
+        String userStoreDomain = user.getUserStoreDomain();
+        String username = user.getUserName();
+
+        preValidatePassword(username, password, userStoreDomain);
+    }
+
+    /**
+     * Pre validate the password against the policies defined in the Identity Server.
+     *
+     * @param username Username
+     * @param password Password to be pre-validated against the policies defined in IS.
+     * @throws IdentityRecoveryServerException
+     * @throws IdentityEventException
+     */
+    public void preValidatePasswordWithUsername(String username, String password) throws IdentityEventException,
+            IdentityRecoveryServerException {
+
+        String userStoreDomain = IdentityUtil.extractDomainFromName(username);
+        username = UserCoreUtil.removeDomainFromName(username);
+
+        preValidatePassword(username, password, userStoreDomain);
+    }
+
+    private void preValidatePassword(String username, String password, String userStoreDomain) throws
+            IdentityRecoveryServerException, IdentityEventException {
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN;
+        HashMap<String, Object> properties = new HashMap<>();
+
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, password);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_ID, tenantId);
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager)
+                    realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+            UserStoreManager secondaryUserStoreManager = userStoreManager.getSecondaryUserStoreManager
+                    (userStoreDomain);
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, secondaryUserStoreManager);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, username,
+                    e);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Validating password against policies for user: %s in tenant: %s and in user " +
+                    "store: %s", username, tenantDomain, userStoreDomain));
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
     }
 
 }
