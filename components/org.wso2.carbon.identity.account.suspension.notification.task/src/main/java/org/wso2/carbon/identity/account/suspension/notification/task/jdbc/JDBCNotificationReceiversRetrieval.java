@@ -94,7 +94,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
             resultSet = prepStmt.executeQuery();
 
-            if (resultSet.next()) {
+            while (resultSet.next()) {
 
                 String userName = resultSet.getString(1);
 
