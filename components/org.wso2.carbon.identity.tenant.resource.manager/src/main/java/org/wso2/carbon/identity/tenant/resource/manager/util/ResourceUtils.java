@@ -140,13 +140,4 @@ public class ResourceUtils {
          return new ResourceManagerImpl();
     }
 
-    /**
-     * This method can be used to get whether configuration management rest API is enabled.
-     *
-     * @return boolean.
-     */
-    public static boolean isConfigurationManagementRestAPIEnabled() {
-
-        return TenantResourceManagerDataHolder.getInstance().getConfigurationManager().isFeatureEnabled();
-    }
 }

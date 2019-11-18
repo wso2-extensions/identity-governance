@@ -32,6 +32,7 @@ import java.io.InputStream;
 
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE;
+import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.PUBLISHER;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleServerException;
 
 /**
@@ -47,7 +48,7 @@ public class ResourceManagerImpl implements ResourceManager {
         try {
             try {
                 deployEventPublisherConfiguration(TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                                .getFileById(resourceFile.getId()));
+                                .getFileById(PUBLISHER , resourceFile.getName(), resourceFile.getId()));
                 if (log.isDebugEnabled()) {
                     log.debug("Event Publisher: " + resourceFile.getName() + " deployed from the configuration "
                             + "store for the tenant id: " + PrivilegedCarbonContext.getThreadLocalCarbonContext()

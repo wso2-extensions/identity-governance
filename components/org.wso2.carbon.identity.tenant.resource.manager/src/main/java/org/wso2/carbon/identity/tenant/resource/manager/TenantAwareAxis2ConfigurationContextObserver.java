@@ -23,6 +23,7 @@ import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.publisher.core.exception.EventPublisherConfigurationException;
 import org.wso2.carbon.event.stream.core.EventStreamConfiguration;
 import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
+import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
@@ -35,11 +36,9 @@ import java.util.List;
 
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG;
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceFile;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceManager;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleServerException;
-import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.isConfigurationManagementRestAPIEnabled;
 
 /**
  * Axis2Observer for generating tenant wise publisher configurations.
@@ -128,14 +127,27 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         for (EventPublisherConfiguration eventPublisherConfiguration : activeEventPublisherConfigurations) {
             try {
                 ResourceFile resourceFile = getResourceFile(eventPublisherConfiguration.getEventPublisherName());
-                if (isConfigurationManagementRestAPIEnabled()
-                        && resourceFile != null) {
-                    if(log.isDebugEnabled()){
-                        log.debug("Feature is enabled and there is a file in the configuration store for the "
-                                + "publisher name: " + eventPublisherConfiguration.getEventPublisherName());
+                if (resourceFile != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Configuration store is enabled and there is a file in the configuration store for "
+                                + "the publisher name: " + eventPublisherConfiguration.getEventPublisherName());
                     }
                     getResourceManager().addEventPublisherConfiguration(resourceFile);
-                } else if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
+                }
+            } catch (ConfigurationManagementException e) {
+                if (e.getErrorCode().equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Configuration store is disabled.");
+                    }
+                }
+
+            } catch (TenantResourceManagementException e) {
+                log.error(handleServerException(
+                        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE, e,
+                        eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
+            }
+            try {
+                if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                         .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName())
                         == null) {
                     if (log.isDebugEnabled()) {
@@ -145,17 +157,10 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                     TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                             .addEventPublisherConfiguration(eventPublisherConfiguration);
                 }
-            } catch (ConfigurationManagementException e) {
-                log.error(handleServerException(ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE, e,
-                        eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
-            } catch (TenantResourceManagementException e) {
-                log.error(handleServerException(
-                        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE,e,
-                        eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
             } catch (EventPublisherConfigurationException e) {
                 log.error(handleServerException(
-                        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,e,
-                        eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
+                        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,
+                        e, eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
             }
         }
     }
