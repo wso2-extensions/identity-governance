@@ -445,7 +445,7 @@ public class Utils {
         String callbackURL = null;
         for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
             if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
-                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                callbackURL = property.getValue();
                 break;
             }
         }
