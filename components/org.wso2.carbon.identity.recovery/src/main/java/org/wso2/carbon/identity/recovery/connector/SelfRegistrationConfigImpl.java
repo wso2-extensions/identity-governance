@@ -137,7 +137,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
-        String verificationSMSOTPExpiryTime = "10";
+        String verificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         String selfSignUpProperty = IdentityUtil.getProperty(

@@ -155,7 +155,7 @@ public class SelfRegistrationConfigImplTest {
         String testEnableNotificationInternallyManage = "true";
         String testEnableSelfRegistrationReCaptcha = "true";
         String testVerificationCodeExpiryTime = "1440";
-        String testVerificationSMSOTPExpiryTime = "10";
+        String testVerificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         Map<String, String> propertiesExpected = new HashMap<>();
