@@ -1,17 +1,19 @@
 /*
- *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.tenant.resource.manager;
@@ -31,7 +33,6 @@ import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResource
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.utils.AbstractAxis2ConfigurationContextObserver;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-
 import java.util.List;
 
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE;
@@ -92,10 +93,8 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
 
         List<EventStreamConfiguration> eventStreamConfigurationList = null;
         try {
-
             eventStreamConfigurationList = TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
                     .getAllEventStreamConfigurations();
-
         } catch (EventStreamConfigurationException e) {
             log.error(handleServerException(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION,
@@ -135,12 +134,12 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                     getResourceManager().addEventPublisherConfiguration(resourceFile);
                 }
             } catch (ConfigurationManagementException e) {
-                if (e.getErrorCode().equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
+                if (e.getErrorCode()
+                        .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
                     if (log.isDebugEnabled()) {
                         log.debug("Configuration store is disabled.");
                     }
                 }
-
             } catch (TenantResourceManagementException e) {
                 log.error(handleServerException(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE, e,
@@ -185,6 +184,5 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             }
         }
     }
-
 }
 

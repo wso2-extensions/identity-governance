@@ -1,17 +1,19 @@
 /*
- *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.tenant.resource.manager.constants;
@@ -28,25 +30,22 @@ public class TenantResourceConstants {
 
     public enum ErrorMessages {
 
-        ERROR_CODE_ERROR_WHEN_HANDLING_INPUT_STREAM("TRM-10001", "Error occurred when handling the file input stream "
-                + "of file with name: %s."),
-        ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE("TRM-10002", "Error occurred when fetching the "
+        ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE("TRM-10001", "Error occurred when fetching the "
                 + "event publisher configuration file with name: %s. for the tenant id: %s"),
-        ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION("TRM-10004", "Error occurred when deploying the "
+        ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION("TRM-10002", "Error occurred when deploying the "
                 + "event publisher configuration for with name: %s."),
-        ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION("TRM-10005", "Error occurred while "
+        ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION("TRM-10003", "Error occurred while "
                 + "loading super tenant event publisher configurations for the tenant with ID: %s."),
-        ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10006", "Error occurred while "
+        ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10004", "Error occurred while "
                 + "loading super tenant event stream configurations for the tenant with ID: %s."),
-        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10007", "Error occurred while "
+        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10005", "Error occurred while "
                 + "creating tenant event stream configuration: %s."),
-        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE("TRM-10008", "Error occurred while "
-                + "creating tenant event publisher configuration: %s. Using configuration store, for the tenant id: "
+        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE("TRM-10006", "Error "
+                + "occurred while creating tenant event publisher configuration: %s. Using configuration store, for the tenant id: "
                 + "%s"),
         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG(
-                "TRM-10009", "Error occurred while creating tenant event publisher configuration: %s.Using super"
+                "TRM-10007", "Error occurred while creating tenant event publisher configuration: %s.Using super"
                 + "tenant configuration, for the tenant id: %s");
-
 
         private final String code;
         private final String message;

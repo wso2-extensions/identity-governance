@@ -1,17 +1,19 @@
 /*
- *  Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.tenant.resource.manager.core;
@@ -47,21 +49,21 @@ public class ResourceManagerImpl implements ResourceManager {
 
         try {
             try {
-                deployEventPublisherConfiguration(TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                                .getFileById(PUBLISHER , resourceFile.getName(), resourceFile.getId()));
+                deployEventPublisherConfiguration(
+                        TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
+                                .getFileById(PUBLISHER, resourceFile.getName(), resourceFile.getId()));
                 if (log.isDebugEnabled()) {
                     log.debug("Event Publisher: " + resourceFile.getName() + " deployed from the configuration "
                             + "store for the tenant id: " + PrivilegedCarbonContext.getThreadLocalCarbonContext()
                             .getTenantId());
                 }
-            }catch (EventPublisherConfigurationException e) {
+            } catch (EventPublisherConfigurationException e) {
                 throw handleServerException(ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION, e,
                         resourceFile.getName());
             }
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE, e, resourceFile.getName());
         }
-
     }
 
     /**
@@ -84,12 +86,12 @@ public class ResourceManagerImpl implements ResourceManager {
             destroyEventPublisherConfiguration(eventPublisherConfiguration);
         }
         carbonEventPublisherService.addEventPublisherConfiguration(eventPublisherConfiguration);
-
     }
 
     /**
      * This is used to destroy an existing EventPublisher.
      * As per the implementation in analytics-common we need to add the publisher as a file before destroying it.
+     *
      * @param eventPublisherConfiguration Event Publisher Configuration.
      * @throws ConfigurationManagementException Configuration Management Exception.
      */
@@ -107,8 +109,5 @@ public class ResourceManagerImpl implements ResourceManager {
                 .addEventPublisherConfigurationFile(eventPublisherConfigurationFile, tenantId);
         TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                 .removeEventPublisherConfigurationFile(eventPublisherConfiguration.getEventPublisherName(), tenantId);
-
     }
-
-
 }

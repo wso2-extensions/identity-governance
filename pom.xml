@@ -510,11 +510,6 @@
                 <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
                 <version>${identity.data.publisher.authentication.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
-                <version>${apache.felix.scr.ds.annotations.version}</version>
-            </dependency>
             <!-- Pax Logging -->
             <dependency>
                 <groupId>org.ops4j.pax.logging</groupId>
@@ -600,6 +595,7 @@
 
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <osgi.service.component.imp.pkg.version.range>[1.2.0, 2.0.0)</osgi.service.component.imp.pkg.version.range>
+        <axis2.osgi.version.range>[1.6.1.wso2v38, 2.0.0)</axis2.osgi.version.range>
 
         <!--Orbit Version-->
         <axis2.wso2.version>1.6.1-wso2v38</axis2.wso2.version>
@@ -685,8 +681,8 @@
         <!-- Pax Logging Version -->
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
-        <carbon.identity.framework.version>5.14.146</carbon.identity.framework.version>
-        <carbon.analytics.common.version>5.2.12-SNAPSHOT</carbon.analytics.common.version>
+        <carbon.identity.framework.version>5.15.1</carbon.identity.framework.version>
+        <carbon.analytics.common.version>5.2.15</carbon.analytics.common.version>
         <carbon.analytics.common.version.range>[5.2.10,6.0.0)</carbon.analytics.common.version.range>
     </properties>
 
