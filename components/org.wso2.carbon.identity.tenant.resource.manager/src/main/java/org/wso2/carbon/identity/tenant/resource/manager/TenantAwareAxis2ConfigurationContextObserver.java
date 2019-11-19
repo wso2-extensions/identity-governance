@@ -58,8 +58,8 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
 
         log.info("creating configuration context for tenant id: " + tenantId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        List<EventPublisherConfiguration> activeEventPublisherConfigurations = null;
-        List<EventStreamConfiguration> eventStreamConfigurationList = null;
+        List<EventPublisherConfiguration> activeEventPublisherConfigurations;
+        List<EventStreamConfiguration> eventStreamConfigurationList;
 
         startSuperTenantFlow();
 
