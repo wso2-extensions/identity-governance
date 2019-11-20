@@ -138,6 +138,7 @@ public class ResourceUtils {
      * @return ResourceManagerImpl Object.
      */
     public static ResourceManager getResourceManager() {
+
         return new ResourceManagerImpl();
     }
 }
