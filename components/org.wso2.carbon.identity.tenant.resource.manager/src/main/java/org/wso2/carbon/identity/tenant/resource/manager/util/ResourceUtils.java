@@ -81,8 +81,7 @@ public class ResourceUtils {
     public static TenantResourceManagementServerException handleServerException(
             TenantResourceConstants.ErrorMessages error, Throwable e, String... data) {
 
-        String message;
-        message = populateMessageWithData(error, data);
+        String message = populateMessageWithData(error, data);
         return new TenantResourceManagementServerException(message, error.getCode(), e);
     }
 

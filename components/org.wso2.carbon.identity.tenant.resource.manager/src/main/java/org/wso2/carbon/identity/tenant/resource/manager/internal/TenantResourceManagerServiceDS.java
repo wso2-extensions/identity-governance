@@ -52,7 +52,8 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
     protected void activate(ComponentContext context) {
 
         try {
-            TenantAwareAxis2ConfigurationContextObserver tenantAwareAxis2ConfigurationContextObserver = new TenantAwareAxis2ConfigurationContextObserver();
+            TenantAwareAxis2ConfigurationContextObserver tenantAwareAxis2ConfigurationContextObserver =
+                    new TenantAwareAxis2ConfigurationContextObserver();
 
             context.getBundleContext().registerService(Axis2ConfigurationContextObserver.class.getName(),
                     tenantAwareAxis2ConfigurationContextObserver, null);
@@ -61,7 +62,7 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed the tenant resource manager service.");
             }
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error("Can not create the tenant resource manager service.", e);
         }
     }
