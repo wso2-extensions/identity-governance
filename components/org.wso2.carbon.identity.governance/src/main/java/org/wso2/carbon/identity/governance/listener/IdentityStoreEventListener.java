@@ -55,15 +55,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
     public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+
         String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
                 this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
     }
 
-
     @Override
     public int getExecutionOrderId() {
+
         int orderId = getOrderId();
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
@@ -134,7 +135,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     /**
      * Persist the Identity Claims we added to thread local in doPreAddUser() operation after the user was
      * successfully added.
-     *
      *
      * @param userName
      * @param credential
@@ -461,9 +461,19 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
 
-            if (log.isDebugEnabled()) {
-                log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
-                        "user: " + userClaimSearchEntry.getUserName());
+            String username = userClaimSearchEntry.getUserName();
+
+            if (username == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Username found to be null while method doPostGetUsersClaimValues getting executed in " +
+                            "the IdentityStoreEventListener.");
+                }
+                continue;
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
+                            "user: " + username);
+                }
             }
 
             if (userClaimSearchEntry.getClaims() == null) {
@@ -471,8 +481,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             }
 
             // There is/are identity claim/s load the dto.
-            UserIdentityClaim identityDTO = identityDataStore.load(userClaimSearchEntry.getUserName(),
-                    userStoreManager);
+            UserIdentityClaim identityDTO = identityDataStore.load(userClaimSearchEntry.getUserName(), userStoreManager
+                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
 
             // If no user identity data found, just continue.
             if (identityDTO == null) {
