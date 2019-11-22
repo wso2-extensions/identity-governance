@@ -79,7 +79,6 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -365,15 +364,15 @@ public class UserSelfRegistrationManager {
      * @param username            Username
      * @param notificationChannel Notification channel
      * @param claimsMap           Properties related to the event
-     * @return True if the channel is already verified.
-     * @throws IdentityRecoveryClientException
+     * @return True if the channel is already verified
+     * @throws IdentityRecoveryClientException Error while getting the notification channel
      */
     private boolean isPreferredChannelVerified(String username, String notificationChannel,
             Map<String, String> claimsMap) throws IdentityRecoveryClientException {
 
-        boolean isRegisterWithVerifiedChannelsEnabled = Boolean.parseBoolean(
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.REGISTER_WITH_VERIFIED_CHANNELS));
-        if (isRegisterWithVerifiedChannelsEnabled) {
+        boolean isSkipAccountLockOnVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SKIP_ACCOUNT_LOCK_ON_VERIFIED_PREFERRED_CHANNEL));
+        if (isSkipAccountLockOnVerifiedPreferredChannelEnabled) {
             NotificationChannels channel = getNotificationChannel(username, notificationChannel);
 
             // Get the matching claim uri for the channel.

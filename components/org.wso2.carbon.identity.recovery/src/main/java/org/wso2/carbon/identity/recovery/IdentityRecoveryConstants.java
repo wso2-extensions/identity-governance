@@ -262,7 +262,8 @@ public class IdentityRecoveryConstants {
 
     public static class ConnectorConfig {
 
-        public static final String REGISTER_WITH_VERIFIED_CHANNELS = "SelfRegistration.RegisterWithVerifiedChannels";
+        public static final String SKIP_ACCOUNT_LOCK_ON_VERIFIED_PREFERRED_CHANNEL =
+                "SelfRegistration.SkipAccountLockOnVerifiedPreferredChannel";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";

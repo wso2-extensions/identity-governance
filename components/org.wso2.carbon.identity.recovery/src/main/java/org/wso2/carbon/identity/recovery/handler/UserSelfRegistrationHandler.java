@@ -313,13 +313,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private boolean isNotificationChannelVerified(String username, String tenantDomain, String notificationChannel,
             Map<String, Object> eventProperties) throws IdentityRecoveryClientException {
 
-        boolean isRegisterWithVerifiedChannelsEnabled = Boolean.parseBoolean(
-                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.REGISTER_WITH_VERIFIED_CHANNELS));
-        if (isRegisterWithVerifiedChannelsEnabled) {
+        boolean isSkipAccountLockOnVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SKIP_ACCOUNT_LOCK_ON_VERIFIED_PREFERRED_CHANNEL));
+        if (isSkipAccountLockOnVerifiedPreferredChannelEnabled) {
             if (log.isDebugEnabled()) {
                 String message = String
-                        .format("RegisterWithVerifiedChannels is enabled for user : %s in domain : %s. Checking "
-                                + "whether the user is already verified", username, tenantDomain);
+                        .format("SkipAccountLockOnVerifiedPreferredChannel is enabled for user : %s in domain : %s. "
+                                + "Checking whether the user is already verified", username, tenantDomain);
                 log.debug(message);
             }
             // Get the notification channel which matches the given channel type.
