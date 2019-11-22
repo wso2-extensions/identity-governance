@@ -469,11 +469,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                             "the IdentityStoreEventListener.");
                 }
                 continue;
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
-                            "user: " + username);
-                }
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
+                        "user: " + username);
             }
 
             if (userClaimSearchEntry.getClaims() == null) {
