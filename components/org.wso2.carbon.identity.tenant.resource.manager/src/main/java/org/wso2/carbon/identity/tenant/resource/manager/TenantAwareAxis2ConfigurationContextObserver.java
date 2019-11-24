@@ -56,26 +56,27 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
     @Override
     public void creatingConfigurationContext(int tenantId) {
 
-        log.info("creating configuration context for tenant id: " + tenantId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        log.info("Creating configuration context for tenant domain: " + tenantDomain);
         List<EventPublisherConfiguration> activeEventPublisherConfigurations;
         List<EventStreamConfiguration> eventStreamConfigurationList;
-
-        startSuperTenantFlow();
-
-        activeEventPublisherConfigurations = getSuperTenantEventPublisherConfigurations(tenantId);
-        eventStreamConfigurationList = getSuperTenantEventStreamConfigurations(tenantId);
-
+        try {
+            startSuperTenantFlow();
+            activeEventPublisherConfigurations = getSuperTenantEventPublisherConfigurations();
+            eventStreamConfigurationList = getSuperTenantEventStreamConfigurations();
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
         startTenantFlow(tenantId, tenantDomain);
 
-        createTenantEventStreamConfiguration(tenantId, eventStreamConfigurationList);
+        createTenantEventStreamConfiguration(eventStreamConfigurationList);
 
         if (activeEventPublisherConfigurations != null) {
-            createTenantEventPublisherConfiguration(tenantId, activeEventPublisherConfigurations);
+            createTenantEventPublisherConfiguration(activeEventPublisherConfigurations);
         }
     }
 
-    private List<EventPublisherConfiguration> getSuperTenantEventPublisherConfigurations(int tenantId) {
+    private List<EventPublisherConfiguration> getSuperTenantEventPublisherConfigurations() {
 
         List<EventPublisherConfiguration> activeEventPublisherConfigurations = null;
         try {
@@ -84,12 +85,12 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         } catch (EventPublisherConfigurationException e) {
             log.error(handleServerException(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION,
-                    e, String.valueOf(tenantId)));
+                    e, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
         }
         return activeEventPublisherConfigurations;
     }
 
-    private List<EventStreamConfiguration> getSuperTenantEventStreamConfigurations(int tenantId) {
+    private List<EventStreamConfiguration> getSuperTenantEventStreamConfigurations() {
 
         List<EventStreamConfiguration> eventStreamConfigurationList = null;
         try {
@@ -98,9 +99,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         } catch (EventStreamConfigurationException e) {
             log.error(handleServerException(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION,
-                    e, String.valueOf(tenantId)));
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
+                    e, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
         }
         return eventStreamConfigurationList;
     }
@@ -120,7 +119,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         carbonContext.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
     }
 
-    private void createTenantEventPublisherConfiguration(int tenantId,
+    private void createTenantEventPublisherConfiguration(
             List<EventPublisherConfiguration> activeEventPublisherConfigurations) {
 
         for (EventPublisherConfiguration eventPublisherConfiguration : activeEventPublisherConfigurations) {
@@ -128,22 +127,24 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                 ResourceFile resourceFile = getResourceFile(eventPublisherConfiguration.getEventPublisherName());
                 if (resourceFile != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Configuration store is enabled and there is a file in the configuration store for "
-                                + "the publisher name: " + eventPublisherConfiguration.getEventPublisherName());
+                        log.debug("There is a file in the configuration store for the publisher name: "
+                                + eventPublisherConfiguration.getEventPublisherName());
                     }
                     getResourceManager().addEventPublisherConfiguration(resourceFile);
                 }
             } catch (ConfigurationManagementException e) {
                 if (e.getErrorCode()
                         .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Configuration store is disabled.");
-                    }
+                    log.warn("Configuration store is disabled super tenant configuration will be used for the tenant "
+                            + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+                } else {
+                    log.error(e);
                 }
             } catch (TenantResourceManagementException e) {
                 log.error(handleServerException(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE, e,
-                        eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
+                        eventPublisherConfiguration.getEventPublisherName(),
+                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
             }
             try {
                 if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
@@ -151,7 +152,8 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                         == null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Super tenant event publisher configuration for the :" + eventPublisherConfiguration
-                                .getEventPublisherName() + " will be used for the tenant with id: " + tenantId);
+                                .getEventPublisherName() + " will be used for the tenant domain: "
+                                + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
                     }
                     TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                             .addEventPublisherConfiguration(eventPublisherConfiguration);
@@ -159,13 +161,13 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             } catch (EventPublisherConfigurationException e) {
                 log.error(handleServerException(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,
-                        e, eventPublisherConfiguration.getEventPublisherName(), String.valueOf(tenantId)));
+                        e, eventPublisherConfiguration.getEventPublisherName(),
+                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
             }
         }
     }
 
-    private void createTenantEventStreamConfiguration(int tenantId,
-            List<EventStreamConfiguration> eventStreamConfigurationList) {
+    private void createTenantEventStreamConfiguration(List<EventStreamConfiguration> eventStreamConfigurationList) {
 
         if (eventStreamConfigurationList != null) {
             for (EventStreamConfiguration eventStreamConfiguration : eventStreamConfigurationList) {
@@ -178,7 +180,8 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                     } catch (EventStreamConfigurationException e) {
                         log.error(handleServerException(
                                 TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION,
-                                e, eventStreamConfiguration.getStreamDefinition().getName(), String.valueOf(tenantId)));
+                                e, eventStreamConfiguration.getStreamDefinition().getName(),
+                                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
                     }
                 }
             }

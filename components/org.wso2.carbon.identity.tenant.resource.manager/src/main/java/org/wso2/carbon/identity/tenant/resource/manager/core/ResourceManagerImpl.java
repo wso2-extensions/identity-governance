@@ -52,8 +52,8 @@ public class ResourceManagerImpl implements ResourceManager {
                     .getFileById(PUBLISHER, resourceFile.getName(), resourceFile.getId()));
             if (log.isDebugEnabled()) {
                 log.debug("Event Publisher: " + resourceFile.getName() + " deployed from the configuration "
-                        + "store for the tenant id: " + PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                        .getTenantId());
+                        + "store for the tenant domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                        .getTenantDomain());
             }
         } catch (EventPublisherConfigurationException e) {
             throw handleServerException(ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION, e,

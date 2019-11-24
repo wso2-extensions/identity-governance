@@ -31,21 +31,21 @@ public class TenantResourceConstants {
     public enum ErrorMessages {
 
         ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE("TRM-10001", "Error occurred when fetching the "
-                + "event publisher configuration file with name: %s. for the tenant id: %s"),
+                + "event publisher configuration file with name: %s. for the tenant domain: %s"),
         ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION("TRM-10002", "Error occurred when deploying the "
                 + "event publisher configuration for with name: %s."),
         ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION("TRM-10003", "Error occurred while "
-                + "loading super tenant event publisher configurations for the tenant with ID: %s."),
+                + "loading super tenant event publisher configurations for the tenant with domain: %s."),
         ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10004", "Error occurred while "
-                + "loading super tenant event stream configurations for the tenant with ID: %s."),
+                + "loading super tenant event stream configurations for the tenant with domain: %s."),
         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION("TRM-10005", "Error occurred while "
                 + "creating tenant event stream configuration: %s."),
         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE("TRM-10006", "Error "
-                + "occurred while creating tenant event publisher configuration: %s. Using configuration store, for the tenant id: "
-                + "%s"),
+                + "occurred while creating tenant event publisher configuration: %s. Using configuration store, for "
+                + "the tenant domain: %s"),
         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG(
                 "TRM-10007", "Error occurred while creating tenant event publisher configuration: %s.Using super"
-                + "tenant configuration, for the tenant id: %s");
+                + "tenant configuration, for the tenant domain: %s");
 
         private final String code;
         private final String message;
