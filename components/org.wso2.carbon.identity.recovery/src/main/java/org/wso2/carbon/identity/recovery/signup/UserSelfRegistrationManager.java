@@ -370,9 +370,9 @@ public class UserSelfRegistrationManager {
     private boolean isPreferredChannelVerified(String username, String notificationChannel,
             Map<String, String> claimsMap) throws IdentityRecoveryClientException {
 
-        boolean isSkipAccountLockOnVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SKIP_ACCOUNT_LOCK_ON_VERIFIED_PREFERRED_CHANNEL));
-        if (isSkipAccountLockOnVerifiedPreferredChannelEnabled) {
+        boolean isEnableAccountLockForVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL));
+        if (!isEnableAccountLockForVerifiedPreferredChannelEnabled) {
             NotificationChannels channel = getNotificationChannel(username, notificationChannel);
 
             // Get the matching claim uri for the channel.

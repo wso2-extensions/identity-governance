@@ -313,9 +313,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private boolean isNotificationChannelVerified(String username, String tenantDomain, String notificationChannel,
             Map<String, Object> eventProperties) throws IdentityRecoveryClientException {
 
-        boolean isSkipAccountLockOnVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SKIP_ACCOUNT_LOCK_ON_VERIFIED_PREFERRED_CHANNEL));
-        if (isSkipAccountLockOnVerifiedPreferredChannelEnabled) {
+        boolean isEnableAccountLockForVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL));
+        if (!isEnableAccountLockForVerifiedPreferredChannelEnabled) {
             if (log.isDebugEnabled()) {
                 String message = String
                         .format("SkipAccountLockOnVerifiedPreferredChannel is enabled for user : %s in domain : %s. "
