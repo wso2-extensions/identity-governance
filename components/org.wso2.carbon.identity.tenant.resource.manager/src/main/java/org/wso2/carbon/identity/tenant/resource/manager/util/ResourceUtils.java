@@ -27,7 +27,6 @@ import org.wso2.carbon.identity.configuration.mgt.core.model.Resources;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl;
-import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementClientException;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementServerException;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 
@@ -40,28 +39,6 @@ import java.util.List;
 public class ResourceUtils {
 
     private static final Log log = LogFactory.getLog(ResourceUtils.class);
-
-    /**
-     * This method can be used to generate a TenantResourceManagementClientException from
-     * ConfigurationConstants.ErrorMessages object when no exception is thrown.
-     *
-     * @param error TenantResourceConstants.ErrorMessages.
-     * @param data  data to replace if message needs to be replaced.
-     * @return TenantResourceManagementClientException.
-     */
-    public static TenantResourceManagementClientException handleClientException(
-            TenantResourceConstants.ErrorMessages error, String... data) {
-
-        String message = populateMessageWithData(error, data);
-        return new TenantResourceManagementClientException(message, error.getCode());
-    }
-
-    public static TenantResourceManagementClientException handleClientException(
-            TenantResourceConstants.ErrorMessages error, Throwable e, String... data) {
-
-        String message = populateMessageWithData(error, data);
-        return new TenantResourceManagementClientException(message, error.getCode(), e);
-    }
 
     /**
      * This method can be used to generate a TenantResourceManagementServerException from
@@ -120,7 +97,7 @@ public class ResourceUtils {
         }
     }
 
-    private static String populateMessageWithData(TenantResourceConstants.ErrorMessages error, String[] data) {
+    public static String populateMessageWithData(TenantResourceConstants.ErrorMessages error, String... data) {
 
         String message;
         if (data.length != 0) {

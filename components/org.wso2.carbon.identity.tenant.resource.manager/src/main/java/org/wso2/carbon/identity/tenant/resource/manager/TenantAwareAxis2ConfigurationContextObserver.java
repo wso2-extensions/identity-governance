@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -28,18 +29,22 @@ import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationExcep
 import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.utils.AbstractAxis2ConfigurationContextObserver;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+
 import java.util.List;
 
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE;
+import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_ADDING_EVENT_PUBLISHER_CONFIGURATION;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG;
-import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceFile;
+import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION;
+import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES;
+import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.PUBLISHER;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceManager;
-import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleServerException;
+import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.populateMessageWithData;
 
 /**
  * Axis2Observer for generating tenant wise publisher configurations.
@@ -57,7 +62,18 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
     public void creatingConfigurationContext(int tenantId) {
 
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        log.info("Creating configuration context for tenant domain: " + tenantDomain);
+        log.info("Loading configuration context for tenant domain: " + tenantDomain);
+        loadEventStreamAndPublisherConfigurations(tenantId, tenantDomain);
+    }
+
+    /**
+     * This method loads event stream and publisher configurations for a specific tenant.
+     *
+     * @param tenantId     tenant id.
+     * @param tenantDomain tenant domain.
+     */
+    private void loadEventStreamAndPublisherConfigurations(int tenantId, String tenantDomain) {
+
         List<EventPublisherConfiguration> activeEventPublisherConfigurations;
         List<EventStreamConfiguration> eventStreamConfigurationList;
         try {
@@ -67,15 +83,57 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
-        startTenantFlow(tenantId, tenantDomain);
+        try {
+            startTenantFlow(tenantId);
+            createTenantEventStreamConfiguration(eventStreamConfigurationList);
+            createTenantPublisherConfigurationFromConfigStore();
 
-        createTenantEventStreamConfiguration(eventStreamConfigurationList);
-
-        if (activeEventPublisherConfigurations != null) {
-            createTenantEventPublisherConfiguration(activeEventPublisherConfigurations);
+            if (activeEventPublisherConfigurations != null) {
+                createTenantPublisherConfigurationFromSuperTenantConfig(activeEventPublisherConfigurations);
+            }
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
+    /**
+     * This method creates publisher configurations tenant wise by fetching them from configuration store.
+     */
+    private void createTenantPublisherConfigurationFromConfigStore() {
+
+        List<ResourceFile> tenantSpecificPublisherFiles;
+        try {
+            tenantSpecificPublisherFiles = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
+                    .getFiles(PUBLISHER);
+            if (CollectionUtils.isNotEmpty(tenantSpecificPublisherFiles)) {
+                for (ResourceFile resourceFile : tenantSpecificPublisherFiles) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("File for publisher name: " + resourceFile.getName()
+                                + " is available in the configuration store.");
+                    }
+                    getResourceManager().addEventPublisherConfiguration(resourceFile);
+                }
+            }
+        } catch (ConfigurationManagementException e) {
+            if (e.getErrorCode()
+                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
+                log.warn("Configuration store is disabled. Super tenant configuration will be used for the tenant "
+                        + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+            } else {
+                log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES,
+                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
+            }
+        } catch (TenantResourceManagementException e) {
+            log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_ADDING_EVENT_PUBLISHER_CONFIGURATION,
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
+        }
+    }
+
+    /**
+     * This method returns super tenant event publisher configurations.
+     *
+     * @return list of event publisher configurations.
+     */
     private List<EventPublisherConfiguration> getSuperTenantEventPublisherConfigurations() {
 
         List<EventPublisherConfiguration> activeEventPublisherConfigurations = null;
@@ -83,13 +141,18 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             activeEventPublisherConfigurations = TenantResourceManagerDataHolder.getInstance()
                     .getEventPublisherService().getAllActiveEventPublisherConfigurations();
         } catch (EventPublisherConfigurationException e) {
-            log.error(handleServerException(
+            log.error(populateMessageWithData(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION,
-                    e, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
         }
         return activeEventPublisherConfigurations;
     }
 
+    /**
+     * This method returns super tenant event stream configurations.
+     *
+     * @return list of event stream configurations.
+     */
     private List<EventStreamConfiguration> getSuperTenantEventStreamConfigurations() {
 
         List<EventStreamConfiguration> eventStreamConfigurationList = null;
@@ -97,18 +160,19 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             eventStreamConfigurationList = TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
                     .getAllEventStreamConfigurations();
         } catch (EventStreamConfigurationException e) {
-            log.error(handleServerException(
+            log.error(populateMessageWithData(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_STREAM_CONFIGURATION,
-                    e, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
         }
         return eventStreamConfigurationList;
     }
 
-    private void startTenantFlow(int tenantId, String tenantDomain) {
+    private void startTenantFlow(int tenantId) {
 
         PrivilegedCarbonContext.startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantId);
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .setTenantDomain(IdentityTenantUtil.getTenantDomain(tenantId));
     }
 
     private void startSuperTenantFlow() {
@@ -119,33 +183,15 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         carbonContext.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
     }
 
-    private void createTenantEventPublisherConfiguration(
+    /**
+     * This method creates event publisher configurations tenant wise by using super tenant publisher configurations.
+     *
+     * @param activeEventPublisherConfigurations list of active super tenant publisher configurations.
+     */
+    private void createTenantPublisherConfigurationFromSuperTenantConfig(
             List<EventPublisherConfiguration> activeEventPublisherConfigurations) {
 
         for (EventPublisherConfiguration eventPublisherConfiguration : activeEventPublisherConfigurations) {
-            try {
-                ResourceFile resourceFile = getResourceFile(eventPublisherConfiguration.getEventPublisherName());
-                if (resourceFile != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("There is a file in the configuration store for the publisher name: "
-                                + eventPublisherConfiguration.getEventPublisherName());
-                    }
-                    getResourceManager().addEventPublisherConfiguration(resourceFile);
-                }
-            } catch (ConfigurationManagementException e) {
-                if (e.getErrorCode()
-                        .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
-                    log.warn("Configuration store is disabled super tenant configuration will be used for the tenant "
-                            + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
-                } else {
-                    log.error(e);
-                }
-            } catch (TenantResourceManagementException e) {
-                log.error(handleServerException(
-                        ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_BY_CONFIG_STORE, e,
-                        eventPublisherConfiguration.getEventPublisherName(),
-                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
-            }
             try {
                 if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                         .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName())
@@ -159,14 +205,18 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                             .addEventPublisherConfiguration(eventPublisherConfiguration);
                 }
             } catch (EventPublisherConfigurationException e) {
-                log.error(handleServerException(
+                log.error(populateMessageWithData(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,
-                        e, eventPublisherConfiguration.getEventPublisherName(),
-                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
+                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
             }
         }
     }
 
+    /**
+     * This method creates event stream configurations tenant wise by using super tenant publisher configurations.
+     *
+     * @param eventStreamConfigurationList list of active super tenant stream configurations.
+     */
     private void createTenantEventStreamConfiguration(List<EventStreamConfiguration> eventStreamConfigurationList) {
 
         if (eventStreamConfigurationList != null) {
@@ -178,10 +228,9 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                         TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
                                 .addEventStreamConfig(eventStreamConfiguration);
                     } catch (EventStreamConfigurationException e) {
-                        log.error(handleServerException(
-                                TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION,
-                                e, eventStreamConfiguration.getStreamDefinition().getName(),
-                                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()));
+                        log.error(populateMessageWithData(
+                                ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION,
+                                PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
                     }
                 }
             }
