@@ -52,7 +52,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
         try {
-            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
@@ -63,9 +62,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
             prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt.execute();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
-            IdentityDatabaseUtil.rollBack(connection);
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
@@ -77,7 +76,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws IdentityRecoveryException {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
         String sql;
         try {
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
@@ -121,7 +120,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     public UserRecoveryData load(String code) throws IdentityRecoveryException {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_FROM_CODE;
@@ -173,8 +172,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, code);
             prepStmt.execute();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
@@ -187,7 +187,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     public UserRecoveryData load(User user) throws IdentityRecoveryException {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
@@ -233,7 +233,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     public UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws IdentityRecoveryException {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
@@ -288,8 +288,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setString(2, user.getUserStoreDomain());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             prepStmt.execute();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
