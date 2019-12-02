@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
@@ -194,7 +195,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
         if (log.isDebugEnabled()) {
             String message = String
-                    .format("For user : %1$s " + "in domain : %2$s, notification template : %3$s was used.",
+                    .format("For user : %1$s in domain : %2$s, notification template : %3$s was used.",
                             domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, templateName);
             log.debug(message);
         }
@@ -221,7 +222,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
         if (log.isDebugEnabled()) {
             String message = String
-                    .format("For user : %1$s " + "in domain : %2$s, notifications were sent from the event : %3$s",
+                    .format("For user : %1$s in domain : %2$s, notifications were sent from the event : %3$s",
                             domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, eventName);
             log.debug(message);
         }
@@ -241,6 +242,12 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private String resolveNotificationChannel(Map<String, Object> eventProperties, String userName, String tenantDomain,
             String domainName) throws IdentityEventException {
 
+        // If channel resolving logic is not enabled, return the server default notification channel. Do not need to
+        // resolve using user preferred channel.
+        if (!Boolean.parseBoolean(
+                IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))) {
+            return IdentityGovernanceUtil.getDefaultNotificationChannel();
+        }
         // Get the user preferred notification channel.
         String preferredChannel = (String) eventProperties.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM);
 
@@ -256,7 +263,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
         if (log.isDebugEnabled()) {
             String message = String
-                    .format("Notification channel : %1$s for the user : %2$s " + "in domain : %3$s.",
+                    .format("Notification channel : %1$s for the user : %2$s in domain : %3$s.",
                             preferredChannel, domainName + CarbonConstants.DOMAIN_SEPARATOR + userName,
                             tenantDomain);
             log.debug(message);
@@ -330,7 +337,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
             // Get the verified status for given channel.
             boolean notificationChannelVerified = Boolean.parseBoolean((String) eventProperties.get(verifiedClaimUri));
-            if (!notificationChannelVerified) {
+            if (notificationChannelVerified) {
                 if (log.isDebugEnabled()) {
                     String message = String
                             .format("Preferred Notification channel : %1$s is verified for the user : %2$s "
