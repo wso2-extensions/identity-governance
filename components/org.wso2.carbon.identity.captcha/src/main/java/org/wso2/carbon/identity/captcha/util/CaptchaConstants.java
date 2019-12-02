@@ -49,6 +49,8 @@ public class CaptchaConstants {
 
         public static final String ENABLE = ".enable";
 
+        public static final String ENABLE_ALWAYS = ".enable.always";
+
         public static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = ".connector.identifier.attribute";
 
         public static final String MAX_ATTEMPTS = ".on.max.failed.attempts";
