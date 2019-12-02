@@ -19,9 +19,12 @@ package org.wso2.carbon.identity.password.history.Util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
+import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
+import org.wso2.carbon.utils.CarbonUtils;
 
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
@@ -46,5 +49,23 @@ public class Utils {
             errorDescription = error.getMessage();
         }
         return IdentityException.error(IdentityEventException.class, error.getCode(), errorDescription, throwable);
+    }
+
+    /**
+     * This method is used to check whether the password trim is enabled.
+     *
+     * @return true if the value of <EnablePasswordTrim> is true in the carbon.xml or <EnablePasswordTrim> is not present
+     * in the carbon.xml
+     */
+    public static boolean isPasswordTrimEnabled() {
+
+        boolean isPasswordTrimEnabled = true;
+        ServerConfiguration serverConfiguration = CarbonUtils.getServerConfiguration();
+        if (serverConfiguration != null && StringUtils.isNotEmpty(serverConfiguration.getFirstProperty
+                (CarbonConstants.IS_PASSWORD_TRIM_ENABLED))) {
+            isPasswordTrimEnabled = Boolean.parseBoolean(serverConfiguration.getFirstProperty
+                    (CarbonConstants.IS_PASSWORD_TRIM_ENABLED));
+        }
+        return isPasswordTrimEnabled;
     }
 }
