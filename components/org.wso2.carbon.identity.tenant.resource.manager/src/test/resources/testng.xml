@@ -23,7 +23,6 @@
 
     <test name="identity-tenant-resource-tests" preserve-order="true" parallel="false">
         <classes>
-            <class name="org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtilsTest"></class>
             <class name="org.wso2.carbon.identity.tenant.resource.manager.TenantAwareAxis2ConfigurationContextObserverTest"></class>
         </classes>
     </test>

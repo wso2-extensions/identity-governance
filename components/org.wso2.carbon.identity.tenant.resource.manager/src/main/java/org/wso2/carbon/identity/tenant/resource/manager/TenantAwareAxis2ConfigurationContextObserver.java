@@ -138,7 +138,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         List<EventPublisherConfiguration> activeEventPublisherConfigurations = null;
         try {
             activeEventPublisherConfigurations = TenantResourceManagerDataHolder.getInstance()
-                    .getEventPublisherService().getAllActiveEventPublisherConfigurations();
+                    .getCarbonEventPublisherService().getAllActiveEventPublisherConfigurations();
         } catch (EventPublisherConfigurationException e) {
             log.error(populateMessageWithData(
                     TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_SUPER_TENANT_EVENT_PUBLISHER_CONFIGURATION,
@@ -196,7 +196,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                         .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName())
                         == null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Super tenant event publisher configuration for the :" + eventPublisherConfiguration
+                        log.debug("Super tenant event publisher configuration for the: " + eventPublisherConfiguration
                                 .getEventPublisherName() + " will be used for the tenant domain: "
                                 + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
                     }

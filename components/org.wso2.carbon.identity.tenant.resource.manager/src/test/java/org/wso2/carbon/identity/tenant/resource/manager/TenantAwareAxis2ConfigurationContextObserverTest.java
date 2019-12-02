@@ -31,7 +31,6 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
 import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterSchema;
 import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService;
-import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.publisher.core.internal.CarbonEventPublisherService;
 import org.wso2.carbon.event.publisher.core.internal.EventPublisher;
@@ -77,8 +76,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
 
     @Mock
     TenantResourceManagerDataHolder tenantResourceManagerDataHolder;
-    @Mock
-    EventPublisherService eventPublisherService;
     @Mock
     EventStreamService eventStreamService;
     @Mock
@@ -149,16 +146,8 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         mockCarbonContext();
         when(TenantResourceManagerDataHolder.getInstance()).thenReturn(tenantResourceManagerDataHolder);
         when(IdentityTenantUtil.getTenantDomain(anyInt())).thenReturn(TENANT_DOMAIN);
-        List<EventPublisherConfiguration> eventPublisherConfigurationList = new ArrayList<>();
-        EventPublisherConfiguration eventPublisherConfiguration = new EventPublisherConfiguration();
-        eventPublisherConfiguration.setEventPublisherName(EMAIL_PUBLISHER);
-        eventPublisherConfigurationList.add(eventPublisherConfiguration);
-        when(eventPublisherService.getAllActiveEventPublisherConfigurations())
-                .thenReturn(eventPublisherConfigurationList);
-
         ResourceFile resourceFile = new ResourceFile();
         resourceFile.setName(EMAIL_PUBLISHER);
-        when(ResourceUtils.getResourceFile(anyString())).thenReturn(resourceFile);
         List<ResourceFile> resourceFiles = new ArrayList<>();
         resourceFiles.add(resourceFile);
         when(configurationManager.getFiles(anyString())).thenReturn(resourceFiles);
@@ -171,7 +160,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         ResourceManager resourceManager = new ResourceManagerImpl();
         when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
 
-        when(tenantResourceManagerDataHolder.getEventPublisherService()).thenReturn(eventPublisherService);
+        when(tenantResourceManagerDataHolder.getCarbonEventPublisherService()).thenReturn(carbonEventPublisherService);
         when(tenantResourceManagerDataHolder.getCarbonEventStreamService()).thenReturn(eventStreamService);
         when(tenantResourceManagerDataHolder.getConfigurationManager()).thenReturn(configurationManager);
         when(tenantResourceManagerDataHolder.getCarbonEventPublisherService()).thenReturn(carbonEventPublisherService);

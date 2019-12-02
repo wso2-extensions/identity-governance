@@ -27,7 +27,6 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService;
 import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -75,49 +74,6 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
         if (log.isDebugEnabled()) {
             log.debug("Tenant resource manager bundle is de-activated");
         }
-    }
-
-    @Reference(name = "EventPublisherService",
-               service = org.wso2.carbon.event.publisher.core.EventPublisherService.class,
-               cardinality = ReferenceCardinality.MANDATORY,
-               policy = ReferencePolicy.DYNAMIC,
-               unbind = "unsetEventPublisherService")
-    protected void setEventPublisherService(EventPublisherService eventPublisherService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Event Publisher Service");
-        }
-        TenantResourceManagerDataHolder.getInstance().setEventPublisherService(eventPublisherService);
-    }
-
-    protected void unsetEventPublisherService(EventPublisherService eventPublisherService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("UnSetting the Event Publisher Service");
-        }
-        TenantResourceManagerDataHolder.getInstance().setEventPublisherService(null);
-    }
-
-    @Reference(name = "OutputEventAdapterService",
-               service = org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService.class,
-               cardinality = ReferenceCardinality.MANDATORY,
-               policy = ReferencePolicy.DYNAMIC,
-               unbind = "unsetCarbonOutputEventAdapterService")
-    protected void setCarbonOutputEventAdapterService(OutputEventAdapterService carbonOutputEventAdapterService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the CarbonOutputEventAdapter Service");
-        }
-        TenantResourceManagerDataHolder.getInstance()
-                .setCarbonOutputEventAdapterService(carbonOutputEventAdapterService);
-    }
-
-    protected void unsetCarbonOutputEventAdapterService(OutputEventAdapterService carbonOutputEventAdapterService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Un Setting the CarbonOutputEventAdapter Service");
-        }
-        TenantResourceManagerDataHolder.getInstance().setCarbonOutputEventAdapterService(null);
     }
 
     @Reference(name = "CarbonEventPublisherService",

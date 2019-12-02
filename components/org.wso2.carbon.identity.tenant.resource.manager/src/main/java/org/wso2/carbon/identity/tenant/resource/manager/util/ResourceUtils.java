@@ -20,18 +20,8 @@ package org.wso2.carbon.identity.tenant.resource.manager.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
-import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
-import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
-import org.wso2.carbon.identity.configuration.mgt.core.model.Resources;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
-import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
-import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementServerException;
-import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Utility methods for tenant resource management.
@@ -60,41 +50,6 @@ public class ResourceUtils {
 
         String message = populateMessageWithData(error, data);
         return new TenantResourceManagementServerException(message, error.getCode(), e);
-    }
-
-    /**
-     * This method can be used to get publisher configuration file from the configuration store.
-     *
-     * @param eventPublisherName Event Publisher Name.
-     * @return event publisher file
-     * @throws ConfigurationManagementException
-     */
-    public static ResourceFile getResourceFile(String eventPublisherName) throws ConfigurationManagementException {
-
-        List<ResourceFile> fileList = new ArrayList<>();
-        Resources resources = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                .getResourcesByType(TenantResourceConstants.PUBLISHER);
-        for (Resource resource : resources.getResources()) {
-            if (eventPublisherName.equals(resource.getResourceName())) {
-                fileList = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                        .getFiles(TenantResourceConstants.PUBLISHER, eventPublisherName);
-                break;
-            }
-        }
-
-        if (fileList.size() > 1) {
-            if (log.isDebugEnabled()) {
-                log.debug("More then one file with the name: " + eventPublisherName);
-            }
-            return null;
-        } else if (fileList.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                log.debug("No file with the name: " + eventPublisherName);
-            }
-            return null;
-        } else {
-            return fileList.get(0);
-        }
     }
 
     public static String populateMessageWithData(TenantResourceConstants.ErrorMessages error, String... data) {
