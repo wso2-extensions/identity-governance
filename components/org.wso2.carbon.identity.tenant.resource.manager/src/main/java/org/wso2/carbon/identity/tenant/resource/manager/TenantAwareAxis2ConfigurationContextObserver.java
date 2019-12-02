@@ -84,11 +84,11 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         }
         try {
             startTenantFlow(tenantId);
-            createTenantEventStreamConfiguration(eventStreamConfigurationList);
-            createTenantPublisherConfigurationFromConfigStore();
+            loadTenantEventStreams(eventStreamConfigurationList);
+            loadTenantPublisherConfigurationFromConfigStore();
 
             if (activeEventPublisherConfigurations != null) {
-                createTenantPublisherConfigurationFromSuperTenantConfig(activeEventPublisherConfigurations);
+                loadTenantPublisherConfigurationFromSuperTenantConfig(activeEventPublisherConfigurations);
             }
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
@@ -96,9 +96,9 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
     }
 
     /**
-     * This method creates publisher configurations tenant wise by fetching them from configuration store.
+     * This method loads publisher configurations tenant wise by fetching them from configuration store.
      */
-    private void createTenantPublisherConfigurationFromConfigStore() {
+    private void loadTenantPublisherConfigurationFromConfigStore() {
 
         List<ResourceFile> tenantSpecificPublisherFiles;
         try {
@@ -187,7 +187,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
      *
      * @param activeEventPublisherConfigurations list of active super tenant publisher configurations.
      */
-    private void createTenantPublisherConfigurationFromSuperTenantConfig(
+    private void loadTenantPublisherConfigurationFromSuperTenantConfig(
             List<EventPublisherConfiguration> activeEventPublisherConfigurations) {
 
         for (EventPublisherConfiguration eventPublisherConfiguration : activeEventPublisherConfigurations) {
@@ -212,11 +212,11 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
     }
 
     /**
-     * This method creates event stream configurations tenant wise by using super tenant publisher configurations.
+     * This method loads event stream configurations tenant wise by using super tenant publisher configurations.
      *
      * @param eventStreamConfigurationList list of active super tenant stream configurations.
      */
-    private void createTenantEventStreamConfiguration(List<EventStreamConfiguration> eventStreamConfigurationList) {
+    private void loadTenantEventStreams(List<EventStreamConfiguration> eventStreamConfigurationList) {
 
         if (eventStreamConfigurationList != null) {
             for (EventStreamConfiguration eventStreamConfiguration : eventStreamConfigurationList) {

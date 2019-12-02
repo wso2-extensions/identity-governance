@@ -40,11 +40,13 @@ import org.wso2.carbon.event.stream.core.EventStreamConfiguration;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils;
 
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -59,7 +61,8 @@ import java.util.List;
 
 @PrepareForTest({
                         TenantResourceManagerDataHolder.class, PrivilegedCarbonContext.class, ResourceUtils.class,
-                        EventPublisherServiceValueHolder.class, EventPublisherServiceValueHolder.class
+                        EventPublisherServiceValueHolder.class, EventPublisherServiceValueHolder.class,
+                        IdentityTenantUtil.class
                 })
 
 public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockTestCase {
@@ -99,6 +102,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         mockStatic(ResourceUtils.class);
         mockStatic(EventPublisherServiceValueHolder.class);
         mockStatic(EventPublisherServiceValueHolder.class);
+        mockStatic(IdentityTenantUtil.class);
         prepareConfigs();
     }
 
@@ -144,6 +148,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
 
         mockCarbonContext();
         when(TenantResourceManagerDataHolder.getInstance()).thenReturn(tenantResourceManagerDataHolder);
+        when(IdentityTenantUtil.getTenantDomain(anyInt())).thenReturn(TENANT_DOMAIN);
         List<EventPublisherConfiguration> eventPublisherConfigurationList = new ArrayList<>();
         EventPublisherConfiguration eventPublisherConfiguration = new EventPublisherConfiguration();
         eventPublisherConfiguration.setEventPublisherName(EMAIL_PUBLISHER);

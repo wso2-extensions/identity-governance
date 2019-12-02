@@ -115,6 +115,6 @@ public class ResourceUtils {
      */
     public static ResourceManager getResourceManager() {
 
-        return new ResourceManagerImpl();
+        return TenantResourceManagerDataHolder.getInstance().getResourceManager();
     }
 }

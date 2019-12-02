@@ -57,8 +57,10 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
 
             context.getBundleContext().registerService(Axis2ConfigurationContextObserver.class.getName(),
                     tenantAwareAxis2ConfigurationContextObserver, null);
+            ResourceManager resourceManager = new ResourceManagerImpl();
             context.getBundleContext()
-                    .registerService(ResourceManager.class.getName(), new ResourceManagerImpl(), null);
+                    .registerService(ResourceManager.class.getName(), resourceManager, null);
+            TenantResourceManagerDataHolder.getInstance().setResourceManager(resourceManager);
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed the tenant resource manager service.");
             }

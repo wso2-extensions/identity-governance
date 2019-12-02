@@ -22,6 +22,7 @@ import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService;
 import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
 
 /**
  * DataHolder for Tenant Resource Manager.
@@ -34,6 +35,7 @@ public class TenantResourceManagerDataHolder {
     private OutputEventAdapterService carbonOutputEventAdapterService = null;
     private EventPublisherService carbonEventPublisherService = null;
     private EventStreamService carbonEventStreamService = null;
+    private ResourceManager resourceManager = null;
 
     private TenantResourceManagerDataHolder() {
     }
@@ -86,5 +88,15 @@ public class TenantResourceManagerDataHolder {
     public ConfigurationManager getConfigurationManager() {
 
         return configurationManager;
+    }
+
+    public ResourceManager getResourceManager() {
+
+        return resourceManager;
+    }
+
+    public void setResourceManager(ResourceManager resourceManager) {
+
+        this.resourceManager = resourceManager;
     }
 }
