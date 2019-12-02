@@ -63,16 +63,15 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
 
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         log.info("Loading configuration context for tenant domain: " + tenantDomain);
-        loadEventStreamAndPublisherConfigurations(tenantId, tenantDomain);
+        loadEventStreamAndPublisherConfigurations(tenantId);
     }
 
     /**
      * This method loads event stream and publisher configurations for a specific tenant.
      *
      * @param tenantId     tenant id.
-     * @param tenantDomain tenant domain.
      */
-    private void loadEventStreamAndPublisherConfigurations(int tenantId, String tenantDomain) {
+    private void loadEventStreamAndPublisherConfigurations(int tenantId) {
 
         List<EventPublisherConfiguration> activeEventPublisherConfigurations;
         List<EventStreamConfiguration> eventStreamConfigurationList;
