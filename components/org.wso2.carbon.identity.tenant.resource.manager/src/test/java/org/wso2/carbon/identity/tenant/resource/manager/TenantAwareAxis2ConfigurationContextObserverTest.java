@@ -29,8 +29,6 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.databridge.commons.StreamDefinition;
-import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterSchema;
-import org.wso2.carbon.event.output.adapter.core.OutputEventAdapterService;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.publisher.core.internal.CarbonEventPublisherService;
 import org.wso2.carbon.event.publisher.core.internal.EventPublisher;
@@ -80,10 +78,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
     EventStreamService eventStreamService;
     @Mock
     ConfigurationManager configurationManager;
-    @Mock
-    OutputEventAdapterService outputEventAdapterService;
-    @Mock
-    OutputEventAdapterSchema outputEventAdapterSchema;
     @Mock
     StreamDefinition streamDefinition;
     @Mock
@@ -152,11 +146,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         resourceFiles.add(resourceFile);
         when(configurationManager.getFiles(anyString())).thenReturn(resourceFiles);
 
-        when(EventPublisherServiceValueHolder.getOutputEventAdapterService()).thenReturn(outputEventAdapterService);
-        when(outputEventAdapterService.getOutputEventAdapterSchema(anyString())).thenReturn(outputEventAdapterSchema);
-        when(EventPublisherServiceValueHolder.getEventStreamService()).thenReturn(eventStreamService);
-        when(EventPublisherServiceValueHolder.getOutputEventAdapterService()).thenReturn(outputEventAdapterService);
-
         ResourceManager resourceManager = new ResourceManagerImpl();
         when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
 
@@ -169,11 +158,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         InputStream fileStream = FileUtils.openInputStream(sampleResourceFile);
         when(configurationManager.getFileById(anyString(), anyString(), anyString())).thenReturn(fileStream);
         when(eventStreamService.getStreamDefinition(anyString(), anyString())).thenReturn(streamDefinition);
-
-        List<String> adapterTypes = new ArrayList<>();
-        adapterTypes.add(ADAPTER_TYPE);
-        when(outputEventAdapterService.getOutputEventAdapterTypes()).thenReturn(adapterTypes);
-
         List<EventStreamConfiguration> eventStreamConfigurationsList = new ArrayList<>();
         EventStreamConfiguration eventStreamConfiguration = new EventStreamConfiguration();
         eventStreamConfiguration.setFileName(EMAIL_PUBLISHER);
