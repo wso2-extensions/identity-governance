@@ -38,7 +38,13 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.wso2.carbon.identity.password.history.Util.Utils.isPasswordTrimEnabled;
 
 public class PasswordHistoryValidationHandler extends AbstractEventHandler implements IdentityConnectorConfig {
 
@@ -115,6 +121,9 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
                 .PRE_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(IdentityEventConstants.EventProperty.CREDENTIAL);
             try {
+                if (isPasswordTrimEnabled() && credential != null) {
+                    credential = credential.toString().trim();
+                }
                 boolean validate = passwordHistoryDataStore.validate(user, credential);
                 if (!validate) {
                     throw Utils.handleEventException(PasswordHistoryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE, null);
@@ -128,7 +137,9 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
                 .POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) || IdentityEventConstants.Event
                 .POST_ADD_USER.equals(event.getEventName())) {
             Object credential = event.getEventProperties().get(IdentityEventConstants.EventProperty.CREDENTIAL);
-            ;
+            if (isPasswordTrimEnabled() && credential != null) {
+                credential = credential.toString().trim();
+            }
             try {
                 passwordHistoryDataStore.store(user, credential);
             } catch (IdentityPasswordHistoryException e) {
