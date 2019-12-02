@@ -43,7 +43,6 @@ import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantR
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.PUBLISHER;
-import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.getResourceManager;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.populateMessageWithData;
 
 /**
@@ -110,7 +109,8 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                         log.debug("File for publisher name: " + resourceFile.getName()
                                 + " is available in the configuration store.");
                     }
-                    getResourceManager().addEventPublisherConfiguration(resourceFile);
+                    TenantResourceManagerDataHolder.getInstance().getResourceManager()
+                            .addEventPublisherConfiguration(resourceFile);
                 }
             }
         } catch (ConfigurationManagementException e) {

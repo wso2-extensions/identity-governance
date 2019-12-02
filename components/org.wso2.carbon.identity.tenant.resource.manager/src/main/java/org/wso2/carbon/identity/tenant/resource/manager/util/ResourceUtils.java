@@ -107,14 +107,4 @@ public class ResourceUtils {
         }
         return message;
     }
-
-    /**
-     * This method can be used to get Resource Manager Impl object.
-     *
-     * @return ResourceManagerImpl Object.
-     */
-    public static ResourceManager getResourceManager() {
-
-        return TenantResourceManagerDataHolder.getInstance().getResourceManager();
-    }
 }
