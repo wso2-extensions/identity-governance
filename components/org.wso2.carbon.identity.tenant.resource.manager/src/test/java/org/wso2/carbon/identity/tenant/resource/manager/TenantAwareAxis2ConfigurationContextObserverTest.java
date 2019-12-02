@@ -169,7 +169,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         when(EventPublisherServiceValueHolder.getOutputEventAdapterService()).thenReturn(outputEventAdapterService);
 
         ResourceManager resourceManager = new ResourceManagerImpl();
-        when(ResourceUtils.getResourceManager()).thenReturn(resourceManager);
+        when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
 
         when(tenantResourceManagerDataHolder.getEventPublisherService()).thenReturn(eventPublisherService);
         when(tenantResourceManagerDataHolder.getCarbonEventStreamService()).thenReturn(eventStreamService);
