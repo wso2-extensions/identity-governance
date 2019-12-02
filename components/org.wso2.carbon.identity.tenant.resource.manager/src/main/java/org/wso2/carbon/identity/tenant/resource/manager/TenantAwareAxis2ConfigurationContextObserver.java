@@ -118,6 +118,11 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                     .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
                 log.warn("Configuration store is disabled. Super tenant configuration will be used for the tenant "
                         + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
+            } else if (e.getErrorCode()
+                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FILES_DOES_NOT_EXISTS.getCode())) {
+                log.warn("Configuration store does not contain any files under resource publisher. Super tenant "
+                        + "configurations will be used for the tenant domain: " + PrivilegedCarbonContext
+                        .getThreadLocalCarbonContext().getTenantDomain());
             } else {
                 log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES,
                         PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
