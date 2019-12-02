@@ -43,7 +43,7 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
     private static final Log log = LogFactory.getLog(TenantResourceManagerServiceDS.class);
 
     /**
-     * Register IdentityEmailEventAdapterFactory as an OSGI service.
+     * Register Tenant Aware Axis2 Configuration Context Observer as an OSGI service.
      *
      * @param context OSGI service component context.
      */

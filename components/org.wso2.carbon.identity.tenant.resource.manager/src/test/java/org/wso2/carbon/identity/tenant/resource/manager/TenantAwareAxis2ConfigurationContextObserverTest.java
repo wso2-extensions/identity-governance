@@ -66,7 +66,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
 
     private static final String EMAIL_PUBLISHER = "EmailPublisher";
     private static final String SAMPLE_RESOURCE_FILE_TXT = "sample-resource-file.txt";
-    private static final String ADAPTER_TYPE = "email";
     private static final String TENANT_DOMAIN = "abc.com";
     private static final String TENANT_SPECIFIC_EMAIL_PUBLISHER = "TENANT_SPECIFIC_EMAIL_PUBLISHER";
     public static final int TENANT_ID = 1;
