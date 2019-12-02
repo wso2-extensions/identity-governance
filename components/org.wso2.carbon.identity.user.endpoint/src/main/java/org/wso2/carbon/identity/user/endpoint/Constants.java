@@ -29,9 +29,7 @@ public final class Constants {
     public static final String DEFAULT_RESPONSE_CONTENT_TYPE = APPLICATION_JSON;
     public static final String HEADER_CONTENT_TYPE = "Content-Type";
 
-
-
-    //default error messages
+    // Default error messages.
     public static final String STATUS_FORBIDDEN_MESSAGE_DEFAULT = "Forbidden";
     public static final String STATUS_NOT_FOUND_MESSAGE_DEFAULT = "Not Found";
     public static final String STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT = "Internal server error";
@@ -44,5 +42,11 @@ public final class Constants {
     public static final String STATUS_INTERNAL_SERVER_ERROR_DESCRIPTION_DEFAULT = "The server encountered "
             + "an internal error. Please contact administrator.";
     public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
+
+    // Response Configurations.
+    public static final String ENABLE_DETAILED_API_RESPONSE =
+            "SelfRegistration.API.EnableDetailedResponseBody";
+
+    public static final String EXTERNAL_NOTIFICATION_CHANNEL = "EXTERNAL";
 
 }

@@ -23,10 +23,14 @@ public class IdentityMgtConstants {
 
     private IdentityMgtConstants(){}
 
+    public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
+
     public class PropertyConfig {
 
         private PropertyConfig(){}
 
+        // Enable notification channel resolver.
+        public static final String RESOLVE_NOTIFICATION_CHANNELS = "Notification.ResolveNotificationChannels.Enable";
         public static final String CONFIG_FILE_NAME = "identity-mgt.properties";
         public static final String ACCOUNT_LOCK_ENABLE = "Account.Lock.Enable";
         public static final String AUTH_POLICY_ENABLE = "Authentication.Policy.Enable";
@@ -77,6 +81,52 @@ public class IdentityMgtConstants {
         public static final String FAIL_LOGIN_ATTEMPTS = "http://wso2.org/claims/identity/failedLoginAttempts";
         public static final String UNLOCKING_TIME = "http://wso2.org/claims/identity/unlockTime";
         public static final String ACCOUNT_LOCK = "http://wso2.org/claims/identity/accountLocked";
+        public static final String PREFERED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
+
+    }
+
+    public class NotificationChannelConstants {
+
+        private NotificationChannelConstants() {
+        }
+
+        public static final String DEFAULT_NOTIFICATION_CHANNEL = "Notification.DefaultNotificationChannel";
+    }
+
+    public enum ErrorMessages {
+
+        ERROR_CODE_DEFAULT_BAD_REQUEST("NCM-400", "Bad Request"),
+        ERROR_CODE_DEFAULT_SERVER_ERROR("NCM-500", "Internal Server Error"),
+        ERROR_CODE_DEFAULT_UNEXPECTED_ERROR("NCM-500", "Unexpected Error"),
+
+        // NCM - notification Channel Manager.
+        ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNEL("NCM-10001","Channel not supported"),
+        ERROR_CODE_NO_CLAIM_MATCHED_FOR_PREFERRED_CHANNEL("NCM-10002",
+                "No claim matched for preferred channel"),
+        ERROR_CODE_NO_NOTIFICATION_CHANNELS("NCM-10003","User has no notification channels"),
+        ERROR_CODE_BAD_REQUEST("NCM-10004", "Bad Request"),
+        ERROR_CODE_SERVER_ERROR("NCM-15001", "Server Error");
+
+        private final String code;
+        private final String message;
+
+        ErrorMessages(String code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        @Override
+        public String toString() {
+            return code + " - " + message;
+        }
 
     }
 }

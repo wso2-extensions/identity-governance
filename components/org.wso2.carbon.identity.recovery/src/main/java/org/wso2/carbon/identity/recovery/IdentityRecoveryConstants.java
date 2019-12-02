@@ -57,6 +57,7 @@ public class IdentityRecoveryConstants {
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
+    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
@@ -70,9 +71,15 @@ public class IdentityRecoveryConstants {
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
+    public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
 
-
+    public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
+    public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
+    public static final String SMS_TEMPLATE_PREFIX = "sms";
+    public static final String EMAIL_CHANNEL = "EMAIL";
+    public static final String SMS_CHANNEL = "SMS";
+    public static final String EXTERNAL_NOTIFICATION_CHANNEL = "EXTERNAL";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
@@ -81,6 +88,8 @@ public class IdentityRecoveryConstants {
     public static final String CALLBACK = "callback";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
     public static final String IS_USER_PORTAL_URL = "isUserPortalURL";
+    public static final int SMS_OTP_CODE_LENGTH = 6;
+    public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     private IdentityRecoveryConstants() {
     }
@@ -167,8 +176,19 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
                 " question %s of the set %s"),
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
-                ".");
+                "."),
 
+        // USR - User Self Registration.
+        ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS("USR-10001",
+                "User specified communication channel is not supported by the server"),
+        ERROR_CODE_PREFERRED_CHANNEL_VALUE_EMPTY("USR-10002",
+                "User specified communication channel does not have any value"),
+        ERROR_CODE_BAD_SELF_REGISTER_REQUEST("USR-10003",
+                "Bad Request"),
+
+        // UAV - User Account Verification.
+        ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
+                "Unsupported verification channel");
 
         private final String code;
         private final String message;
@@ -193,7 +213,57 @@ public class IdentityRecoveryConstants {
 
     }
 
+    /**
+     * Enum contains the status codes and status messages for successful user self registration scenarios.
+     */
+    public enum SuccessEvents {
+
+        SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_INTERNAL_VERIFICATION("USR-02001",
+                "Successful user self registration. Pending account verification."),
+        SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION("USR-02002",
+                "Successful user self registration. Pending External verification."),
+        SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_UNLOCKED_WITH_NO_VERIFICATION("USR-02003",
+                "Successful user self registration. Account verification not required."),
+        SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL("USR-02004",
+                "Successful user self registration with verified channel. "
+                        + "Account verification not required.");
+
+        private final String code;
+        private final String message;
+
+        SuccessEvents(String code, String message) {
+            this.code = code;
+            this.message = message;
+        }
+
+        /**
+         * Get the code of the SuccessEvents
+         *
+         * @return Code
+         */
+        public String getCode() {
+            return code;
+        }
+
+        /**
+         * Get the message of the success event.
+         *
+         * @return Message
+         */
+        public String getMessage() {
+            return message;
+        }
+
+        @Override
+        public String toString() {
+            return code + " - " + message;
+        }
+    }
+
     public static class ConnectorConfig {
+
+        public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
+                "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
@@ -218,6 +288,8 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "SelfRegistration" +
                 ".VerificationCode.ExpiryTime";
         public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
+        public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
+                "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";

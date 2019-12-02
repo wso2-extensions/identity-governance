@@ -13,7 +13,7 @@ info:
   contact:
     name: "WSO2"
     url: "http://wso2.com/products/identity-server/"
-    email: "architecture@wso2.com"
+    email: "architecture@wso2.org"
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -84,8 +84,7 @@ paths:
         201:
           description: Successfully created
           schema:
-            title: key
-            type: string
+            $ref: '#/definitions/SuccessfulUserCreation'
         400:
           description: Bad Request
           schema:
@@ -130,9 +129,11 @@ paths:
       description: |
          This API is used to validate the code used by self registered users.
       x-wso2-request: |
-       curl -k -v -X POST -H "Authorization: <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{ "code": "<validation_code>","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
+       curl -k -v -X POST -H "Authorization: <Base64Encoded_username:password>" -H "Content-Type: application/json"
+        -d '{ "code": "<validation_code>","verifiedChannel":{"type":<type>, "claim":<claim_uri},
+         "properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
       x-wso2-curl: |
-        curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","verifiedChannel":{"type":"SMS", "claim":"http://wso2.org/claims/mobile"},"properties": []}' "https://localhost:9443/api/identity/user/v1.0/validate-code"
 
       x-wso2-response: |
         "HTTP/1.1 202 Accepted"
@@ -356,9 +357,32 @@ paths:
           - Username Update
 
 definitions:
-#-----------------------------------------------------
-# The SelfRegistrationUser  Object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # SuccessfulUserCreation object
+  #-----------------------------------------------------
+  SuccessfulUserCreation:
+    type: object
+    properties:
+      code:
+        type: string
+        example: "USR-02007"
+        description: Status code of the operation.
+      message:
+        type: string
+        example: "successful user self registration"
+        description: Descriptive message regarding the operation.
+      notificationChannel:
+        type: string
+        example: "EMAIL"
+        description: Account confirmation notification sent channel.
+      confirmationCode:
+        type: string
+        example: ""
+        description: Confirmation code to verify the user, when notifications are externally managed. In this scenario, *notificationChannel* will be *EXTERNAL*. Use the confirmation code for confirm the user accounut.
+
+  #-----------------------------------------------------
+  # The SelfRegistrationUser  Object
+  #-----------------------------------------------------
   SelfRegistrationUser:
     type: object
     properties:
@@ -442,10 +466,28 @@ definitions:
     properties:
       code:
         type: string
+      verifiedChannel:
+        $ref: '#/definitions/VerifiedChannel'
       properties:
         type: array
         items:
           $ref: '#/definitions/Property'
+
+  #-----------------------------------------------------
+  # The VerifiedChannel  object
+  #-----------------------------------------------------
+  VerifiedChannel:
+    type: object
+    description: "Verified channel information"
+    properties:
+      type:
+        type: string
+        example: EMAIL
+        description: verified channel type
+      claim:
+        type: string
+        example: http://wso2.org/claims/emailaddress
+        description: verified channel claim
 
 #-----------------------------------------------------
 # The UsernameValidationRequest  object

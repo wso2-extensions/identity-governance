@@ -20,13 +20,13 @@ public class SelfRegistrationUserDTO  {
   
   private String username = null;
   
-  
+
   private String tenantDomain = null;
   
   
   private String realm = null;
-  
-  
+
+
   private String password = null;
   
   
@@ -56,7 +56,7 @@ public class SelfRegistrationUserDTO  {
     this.tenantDomain = tenantDomain;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -68,7 +68,7 @@ public class SelfRegistrationUserDTO  {
     this.realm = realm;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")

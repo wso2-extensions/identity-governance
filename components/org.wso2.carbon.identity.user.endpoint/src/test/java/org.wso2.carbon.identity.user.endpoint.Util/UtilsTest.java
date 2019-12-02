@@ -131,6 +131,12 @@ public class UtilsTest {
         assertEquals(Utils.getProperties(buildPropertyDTOs()).length, buildPropertyDTOs().size());
     }
 
+    @Test
+    public void testGetPropertiesMap(){
+        assertEquals(Utils.getPropertiesMap(null).size(),0);
+        assertEquals(Utils.getPropertiesMap(buildPropertyDTOs()).size(),1);
+    }
+
     private List<PropertyDTO> buildPropertyDTOs() {
 
         PropertyDTO propertyDTO = new PropertyDTO();

@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -40,6 +41,9 @@ import javax.ws.rs.core.Response;
 public class MeApiServiceImpl extends MeApiService {
 
     private static final Log LOG = LogFactory.getLog(MeApiServiceImpl.class);
+
+    // Default value for enabling API response.
+    private static final boolean ENABLE_DETAILED_API_RESPONSE = false;
 
     @Override
     public Response getMe() {
@@ -75,10 +79,11 @@ public class MeApiServiceImpl extends MeApiService {
                 .getUserSelfRegistrationManager();
         NotificationResponseBean notificationResponseBean = null;
         try {
-            notificationResponseBean = userSelfRegistrationManager.registerUser(
-                    Utils.getUser(selfUserRegistrationRequestDTO.getUser()), selfUserRegistrationRequestDTO.getUser().getPassword(),
-                    Utils.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
-                    Utils.getProperties(selfUserRegistrationRequestDTO.getProperties()));
+            notificationResponseBean = userSelfRegistrationManager
+                    .registerUser(Utils.getUser(selfUserRegistrationRequestDTO.getUser()),
+                            selfUserRegistrationRequestDTO.getUser().getPassword(),
+                            Utils.getClaims(selfUserRegistrationRequestDTO.getUser().getClaims()),
+                            Utils.getProperties(selfUserRegistrationRequestDTO.getProperties()));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while registering self up user ", e);
@@ -94,13 +99,68 @@ public class MeApiServiceImpl extends MeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (notificationResponseBean != null) {
-            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
-                return Response.status(Response.Status.CREATED).build();
-            }
-            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+        return buildSuccessfulAPIResponse(notificationResponseBean);
+    }
+
+    /**
+     * Build response for a successful user self registration.
+     *
+     * @param notificationResponseBean NotificationResponseBean {@link NotificationResponseBean}
+     * @return Response
+     */
+    private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
+
+        // Check whether detailed api responses are enabled.
+        if (isDetailedResponseBodyEnabled()) {
+            SuccessfulUserCreationDTO successfulUserCreationDTO = buildSuccessResponse(notificationResponseBean);
+            return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
         } else {
+            if (notificationResponseBean != null) {
+                String notificationChannel = notificationResponseBean.getNotificationChannel();
+
+                // If the notifications are required in the form of legacy response, and notifications are externally
+                // managed, the recoveryId should be in the response as text.
+                if (StringUtils.isNotEmpty(notificationChannel) && notificationChannel
+                        .equals(Constants.EXTERNAL_NOTIFICATION_CHANNEL)) {
+                    return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
+                            .build();
+                }
+            }
             return Response.status(Response.Status.CREATED).build();
+        }
+    }
+
+    /**
+     * Build the successResponseDTO for successful user identification and channel retrieve.
+     *
+     * @param notificationResponseBean NotificationResponseBean
+     * @return SuccessfulUserCreationDTO
+     */
+    private SuccessfulUserCreationDTO buildSuccessResponse(NotificationResponseBean notificationResponseBean) {
+
+        SuccessfulUserCreationDTO successDTO = new SuccessfulUserCreationDTO();
+        successDTO.setCode(notificationResponseBean.getCode());
+        successDTO.setMessage(notificationResponseBean.getMessage());
+        successDTO.setNotificationChannel(notificationResponseBean.getNotificationChannel());
+        successDTO.setConfirmationCode(notificationResponseBean.getRecoveryId());
+        return successDTO;
+    }
+
+    /**
+     * Reads configurations from the identity.xml and return whether the detailed response is enabled or not.
+     *
+     * @return True if the legacy response is enabled.
+     */
+    private boolean isDetailedResponseBodyEnabled() {
+
+        String enableDetailedResponseConfig= IdentityUtil
+                .getProperty(Constants.ENABLE_DETAILED_API_RESPONSE);
+        if(StringUtils.isEmpty(enableDetailedResponseConfig)){
+
+            // Return false if the user has not enabled the detailed response body.
+            return ENABLE_DETAILED_API_RESPONSE;
+        } else  {
+            return Boolean.parseBoolean(enableDetailedResponseConfig);
         }
     }
 }
