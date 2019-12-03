@@ -127,6 +127,7 @@
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
+        <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
 
         <module>service-stubs/identity</module>
 
@@ -140,6 +141,7 @@
         <module>features/org.wso2.carbon.identity.governance.feature</module>
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
+        <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -148,6 +150,20 @@
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>javax.servlet</artifactId>
                 <version>${equinox.javax.servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.analytics-common</groupId>
+                <artifactId>org.wso2.carbon.event.publisher.core</artifactId>
+                <version>${carbon.analytics.common.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>configuration-mgt</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
+                <version>${carbon.identity.framework.version}</version>
             </dependency>
 
             <!--Orbit Dependencies-->
@@ -484,11 +500,6 @@
                 <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
                 <version>${identity.data.publisher.authentication.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
-                <version>${apache.felix.scr.ds.annotations.version}</version>
-            </dependency>
             <!-- Pax Logging -->
             <dependency>
                 <groupId>org.ops4j.pax.logging</groupId>
@@ -574,6 +585,7 @@
 
         <osgi.framework.imp.pkg.version.range>[1.7.0, 2.0.0)</osgi.framework.imp.pkg.version.range>
         <osgi.service.component.imp.pkg.version.range>[1.2.0, 2.0.0)</osgi.service.component.imp.pkg.version.range>
+        <axis2.osgi.version.range>[1.6.1, 2.0.0)</axis2.osgi.version.range>
 
         <!--Orbit Version-->
         <axis2.wso2.version>1.6.1-wso2v38</axis2.wso2.version>
@@ -613,8 +625,8 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.14.78</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.14.67, 6.0.0)
+        <carbon.identity.framework.version>5.15.28</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[5.15.28, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
@@ -658,6 +670,9 @@
 
         <!-- Pax Logging Version -->
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
+
+        <carbon.analytics.common.version>5.2.15</carbon.analytics.common.version>
+        <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
     </properties>
 
 </project>
