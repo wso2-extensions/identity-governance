@@ -68,7 +68,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
     private static final String SAMPLE_RESOURCE_FILE_TXT = "sample-resource-file.txt";
     private static final String TENANT_DOMAIN = "abc.com";
     private static final String TENANT_SPECIFIC_EMAIL_PUBLISHER = "TENANT_SPECIFIC_EMAIL_PUBLISHER";
-    public static final int TENANT_ID = 1;
+    private static final int TENANT_ID = 1;
     private CustomCarbonEventPublisherService carbonEventPublisherService = new CustomCarbonEventPublisherService();
 
     @Mock
@@ -143,7 +143,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         resourceFile.setName(EMAIL_PUBLISHER);
         List<ResourceFile> resourceFiles = new ArrayList<>();
         resourceFiles.add(resourceFile);
-        when(configurationManager.getFiles(anyString())).thenReturn(resourceFiles);
+        when(configurationManager.getFiles(anyString(),anyInt())).thenReturn(resourceFiles);
 
         ResourceManager resourceManager = new ResourceManagerImpl();
         when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);

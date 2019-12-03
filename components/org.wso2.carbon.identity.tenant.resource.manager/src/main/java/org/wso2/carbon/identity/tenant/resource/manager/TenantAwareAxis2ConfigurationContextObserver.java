@@ -102,7 +102,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         List<ResourceFile> tenantSpecificPublisherFiles;
         try {
             tenantSpecificPublisherFiles = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                    .getFiles(PUBLISHER);
+                    .getFiles(PUBLISHER, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId());
             if (CollectionUtils.isNotEmpty(tenantSpecificPublisherFiles)) {
                 for (ResourceFile resourceFile : tenantSpecificPublisherFiles) {
                     if (log.isDebugEnabled()) {
@@ -119,7 +119,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                 log.warn("Configuration store is disabled. Super tenant configuration will be used for the tenant "
                         + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
             } else if (e.getErrorCode()
-                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FILES_DOES_NOT_EXISTS.getCode())) {
+                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_GET_FILES_BY_TENANT_ID.getCode())) {
                 log.warn("Configuration store does not contain any files under resource publisher. Super tenant "
                         + "configurations will be used for the tenant domain: " + PrivilegedCarbonContext
                         .getThreadLocalCarbonContext().getTenantDomain());
