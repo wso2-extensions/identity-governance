@@ -28,7 +28,9 @@ import org.wso2.carbon.event.stream.core.EventStreamConfiguration;
 import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
 import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resources;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
@@ -99,18 +101,18 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
      */
     private void loadTenantPublisherConfigurationFromConfigStore() {
 
-        List<ResourceFile> tenantSpecificPublisherFiles;
         try {
-            tenantSpecificPublisherFiles = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                    .getFiles(PUBLISHER, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId());
-            if (CollectionUtils.isNotEmpty(tenantSpecificPublisherFiles)) {
-                for (ResourceFile resourceFile : tenantSpecificPublisherFiles) {
+            List<Resource> resourcesByTypePublisher = TenantResourceManagerDataHolder.getInstance()
+                    .getConfigurationManager().getResourcesByType(PUBLISHER).getResources();
+            for (Resource resource : resourcesByTypePublisher) {
+                ResourceFile tenantSpecificPublisherFile = resource.getFiles().get(0);
+                if (tenantSpecificPublisherFile != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("File for publisher name: " + resourceFile.getName()
+                        log.debug("File for publisher name: " + tenantSpecificPublisherFile.getName()
                                 + " is available in the configuration store.");
                     }
                     TenantResourceManagerDataHolder.getInstance().getResourceManager()
-                            .addEventPublisherConfiguration(resourceFile);
+                            .addEventPublisherConfiguration(tenantSpecificPublisherFile);
                 }
             }
         } catch (ConfigurationManagementException e) {
@@ -119,9 +121,9 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
                 log.warn("Configuration store is disabled. Super tenant configuration will be used for the tenant "
                         + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
             } else if (e.getErrorCode()
-                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_GET_FILES_BY_TENANT_ID.getCode())) {
-                log.warn("Configuration store does not contain any files under resource publisher. Super tenant "
-                        + "configurations will be used for the tenant domain: " + PrivilegedCarbonContext
+                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCES_DOES_NOT_EXISTS.getCode())) {
+                log.warn("Configuration store does not contain any resources under resource type publisher. Super "
+                        + "tenant configurations will be used for the tenant domain: " + PrivilegedCarbonContext
                         .getThreadLocalCarbonContext().getTenantDomain());
             } else {
                 log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES,

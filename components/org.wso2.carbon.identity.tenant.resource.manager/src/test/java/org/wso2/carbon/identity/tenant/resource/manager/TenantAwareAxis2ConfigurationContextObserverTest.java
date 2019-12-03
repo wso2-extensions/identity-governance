@@ -36,7 +36,9 @@ import org.wso2.carbon.event.publisher.core.internal.ds.EventPublisherServiceVal
 import org.wso2.carbon.event.stream.core.EventStreamConfiguration;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resources;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManager;
 import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl;
@@ -156,6 +158,13 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         File sampleResourceFile = new File(getSamplesPath());
         InputStream fileStream = FileUtils.openInputStream(sampleResourceFile);
         when(configurationManager.getFileById(anyString(), anyString(), anyString())).thenReturn(fileStream);
+        Resources resources = new Resources();
+        Resource resource = new Resource();
+        resource.setFiles(resourceFiles);
+        List<Resource> resourceList = new ArrayList<Resource>();
+        resourceList.add(resource);
+        resources.setResources(resourceList);
+        when(configurationManager.getResourcesByType(anyString())).thenReturn(resources);
         when(eventStreamService.getStreamDefinition(anyString(), anyString())).thenReturn(streamDefinition);
         List<EventStreamConfiguration> eventStreamConfigurationsList = new ArrayList<>();
         EventStreamConfiguration eventStreamConfiguration = new EventStreamConfiguration();
