@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManager;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -58,6 +60,10 @@ public class IdentityMgtServiceComponent {
             context.getBundleContext().registerService(IdentityGovernanceService.class, identityGovernanceService,
                     null);
             IdentityMgtServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
+            DefaultNotificationChannelManager defaultNotificationChannelManager =
+                    new DefaultNotificationChannelManager();
+            context.getBundleContext()
+                    .registerService(NotificationChannelManager.class.getName(), defaultNotificationChannelManager, null);
 
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");

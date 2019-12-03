@@ -99,6 +99,10 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
 
                 Cache<String, UserIdentityClaim> cache = getCache();
                 if (cache != null) {
+                    UserIdentityClaim cachedUserIdentityDTO = cache.get(key);
+                    if (cachedUserIdentityDTO != null) {
+                        userIdentityDTO.getUserIdentityDataMap().putAll(cachedUserIdentityDTO.getUserIdentityDataMap());
+                    }
                     cache.put(key, userIdentityDTO);
                 }
             }

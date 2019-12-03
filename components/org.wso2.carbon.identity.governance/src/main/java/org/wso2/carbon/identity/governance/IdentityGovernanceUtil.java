@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -129,4 +130,18 @@ public class IdentityGovernanceUtil {
         return domainNameProperty;
     }
 
+    /**
+     * Reads configurations from the identity.xml and returns the default notification channel.
+     *
+     * @return Default channel for sending notifications
+     */
+    public static String getDefaultNotificationChannel() {
+
+        String defaultNotificationChannel = IdentityUtil
+                .getProperty(IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL);
+        if (StringUtils.isEmpty(defaultNotificationChannel)) {
+            return NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        }
+        return defaultNotificationChannel;
+    }
 }

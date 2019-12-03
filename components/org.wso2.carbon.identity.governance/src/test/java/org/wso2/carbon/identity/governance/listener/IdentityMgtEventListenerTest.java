@@ -154,11 +154,13 @@ public class IdentityMgtEventListenerTest {
         claimSet1.put("http://wso2.org/claims/email", "example1@wso2.com");
         claimSet1.put("http://wso2.org/claims/username", "john");
         claimSet1.put("http://wso2.org/claims/identity/accountLocked", "true");
+        claimSet1.put("http://wso2.org/claims/identity/preferredChannel","EMAIL");
 
         Map<String, String> claimSet2 = new HashMap<>();
         claimSet2.put("http://wso2.org/claims/identity/oidc", "oidc");
         claimSet2.put("http://wso2.org/claims/email", "example@wso2.com");
         claimSet2.put("http://wso2.org/claims/identity/accountLocked", "false");
+        claimSet2.put("http://wso2.org/claims/identity/preferredChannel","EMAIL");
 
         return new Object[][]{
                 {"admin", claimSet1, "myProfile"},
@@ -190,11 +192,13 @@ public class IdentityMgtEventListenerTest {
         claimSet1.put("http://wso2.org/claims/email", "example@wso2.com");
         claimSet1.put("http://wso2.org/claims/username", "john");
         claimSet1.put("http://wso2.org/claims/identity/accountLocked", "true");
+        claimSet1.put("http://wso2.org/claims/identity/preferredChannel","EMAIL");
 
         Map<String, String> claimSet2 = new HashMap<>();
         claimSet2.put("http://wso2.org/claims/identity/oidc", "oidc");
         claimSet2.put("http://wso2.org/claims/email", "john@wso2.com");
         claimSet2.put("http://wso2.org/claims/identity/accountLocked", "false");
+        claimSet1.put("http://wso2.org/claims/identity/preferredChannel","EMAIL");
 
         return new Object[][]{
                 {"admin", new String("admin"), roleList, claimSet1, "muProfile"},

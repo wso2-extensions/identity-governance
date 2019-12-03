@@ -70,17 +70,19 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                "Enable Self User Registration");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "Enable Self User Registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Internal Notification Management");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                "Enable reCaptcha");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Enable reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                "User self registration code expiry time");
+                "User self registration verification link expiry time");
+        nameMapping
+                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                        "User self registration SMS OTP expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
@@ -89,6 +91,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable self user registration");
@@ -100,8 +103,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable captcha verification during self registration");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes the user self registration verification mail would be valid.(Negative " +
-                        "value for infinite validity)");
+                "Set the number of minutes the user self registration verification mail would be valid");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                "Set the number of minutes that the SMS OTP would be valid");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
@@ -117,6 +122,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        properties
+                .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         return properties.toArray(new String[properties.size()]);
@@ -130,6 +137,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
+        String verificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         String selfSignUpProperty = IdentityUtil.getProperty(
@@ -142,6 +150,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         String verificationCodeExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        String verificationSMSOTPExpiryTimeProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
 
@@ -160,6 +170,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(verificationCodeExpiryTimeProperty)) {
             verificationCodeExpiryTime = verificationCodeExpiryTimeProperty;
         }
+        if (StringUtils.isNotEmpty(verificationSMSOTPExpiryTimeProperty)) {
+            verificationSMSOTPExpiryTime = verificationSMSOTPExpiryTimeProperty;
+        }
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
@@ -175,6 +188,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 verificationCodeExpiryTime);
+        defaultProperties
+                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                        verificationSMSOTPExpiryTime);
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));

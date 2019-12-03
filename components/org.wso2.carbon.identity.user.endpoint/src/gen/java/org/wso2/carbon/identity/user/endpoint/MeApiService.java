@@ -5,6 +5,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.*;
 
 import org.wso2.carbon.identity.user.endpoint.dto.ExportedUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 
 import java.util.List;

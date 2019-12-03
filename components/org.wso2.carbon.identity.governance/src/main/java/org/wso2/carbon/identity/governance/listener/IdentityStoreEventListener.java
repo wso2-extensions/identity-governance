@@ -19,17 +19,22 @@ package org.wso2.carbon.identity.governance.listener;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
@@ -50,15 +55,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
     public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+
         String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
                 this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
     }
 
-
     @Override
     public int getExecutionOrderId() {
+
         int orderId = getOrderId();
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
@@ -129,7 +135,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     /**
      * Persist the Identity Claims we added to thread local in doPreAddUser() operation after the user was
      * successfully added.
-     *
      *
      * @param userName
      * @param credential
@@ -420,4 +425,92 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
     }
 
+    @Override
+    public boolean doPostGetUsersClaimValues(String[] userNames, String[] claims, String profileName,
+                                             UserClaimSearchEntry[] userClaimSearchEntries) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener.");
+        }
+
+        // No need to separately handle if identity data store is user store based.
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
+        // Check if there are identity claims.
+        boolean containsIdentityClaims = false;
+        for (String claim : claims) {
+            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+                containsIdentityClaims = true;
+                break;
+            }
+        }
+
+        // If there are no identity claims, let it go.
+        if (!containsIdentityClaims) {
+            return true;
+        }
+
+        // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
+        UserStoreManager userStoreManager = getUserStoreManager();
+
+        for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
+
+            String username = userClaimSearchEntry.getUserName();
+
+            if (username == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Username found to be null while method doPostGetUsersClaimValues getting executed in " +
+                            "the IdentityStoreEventListener.");
+                }
+                continue;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
+                        "user: " + username);
+            }
+
+            if (userClaimSearchEntry.getClaims() == null) {
+                userClaimSearchEntry.setClaims(new HashMap<String, String>());
+            }
+
+            // There is/are identity claim/s load the dto.
+            UserIdentityClaim identityDTO = identityDataStore.load(userClaimSearchEntry.getUserName(), userStoreManager
+                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
+
+            // If no user identity data found, just continue.
+            if (identityDTO == null) {
+                continue;
+            }
+
+            // Data found, add the values for security questions and identity claims.
+            for (String claim : claims) {
+                if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
+                    userClaimSearchEntry.getClaims().put(claim, identityDTO.getUserIdentityDataMap().get(claim));
+                }
+            }
+        }
+        return true;
+    }
+
+    private UserStoreManager getUserStoreManager() throws UserStoreException {
+
+        RealmService realmService = IdentityMgtServiceDataHolder.getInstance().getRealmService();
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+
+        UserRealm userRealm;
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            throw new UserStoreException("Error occurred while retrieving user realm.", e);
+        }
+        return userRealm.getUserStoreManager();
+    }
 }
