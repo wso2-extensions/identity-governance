@@ -145,7 +145,6 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
         resourceFile.setName(EMAIL_PUBLISHER);
         List<ResourceFile> resourceFiles = new ArrayList<>();
         resourceFiles.add(resourceFile);
-        when(configurationManager.getFiles(anyString(),anyInt())).thenReturn(resourceFiles);
 
         ResourceManager resourceManager = new ResourceManagerImpl();
         when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
