@@ -35,6 +35,7 @@ public class NotificationChannelManagerException extends IdentityException {
      * @param message The detail message
      */
     public NotificationChannelManagerException(String message) {
+
         super(message);
         this.setErrorCode(getDefaultErrorCode());
     }
@@ -46,6 +47,7 @@ public class NotificationChannelManagerException extends IdentityException {
      * @param cause   The cause
      */
     public NotificationChannelManagerException(String message, Throwable cause) {
+
         super(message, cause);
         this.setErrorCode(getDefaultErrorCode());
     }
@@ -57,6 +59,7 @@ public class NotificationChannelManagerException extends IdentityException {
      * @param message   The detail message
      */
     public NotificationChannelManagerException(String errorCode, String message) {
+
         super(errorCode, message);
         this.setErrorCode(errorCode);
     }
@@ -69,6 +72,7 @@ public class NotificationChannelManagerException extends IdentityException {
      * @param throwable Throwable
      */
     public NotificationChannelManagerException(String errorCode, String message, Throwable throwable) {
+
         super(errorCode, message, throwable);
         this.setErrorCode(errorCode);
     }
@@ -82,7 +86,8 @@ public class NotificationChannelManagerException extends IdentityException {
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_UNEXPECTED_ERROR.getCode();
+            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_CHANNEL_MANAGER
+                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_UNEXPECTED_ERROR.getCode();
         }
         return errorCode;
     }

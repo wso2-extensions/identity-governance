@@ -139,16 +139,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     // Resolve event name.
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
 
-                    // Resolve template name.
-                    String templateName = resolveTemplateName(preferredChannel, userName, domainName, tenantDomain);
-
                     UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                             RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
 
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, templateName, secretKey, Utils.getArbitraryProperties(), eventName);
+                    triggerNotification(user, preferredChannel, secretKey, Utils.getArbitraryProperties(), eventName);
                 }
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while sending self sign up notification ", e);
@@ -172,34 +169,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             }
 
         }
-    }
-
-    /**
-     * Resolve the notification template name according to the notification channel.
-     *
-     * @param preferredChannel Notification channel
-     * @param userName         Username
-     * @param domainName       Domain name
-     * @param tenantDomain     Tenant domain name
-     * @return Resolved notification template name
-     */
-    private String resolveTemplateName(String preferredChannel, String userName, String domainName,
-            String tenantDomain) {
-
-        String templateName;
-        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(preferredChannel)) {
-            templateName = IdentityRecoveryConstants.SMS_TEMPLATE_PREFIX
-                    + IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM;
-        } else {
-            templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM;
-        }
-        if (log.isDebugEnabled()) {
-            String message = String
-                    .format("For user : %1$s in domain : %2$s, notification template : %3$s was used.",
-                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, templateName);
-            log.debug(message);
-        }
-        return templateName;
     }
 
     /**
@@ -421,14 +390,14 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     /**
      * Triggers notifications according to the given event name.
      *
-     * @param user                 User
-     * @param notificationTemplate Notification Template
-     * @param code                 Recovery code
-     * @param props                Event properties
-     * @param eventName            Name of the event
+     * @param user                User
+     * @param notificationChannel Notification channel
+     * @param code                Recovery code
+     * @param props               Event properties
+     * @param eventName           Name of the event
      * @throws IdentityRecoveryException Error triggering notifications
      */
-    private void triggerNotification(User user, String notificationTemplate, String code, Property[] props,
+    private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
         if (log.isDebugEnabled()) {
@@ -438,6 +407,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
 
         if (props != null && props.length > 0) {
             for (Property prop : props) {
@@ -447,7 +417,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, notificationTemplate);
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
