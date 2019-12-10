@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiParam;
 
 import org.wso2.carbon.identity.user.endpoint.dto.ExportedUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 
 import java.util.List;
@@ -31,9 +32,9 @@ public class MeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Export self user information", notes = "Returns the personal information of the authenticated user", response = ExportedUserDTO.class)
+    @io.swagger.annotations.ApiOperation(value = "Export self user information", notes = "This API is used to retrieve the personal information of the authenticated user.", response = ExportedUserDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "successful operation"),
+        @io.swagger.annotations.ApiResponse(code = 200, message = "Successful operation"),
         
         @io.swagger.annotations.ApiResponse(code = 401, message = "Unauthorized request") })
 
@@ -45,9 +46,9 @@ public class MeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Register User\n", notes = "This API is used to user self registration.\n", response = String.class)
+    @io.swagger.annotations.ApiOperation(value = "Register user\n", notes = "This API is used for user self registration.\n", response = SuccessfulUserCreationDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 201, message = "Successful created"),
+        @io.swagger.annotations.ApiResponse(code = 201, message = "Successfully created"),
         
         @io.swagger.annotations.ApiResponse(code = 400, message = "Bad Request"),
         
@@ -55,7 +56,7 @@ public class MeApi  {
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 
-    public Response mePost(@ApiParam(value = "It can be sent optional property parameters over email based on email template." ,required=true ) SelfUserRegistrationRequestDTO user)
+    public Response mePost(@ApiParam(value = "Sends optional property parameters over email based on an email template." ,required=true ) SelfUserRegistrationRequestDTO user)
     {
     return delegate.mePost(user);
     }

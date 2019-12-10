@@ -94,7 +94,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
             resultSet = prepStmt.executeQuery();
 
-            if (resultSet.next()) {
+            while (resultSet.next()) {
 
                 String userName = resultSet.getString(1);
 
@@ -123,8 +123,9 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     users.add(receiver);
                 }
             }
-
+            dbConnection.commit();
         } catch (SQLException e) {
+            DatabaseUtil.rollBack(dbConnection);
             if (log.isDebugEnabled()) {
                 log.debug("Using sql : " + sqlStmt);
             }

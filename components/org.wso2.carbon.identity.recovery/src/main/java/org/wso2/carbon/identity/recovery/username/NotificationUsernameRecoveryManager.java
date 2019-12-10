@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -54,6 +55,7 @@ import java.util.List;
 public class NotificationUsernameRecoveryManager {
 
     private static final Log log = LogFactory.getLog(NotificationUsernameRecoveryManager.class);
+    private static final String FORWARD_SLASH = "/";
 
     private static NotificationUsernameRecoveryManager instance = new NotificationUsernameRecoveryManager();
 
@@ -163,15 +165,12 @@ public class NotificationUsernameRecoveryManager {
                 return userName;
             }
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("No valid user found for the given criteria");
-            }
             boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
                     IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
 
             if (notifyUserExistence) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_NO_VALID_USERNAME, null);
+                        .ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND, null);
             } else {
                 return null;
             }
@@ -273,8 +272,6 @@ public class NotificationUsernameRecoveryManager {
             if (log.isDebugEnabled()) {
                 log.debug("There are more than one user in the result set : "  + Arrays.toString(resultedUserList));
             }
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY, null);
         }
         return userName;
     }
@@ -297,6 +294,17 @@ public class NotificationUsernameRecoveryManager {
         }
         try {
             if (userStoreManager != null) {
+                if (StringUtils.isNotBlank(value) && value.contains(FORWARD_SLASH)) {
+                    String extractedDomain = IdentityUtil.extractDomainFromName(value);
+                    UserStoreManager secondaryUserStoreManager = userStoreManager.
+                            getSecondaryUserStoreManager(extractedDomain);
+                    /* Some claims (Eg:- Birth date) can have "/" in claim values. But in user store level we are
+                      trying to extract the claim value and find the user store domain. Hence we are adding an extra
+                      "/" to the claim value to avoid such issues.*/
+                    if (secondaryUserStoreManager == null) {
+                        value = FORWARD_SLASH + value;
+                    }
+                }
                 userList = userStoreManager.getUserList(claim, value, null);
             }
             return userList;

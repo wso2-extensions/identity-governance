@@ -22,6 +22,7 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
@@ -30,6 +31,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -38,12 +40,22 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.ClaimManager;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -61,6 +73,23 @@ public class Utils {
 
     //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    //Error messages that are caused by password pattern violations
+    private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
+            .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL_BY_ADMIN.getCode(), UserCoreErrorConstants.ErrorMessages
+            .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode()};
+
+    private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
+
+    /**
+     * Get an instance of the NotificationChannelManager.
+     *
+     * @return Instance of the NotificationChannelManager
+     */
+    public static NotificationChannelManager getNotificationChannelManager() {
+        return (NotificationChannelManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getOSGiService(NotificationChannelManager.class, null);
+    }
 
     /**
      * @return
@@ -129,6 +158,25 @@ public class Utils {
         }
         return claimValue;
 
+    }
+
+
+    public static void removeClaimFromUserStoreManager(User user, String[] claims)
+            throws UserStoreException {
+
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        if (realmService.getTenantUserRealm(tenantId) != null) {
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        }
+
+        if (userStoreManager != null) {
+            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+        }
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -289,8 +337,8 @@ public class Utils {
             return challengeSetUri;
         }
 
-        int index = challengeSetUri.lastIndexOf("/");
-        return challengeSetUri.substring(index + 1);
+        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" );
+        return components.length > 1 ? components[1] : components[0];
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
@@ -368,4 +416,164 @@ public class Utils {
         return user;
     }
 
+    public static boolean validateCallbackURL(String callbackURL, String tenantDomain, String callbackRegexType)
+            throws IdentityEventException {
+
+        String callbackRegex = getConnectorConfig(callbackRegexType, tenantDomain);
+        if (callbackRegex != null && callbackURL.matches(callbackRegex)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static String getCallbackURLFromRegistration(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException, MalformedURLException {
+
+        if (properties == null) {
+            return null;
+        }
+        String callbackURL = null;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
+                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                break;
+            }
+        }
+
+        if (StringUtils.isNotBlank(callbackURL)) {
+                URL url = new URL(callbackURL);
+                callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
+                        .toString();
+        }
+        return callbackURL;
+    }
+
+    public static String getCallbackURL(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException, URISyntaxException {
+
+        if (properties == null) {
+            return null;
+        }
+        String callbackURL = null;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
+                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                break;
+            }
+        }
+
+        if (StringUtils.isNotBlank(callbackURL)) {
+            URI uri = new URI(callbackURL);
+            callbackURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null)
+                    .toString();
+        }
+        return callbackURL;
+    }
+
+    /**
+     * Extracts the boolean value of 'isUserPortalURL' from the properties.
+     *
+     * @param properties from the request
+     * @return the boolean value of 'isUserPortalURL'
+     */
+    public static boolean isUserPortalURL(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
+        if (properties == null) {
+            return false;
+        }
+
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.IS_USER_PORTAL_URL.equals(property.getKey())) {
+                return Boolean.parseBoolean(property.getValue());
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if the exception contains a password pattern violation message and act accordingly
+     *
+     * @param exception An UserStoreException
+     * @throws IdentityRecoveryClientException If exception's message contains a password pattern violation message
+     */
+    public static void checkPasswordPatternViolation(UserStoreException exception, User user)
+            throws IdentityRecoveryClientException {
+
+        if (StringUtils.isBlank(exception.getMessage())) {
+            return;
+        }
+        RealmConfiguration realmConfig = getRealmConfiguration(user);
+        String passwordErrorMessage = realmConfig.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG);
+        String exceptionMessage = exception.getMessage();
+        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) && StringUtils
+                .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
+                .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
+
+            String errorMessage = String.format(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD
+                            .getMessage(),
+                    realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
+
+            throw IdentityException.error(IdentityRecoveryClientException.class,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), errorMessage, exception);
+        }
+    }
+
+    /**
+     * Get RealmConfiguration by tenantId
+     *
+     * @param user User
+     * @return realmConfiguration RealmConfiguration of the given tenant
+     * @throws IdentityRecoveryClientException If fails
+     */
+    private static RealmConfiguration getRealmConfiguration(User user) throws IdentityRecoveryClientException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        UserStoreManager userStoreManager;
+        try {
+            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+        } catch (UserStoreException userStoreException) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
+                    null, userStoreException);
+        }
+
+        return ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
+                .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
+    }
+
+    /**
+     * Checks whether the accountState claim exists and returns true if the claim exists, else returns false.
+     *
+     * @param tenantDomain tenantDomain
+     * @return true if accountState claim exists else return false
+     * @throws IdentityEventException
+     */
+    public static boolean isAccountStateClaimExisting(String tenantDomain) throws IdentityEventException {
+
+        org.wso2.carbon.user.api.UserRealm userRealm = null;
+        ClaimManager claimManager = null;
+        boolean isExist = false;
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        if (realmService != null) {
+            try {
+                int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+                // Get tenant's user realm.
+                userRealm = realmService.getTenantUserRealm(tenantId);
+                if (userRealm != null) {
+                    // Get claim manager for manipulating attributes.
+                    claimManager = (ClaimManager) userRealm.getClaimManager();
+                    if (claimManager != null) {
+                        Claim claim = claimManager.getClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+                        if (claim != null) {
+                            isExist = true;
+                        }
+                    }
+                }
+            } catch (UserStoreException e) {
+                throw new IdentityEventException("Error while retrieving accountState claim from ClaimManager.", e);
+            }
+        }
+        return isExist;
+    }
 }

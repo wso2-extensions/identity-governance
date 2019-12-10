@@ -18,26 +18,38 @@
 
 package org.wso2.carbon.identity.user.endpoint.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.endpoint.Constants;
+import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.InternalServerErrorException;
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.exceptions.NotAcceptableException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.NotFoundException;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
+import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class Utils {
@@ -122,6 +134,56 @@ public class Utils {
     public static ConflictException buildConflictException(String description, String code) {
         ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_CONFLICT_MESSAGE_DEFAULT, code, description);
         return new ConflictException(errorDTO);
+    }
+
+    /**
+     * Throws a NotAcceptableException handling the error code and the message
+     *
+     * @param msg  detailed message of the exception
+     * @param code error code
+     * @throws NotAcceptableException
+     */
+    public static void handleNotAcceptable(String msg, String code) throws NotAcceptableException {
+
+        throw  buildNotAcceptableException(msg, code);
+    }
+
+    /**
+     * Returns a new NotAcceptableException
+     *
+     * @param description detailed message
+     * @param code        error code
+     * @return an instance of NotAcceptableException
+     */
+    public static NotAcceptableException buildNotAcceptableException(String description, String code) {
+
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_NOT_ACCEPTABLE_MESSAGE_DEFAULT, code, description);
+        return new NotAcceptableException(errorDTO);
+    }
+
+    /**
+     * Throws a NotFoundException handling the error code and the message
+     *
+     * @param msg  detailed message of the exception
+     * @param code error code
+     * @throws NotFoundException
+     */
+    public static void handleNotFound(String msg, String code) throws NotFoundException {
+
+        throw  buildNotFoundException(msg, code);
+    }
+
+    /**
+     * Returns a new NotFoundException
+     *
+     * @param description detailed message of the exception
+     * @param code        error code
+     * @return
+     */
+    public static NotFoundException buildNotFoundException(String description, String code) {
+
+        ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_NOT_FOUND_MESSAGE_DEFAULT, code, description);
+        return new NotFoundException(errorDTO);
     }
 
     /**
@@ -216,4 +278,73 @@ public class Utils {
         }
     }
 
+    /**
+     * Returns the OSGI service implementation of UsernameUpdateService {@link UsernameUpdateService}
+     *
+     * @return UsernameUpdateService {@link UsernameUpdateService} instance
+     */
+    public static UsernameUpdateService getUsernameUpdateService() {
+
+        try {
+            return (UsernameUpdateService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(UsernameUpdateService.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if the UsernameUpdateService is not registered properly.
+            throw new InternalServerErrorException("Error while retrieving UsernameUpdateService.", e);
+        }
+    }
+
+    /**
+     * Returns the OSGI service implementation of ResendConfirmationManager. {@link ResendConfirmationManager}
+     *
+     * @return ResendConfirmationManager {@link ResendConfirmationManager} instance.
+     */
+    public static ResendConfirmationManager getResendConfirmationManager() {
+
+        try {
+            return (ResendConfirmationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .getOSGiService(ResendConfirmationManager.class, null);
+        } catch (NullPointerException e) {
+            // Catching NPE since getOSGiService can throw NPE if ResendConfirmationManager is not registered properly.
+            throw new InternalServerErrorException("Error while retrieving ResendConfirmationManager.", e);
+        }
+    }
+
+    /**
+     * Gets user recovery data for a specific user.
+     *
+     * @param resendCodeRequestDTO resendCodeRequestDTO.
+     * @return User recovery data.
+     */
+    public static UserRecoveryData getUserRecoveryData(ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = null;
+        try {
+            userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    Utils.getUser(resendCodeRequestDTO.getUser()));
+        } catch (IdentityRecoveryException e) {
+            throw new InternalServerErrorException("Error in loading user recovery data for "
+                    + Utils.getUser(resendCodeRequestDTO.getUser()), e);
+        }
+
+        return userRecoveryData;
+    }
+
+    /**
+     * Create a map of properties.
+     *
+     * @param propertyDTOS Property DTOs in the API request {@link PropertyDTO}
+     * @return Map of properties
+     */
+    public static HashMap<String, String> getPropertiesMap(List<PropertyDTO> propertyDTOS) {
+
+        HashMap<String, String> propertiesMap = new HashMap<>();
+        if (propertyDTOS != null && propertyDTOS.size() > 0) {
+            for (PropertyDTO property : propertyDTOS) {
+                propertiesMap.put(property.getKey(), property.getValue());
+            }
+        }
+        return propertiesMap;
+    }
 }

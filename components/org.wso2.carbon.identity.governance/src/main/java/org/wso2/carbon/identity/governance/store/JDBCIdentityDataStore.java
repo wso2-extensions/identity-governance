@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
-    private static Log log = LogFactory.getLog(JDBCIdentityDataStore.class);
+    private static final Log log = LogFactory.getLog(JDBCIdentityDataStore.class);
 
     private static final String QUERY_FILTER_STRING_ANY = "*";
     private static final String SQL_FILTER_STRING_ANY = "%";
@@ -87,29 +87,25 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             } catch (SQLException e) {
                 throw IdentityException.error("Error occurred while checking if user existing", e);
             }
-            try {
-                if (isUserExists) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Key:" + key + ", Value:" + value + " updated for user:" + userName + " in " +
-                                "JDBCIdentityDataStore");
-                    }
-                    updateUserDataValue(userName, tenantId, key, value);
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Key:" + key + ", Value:" + value + " added for user:" + userName + " in " +
-                                "JDBCIdentityDataStore");
-                    }
-                    addUserDataValue(userName, tenantId, key, value);
+            if (isUserExists) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Key:" + key + ", Value:" + value + " updated for user:" + userName + " in "
+                            + "JDBCIdentityDataStore");
                 }
-            } catch (SQLException e) {
-                throw IdentityException.error("Error occurred while persisting user data", e);
+                updateUserDataValue(userName, tenantId, key, value);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Key:" + key + ", Value:" + value + " added for user:" + userName + " in "
+                            + "JDBCIdentityDataStore");
+                }
+                addUserDataValue(userName, tenantId, key, value);
             }
         }
     }
 
     private boolean isExistingUserDataValue(String userName, int tenantId, String key) throws SQLException {
 
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
         PreparedStatement prepStmt = null;
         ResultSet results;
         boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
@@ -128,7 +124,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             if (results.next()) {
                 return true;
             }
-            connection.commit();
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -137,7 +132,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
 
-    private void addUserDataValue(String userName, int tenantId, String key, String value) throws SQLException {
+    private void addUserDataValue(String userName, int tenantId, String key, String value) {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
@@ -149,7 +144,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             prepStmt.setString(3, key);
             prepStmt.setString(4, value);
             prepStmt.execute();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            log.error("Error occurred while persisting user data", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -157,7 +155,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
 
-    private void updateUserDataValue(String userName, int tenantId, String key, String value) throws SQLException {
+    private void updateUserDataValue(String userName, int tenantId, String key, String value) {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
@@ -175,7 +173,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             prepStmt.setString(3, userName);
             prepStmt.setString(4, key);
             prepStmt.executeUpdate();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            log.error("Error occurred while persisting user data", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -216,7 +217,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             while (results.next()) {
                 data.put(results.getString(1), results.getString(2));
             }
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
             if (log.isDebugEnabled()) {
                 log.debug("Retrieved identity data for:" + tenantId + ":" + userName);
                 for (Map.Entry<String, String> dataEntry : data.entrySet()) {
@@ -232,6 +233,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             }
             return dto;
         } catch (SQLException | UserStoreException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             log.error("Error while reading user identity data", e);
         } finally {
             IdentityDatabaseUtil.closeResultSet(results);
@@ -264,8 +266,9 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             prepStmt.setInt(1, tenantId);
             prepStmt.setString(2, userName);
             prepStmt.execute();
-            connection.commit();
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException | UserStoreException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw IdentityException.error("Error while reading user identity data", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
@@ -322,6 +325,9 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                         userNames.add(resultSet.getString("USER_NAME"));
                     }
                 }
+                IdentityDatabaseUtil.commitTransaction(connection);
+            } catch (SQLException e) {
+                IdentityDatabaseUtil.rollbackTransaction(connection);
             }
         } catch (SQLException | UserStoreException e) {
             throw new IdentityException("Error occurred while retrieving users from claim URI: " + claimUri, e);

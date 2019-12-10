@@ -31,6 +31,7 @@
 <%@ page import="org.wso2.carbon.utils.ServerConstants" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 
 <%
@@ -82,8 +83,11 @@
 
 
         ChallengeQuestion[] retrievedChallengeQuestions = proxy.getChallengeQuestionsForTenant(tenantDomain);
-        retrievedQuestions = Arrays.asList(retrievedChallengeQuestions);
-
+        if (retrievedChallengeQuestions != null) {
+            retrievedQuestions = Arrays.asList(retrievedChallengeQuestions);
+        } else {
+            retrievedQuestions = Collections.emptyList();
+        }
 
         if (removeSetId != null && removeSetId.trim().length() > 0) {
             for (ChallengeQuestion challengeQuestion : retrievedQuestions) {

@@ -17,13 +17,13 @@ public class UserDTO  {
   
   private String username = null;
   
-  
+
   private String tenantDomain = null;
-  
+
   
   private String realm = null;
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -47,7 +47,7 @@ public class UserDTO  {
     this.tenantDomain = tenantDomain;
   }
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -59,7 +59,7 @@ public class UserDTO  {
     this.realm = realm;
   }
 
-  
+
 
   @Override
   public String toString()  {

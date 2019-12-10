@@ -1,0 +1,21 @@
+{
+  "recaptcha.site_key": [
+    {
+      "if": {
+        "recaptcha.enabled": true
+      },
+      "regex": ".+",
+      "error_message": "Recaptcha site key is required."
+    }
+  ],
+
+  "recaptcha.secret_key": [
+    {
+      "if": {
+        "recaptcha.enabled": true
+      },
+      "regex": ".+",
+      "error_message": "Recaptcha secret key is required."
+    }
+  ]
+}

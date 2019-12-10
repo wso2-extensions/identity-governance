@@ -68,7 +68,6 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
 
         ResultSet resultSet = null;
         try {
-            connection.setAutoCommit(false);
             prepStmt1 = connection.prepareStatement(PasswordHistoryConstants.SQLQueries.LOAD_HISTORY_DATA);
             prepStmt1.setString(1, user.getUserName());
             prepStmt1.setString(2, user.getUserStoreDomain());
@@ -100,14 +99,9 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             prepStmt3.setString(5, preparePassword(credential.toString(), saltValue));
             prepStmt3.setTimestamp(6, new Timestamp(new java.util.Date().getTime()));
             prepStmt3.execute();
-            connection.commit();
-
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException e1) {
-                throw new IdentityPasswordHistoryException("Error while rollback password history storing", e1);
-            }
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw new IdentityPasswordHistoryException("Error while storing password history", e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt1);
@@ -123,16 +117,15 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         PreparedStatement prepStmt = null;
         try {
-            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(PasswordHistoryConstants.SQLQueries
                     .DELETE_USER_HISTORY);
             prepStmt.setString(1, user.getUserName());
             prepStmt.setString(2, user.getUserStoreDomain());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             prepStmt.execute();
-            connection.commit();
-
+            IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
             throw new IdentityPasswordHistoryException("Error while removing password history date from user :" +
                     user.getUserName(), e);
         } finally {
@@ -149,12 +142,11 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             return true;
         }
 
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
         int storedHistoryCount = 0;
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         try {
-            connection.setAutoCommit(false);
             prepStmt = connection.prepareStatement(PasswordHistoryConstants.SQLQueries
                     .LOAD_HISTORY_DATA);
             prepStmt.setString(1, user.getUserName());
@@ -171,7 +163,6 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
                     }
                 }
             }
-
         } catch (SQLException e) {
             throw new IdentityPasswordHistoryException("Error while validating password history", e);
         } finally {

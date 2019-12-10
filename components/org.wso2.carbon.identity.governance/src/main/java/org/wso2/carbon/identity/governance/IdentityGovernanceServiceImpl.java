@@ -24,12 +24,14 @@ import org.wso2.carbon.identity.application.common.model.IdentityProviderPropert
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,13 +39,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
 
-    /**
-     * Store the configurations of a tenant in cache and database
-     *
-     * @param tenantDomain             Domain name of the tenant
-     * @param configurationDetails Configurations belong to the tenant
-     */
-    public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails) throws IdentityGovernanceException {
+    public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
+            throws IdentityGovernanceException {
 
         try {
             IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
@@ -75,9 +72,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
             for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
                 if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
-                        ()) || IdentityApplicationConstants.NAME.equals(authenticatorConfig.getName()) ||
-                        IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
-                                .getName())) {
+                        ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
+                        .getName())) {
                     configsToSave.add(authenticatorConfig);
                 }
             }
@@ -90,12 +86,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     }
 
-    /**
-     * Get the configurations of a tenant from cache or database
-     *
-     * @param tenantDomain Domain name of the tenant
-     * @return Configurations belong to the tenant
-     */
     @Override
     public Property[] getConfiguration(String tenantDomain) throws IdentityGovernanceException {
 
@@ -111,7 +101,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         Property[] configMap = new Property[identityMgtProperties.length];
         int index = 0;
         for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
-            if (IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY.equals(identityMgtProperty.getName())) {
+            if (IdentityEventConstants.PropertyConfig.ALREADY_WRITTEN_PROPERTY_KEY
+                    .equals(identityMgtProperty.getName())) {
                 continue;
             }
             Property property = new Property();
@@ -120,6 +111,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             configMap[index] = property;
             index++;
         }
+
         return configMap;
     }
 
@@ -143,7 +135,97 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     }
 
     public List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException {
+
         return IdentityMgtServiceDataHolder.getInstance().getIdentityGovernanceConnectorList();
+    }
+
+    public List<ConnectorConfig> getConnectorListWithConfigs(String tenantDomain) throws IdentityGovernanceException {
+
+        List<IdentityConnectorConfig> list = IdentityMgtServiceDataHolder.getInstance()
+                .getIdentityGovernanceConnectorList();
+        Property[] properties = this.getConfiguration(tenantDomain);
+        List<ConnectorConfig> configs = new ArrayList<>(list.size());
+        String[] connectorProperties;
+        for (int i = 0; i < list.size(); i++) {
+            ConnectorConfig config = new ConnectorConfig();
+            Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
+            Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+            config.setFriendlyName(list.get(i).getFriendlyName());
+            config.setName(list.get(i).getName());
+            config.setCategory(list.get(i).getCategory());
+            config.setSubCategory(list.get(i).getSubCategory());
+            config.setOrder(list.get(i).getOrder());
+            connectorProperties = list.get(i).getPropertyNames();
+            Property[] configProperties = new Property[connectorProperties.length];
+            for (int j = 0; j < connectorProperties.length; j++) {
+                for (Property property : properties) {
+                    if (connectorProperties[j].equals(property.getName())) {
+                        configProperties[j] = property;
+                        configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
+                        configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        break;
+                    }
+                }
+            }
+            config.setProperties(configProperties);
+            configs.add(i, config);
+        }
+        return configs;
+    }
+
+    public Map<String, List<ConnectorConfig>> getCategorizedConnectorListWithConfigs(String tenantDomain)
+            throws IdentityGovernanceException {
+
+        List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
+
+        Map<String, List<ConnectorConfig>> categorizedConnectorListWithConfigs = new HashMap<>();
+        if (connectorListWithConfigs != null) {
+            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+                String category = connectorConfig.getCategory();
+                if (categorizedConnectorListWithConfigs.get(category) == null) {
+                    List<ConnectorConfig> categorizedConnectors = new ArrayList<>();
+                    categorizedConnectors.add(connectorConfig);
+                    categorizedConnectorListWithConfigs.put(category, categorizedConnectors);
+                } else {
+                    categorizedConnectorListWithConfigs.get(category).add(connectorConfig);
+                }
+            }
+        }
+
+        return categorizedConnectorListWithConfigs;
+    }
+
+    public List<ConnectorConfig> getConnectorListWithConfigsByCategory(String tenantDomain,
+                                                                       String category)
+            throws IdentityGovernanceException {
+
+        List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
+
+        List<ConnectorConfig> categorizedConnectorListWithConfigs = new ArrayList<>();
+        if (connectorListWithConfigs != null) {
+            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+                if (connectorConfig.getCategory().equals(category)) {
+                    categorizedConnectorListWithConfigs.add(connectorConfig);
+                }
+            }
+        }
+
+        return categorizedConnectorListWithConfigs;
+    }
+
+    public ConnectorConfig getConnectorWithConfigs(String tenantDomain,
+                                                   String connectorName) throws IdentityGovernanceException {
+
+        List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
+
+        if (connectorListWithConfigs != null) {
+            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+                if (connectorConfig.getName().equals(connectorName)) {
+                    return connectorConfig;
+                }
+            }
+        }
+        return null;
     }
 
 }

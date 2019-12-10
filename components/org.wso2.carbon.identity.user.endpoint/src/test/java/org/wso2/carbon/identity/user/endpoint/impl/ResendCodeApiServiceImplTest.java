@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
@@ -53,6 +54,9 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @Mock
     private NotificationResponseBean notificationResponseBean;
 
+    @Mock
+    private UserRecoveryData userRecoveryData;
+
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
 
@@ -65,7 +69,16 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenReturn(notificationResponseBean);
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
-        assertEquals(resendCodeApiService.resendCodePost(null).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(emptyResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(multipleResendCodeRequestDTO()).getStatus(), 201);
+
+        when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 201);
+
+        when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(userRecoveryData);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(), 201);
     }
 
     @Test
@@ -115,6 +128,57 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         return resendCodeRequestDTO;
     }
 
+    private ResendCodeRequestDTO emptyResendCodeRequestDTO() {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        UserDTO userDTO = new UserDTO();
+        resendCodeRequestDTO.setUser(userDTO);
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        resendCodeRequestDTO.setProperties(listProperty);
+        return resendCodeRequestDTO;
+    }
+
+    private ResendCodeRequestDTO emptyPropertyResendCodeRequestDTO() {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        resendCodeRequestDTO.setUser(buildUserDTO());
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        resendCodeRequestDTO.setProperties(listProperty);
+        return resendCodeRequestDTO;
+    }
+
+    private ResendCodeRequestDTO multipleResendCodeRequestDTO() {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        resendCodeRequestDTO.setUser(buildUserDTO());
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        listProperty.add(buildPropertyDTO());
+        listProperty.add(buildPropertyDTO());
+        resendCodeRequestDTO.setProperties(listProperty);
+        return resendCodeRequestDTO;
+    }
+
+    private ResendCodeRequestDTO duplicateScenarioResendCodeRequestDTO() {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        resendCodeRequestDTO.setUser(buildUserDTO());
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        listProperty.add(recoveryScenarioPropertyDTO());
+        listProperty.add(recoveryScenarioPropertyDTO());
+        resendCodeRequestDTO.setProperties(listProperty);
+        return resendCodeRequestDTO;
+    }
+
+    private ResendCodeRequestDTO recoveryScenarioResendCodeRequestDTO() {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        resendCodeRequestDTO.setUser(buildUserDTO());
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        listProperty.add(recoveryScenarioPropertyDTO());
+        resendCodeRequestDTO.setProperties(listProperty);
+        return resendCodeRequestDTO;
+    }
+
     private UserDTO buildUserDTO() {
 
         UserDTO userDTO = new UserDTO();
@@ -129,6 +193,14 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         PropertyDTO propertyDTO = new PropertyDTO();
         propertyDTO.setKey("TestKey");
         propertyDTO.setKey("TestValue");
+        return propertyDTO;
+    }
+
+    private PropertyDTO recoveryScenarioPropertyDTO() {
+
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setKey("RecoveryScenario");
+        propertyDTO.setValue("ASK_PASSWORD");
         return propertyDTO;
     }
 }

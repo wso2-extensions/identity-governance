@@ -23,35 +23,159 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
 public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
+    private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
 
     @Override
     public Response resendCodePost(ResendCodeRequestDTO resendCodeRequestDTO) {
 
-        String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+        String tenantFromContext = getTenantDomainFromContext();
 
         if(StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
 
+        NotificationResponseBean notificationResponseBean = null;
+        List<PropertyDTO> recoveryScenarioProperty = resendCodeRequestDTO.getProperties();
+
+        if (recoveryScenarioProperty.isEmpty()) {
+            notificationResponseBean = doResendConfirmationCodeForSelfSignUp(notificationResponseBean,
+                    resendCodeRequestDTO);
+        } else {
+            String recoveryScenario = validateRecoveryScenarioPropertyList(recoveryScenarioProperty);
+            if (recoveryScenario != null) {
+                notificationResponseBean = doResendConfirmationCode(recoveryScenario, notificationResponseBean,
+                        resendCodeRequestDTO);
+            }
+        }
+
+        if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
+            return Response.status(Response.Status.CREATED).build();
+        }
+        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+    }
+
+    private String validateRecoveryScenarioPropertyList(List<PropertyDTO> recoveryScenarioProperty) {
+
+        String recoveryScenario = null;
+        Map<String, List<PropertyDTO>> filteredList =
+                recoveryScenarioProperty.stream().collect(Collectors.groupingBy(PropertyDTO::getKey));
+
+        if (!filteredList.containsKey(RECOVERY_SCENARIO_KEY) || filteredList.get(RECOVERY_SCENARIO_KEY).size() > 1) {
+            return recoveryScenario;
+        } else {
+            recoveryScenario = filteredList.get(RECOVERY_SCENARIO_KEY).get(0).getValue();
+        }
+
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario)) {
+            return recoveryScenario;
+        }
+
+        return recoveryScenario;
+    }
+
+    private NotificationResponseBean doResendConfirmationCode(String recoveryScenario,
+                                                              NotificationResponseBean notificationResponseBean,
+                                                              ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO);
+        if (userRecoveryData == null) {
+            return notificationResponseBean;
+        }
+
+        ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.ASK_PASSWORD.toString(), RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_PASSWORD_RESET, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.
+                equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET,
+                    resendCodeRequestDTO);
+        } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
+                equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP,
+                    resendCodeRequestDTO);
+        }
+
+        return notificationResponseBean;
+    }
+
+    private NotificationResponseBean setNotificationResponseBean(ResendConfirmationManager resendConfirmationManager,
+                                                                 String recoveryScenario, String recoveryStep,
+                                                                 String notificationType,
+                                                                 ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        NotificationResponseBean notificationResponseBean = null;
+        try {
+            notificationResponseBean =
+                    resendConfirmationManager.resendConfirmationCode(Utils.getUser(resendCodeRequestDTO.getUser()),
+                            recoveryScenario, recoveryStep, notificationType,
+                            Utils.getProperties(resendCodeRequestDTO.getProperties()));
+        } catch (IdentityRecoveryException e) {
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+        }
+
+        return notificationResponseBean;
+    }
+
+    private NotificationResponseBean doResendConfirmationCodeForSelfSignUp(
+            NotificationResponseBean notificationResponseBean, ResendCodeRequestDTO resendCodeRequestDTO) {
+
         UserSelfRegistrationManager userSelfRegistrationManager = Utils
                 .getUserSelfRegistrationManager();
-        NotificationResponseBean notificationResponseBean = null;
         try {
             notificationResponseBean = userSelfRegistrationManager.resendConfirmationCode(
                     Utils.getUser(resendCodeRequestDTO.getUser()),
                     Utils.getProperties(resendCodeRequestDTO.getProperties()));
-
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resending self sign-up confirmation code ", e);
@@ -63,13 +187,22 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (notificationResponseBean != null) {
-            if (StringUtils.isBlank(notificationResponseBean.getKey())) {
-                return Response.status(Response.Status.CREATED).build();
-            }
-            return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
-        } else {
-            return Response.status(Response.Status.CREATED).build();
-        }
+
+        return notificationResponseBean;
     }
+
+    private String getTenantDomainFromContext() {
+
+        String tenantDomain = null;
+        if (IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT) != null) {
+            tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+        }
+
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
+        return tenantDomain;
+    }
+
 }

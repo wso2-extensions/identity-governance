@@ -45,6 +45,11 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
+import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -69,9 +74,13 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +118,20 @@ public class UserSelfRegistrationManager {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
+        // Callback URL validation
+        String callbackURL = null;
+        try {
+            callbackURL = Utils.getCallbackURLFromRegistration(properties);
+            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                    IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            }
+        } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    callbackURL);
+        }
+
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("registerUser :Tenant domain is not in the request. set to default for user : " +
@@ -127,14 +150,7 @@ public class UserSelfRegistrationManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
                     .getUserName());
         }
-
-        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
-        boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
-
-        NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
-
+        NotificationResponseBean notificationResponseBean;
         try {
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
@@ -159,6 +175,8 @@ public class UserSelfRegistrationManager {
             Utils.setArbitraryProperties(properties);
             validateAndFilterFromReceipt(consent, claimsMap);
 
+            // User preferred notification channel.
+            String preferredChannel;
             try {
 
                 //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
@@ -166,15 +184,26 @@ public class UserSelfRegistrationManager {
                     Permission permission = new Permission("/permission/admin/login", IdentityRecoveryConstants.EXECUTE_ACTION);
                     userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null, new Permission[]{permission});
                 }
-
                 String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
-
-                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
-                        password, userRoles, claimsMap, null);
-
+                try {
+                    NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
+                    preferredChannel = notificationChannelManager
+                            .resolveCommunicationChannel(user.getUserName(), user.getTenantDomain(),
+                                    user.getUserStoreDomain(), claimsMap);
+                } catch (NotificationChannelManagerException e) {
+                    throw mapNotificationChannelManagerException(e, user);
+                }
+                // If the preferred channel value is not in the claims map, add the value to  claims map if the
+                // resolved channel is not empty.
+                if (StringUtils.isEmpty(claimsMap.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM)) && StringUtils
+                        .isNotEmpty(preferredChannel)) {
+                    claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
+                }
+                userStoreManager
+                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), password,
+                                userRoles, claimsMap, null);
             } catch (UserStoreException e) {
                 Throwable cause = e;
-
                 while (cause != null) {
                     if (cause instanceof PolicyViolationException) {
                         throw IdentityException.error(IdentityRecoveryClientException.class,
@@ -182,34 +211,204 @@ public class UserSelfRegistrationManager {
                     }
                     cause = cause.getCause();
                 }
+                Utils.checkPasswordPatternViolation(e, user);
 
-                if (e.getMessage() != null && e.getMessage().contains("UserAlreadyExisting:")) {
-                    throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
-                } else {
-                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
-                }
+                return handleClientException(user, e);
             }
             addUserConsent(consent, tenantDomain);
 
-            if (!isNotificationInternallyManage && isAccountLockOnCreation) {
-                UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-                userRecoveryDataStore.invalidate(user);
-
-                String secretKey = UUIDGenerator.generateUUID();
-                UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                        .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
-
-                userRecoveryDataStore.store(recoveryDataDO);
-                notificationResponseBean.setKey(secretKey);
-            }
-
-            //isNotificationInternallyManage == true,  will be handled in UserSelfRegistration Handler
-
+            // Build the notification response.
+            notificationResponseBean = buildNotificationResponseBean(user, preferredChannel, claimsMap);
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Build the notification response bean.
+     *
+     * @param user             User
+     * @param preferredChannel User preferred channel
+     * @param claimsMap        Claim map of the user
+     * @return NotificationResponseBean object
+     * @throws IdentityRecoveryException Error while building the response.
+     */
+    private NotificationResponseBean buildNotificationResponseBean(User user, String preferredChannel,
+            Map<String, String> claimsMap) throws IdentityRecoveryException {
+
+        boolean isAccountLockOnCreation = Boolean.parseBoolean(
+                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                        user.getTenantDomain()));
+        boolean isNotificationInternallyManage = Boolean.parseBoolean(
+                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                        user.getTenantDomain()));
+
+        // Check whether the preferred channel is already verified. In this case no need to send confirmation
+        // mails.
+        boolean preferredChannelVerified = isPreferredChannelVerified(user.getUserName(), preferredChannel, claimsMap);
+        NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
+
+        // If the channel is already verified, no need to lock the account or ask to verify the account
+        // since, the notification channel is already verified.
+        if (preferredChannelVerified) {
+            notificationResponseBean.setCode(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL.getCode());
+            notificationResponseBean.setMessage(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL.getMessage());
+        } else if (isNotificationInternallyManage && isAccountLockOnCreation) {
+
+            // When the channel is not verified, notifications are internally managed and account is locked
+            // on creating, API should ask the user to verify the user account and and notification channel.
+            notificationResponseBean.setCode(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_INTERNAL_VERIFICATION.getCode());
+            notificationResponseBean.setMessage(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_INTERNAL_VERIFICATION.getMessage());
+            notificationResponseBean.setNotificationChannel(preferredChannel);
+        } else if (!isAccountLockOnCreation) {
+
+            // When the preferred channel is not verified and account is not locked on user creation, response needs to
+            // convey that no verification is needed.
+            // In this scenario notification managed mechanism will not effect.
+            notificationResponseBean.setCode(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_UNLOCKED_WITH_NO_VERIFICATION.getCode());
+            notificationResponseBean.setMessage(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_UNLOCKED_WITH_NO_VERIFICATION.getMessage());
+        } else {
+            // When the notification is externally managed and the account is locked on user creation.
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            userRecoveryDataStore.invalidate(user);
+
+            String secretKey = UUIDGenerator.generateUUID();
+            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.SELF_SIGN_UP,
+                    RecoverySteps.CONFIRM_SIGN_UP);
+            recoveryDataDO.setRemainingSetIds(IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL);
+
+            userRecoveryDataStore.store(recoveryDataDO);
+            notificationResponseBean.setCode(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getCode());
+            notificationResponseBean.setMessage(IdentityRecoveryConstants.SuccessEvents.
+                    SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getMessage());
+            notificationResponseBean.setRecoveryId(secretKey);
+            notificationResponseBean.setNotificationChannel(IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL);
+
+            // Populate the key variable in response bean to maintain backward compatibility.
+            notificationResponseBean.setKey(secretKey);
+        }
+        return notificationResponseBean;
+    }
+
+    private NotificationResponseBean handleClientException(User user, UserStoreException e) throws
+            IdentityRecoveryException {
+
+        if (StringUtils.isEmpty(e.getMessage())) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("31301")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USERNAME_POLICY_VIOLATED, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("PasswordInvalidAsk")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_PASSWORD_POLICY_VIOLATED, StringUtils.EMPTY, e);
+        }
+
+        if (e.getMessage().contains("UserAlreadyExisting:")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USER_ALREADY_EXISTS, user.getUserName(), e);
+        }
+
+        if (e.getMessage().contains("Invalid Domain")) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
+        }
+
+        throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+    }
+
+    /**
+     * Maps the errors thrown during channel resolving with the scenarios in the user self registration process.
+     *
+     * @param e    Exception
+     * @param user User
+     * @throws IdentityRecoveryException Exception
+     */
+    private IdentityRecoveryException mapNotificationChannelManagerException(NotificationChannelManagerException e,
+            User user) throws IdentityRecoveryException {
+
+        // Check error is due to not providing preferred channel values.
+        if (StringUtils.isNotEmpty(e.getErrorCode()) && e.getErrorCode()
+                .equals(IdentityMgtConstants.ErrorMessages.ERROR_CODE_NO_CLAIM_MATCHED_FOR_PREFERRED_CHANNEL
+                        .getCode())) {
+            return Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PREFERRED_CHANNEL_VALUE_EMPTY,
+                    user.getUserName(), e);
+        }
+        // Check whether the error is due to unsupported preferred channel.
+        if (StringUtils.isNotEmpty(e.getErrorCode()) && e.getErrorCode()
+                .equals(IdentityMgtConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNEL.getCode())) {
+            return Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS,
+                    user.getUserName(), e);
+        }
+        return Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_BAD_SELF_REGISTER_REQUEST,
+                user.getUserName(), e);
+    }
+
+    /**
+     * Checks whether the notification channel is already verified for the user.
+     *
+     * @param username            Username
+     * @param notificationChannel Notification channel
+     * @param claimsMap           Properties related to the event
+     * @return True if the channel is already verified
+     * @throws IdentityRecoveryClientException Error while getting the notification channel
+     */
+    private boolean isPreferredChannelVerified(String username, String notificationChannel,
+            Map<String, String> claimsMap) throws IdentityRecoveryClientException {
+
+        boolean isEnableAccountLockForVerifiedPreferredChannelEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL));
+        if (!isEnableAccountLockForVerifiedPreferredChannelEnabled) {
+            NotificationChannels channel = getNotificationChannel(username, notificationChannel);
+
+            // Get the matching claim uri for the channel.
+            String verifiedClaimUri = channel.getVerifiedClaimUrl();
+
+            // Get the verified status for given channel.
+            String verifiedStatus = claimsMap.get(verifiedClaimUri);
+            return StringUtils.isNotEmpty(verifiedStatus) && Boolean.parseBoolean(verifiedStatus);
+        }
+        return false;
+    }
+
+    /**
+     * Get the NotificationChannels object which matches the given channel type.
+     *
+     * @param username            Username
+     * @param notificationChannel Notification channel
+     * @return NotificationChannels object
+     * @throws IdentityRecoveryClientException Unsupported channel type
+     */
+    private NotificationChannels getNotificationChannel(String username, String notificationChannel)
+            throws IdentityRecoveryClientException {
+
+        NotificationChannels channel;
+        try {
+            channel = NotificationChannels.getNotificationChannel(notificationChannel);
+        } catch (NotificationChannelManagerClientException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Unsupported channel type : " + notificationChannel, e);
+            }
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS, username, e);
+        }
+        return channel;
     }
 
     /**
@@ -315,6 +514,16 @@ public class UserSelfRegistrationManager {
 
     }
 
+    /**
+     * This method is deprecated.
+     *
+     * @since 1.1.37
+     * @deprecated Additional properties cannot be passed in to the method.
+     * Use
+     * {@link
+     * org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager#confirmUserSelfRegistration
+     * (String, Map, String, String)}
+     */
     public void confirmUserSelfRegistration(String code) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -369,7 +578,248 @@ public class UserSelfRegistrationManager {
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
+    }
 
+    /**
+     * Confirms the user self registration by validating the confirmation code and sets externally verified claims.
+     *
+     * @param code                 Confirmation code
+     * @param verifiedChannelType  Type of the verified channel
+     * @param verifiedChannelClaim Claim associated with verified channel
+     * @param properties           Properties sent with the validate code request
+     * @throws IdentityRecoveryException Error validating the confirmation code
+     */
+    public void confirmUserSelfRegistration(String code, String verifiedChannelType,
+            String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
+        UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
+        User user = recoveryData.getUser();
+
+        // Validate context tenant domain name with user tenant domain.
+        validateContextTenantDomainWithUserTenantDomain(user);
+
+        // Validate the recovery step to confirm self sign up.
+        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
+        // Get the userstore manager for the user.
+        UserStoreManager userStoreManager = getUserStoreManager(user);
+
+        String externallyVerifiedClaim = null;
+
+        // Get externally verified claim from the validation request which is bound to the verified channel.
+        // If the channel type is EXTERNAL, no verified claims are associated to it.
+        if (!IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(verifiedChannelType)) {
+            externallyVerifiedClaim = getChannelVerifiedClaim(recoveryData.getUser().getUserName(), verifiedChannelType,
+                    verifiedChannelClaim);
+        }
+
+        // Get the claims that needs to be updated.
+        // NOTE: Verification channel is stored in Remaining_Sets in user recovery data.
+        HashMap<String, String> userClaims = getClaimsListToUpdate(user, recoveryData.getRemainingSetIds(),
+                externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
+
+        // Update the user claims.
+        updateUserClaims(userStoreManager, user, userClaims);
+
+        // Invalidate code.
+        userRecoveryDataStore.invalidate(code);
+    }
+
+    /**
+     * Update the user claims.
+     *
+     * @param userStoreManager Userstore manager
+     * @param user             User
+     * @param userClaims       Claims that needs to be updated
+     * @throws IdentityRecoveryException Error while unlocking user
+     */
+    private void updateUserClaims(UserStoreManager userStoreManager, User user, HashMap<String, String> userClaims)
+            throws IdentityRecoveryException {
+
+        try {
+            userStoreManager
+                    .setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                            userClaims, null);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNLOCK_USER_USER,
+                    user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Get the verified channel claim associated with the externally verified channel.
+     *
+     * @param username             Username of the user
+     * @param verifiedChannelType  Verified channel type
+     * @param verifiedChannelClaim Verified channel claim
+     * @return Verified claim associated with the externally verified channel
+     */
+    private String getChannelVerifiedClaim(String username, String verifiedChannelType, String verifiedChannelClaim)
+            throws IdentityRecoveryException {
+
+        if (StringUtils.isNotEmpty(verifiedChannelType) && StringUtils.isNotEmpty(verifiedChannelClaim)) {
+
+            // Get the notification channel which matches the given channel type
+            NotificationChannels channel = getNotificationChannel(username,verifiedChannelType);
+            String channelClaim = channel.getClaimUri();
+
+            // Check whether the channels claims are matching.
+            if (channelClaim.equals(verifiedChannelClaim)) {
+                return channel.getVerifiedClaimUrl();
+            } else {
+                if (log.isDebugEnabled()) {
+                    String error = String.format("Channel claim: %s in the request does not match the channel claim "
+                            + "bound to channelType : %s", verifiedChannelType, verifiedChannelType);
+                    log.debug(error);
+                }
+                throw new IdentityRecoveryException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL
+                                .getMessage(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL.getCode());
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Externally verified channels are not specified");
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Get the claims that needs to be updated during the registration confirmation.
+     *
+     * @param user                           User
+     * @param verificationChannel            Verification channel associated with the confirmation code
+     * @param externallyVerifiedChannelClaim Externally verified channel claim
+     * @param recoveryScenario               Recovery scenario
+     * @return Claims that needs to be updated
+     */
+    private HashMap<String, String> getClaimsListToUpdate(User user, String verificationChannel,
+            String externallyVerifiedChannelClaim, String recoveryScenario) {
+
+        HashMap<String, String> userClaims = new HashMap<>();
+
+        // Need to unlock user account
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+
+        // Set the verified claims to TRUE.
+        setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
+        return userClaims;
+    }
+
+    /**
+     * Get the userstore manager for the user.
+     *
+     * @param user User
+     * @return Userstore manager
+     * @throws IdentityRecoveryException Error getting the userstore manager.
+     */
+    private UserStoreManager getUserStoreManager(User user) throws IdentityRecoveryException {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            return realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()))
+                    .getUserStoreManager();
+        } catch (UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("Error getting the user store manager for the user : %s with in domain : %s.",
+                                user.getUserStoreDomain() + CarbonConstants.DOMAIN_SEPARATOR + user.getUserName(),
+                                user.getTenantDomain());
+                log.debug(message);
+            }
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
+                    user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Validate context tenant domain name with user tenant domain.
+     *
+     * @param user User
+     * @throws IdentityRecoveryException Invalid Tenant
+     */
+    private void validateContextTenantDomainWithUserTenantDomain(User user) throws IdentityRecoveryException {
+
+        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userTenantDomain = user.getTenantDomain();
+        if (!StringUtils.equalsIgnoreCase(contextTenantDomain, userTenantDomain)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT,
+                    contextTenantDomain);
+        }
+    }
+
+    /**
+     * Set the email verified or mobile verified claim to TRUE according to the verified channel in the request.
+     *
+     * @param user                           User
+     * @param verificationChannel            Verification channel (SMS, EMAIL, EXTERNAL)
+     * @param externallyVerifiedChannelClaim Claims to be set at confirmation
+     * @param recoveryScenario               Recovery scenario
+     * @param userClaims                     User claims for the user
+     */
+    private void setVerificationClaims(User user, String verificationChannel, String externallyVerifiedChannelClaim,
+            String recoveryScenario,HashMap<String, String> userClaims) {
+
+        // Externally verified channel claims are sent with the code validation request.
+        if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(verificationChannel)) {
+            if (StringUtils.isNotEmpty(externallyVerifiedChannelClaim)) {
+                if (log.isDebugEnabled()) {
+                    String message = String
+                            .format("Externally verified claim is available for user :%s in tenant domain : %s ",
+                                    user.getUserName(), user.getTenantDomain());
+                    log.debug(message);
+                }
+                userClaims.put(externallyVerifiedChannelClaim, Boolean.TRUE.toString());
+            } else {
+
+                // Externally verified channel claims are not in the request, set the email claim as the verified
+                // channel.
+                if (log.isDebugEnabled()) {
+                    String message = String
+                            .format("Externally verified channel claims are not available for user : %s in tenant "
+                                            + "domain : %s. Therefore, setting %s claim as the default " + "verified channel.",
+                                    user.getUserName(), user.getTenantDomain(),
+                                    NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl());
+                    log.debug(message);
+                }
+                // If no verification claims are sent, set the email verified claim to true.
+                // This is to support backward compatibility.
+                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            }
+        } else if (StringUtils.isNotEmpty(verificationChannel) && verificationChannel
+                .equalsIgnoreCase(IdentityRecoveryConstants.SMS_CHANNEL)) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("Self sign-up via SMS channel detected. Updating %s value for user : %s in tenant "
+                                        + "domain : %s ", NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(),
+                                user.getUserName(), user.getTenantDomain());
+                log.debug(message);
+            }
+            userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+        } else if (StringUtils.isNotEmpty(verificationChannel) && verificationChannel
+                .equalsIgnoreCase(IdentityRecoveryConstants.EMAIL_CHANNEL)) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("Self sign-up via EMAIL channel detected. Updating %s value for user : %s in tenant "
+                                        + "domain : %s ", NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(),
+                                user.getUserName(), user.getTenantDomain());
+                log.debug(message);
+            }
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+        } else {
+            if (log.isDebugEnabled()) {
+                String message = String.format("No notification channel detected for user : %s in tenant domain : %s "
+                                + "for recovery scenario : %s. Therefore setting email as the verified channel.",
+                        user.getUserName(), user.getTenantDomain(), recoveryScenario);
+                log.debug(message);
+            }
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+        }
     }
 
     public NotificationResponseBean resendConfirmationCode(User user, Property[] properties) throws IdentityRecoveryException {
@@ -477,9 +927,9 @@ public class UserSelfRegistrationManager {
      */
     public boolean isSelfRegistrationEnabled(String tenantDomain) throws IdentityRecoveryException {
 
-        String selfSignUpEnalbed = getIDPProperty(tenantDomain,
+        String selfSignUpEnabled = getIDPProperty(tenantDomain,
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
-        return Boolean.parseBoolean(selfSignUpEnalbed);
+        return Boolean.parseBoolean(selfSignUpEnabled);
     }
 
     private String getIDPProperty(String tenantDomain, String propertyName) throws
@@ -542,6 +992,16 @@ public class UserSelfRegistrationManager {
         }
         // There should be a one receipt
         ReceiptServiceInput receiptServiceInput = receiptInput.getServices().get(0);
+
+        // Handle the scenario, where all the purposes are having optional PII attributes and then the user register
+        // without giving consent to any of the purposes.
+        if (receiptServiceInput.getPurposes().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Consent does not contain any purposes. Hence not adding consent");
+            }
+            return;
+        }
+
         receiptServiceInput.setTenantDomain(tenantDomain);
         try {
             setIDPData(tenantDomain, receiptServiceInput);
@@ -690,6 +1150,78 @@ public class UserSelfRegistrationManager {
         Pattern p2 = Pattern.compile(regularExpression);
         Matcher m2 = p2.matcher(attribute);
         return m2.matches();
+    }
+
+    /**
+     * Pre validate password against the policies defined in the Identity Server during password recovery instance.
+     *
+     * @param confirmationKey Confirmation code for password recovery.
+     * @param password Password to be pre-validated against the policies defined in IS.
+     * @throws IdentityEventException
+     * @throws IdentityRecoveryException
+     */
+    public void preValidatePasswordWithConfirmationKey(String confirmationKey, String password) throws
+            IdentityEventException, IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData recoveryData = userRecoveryDataStore.load(confirmationKey);
+        User user = recoveryData.getUser();
+        String userStoreDomain = user.getUserStoreDomain();
+        String username = user.getUserName();
+
+        preValidatePassword(username, password, userStoreDomain);
+    }
+
+    /**
+     * Pre validate the password against the policies defined in the Identity Server.
+     *
+     * @param username Username
+     * @param password Password to be pre-validated against the policies defined in IS.
+     * @throws IdentityRecoveryServerException
+     * @throws IdentityEventException
+     */
+    public void preValidatePasswordWithUsername(String username, String password) throws IdentityEventException,
+            IdentityRecoveryServerException {
+
+        String userStoreDomain = IdentityUtil.extractDomainFromName(username);
+        username = UserCoreUtil.removeDomainFromName(username);
+
+        preValidatePassword(username, password, userStoreDomain);
+    }
+
+    private void preValidatePassword(String username, String password, String userStoreDomain) throws
+            IdentityRecoveryServerException, IdentityEventException {
+
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+
+        String eventName = IdentityEventConstants.Event.PRE_UPDATE_CREDENTIAL_BY_ADMIN;
+        HashMap<String, Object> properties = new HashMap<>();
+
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
+        properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, password);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
+        properties.put(IdentityEventConstants.EventProperty.TENANT_ID, tenantId);
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager)
+                    realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+            UserStoreManager secondaryUserStoreManager = userStoreManager.getSecondaryUserStoreManager
+                    (userStoreDomain);
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, secondaryUserStoreManager);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, username,
+                    e);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Validating password against policies for user: %s in tenant: %s and in user " +
+                    "store: %s", username, tenantDomain, userStoreDomain));
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
     }
 
 }
