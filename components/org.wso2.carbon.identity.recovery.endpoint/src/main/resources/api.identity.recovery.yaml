@@ -27,7 +27,7 @@ schemes:
   - https
 
 # The domain of the API.
-# This is configured by the customer during deployment.
+# This is configured by the system administrator during deployment.
 # The given host is just an example.
 host: apis.is.com
 
@@ -47,17 +47,17 @@ consumes:
 # The media type(s) consumable by the requestor is specified in the Accept header field
 # of the corresponding request. 
 # The actual media type returned will be specfied in the Content-Type header field 
-# of the of the response.
-# The default of the Accept header is json, i.e. there is not needed to
+# of the response.
+# The default of the Accept header is JSON, i.e., it is not needed to
 # set the value, but supporting it serves extensibility.
 produces: 
   - application/json
 paths:
-  # Endpoint uses to send recovery notificataion
+  # The endpoint that is used to send recovery notifications.
   /recover-password:
     post:
       description: |
-         This API is used to send password recovery confirmation over defined channels like email/sms
+         This API is used to send password recovery confirmation over defined channels like email/sms.
       x-wso2-request: |
         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING","tenant-domain":"carbon.super"},"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/recover-password?type=email¬ify=true"
         
@@ -66,12 +66,12 @@ paths:
       summary: |
         Send Recovery Notification
        
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: RecoveryInitiatingRequest
           in: body
-          description:  It can be sent optional property parameters over email based on email template.
+          description: Optional property parameters can be sent via email based on the email template.
           required: true
           schema:
             $ref: '#/definitions/RecoveryInitiatingRequest'
@@ -85,7 +85,7 @@ paths:
         -
           name: notify
           in: query
-          description:  If notify=true then, notifications will be internally managed. 
+          description: If notify=true, notifications will be internally managed. 
           required: false
           type: boolean          
 
@@ -108,12 +108,12 @@ paths:
         - Password Recovery
         - Notification
             
-    # Endpoint uses to reset user password
+    # The endpoint that is used to reset the user password.
   /set-password:
 
     post:
       description: |
-        This API will be used to reset user password using the confirmatin key recieved through recovery process. Need to input `key`  and the new `password`.
+        This API is used to reset user password using the confirmation key recieved through the recovery process. Need to input `key` and the new `password`.
       x-wso2-request: |
         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "5c765a47-6764-4048-b5cf-55864cb654c0", "password": "P@ssW0rd","properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/set-password"
             
@@ -126,7 +126,7 @@ paths:
         -
           name: ResetPasswordRequest
           in: body
-          description:  key, password and optional metadata properties
+          description: Key, password, and optional metadata properties.
           required: true
           schema:
             $ref: '#/definitions/ResetPasswordRequest'
@@ -141,7 +141,7 @@ paths:
              $ref: '#/definitions/Error'
              
         412:
-          description: Precondition Falied
+          description: Precondition Failed
           schema:
              $ref: '#/definitions/RetryError'             
           
@@ -156,7 +156,7 @@ paths:
   /validate-code:
     post:
       description: |
-        This API is used to validate confirmation codes sent in account recovery scenarios and self signup.Need to put confirmation "code" and recovery "step" as parameters.
+        This API is used to validate confirmation codes sent in account recovery scenarios and self signup. You need to input the confirmation "code" and recovery "step" as parameters.
       x-wso2-request: |
         curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","step": "UPDATE_PASSWORD","properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/validate-code"
 
@@ -166,12 +166,12 @@ paths:
       summary: |
         Validate Confirmation Code
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: CodeValidationRequest
           in: body
-          description:  code, recovery step and optianal parameters. For recovery steps you can use values from "UPDATE_PASSWORD","CONFIRM_SIGN_UP","VALIDATE_CHALLENGE_QUESTION", "VALIDATE_ALL_CHALLENGE_QUESTION" four categories according to the recovery scenario you want to validate the code.
+          description: Code, recovery step, and optional parameters. For recovery steps, you can use values from "UPDATE_PASSWORD","CONFIRM_SIGN_UP","VALIDATE_CHALLENGE_QUESTION", and "VALIDATE_ALL_CHALLENGE_QUESTION": four categories according to the recovery scenario you want to validate the code.
           required: true
           schema:
             $ref: '#/definitions/CodeValidationRequest'
@@ -191,7 +191,7 @@ paths:
         - Password Recovery
 
 
-   # Endpoint uses to initiate password reset with security questions
+   # The endpoint that is used to initiate password reset with security questions.
   /security-question:
      get:
       description: |
@@ -204,7 +204,7 @@ paths:
       summary: |
         Get Challenge Question of User
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: username
@@ -216,14 +216,14 @@ paths:
           name: realm
           in: query
           description: |
-            `User Store Domain` which user belongs. If not specified, it will be `PRIMARY` domain.
+            `User Store Domain` that the user belongs to. If not specified, it will be `PRIMARY` domain.
           required: false
           type: string
         -
           name: tenant-domain
           in: query
           description: |
-            `Tenant Domain` which user belongs. If not specified, it will be `carbon.super` domain.
+            `Tenant Domain` that the user belongs to. If not specified, it will be `carbon.super` domain.
           required: false
           type: string
 
@@ -248,11 +248,11 @@ paths:
         - Password Recovery
         - Security Question
 
-   # Endpoint uses to initiate password reset with security questions
+   # The endpoint that is used to initiate password reset with security questions.
   /security-questions:
      get:
       description: |
-         This API is used to initiate password recovery using user challenge questions at once. Response will be a random challenge questions with a confirmation key.
+         This API is used to initiate password recovery using user challenge questions at once. Response will be a random challenge question with a confirmation key.
       x-wso2-request: |
          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
 
@@ -261,7 +261,7 @@ paths:
       summary: |
         Get Challenge Questions of User
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: username
@@ -273,14 +273,14 @@ paths:
           name: realm
           in: query
           description: |
-            `User Store Domain` which user belongs. If not specified, it will be `PRIMARY` domain.
+            `User Store Domain` that the user belongs to. If not specified, it will be `PRIMARY` domain.
           required: false
           type: string
         -
           name: tenant-domain
           in: query
           description: |
-            `Tenant Domain` which user belongs. If not specified, it will be `carbon.super` domain.
+            `Tenant Domain` that the user belongs to. If not specified, it will be `carbon.super` domain.
           required: false
           type: string
 
@@ -309,7 +309,7 @@ paths:
   /validate-answer:
      post:
       description: |
-         This is used to validate user challenge answer. If user challenge answer is valid, it will send another challenge question to answer until the status become `COMPLETE`. If the answer is wrong, user can retry the answer.
+         This is used to validate the user challenge answer. If the user challenge answer is valid, it sends another challenge question to answer until the status becomes `COMPLETE`. If the answer is wrong, user can retry the answer.
       x-wso2-request: |
          curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "0b20bd4d-cd82-4e8f-8ca4-4d265360b56b","answers": [{ "question-set-id": "http://wso2.org/claims/challengeQuestion1","answer": "born"},{"question-set-id": "http://wso2.org/claims/challengeQuestion2","answer": "car"}],"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/validate-answer"
 
@@ -319,12 +319,12 @@ paths:
       summary: |
         Validate user challenge answer/answers.
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         -
           name: AnswerVerificationRequest
           in: body
-          description: User answers verification with key returned in privious step.
+          description: User answers verification with key returned in previous step.
           required: true
           schema:
             $ref: '#/definitions/AnswerVerificationRequest'
@@ -351,7 +351,7 @@ paths:
   /recover-username/:
     post:
       description: |
-       This API can be used to recover forgot username.
+       This API can be used to recover a forgotten username.
       x-wso2-request: |
          curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '[{"uri": "http://wso2.org/claims/givenname","value": "isura"},{"uri": "http://wso2.org/claims/emailaddress", "value": "isuradil@email.com"},{"uri": "http://wso2.org/claims/lastname","value": "karunaratne" }]' "https://localhost:9443/api/identity/recovery/v0.9/recover-username/"
 
@@ -374,13 +374,13 @@ paths:
         -
           name: tenant-domain
           in: query
-          description: Tenant Domain which user belongs. Default `carbon.super`
+          description: Tenant Domain that the user belongs to. Default `carbon.super`
           required: false
           type: string
         -
           name: notify
           in: query
-          description:  If notify=true then, notifications will be internally managed.
+          description:  If notify=true, notifications will be internally managed.
           required: false
           type: boolean
 
@@ -388,7 +388,7 @@ paths:
         202:
           description: Successful response
         204:
-          description: No valid user found for given data
+          description: No valid user found for given data.
 
         400:
           description: Bad Request
@@ -557,7 +557,7 @@ paths:
 
 definitions:
 #-----------------------------------------------------
-# The User  Object
+# The User Object
 #-----------------------------------------------------
   User:
     type: object
@@ -567,7 +567,7 @@ definitions:
       realm:
         type: string
 #-----------------------------------------------------
-# The Credential  object
+# The Credential object
 #-----------------------------------------------------
   ResetPasswordRequest:
     type: object
@@ -582,7 +582,7 @@ definitions:
           $ref: '#/definitions/Property'
 
 #-----------------------------------------------------
-# The Error Response  object
+# The Error Response object
 #-----------------------------------------------------
   Error:
     type: object
@@ -594,7 +594,7 @@ definitions:
       description:
         type: string
 #-----------------------------------------------------
-# The Security Question  object
+# The Security Question object
 #-----------------------------------------------------
   Question:
     type: object
@@ -604,7 +604,7 @@ definitions:
       question-set-id:
         type: string
 #-----------------------------------------------------
-# Security Answers verificiaton request  object
+# Security Answers verificiaton request object
 #-----------------------------------------------------
   AnswerVerificationRequest:
     type: object
@@ -621,7 +621,7 @@ definitions:
           $ref: '#/definitions/Property'
 
 #-----------------------------------------------------
-# The Error Response  object
+# The Error Response object
 #-----------------------------------------------------
   RetryError:
     type: object
@@ -635,7 +635,7 @@ definitions:
       key:
         type: string
 #-----------------------------------------------------
-# The Property  object
+# The Property object
 #-----------------------------------------------------
   Property:
     type: object
@@ -645,7 +645,7 @@ definitions:
       value:
         type: string
 #-----------------------------------------------------
-# Security Answers verificiaton response  object
+# Security Answers verificiaton response object
 #-----------------------------------------------------
   RecoveryInitiatingRequest:
     type: object
@@ -657,7 +657,7 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 #-----------------------------------------------------
-# The InitiateAllQuestionResponse Response  object
+# The InitiateAllQuestionResponse response object
 #-----------------------------------------------------
   InitiateAllQuestionResponse:
     type: object
@@ -672,7 +672,7 @@ definitions:
         $ref: '#/definitions/Link'
 
 #-----------------------------------------------------
-# The InitiateQuestionResponse Response  object
+# The InitiateQuestionResponse response object
 #-----------------------------------------------------
   InitiateQuestionResponse:
     type: object
@@ -686,7 +686,7 @@ definitions:
 
 
 #-----------------------------------------------------
-# User Security Answer  object
+# User Security Answer object
 #-----------------------------------------------------
   SecurityAnswer:
     type: object
@@ -696,7 +696,7 @@ definitions:
       answer:
         type: string
 #-----------------------------------------------------
-# Claim  object
+# Claim object
 #-----------------------------------------------------
   Claim:
     type: object
@@ -729,7 +729,7 @@ definitions:
         type: string
 
 #-----------------------------------------------------
-# User Claim  object
+# User Claim object
 #-----------------------------------------------------
   UserClaim:
     type: object
@@ -741,7 +741,7 @@ definitions:
 #-----------------------------------------------------
 
 #-----------------------------------------------------
-# The CodeValidationRequest  object
+# The CodeValidationRequest object
 #-----------------------------------------------------
   CodeValidationRequest:
     type: object
