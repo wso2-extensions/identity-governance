@@ -18,7 +18,7 @@ package org.wso2.carbon.identity.governance.exceptions.notiification;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 
-public class NotificationTemplateManagerClientException extends NotificationTemplateManagerException{
+public class NotificationTemplateManagerClientException extends NotificationTemplateManagerException {
 
     /**
      * Constructs a new exception with the specified detail message.
@@ -78,7 +78,7 @@ public class NotificationTemplateManagerClientException extends NotificationTemp
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
             errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER
-                    +IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
+                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
         }
         return errorCode;
     }

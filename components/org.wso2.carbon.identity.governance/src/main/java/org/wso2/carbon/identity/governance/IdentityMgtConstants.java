@@ -28,7 +28,7 @@ public class IdentityMgtConstants {
     /**
      * Class that contains the error scenarios.
      */
-    public class Error_Scenario{
+    public class Error_Scenario {
 
         public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
         public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";

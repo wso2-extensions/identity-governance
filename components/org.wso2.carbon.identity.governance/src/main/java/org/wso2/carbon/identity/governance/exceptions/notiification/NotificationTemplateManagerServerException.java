@@ -81,7 +81,7 @@ public class NotificationTemplateManagerServerException extends NotificationTemp
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
             errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER
-                    +IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_SERVER_ERROR.getCode();
+                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_SERVER_ERROR.getCode();
         }
         return errorCode;
     }
