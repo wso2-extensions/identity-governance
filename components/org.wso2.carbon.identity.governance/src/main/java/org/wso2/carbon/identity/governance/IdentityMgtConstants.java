@@ -25,6 +25,15 @@ public class IdentityMgtConstants {
 
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
+    /**
+     * Class that contains the error scenarios.
+     */
+    public class Error_Scenario {
+
+        public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
+        public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";
+    }
+
     public class PropertyConfig {
 
         private PropertyConfig(){}
@@ -95,9 +104,9 @@ public class IdentityMgtConstants {
 
     public enum ErrorMessages {
 
-        ERROR_CODE_DEFAULT_BAD_REQUEST("NCM-400", "Bad Request"),
-        ERROR_CODE_DEFAULT_SERVER_ERROR("NCM-500", "Internal Server Error"),
-        ERROR_CODE_DEFAULT_UNEXPECTED_ERROR("NCM-500", "Unexpected Error"),
+        ERROR_CODE_DEFAULT_BAD_REQUEST("10000", "Bad Request"),
+        ERROR_CODE_DEFAULT_SERVER_ERROR("65000", "Internal Server Error"),
+        ERROR_CODE_DEFAULT_UNEXPECTED_ERROR("65000", "Unexpected Error"),
 
         // NCM - notification Channel Manager.
         ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNEL("NCM-10001","Channel not supported"),
@@ -105,7 +114,24 @@ public class IdentityMgtConstants {
                 "No claim matched for preferred channel"),
         ERROR_CODE_NO_NOTIFICATION_CHANNELS("NCM-10003","User has no notification channels"),
         ERROR_CODE_BAD_REQUEST("NCM-10004", "Bad Request"),
-        ERROR_CODE_SERVER_ERROR("NCM-15001", "Server Error");
+        ERROR_CODE_SERVER_ERROR("NCM-15001", "Server Error"),
+
+        // NTM - Notification Template Manager.
+        ERROR_CODE_NO_CONTENT_IN_TEMPLATE("NTM-10001","Unable to find any content in %s:%s "
+                + "email template"),
+        ERROR_CODE_INVALID_EMAIL_TEMPLATE_CONTENT("NTM-10002","Template %s:%s body is in "
+                + "invalid format. Missing subject,body or footer"),
+        ERROR_CODE_INVALID_SMS_TEMPLATE_CONTENT("NTM-10003","Template %s:%s body is in a "
+                + "invalid format. Should have only a SMS body"),
+        ERROR_CODE_NO_TEMPLATE_FOUND("NTM-10004","Cannot find '%s' template in the default '%s' "
+                + "locale for '%s' tenant"),
+        ERROR_CODE_INVALID_NOTIFICATION_TEMPLATE("NTM-10005","Invalid notification template"),
+        ERROR_CODE_DESERIALIZING_TEMPLATE_FROM_TENANT_REGISTRY("NTM-65001","Error deserializing '%s:%s' "
+                + "template from tenant registry"),
+        ERROR_CODE_ERROR_RETRIEVING_TEMPLATE_FROM_REGISTRY("NTM-65002","Error when retrieving '%s:%s' "
+                + "template from %s tenant registry"),
+        ERROR_CODE_ERROR_RETRIEVING_TEMPLATE_OBJECT_FROM_REGISTRY("NTM-65003","Error retrieving a "
+                + "template object from the registry resource");
 
         private final String code;
         private final String message;

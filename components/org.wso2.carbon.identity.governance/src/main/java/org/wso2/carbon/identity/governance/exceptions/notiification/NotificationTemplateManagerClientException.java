@@ -1,36 +1,31 @@
 /*
  * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- * Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.wso2.carbon.identity.governance.exceptions.notiification;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 
-/**
- * Exception class that represents exceptions thrown upon server errors while resolving the notification channel.
- */
-public class NotificationChannelManagerServerException extends NotificationChannelManagerException {
+public class NotificationTemplateManagerClientException extends NotificationTemplateManagerException {
 
     /**
      * Constructs a new exception with the specified detail message.
      *
      * @param message The detail message
      */
-    public NotificationChannelManagerServerException(String message) {
+    public NotificationTemplateManagerClientException(String message) {
 
         super(message);
         this.setErrorCode(getDefaultErrorCode());
@@ -42,7 +37,7 @@ public class NotificationChannelManagerServerException extends NotificationChann
      * @param message The detail message
      * @param cause   The cause
      */
-    public NotificationChannelManagerServerException(String message, Throwable cause) {
+    public NotificationTemplateManagerClientException(String message, Throwable cause) {
 
         super(message, cause);
         this.setErrorCode(getDefaultErrorCode());
@@ -54,7 +49,7 @@ public class NotificationChannelManagerServerException extends NotificationChann
      * @param errorCode The error code
      * @param message   The detail message.
      */
-    public NotificationChannelManagerServerException(String errorCode, String message) {
+    public NotificationTemplateManagerClientException(String errorCode, String message) {
 
         super(errorCode, message);
         this.setErrorCode(errorCode);
@@ -67,7 +62,7 @@ public class NotificationChannelManagerServerException extends NotificationChann
      * @param message   The detail message
      * @param throwable Throwable
      */
-    public NotificationChannelManagerServerException(String errorCode, String message, Throwable throwable) {
+    public NotificationTemplateManagerClientException(String errorCode, String message, Throwable throwable) {
 
         super(errorCode, message, throwable);
         this.setErrorCode(errorCode);
@@ -82,8 +77,8 @@ public class NotificationChannelManagerServerException extends NotificationChann
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_CHANNEL_MANAGER
-                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_SERVER_ERROR.getCode();
+            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER
+                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
         }
         return errorCode;
     }

@@ -32,6 +32,7 @@ public class NotificationChannelManagerClientException extends NotificationChann
      * @param message The detail message
      */
     public NotificationChannelManagerClientException(String message) {
+
         super(message);
         this.setErrorCode(getDefaultErrorCode());
     }
@@ -43,6 +44,7 @@ public class NotificationChannelManagerClientException extends NotificationChann
      * @param cause   The cause
      */
     public NotificationChannelManagerClientException(String message, Throwable cause) {
+
         super(message, cause);
         this.setErrorCode(getDefaultErrorCode());
     }
@@ -54,6 +56,7 @@ public class NotificationChannelManagerClientException extends NotificationChann
      * @param message   The detail message.
      */
     public NotificationChannelManagerClientException(String errorCode, String message) {
+
         super(errorCode, message);
         this.setErrorCode(errorCode);
     }
@@ -66,6 +69,7 @@ public class NotificationChannelManagerClientException extends NotificationChann
      * @param throwable Throwable
      */
     public NotificationChannelManagerClientException(String errorCode, String message, Throwable throwable) {
+
         super(errorCode, message, throwable);
         this.setErrorCode(errorCode);
     }
@@ -79,7 +83,8 @@ public class NotificationChannelManagerClientException extends NotificationChann
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
+            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_CHANNEL_MANAGER
+                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
         }
         return errorCode;
     }
