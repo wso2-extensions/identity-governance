@@ -322,7 +322,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         // Self sign up scenario has two sub scenarios as verification via email or verification via SMS.
         if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) && RecoverySteps.CONFIRM_SIGN_UP
                 .equals(recoveryStep)) {
-
             // If the verification channel is email, use verification link timeout configs to validate.
             if (StringUtils.isNotEmpty(recoveryData) && recoveryData.equals(IdentityRecoveryConstants.EMAIL_CHANNEL)) {
 
@@ -336,7 +335,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                         tenantDomain));
             } else if (StringUtils.isNotEmpty(recoveryData) && recoveryData
                     .equals(IdentityRecoveryConstants.SMS_CHANNEL)) {
-
                 // If the verification channel is SMS, use SMS OTP timeout configs to validate.
                 if (log.isDebugEnabled()) {
                     String message = String.format("Verification channel: %s was detected for recovery scenario: %s "

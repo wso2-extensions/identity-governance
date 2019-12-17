@@ -117,7 +117,6 @@ public class MeApiServiceImpl extends MeApiService {
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
-
                 // If the notifications are required in the form of legacy response, and notifications are externally
                 // managed, the recoveryId should be in the response as text.
                 if (StringUtils.isNotEmpty(notificationChannel) && notificationChannel
@@ -156,7 +155,6 @@ public class MeApiServiceImpl extends MeApiService {
         String enableDetailedResponseConfig= IdentityUtil
                 .getProperty(Constants.ENABLE_DETAILED_API_RESPONSE);
         if(StringUtils.isEmpty(enableDetailedResponseConfig)){
-
             // Return false if the user has not enabled the detailed response body.
             return ENABLE_DETAILED_API_RESPONSE;
         } else  {

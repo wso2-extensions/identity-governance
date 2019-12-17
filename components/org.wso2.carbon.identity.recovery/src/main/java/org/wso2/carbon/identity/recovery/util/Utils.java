@@ -87,6 +87,7 @@ public class Utils {
      * @return Instance of the NotificationChannelManager
      */
     public static NotificationChannelManager getNotificationChannelManager() {
+
         return (NotificationChannelManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(NotificationChannelManager.class, null);
     }

@@ -66,7 +66,6 @@ public class DefaultNotificationChannelManager implements NotificationChannelMan
 
         // Server supported notification channels.
         for (NotificationChannels channel : channels) {
-
             // If preferred channel is in the channel list, the preferred channel is supported by the server to send
             // notifications.
             if (channel.getChannelType().equalsIgnoreCase(preferredChannel)) {
@@ -207,7 +206,6 @@ public class DefaultNotificationChannelManager implements NotificationChannelMan
 
         ArrayList<String> availableChannels = new ArrayList<>();
         for (NotificationChannels channel : channels) {
-
             // Checks whether there is a value value for given communication channel url.
             String value = claimsMap.get(channel.getClaimUri());
             if (StringUtils.isNotEmpty(value)) {
@@ -315,7 +313,7 @@ public class DefaultNotificationChannelManager implements NotificationChannelMan
     }
 
     /**
-     * Get the UserStoreManager
+     * Get the UserStoreManager.
      *
      * @param username     Username
      * @param tenantDomain Tenant domain
