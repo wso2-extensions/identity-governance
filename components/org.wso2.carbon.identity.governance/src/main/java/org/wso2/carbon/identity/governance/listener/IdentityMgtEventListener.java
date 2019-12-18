@@ -675,6 +675,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                     throw new UserStoreException(e.getMessage(), e);
                 }
             }
+         
+            // The following log is related to identifying the root cause for the issue, 
+            // https://github.com/wso2/product-is/issues/7128.
+            log.error("ISSUE-7128 : Failed while handling the event", e);
             throw new UserStoreException("Error when handling event : " + eventName, e);
         }
     }
