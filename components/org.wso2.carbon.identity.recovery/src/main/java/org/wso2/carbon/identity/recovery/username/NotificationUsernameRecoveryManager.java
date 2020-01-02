@@ -156,7 +156,6 @@ public class NotificationUsernameRecoveryManager {
         // Resolve notification internally managed status.
         boolean isNotificationInternallyManaged = isNotificationsInternallyManaged(tenantDomain, notify);
         HashMap<String, String> userClaims = buildUserClaimsMap(claims);
-
         // Validate the claims.
         if (claims.length < 1) {
             throw Utils.handleClientException(
@@ -196,7 +195,6 @@ public class NotificationUsernameRecoveryManager {
         } catch (IdentityRecoveryServerException exception) {
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();
-
                 // Userstore not found error.
                 if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER.getCode()
                         .equals(errorCode)) {
@@ -214,7 +212,6 @@ public class NotificationUsernameRecoveryManager {
         } catch (IdentityRecoveryClientException exception) {
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();
-
                 // Multiple users matched error.
                 if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode()
                         .equals(errorCode)) {

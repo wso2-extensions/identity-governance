@@ -137,13 +137,10 @@ public class ResendConfirmationManager {
         RecoverySteps step = RecoverySteps.getRecoveryStep(recoveryStep);
         RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
-
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
-
-        // Validate tenantDomain.
         if (!tenantDomain.equals(user.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
@@ -158,17 +155,12 @@ public class ResendConfirmationManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
-
-        // Generate confirmation code.
         String confirmationCode = generateSecretKey(notificationChannel);
         String eventName = Utils.resolveEventName(notificationChannel);
         triggerNotification(user, notificationChannel, notificationScenario, confirmationCode, eventName, properties);
-
         // Store new confirmation code.
         addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), confirmationCode, notificationChannel,
                 scenario, step);
-
-        // Generate resend code.
         resendCode = generateResendCode(notificationChannel, scenario, userRecoveryData);
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
         resendConfirmationDTO.setNotificationChannel(notificationChannel);

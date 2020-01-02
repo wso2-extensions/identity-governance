@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,10 +103,8 @@ public class UserAccountRecoveryManagerTest {
 
         // Test no matching users for a given set of claims.
         testNoMatchingUsersForGivenClaims();
-
         // Test notifications externally managed.
         testGetUserWithNotificationsExternallyManaged();
-
         // Test notifications internally managed.
         testGetUserWithNotificationsInternallyManaged();
     }
@@ -122,10 +120,8 @@ public class UserAccountRecoveryManagerTest {
         mockRecoveryConfigs(true);
         mockUserstoreManager();
         mockJDBCRecoveryDataStore();
-
         // Test when the user is self-registered.
         testGetSelfSignUpUsers();
-
         // Test when the user is not self registered.
         testGetGeneralUsers();
     }
@@ -282,16 +278,12 @@ public class UserAccountRecoveryManagerTest {
 
         // Test no claims provided error.
         testNoClaimsProvidedToRetrieveMatchingUsers();
-
         // Test multiple users matching for the given set of claims.
         testMultipleUsersMatchingForGivenClaims();
-
         // Test no matching users for given set of claims.
         testNoMatchingUsers();
-
         // Test get matched user for given set of claims.
         testGetMatchedUser();
-
         // Test no matching users for given set of claims.
         testNoMatchedUsers();
     }
@@ -412,7 +404,6 @@ public class UserAccountRecoveryManagerTest {
         // Mock getTenantId.
         mockStatic(IdentityTenantUtil.class);
         when(IdentityTenantUtil.getTenantId(Matchers.anyString())).thenReturn(-1234);
-
         // Get UserStoreManager.
         mockStatic(IdentityRecoveryServiceDataHolder.class);
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);

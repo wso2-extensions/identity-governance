@@ -634,7 +634,6 @@ public class Utils {
     public static String prependOperationScenarioToErrorCode(String exceptionErrorCode, String scenario) {
 
         if (StringUtils.isNotEmpty(exceptionErrorCode)) {
-
             // Check whether the scenario is already in the errorCode.
             if (exceptionErrorCode.contains(IdentityRecoveryConstants.EXCEPTION_SCENARIO_SEPARATOR)) {
                 return exceptionErrorCode;
@@ -663,7 +662,6 @@ public class Utils {
             try {
                 String manageNotificationsInternally = properties
                         .get(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY);
-
                 // Notification managed mechanism is not specified in the request.
                 if (StringUtils.isEmpty(manageNotificationsInternally)) {
                     return Boolean.parseBoolean(Utils.getRecoveryConfigs(

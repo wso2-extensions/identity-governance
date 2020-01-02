@@ -397,14 +397,17 @@ public class NotificationPasswordRecoveryManager {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for user : "
-                    + user.getUserName());
+            if (log.isDebugEnabled()) {
+                log.debug("SendRecoveryNotification :Tenant domain is not in the request. set to default for " +
+                        "user : " + user.getUserName());
+            }
         }
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info(
-                    "SendRecoveryNotification : User store domain is not in the request. set to default for user : "
-                            + user.getUserName());
+            if (log.isDebugEnabled()) {
+                log.debug("SendRecoveryNotification : User store domain is not in the request. set to " +
+                        "default for user : " + user.getUserName());
+            }
         }
     }
 
@@ -454,8 +457,8 @@ public class NotificationPasswordRecoveryManager {
                 triggerNotification(userRecoveryData.getUser(), notificationChannel,
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, StringUtils.EMPTY,
                         eventName, properties);
-            } catch (Exception e) {
-                log.warn("Error while sending password reset success notification to user :" + userRecoveryData.
+            } catch (IdentityRecoveryException e) {
+                log.error("Error while sending password reset success notification to user :" + userRecoveryData.
                         getUser().getUserName());
             }
         }
@@ -492,8 +495,7 @@ public class NotificationPasswordRecoveryManager {
             // Get the claims that related to a password reset.
             HashMap<String, String> userClaims = getAccountStateClaims(userRecoveryData,
                     isNotificationInternallyManaged);
-            if (userClaims != null && !userClaims.isEmpty()) {
-
+            if (MapUtils.isNotEmpty(userClaims)) {
                 // Update the retrieved claims set.
                 userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
             }

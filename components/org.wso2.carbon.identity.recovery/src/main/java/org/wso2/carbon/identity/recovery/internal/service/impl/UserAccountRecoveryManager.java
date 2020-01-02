@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -61,6 +60,8 @@ public class UserAccountRecoveryManager {
     private static final Log log = LogFactory.getLog(UserAccountRecoveryManager.class);
     private static UserAccountRecoveryManager instance = new UserAccountRecoveryManager();
     private static final String FORWARD_SLASH = "/";
+    private static final NotificationChannels[] notificationChannels = {
+            NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
 
     /**
      * Constructor.
@@ -95,14 +96,11 @@ public class UserAccountRecoveryManager {
 
         // Retrieve the user who matches the given set of claims.
         String username = getUsernameByClaims(claims, tenantDomain);
-
-        // Get the claims of the user if the user is verified.
         if (StringUtils.isNotEmpty(username)) {
 
             // If the account is locked or disabled, do not let the user to recover the account.
             checkAccountLockedStatus(buildUser(username, tenantDomain));
             List<NotificationChannel> notificationChannels;
-
             // Get the notification management mechanism.
             boolean isNotificationsInternallyManaged = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
 
@@ -162,7 +160,6 @@ public class UserAccountRecoveryManager {
             throws IdentityRecoveryException {
 
         if (MapUtils.isEmpty(claims)) {
-
             // Get error code with scenario.
             String errorCode = Utils.prependOperationScenarioToErrorCode(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
@@ -182,13 +179,10 @@ public class UserAccountRecoveryManager {
                 }
                 // Get the matching user list for the given claim.
                 String[] matchedUserList = getUserList(tenantId, key, value);
-
                 // Check for duplicates with the already retrieved users, if the matched users for the claim.
                 if (!ArrayUtils.isEmpty(matchedUserList)) {
-
                     // In the first iteration resultedUserList will be empty.
                     if (ArrayUtils.isNotEmpty(resultedUserList)) {
-
                         // Remove the users from already matched list who are not in the recently matched list.
                         resultedUserList = getCommonUserEntries(resultedUserList, matchedUserList, key, value);
                         if (ArrayUtils.isEmpty(resultedUserList)) {
@@ -250,7 +244,6 @@ public class UserAccountRecoveryManager {
 
         // Create a list of required claims that needs to be retrieved from the user attributes.
         String[] requiredClaims = createRequiredChannelClaimsList();
-
         // Get channel related claims related to the user.
         Map<String, String> claimValues = getClaimListOfUser(username, tenantDomain, requiredClaims);
         if (MapUtils.isEmpty(claimValues)) {
@@ -302,7 +295,6 @@ public class UserAccountRecoveryManager {
             throws IdentityRecoveryException {
 
         ArrayList<NotificationChannelDTO> notificationChannelDTOs = new ArrayList<>();
-
         // Store available channels as NotificationChannelDTO objects in the array.
         int channelId = 1;
         StringBuilder recoveryChannels = new StringBuilder();
@@ -310,7 +302,6 @@ public class UserAccountRecoveryManager {
             NotificationChannelDTO dto = buildNotificationChannelsResponseDTO(channelId, channel.getType(),
                     channel.getChannelValue(), channel.isPreferredStatus());
             notificationChannelDTOs.add(dto);
-
             // Creating the notification channel list for recovery.
             String channelEntry = channel.getType() + IdentityRecoveryConstants.CHANNEL_ATTRIBUTE_SEPARATOR + channel
                     .getChannelValue();
@@ -337,7 +328,6 @@ public class UserAccountRecoveryManager {
         NotificationChannelDTO notificationChannelDTO = new NotificationChannelDTO();
         notificationChannelDTO.setId(channelId);
         notificationChannelDTO.setType(channelType);
-
         // Encode the channel Values.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channelType)) {
             notificationChannelDTO.setValue(maskEmailAddress(value));
@@ -432,7 +422,7 @@ public class UserAccountRecoveryManager {
      */
     private UserStoreManager getUserStoreManager(int tenantId) throws IdentityRecoveryServerException {
 
-        UserStoreManager userStoreManager = null;
+        UserStoreManager userStoreManager;
         RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
         try {
             if (realmService.getTenantUserRealm(tenantId) != null) {
@@ -467,7 +457,6 @@ public class UserAccountRecoveryManager {
 
         ArrayList<String> matchedUsers = new ArrayList<>(Arrays.asList(matchedUserList));
         ArrayList<String> resultedUsers = new ArrayList<>(Arrays.asList(resultedUserList));
-
         // Remove not matching users.
         resultedUsers.retainAll(matchedUsers);
         if (resultedUsers.size() > 0) {
@@ -528,15 +517,11 @@ public class UserAccountRecoveryManager {
     private String[] createRequiredChannelClaimsList() {
 
         List<String> requiredClaims = new ArrayList<>();
-        NotificationChannels[] channels = {NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
-        for (NotificationChannels channel : channels) {
+        for (NotificationChannels channel : notificationChannels) {
             requiredClaims.add(channel.getClaimUri());
             requiredClaims.add(channel.getVerifiedClaimUrl());
         }
-
-        // Set the preferred channel claim uri.
         requiredClaims.add(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM);
-
         // Get the list of roles that the user has since the channel selection criteria changes with the availability
         // of INTERNAL/selfsignup role.
         requiredClaims.add(IdentityRecoveryConstants.USER_ROLES_CLAIM);
@@ -553,12 +538,6 @@ public class UserAccountRecoveryManager {
 
         // Check whether the user is self registered user.
         boolean isSelfRegisteredUser = isSelfSignUpUser(claimValues.get(IdentityRecoveryConstants.USER_ROLES_CLAIM));
-
-        // Create supported notification channels list by the server.
-        NotificationChannels[] notificationChannels = {
-                NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL
-        };
-
         String preferredChannel = claimValues.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM);
         List<NotificationChannel> verifiedChannels = new ArrayList<>();
         for (NotificationChannels channel : notificationChannels) {
@@ -571,22 +550,18 @@ public class UserAccountRecoveryManager {
             if (isSelfRegisteredUser && channelVerified && StringUtils.isNotEmpty(channelValue)) {
                 channelDataModel.setType(channel.getChannelType());
                 channelDataModel.setChannelValue(channelValue);
-
                 // Check whether the preferred channel matches the given channel.
                 if (StringUtils.isNotEmpty(preferredChannel) && channel.getChannelType().equals(preferredChannel)) {
                     channelDataModel.setPreferredStatus(true);
                 }
-                // Add the channel as a verified channel.
                 verifiedChannels.add(channelDataModel);
             } else if (StringUtils.isNotEmpty(channelValue)) {
                 channelDataModel.setType(channel.getChannelType());
                 channelDataModel.setChannelValue(channelValue);
-
                 // Check whether the preferred channel matches the given channel.
                 if (StringUtils.isNotEmpty(preferredChannel) && channel.getChannelType().equals(preferredChannel)) {
                     channelDataModel.setPreferredStatus(true);
                 }
-                // Add the channel as a verified channel.
                 verifiedChannels.add(channelDataModel);
             }
         }
@@ -620,7 +595,6 @@ public class UserAccountRecoveryManager {
             // Retrieve recovery data bound to the recoveryId.
             recoveryData = userRecoveryDataStore.load(code);
         } catch (IdentityRecoveryException e) {
-
             // Map code expired error to new error codes for user account recovery.
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode().equals(e.getErrorCode())) {
                 e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode());
@@ -663,7 +637,6 @@ public class UserAccountRecoveryManager {
         User user = buildUser(username, tenantDomain);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, scenario,
                 RecoverySteps.SEND_RECOVERY_INFORMATION);
-
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
         try {

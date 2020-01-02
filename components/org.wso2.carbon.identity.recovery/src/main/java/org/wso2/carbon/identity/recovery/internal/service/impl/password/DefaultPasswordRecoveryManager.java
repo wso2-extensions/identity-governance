@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,6 +17,7 @@
  */
 package org.wso2.carbon.identity.recovery.internal.service.impl.password;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -87,16 +87,12 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_NOT_ENABLED,
                     null);
         }
-
         // Get recovery channel information.
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                         properties);
-
-        // build RecoveryInformationDTO.
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
         recoveryInformationDTO.setUsername(recoveryChannelInfoDTO.getUsername());
-
         // Do not add recovery channel information if Notification based recovery is not enabled.
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         if (isNotificationBasedRecoveryEnabled) {
@@ -123,22 +119,15 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
         tenantDomain = resolveTenantDomain(tenantDomain);
-
-        // Verify the configurations.
         validateConfigurations(tenantDomain);
-
-        // Validate the channel Id in the request.
         int channelIDCode = validateChannelID(channelId);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
 
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
-
-        // Get notification channel.
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIDCode);
-
         // Resolve notify status according to the notification channel of the user.
         boolean manageNotificationsInternally = true;
         if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
@@ -147,8 +136,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = notifyUser(userRecoveryData.getUser(), notificationChannel,
                 manageNotificationsInternally, properties);
         String secretKey = notificationResponseBean.getKey();
-
-        // Generate resend code.
         String resendCode = generateResendCode(notificationChannel, userRecoveryData);
         return buildPasswordRecoveryResponseDTO(notificationChannel, secretKey, resendCode);
     }
@@ -168,7 +155,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
 
         tenantDomain = resolveTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
-
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(confirmationCode, RecoverySteps.UPDATE_PASSWORD);
@@ -348,9 +334,8 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     private Property[] buildPropertyList(String notificationChannel, Map<String, String> properties) {
 
         ArrayList<Property> propertyArrayList = new ArrayList<>();
-
         // Add already existing meta properties.
-        if (properties != null && properties.size() > 0) {
+        if (MapUtils.isNotEmpty(properties)) {
             for (String key : properties.keySet()) {
                 if (StringUtils.isNotEmpty(key)) {
                     propertyArrayList.add(buildProperty(key, properties.get(key)));
@@ -409,7 +394,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     private int validateChannelID(String channelId) throws IdentityRecoveryClientException {
 
         int id;
-
         // Check whether the channel Id is an int.
         try {
             id = Integer.parseInt(channelId);
@@ -451,8 +435,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
 
         PasswordRecoverDTO passwordRecoverDTO = new PasswordRecoverDTO();
         passwordRecoverDTO.setNotificationChannel(notificationChannel);
-
-        // Check for notification method.
         if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
             passwordRecoverDTO.setConfirmationCode(confirmationCode);
             passwordRecoverDTO.setCode(
@@ -538,13 +520,13 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
      * @throws IdentityRecoveryServerException Error reading configs for the tenant
      */
     private boolean isQuestionBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
         // Check whether the challenge question based recovery is enabled.
         try {
             return Boolean.parseBoolean(
                     Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
                             tenantDomain));
         } catch (IdentityRecoveryServerException e) {
-
             // Prepend scenario to the thrown exception.
             String errorCode = Utils
                     .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
@@ -561,13 +543,13 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
      * @throws IdentityRecoveryServerException Error reading configs for the tenant
      */
     private boolean isNotificationBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
         // Check whether the challenge question based recovery is enabled.
         try {
             return Boolean.parseBoolean(
                     Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                             tenantDomain));
         } catch (IdentityRecoveryServerException e) {
-
             // Prepend scenario to the thrown exception.
             String errorCode = Utils
                     .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
@@ -612,7 +594,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.RESEND_CONFIRMATION_CODE);
-
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
         try {

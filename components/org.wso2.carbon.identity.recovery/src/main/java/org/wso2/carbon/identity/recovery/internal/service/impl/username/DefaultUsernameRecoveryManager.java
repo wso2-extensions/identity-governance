@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,6 +17,7 @@
  */
 package org.wso2.carbon.identity.recovery.internal.service.impl.username;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -73,18 +73,13 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
         tenantDomain = resolveTenantDomain(tenantDomain);
-
-        // Verify the configurations.
         validateConfigurations(tenantDomain);
-
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
 
         boolean useLegacyAPIApproach = useLegacyAPIApproach(properties);
         boolean manageNotificationsInternally = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
-
         if (!useLegacyAPIApproach) {
-
             // Add notification method in a meta property list.
             Map<String, String> metaProperties = new HashMap<>();
             metaProperties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
@@ -93,12 +88,9 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
                     .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
                             metaProperties));
         } else {
-
             // Else block is used to support legacy username recovery API functionality.
             String username = userAccountRecoveryManager.getUsernameByClaims(claims, tenantDomain);
             if (StringUtils.isNotEmpty(username)) {
-
-                // Send notifications.
                 if (manageNotificationsInternally) {
                     User user = createUser(username, tenantDomain);
                     triggerNotification(user, NotificationChannels.EMAIL_CHANNEL.getChannelType(),
@@ -145,11 +137,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
         tenantDomain = resolveTenantDomain(tenantDomain);
-
-        // Validate the channel Id passed in the request.
         int channelIdCode = validateChannelID(channelId);
-
-        // Verify the configurations.
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager recoveryAccountManager = UserAccountRecoveryManager.getInstance();
 
@@ -162,11 +150,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
 
         // If the notifications are externally managed we do not need to send notifications internally.
         if (!IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
-
-            // Resolve event name.
             String eventName = Utils.resolveEventName(notificationChannel);
-
-            // Validate callback url if present in meta data properties.
             validateCallbackURL(properties, userRecoveryData.getUser());
             triggerNotification(userRecoveryData.getUser(), notificationChannel, eventName, properties);
         }
@@ -240,7 +224,6 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
     private int validateChannelID(String channelId) throws IdentityRecoveryClientException {
 
         int id;
-
         // Check whether the channel Id is an int.
         try {
             id = Integer.parseInt(channelId);
@@ -269,7 +252,6 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
         String QUALIFIED_USERNAME_REGEX_PATTERN = "%s@%s";
         UsernameRecoverDTO usernameRecoverDTO = new UsernameRecoverDTO();
         usernameRecoverDTO.setNotificationChannel(notificationChannel);
-
         // Check for notification method.
         if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
             usernameRecoverDTO.setCode(
@@ -403,7 +385,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
     }
 
     /**
-     * Get the callback url from the mpa of properties.
+     * Get the callback url from the map of properties.
      *
      * @param properties Map of properties
      * @return Callback url
@@ -413,15 +395,18 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
 
         String callbackURL = null;
         try {
-            for (String key : properties.keySet()) {
-                if (IdentityRecoveryConstants.CALLBACK.equals(key)) {
-                    callbackURL = URLDecoder.decode(properties.get(key), IdentityRecoveryConstants.UTF_8);
-                    break;
+            if (MapUtils.isNotEmpty(properties)) {
+                for (String key : properties.keySet()) {
+                    if (IdentityRecoveryConstants.CALLBACK.equals(key)) {
+                        callbackURL = URLDecoder.decode(properties.get(key), IdentityRecoveryConstants.UTF_8);
+                        break;
+                    }
                 }
-            }
-            if (StringUtils.isNotBlank(callbackURL)) {
-                URI uri = new URI(callbackURL);
-                callbackURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null).toString();
+                if (StringUtils.isNotBlank(callbackURL)) {
+                    URI uri = new URI(callbackURL);
+                    callbackURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null,
+                            null).toString();
+                }
             }
         } catch (UnsupportedEncodingException | URISyntaxException e) {
             String error = "Error getting callback url";
