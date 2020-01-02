@@ -360,15 +360,86 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } else if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, tenantDomain));
+        } else if (RecoveryScenarios.USERNAME_RECOVERY.equals(recoveryScenario)) {
+
+            // Validate the recovery code given at username recovery.
+            notificationExpiryTimeInMinutes = getRecoveryCodeExpiryTime();
+        } else if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)) {
+
+            if (RecoverySteps.RESEND_CONFIRMATION_CODE.toString().equals(recoveryStep.toString())) {
+                notificationExpiryTimeInMinutes = getResendCodeExpiryTime();
+            } else if (RecoverySteps.SEND_RECOVERY_INFORMATION.toString().equals(recoveryStep.toString())) {
+
+                // Validate the recovery code password recovery.
+                notificationExpiryTimeInMinutes = getRecoveryCodeExpiryTime();
+            } else if (IdentityRecoveryConstants.SMS_CHANNEL.equals(recoveryData)) {
+
+                // Validate the SMS OTP confirmation code.
+                notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, tenantDomain));
+            } else {
+                notificationExpiryTimeInMinutes = Integer.parseInt(
+                        Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, tenantDomain));
+            }
         } else {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.EXPIRY_TIME, tenantDomain));
         }
         if (notificationExpiryTimeInMinutes < 0) {
-            //make the code valid infinitely in case of negative value
+            // Make the code valid infinitely in case of negative value
             notificationExpiryTimeInMinutes = Integer.MAX_VALUE;
         }
         long expiryTime = createdTimestamp + TimeUnit.MINUTES.toMillis(notificationExpiryTimeInMinutes);
         return System.currentTimeMillis() > expiryTime;
+    }
+
+    /**
+     * Get the expiry time of the recovery code given at username recovery and password recovery init.
+     *
+     * @return Expiry time of the recovery code (In minutes)
+     */
+    private int getRecoveryCodeExpiryTime() {
+
+        String expiryTime = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME);
+        if (StringUtils.isEmpty(expiryTime)) {
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+        try {
+            return Integer.parseInt(expiryTime);
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("User recovery code expired. Therefore setting DEFAULT expiry time : %s minutes",
+                                IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME);
+                log.debug(message);
+            }
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+    }
+
+    /**
+     * Get the expiry time of the recovery code given at username recovery and password recovery init.
+     *
+     * @return Expiry time of the recovery code (In minutes)
+     */
+    private int getResendCodeExpiryTime() {
+
+        String expiryTime = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.RESEND_CODE_EXPIRY_TIME);
+        if (StringUtils.isEmpty(expiryTime)) {
+            return IdentityRecoveryConstants.RESEND_CODE_DEFAULT_EXPIRY_TIME;
+        }
+        try {
+            return Integer.parseInt(expiryTime);
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("User recovery code expired. Therefore setting DEFAULT expiry time : %s minutes",
+                                IdentityRecoveryConstants.RESEND_CODE_DEFAULT_EXPIRY_TIME);
+                log.debug(message);
+            }
+            return IdentityRecoveryConstants.RESEND_CODE_DEFAULT_EXPIRY_TIME;
+        }
     }
 }

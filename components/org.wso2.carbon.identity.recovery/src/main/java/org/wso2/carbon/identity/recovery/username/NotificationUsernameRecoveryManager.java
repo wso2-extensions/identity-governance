@@ -32,9 +32,13 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.internal.service.impl.username.DefaultUsernameRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -48,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manager class which can be used to recover passwords using a notification
@@ -58,6 +63,7 @@ public class NotificationUsernameRecoveryManager {
     private static final String FORWARD_SLASH = "/";
 
     private static NotificationUsernameRecoveryManager instance = new NotificationUsernameRecoveryManager();
+    private static DefaultUsernameRecoveryManager defaultUsernameRecoveryManager = new DefaultUsernameRecoveryManager();
 
     private NotificationUsernameRecoveryManager() {
 
@@ -131,186 +137,141 @@ public class NotificationUsernameRecoveryManager {
         return claims;
     }
 
-
+    /**
+     * Recovery username of the user who matches the given set of claims.
+     *
+     * @param claims       User claims
+     * @param tenantDomain Tenant domain
+     * @param notify       Notify user existence
+     * @return Username if notifications are externally managed
+     * @throws IdentityRecoveryException Error while recovering the username
+     */
     public String verifyUsername(UserClaim[] claims, String tenantDomain, Boolean notify) throws
             IdentityRecoveryException {
 
+        // Resolve Tenant domain.
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
+        // Resolve notification internally managed status.
+        boolean isNotificationInternallyManaged = isNotificationsInternallyManaged(tenantDomain, notify);
+        HashMap<String, String> userClaims = buildUserClaimsMap(claims);
 
-        boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                .ConnectorConfig.USERNAME_RECOVERY_ENABLE, tenantDomain));
-        if (!isRecoveryEnable) {
+        // Validate the claims.
+        if (claims.length < 1) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE, null);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
         }
-
-        boolean isNotificationInternallyManaged;
-        if (notify == null) {
-            isNotificationInternallyManaged = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
-                    .ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+        RecoveryInformationDTO recoveryInformationDTO = initiateUsernameRecovery(userClaims, tenantDomain,
+                isNotificationInternallyManaged);
+        /*
+        recoveryChannelInfoDTO will be NULL for successful username recovery or when notify user existence in not
+        enabled and no user is matched to the given claims.
+         */
+        if (recoveryInformationDTO == null) {
+            return null;
         } else {
-            isNotificationInternallyManaged = notify;
-        }
-
-        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String userName = getUsernameByClaims(claims, tenantId);
-
-        if (userName != null) {
-            if (isNotificationInternallyManaged) {
-                triggerNotification(userName, IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY, tenantDomain);
-                return null;
-            } else {
-                return userName;
-            }
-        } else {
-            boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
-                    IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
-
-            if (notifyUserExistence) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND, null);
-            } else {
-                return null;
-            }
+            return recoveryInformationDTO.getUsername();
         }
     }
 
+    /**
+     * Initiate username recovery.
+     *
+     * @param claims                        User claims
+     * @param tenantDomain                  Tenant domain
+     * @param manageNotificationsInternally Enable internal notification management
+     * @return RecoveryChannelInfoDTO
+     * @throws IdentityRecoveryException Error initiating username recovery.
+     */
+    private RecoveryInformationDTO initiateUsernameRecovery(Map<String, String> claims, String tenantDomain,
+                                                            boolean manageNotificationsInternally) throws IdentityRecoveryException {
 
-    private void triggerNotification(String user, String type, String tenantDomain) throws IdentityRecoveryException {
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, UserCoreUtil.removeDomainFromName(user));
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, tenantDomain);
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, IdentityUtil.extractDomainFromName(user));
-
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-        Event identityMgtEvent = new Event(eventName, properties);
         try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_TRIGGER_NOTIFICATION, user, e);
-        }
-    }
+            HashMap<String, String> properties = new HashMap<>();
+            properties.put(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY, Boolean.toString(true));
+            properties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
+                    Boolean.toString(manageNotificationsInternally));
+            return defaultUsernameRecoveryManager.initiate(claims, tenantDomain, properties);
+        } catch (IdentityRecoveryServerException exception) {
+            if (StringUtils.isNotEmpty(exception.getErrorCode())) {
+                String errorCode = exception.getErrorCode();
 
-    private String getUsernameByClaims(UserClaim[] claims, int tenantId)
-            throws IdentityRecoveryException {
-
-        if (claims == null || claims.length < 1) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY, null);
-        }
-
-        String userName = null;
-        String[] resultedUserList = null;
-
-        // Need to populate the claim email as the first element in the
-        // passed array.
-        for (int i = 0; i < claims.length; i++) {
-
-            UserClaim claim = claims[i];
-            if (claim.getClaimURI() != null && claim.getClaimValue() != null) {
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Searching users for " + claim.getClaimURI() + " with the value :" + claim
-                            .getClaimValue());
+                // Userstore not found error.
+                if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER.getCode()
+                        .equals(errorCode)) {
+                    String msg = "Error retrieving the user store manager for the tenant";
+                    throw new IdentityRecoveryException(msg, exception);
                 }
-                String[] matchedUserList = getUserList(tenantId, claim.getClaimURI(),
-                        claim.getClaimValue());
+                // Error retrieving claims.
+                if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM.getCode()
+                        .equals(errorCode)) {
+                    String msg = "Unable to retrieve the claim for the given tenant";
+                    throw new IdentityRecoveryException(msg, exception);
+                }
+            }
+            throw exception;
+        } catch (IdentityRecoveryClientException exception) {
+            if (StringUtils.isNotEmpty(exception.getErrorCode())) {
+                String errorCode = exception.getErrorCode();
 
-                if (!ArrayUtils.isEmpty(matchedUserList)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Matched userList : " + Arrays.toString(matchedUserList));
+                // Multiple users matched error.
+                if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode()
+                        .equals(errorCode)) {
+                    if (Boolean.parseBoolean(IdentityUtil
+                                    .getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
+                        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                                .ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND, null);
                     }
-                    //If more than one user find the first matching user list. Hence need to define unique claims
-                    if (resultedUserList != null) {
-                        List<String> users = new ArrayList<String>();
-                        for (String user : resultedUserList) {
-                            for (String matchedUser : matchedUserList) {
-                                if (user.equals(matchedUser)) {
-                                    users.add(matchedUser);
-                                }
-                            }
-                        }
-                        if (users.size() > 0) {
-                            resultedUserList = new String[users.size()];
-                            users.toArray(resultedUserList);
-                            if (log.isDebugEnabled()) {
-                                log.debug("Current matching temporary userlist :" + Arrays.toString(resultedUserList));
-                            }
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug("There are no users for " + claim.getClaimURI() + " with the value : " + claim
-                                        .getClaimValue()+ " in the previously filtered user list");
-                            }
-                            return null;
-                        }
-                    } else {
-                        resultedUserList = matchedUserList;
-                        if (log.isDebugEnabled()) {
-                            log.debug("Current matching temporary userlist :" + Arrays.toString(resultedUserList));
-                        }
-                    }
-
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("There are no matching users for " + claim.getClaimURI() + " with the value : " + claim
-                                .getClaimValue());
-                    }
+                    /* If the notify user is not enabled, return an NULL object so that the user is not notified with
+                    an error. */
                     return null;
                 }
+                // Configurations not enabled error.
+                if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED.getCode()
+                        .equals(errorCode)) {
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLE, null);
+                }
             }
+            throw exception;
         }
-
-        if (resultedUserList.length == 1) {
-            userName = resultedUserList[0];
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("There are more than one user in the result set : "  + Arrays.toString(resultedUserList));
-            }
-        }
-        return userName;
     }
 
-    private static String[] getUserList(int tenantId, String claim, String value) throws IdentityRecoveryException {
+    /**
+     * Get a map of user claims using a list of UserClaims.
+     *
+     * @param claims List of UserClaims
+     * @return Claims
+     */
+    private HashMap<String, String> buildUserClaimsMap(UserClaim[] claims) {
 
-        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
-        String[] userList = null;
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-
-        try {
-            if (realmService.getTenantUserRealm(tenantId) != null) {
-                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                        getUserStoreManager();
+        HashMap<String, String> claimsMap = new HashMap<>();
+        for (UserClaim userClaim : claims) {
+            if (StringUtils.isNotEmpty(userClaim.getClaimURI()) && StringUtils.isNotEmpty(userClaim.getClaimValue())) {
+                claimsMap.put(userClaim.getClaimURI(), userClaim.getClaimValue());
             }
-
-        } catch (Exception e) {
-            String msg = "Error retrieving the user store manager for the tenant";
-            throw new IdentityRecoveryException(msg, e);
         }
-        try {
-            if (userStoreManager != null) {
-                if (StringUtils.isNotBlank(value) && value.contains(FORWARD_SLASH)) {
-                    String extractedDomain = IdentityUtil.extractDomainFromName(value);
-                    UserStoreManager secondaryUserStoreManager = userStoreManager.
-                            getSecondaryUserStoreManager(extractedDomain);
-                    /* Some claims (Eg:- Birth date) can have "/" in claim values. But in user store level we are
-                      trying to extract the claim value and find the user store domain. Hence we are adding an extra
-                      "/" to the claim value to avoid such issues.*/
-                    if (secondaryUserStoreManager == null) {
-                        value = FORWARD_SLASH + value;
-                    }
-                }
-                userList = userStoreManager.getUserList(claim, value, null);
-            }
-            return userList;
-        } catch (Exception e) {
-            String msg = "Unable to retrieve the claim for the given tenant";
-            throw new IdentityRecoveryException(msg, e);
+        return claimsMap;
+    }
+
+    /**
+     * Check whether notifications are internally managed.
+     *
+     * @param tenantDomain Tenant Domain
+     * @param notify       Manage notifications internally
+     * @return True of the notifications are internally managed
+     * @throws IdentityRecoveryException Error while getting server configurations
+     */
+    private boolean isNotificationsInternallyManaged(String tenantDomain, Boolean notify)
+            throws IdentityRecoveryException {
+
+        if (notify == null) {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                            tenantDomain));
+        } else {
+            return notify;
         }
     }
 }

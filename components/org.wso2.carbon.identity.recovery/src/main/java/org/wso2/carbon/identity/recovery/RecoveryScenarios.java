@@ -16,6 +16,12 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.recovery.util.Utils;
+
+/**
+ * Enum which contains the recovery scenarios.
+ */
 public enum RecoveryScenarios {
     NOTIFICATION_BASED_PW_RECOVERY,
     QUESTION_BASED_PWD_RECOVERY,
@@ -23,6 +29,30 @@ public enum RecoveryScenarios {
     SELF_SIGN_UP,
     ASK_PASSWORD,
     ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK,
-    ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
+    ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
+
+    /**
+     * Get recovery scenario which matches the given scenario name.
+     *
+     * @param scenarioName Name of the scenario
+     * @return RecoveryScenarios
+     * @throws IdentityRecoveryClientException Invalid scenario name
+     */
+    public static RecoveryScenarios getRecoveryScenario(String scenarioName) throws IdentityRecoveryClientException {
+
+        RecoveryScenarios[] scenarios = {
+                NOTIFICATION_BASED_PW_RECOVERY, QUESTION_BASED_PWD_RECOVERY, USERNAME_RECOVERY, SELF_SIGN_UP,
+                ASK_PASSWORD, ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, ADMIN_FORCED_PASSWORD_RESET_VIA_OTP
+        };
+        if (StringUtils.isNotEmpty(scenarioName)) {
+            for (RecoveryScenarios scenario : scenarios) {
+                if (scenarioName.equals(scenario.name())) {
+                    return scenario;
+                }
+            }
+        }
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_SCENARIO,
+                scenarioName);
+    }
 
 }

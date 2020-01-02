@@ -17,7 +17,7 @@
 package org.wso2.carbon.identity.recovery;
 
 /**
- * Identity management related constants
+ * Identity management related constants.
  */
 public class IdentityRecoveryConstants {
 
@@ -55,12 +55,17 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
+
+    // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
+    public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
+
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
+    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -71,7 +76,6 @@ public class IdentityRecoveryConstants {
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
-    public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
 
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
@@ -88,12 +92,34 @@ public class IdentityRecoveryConstants {
     public static final String CALLBACK = "callback";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
     public static final String IS_USER_PORTAL_URL = "isUserPortalURL";
-    public static final int SMS_OTP_CODE_LENGTH = 6;
+    public static final String NOTIFY_CHANNEL_LIST_SEPARATOR = ",";
+    public static final String CHANNEL_ATTRIBUTE_SEPARATOR = ":";
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public static final String EXCEPTION_SCENARIO_SEPARATOR = "-";
+
+    public static final String USE_LEGACY_API_PROPERTY_KEY = "useLegacyAPI";
+    public static final String NOTIFICATION_CHANNEL_PROPERTY_KEY = "notificationChannel";
+    public static final String VERIFIED_USER_PROPERTY_KEY = "verifiedUser";
+    public static final String MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY = "manageNotificationsInternally";
+
+    // Recovery Scenarios.
+    public static final String USER_NAME_RECOVERY = "UNR";
+    public static final String USER_SELF_REGISTRATION = "USR";
+    public static final String PASSWORD_RECOVERY_SCENARIO = "PWR";
+    public static final String USER_ACCOUNT_RECOVERY = "UAR";
+
+    public static final int SMS_OTP_CODE_LENGTH = 6;
+
+    // Recovery code given at the username and password recovery initiation.
+    public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
+    public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
 
     private IdentityRecoveryConstants() {
     }
 
+    /**
+     * Enum which contains the error codes and corresponding error messages.
+     */
     public enum ErrorMessages {
 
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s.'"),
@@ -188,7 +214,52 @@ public class IdentityRecoveryConstants {
 
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
-                "Unsupported verification channel");
+                "Unsupported verification channel"),
+
+        // UNR - Username Recovery
+        ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED("UNR-10001", "Username recovery is not enabled"),
+
+        // UAR - User Account Recovery.
+        ERROR_CODE_INVALID_RECOVERY_CODE("UAR-10001", "Invalid recoveryCode : '%s'"),
+        ERROR_CODE_NO_USER_FOUND("UAR-10002", "No user found"),
+        ERROR_CODE_NO_VERIFIED_CHANNELS_FOR_USER("UAR-10003", "No verified channels found for user"),
+        ERROR_CODE_INVALID_CHANNEL_ID("UAR-10004", "Channel ID does not exist"),
+        ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT("UAR-10005", "User's tenant domain does "
+                + "not match the domain in the context"),
+        ERROR_CODE_ERROR_LOADING_USER_CLAIMS("UAR-10006", "Error loading claims of the user"),
+        ERROR_CODE_MULTIPLE_MATCHING_USERS("UAR-10007", "Multiple users found for given claims"),
+        ERROR_CODE_NO_ACCOUNT_RECOVERY_DATA("UAR-10008", "No account recovery data found for "
+                + "recovery code : '%s'"),
+        ERROR_CODE_NO_NOTIFICATION_CHANNELS_FOR_USER("UAR-10009", "Notification channels not "
+                + "found for user"),
+        ERROR_CODE_INVALID_RECOVERY_STEP("UAR-10010", "Invalid recovery step : '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_SCENARIO("UAR-10011", "Invalid recovery scenario : '%s'"),
+        ERROR_CODE_INVALID_RESEND_CODE("UAR-10012", "Invalid resend code : '%s'"),
+        ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code : '%s'"),
+        ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
+        ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
+        ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims : '%s' "
+                + "from the userstore"),
+        ERROR_CODE_UNEXPECTED_ERROR("UAR-15004", "Unexpected error"),
+        ERROR_CODE_UNSUPPORTED_NOTIFICATION_CHANNEL("UAR-15005",
+                "Unsupported notification channel : '%s'"),
+        ERROR_CODE_ERROR_GENERATING_NEW_RESET_CODE("UAR-15006", "Error while generating new "
+                + "password reset code"),
+
+        // PWR - Password Recovery.
+        ERROR_CODE_INVALID_TENANT_DOMAIN_PASSWORD_RESET("PWR-10001", "User's tenant domain does "
+                + "not match with the domain in the context"),
+        ERROR_CODE_PASSWORD_RECOVERY_WITH_NOTIFICATIONS_NOT_ENABLED(
+                "PWR-10002", "Password recovery with notifications is not enabled"),
+        ERROR_CODE_NO_PASSWORD_IN_REQUEST("PWR-10003", "No password found"),
+        ERROR_CODE_PASSWORD_RECOVERY_NOT_ENABLED("UNR-10004", "Password recovery is not enabled"),
+        ERROR_CODE_PASSWORD_HISTORY_VIOLATION("UNR-10005", "This password has been used in recent "
+                + "history. Please choose a different password"),
+        ERROR_CODE_PASSWORD_POLICY_VIOLATION("UNR-10006", "Password policy violation"),
+        ERROR_CODE_INVALID_CALLBACK_PASSWORD_RESET("UNR-10007", "Invalid callback url in password " +
+                "reset request"),
+        ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
+                + "password reset");
 
         private final String code;
         private final String message;
@@ -218,6 +289,7 @@ public class IdentityRecoveryConstants {
      */
     public enum SuccessEvents {
 
+        // USR - User Self Registration.
         SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_INTERNAL_VERIFICATION("USR-02001",
                 "Successful user self registration. Pending account verification."),
         SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION("USR-02002",
@@ -226,7 +298,24 @@ public class IdentityRecoveryConstants {
                 "Successful user self registration. Account verification not required."),
         SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL("USR-02004",
                 "Successful user self registration with verified channel. "
-                        + "Account verification not required.");
+                        + "Account verification not required."),
+
+        // UNR - Username Recovery.
+        SUCCESS_STATUS_CODE_USERNAME_INTERNALLY_NOTIFIED("UNR-02001",
+                "Username recovery information sent via user preferred notification channel."),
+        SUCCESS_STATUS_CODE_USERNAME_EXTERNALLY_NOTIFIED("UNR-02002",
+                "Username recovery information sent externally."),
+
+        // PWR - Password Recovery.
+        SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED("PWR-02001",
+                "Password recovery information sent via user preferred notification channel."),
+        SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_EXTERNALLY_NOTIFIED("PWR-02002",
+                "Password recovery information sent externally"),
+        SUCCESS_STATUS_CODE_SUCCESSFUL_PASSWORD_UPDATE("PWR-02005", "Successful password reset."),
+
+        // UAR - User Account Recovery.
+        SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE("UAR-02001",
+                "Confirmation code resent to the user.");
 
         private final String code;
         private final String message;
@@ -237,7 +326,7 @@ public class IdentityRecoveryConstants {
         }
 
         /**
-         * Get the code of the SuccessEvents
+         * Get the code of the SuccessEvents.
          *
          * @return Code
          */
@@ -262,6 +351,10 @@ public class IdentityRecoveryConstants {
 
     public static class ConnectorConfig {
 
+        public static final String PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME =
+                "Recovery.Notification.Recovery.ExpiryTime.SMSOTP";
+        public static final String RESEND_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.ResendCode";
+        public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
@@ -373,5 +466,16 @@ public class IdentityRecoveryConstants {
         public static final String PURPOSE_ID = "purposeId";
         public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
         public static final String RESIDENT_IDP = "Resident IDP";
+    }
+
+    /**
+     * Constants used for masking the notification channels.
+     */
+    public static class ChannelMasking {
+
+        public static final String MASKING_CHARACTER = "*";
+        public static final String EMAIL_MASKING_REGEX =
+                "(?<=.)[^@](?=[^@]*?@)|(?:(?<=@.)|(?!^)\\G(?=[^@]*$)).(?=.*[^@]\\.)";
+        public static final String MOBILE_MASKING_REGEX = ".(?=.{4})";
     }
 }
