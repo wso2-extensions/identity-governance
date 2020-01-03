@@ -17,7 +17,9 @@ package org.wso2.carbon.identity.governance.internal.service.impl.notification;
 
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertEquals;
 
 import org.apache.commons.lang.StringUtils;
 import org.mockito.InjectMocks;
@@ -25,7 +27,10 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.IObjectFactory;
-import org.testng.annotations.*;
+import org.testng.annotations.ObjectFactory;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -379,7 +384,6 @@ public class DefaultNotificationChannelManagerTest {
                 { channelClaimsMap11, defaultChannel11, expectedChannel11, message11, CHANNEL_RESOLVING_NOT_ENABLED,
                   null }
         };
-
     }
 
     /**
@@ -395,7 +399,7 @@ public class DefaultNotificationChannelManagerTest {
         channelClaimsMap1.put(IdentityMgtConstants.Claim.PREFERED_CHANNEL_CLAIM,
                 NotificationChannels.EMAIL_CHANNEL.getChannelType());
         String defaultChannel1 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
-        String expectedChannel1 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String expectedChannel1 = defaultChannel1;
         String message1 = "SCENARIO: User specified the Preferred Channel as EMAIL and has email claim values : ";
 
         // Preferred Channel SMS with SMS claim values.
@@ -410,7 +414,7 @@ public class DefaultNotificationChannelManagerTest {
         HashMap<String, String> channelClaimsMap3 = new HashMap<>(channelClaims);
         channelClaimsMap3.remove(NotificationChannels.SMS_CHANNEL.getClaimUri());
         String defaultChannel3 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
-        String expectedChannel3 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String expectedChannel3 = defaultChannel3;
         String message3 = "SCENARIO: User has no preferred channel, has email claims only : ";
 
         // User has not specified a preferred channel, but have values for mobile claim.
@@ -424,14 +428,14 @@ public class DefaultNotificationChannelManagerTest {
         // Default notification channel in EMAIL.
         HashMap<String, String> channelClaimsMap5 = new HashMap<>(channelClaims);
         String defaultChannel5 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
-        String expectedChannel5 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String expectedChannel5 = defaultChannel5 ;
         String message5 = "SCENARIO: User has both email and mobile claims. Default channel EMAIL : ";
 
         // User has not specified a preferred channel, but provided both email and mobile values.
         // Default notification channel in SMS.
         HashMap<String, String> channelClaimsMap6 = new HashMap<>(channelClaims);
         String defaultChannel6 = NotificationChannels.SMS_CHANNEL.getChannelType();
-        String expectedChannel6 = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String expectedChannel6 = defaultChannel6;
         String message6 = "SCENARIO: User has both email and mobile claims. Default channel SMS : ";
 
         /* ERROR SCENARIOS */
@@ -456,13 +460,13 @@ public class DefaultNotificationChannelManagerTest {
         // Default notification channel in EMAIL.
         HashMap<String, String> channelClaimsMap9 = new HashMap<>(channelClaims);
         String defaultChannel9 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
-        String expectedChannel9 = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String expectedChannel9 = defaultChannel9;
         String message9 = "SCENARIO: Configs not enabled. Default Channel " + defaultChannel9 + " : ";
 
         // Default notification channel in SMS.
         HashMap<String, String> channelClaimsMap10 = new HashMap<>(channelClaims);
         String defaultChannel10 = NotificationChannels.SMS_CHANNEL.getChannelType();
-        String expectedChannel10 = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String expectedChannel10 = defaultChannel10;
         String message10 = "SCENARIO: Configs not enabled. Default Channel " + defaultChannel10 + " : ";
 
         return new Object[][] {

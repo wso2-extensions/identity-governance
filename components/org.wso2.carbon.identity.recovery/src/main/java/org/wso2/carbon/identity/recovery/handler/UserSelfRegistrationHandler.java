@@ -219,7 +219,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
         // Get the user preferred notification channel.
         String preferredChannel = (String) eventProperties.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM);
-
         // Resolve preferred notification channel.
         if (StringUtils.isEmpty(preferredChannel)) {
             NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
