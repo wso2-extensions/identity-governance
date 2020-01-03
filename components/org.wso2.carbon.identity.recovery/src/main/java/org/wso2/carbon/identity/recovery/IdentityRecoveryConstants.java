@@ -352,7 +352,7 @@ public class IdentityRecoveryConstants {
     public static class ConnectorConfig {
 
         public static final String PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME =
-                "Recovery.Notification.Recovery.ExpiryTime.SMSOTP";
+                "Recovery.Notification.Password.ExpiryTime.smsOtp";
         public static final String RESEND_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.ResendCode";
         public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
