@@ -38,6 +38,7 @@ public enum RecoverySteps {
      * @throws IdentityRecoveryClientException Invalid step name
      */
     public static RecoverySteps getRecoveryStep(String stepName) throws IdentityRecoveryClientException {
+
         RecoverySteps[] recoverySteps = {
                 NOTIFY, UPDATE_PASSWORD, VALIDATE_CHALLENGE_QUESTION, VALIDATE_ALL_CHALLENGE_QUESTION, CONFIRM_SIGN_UP,
                 SEND_RECOVERY_INFORMATION, RESEND_CONFIRMATION_CODE

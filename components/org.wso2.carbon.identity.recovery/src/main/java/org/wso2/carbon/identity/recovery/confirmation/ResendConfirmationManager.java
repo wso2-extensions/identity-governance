@@ -146,11 +146,12 @@ public class ResendConfirmationManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
                     tenantDomain);
         }
-        // Validate recovery scenario.
         if (!scenario.equals(userRecoveryData.getRecoveryScenario())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
                     resendCode);
         }
+        //Validate the tenant domain and the recovery scenario in the request.
+        validateRequestAttributes(user,scenario,userRecoveryData.getRecoveryScenario(),tenantDomain,resendCode);
         validateCallback(properties, user.getTenantDomain());
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
@@ -170,6 +171,32 @@ public class ResendConfirmationManager {
         resendConfirmationDTO.setSuccessMessage(
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getMessage());
         return resendConfirmationDTO;
+    }
+
+    /**
+     * Validate the tenant domain and the recovery scenario in the request.
+     *
+     * @param recoveredUser         User recovered using the resend code
+     * @param scenarioInRequest     Recovery scenario in the resend request
+     * @param recoveredScenario     Recovery scenario related to the resend code
+     * @param tenantDomainInRequest Tenant domain in the request
+     * @param resendCode            Resend code
+     * @throws IdentityRecoveryClientException Error in the resend request
+     */
+    private void validateRequestAttributes(User recoveredUser, RecoveryScenarios scenarioInRequest,
+                                           Enum recoveredScenario,
+                                           String tenantDomainInRequest, String resendCode)
+            throws IdentityRecoveryClientException {
+
+        if (!tenantDomainInRequest.equals(recoveredUser.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                    tenantDomainInRequest);
+        }
+        if (!scenarioInRequest.equals(recoveredScenario)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
+                    resendCode);
+        }
     }
 
     /**

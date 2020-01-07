@@ -21,7 +21,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -54,9 +53,9 @@ import java.util.Map;
 /**
  * Class that implements the UsernameRecoveryManager.
  */
-public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
+public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
-    private static final Log log = LogFactory.getLog(DefaultUsernameRecoveryManager.class);
+    private static final Log log = LogFactory.getLog(UsernameRecoveryManagerImpl.class);
 
     /**
      * Get the username recovery information with available verified channel details.
@@ -72,23 +71,15 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
     public RecoveryInformationDTO initiate(Map<String, String> claims, String tenantDomain,
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
 
         boolean useLegacyAPIApproach = useLegacyAPIApproach(properties);
         boolean manageNotificationsInternally = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
-        if (!useLegacyAPIApproach) {
-            // Add notification method in a meta property list.
-            Map<String, String> metaProperties = new HashMap<>();
-            metaProperties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
-                    Boolean.toString(manageNotificationsInternally));
-            recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
-                    .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
-                            metaProperties));
-        } else {
-            // Else block is used to support legacy username recovery API functionality.
+        if (useLegacyAPIApproach) {
+            // Use legacy API approach to support legacy username recovery.
             String username = userAccountRecoveryManager.getUsernameByClaims(claims, tenantDomain);
             if (StringUtils.isNotEmpty(username)) {
                 if (manageNotificationsInternally) {
@@ -100,24 +91,32 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
                                 "User notified Internally");
                     }
                     return null;
-                } else {
-                    log.debug("Successful username recovery for user: " + username + ". User notified Externally");
-                    recoveryInformationDTO.setUsername(username);
                 }
+                if (log.isDebugEnabled()) {
+                    log.debug("Successful username recovery for user: " + username + ". User notified Externally");
+                }
+                recoveryInformationDTO.setUsername(username);
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("No user found for the given claims");
+                    log.debug("No user found for the given claims in tenant domain : " + tenantDomain);
                 }
                 if (Boolean.parseBoolean(
                         IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
                     throw Utils.handleClientException(
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND,
                             null);
-                } else {
-                    return null;
                 }
+                return null;
             }
+            return recoveryInformationDTO;
         }
+        // Add notification method in a meta property list.
+        Map<String, String> metaProperties = new HashMap<>();
+        metaProperties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
+                Boolean.toString(manageNotificationsInternally));
+        recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
+                .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
+                        metaProperties));
         return recoveryInformationDTO;
     }
 
@@ -136,7 +135,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
     public UsernameRecoverDTO notify(String recoveryCode, String channelId, String tenantDomain,
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         int channelIdCode = validateChannelID(channelId);
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager recoveryAccountManager = UserAccountRecoveryManager.getInstance();
@@ -166,7 +165,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
      */
     private boolean useLegacyAPIApproach(Map<String, String> properties) {
 
-        if (properties != null && properties.size() > 0) {
+        if (MapUtils.isNotEmpty(properties)) {
             try {
                 return Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
             } catch (NumberFormatException e) {
@@ -194,24 +193,6 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
         return user;
-    }
-
-    /**
-     * Resolve the tenant domain in the request.
-     *
-     * @param tenantDomain Tenant domain in the request
-     * @return Resolved tenant domain
-     */
-    private String resolveTenantDomain(String tenantDomain) {
-
-        if (StringUtils.isBlank(tenantDomain)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Tenant domain is not in the request. Therefore, domain set to : "
-                        + MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            }
-            return MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        return tenantDomain;
     }
 
     /**
@@ -249,7 +230,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
     private UsernameRecoverDTO buildUserNameRecoveryResponseDTO(User user, String notificationChannel) {
 
         // Username regex. Example: username@tenantDomain.
-        String QUALIFIED_USERNAME_REGEX_PATTERN = "%s@%s";
+        String qualifiedUsernameRegexPattern = "%s@%s";
         UsernameRecoverDTO usernameRecoverDTO = new UsernameRecoverDTO();
         usernameRecoverDTO.setNotificationChannel(notificationChannel);
         // Check for notification method.
@@ -263,7 +244,7 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
             // If notifications are externally managed, username needs to be sent with the request.
             // Build username for external notification.
             String username =
-                    String.format(QUALIFIED_USERNAME_REGEX_PATTERN, user.getUserName(), user.getTenantDomain());
+                    String.format(qualifiedUsernameRegexPattern, user.getUserName(), user.getTenantDomain());
             usernameRecoverDTO.setUsername(username);
         } else {
             usernameRecoverDTO.setCode(
@@ -422,5 +403,21 @@ public class DefaultUsernameRecoveryManager implements UsernameRecoveryManager {
                     callbackURL);
         }
         return callbackURL;
+    }
+
+    /**
+     * Validates the tenant domain in the request.
+     *
+     * @param tenantDomain Tenant domain
+     * @throws IdentityRecoveryClientException Empty tenant domain in the request
+     */
+    private void validateTenantDomain(String tenantDomain) throws IdentityRecoveryClientException {
+
+        if (StringUtils.isBlank(tenantDomain)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN
+                            .getMessage(), null);
+        }
     }
 }

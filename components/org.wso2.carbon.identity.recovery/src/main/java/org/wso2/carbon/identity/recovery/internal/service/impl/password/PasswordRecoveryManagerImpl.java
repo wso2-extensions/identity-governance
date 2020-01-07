@@ -22,7 +22,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -56,9 +55,9 @@ import java.util.Map;
 /**
  * Class that implements the PasswordRecoveryManager.
  */
-public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
+public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
-    private static final Log log = LogFactory.getLog(DefaultPasswordRecoveryManager.class);
+    private static final Log log = LogFactory.getLog(PasswordRecoveryManagerImpl.class);
 
     /**
      * Get the username recovery information with available verified channel details.
@@ -74,7 +73,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     public RecoveryInformationDTO initiate(Map<String, String> claims, String tenantDomain,
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         boolean isQuestionBasedRecoveryEnabled = isQuestionBasedRecoveryEnabled(tenantDomain);
         boolean isNotificationBasedRecoveryEnabled = isNotificationBasedRecoveryEnabled(tenantDomain);
@@ -118,7 +117,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     public PasswordRecoverDTO notify(String recoveryCode, String channelId, String tenantDomain,
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         validateConfigurations(tenantDomain);
         int channelIDCode = validateChannelID(channelId);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
@@ -153,7 +152,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     public PasswordResetCodeDTO confirm(String confirmationCode, String tenantDomain, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
@@ -205,7 +204,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
             throw mapClientExceptionWithImprovedErrorCodes(e);
         } catch (IdentityEventException e) {
             if (log.isDebugEnabled()) {
-                log.debug("DefaultPasswordRecoveryManager: Error while resetting password ", e);
+                log.debug("PasswordRecoveryManagerImpl: Error while resetting password ", e);
             }
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET.getCode(),
@@ -229,7 +228,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     public ResendConfirmationDTO resend(String tenantDomain, String resendCode, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-        tenantDomain = resolveTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         Property[] metaProperties = buildPropertyList(null, properties);
         ResendConfirmationManager resendConfirmationManager = ResendConfirmationManager.getInstance();
         try {
@@ -385,7 +384,7 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     }
 
     /**
-     * Validate the channel Id given in the reqest.
+     * Validate the channel Id given in the request.
      *
      * @param channelId Channel Id in the request.
      * @return Channel Id
@@ -394,7 +393,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     private int validateChannelID(String channelId) throws IdentityRecoveryClientException {
 
         int id;
-        // Check whether the channel Id is an int.
         try {
             id = Integer.parseInt(channelId);
         } catch (NumberFormatException e) {
@@ -495,24 +493,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     }
 
     /**
-     * Resolve the tenant domain in the request.
-     *
-     * @param tenantDomain Tenant domain in the request
-     * @return Resolved tenant domain
-     */
-    private String resolveTenantDomain(String tenantDomain) {
-
-        if (StringUtils.isBlank(tenantDomain)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Tenant domain is not in the request. Therefore, domain set to : "
-                        + MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            }
-            return MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        return tenantDomain;
-    }
-
-    /**
      * Check whether challenge question based recovery is enabled for the tenant.
      *
      * @param tenantDomain Tenant domain
@@ -587,7 +567,6 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
     private void addRecoveryDataObject(String userName, String tenantDomain, String secretKey, String recoveryData)
             throws IdentityRecoveryServerException {
 
-        // Create a user object.
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);
@@ -603,6 +582,22 @@ public class DefaultPasswordRecoveryManager implements PasswordRecoveryManager {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,
                     "Error Storing Recovery Data", e);
+        }
+    }
+
+    /**
+     * Validates the tenant domain in the request.
+     *
+     * @param tenantDomain Tenant domain
+     * @throws IdentityRecoveryClientException Empty tenant domain in the request
+     */
+    private void validateTenantDomain(String tenantDomain) throws IdentityRecoveryClientException {
+
+        if (StringUtils.isBlank(tenantDomain)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN
+                            .getMessage(), null);
         }
     }
 }

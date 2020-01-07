@@ -19,7 +19,6 @@
 
 package org.wso2.carbon.identity.recovery.username;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,27 +28,19 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.IdentityClaimManager;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.IdentityEventException;
-import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
-import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
-import org.wso2.carbon.identity.recovery.internal.service.impl.username.DefaultUsernameRecoveryManager;
+import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.model.UserClaim;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
-import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.Claim;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +54,7 @@ public class NotificationUsernameRecoveryManager {
     private static final String FORWARD_SLASH = "/";
 
     private static NotificationUsernameRecoveryManager instance = new NotificationUsernameRecoveryManager();
-    private static DefaultUsernameRecoveryManager defaultUsernameRecoveryManager = new DefaultUsernameRecoveryManager();
+    private static UsernameRecoveryManagerImpl usernameRecoveryManagerImpl = new UsernameRecoveryManagerImpl();
 
     private NotificationUsernameRecoveryManager() {
 
@@ -191,7 +182,7 @@ public class NotificationUsernameRecoveryManager {
             properties.put(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY, Boolean.toString(true));
             properties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
                     Boolean.toString(manageNotificationsInternally));
-            return defaultUsernameRecoveryManager.initiate(claims, tenantDomain, properties);
+            return usernameRecoveryManagerImpl.initiate(claims, tenantDomain, properties);
         } catch (IdentityRecoveryServerException exception) {
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();

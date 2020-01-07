@@ -218,6 +218,8 @@ public class IdentityRecoveryConstants {
 
         // UNR - Username Recovery
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED("UNR-10001", "Username recovery is not enabled"),
+        ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN("UNR-10002", "Empty tenant domain in username "
+                + "recovery request"),
 
         // UAR - User Account Recovery.
         ERROR_CODE_INVALID_RECOVERY_CODE("UAR-10001", "Invalid recoveryCode : '%s'"),
@@ -258,6 +260,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PASSWORD_POLICY_VIOLATION("UNR-10006", "Password policy violation"),
         ERROR_CODE_INVALID_CALLBACK_PASSWORD_RESET("UNR-10007", "Invalid callback url in password " +
                 "reset request"),
+        ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("UNR-10008", "Empty tenant domain in password "
+                + "recovery request"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset");
 

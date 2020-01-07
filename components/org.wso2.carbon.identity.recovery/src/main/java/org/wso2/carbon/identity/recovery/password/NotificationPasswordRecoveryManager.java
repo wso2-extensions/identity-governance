@@ -109,8 +109,8 @@ public class NotificationPasswordRecoveryManager {
         if (!isUserVerified(propertyMap)) {
             if (!isExistingUser(user)) {
 
-                // If the user does not exist, Check for NOTIFY_USER_EXISTENCE property. If the property is not
-                // enabled, notify with an empty NotificationResponseBean.
+                /* If the user does not exist, Check for NOTIFY_USER_EXISTENCE property. If the property is not
+                enabled, notify with an empty NotificationResponseBean.*/
                 boolean notifyUserExistence = Boolean.parseBoolean(
                         IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
                 if (notifyUserExistence) {
@@ -235,10 +235,18 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityRecoveryException {
 
         if (notify == null) {
-            return Boolean.parseBoolean(
+            boolean manageNotificationsInternally = Boolean.parseBoolean(
                     Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                             tenantDomain));
+            if (log.isDebugEnabled()) {
+                log.debug("Notify parameter not in the request. ManageNotificationsInternally set to " +
+                        "server default value: " + manageNotificationsInternally);
+            }
+            return manageNotificationsInternally;
         } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Notify parameter in the request. ManageNotificationsInternally set to : " + notify);
+            }
             return notify;
         }
     }
@@ -304,8 +312,7 @@ public class NotificationPasswordRecoveryManager {
         if (StringUtils.isEmpty(channel)) {
             String defaultNotificationChannel = IdentityGovernanceUtil.getDefaultNotificationChannel();
             if (log.isDebugEnabled()) {
-                String message = String.format("Notification channel is set to : ", defaultNotificationChannel);
-                log.debug(message);
+                log.debug("Notification channel is set to : " + defaultNotificationChannel);
             }
             return defaultNotificationChannel;
         }

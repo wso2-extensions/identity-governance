@@ -49,7 +49,10 @@ import org.wso2.carbon.user.core.service.RealmService;
 import java.util.HashMap;
 
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNull;
 
 /**
  * Class which contains the test cases for UserAccountRecoveryManager.
