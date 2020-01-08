@@ -141,7 +141,7 @@ public class ResendConfirmationManager {
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
-        if (!tenantDomain.equals(user.getTenantDomain())) {
+        if (!StringUtils.equals(tenantDomain,user.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
                     tenantDomain);
@@ -150,20 +150,27 @@ public class ResendConfirmationManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
                     resendCode);
         }
-        //Validate the tenant domain and the recovery scenario in the request.
+        // Validate the tenant domain and the recovery scenario in the request.
         validateRequestAttributes(user,scenario,userRecoveryData.getRecoveryScenario(),tenantDomain,resendCode);
         validateCallback(properties, user.getTenantDomain());
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
         String confirmationCode = generateSecretKey(notificationChannel);
-        String eventName = Utils.resolveEventName(notificationChannel);
-        triggerNotification(user, notificationChannel, notificationScenario, confirmationCode, eventName, properties);
+        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
+
+        // Notification needs to trigger if the notification channel is not equal to EXTERNAL.
+        if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String eventName = Utils.resolveEventName(notificationChannel);
+            triggerNotification(user, notificationChannel, notificationScenario, confirmationCode, eventName,
+                    properties);
+        } else {
+            resendConfirmationDTO.setExternalConfirmationCode(confirmationCode);
+        }
         // Store new confirmation code.
         addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), confirmationCode, notificationChannel,
                 scenario, step);
         resendCode = generateResendCode(notificationChannel, scenario, userRecoveryData);
-        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
         resendConfirmationDTO.setNotificationChannel(notificationChannel);
         resendConfirmationDTO.setResendCode(resendCode);
         resendConfirmationDTO.setSuccessCode(
@@ -188,7 +195,7 @@ public class ResendConfirmationManager {
                                            String tenantDomainInRequest, String resendCode)
             throws IdentityRecoveryClientException {
 
-        if (!tenantDomainInRequest.equals(recoveredUser.getTenantDomain())) {
+        if (!StringUtils.equals(tenantDomainInRequest,recoveredUser.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
                     tenantDomainInRequest);

@@ -104,8 +104,8 @@ public class UserAccountRecoveryManager {
             // Get the notification management mechanism.
             boolean isNotificationsInternallyManaged = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
 
-            // If the notification is internally managed, then notification channels available for the user needs to
-            // be retrieved. If external notifications are enabled, external channel list should be returned.
+            /* If the notification is internally managed, then notification channels available for the user needs to
+            be retrieved. If external notifications are enabled, external channel list should be returned.*/
             if (isNotificationsInternallyManaged) {
                 notificationChannels = getInternalNotificationChannelList(username, tenantDomain);
             } else {

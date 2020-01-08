@@ -90,6 +90,8 @@ public enum NotificationChannels {
             return EMAIL_CHANNEL;
         } else if (SMS_CHANNEL.getChannelType().equals(channelType)) {
             return SMS_CHANNEL;
+        } else if (EXTERNAL_CHANNEL.getChannelType().equals(channelType)) {
+            return EXTERNAL_CHANNEL;
         } else {
             throw new NotificationChannelManagerClientException(
                     IdentityMgtConstants.ErrorMessages.ERROR_CODE_NO_NOTIFICATION_CHANNELS.getCode(),

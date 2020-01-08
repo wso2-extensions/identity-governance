@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -658,7 +659,7 @@ public class Utils {
     public static boolean isNotificationsInternallyManaged(String tenantDomain, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-        if (properties != null && properties.size() > 0) {
+        if (MapUtils.isNotEmpty(properties)) {
             try {
                 String manageNotificationsInternally = properties
                         .get(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY);

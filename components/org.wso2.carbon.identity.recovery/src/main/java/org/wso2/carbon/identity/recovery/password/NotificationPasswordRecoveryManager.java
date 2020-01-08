@@ -20,6 +20,7 @@
 package org.wso2.carbon.identity.recovery.password;
 
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -344,7 +345,7 @@ public class NotificationPasswordRecoveryManager {
     private HashMap<String, String> buildPropertyMap(Property[] properties) {
 
         HashMap<String, String> propertyMap = new HashMap<>();
-        if (properties != null && properties.length > 0) {
+        if (ArrayUtils.isNotEmpty(properties)) {
             for (Property property : properties) {
                 if (StringUtils.isNotEmpty(property.getKey())) {
                     propertyMap.put(property.getKey(), property.getValue());

@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -433,24 +434,16 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
         PasswordRecoverDTO passwordRecoverDTO = new PasswordRecoverDTO();
         passwordRecoverDTO.setNotificationChannel(notificationChannel);
-        if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
+        if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             passwordRecoverDTO.setConfirmationCode(confirmationCode);
-            passwordRecoverDTO.setCode(
-                    IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_EXTERNALLY_NOTIFIED
-                            .getCode());
-            passwordRecoverDTO.setMessage(
-                    IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_EXTERNALLY_NOTIFIED
-                            .getMessage());
-        } else {
-            passwordRecoverDTO.setConfirmationCode(StringUtils.EMPTY);
-            passwordRecoverDTO.setResendCode(resendCode);
-            passwordRecoverDTO.setCode(
-                    IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED
-                            .getCode());
-            passwordRecoverDTO.setMessage(
-                    IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED
-                            .getMessage());
         }
+        passwordRecoverDTO.setResendCode(resendCode);
+        passwordRecoverDTO.setCode(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED
+                        .getCode());
+        passwordRecoverDTO.setMessage(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED
+                        .getMessage());
         return passwordRecoverDTO;
     }
 
