@@ -27,12 +27,18 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.dto.ResendConfirmationDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -40,11 +46,14 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
 /**
  * Generic Manager class which can be used to resend confirmation code for any recovery scenario and self registration
- * using a notification
+ * using a notification.
  */
 public class ResendConfirmationManager {
 
@@ -103,6 +112,266 @@ public class ResendConfirmationManager {
                     user.getUserName());
         }
         return validateAndResendNotification(user, code, recoveryScenario, recoveryStep, notificationType, properties);
+    }
+
+    /**
+     * Resend confirmation information for the user bound to the resend code. The user will be notified via a channel
+     * recovered from the recovery data of the user.
+     *
+     * @param tenantDomain         Tenant domain
+     * @param resendCode           Previously issued confirmation code
+     * @param recoveryScenario     Name of the recovery scenario
+     *                             {@link org.wso2.carbon.identity.recovery.RecoveryScenarios}
+     * @param recoveryStep         Name of the recovery step {@link org.wso2.carbon.identity.recovery.RecoverySteps}
+     * @param notificationScenario Notification template name related to the recovery scenario (Eg: org.wso2.carbon
+     *                             .identity.recovery.IdentityRecoveryConstants
+     *                             .NOTIFICATION_TYPE_RESEND_PASSWORD_RESET
+     * @param properties           Meta properties
+     * @return ResendConfirmationDTO {@link ResendConfirmationDTO} bean resend operation information
+     * @throws IdentityRecoveryException Error while sending confirmation info
+     */
+    public ResendConfirmationDTO resendConfirmation(String tenantDomain, String resendCode, String recoveryScenario,
+                                                    String recoveryStep, String notificationScenario,
+                                                    Property[] properties) throws IdentityRecoveryException {
+
+        RecoverySteps step = RecoverySteps.getRecoveryStep(recoveryStep);
+        RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
+        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        // Get Recovery data.
+        UserRecoveryData userRecoveryData = userAccountRecoveryManager
+                .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
+        User user = userRecoveryData.getUser();
+        if (!StringUtils.equals(tenantDomain, user.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                    tenantDomain);
+        }
+        if (!scenario.equals(userRecoveryData.getRecoveryScenario())) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
+                    resendCode);
+        }
+        // Validate the tenant domain and the recovery scenario in the request.
+        validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
+        validateCallback(properties, user.getTenantDomain());
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidate(user);
+        String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
+        String confirmationCode = generateSecretKey(notificationChannel);
+        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
+
+        // Notification needs to trigger if the notification channel is not equal to EXTERNAL.
+        if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String eventName = Utils.resolveEventName(notificationChannel);
+            triggerNotification(user, notificationChannel, notificationScenario, confirmationCode, eventName,
+                    properties);
+        } else {
+            resendConfirmationDTO.setExternalConfirmationCode(confirmationCode);
+        }
+        // Store new confirmation code.
+        addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), confirmationCode, notificationChannel,
+                scenario, step);
+        resendCode = generateResendCode(notificationChannel, scenario, userRecoveryData);
+        resendConfirmationDTO.setNotificationChannel(notificationChannel);
+        resendConfirmationDTO.setResendCode(resendCode);
+        resendConfirmationDTO.setSuccessCode(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
+        resendConfirmationDTO.setSuccessMessage(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getMessage());
+        return resendConfirmationDTO;
+    }
+
+    /**
+     * Validate the tenant domain and the recovery scenario in the request.
+     *
+     * @param recoveredUser         User recovered using the resend code
+     * @param scenarioInRequest     Recovery scenario in the resend request
+     * @param recoveredScenario     Recovery scenario related to the resend code
+     * @param tenantDomainInRequest Tenant domain in the request
+     * @param resendCode            Resend code
+     * @throws IdentityRecoveryClientException Error in the resend request
+     */
+    private void validateRequestAttributes(User recoveredUser, RecoveryScenarios scenarioInRequest,
+                                           Enum recoveredScenario,
+                                           String tenantDomainInRequest, String resendCode)
+            throws IdentityRecoveryClientException {
+
+        if (!StringUtils.equals(tenantDomainInRequest, recoveredUser.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                    tenantDomainInRequest);
+        }
+        if (!scenarioInRequest.equals(recoveredScenario)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
+                    resendCode);
+        }
+    }
+
+    /**
+     * Trigger notification to send userName recovery information.
+     *
+     * @param user                User
+     * @param notificationChannel Notification channel (Eg: EMAIL or SMS)
+     * @param templateName        Notification Template name
+     * @param code                Secret key
+     * @param eventName           Event name
+     * @param metaProperties      Meta properties to be send with the notification.
+     * @throws IdentityRecoveryException Error while triggering notification.
+     */
+    private void triggerNotification(User user, String notificationChannel, String templateName, String code,
+                                     String eventName, Property[] metaProperties) throws IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
+        }
+
+    }
+
+    /**
+     * Get the resend code.
+     *
+     * @param notificationChannel Notification channel
+     * @param scenario            Recovery scenario
+     * @param userRecoveryData    User Recovery data
+     * @return Resend code
+     * @throws IdentityRecoveryServerException Error while adding the resend code
+     */
+    private String generateResendCode(String notificationChannel, RecoveryScenarios scenario,
+                                      UserRecoveryData userRecoveryData) throws IdentityRecoveryServerException {
+
+        String resendCode = UUIDGenerator.generateUUID();
+        User user = userRecoveryData.getUser();
+        addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), resendCode, notificationChannel, scenario,
+                RecoverySteps.RESEND_CONFIRMATION_CODE);
+        return resendCode;
+    }
+
+    /**
+     * Add the notification channel recovery data to the store.
+     *
+     * @param userName         Username
+     * @param tenantDomain     Tenant domain
+     * @param secretKey        RecoveryId
+     * @param recoveryData     Data to be stored as mata which are needed to evaluate the recovery data object
+     * @param recoveryScenario Recovery scenario
+     * @param recoveryStep     Recovery step
+     * @throws IdentityRecoveryServerException Error storing recovery data
+     */
+    private void addRecoveryDataObject(String userName, String tenantDomain, String secretKey, String recoveryData,
+                                       RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep)
+            throws IdentityRecoveryServerException {
+
+        // Create a user object.
+        User user = new User();
+        user.setUserName(userName);
+        user.setTenantDomain(tenantDomain);
+        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
+
+        // Store available channels in remaining setIDs.
+        recoveryDataDO.setRemainingSetIds(recoveryData);
+        try {
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            userRecoveryDataStore.store(recoveryDataDO);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,
+                    "Error Storing Recovery Data", e);
+        }
+    }
+
+    /**
+     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
+     * UUID for other channels.
+     *
+     * @param channel Recovery notification channel.
+     * @return Secret key
+     */
+    private String generateSecretKey(String channel) {
+
+        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(channel)) {
+            return generateSMSOTP();
+        } else {
+            return UUIDGenerator.generateUUID();
+        }
+    }
+
+    /**
+     * Generate an OTP for password recovery via mobile Channel.
+     *
+     * @return OTP
+     */
+    private String generateSMSOTP() {
+
+        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
+            sb.append(chars[rnd.nextInt(chars.length)]);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Validate the callback Url.
+     *
+     * @param properties   Properties
+     * @param tenantDomain Tenant Domain
+     * @throws IdentityRecoveryServerException Error validating the callback
+     */
+    private void validateCallback(Property[] properties, String tenantDomain) throws IdentityRecoveryServerException {
+
+        String callbackURL = null;
+        try {
+            callbackURL = Utils.getCallbackURL(properties);
+            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            }
+        } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    callbackURL);
+        }
+    }
+
+    /**
+     * Validate the channel name in the recovery data.
+     *
+     * @param channel Channel in the user recovery data
+     * @return Server supported channel name
+     * @throws IdentityRecoveryClientException Invalid channel type
+     */
+    private String validateNotificationChannel(String channel) throws IdentityRecoveryClientException {
+
+        try {
+            return NotificationChannels.getNotificationChannel(channel).getChannelType();
+        } catch (NotificationChannelManagerException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Unsupported Notification channel : " + channel, e);
+            }
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_NOTIFICATION_CHANNEL, channel);
+        }
     }
 
     private NotificationResponseBean validateAndResendNotification(User user, String code, String recoveryScenario,

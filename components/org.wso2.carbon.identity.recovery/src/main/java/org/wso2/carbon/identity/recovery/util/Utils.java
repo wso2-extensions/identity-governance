@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,6 +29,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -63,6 +65,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class which contains the Utils for user recovery.
+ */
 public class Utils {
     private static final Log log = LogFactory.getLog(Utils.class);
 
@@ -210,6 +215,26 @@ public class Utils {
                 IdentityRecoveryServerException.class, error.getCode(), errorDescription, e);
     }
 
+    /**
+     * Handle Server Exceptions.
+     *
+     * @param errorCode    Error code of the exception
+     * @param errorMessage Error message of the exception
+     * @param data         Meta data associated with the exception
+     * @return IdentityRecoveryServerException as the server error
+     */
+    public static IdentityRecoveryServerException handleServerException(String errorCode, String errorMessage,
+                                                                        String data) {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(errorMessage, data);
+        } else {
+            errorDescription = errorMessage;
+        }
+        return IdentityException.error(IdentityRecoveryServerException.class, errorCode, errorDescription);
+    }
+
     public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages
                                                                                 error, String data)
             throws IdentityRecoveryClientException {
@@ -237,6 +262,26 @@ public class Utils {
         }
 
         return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), errorDescription, e);
+    }
+
+    /**
+     * Handle Client Exceptions.
+     *
+     * @param errorCode    Error code of the exception
+     * @param errorMessage Error message of the exception
+     * @param data         Meta data associated with the exception
+     * @return IdentityRecoveryClientException
+     */
+    public static IdentityRecoveryClientException handleClientException(String errorCode, String errorMessage,
+                                                                        String data) {
+
+        String errorDescription;
+        if (StringUtils.isNotBlank(data)) {
+            errorDescription = String.format(errorMessage, data);
+        } else {
+            errorDescription = errorMessage;
+        }
+        return IdentityException.error(IdentityRecoveryClientException.class, errorCode, errorDescription);
     }
 
     /**
@@ -576,5 +621,89 @@ public class Utils {
             }
         }
         return isExist;
+    }
+
+    /**
+     * Prepend the operation scenario to the existing exception error code.
+     * (Eg: USR-20045)
+     *
+     * @param exceptionErrorCode Existing error code.
+     * @param scenario           Operation scenario
+     * @return New error code with the scenario prepended (NOTE: Return an empty String if the provided error code is
+     * empty)
+     */
+    public static String prependOperationScenarioToErrorCode(String exceptionErrorCode, String scenario) {
+
+        if (StringUtils.isNotEmpty(exceptionErrorCode)) {
+            // Check whether the scenario is already in the errorCode.
+            if (exceptionErrorCode.contains(IdentityRecoveryConstants.EXCEPTION_SCENARIO_SEPARATOR)) {
+                return exceptionErrorCode;
+            }
+            if (StringUtils.isNotEmpty(scenario)) {
+                exceptionErrorCode =
+                        scenario + IdentityRecoveryConstants.EXCEPTION_SCENARIO_SEPARATOR + exceptionErrorCode;
+            }
+        }
+        return exceptionErrorCode;
+    }
+
+    /**
+     * Check whether the internally notification management property is send with the meta properties. If management
+     * mechanism is specified, return the specified boolean value. If the management mechanism is not specified in
+     * meta properties return server configurations.
+     *
+     * @param tenantDomain Tenant domain
+     * @param properties   Meta properties
+     * @return True when notifications are managed internally
+     */
+    public static boolean isNotificationsInternallyManaged(String tenantDomain, Map<String, String> properties)
+            throws IdentityRecoveryException {
+
+        if (MapUtils.isNotEmpty(properties)) {
+            try {
+                String manageNotificationsInternally = properties
+                        .get(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY);
+                // Notification managed mechanism is not specified in the request.
+                if (StringUtils.isEmpty(manageNotificationsInternally)) {
+                    return Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, tenantDomain));
+                } else {
+                    return Boolean.parseBoolean(manageNotificationsInternally);
+                }
+            } catch (NumberFormatException e) {
+                String manageNotificationsInternally = Utils
+                        .getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                                tenantDomain);
+                if (log.isDebugEnabled()) {
+                    String error = String
+                            .format("Invalid boolean value : %s to enable enable internal notification management. "
+                                            + "Server default value : %s will be used.", properties.get
+                                            (IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY),
+                                    manageNotificationsInternally);
+                    log.debug(error);
+                }
+                return Boolean.parseBoolean(manageNotificationsInternally);
+            }
+        }
+        // The request has no meta properties, then server configurations will be returned.
+        return Boolean.parseBoolean(
+                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                        tenantDomain));
+    }
+
+    /**
+     * Resolve event name according to the notification channel.
+     *
+     * @param notificationChannel Notification channel
+     * @return Resolved event name
+     */
+    public static String resolveEventName(String notificationChannel) {
+
+        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(notificationChannel)) {
+            return IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + notificationChannel
+                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+        } else {
+            return IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        }
     }
 }

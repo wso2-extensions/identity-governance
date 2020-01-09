@@ -13,13 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.wso2.carbon.identity.recovery;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.recovery.util.Utils;
+
+/**
+ * Enum which contains the recovery steps related to recovery scenarios.
+ */
 public enum RecoverySteps {
     NOTIFY,
     UPDATE_PASSWORD,
     VALIDATE_CHALLENGE_QUESTION,
     VALIDATE_ALL_CHALLENGE_QUESTION,
-    CONFIRM_SIGN_UP
+    CONFIRM_SIGN_UP,
+    SEND_RECOVERY_INFORMATION,
+    RESEND_CONFIRMATION_CODE;
+
+    /**
+     * Get Recovery step which matches the given step name.
+     *
+     * @param stepName Name of the step
+     * @return RecoverySteps
+     * @throws IdentityRecoveryClientException Invalid step name
+     */
+    public static RecoverySteps getRecoveryStep(String stepName) throws IdentityRecoveryClientException {
+
+        RecoverySteps[] recoverySteps = {
+                NOTIFY, UPDATE_PASSWORD, VALIDATE_CHALLENGE_QUESTION, VALIDATE_ALL_CHALLENGE_QUESTION, CONFIRM_SIGN_UP,
+                SEND_RECOVERY_INFORMATION, RESEND_CONFIRMATION_CODE
+        };
+        if (StringUtils.isNotEmpty(stepName)) {
+            for (RecoverySteps step : recoverySteps) {
+                if (stepName.equals(step.name())) {
+                    return step;
+                }
+            }
+        }
+        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_STEP,
+                stepName);
+    }
 }

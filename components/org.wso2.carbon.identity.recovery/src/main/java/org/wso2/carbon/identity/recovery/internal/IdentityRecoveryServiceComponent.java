@@ -41,9 +41,13 @@ import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
+import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
+import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -99,6 +103,12 @@ public class IdentityRecoveryServiceComponent {
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new
                     AdminForcedPasswordResetConfigImpl(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new CodeInvalidationHandler(), null);
+            UsernameRecoveryManager usernameRecoveryManager = new UsernameRecoveryManagerImpl();
+            bundleContext.registerService(UsernameRecoveryManager.class.getName(),
+                    usernameRecoveryManager, null);
+            PasswordRecoveryManager passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+            bundleContext.registerService(PasswordRecoveryManager.class.getName(),
+                    passwordRecoveryManager, null);
             // Registering missing challenge question handler as a post authn handler
             PostAuthenticationHandler postAuthnMissingChallengeQuestions = PostAuthnMissingChallengeQuestionsHandler
                     .getInstance();

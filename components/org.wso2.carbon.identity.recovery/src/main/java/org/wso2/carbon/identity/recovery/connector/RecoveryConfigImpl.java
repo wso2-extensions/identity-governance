@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Class which contains account recovery configs.
+ */
 public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
     private static String connectorName = "account-recovery";
@@ -73,7 +76,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
                 "reCaptcha for Username Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery Link Expiry Time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                "SMS OTP Expiry Time");
 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 "Notify when Recovery Success");
@@ -102,6 +107,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Force users to provide answers to challenge questions during sign in");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                "Expiration time of the SMS OTP code for password recovery");
         return descriptionMapping;
     }
 
@@ -121,6 +128,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         return properties.toArray(new String[properties.size()]);
@@ -137,6 +145,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableUsernameRecovery = "false";
         String enableNotificationInternallyManage = "true";
         String expiryTime = "1440";
+        String expiryTimeSMSOTP = "1";
         String notifySuccess = "false";
         String notifyStart = "false";
         String enableForceChallengeQuestions = "false";
@@ -159,6 +168,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String notificationInternallyManged = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        String expiryTimeSMSOTPProperty = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
         String notifySuccessProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         String notifyStartProperty = IdentityUtil.getProperty(
@@ -172,6 +183,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String recoveryCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
 
+        if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
+            expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
+        }
         if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
             enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
         }
@@ -236,6 +250,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, expiryTime);
+        defaultProperties
+                .put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, expiryTimeSMSOTP);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 notifySuccess);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,

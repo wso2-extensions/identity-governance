@@ -83,7 +83,9 @@ public class RecoveryConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
                 "Enable reCaptcha for Username Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Notification Expiry Time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery Link Expiry Time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                "SMS OTP Expiry Time");
 
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 "Notify when Recovery Success");
@@ -115,6 +117,8 @@ public class RecoveryConfigImplTest {
                 "Force users to provide answers to challenge questions during sign in");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                "Expiration time of the SMS OTP code for password recovery");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -135,6 +139,7 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
 
@@ -157,6 +162,7 @@ public class RecoveryConfigImplTest {
         String testEnableUsernameRecovery = "false";
         String testEnableNotificationInternallyManage = "true";
         String testExpiryTime = "1440";
+        String testExpiryTimeSMSOTP = "1";
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
         String testForceChallengeQuestions = "false";
@@ -185,6 +191,8 @@ public class RecoveryConfigImplTest {
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                testExpiryTimeSMSOTP);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 testNotifySuccess);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,

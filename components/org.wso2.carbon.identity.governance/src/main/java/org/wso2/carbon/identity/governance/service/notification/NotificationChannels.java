@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.governance.service.notification;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
 
@@ -29,7 +30,8 @@ public enum NotificationChannels {
     EMAIL_CHANNEL("EMAIL", "http://wso2.org/claims/emailaddress",
             "http://wso2.org/claims/identity/emailVerified"),
     SMS_CHANNEL("SMS", "http://wso2.org/claims/mobile",
-            "http://wso2.org/claims/identity/phoneVerified");
+            "http://wso2.org/claims/identity/phoneVerified"),
+    EXTERNAL_CHANNEL("EXTERNAL", StringUtils.EMPTY, StringUtils.EMPTY);
 
     // Type of the channel. Eg: EMAIL or SMS.
     private String channelType;
@@ -88,6 +90,8 @@ public enum NotificationChannels {
             return EMAIL_CHANNEL;
         } else if (SMS_CHANNEL.getChannelType().equals(channelType)) {
             return SMS_CHANNEL;
+        } else if (EXTERNAL_CHANNEL.getChannelType().equals(channelType)) {
+            return EXTERNAL_CHANNEL;
         } else {
             throw new NotificationChannelManagerClientException(
                     IdentityMgtConstants.ErrorMessages.ERROR_CODE_NO_NOTIFICATION_CHANNELS.getCode(),
