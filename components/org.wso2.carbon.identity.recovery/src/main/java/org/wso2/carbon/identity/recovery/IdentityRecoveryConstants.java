@@ -254,13 +254,13 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PASSWORD_RECOVERY_WITH_NOTIFICATIONS_NOT_ENABLED(
                 "PWR-10002", "Password recovery with notifications is not enabled"),
         ERROR_CODE_NO_PASSWORD_IN_REQUEST("PWR-10003", "No password found"),
-        ERROR_CODE_PASSWORD_RECOVERY_NOT_ENABLED("UNR-10004", "Password recovery is not enabled"),
-        ERROR_CODE_PASSWORD_HISTORY_VIOLATION("UNR-10005", "This password has been used in recent "
+        ERROR_CODE_PASSWORD_RECOVERY_NOT_ENABLED("PWR-10004", "Password recovery is not enabled"),
+        ERROR_CODE_PASSWORD_HISTORY_VIOLATION("PWR-10005", "This password has been used in recent "
                 + "history. Please choose a different password"),
-        ERROR_CODE_PASSWORD_POLICY_VIOLATION("UNR-10006", "Password policy violation"),
-        ERROR_CODE_INVALID_CALLBACK_PASSWORD_RESET("UNR-10007", "Invalid callback url in password " +
+        ERROR_CODE_PASSWORD_POLICY_VIOLATION("PWR-10006", "Password policy violation"),
+        ERROR_CODE_INVALID_CALLBACK_PASSWORD_RESET("PWR-10007", "Invalid callback url in password " +
                 "reset request"),
-        ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("UNR-10008", "Empty tenant domain in password "
+        ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("PWR-10008", "Empty tenant domain in password "
                 + "recovery request"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset");

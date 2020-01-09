@@ -141,7 +141,7 @@ public class ResendConfirmationManager {
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
-        if (!StringUtils.equals(tenantDomain,user.getTenantDomain())) {
+        if (!StringUtils.equals(tenantDomain, user.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
                     tenantDomain);
@@ -151,7 +151,7 @@ public class ResendConfirmationManager {
                     resendCode);
         }
         // Validate the tenant domain and the recovery scenario in the request.
-        validateRequestAttributes(user,scenario,userRecoveryData.getRecoveryScenario(),tenantDomain,resendCode);
+        validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
         validateCallback(properties, user.getTenantDomain());
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
@@ -195,7 +195,7 @@ public class ResendConfirmationManager {
                                            String tenantDomainInRequest, String resendCode)
             throws IdentityRecoveryClientException {
 
-        if (!StringUtils.equals(tenantDomainInRequest,recoveredUser.getTenantDomain())) {
+        if (!StringUtils.equals(tenantDomainInRequest, recoveredUser.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
                     tenantDomainInRequest);
