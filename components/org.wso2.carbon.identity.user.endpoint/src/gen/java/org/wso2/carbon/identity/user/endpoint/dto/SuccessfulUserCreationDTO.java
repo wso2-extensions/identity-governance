@@ -1,95 +1,86 @@
+/*
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.wso2.carbon.identity.user.endpoint.dto;
-
 
 import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-
-
-
-
+import javax.validation.constraints.Pattern;
 
 @ApiModel(description = "")
-public class SuccessfulUserCreationDTO  {
-  
-  
-  
-  private String code = null;
-  
-  
-  private String message = null;
-  
-  
-  private String notificationChannel = null;
-  
-  
-  private String confirmationCode = null;
+public class SuccessfulUserCreationDTO {
 
-  
-  /**
-   * Status code of the operation.
-   **/
-  @ApiModelProperty(value = "Status code of the operation.")
-  @JsonProperty("code")
-  public String getCode() {
-    return code;
-  }
-  public void setCode(String code) {
-    this.code = code;
-  }
+    @Valid 
+    private String code = null;
 
-  
-  /**
-   * Descriptive message regarding the operation.
-   **/
-  @ApiModelProperty(value = "Descriptive message regarding the operation.")
-  @JsonProperty("message")
-  public String getMessage() {
-    return message;
-  }
-  public void setMessage(String message) {
-    this.message = message;
-  }
+    @Valid 
+    private String message = null;
 
-  
-  /**
-   * Account confirmation notification sent channel.
-   **/
-  @ApiModelProperty(value = "Account confirmation notification sent channel.")
-  @JsonProperty("notificationChannel")
-  public String getNotificationChannel() {
-    return notificationChannel;
-  }
-  public void setNotificationChannel(String notificationChannel) {
-    this.notificationChannel = notificationChannel;
-  }
+    @Valid 
+    private String notificationChannel = null;
 
-  
-  /**
-   * Confirmation code to verify the user, when notifications are externally managed. In this scenario, *notificationChannel* will be *EXTERNAL*. Use the confirmation code for confirm the user accounut.
-   **/
-  @ApiModelProperty(value = "Confirmation code to verify the user, when notifications are externally managed. In this scenario, *notificationChannel* will be *EXTERNAL*. Use the confirmation code for confirm the user accounut.")
-  @JsonProperty("confirmationCode")
-  public String getConfirmationCode() {
-    return confirmationCode;
-  }
-  public void setConfirmationCode(String confirmationCode) {
-    this.confirmationCode = confirmationCode;
-  }
+    /**
+    * Status code of the operation.
+    **/
+    @ApiModelProperty(value = "Status code of the operation.")
+    @JsonProperty("code")
+    public String getCode() {
+        return code;
+    }
+    public void setCode(String code) {
+        this.code = code;
+    }
 
-  
+    /**
+    * Descriptive message regarding the operation.
+    **/
+    @ApiModelProperty(value = "Descriptive message regarding the operation.")
+    @JsonProperty("message")
+    public String getMessage() {
+        return message;
+    }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-  @Override
-  public String toString()  {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class SuccessfulUserCreationDTO {\n");
-    
-    sb.append("  code: ").append(code).append("\n");
-    sb.append("  message: ").append(message).append("\n");
-    sb.append("  notificationChannel: ").append(notificationChannel).append("\n");
-    sb.append("  confirmationCode: ").append(confirmationCode).append("\n");
-    sb.append("}\n");
-    return sb.toString();
-  }
+    /**
+    * Account confirmation notification sent channel.
+    **/
+    @ApiModelProperty(value = "Account confirmation notification sent channel.")
+    @JsonProperty("notificationChannel")
+    public String getNotificationChannel() {
+        return notificationChannel;
+    }
+    public void setNotificationChannel(String notificationChannel) {
+        this.notificationChannel = notificationChannel;
+    }
+
+    @Override
+    public String toString() {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("class SuccessfulUserCreationDTO {\n");
+        
+        sb.append("    code: ").append(code).append("\n");
+        sb.append("    message: ").append(message).append("\n");
+        sb.append("    notificationChannel: ").append(notificationChannel).append("\n");
+        
+        sb.append("}\n");
+        return sb.toString();
+    }
 }
