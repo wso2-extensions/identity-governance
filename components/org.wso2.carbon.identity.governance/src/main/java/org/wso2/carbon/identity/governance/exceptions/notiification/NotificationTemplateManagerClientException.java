@@ -77,8 +77,10 @@ public class NotificationTemplateManagerClientException extends NotificationTemp
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER
-                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
+            errorCode =
+                    IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER +
+                            IdentityMgtConstants.ERROR_CODE_DELIMITER
+                            + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
         }
         return errorCode;
     }

@@ -83,7 +83,8 @@ public class NotificationTemplateManagerException extends IdentityException {
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER
+            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_TEMPLATE_MANAGER +
+                    IdentityMgtConstants.ERROR_CODE_DELIMITER
                     + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_UNEXPECTED_ERROR.getCode();
         }
         return errorCode;
