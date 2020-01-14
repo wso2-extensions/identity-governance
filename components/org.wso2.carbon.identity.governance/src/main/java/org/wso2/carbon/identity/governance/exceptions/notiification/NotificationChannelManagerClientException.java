@@ -83,8 +83,10 @@ public class NotificationChannelManagerClientException extends NotificationChann
 
         String errorCode = super.getErrorCode();
         if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.Error_Scenario.NOTIFICATION_CHANNEL_MANAGER
-                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
+            errorCode =
+                    IdentityMgtConstants.Error_Scenario.NOTIFICATION_CHANNEL_MANAGER +
+                            IdentityMgtConstants.ERROR_CODE_DELIMITER
+                            + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_BAD_REQUEST.getCode();
         }
         return errorCode;
     }

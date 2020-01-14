@@ -24,6 +24,7 @@ public class IdentityMgtConstants {
     private IdentityMgtConstants(){}
 
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
+    public static final String ERROR_CODE_DELIMITER = "-";
 
     /**
      * Class that contains the error scenarios.
