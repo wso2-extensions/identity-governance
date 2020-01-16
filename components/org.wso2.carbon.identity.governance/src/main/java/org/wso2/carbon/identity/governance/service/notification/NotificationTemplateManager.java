@@ -18,6 +18,8 @@ package org.wso2.carbon.identity.governance.service.notification;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationTemplateManagerException;
 import org.wso2.carbon.identity.governance.model.NotificationTemplate;
 
+import java.util.List;
+
 /**
  * Service interface for Notification Template Manager.
  */
@@ -34,5 +36,46 @@ public interface NotificationTemplateManager {
      * @throws NotificationTemplateManagerException Error while getting the notification template
      */
     NotificationTemplate getNotificationTemplate(String notificationChannel, String templateType, String locale,
-            String tenantDomain) throws NotificationTemplateManagerException;
+                                                 String tenantDomain) throws NotificationTemplateManagerException;
+
+    /**
+     * Add the notification template to the registry.
+     *
+     * @param notificationTemplate Notification template
+     *                             {@link org.wso2.carbon.identity.governance.model.NotificationTemplate}
+     * @param tenantDomain         Tenant domain
+     * @throws NotificationTemplateManagerException Error while adding the notification template.
+     */
+    void addNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain)
+            throws NotificationTemplateManagerException;
+
+    /**
+     * Add a new notification template to the registry to the corresponding notification channel root directory.
+     *
+     * @param displayName         Notification template display name
+     * @param notificationChannel Notification channel
+     * @param tenantDomain        Tenant domain
+     * @throws NotificationTemplateManagerException Error adding the template to the registry.
+     */
+    void addNotificationTemplateType(String displayName, String notificationChannel, String tenantDomain)
+            throws NotificationTemplateManagerException;
+
+    /**
+     * Add the default notification templates which matches the given notification channel to the respective tenants
+     * registry.
+     *
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL)
+     * @param tenantDomain        Tenant domain
+     * @throws NotificationTemplateManagerException Error adding the default notification templates
+     */
+    void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
+            throws NotificationTemplateManagerException;
+
+    /**
+     * Get the notification templates which matches the given notification template type.
+     *
+     * @param notificationChannel Notification channel type (Eg: EMAIL, SMS)
+     * @return List of default notification templates
+     */
+    List<NotificationTemplate> getDefaultNotificationTemplates(String notificationChannel);
 }
