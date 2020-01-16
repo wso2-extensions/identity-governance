@@ -601,8 +601,9 @@ public class UserSelfRegistrationManager {
         // Validate context tenant domain name with user tenant domain.
         validateContextTenantDomainWithUserTenantDomain(user);
 
-        // Validate the recovery step to confirm self sign up.
-        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+        // Validate the recovery step to confirm self sign up or to verify email account.
+        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
         // Get the userstore manager for the user.
@@ -622,11 +623,39 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, recoveryData.getRemainingSetIds(),
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
+        if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            String pendingVerificationEmailClaimValue = getPendingVerificationEmailClaimValue(user, userStoreManager);
+            if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
+                userClaims.put(IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL_CLAIM, "");
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingVerificationEmailClaimValue);
+            }
+        }
+
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
+    }
+
+    private String getPendingVerificationEmailClaimValue(User user, UserStoreManager
+            userStoreManager) throws IdentityRecoveryServerException {
+
+        Map<String, String> verificationPendingEmailClaimMap;
+        try {
+            verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
+                    (user.getUserName(), user.getUserStoreDomain()), new String[]{IdentityRecoveryConstants
+                    .VERIFICATION_PENDING_EMAIL_CLAIM}, null);
+            for (Map.Entry<String, String> entry : verificationPendingEmailClaimMap.entrySet()) {
+                if (IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL_CLAIM.equals(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                            .ERROR_CODE_GETTING_VERIFICATION_PENDING_EMAIL, user.getUserName(), e);
+        }
+        return null;
     }
 
     /**

@@ -48,7 +48,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
         String eventName = event.getEventName();
         if (log.isDebugEnabled()) {
-            log.debug("Handling event : " + eventName);//
+            log.debug("Handling event : " + eventName);
         }
         Map<String, Object> eventProperties = event.getEventProperties();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants
