@@ -68,32 +68,32 @@ public class HandleExceptionsTest {
     }
 
     @Test
-    public void testHandleConflictException(){
+    public void testHandleConflictException() {
 
         ConflictException conflictException = new ConflictException();
-        assertEquals(conflictException.getResponse().getStatus(),409);
-        String errorCode = "UNR-10002";
+        assertEquals(conflictException.getResponse().getStatus(), 409);
+        String errorCode = "Test Code";
         String errorMessage = "Test Error";
         try {
             Utils.handleConflict(errorMessage, errorCode);
         } catch (ConflictException exception) {
-            assertEquals(exception.getResponse().getStatus(),409);
-            assertEquals(exception.getMessage(),errorMessage);
+            assertEquals(exception.getResponse().getStatus(), 409);
+            assertEquals(exception.getMessage(), errorMessage);
         }
     }
 
     @Test
-    public void testHandleNotAcceptableException(){
+    public void testHandleNotAcceptableException() {
 
         NotAcceptableException notAcceptableException = new NotAcceptableException();
-        assertEquals(notAcceptableException.getResponse().getStatus(),406);
-        String errorCode = "UNR-10002";
+        assertEquals(notAcceptableException.getResponse().getStatus(), 406);
+        String errorCode = "Test Code";
         String errorMessage = "Test Error";
         try {
             Utils.handleNotAcceptable(errorMessage, errorCode);
         } catch (NotAcceptableException exception) {
-            assertEquals(exception.getResponse().getStatus(),406);
-            assertEquals(exception.getMessage(),errorMessage);
+            assertEquals(exception.getResponse().getStatus(), 406);
+            assertEquals(exception.getMessage(), errorMessage);
         }
     }
 }

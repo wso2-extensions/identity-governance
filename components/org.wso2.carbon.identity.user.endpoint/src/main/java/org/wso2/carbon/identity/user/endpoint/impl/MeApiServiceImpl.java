@@ -118,8 +118,7 @@ public class MeApiServiceImpl extends MeApiService {
         // Check whether detailed api responses are enabled.
         if (isDetailedResponseBodyEnabled()) {
             String notificationChannel = notificationResponseBean.getNotificationChannel();
-            if (StringUtils.isNotEmpty(notificationChannel) && notificationChannel
-                    .equals(NotificationChannels.EXTERNAL_CHANNEL.getChannelType())) {
+            if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
                 // Handle response when the notifications are externally managed.
                 SuccessfulUserCreationExternalResponseDTO successfulUserCreationDTO =
                         buildSuccessResponseForExternalChannel(notificationResponseBean);
@@ -131,10 +130,9 @@ public class MeApiServiceImpl extends MeApiService {
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
-                // If the notifications are required in the form of legacy response, and notifications are externally
-                // managed, the recoveryId should be in the response as text.
-                if (StringUtils.isNotEmpty(notificationChannel) && notificationChannel
-                        .equals(NotificationChannels.EXTERNAL_CHANNEL.getChannelType())) {
+                /*If the notifications are required in the form of legacy response, and notifications are externally
+                 managed, the recoveryId should be in the response as text*/
+                if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
                     return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
                             .build();
                 }
