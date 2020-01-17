@@ -47,6 +47,4 @@ public final class Constants {
     public static final String ENABLE_DETAILED_API_RESPONSE =
             "SelfRegistration.API.EnableDetailedResponseBody";
 
-    public static final String EXTERNAL_NOTIFICATION_CHANNEL = "EXTERNAL";
-
 }
