@@ -59,7 +59,6 @@ public class IdentityRecoveryConstants {
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
-    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
@@ -80,10 +79,6 @@ public class IdentityRecoveryConstants {
 
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
-    public static final String SMS_TEMPLATE_PREFIX = "sms";
-    public static final String EMAIL_CHANNEL = "EMAIL";
-    public static final String SMS_CHANNEL = "SMS";
-    public static final String EXTERNAL_NOTIFICATION_CHANNEL = "EXTERNAL";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";

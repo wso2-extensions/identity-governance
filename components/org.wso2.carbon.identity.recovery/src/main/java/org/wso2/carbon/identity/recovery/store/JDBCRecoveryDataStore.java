@@ -24,6 +24,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
@@ -323,8 +324,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) && RecoverySteps.CONFIRM_SIGN_UP
                 .equals(recoveryStep)) {
             // If the verification channel is email, use verification link timeout configs to validate.
-            if (StringUtils.isNotEmpty(recoveryData) && recoveryData.equals(IdentityRecoveryConstants.EMAIL_CHANNEL)) {
-
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(recoveryData)) {
                 if (log.isDebugEnabled()) {
                     String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
                             + "and recovery step: %s", recoveryData, recoveryScenario, recoveryStep);
@@ -333,8 +333,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                         tenantDomain));
-            } else if (StringUtils.isNotEmpty(recoveryData) && recoveryData
-                    .equals(IdentityRecoveryConstants.SMS_CHANNEL)) {
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(recoveryData)) {
                 // If the verification channel is SMS, use SMS OTP timeout configs to validate.
                 if (log.isDebugEnabled()) {
                     String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
@@ -348,8 +347,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 // If the verification channel is not specified, verification will takes place according to default
                 // verification link timeout configs.
                 if (log.isDebugEnabled()) {
-                    String message = String.format("No verification channel for recovery scenario: %s "
-                                    + "and recovery step: %s .Therefore, using verification link default timeout configs",
+                    String message = String.format("No verification channel for recovery scenario: %s and recovery " +
+                                    "step: %s .Therefore, using verification link default timeout configs",
                             recoveryScenario, recoveryStep);
                     log.debug(message);
                 }
@@ -372,7 +371,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
                 // Validate the recovery code password recovery.
                 notificationExpiryTimeInMinutes = getRecoveryCodeExpiryTime();
-            } else if (IdentityRecoveryConstants.SMS_CHANNEL.equals(recoveryData)) {
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(recoveryData)) {
 
                 // Validate the SMS OTP confirmation code.
                 notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(

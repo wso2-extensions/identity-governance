@@ -148,7 +148,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                 channelIdCode);
 
         // If the notifications are externally managed we do not need to send notifications internally.
-        if (!IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
+        if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             String eventName = Utils.resolveEventName(notificationChannel);
             validateCallbackURL(properties, userRecoveryData.getUser());
             triggerNotification(userRecoveryData.getUser(), notificationChannel, eventName, properties);
@@ -234,7 +234,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         UsernameRecoverDTO usernameRecoverDTO = new UsernameRecoverDTO();
         usernameRecoverDTO.setNotificationChannel(notificationChannel);
         // Check for notification method.
-        if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
+        if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             usernameRecoverDTO.setCode(
                     IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_USERNAME_EXTERNALLY_NOTIFIED.getCode());
             usernameRecoverDTO.setMessage(

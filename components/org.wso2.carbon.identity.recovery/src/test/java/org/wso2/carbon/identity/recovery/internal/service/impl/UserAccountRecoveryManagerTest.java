@@ -58,7 +58,7 @@ import static org.testng.Assert.assertNull;
  * Class which contains the test cases for UserAccountRecoveryManager.
  */
 @PrepareForTest({IdentityTenantUtil.class, IdentityRecoveryServiceDataHolder.class, IdentityUtil.class,
-        Utils.class, JDBCRecoveryDataStore.class })
+        Utils.class, JDBCRecoveryDataStore.class})
 public class UserAccountRecoveryManagerTest {
 
     @InjectMocks
@@ -92,6 +92,7 @@ public class UserAccountRecoveryManagerTest {
 
     @BeforeTest
     private void setup() {
+
         userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         userClaims = buildUserClaimsMap();
     }
@@ -119,7 +120,7 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testGetUserWithNotificationsInternallyManaged() throws Exception {
 
-        mockGetUserList(new String[] { UserProfile.USERNAME.getValue() });
+        mockGetUserList(new String[]{UserProfile.USERNAME.getValue()});
         mockRecoveryConfigs(true);
         mockUserstoreManager();
         mockJDBCRecoveryDataStore();
@@ -206,7 +207,7 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testGetUserWithNotificationsExternallyManaged() throws Exception {
 
-        mockGetUserList(new String[] { UserProfile.USERNAME.getValue() });
+        mockGetUserList(new String[]{UserProfile.USERNAME.getValue()});
         mockRecoveryConfigs(false);
         mockJDBCRecoveryDataStore();
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
@@ -219,7 +220,7 @@ public class UserAccountRecoveryManagerTest {
         NotificationChannelDTO[] notificationChannelDTOS = recoveryChannelInfoDTO.getNotificationChannelDTOs();
         assertEquals(notificationChannelDTOS.length, 1,
                 "Notifications Externally managed scenario. Available recovery channels");
-        assertEquals(notificationChannelDTOS[0].getType(), IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL,
+        assertEquals(notificationChannelDTOS[0].getType(), NotificationChannels.EXTERNAL_CHANNEL.getChannelType(),
                 "Notification channel : ");
     }
 
@@ -231,7 +232,7 @@ public class UserAccountRecoveryManagerTest {
     private void testNoMatchingUsersForGivenClaims() throws Exception {
 
         try {
-            mockGetUserList(new String[] {});
+            mockGetUserList(new String[]{});
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -304,7 +305,7 @@ public class UserAccountRecoveryManagerTest {
 
         mockUserstoreManager();
         when(userStoreManager.getUserList(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
-                .thenReturn(new String[] { testUsername1, testUsername2 }).thenReturn(new String[] { testUsername3 });
+                .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername3});
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertTrue(username.isEmpty(), "Different Users matched for different claims : ");
@@ -323,9 +324,9 @@ public class UserAccountRecoveryManagerTest {
 
         mockUserstoreManager();
         when(userStoreManager.getUserList(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
-                .thenReturn(new String[] { testUsername1, testUsername2, testUsername3 })
-                .thenReturn(new String[] { testUsername1, testUsername2 }).thenReturn(new String[] { testUsername1 })
-                .thenReturn(new String[] { testUsername1 });
+                .thenReturn(new String[]{testUsername1, testUsername2, testUsername3})
+                .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername1})
+                .thenReturn(new String[]{testUsername1});
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertEquals(username, testUsername1, "Test get matched users fot given claims : ");
@@ -338,7 +339,7 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testNoMatchingUsers() throws Exception {
 
-        mockGetUserList(new String[] {});
+        mockGetUserList(new String[]{});
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertTrue(username.isEmpty(), "No matching users for given set of claims : ");
@@ -371,7 +372,7 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testMultipleUsersMatchingForGivenClaims() throws Exception {
 
-        mockGetUserList(new String[] { "Sominda1", "Sominda2" });
+        mockGetUserList(new String[]{"Sominda1", "Sominda2"});
         try {
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -449,6 +450,7 @@ public class UserAccountRecoveryManagerTest {
         private final String value;
 
         UserProfile(String key, String value) {
+
             this.key = key;
             this.value = value;
         }
@@ -459,6 +461,7 @@ public class UserAccountRecoveryManagerTest {
          * @return Code
          */
         public String getKey() {
+
             return key;
         }
 
@@ -468,6 +471,8 @@ public class UserAccountRecoveryManagerTest {
          * @return Message
          */
         public String getValue() {
+
             return value;
-        }}
+        }
+    }
 }

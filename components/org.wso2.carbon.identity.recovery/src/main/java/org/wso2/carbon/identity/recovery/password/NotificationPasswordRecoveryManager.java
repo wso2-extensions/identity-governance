@@ -104,7 +104,7 @@ public class NotificationPasswordRecoveryManager {
         // Check whether to manage notifications internally.
         boolean isNotificationInternallyManage = isNotificationsInternallyManaged(user.getTenantDomain(), notify);
         if (!isNotificationInternallyManage) {
-            notificationChannel = IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL;
+            notificationChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         }
         // Check whether the user is already verified ( NOTE: This property is set by the new recovery API).
         if (!isUserVerified(propertyMap)) {
@@ -133,7 +133,6 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.store(recoveryDataDO);
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
-
             // Manage notifications by the identity server.
             String eventName = Utils.resolveEventName(notificationChannel);
             triggerNotification(user, notificationChannel, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET,
@@ -156,7 +155,7 @@ public class NotificationPasswordRecoveryManager {
      */
     private String generateSecretKey(String channel) {
 
-        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(channel)) {
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
             return generateSMSOTP();
         } else {
             return UUIDGenerator.generateUUID();
@@ -261,20 +260,22 @@ public class NotificationPasswordRecoveryManager {
      */
     private boolean isUserVerified(HashMap<String, String> propertyMap) {
 
-        if (MapUtils.isNotEmpty(propertyMap)) {
-            String verified = propertyMap.get(IdentityRecoveryConstants.VERIFIED_USER_PROPERTY_KEY);
-            if (StringUtils.isNotEmpty(verified)) {
-                try {
-                    return Boolean.parseBoolean(verified);
-                } catch (NumberFormatException e) {
-                    if (log.isDebugEnabled()) {
-                        String message = String
-                                .format("Value : %s given for property : %s is not a boolean. Therefore, "
-                                                + "returning false for the property.", verified,
-                                        IdentityRecoveryConstants.VERIFIED_USER_PROPERTY_KEY);
-                        log.debug(message);
-                    }
-                }
+        if (MapUtils.isEmpty(propertyMap)) {
+            return false;
+        }
+        String verified = propertyMap.get(IdentityRecoveryConstants.VERIFIED_USER_PROPERTY_KEY);
+        if (StringUtils.isBlank(verified)) {
+            return false;
+        }
+        try {
+            return Boolean.parseBoolean(verified);
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                String message = String
+                        .format("Value : %s given for property : %s is not a boolean. Therefore, "
+                                        + "returning false for the property.", verified,
+                                IdentityRecoveryConstants.VERIFIED_USER_PROPERTY_KEY);
+                log.debug(message);
             }
         }
         return false;
@@ -289,14 +290,7 @@ public class NotificationPasswordRecoveryManager {
     private String getNotificationChannelFromProperties(HashMap<String, String> propertyMap) {
 
         if (MapUtils.isEmpty(propertyMap)) {
-            String defaultNotificationChannel = IdentityGovernanceUtil.getDefaultNotificationChannel();
-            if (log.isDebugEnabled()) {
-                String message =
-                        "No notification channel in the request properties. Configuring the notification channel" +
-                                " to the default notification channel: " + defaultNotificationChannel;
-                log.debug(message);
-            }
-            return defaultNotificationChannel;
+            return NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         String notificationChannel = propertyMap.get(IdentityRecoveryConstants.NOTIFICATION_CHANNEL_PROPERTY_KEY);
         return getServerSupportedNotificationChannel(notificationChannel);
@@ -311,11 +305,13 @@ public class NotificationPasswordRecoveryManager {
     private String getServerSupportedNotificationChannel(String channel) {
 
         if (StringUtils.isEmpty(channel)) {
-            String defaultNotificationChannel = IdentityGovernanceUtil.getDefaultNotificationChannel();
             if (log.isDebugEnabled()) {
-                log.debug("Notification channel is set to : " + defaultNotificationChannel);
+                String message =
+                        "No notification channel in the request properties. Configuring the notification channel" +
+                                " to: " + NotificationChannels.EMAIL_CHANNEL.getChannelType();
+                log.debug(message);
             }
-            return defaultNotificationChannel;
+            return NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         // Validate notification channels.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)) {
@@ -459,7 +455,7 @@ public class NotificationPasswordRecoveryManager {
                 notificationsInternallyManaged);
         userRecoveryDataStore.invalidate(userRecoveryData.getUser());
         if (notificationsInternallyManaged && isNotificationSendWhenSuccess
-                && !IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
+                && !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             try {
                 String eventName = Utils.resolveEventName(notificationChannel);
                 triggerNotification(userRecoveryData.getUser(), notificationChannel,
@@ -540,10 +536,10 @@ public class NotificationPasswordRecoveryManager {
         // If notifications are internally managed we try to set the verified claims since this is an opportunity
         // to verify a user channel.
         if (isNotificationInternallyManaged) {
-            if (IdentityRecoveryConstants.EMAIL_CHANNEL.equals(userRecoveryData.getRemainingSetIds())) {
-                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-            } else if (IdentityRecoveryConstants.SMS_CHANNEL.equals(userRecoveryData.getRemainingSetIds())) {
-                userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds())) {
+                userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds())) {
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             } else {
                 if (log.isDebugEnabled()) {
                     String error = String
@@ -552,7 +548,7 @@ public class NotificationPasswordRecoveryManager {
                                             .getUserName(), userRecoveryData.getUser().getTenantDomain());
                     log.debug(error);
                 }
-                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             }
             if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,

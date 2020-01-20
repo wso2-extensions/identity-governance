@@ -130,7 +130,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 channelIDCode);
         // Resolve notify status according to the notification channel of the user.
         boolean manageNotificationsInternally = true;
-        if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(notificationChannel)) {
+        if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             manageNotificationsInternally = false;
         }
         NotificationResponseBean notificationResponseBean = notifyUser(userRecoveryData.getUser(), notificationChannel,

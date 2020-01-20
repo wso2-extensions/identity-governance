@@ -158,5 +158,4 @@ public class NotificationChannel {
 
         this.channelVerifiedClaimUri = channelVerifiedClaimUri;
     }
-
 }
