@@ -109,13 +109,13 @@
                             org.wso2.carbon.event.publisher.core; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.publisher.core.exception; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.publisher.core.config; version="${carbon.analytics.common.version.range}",
-                            org.wso2.carbon.event.stream.core.*; version="${carbon.analytics.common.version.range}",
+                            org.wso2.carbon.event.stream.core; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.model; version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.utils.*; version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.utils; version="${carbon.kernel.package.import.version.range}",
                             org.apache.axis2.context; version="${axis2.osgi.version.range}",
                             org.wso2.carbon.identity.governance; version="${identity.governance.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.core.util; version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                     </instructions>
                 </configuration>
