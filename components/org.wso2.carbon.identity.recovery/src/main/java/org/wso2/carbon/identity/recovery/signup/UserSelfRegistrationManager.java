@@ -626,8 +626,9 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingVerificationEmailClaimValue = getPendingVerificationEmailClaimValue(user, userStoreManager);
             if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
-                userClaims.put(IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL_CLAIM, "");
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM, "");
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingVerificationEmailClaimValue);
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(true);
             }
         }
 
@@ -645,9 +646,9 @@ public class UserSelfRegistrationManager {
         try {
             verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
                     (user.getUserName(), user.getUserStoreDomain()), new String[]{IdentityRecoveryConstants
-                    .VERIFICATION_PENDING_EMAIL_CLAIM}, null);
+                    .EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM}, null);
             for (Map.Entry<String, String> entry : verificationPendingEmailClaimMap.entrySet()) {
-                if (IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL_CLAIM.equals(entry.getKey())) {
+                if (IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM.equals(entry.getKey())) {
                     return entry.getValue();
                 }
             }

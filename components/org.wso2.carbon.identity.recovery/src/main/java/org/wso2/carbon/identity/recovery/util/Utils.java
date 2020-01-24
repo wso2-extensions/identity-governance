@@ -69,8 +69,8 @@ import java.util.Map;
  * Class which contains the Utils for user recovery.
  */
 public class Utils {
-    private static final Log log = LogFactory.getLog(Utils.class);
 
+    private static final Log log = LogFactory.getLog(Utils.class);
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -78,6 +78,13 @@ public class Utils {
 
     //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to prevent sending of a verification email when SetUserClaimsListener is
+     * triggered in the UserEmailVerificationHandler in other update scenarios where the purpose is not to update the
+     * email address claim.
+     */
+    private static ThreadLocal<Boolean> threadLocalToSkipSendingEmailVerificationOnUpdate = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -101,6 +108,7 @@ public class Utils {
      * @return
      */
     public static org.wso2.carbon.identity.recovery.model.Property[] getArbitraryProperties() {
+
         if (arbitraryProperties.get() == null) {
             return null;
         }
@@ -111,18 +119,20 @@ public class Utils {
      * @param properties
      */
     public static void setArbitraryProperties(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
         arbitraryProperties.set(properties);
     }
 
     public static void clearArbitraryProperties() {
+
         arbitraryProperties.remove();
     }
-
 
     /**
      * @return
      */
     public static Claim getEmailVerifyTemporaryClaim() {
+
         if (emailVerifyTemporaryClaim.get() == null) {
             return null;
         }
@@ -133,13 +143,42 @@ public class Utils {
      * @param claim
      */
     public static void setEmailVerifyTemporaryClaim(Claim claim) {
+
         emailVerifyTemporaryClaim.set(claim);
     }
 
     public static void clearEmailVerifyTemporaryClaim() {
+
         emailVerifyTemporaryClaim.remove();
     }
 
+    /**
+     * Clears the thread local used to maintain the status for whether email verification is required to be skipped.
+     */
+    public static void unsetThreadLocalToSkipSendingEmailVerificationOnUpdate() {
+
+        threadLocalToSkipSendingEmailVerificationOnUpdate.remove();
+    }
+
+    /**
+     * Checks whether email verification needs to be triggered or not.
+     *
+     * @return True if the email verification should be skipped.
+     */
+    public static Boolean getThreadLocalToSkipSendingEmailVerificationOnUpdate() {
+
+        return threadLocalToSkipSendingEmailVerificationOnUpdate.get();
+    }
+
+    /**
+     * Sets the thread local value to represent the status whether email verification is to be skipped.
+     *
+     * @param value Whether the email verification should be skipped.
+     */
+    public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(Boolean value) {
+
+        threadLocalToSkipSendingEmailVerificationOnUpdate.set(value);
+    }
 
     public static String getClaimFromUserStoreManager(User user, String claim)
             throws UserStoreException {
@@ -165,7 +204,6 @@ public class Utils {
         return claimValue;
 
     }
-
 
     public static void removeClaimFromUserStoreManager(User user, String[] claims)
             throws UserStoreException {
@@ -290,6 +328,7 @@ public class Utils {
      * @throws UserStoreException
      */
     public static String doHash(String value) throws UserStoreException {
+
         try {
             String digsestFunction = "SHA-256";
             MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
@@ -334,8 +373,8 @@ public class Utils {
 
     }
 
-
     public static String getRecoveryConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
@@ -353,6 +392,7 @@ public class Utils {
     }
 
     public static String getSignUpConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
@@ -365,6 +405,7 @@ public class Utils {
     }
 
     public static String getConnectorConfig(String key, String tenantDomain) throws IdentityEventException {
+
         try {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
@@ -376,9 +417,9 @@ public class Utils {
         }
     }
 
-
     // challenge question related Util
     public static String getChallengeSetDirFromUri(String challengeSetUri) {
+
         if (StringUtils.isBlank(challengeSetUri)) {
             return challengeSetUri;
         }
@@ -388,6 +429,7 @@ public class Utils {
     }
 
     public static ChallengeQuestion[] getDefaultChallengeQuestions() {
+
         List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
         // locale en_US, challengeSet1
         int count = 0;
@@ -419,7 +461,6 @@ public class Utils {
                     .ERROR_CODE_FAILED_TO_CHECK_ACCOUNT_LOCK_STATUS, user.getUserName(), e);
         }
     }
-
 
     public static boolean isAccountDisabled(User user) throws IdentityRecoveryException {
 
@@ -455,6 +496,7 @@ public class Utils {
     }
 
     public static User createUser(String username, String tenantDomain) {
+
         User user = new User();
         user.setUserName(MultitenantUtils.getTenantAwareUsername(username));
         user.setTenantDomain(tenantDomain);

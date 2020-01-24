@@ -121,7 +121,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
 
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     @Override
