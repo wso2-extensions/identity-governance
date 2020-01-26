@@ -1156,9 +1156,9 @@ public class UserSelfRegistrationManager {
      * Pre validate password against the policies defined in the Identity Server during password recovery instance.
      *
      * @param confirmationKey Confirmation code for password recovery.
-     * @param password Password to be pre-validated against the policies defined in IS.
-     * @throws IdentityEventException
-     * @throws IdentityRecoveryException
+     * @param password        Password to be pre-validated against the policies defined in IS.
+     * @throws IdentityEventException    Error handling the event.
+     * @throws IdentityRecoveryException Error getting the userstore manager.
      */
     public void preValidatePasswordWithConfirmationKey(String confirmationKey, String password) throws
             IdentityEventException, IdentityRecoveryException {
@@ -1175,10 +1175,10 @@ public class UserSelfRegistrationManager {
     /**
      * Pre validate the password against the policies defined in the Identity Server.
      *
-     * @param username Username
+     * @param username Username.
      * @param password Password to be pre-validated against the policies defined in IS.
-     * @throws IdentityRecoveryServerException
-     * @throws IdentityEventException
+     * @throws IdentityRecoveryServerException Error getting the userstore manager.
+     * @throws IdentityEventException          Error handling the event.
      */
     public void preValidatePasswordWithUsername(String username, String password) throws IdentityEventException,
             IdentityRecoveryServerException {
@@ -1211,8 +1211,12 @@ public class UserSelfRegistrationManager {
                     (userStoreDomain);
             properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, secondaryUserStoreManager);
         } catch (UserStoreException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, username,
-                    e);
+            String message = String.format("Error getting the user store manager for the user : %s in domain :" +
+                    " %s.", userStoreDomain + CarbonConstants.DOMAIN_SEPARATOR + username, tenantDomain);
+            if(log.isDebugEnabled()){
+                log.debug(message, e);
+            }
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
 
         if (log.isDebugEnabled()) {
@@ -1223,5 +1227,4 @@ public class UserSelfRegistrationManager {
         Event identityMgtEvent = new Event(eventName, properties);
         IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
     }
-
 }
