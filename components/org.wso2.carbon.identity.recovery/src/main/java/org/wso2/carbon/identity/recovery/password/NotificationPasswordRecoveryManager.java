@@ -261,10 +261,16 @@ public class NotificationPasswordRecoveryManager {
     private boolean isUserVerified(HashMap<String, String> propertyMap) {
 
         if (MapUtils.isEmpty(propertyMap)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Empty property map received in the recovery request");
+            }
             return false;
         }
         String verified = propertyMap.get(IdentityRecoveryConstants.VERIFIED_USER_PROPERTY_KEY);
         if (StringUtils.isBlank(verified)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Property : verifiedUser is not in the property map. Hence returning FALSE");
+            }
             return false;
         }
         try {

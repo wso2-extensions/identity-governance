@@ -43,7 +43,7 @@ public class ResendConfirmationDTO {
     private String successCode;
 
     /**
-     * Code to used to confirm password recovery when the notifications are managed externally.
+     * Code to confirm password recovery when the notifications are managed externally.
      */
     private String externalConfirmationCode;
 
