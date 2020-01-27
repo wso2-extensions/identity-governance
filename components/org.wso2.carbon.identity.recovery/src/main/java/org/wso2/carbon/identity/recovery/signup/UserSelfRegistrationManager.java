@@ -283,7 +283,7 @@ public class UserSelfRegistrationManager {
             String secretKey = UUIDGenerator.generateUUID();
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.SELF_SIGN_UP,
                     RecoverySteps.CONFIRM_SIGN_UP);
-            recoveryDataDO.setRemainingSetIds(IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL);
+            recoveryDataDO.setRemainingSetIds(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
 
             userRecoveryDataStore.store(recoveryDataDO);
             notificationResponseBean.setCode(IdentityRecoveryConstants.SuccessEvents.
@@ -291,7 +291,7 @@ public class UserSelfRegistrationManager {
             notificationResponseBean.setMessage(IdentityRecoveryConstants.SuccessEvents.
                     SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getMessage());
             notificationResponseBean.setRecoveryId(secretKey);
-            notificationResponseBean.setNotificationChannel(IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL);
+            notificationResponseBean.setNotificationChannel(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
 
             // Populate the key variable in response bean to maintain backward compatibility.
             notificationResponseBean.setKey(secretKey);
@@ -584,7 +584,7 @@ public class UserSelfRegistrationManager {
      * Confirms the user self registration by validating the confirmation code and sets externally verified claims.
      *
      * @param code                 Confirmation code
-     * @param verifiedChannelType  Type of the verified channel
+     * @param verifiedChannelType  Type of the verified channel (SMS or EMAIL)
      * @param verifiedChannelClaim Claim associated with verified channel
      * @param properties           Properties sent with the validate code request
      * @throws IdentityRecoveryException Error validating the confirmation code
@@ -612,7 +612,7 @@ public class UserSelfRegistrationManager {
 
         // Get externally verified claim from the validation request which is bound to the verified channel.
         // If the channel type is EXTERNAL, no verified claims are associated to it.
-        if (!IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(verifiedChannelType)) {
+        if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(verifiedChannelType)) {
             externallyVerifiedClaim = getChannelVerifiedClaim(recoveryData.getUser().getUserName(), verifiedChannelType,
                     verifiedChannelClaim);
         }
@@ -766,7 +766,7 @@ public class UserSelfRegistrationManager {
             String recoveryScenario,HashMap<String, String> userClaims) {
 
         // Externally verified channel claims are sent with the code validation request.
-        if (IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL.equals(verificationChannel)) {
+        if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(verificationChannel)) {
             if (StringUtils.isNotEmpty(externallyVerifiedChannelClaim)) {
                 if (log.isDebugEnabled()) {
                     String message = String
@@ -776,7 +776,6 @@ public class UserSelfRegistrationManager {
                 }
                 userClaims.put(externallyVerifiedChannelClaim, Boolean.TRUE.toString());
             } else {
-
                 // Externally verified channel claims are not in the request, set the email claim as the verified
                 // channel.
                 if (log.isDebugEnabled()) {
@@ -791,8 +790,7 @@ public class UserSelfRegistrationManager {
                 // This is to support backward compatibility.
                 userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
             }
-        } else if (StringUtils.isNotEmpty(verificationChannel) && verificationChannel
-                .equalsIgnoreCase(IdentityRecoveryConstants.SMS_CHANNEL)) {
+        } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
                 String message = String
                         .format("Self sign-up via SMS channel detected. Updating %s value for user : %s in tenant "
@@ -800,9 +798,8 @@ public class UserSelfRegistrationManager {
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
-            userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
-        } else if (StringUtils.isNotEmpty(verificationChannel) && verificationChannel
-                .equalsIgnoreCase(IdentityRecoveryConstants.EMAIL_CHANNEL)) {
+            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+        } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
                 String message = String
                         .format("Self sign-up via EMAIL channel detected. Updating %s value for user : %s in tenant "

@@ -183,7 +183,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private String resolveEventName(String preferredChannel, String userName, String domainName, String tenantDomain) {
 
         String eventName;
-        if (IdentityRecoveryConstants.EMAIL_CHANNEL.equals(preferredChannel)) {
+        if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(preferredChannel)) {
             eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         } else {
             eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
@@ -452,7 +452,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
      */
     private String generateSecretKey(String channel) {
 
-        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(channel)) {
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
             if (log.isDebugEnabled()) {
                 log.debug("OTP was generated for the user for channel : " + channel);
             }
