@@ -35,8 +35,12 @@ public interface NotificationTemplateManager {
      * @return Return {@link org.wso2.carbon.identity.governance.model.NotificationTemplate} object
      * @throws NotificationTemplateManagerException If an error occurred while getting the notification template
      */
-    NotificationTemplate getNotificationTemplate(String notificationChannel, String templateType, String locale,
-                                                 String tenantDomain) throws NotificationTemplateManagerException;
+    default NotificationTemplate getNotificationTemplate(String notificationChannel, String templateType, String locale,
+                                                         String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+        return null;
+    }
 
     /**
      * Add the notification template to the registry.
@@ -46,8 +50,10 @@ public interface NotificationTemplateManager {
      * @param tenantDomain         Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the notification template
      */
-    void addNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain)
-            throws NotificationTemplateManagerException;
+    default void addNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+    }
 
     /**
      * Add a new notification template to the registry to the corresponding notification channel root directory.
@@ -57,8 +63,10 @@ public interface NotificationTemplateManager {
      * @param tenantDomain        Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the template to the registry
      */
-    void addNotificationTemplateType(String displayName, String notificationChannel, String tenantDomain)
-            throws NotificationTemplateManagerException;
+    default void addNotificationTemplateType(String displayName, String notificationChannel, String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+    }
 
     /**
      * Add the default notification templates which matches the given notification channel to the respective tenants
@@ -68,8 +76,10 @@ public interface NotificationTemplateManager {
      * @param tenantDomain        Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the default notification templates
      */
-    void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
-            throws NotificationTemplateManagerException;
+    default void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+    }
 
     /**
      * Get the notification templates which matches the given notification template type.
@@ -77,5 +87,8 @@ public interface NotificationTemplateManager {
      * @param notificationChannel Notification channel type (Eg: EMAIL, SMS)
      * @return List of default notification templates
      */
-    List<NotificationTemplate> getDefaultNotificationTemplates(String notificationChannel);
+    default List<NotificationTemplate> getDefaultNotificationTemplates(String notificationChannel) {
+
+        return null;
+    }
 }
