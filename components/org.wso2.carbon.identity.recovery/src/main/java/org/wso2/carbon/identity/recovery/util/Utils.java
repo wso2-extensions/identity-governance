@@ -85,7 +85,7 @@ public class Utils {
      * triggered in the UserEmailVerificationHandler in other update scenarios where the purpose is not to update the
      * email address claim with a new email address.
      */
-    private static ThreadLocal<String> threadLocalToSkipSendingEmailVerificationOnUpdate = new ThreadLocal<>();
+    private static ThreadLocal<String> skipSendingEmailVerificationOnUpdateState = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -158,7 +158,7 @@ public class Utils {
      */
     public static void unsetThreadLocalToSkipSendingEmailVerificationOnUpdate() {
 
-        threadLocalToSkipSendingEmailVerificationOnUpdate.remove();
+        skipSendingEmailVerificationOnUpdateState.remove();
     }
 
     /**
@@ -168,7 +168,7 @@ public class Utils {
      */
     public static String getThreadLocalToSkipSendingEmailVerificationOnUpdate() {
 
-        return threadLocalToSkipSendingEmailVerificationOnUpdate.get();
+        return skipSendingEmailVerificationOnUpdateState.get();
     }
 
     /**
@@ -178,7 +178,7 @@ public class Utils {
      */
     public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(String value) {
 
-        threadLocalToSkipSendingEmailVerificationOnUpdate.set(value);
+        skipSendingEmailVerificationOnUpdateState.set(value);
     }
 
     public static String getClaimFromUserStoreManager(User user, String claim)

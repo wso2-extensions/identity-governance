@@ -61,7 +61,6 @@ public class IdentityRecoveryConstants {
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
-    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
@@ -83,10 +82,6 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
     public static final String SEND_TO = "send-to";
-    public static final String SMS_TEMPLATE_PREFIX = "sms";
-    public static final String EMAIL_CHANNEL = "EMAIL";
-    public static final String SMS_CHANNEL = "SMS";
-    public static final String EXTERNAL_NOTIFICATION_CHANNEL = "EXTERNAL";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
@@ -403,8 +398,11 @@ public class IdentityRecoveryConstants {
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
-        public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "EmailVerificationOnUpdate.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
+        public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
+                "EnableVerification";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.Email.VerificationCode" +
+                ".ExpiryTime";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
@@ -501,8 +499,15 @@ public class IdentityRecoveryConstants {
      */
     public enum SkipEmailVerificationOnUpdateStates {
 
+        // State maintained to skip re-triggering an email verification when confirming the verification code.
         SKIP_ON_CONFIRM,
+
+        /* State maintained to skip triggering an email verification when the email address to be updated is the same
+        as the existing email address. */
         SKIP_ON_EXISTING_EMAIL,
-        SKIP
+
+        /* State maintained to skip triggering an email verification when the update request contains other claims
+        without the email address claim. */
+        SKIP_ON_INAPPLICABLE_CLAIMS
     }
 }

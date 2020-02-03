@@ -83,22 +83,19 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, user.getTenantDomain()));
         }
 
-        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
-                .USER_CLAIMS);
-
         if (!enable) {
             // Email Verification feature is disabled.
             if (log.isDebugEnabled()) {
-                log.debug("Email verification Handler is disabled in tenant: " + user.getTenantDomain());
-            }
-            if (MapUtils.isNotEmpty(claims)) {
-                claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
-                claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+                log.debug("Email verification Handler is disabled in tenant: " + user.getTenantDomain() + "for " +
+                        "event: " + eventName);
             }
             return;
         }
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
+
+        Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
+                .USER_CLAIMS);
 
         if (roleList != null) {
             List<String> roles = Arrays.asList(roleList);
@@ -238,7 +235,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         try {
             userRecoveryDataStore.invalidate(user);
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                    RecoveryScenarios.VERIFY_EMAIL_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+                    RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            /* Email address persisted in remaining set ids to maintain context information about the email address
+            associated with the verification code generated. */
+            recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
             userRecoveryDataStore.store(recoveryDataDO);
             triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE, secretKey,
                     Utils.getArbitraryProperties(), verificationPendingEmailAddress);
@@ -306,7 +306,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
-        if (verificationPendingEmailAddress != null) {
+        if (StringUtils.isNotBlank(verificationPendingEmailAddress)) {
             properties.put(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailAddress);
         }
 
@@ -342,7 +342,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     }
 
     private void preSetUserClaimsOnEmailUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
-                                               User user) {
+                                               User user) throws IdentityEventException {
 
         if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                 (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
@@ -363,19 +363,21 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (StringUtils.isNotBlank(emailAddress)) {
 
-            String existingEmail = null;
+            String existingEmail;
             String username = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
             try {
                 existingEmail = userStoreManager.getUserClaimValue(username,
                         IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
             } catch (UserStoreException e) {
-                log.error("Error occurred while retrieving existing email address for user: " + username, e);
+                throw new IdentityEventException("Error occurred while retrieving existing email address for user: "
+                        + username, e);
             }
 
             if (emailAddress.equals(existingEmail)) {
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("The email address to be updated is same as the existing email " +
-                            "address for user: %s . Hence an email verification will not be triggered.", username));
+                    log.debug(String.format("The email address to be updated: %s is same as the existing email " +
+                                    "address for user: %s . Hence an email verification will not be triggered.",
+                            emailAddress, username));
                 }
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
@@ -384,12 +386,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
             claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-
         } else {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipEmailVerificationOnUpdateStates.SKIP.toString());
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }
-
     }
 
     private void postSetUserClaimsOnEmailUpdate(User user, UserStoreManager userStoreManager) throws
@@ -401,18 +401,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants.
                     SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString().equals
                     (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
-                    .SkipEmailVerificationOnUpdateStates.SKIP.toString().equals(skipEmailVerificationOnUpdateState)) {
-
-                boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                        (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                                user.getTenantDomain()));
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString().equals
+                            (skipEmailVerificationOnUpdateState)) {
 
                 String pendingVerificationEmailClaimValue = getPendingVerificationEmailValue(userStoreManager, user);
 
                 if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
-                    if (isNotificationInternallyManage) {
-                        initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
-                    }
+                    initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
+
                 }
             }
         } finally {
