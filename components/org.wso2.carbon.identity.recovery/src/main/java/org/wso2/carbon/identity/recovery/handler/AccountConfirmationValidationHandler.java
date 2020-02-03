@@ -29,8 +29,10 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -66,6 +68,16 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
+
+        boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+
+        if (!enable) {
+            if (log.isDebugEnabled()) {
+                log.debug("Self signup feature is disabled in the tenant: " + tenantDomain);
+            }
+            return;
+        }
 
 
         if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {

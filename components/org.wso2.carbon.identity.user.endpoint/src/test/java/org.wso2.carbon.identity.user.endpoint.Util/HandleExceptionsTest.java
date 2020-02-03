@@ -22,7 +22,9 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.InternalServerErrorException;
+import org.wso2.carbon.identity.user.endpoint.exceptions.NotAcceptableException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.UserEndpointExceptionMapper;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -65,6 +67,33 @@ public class HandleExceptionsTest {
         assertEquals(conflictException.getResponse().getStatus(), 409);
     }
 
+    @Test
+    public void testHandleConflictException() {
 
+        ConflictException conflictException = new ConflictException();
+        assertEquals(conflictException.getResponse().getStatus(), 409);
+        String errorCode = "Test Code";
+        String errorMessage = "Test Error";
+        try {
+            Utils.handleConflict(errorMessage, errorCode);
+        } catch (ConflictException exception) {
+            assertEquals(exception.getResponse().getStatus(), 409);
+            assertEquals(exception.getMessage(), errorMessage);
+        }
+    }
+
+    @Test
+    public void testHandleNotAcceptableException() {
+
+        NotAcceptableException notAcceptableException = new NotAcceptableException();
+        assertEquals(notAcceptableException.getResponse().getStatus(), 406);
+        String errorCode = "Test Code";
+        String errorMessage = "Test Error";
+        try {
+            Utils.handleNotAcceptable(errorMessage, errorCode);
+        } catch (NotAcceptableException exception) {
+            assertEquals(exception.getResponse().getStatus(), 406);
+            assertEquals(exception.getMessage(), errorMessage);
+        }
+    }
 }
-

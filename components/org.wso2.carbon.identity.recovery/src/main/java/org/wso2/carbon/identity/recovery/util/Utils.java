@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -741,7 +742,7 @@ public class Utils {
      */
     public static String resolveEventName(String notificationChannel) {
 
-        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(notificationChannel)) {
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
             return IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + notificationChannel
                     + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
         } else {

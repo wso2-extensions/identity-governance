@@ -375,10 +375,6 @@ definitions:
         type: string
         example: "EMAIL"
         description: Account confirmation notification sent channel.
-      confirmationCode:
-        type: string
-        example: ""
-        description: Confirmation code to verify the user, when notifications are externally managed. In this scenario, *notificationChannel* will be *EXTERNAL*. Use the confirmation code for confirm the user accounut.
 
   #-----------------------------------------------------
   # The SelfRegistrationUser  Object

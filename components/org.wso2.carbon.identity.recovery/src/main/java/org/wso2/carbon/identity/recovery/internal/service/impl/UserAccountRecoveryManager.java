@@ -224,7 +224,7 @@ public class UserAccountRecoveryManager {
     private List<NotificationChannel> getExternalNotificationChannelList() {
 
         NotificationChannel channelDataModel = new NotificationChannel();
-        channelDataModel.setType(IdentityRecoveryConstants.EXTERNAL_NOTIFICATION_CHANNEL);
+        channelDataModel.setType(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
         List<NotificationChannel> notificationChannels = new ArrayList<>();
         notificationChannels.add(channelDataModel);
         return notificationChannels;

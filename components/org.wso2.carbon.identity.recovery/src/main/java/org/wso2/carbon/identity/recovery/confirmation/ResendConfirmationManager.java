@@ -141,15 +141,6 @@ public class ResendConfirmationManager {
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
-        if (!StringUtils.equals(tenantDomain, user.getTenantDomain())) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
-                    tenantDomain);
-        }
-        if (!scenario.equals(userRecoveryData.getRecoveryScenario())) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RESEND_CODE,
-                    resendCode);
-        }
         // Validate the tenant domain and the recovery scenario in the request.
         validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
         validateCallback(properties, user.getTenantDomain());
@@ -243,7 +234,6 @@ public class ResendConfirmationManager {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
-
     }
 
     /**
@@ -308,7 +298,7 @@ public class ResendConfirmationManager {
      */
     private String generateSecretKey(String channel) {
 
-        if (IdentityRecoveryConstants.SMS_CHANNEL.equals(channel)) {
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
             return generateSMSOTP();
         } else {
             return UUIDGenerator.generateUUID();

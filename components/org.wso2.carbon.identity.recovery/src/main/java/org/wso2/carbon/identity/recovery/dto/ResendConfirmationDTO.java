@@ -43,6 +43,11 @@ public class ResendConfirmationDTO {
     private String successCode;
 
     /**
+     * Code to confirm password recovery when the notifications are managed externally.
+     */
+    private String externalConfirmationCode;
+
+    /**
      * Get external confirmation code.
      *
      * @return External confirmation code.
@@ -61,11 +66,6 @@ public class ResendConfirmationDTO {
 
         this.externalConfirmationCode = externalConfirmationCode;
     }
-
-    /**
-     * Code to used to confirm password recovery when the notifications are managed externally.
-     */
-    private String externalConfirmationCode;
 
     /**
      * Get resend code.
