@@ -344,16 +344,21 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private void preSetUserClaimsOnEmailUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
                                                User user) {
 
+        if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
+                (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
+            // Not required to handle in this handler.
+            return;
+        }
+
+        if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() != null) {
+            Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+        }
+
         if (MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
             return;
         }
 
-        if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() != null &&
-                Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate()) {
-            // Not required to handle in this handler.
-            return;
-        }
         String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
 
         if (StringUtils.isNotBlank(emailAddress)) {
@@ -372,41 +377,47 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     log.debug(String.format("The email address to be updated is same as the existing email " +
                             "address for user: %s . Hence an email verification will not be triggered.", username));
                 }
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(true);
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
                 return;
             }
 
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(false);
-
-            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM, emailAddress);
+            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+
         } else {
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(true);
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP.toString());
         }
+
     }
 
     private void postSetUserClaimsOnEmailUpdate(User user, UserStoreManager userStoreManager) throws
             IdentityEventException {
 
-        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                        user.getTenantDomain()));
+        try {
+            String skipEmailVerificationOnUpdateState = Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate();
+            if (!IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
+                    (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants.
+                    SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString().equals
+                    (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP.toString().equals(skipEmailVerificationOnUpdateState)) {
 
-        if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() == null) {
-            return;
-        }
+                boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
+                        (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                                user.getTenantDomain()));
 
-        if (!Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate()) {
-            String pendingVerificationEmailClaimValue = getPendingVerificationEmailValue(userStoreManager, user);
+                String pendingVerificationEmailClaimValue = getPendingVerificationEmailValue(userStoreManager, user);
 
-            if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
-
-                if (isNotificationInternallyManage) {
-                    initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
+                if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
+                    if (isNotificationInternallyManage) {
+                        initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
+                    }
                 }
             }
+        } finally {
+            Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
-        Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
     }
 
     private String getPendingVerificationEmailValue(UserStoreManager userStoreManager, User user) throws
@@ -416,7 +427,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         try {
             verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(
                     user.getUserName(), user.getUserStoreDomain()), new String[]{
-                    IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM}, null);
+                    IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM}, null);
         } catch (UserStoreException e) {
             throw new IdentityEventException("Error while retrieving verification pending email claim value for user: "
                     + user.toFullQualifiedUsername(), e);
@@ -429,7 +440,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         for (Map.Entry<String, String> entry : verificationPendingEmailClaimMap.entrySet()) {
             String pendingVerificationEmailClaimURI = entry.getKey();
             if (pendingVerificationEmailClaimURI
-                    .equals(IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM)) {
+                    .equals(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM)) {
                 return entry.getValue();
             }
         }

@@ -82,9 +82,9 @@ public class Utils {
     /**
      * This thread local variable is used to prevent sending of a verification email when SetUserClaimsListener is
      * triggered in the UserEmailVerificationHandler in other update scenarios where the purpose is not to update the
-     * email address claim.
+     * email address claim with a new email address.
      */
-    private static ThreadLocal<Boolean> threadLocalToSkipSendingEmailVerificationOnUpdate = new ThreadLocal<>();
+    private static ThreadLocal<String> threadLocalToSkipSendingEmailVerificationOnUpdate = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -153,7 +153,7 @@ public class Utils {
     }
 
     /**
-     * Clears the thread local used to maintain the status for whether email verification is required to be skipped.
+     * Clears the thread local used to maintain the email verification skipping state.
      */
     public static void unsetThreadLocalToSkipSendingEmailVerificationOnUpdate() {
 
@@ -161,21 +161,21 @@ public class Utils {
     }
 
     /**
-     * Checks whether email verification needs to be triggered or not.
+     * Retrieve the state to skip email verification.
      *
-     * @return True if the email verification should be skipped.
+     * @return The state  should be skipped.
      */
-    public static Boolean getThreadLocalToSkipSendingEmailVerificationOnUpdate() {
+    public static String getThreadLocalToSkipSendingEmailVerificationOnUpdate() {
 
         return threadLocalToSkipSendingEmailVerificationOnUpdate.get();
     }
 
     /**
-     * Sets the thread local value to represent the status whether email verification is to be skipped.
+     * Sets the thread local value to represent the state whether email verification is to be skipped.
      *
-     * @param value Whether the email verification should be skipped.
+     * @param value The email verification state to be skipped.
      */
-    public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(Boolean value) {
+    public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(String value) {
 
         threadLocalToSkipSendingEmailVerificationOnUpdate.set(value);
     }

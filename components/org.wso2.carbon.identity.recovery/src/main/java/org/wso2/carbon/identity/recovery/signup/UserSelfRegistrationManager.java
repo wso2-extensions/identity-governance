@@ -592,6 +592,8 @@ public class UserSelfRegistrationManager {
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
+        Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
@@ -626,9 +628,10 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingVerificationEmailClaimValue = getPendingVerificationEmailClaimValue(user, userStoreManager);
             if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
-                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM, "");
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, "");
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingVerificationEmailClaimValue);
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(true);
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
 
@@ -646,9 +649,9 @@ public class UserSelfRegistrationManager {
         try {
             verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
                     (user.getUserName(), user.getUserStoreDomain()), new String[]{IdentityRecoveryConstants
-                    .EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM}, null);
+                    .EMAIL_ADDRESS_PENDING_VALUE_CLAIM}, null);
             for (Map.Entry<String, String> entry : verificationPendingEmailClaimMap.entrySet()) {
-                if (IdentityRecoveryConstants.EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM.equals(entry.getKey())) {
+                if (IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM.equals(entry.getKey())) {
                     return entry.getValue();
                 }
             }

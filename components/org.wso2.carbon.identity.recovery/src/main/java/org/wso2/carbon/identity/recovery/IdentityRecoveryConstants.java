@@ -59,8 +59,8 @@ public class IdentityRecoveryConstants {
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
-    public static final String EMAIL_ADDRESS_VERIFICATION_PENDING_CLAIM =
-            "http://wso2.org/claims/identity/emailaddress.verificationPending";
+    public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
+            "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
@@ -137,7 +137,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
-         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
+        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
@@ -494,5 +494,15 @@ public class IdentityRecoveryConstants {
         public static final String EMAIL_MASKING_REGEX =
                 "(?<=.)[^@](?=[^@]*?@)|(?:(?<=@.)|(?!^)\\G(?=[^@]*$)).(?=.*[^@]\\.)";
         public static final String MOBILE_MASKING_REGEX = ".(?=.{4})";
+    }
+
+    /**
+     * Enum which contains scenarios where it is not required to trigger an email verification.
+     */
+    public enum SkipEmailVerificationOnUpdateStates {
+
+        SKIP_ON_CONFIRM,
+        SKIP_ON_EXISTING_EMAIL,
+        SKIP
     }
 }
