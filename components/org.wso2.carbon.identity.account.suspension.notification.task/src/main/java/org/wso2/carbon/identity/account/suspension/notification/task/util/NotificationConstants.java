@@ -26,6 +26,7 @@ public class NotificationConstants {
             + "disable.delay";
     public static final String SUSPENSION_NOTIFICATION_TRIGGER_TIME= "suspension.notification.trigger.time";
     public static final String SUSPENSION_NOTIFICATION_DELAYS="suspension.notification.delays";
+    public static final String HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM = "HandleLastLoginTimeAsDefaultClaim";
     public static final String TRIGGER_TIME_FORMAT = "HH:mm:ss";
     public static final long SCHEDULER_DELAY = 24; // In hours
     public static final String SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE = "suspension.notification.thread.pool.size";
@@ -39,6 +40,7 @@ public class NotificationConstants {
     public final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
     public final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";
     public final static String LAST_LOGIN_TIME = "http://wso2.org/claims/lastLoginTime";
+    public final static String LAST_LOGIN_TIME_IDENTITY_CLAIM = "http://wso2.org/claims/identity/lastLoginTime";
 
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +

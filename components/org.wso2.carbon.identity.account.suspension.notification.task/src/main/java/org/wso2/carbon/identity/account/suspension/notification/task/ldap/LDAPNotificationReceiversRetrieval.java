@@ -34,7 +34,6 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
 import org.wso2.carbon.user.core.ldap.LDAPConstants;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -76,10 +75,22 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     userStoreDomain = IdentityUtil.getPrimaryDomainName();
                 }
 
+                boolean isHandleLastLoginTimeAsDefaultClaim = Boolean.parseBoolean(IdentityUtil.
+                        getProperty(NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM));
+                String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
+
+                if (isHandleLastLoginTimeAsDefaultClaim) {
+                    lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+                    if (log.isDebugEnabled()) {
+                        log.debug("Property " + NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM + " is enabled" +
+                                " in identity.xml file hence treating last login time as default claim");
+                    }
+                }
+
                 String usernameMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.USERNAME_CLAIM);
                 String firstNameMapAttribute  = claimManager.getAttributeName(userStoreDomain, NotificationConstants.FIRST_NAME_CLAIM);
                 String emailMapAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.EMAIL_CLAIM);
-                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
+                String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, lastLoginClaim);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);

@@ -80,8 +80,19 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                 userStoreDomain = IdentityUtil.getPrimaryDomainName();
             }
 
+            boolean isHandleLastLoginTimeAsDefaultClaim = Boolean.parseBoolean(IdentityUtil.
+                    getProperty(NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM));
+            String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
+
+            if (isHandleLastLoginTimeAsDefaultClaim) {
+                lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+                if (log.isDebugEnabled()) {
+                    log.debug("Property " + NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM + " is enabled" +
+                            " in identity.xml file hence treating last login time as default claim");
+                }
+            }
             String lastLoginTimeAttribute = claimManager
-                    .getAttributeName(userStoreDomain, NotificationConstants.LAST_LOGIN_TIME);
+                    .getAttributeName(userStoreDomain, lastLoginClaim);
 
             dbConnection = getDBConnection(realmConfiguration);
             sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
@@ -103,7 +114,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     String[] claims = new String[3];
                     claims[0] = NotificationConstants.FIRST_NAME_CLAIM;
                     claims[1] = NotificationConstants.EMAIL_CLAIM;
-                    claims[2] = NotificationConstants.LAST_LOGIN_TIME;
+                    claims[2] = lastLoginClaim;
 
                     UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(IdentityTenantUtil
                             .getTenantId(tenantDomain)).getUserStoreManager();
@@ -117,7 +128,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setFirstName(map.get(NotificationConstants.FIRST_NAME_CLAIM));
                     receiver.setUserStoreDomain(userStoreDomain);
 
-                    long lastLoginTime = Long.parseLong(map.get(NotificationConstants.LAST_LOGIN_TIME));
+                    long lastLoginTime = Long.parseLong(map.get(lastLoginClaim));
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
                     receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
                     users.add(receiver);
