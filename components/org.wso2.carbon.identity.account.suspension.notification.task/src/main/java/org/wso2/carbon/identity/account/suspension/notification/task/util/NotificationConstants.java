@@ -26,7 +26,7 @@ public class NotificationConstants {
             + "disable.delay";
     public static final String SUSPENSION_NOTIFICATION_TRIGGER_TIME= "suspension.notification.trigger.time";
     public static final String SUSPENSION_NOTIFICATION_DELAYS="suspension.notification.delays";
-    public static final String HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM = "HandleLastLoginTimeAsDefaultClaim";
+    public static final String HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM = "Suspension.HandleLastLoginTimeAsDefaultClaim";
     public static final String TRIGGER_TIME_FORMAT = "HH:mm:ss";
     public static final long SCHEDULER_DELAY = 24; // In hours
     public static final String SUSPENSION_NOTIFICATION_THREAD_POOL_SIZE = "suspension.notification.thread.pool.size";
