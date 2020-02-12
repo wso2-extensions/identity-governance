@@ -380,12 +380,15 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 notificationExpiryTimeInMinutes = Integer.parseInt(
                         Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, tenantDomain));
             }
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(recoveryScenario)) {
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, tenantDomain));
         } else {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.EXPIRY_TIME, tenantDomain));
         }
         if (notificationExpiryTimeInMinutes < 0) {
-            // Make the code valid infinitely in case of negative value
+            // Make the code valid infinitely in case of negative value.
             notificationExpiryTimeInMinutes = Integer.MAX_VALUE;
         }
         long expiryTime = createdTimestamp + TimeUnit.MINUTES.toMillis(notificationExpiryTimeInMinutes);

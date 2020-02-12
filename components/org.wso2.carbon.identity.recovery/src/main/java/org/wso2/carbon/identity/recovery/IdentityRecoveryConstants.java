@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.recovery;
  */
 public class IdentityRecoveryConstants {
 
-
     public static final String IDENTITY_MANAGEMENT_PATH = "/identity";
     public static final String IDENTITY_MANAGEMENT_QUESTIONS = IDENTITY_MANAGEMENT_PATH + "/questionCollection";
     public static final String IDENTITY_MANAGEMENT_I18N_PATH = "/repository/components/identity";
@@ -39,6 +38,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
+    public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
@@ -59,12 +59,15 @@ public class IdentityRecoveryConstants {
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
+    public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
+            "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
     public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
+    public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -72,13 +75,13 @@ public class IdentityRecoveryConstants {
     public static final String PENDING_EMAIL_VERIFICATION = "PENDING_EV";
     public static final String ACCOUNT_STATE_UNLOCKED = "UNLOCKED";
 
-
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
 
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
+    public static final String SEND_TO = "send-to";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
     public static final String SELF_SIGNUP_ROLE = "Internal/selfsignup";
@@ -110,6 +113,7 @@ public class IdentityRecoveryConstants {
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
 
     private IdentityRecoveryConstants() {
+
     }
 
     /**
@@ -128,7 +132,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
-         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
+        ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
         ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
@@ -210,6 +214,8 @@ public class IdentityRecoveryConstants {
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
                 "Unsupported verification channel"),
+        ERROR_CODE_GETTING_VERIFICATION_PENDING_EMAIL("UAV-10002", "Error while getting verification " +
+                "pending email from the userstore."),
 
         // UNR - Username Recovery
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED("UNR-10001", "Username recovery is not enabled"),
@@ -264,20 +270,24 @@ public class IdentityRecoveryConstants {
         private final String message;
 
         ErrorMessages(String code, String message) {
+
             this.code = code;
             this.message = message;
         }
 
         public String getCode() {
+
             return code;
         }
 
         public String getMessage() {
+
             return message;
         }
 
         @Override
         public String toString() {
+
             return code + " - " + message;
         }
 
@@ -320,6 +330,7 @@ public class IdentityRecoveryConstants {
         private final String message;
 
         SuccessEvents(String code, String message) {
+
             this.code = code;
             this.message = message;
         }
@@ -330,6 +341,7 @@ public class IdentityRecoveryConstants {
          * @return Code
          */
         public String getCode() {
+
             return code;
         }
 
@@ -339,11 +351,13 @@ public class IdentityRecoveryConstants {
          * @return Message
          */
         public String getMessage() {
+
             return message;
         }
 
         @Override
         public String toString() {
+
             return code + " - " + message;
         }
     }
@@ -385,6 +399,10 @@ public class IdentityRecoveryConstants {
 
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
+        public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
+                "EnableVerification";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.Email.VerificationCode" +
+                ".ExpiryTime";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
@@ -413,7 +431,6 @@ public class IdentityRecoveryConstants {
                 "STEP = ?";
 
         public static final String LOAD_RECOVERY_DATA_FROM_CODE = "SELECT * FROM IDN_RECOVERY_DATA WHERE CODE = ?";
-
 
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
@@ -448,7 +465,6 @@ public class IdentityRecoveryConstants {
         public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
                 "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
 
-
     }
 
     public static class Consent {
@@ -476,5 +492,22 @@ public class IdentityRecoveryConstants {
         public static final String EMAIL_MASKING_REGEX =
                 "(?<=.)[^@](?=[^@]*?@)|(?:(?<=@.)|(?!^)\\G(?=[^@]*$)).(?=.*[^@]\\.)";
         public static final String MOBILE_MASKING_REGEX = ".(?=.{4})";
+    }
+
+    /**
+     * Enum which contains scenarios where it is not required to trigger an email verification.
+     */
+    public enum SkipEmailVerificationOnUpdateStates {
+
+        // State maintained to skip re-triggering an email verification when confirming the verification code.
+        SKIP_ON_CONFIRM,
+
+        /* State maintained to skip triggering an email verification when the email address to be updated is the same
+        as the existing email address. */
+        SKIP_ON_EXISTING_EMAIL,
+
+        /* State maintained to skip triggering an email verification when the update request contains other claims
+        without the email address claim. */
+        SKIP_ON_INAPPLICABLE_CLAIMS
     }
 }

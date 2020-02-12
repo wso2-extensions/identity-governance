@@ -29,7 +29,8 @@ public enum RecoveryScenarios {
     SELF_SIGN_UP,
     ASK_PASSWORD,
     ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK,
-    ADMIN_FORCED_PASSWORD_RESET_VIA_OTP;
+    ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
+    EMAIL_VERIFICATION_ON_UPDATE;
 
     /**
      * Get recovery scenario which matches the given scenario name.

@@ -592,6 +592,8 @@ public class UserSelfRegistrationManager {
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
+        Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
@@ -601,8 +603,9 @@ public class UserSelfRegistrationManager {
         // Validate context tenant domain name with user tenant domain.
         validateContextTenantDomainWithUserTenantDomain(user);
 
-        // Validate the recovery step to confirm self sign up.
-        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+        // Validate the recovery step to confirm self sign up or to verify email account.
+        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
         // Get the userstore manager for the user.
@@ -621,6 +624,16 @@ public class UserSelfRegistrationManager {
         // NOTE: Verification channel is stored in Remaining_Sets in user recovery data.
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, recoveryData.getRemainingSetIds(),
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
+
+        if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
+            if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+            }
+        }
 
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);

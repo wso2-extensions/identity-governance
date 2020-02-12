@@ -28,7 +28,8 @@ public enum RecoverySteps {
     VALIDATE_ALL_CHALLENGE_QUESTION,
     CONFIRM_SIGN_UP,
     SEND_RECOVERY_INFORMATION,
-    RESEND_CONFIRMATION_CODE;
+    RESEND_CONFIRMATION_CODE,
+    VERIFY_EMAIL;
 
     /**
      * Get Recovery step which matches the given step name.
