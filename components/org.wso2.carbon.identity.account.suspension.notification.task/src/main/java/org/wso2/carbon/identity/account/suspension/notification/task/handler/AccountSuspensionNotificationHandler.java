@@ -23,13 +23,13 @@ import org.wso2.carbon.identity.account.suspension.notification.task.internal.No
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -68,7 +68,18 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
             }
             try {
                 HashMap<String, String> userClaims = new HashMap<>();
-                userClaims.put(NotificationConstants.LAST_LOGIN_TIME, Long.toString(System.currentTimeMillis()));
+                boolean isHandleLastLoginTimeAsDefaultClaim = Boolean.parseBoolean(IdentityUtil.
+                        getProperty(NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM));
+                String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
+
+                if (isHandleLastLoginTimeAsDefaultClaim) {
+                    lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+                    if (log.isDebugEnabled()) {
+                        log.debug("Property " + NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM + " is enabled" +
+                                " in identity.xml file hence treating last login time as default claim");
+                    }
+                }
+                userClaims.put(lastLoginClaim, Long.toString(System.currentTimeMillis()));
                 userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
