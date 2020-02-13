@@ -80,15 +80,17 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                 userStoreDomain = IdentityUtil.getPrimaryDomainName();
             }
 
-            boolean isHandleLastLoginTimeAsDefaultClaim = Boolean.parseBoolean(IdentityUtil.
-                    getProperty(NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM));
+            String identityClaimForLastLoginTime = IdentityUtil.
+                    getProperty(NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME);
+            boolean useIdentityClaimForLastLoginTime = StringUtils.isBlank(identityClaimForLastLoginTime) ||
+                    Boolean.parseBoolean(identityClaimForLastLoginTime);
             String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
 
-            if (isHandleLastLoginTimeAsDefaultClaim) {
+            if (!useIdentityClaimForLastLoginTime) {
                 lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
                 if (log.isDebugEnabled()) {
-                    log.debug("Property " + NotificationConstants.HANDLE_LAST_LOGIN_AS_DEFAULT_CLAIM + " is enabled" +
-                            " in identity.xml file hence treating last login time as default claim");
+                    log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
+                            " is enabled in identity.xml file hence using last login time as default claim");
                 }
             }
             String lastLoginTimeAttribute = claimManager
