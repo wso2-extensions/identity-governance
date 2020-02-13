@@ -251,9 +251,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
         // data found, add the values for security questions and identity claims
+        String value;
         for (String claim : claims) {
-            if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
-                claimMap.put(claim, identityDTO.getUserIdentityDataMap().get(claim));
+            if (identityDTO.getUserIdentityDataMap().containsKey(claim)
+                    && (value = identityDTO.getUserIdentityDataMap().get(claim)) != null && value.trim().length() > 0) {
+                claimMap.put(claim, value);
             }
         }
         return true;
