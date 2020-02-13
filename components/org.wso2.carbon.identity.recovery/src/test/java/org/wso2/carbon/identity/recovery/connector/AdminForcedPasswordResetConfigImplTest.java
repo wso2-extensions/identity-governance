@@ -30,8 +30,8 @@ import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
 
-/***
- *This class does unit test coverage for AdminForcedPasswordResetConfigImpl class
+/**
+ * This class does unit test coverage for AdminForcedPasswordResetConfigImpl class.
  */
 public class AdminForcedPasswordResetConfigImplTest {
 
@@ -39,36 +39,43 @@ public class AdminForcedPasswordResetConfigImplTest {
 
     @BeforeTest
     public void init() {
+
         adminForcedPasswordResetConfigIml = new AdminForcedPasswordResetConfigImpl();
     }
 
     @Test
     public void testGetName() throws IdentityGovernanceException {
+
         assertEquals(adminForcedPasswordResetConfigIml.getName(), "admin-forced-password-reset");
     }
 
     @Test
     public void testGetFriendlyName() throws IdentityGovernanceException {
+
         assertEquals(adminForcedPasswordResetConfigIml.getFriendlyName(), "Password Reset");
     }
 
     @Test
     public void testGetCategory() throws IdentityGovernanceException {
+
         assertEquals(adminForcedPasswordResetConfigIml.getCategory(), "Account Management Policies");
     }
 
     @Test
     public void testGetSubCategory() throws IdentityGovernanceException {
+
         assertEquals(adminForcedPasswordResetConfigIml.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() throws IdentityGovernanceException {
+
         assertEquals(adminForcedPasswordResetConfigIml.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() throws IdentityGovernanceException {
+
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "Enable Password Reset via Recovery Email");
@@ -83,6 +90,7 @@ public class AdminForcedPasswordResetConfigImplTest {
 
     @Test
     public void testGetPropertyDescriptionMapping() throws IdentityGovernanceException {
+
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "User gets notified with a link to reset password");
@@ -97,6 +105,7 @@ public class AdminForcedPasswordResetConfigImplTest {
 
     @Test
     public void testGetPropertyNames() throws IdentityGovernanceException {
+
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
@@ -112,6 +121,7 @@ public class AdminForcedPasswordResetConfigImplTest {
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
+
         String testEnableAdminPasswordResetWithRecoveryLink = "false";
         String testEnableAdminPasswordResetWithOTP = "false";
         String testEnableAdminPasswordResetOffline = "false";
@@ -134,6 +144,7 @@ public class AdminForcedPasswordResetConfigImplTest {
 
     @Test
     public void testGetDefaultProperties() throws IdentityGovernanceException {
+
         String tenantDomain = "admin";
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
