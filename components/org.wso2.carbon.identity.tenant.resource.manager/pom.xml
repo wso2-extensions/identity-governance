@@ -108,6 +108,7 @@
                             org.wso2.carbon.databridge.commons; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.publisher.core; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.publisher.core.exception; version="${carbon.analytics.common.version.range}",
+                            org.wso2.carbon.event.stream.core.exception; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.publisher.core.config; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.event.stream.core; version="${carbon.analytics.common.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
