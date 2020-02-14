@@ -254,7 +254,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         String value;
         for (String claim : claims) {
             if (identityDTO.getUserIdentityDataMap().containsKey(claim)
-                    && (value = identityDTO.getUserIdentityDataMap().get(claim)) != null && value.trim().length() > 0) {
+                    && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claim))) {
                 claimMap.put(claim, value);
             }
         }
