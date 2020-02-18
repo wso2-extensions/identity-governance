@@ -42,6 +42,7 @@ import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManag
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -189,7 +190,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
     private User createUser(String userName, String tenantDomain) {
 
         User user = new User();
-        user.setUserName(userName);
+        user.setUserName(UserCoreUtil.removeDomainFromName(userName));
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
         return user;
