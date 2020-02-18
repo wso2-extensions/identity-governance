@@ -46,6 +46,7 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -660,7 +661,7 @@ public class UserAccountRecoveryManager {
     private User buildUser(String username, String tenantDomain) {
 
         User user = new User();
-        user.setUserName(username);
+        user.setUserName(UserCoreUtil.removeDomainFromName(username));
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
         return user;
