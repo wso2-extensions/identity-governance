@@ -81,6 +81,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -832,29 +833,40 @@ public class UserSelfRegistrationManager {
         }
     }
 
-    public NotificationResponseBean resendConfirmationCode(User user, Property[] properties) throws IdentityRecoveryException {
+    /**
+     * Resend the account confirmation code for user self registration.
+     *
+     * @param user       User
+     * @param properties Meta properties
+     * @return NotificationResponseBean
+     * @throws IdentityRecoveryException If an error occurred while resending the account confirmation details.
+     */
+    public NotificationResponseBean resendConfirmationCode(User user, Property[] properties)
+            throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for " +
+                    "user : " + user.getUserName());
         }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default " +
+                            "for user : " + user.getUserName());
         }
 
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
+        boolean selfRegistrationEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
+        if (!selfRegistrationEnabled) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP,
+                    user.getUserName());
         }
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                        user.getTenantDomain()));
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -862,25 +874,124 @@ public class UserSelfRegistrationManager {
 
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) || !RecoverySteps
                 .CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_OLD_CODE_NOT_FOUND, null);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_OLD_CODE_NOT_FOUND,
+                    null);
         }
-        //Invalid old code
+        // Invalid previous confirmation code.
         userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
 
-        String secretKey = UUIDGenerator.generateUUID();
+        // By default, preferred notification channel should be EMAIL to support backward compatibility.
+        String preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        if (isNotificationInternallyManage) {
+            preferredChannel = resolveNotificationChannel(user);
+        }
+        // Create a secret key based on the preferred notification channel.
+        String secretKey = generateSecretKey(preferredChannel);
+
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        // Notified channel is stored in remaining setIds for recovery purposes.
+        recoveryDataDO.setRemainingSetIds(preferredChannel);
 
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(), secretKey, properties);
+            // Resolve event name.
+            String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),
+                    user.getTenantDomain());
+            triggerNotification(user, eventName, preferredChannel, secretKey, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
-
         return notificationResponseBean;
+    }
 
+    /**
+     * Resolve the notification channel of a given user.
+     *
+     * @param user User
+     * @return Preferred notification channel
+     */
+    private String resolveNotificationChannel(User user) {
+
+        try {
+            return Utils.getNotificationChannelManager().resolveCommunicationChannel(user.getUserName(),
+                    user.getTenantDomain(), user.getUserStoreDomain());
+        } catch (NotificationChannelManagerException exception) {
+            if (log.isDebugEnabled()) {
+                String error =
+                        String.format("Error while getting the preferred notification channel for user: %s in " +
+                                        "domain: %s. Setting EMAIL as notification channel", user.getUserName(),
+                                user.getTenantDomain());
+                log.debug(error, exception);
+            }
+            return NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        }
+    }
+
+    /**
+     * Resolve the event name according to the notification channel.
+     *
+     * @param preferredChannel User preferred notification channel
+     * @param userName         Username
+     * @param domainName       Domain name
+     * @param tenantDomain     Tenant domain name
+     * @return Resolved event name
+     */
+    private String resolveEventName(String preferredChannel, String userName, String domainName, String tenantDomain) {
+
+        String eventName;
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(preferredChannel)) {
+            eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
+                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+        } else {
+            eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        }
+        if (log.isDebugEnabled()) {
+            String message = String
+                    .format("For user : %1$s in domain : %2$s, notifications were sent from the event : %3$s",
+                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, eventName);
+            log.debug(message);
+        }
+        return eventName;
+    }
+
+    /**
+     * Generate an OTP for password recovery via mobile Channel
+     *
+     * @return OTP
+     */
+    private String generateSMSOTP() {
+
+        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
+            sb.append(chars[rnd.nextInt(chars.length)]);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
+     * UUID for other channels.
+     *
+     * @param channel Recovery notification channel.
+     * @return Secret key
+     */
+    private String generateSecretKey(String channel) {
+
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
+            if (log.isDebugEnabled()) {
+                log.debug("OTP was generated for the user for channel : " + channel);
+            }
+            return generateSMSOTP();
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("UUID was generated for the user for channel : " + channel);
+            }
+            return UUIDGenerator.generateUUID();
+        }
     }
 
     /**
@@ -963,31 +1074,43 @@ public class UserSelfRegistrationManager {
         return propertyValue;
     }
 
-    private void triggerNotification(User user, String type, String code, Property[] props) throws
+    /**
+     * Triggers notifications according to the given event name.
+     *
+     * @param user                User
+     * @param eventName           Event name
+     * @param notificationChannel Notification channel (SMS or EMAIL)
+     * @param code                Confirmation code
+     * @param metaProperties      Other properties related to the event
+     * @throws IdentityRecoveryException If an error occurred while triggering notifications.
+     */
+    private void triggerNotification(User user, String eventName, String notificationChannel,
+                                     String code, Property[] metaProperties) throws
             IdentityRecoveryException {
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
 
-        if (props != null && props.length > 0) {
-            for (int i = 0; i < props.length; i++) {
-                properties.put(props[i].getKey(), props[i].getValue());
+        if (metaProperties != null && metaProperties.length > 0) {
+            for (int i = 0; i < metaProperties.length; i++) {
+                properties.put(metaProperties[i].getKey(), metaProperties[i].getValue());
             }
         }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
+            throw Utils
+                    .handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
+                            .getUserName(), e);
         }
     }
 
