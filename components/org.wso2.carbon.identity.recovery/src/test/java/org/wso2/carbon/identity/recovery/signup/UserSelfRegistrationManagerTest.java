@@ -139,7 +139,7 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
      * @return Object[][]
      */
     @DataProvider(name = "userDetailsForResendingAccountConfirmation")
-    private Object[][] buildChannelClaimSet1() {
+    private Object[][] userDetailsForResendingAccountConfirmation() {
 
         String username = "sominda";
         // Notification channel types.
