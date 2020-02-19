@@ -19,13 +19,18 @@
 
 package org.wso2.carbon.identity.recovery.signup;
 
+import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.ConsentManagerImpl;
@@ -37,18 +42,42 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
-@PrepareForTest({IdentityUtil.class, Utils.class, IdentityTenantUtil.class, IdentityProviderManager.class})
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.testng.Assert.assertEquals;
+
+@PrepareForTest({IdentityUtil.class, Utils.class, IdentityTenantUtil.class, IdentityProviderManager.class,
+        Utils.class, JDBCRecoveryDataStore.class})
 public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
 
-    UserSelfRegistrationManager userSelfRegistrationManager = UserSelfRegistrationManager.getInstance();
-    ReceiptInput resultReceipt;
+    private UserSelfRegistrationManager userSelfRegistrationManager = UserSelfRegistrationManager.getInstance();
+    private ReceiptInput resultReceipt;
+    private String TEST_TENANT_DOMAIN_NAME = "carbon.super";
+    private String TEST_USERSTORE_DOMAIN = "PRIMARY";
+
     @Mock
     IdentityProviderManager identityProviderManager;
+
+    @Mock
+    UserRecoveryDataStore userRecoveryDataStore;
+
+    @Mock
+    IdentityEventService identityEventService;
 
     @BeforeTest
     void setup() {
@@ -66,6 +95,117 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
                     "\"termination\":\"DATE_UNTIL:INDEFINITE\",\"thirdPartyDisclosure\":false}],\"tenantId\":1}]," +
                     "\"policyURL\":\"somePolicyUrl\",\"tenantId\":1,\"properties\":{}}";
 
+    /**
+     * Testing ResendConfirmationCode for user self registration.
+     *
+     * @param username                             Username
+     * @param userstore                            Userstore domain
+     * @param tenantDomain                         Tenant domain
+     * @param preferredChannel                     Preferred Notification channel
+     * @param errorMsg                             Error scenario
+     * @param enableInternalNotificationManagement Manage notifications internally
+     * @param expectedChannel                      Expected notification channel
+     * @throws Exception If an error occurred while testing.
+     */
+    @Test(dataProvider = "userDetailsForResendingAccountConfirmation")
+    public void testResendConfirmationCode(String username, String userstore, String tenantDomain,
+                                           String preferredChannel, String errorMsg,
+                                           String enableInternalNotificationManagement, String expectedChannel)
+            throws Exception {
+
+        // Build recovery user.
+        User user = new User();
+        user.setUserName(username);
+        user.setUserStoreDomain(userstore);
+        user.setTenantDomain(tenantDomain);
+
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, "1234-4567-890", RecoveryScenarios
+                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        // Storing preferred notification channel in remaining set ids.
+        userRecoveryData.setRemainingSetIds(preferredChannel);
+
+        mockConfigurations("true", enableInternalNotificationManagement);
+        mockJDBCRecoveryDataStore(userRecoveryData);
+        mockEmailTrigger();
+
+        NotificationResponseBean responseBean =
+                userSelfRegistrationManager.resendConfirmationCode(user, null);
+        assertEquals(responseBean.getNotificationChannel(), expectedChannel, errorMsg);
+    }
+
+    /**
+     * Contains user data related resending self registration notification.
+     *
+     * @return Object[][]
+     */
+    @DataProvider(name = "userDetailsForResendingAccountConfirmation")
+    private Object[][] buildChannelClaimSet1() {
+
+        String username = "sominda";
+        // Notification channel types.
+        String EMAIL = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String SMS = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String EXTERNAL = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
+
+        /* ArrayOrder: Username, Userstore, Tenant domain, Preferred channel, Error message, Manage notifications
+        internally, excepted channel */
+        return new Object[][]{
+                {username, StringUtils.EMPTY, StringUtils.EMPTY, EMAIL, "User with EMAIL as Preferred Notification " +
+                        "Channel : ", "TRUE", EMAIL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel : ", "TRUE", EMAIL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel but notifications are externally managed : ", "FALSE", EXTERNAL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, SMS, "User with SMS as Preferred " +
+                        "Notification Channel : ", "TRUE", SMS},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, StringUtils.EMPTY,
+                        "User no preferred channel specified : ", "TRUE", EMAIL}
+        };
+    }
+
+    /**
+     * Mock user self registration configurations for resend account confirmation.
+     *
+     * @param enableSelfSignUp            Enable user self registration
+     * @param enableInternalNotifications Enable notifications internal management.
+     * @throws Exception If an error occurred while mocking configurations.
+     */
+    private void mockConfigurations(String enableSelfSignUp, String enableInternalNotifications) throws Exception {
+
+        mockStatic(Utils.class);
+        when(Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+                TEST_TENANT_DOMAIN_NAME)).thenReturn(enableSelfSignUp);
+        when(Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN_NAME)).thenReturn(enableInternalNotifications);
+        mockStatic(IdentityUtil.class);
+        when(IdentityUtil.getPrimaryDomainName()).thenReturn(TEST_USERSTORE_DOMAIN);
+    }
+
+    /**
+     * Mock JDBCRecoveryDataStore to store user recovery data.
+     *
+     * @param userRecoveryData User recovery data to be mocked.
+     * @throws IdentityRecoveryException If an error occurred while mocking JDBCRecoveryDataStore.
+     */
+    private void mockJDBCRecoveryDataStore(UserRecoveryData userRecoveryData) throws IdentityRecoveryException {
+
+        mockStatic(JDBCRecoveryDataStore.class);
+        when(JDBCRecoveryDataStore.getInstance()).thenReturn(userRecoveryDataStore);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(Matchers.anyObject())).thenReturn(userRecoveryData);
+        doNothing().when(userRecoveryDataStore).invalidate(Matchers.anyString());
+        doNothing().when(userRecoveryDataStore).store(Matchers.any(UserRecoveryData.class));
+    }
+
+    /**
+     * Mock email triggering.
+     *
+     * @throws IdentityEventException If an error occurred while mocking identityEventService.
+     */
+    private void mockEmailTrigger() throws IdentityEventException {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
+        doNothing().when(identityEventService).handleEvent(Matchers.any(Event.class));
+    }
 
     @Test
     public void testAddConsent() throws Exception {

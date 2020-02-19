@@ -91,7 +91,7 @@ import java.util.Set;
 
 
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class UserSelfRegistrationManager {
 
@@ -678,7 +678,7 @@ public class UserSelfRegistrationManager {
         if (StringUtils.isNotEmpty(verifiedChannelType) && StringUtils.isNotEmpty(verifiedChannelClaim)) {
 
             // Get the notification channel which matches the given channel type
-            NotificationChannels channel = getNotificationChannel(username,verifiedChannelType);
+            NotificationChannels channel = getNotificationChannel(username, verifiedChannelType);
             String channelClaim = channel.getClaimUri();
 
             // Check whether the channels claims are matching.
@@ -777,7 +777,7 @@ public class UserSelfRegistrationManager {
      * @param userClaims                     User claims for the user
      */
     private void setVerificationClaims(User user, String verificationChannel, String externallyVerifiedChannelClaim,
-            String recoveryScenario,HashMap<String, String> userClaims) {
+                                       String recoveryScenario, HashMap<String, String> userClaims) {
 
         // Externally verified channel claims are sent with the code validation request.
         if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(verificationChannel)) {
@@ -795,8 +795,8 @@ public class UserSelfRegistrationManager {
                 if (log.isDebugEnabled()) {
                     String message = String
                             .format("Externally verified channel claims are not available for user : %s in tenant "
-                                            + "domain : %s. Therefore, setting %s claim as the default " + "verified channel.",
-                                    user.getUserName(), user.getTenantDomain(),
+                                            + "domain : %s. Therefore, setting %s claim as the default " +
+                                            "verified channel.", user.getUserName(), user.getTenantDomain(),
                                     NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl());
                     log.debug(message);
                 }
@@ -853,7 +853,7 @@ public class UserSelfRegistrationManager {
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default " +
-                            "for user : " + user.getUserName());
+                    "for user : " + user.getUserName());
         }
 
         boolean selfRegistrationEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs
@@ -880,19 +880,23 @@ public class UserSelfRegistrationManager {
         // Invalid previous confirmation code.
         userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
 
-        // By default, preferred notification channel should be EMAIL to support backward compatibility.
-        String preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String preferredChannel;
         if (isNotificationInternallyManage) {
-            preferredChannel = resolveNotificationChannel(user);
+            // Getting notification channel stored in remainingSetIds.
+            preferredChannel = userRecoveryData.getRemainingSetIds();
+            if (StringUtils.isEmpty(preferredChannel)) {
+                // By default, preferred notification channel should be EMAIL to support backward compatibility.
+                preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+            }
+        } else {
+            preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         }
         // Create a secret key based on the preferred notification channel.
         String secretKey = generateSecretKey(preferredChannel);
-
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
         // Notified channel is stored in remaining setIds for recovery purposes.
         recoveryDataDO.setRemainingSetIds(preferredChannel);
-
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (isNotificationInternallyManage) {
@@ -903,30 +907,12 @@ public class UserSelfRegistrationManager {
         } else {
             notificationResponseBean.setKey(secretKey);
         }
+        notificationResponseBean.setCode(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
+        notificationResponseBean.setMessage(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getMessage());
+        notificationResponseBean.setNotificationChannel(preferredChannel);
         return notificationResponseBean;
-    }
-
-    /**
-     * Resolve the notification channel of a given user.
-     *
-     * @param user User
-     * @return Preferred notification channel
-     */
-    private String resolveNotificationChannel(User user) {
-
-        try {
-            return Utils.getNotificationChannelManager().resolveCommunicationChannel(user.getUserName(),
-                    user.getTenantDomain(), user.getUserStoreDomain());
-        } catch (NotificationChannelManagerException exception) {
-            if (log.isDebugEnabled()) {
-                String error =
-                        String.format("Error while getting the preferred notification channel for user: %s in " +
-                                        "domain: %s. Setting EMAIL as notification channel", user.getUserName(),
-                                user.getTenantDomain());
-                log.debug(error, exception);
-            }
-            return NotificationChannels.EMAIL_CHANNEL.getChannelType();
-        }
     }
 
     /**
@@ -957,9 +943,9 @@ public class UserSelfRegistrationManager {
     }
 
     /**
-     * Generate an OTP for password recovery via mobile Channel
+     * Generate an OTP for password recovery via mobile Channel.
      *
-     * @return OTP
+     * @return OTP for SMS channel.
      */
     private String generateSMSOTP() {
 
@@ -977,7 +963,7 @@ public class UserSelfRegistrationManager {
      * UUID for other channels.
      *
      * @param channel Recovery notification channel.
-     * @return Secret key
+     * @return Secret key.
      */
     private String generateSecretKey(String channel) {
 
