@@ -150,8 +150,6 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
         /* ArrayOrder: Username, Userstore, Tenant domain, Preferred channel, Error message, Manage notifications
         internally, excepted channel */
         return new Object[][]{
-                {username, StringUtils.EMPTY, StringUtils.EMPTY, EMAIL, "User with EMAIL as Preferred Notification " +
-                        "Channel : ", "TRUE", EMAIL},
                 {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
                         "Notification Channel : ", "TRUE", EMAIL},
                 {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
@@ -159,7 +157,7 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
                 {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, SMS, "User with SMS as Preferred " +
                         "Notification Channel : ", "TRUE", SMS},
                 {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, StringUtils.EMPTY,
-                        "User no preferred channel specified : ", "TRUE", EMAIL}
+                        "User no preferred channel specified : ", "TRUE", null}
         };
     }
 

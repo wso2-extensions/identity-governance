@@ -264,7 +264,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("PWR-10008", "Empty tenant domain in password "
                 + "recovery request"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
-                + "password reset");
+                + "password reset"),
+
+        // Resend Account Confirmation.
+        ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request");
 
         private final String code;
         private final String message;
