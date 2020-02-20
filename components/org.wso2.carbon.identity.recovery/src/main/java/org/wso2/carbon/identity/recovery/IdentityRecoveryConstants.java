@@ -311,7 +311,7 @@ public class IdentityRecoveryConstants {
         SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL("USR-02004",
                 "Successful user self registration with verified channel. "
                         + "Account verification not required."),
-        SUCCESS_STATUS_CODE_SUCCESSFUL_RESEND_ACCOUNT_CONFIRMATION("USR-20004",
+        SUCCESS_STATUS_CODE_SUCCESSFUL_RESEND_ACCOUNT_CONFIRMATION("USR-20005",
                 "Successfully resend confirmation. Pending account verification."),
 
         // UNR - Username Recovery.

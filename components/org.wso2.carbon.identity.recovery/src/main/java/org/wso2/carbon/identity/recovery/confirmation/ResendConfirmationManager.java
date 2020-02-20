@@ -86,7 +86,9 @@ public class ResendConfirmationManager {
     public NotificationResponseBean resendConfirmationCode(User user, String recoveryScenario,
                                                            String recoveryStep, String notificationType,
                                                            Property[] properties) throws IdentityRecoveryException {
-        return resendAccountRecoveryNotification(user, null, recoveryScenario, recoveryStep, notificationType, properties);
+
+        return resendAccountRecoveryNotification(user, null, recoveryScenario, recoveryStep, notificationType,
+                properties);
     }
 
     /**
@@ -108,12 +110,14 @@ public class ResendConfirmationManager {
     public NotificationResponseBean resendConfirmationCode(User user, String code, String recoveryScenario,
                                                            String recoveryStep, String notificationType,
                                                            Property[] properties) throws IdentityRecoveryException {
+
         if (StringUtils.isBlank(code)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CONFIRMATION_CODE_NOT_PROVIDED,
                     user.getUserName());
         }
-        return resendAccountRecoveryNotification(user, code, recoveryScenario, recoveryStep, notificationType, properties);
+        return resendAccountRecoveryNotification(user, code, recoveryScenario, recoveryStep, notificationType,
+                properties);
     }
 
     /**
@@ -217,7 +221,7 @@ public class ResendConfirmationManager {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        if(StringUtils.isBlank(notificationChannel)){
+        if (StringUtils.isBlank(notificationChannel)) {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
@@ -373,13 +377,13 @@ public class ResendConfirmationManager {
      * Resend account recovery information to the user.
      *
      * @param user             User object
-     * @param code  Previous confirmation code
+     * @param code             Previous confirmation code
      * @param recoveryScenario Recovery scenario
-     * @param recoveryStep Re
-     * @param notificationType
-     * @param properties
-     * @return
-     * @throws IdentityRecoveryException
+     * @param recoveryStep     Recovery step
+     * @param notificationType Notification type
+     * @param properties       Event properties
+     * @return NotificationResponseBean
+     * @throws IdentityRecoveryException If an error occurred while sending notifications.
      */
     private NotificationResponseBean resendAccountRecoveryNotification(User user, String code, String recoveryScenario,
                                                                        String recoveryStep, String notificationType,
@@ -475,7 +479,7 @@ public class ResendConfirmationManager {
             return StringUtils.isNotBlank(NotificationChannels.getNotificationChannel(value).getChannelType());
         } catch (NotificationChannelManagerException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Value : " + value + " is not a supported notification channel", e);
+                log.debug("The given value : " + value + " is not a supported notification channel", e);
             }
             return false;
         }
