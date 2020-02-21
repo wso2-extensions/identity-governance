@@ -21,7 +21,9 @@ package org.wso2.carbon.identity.recovery.confirmation;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -84,7 +86,9 @@ public class ResendConfirmationManager {
     public NotificationResponseBean resendConfirmationCode(User user, String recoveryScenario,
                                                            String recoveryStep, String notificationType,
                                                            Property[] properties) throws IdentityRecoveryException {
-        return validateAndResendNotification(user, null, recoveryScenario, recoveryStep, notificationType, properties);
+
+        return resendAccountRecoveryNotification(user, null, recoveryScenario, recoveryStep, notificationType,
+                properties);
     }
 
     /**
@@ -106,12 +110,14 @@ public class ResendConfirmationManager {
     public NotificationResponseBean resendConfirmationCode(User user, String code, String recoveryScenario,
                                                            String recoveryStep, String notificationType,
                                                            Property[] properties) throws IdentityRecoveryException {
+
         if (StringUtils.isBlank(code)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CONFIRMATION_CODE_NOT_PROVIDED,
                     user.getUserName());
         }
-        return validateAndResendNotification(user, code, recoveryScenario, recoveryStep, notificationType, properties);
+        return resendAccountRecoveryNotification(user, code, recoveryScenario, recoveryStep, notificationType,
+                properties);
     }
 
     /**
@@ -215,6 +221,9 @@ public class ResendConfirmationManager {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        if (StringUtils.isBlank(notificationChannel)) {
+            notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
@@ -364,37 +373,136 @@ public class ResendConfirmationManager {
         }
     }
 
-    private NotificationResponseBean validateAndResendNotification(User user, String code, String recoveryScenario,
-                                                                   String recoveryStep, String notificationType,
-                                                                   Property[] properties)
+    /**
+     * Resend account recovery information to the user.
+     *
+     * @param user             User object
+     * @param code             Previous confirmation code
+     * @param recoveryScenario Recovery scenario
+     * @param recoveryStep     Recovery step
+     * @param notificationType Notification type
+     * @param properties       Event properties
+     * @return NotificationResponseBean
+     * @throws IdentityRecoveryException If an error occurred while sending notifications.
+     */
+    private NotificationResponseBean resendAccountRecoveryNotification(User user, String code, String recoveryScenario,
+                                                                       String recoveryStep, String notificationType,
+                                                                       Property[] properties)
             throws IdentityRecoveryException {
-        validateProvidedRecoveryInfo(user, recoveryScenario, recoveryStep);
-        validateProvidedNotificationInfo(user, notificationType);
-        setTenantDomainForUser(user);
-        setUserStoreDomainForUser(user);
+
+        validateRequestParameters(user, recoveryScenario, recoveryStep, notificationType);
+        // Resolve the tenant domain and the userstore domain name of the user.
+        resolveUserAttributes(user);
+
         boolean notificationInternallyManage = isNotificationInternallyManage(user);
+
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
-        String secretKey = UUIDGenerator.generateUUID();
-        validateAndStoreRecoveryData(user, secretKey, recoveryScenario, recoveryStep, code);
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+
+        // Validate the previous confirmation code with the data retrieved by the user recovery information.
+        validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
+        // Invalid previous confirmation code.
+        userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
+
+        // Get the notification channel details stored in the remainingSetIds.
+        String storedNotificationChannel = userRecoveryData.getRemainingSetIds();
+
+        String preferredChannel = StringUtils.EMPTY;
+        /* Having a not supported storedNotificationChannel implies that the particular recovery scenario does not store
+            the notification channel in remainingSetIds column. In that case the notification channel should be EMAIL.*/
+        if (isServerSupportedNotificationChannel(storedNotificationChannel)) {
+            preferredChannel = storedNotificationChannel;
+            if (!notificationInternallyManage) {
+                preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
+            }
+        }
+        String secretKey = generateSecretKey(preferredChannel);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        /*
+        Notified channel is stored in remaining setIds for recovery purposes.
+        Having a EMPTY preferred channel states that the notification channel should not be stored.
+        */
+        if (StringUtils.isNotBlank(preferredChannel)) {
+            recoveryDataDO.setRemainingSetIds(preferredChannel);
+            notificationResponseBean.setNotificationChannel(preferredChannel);
+        }
+        userRecoveryDataStore.store(recoveryDataDO);
+
         if (notificationInternallyManage) {
-            triggerNotification(user, notificationType, secretKey, properties);
+            String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),
+                    user.getTenantDomain());
+            triggerNotification(user, preferredChannel, notificationType, secretKey, eventName, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
         return notificationResponseBean;
     }
 
-    private void validateProvidedNotificationInfo(User user, String notificationType)
-            throws IdentityRecoveryClientException {
-        if (StringUtils.isBlank(notificationType)) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED,
-                    user.getUserName());
+    /**
+     * Resolve the event name according to the notification channel.
+     *
+     * @param preferredChannel User preferred notification channel
+     * @param userName         Username
+     * @param domainName       Domain name
+     * @param tenantDomain     Tenant domain name
+     * @return Resolved event name
+     */
+    private String resolveEventName(String preferredChannel, String userName, String domainName, String tenantDomain) {
+
+        String eventName;
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(preferredChannel)) {
+            eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
+                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+        } else {
+            eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        }
+        if (log.isDebugEnabled()) {
+            String message = String
+                    .format("For user : %1$s in domain : %2$s, notifications were sent from the event : %3$s",
+                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, eventName);
+            log.debug(message);
+        }
+        return eventName;
+    }
+
+    /**
+     * Checks whether the given value is a sever supported notification channel.
+     *
+     * @param value Value
+     * @return TRUE if the value is a sever supported notification channel.
+     */
+    private boolean isServerSupportedNotificationChannel(String value) {
+
+        try {
+            return StringUtils.isNotBlank(NotificationChannels.getNotificationChannel(value).getChannelType());
+        } catch (NotificationChannelManagerException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("The given value : " + value + " is not a supported notification channel", e);
+            }
+            return false;
         }
     }
 
-    private void validateProvidedRecoveryInfo(User user, String recoveryScenario, String recoveryStep)
+    /**
+     * Validate the input parameters in the request.
+     *
+     * @param user             User
+     * @param recoveryScenario Recovery scenario
+     * @param recoveryStep     Recovery step
+     * @param notificationType Notification type
+     * @throws IdentityRecoveryClientException If resend request does not have a recovery scenario or a recovery step.
+     */
+    private void validateRequestParameters(User user, String recoveryScenario, String recoveryStep,
+                                           String notificationType)
             throws IdentityRecoveryClientException {
+
+        if (user == null) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_OBJECT_NOT_FOUND.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_OBJECT_NOT_FOUND.getMessage(), null);
+        }
         if (StringUtils.isBlank(recoveryScenario)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_RECOVERY_SCENARIO_NOT_PROVIDED,
@@ -405,25 +513,38 @@ public class ResendConfirmationManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_RECOVERY_STEP_NOT_PROVIDED,
                     user.getUserName());
         }
+        if (StringUtils.isBlank(notificationType)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_TYPE_NOT_PROVIDED,
+                    user.getUserName());
+        }
     }
 
     private boolean isNotificationInternallyManage(User user) throws IdentityRecoveryServerException {
+
         return Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                         user.getTenantDomain()));
     }
 
-    private void setTenantDomainForUser(User user) {
+    /**
+     * Resolve the tenant domain and the userstore domain of the user object.
+     *
+     * @param user User
+     */
+    private void resolveUserAttributes(User user) {
+
         if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            if (StringUtils.isBlank(tenantDomain)) {
+                tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+            }
+            user.setTenantDomain(tenantDomain);
             if (log.isDebugEnabled()) {
                 log.debug("Tenant domain is not in the request. Set super tenant domain for user : " +
                         user.getUserName());
             }
         }
-    }
-
-    private void setUserStoreDomainForUser(User user) {
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             if (log.isDebugEnabled()) {
@@ -433,65 +554,31 @@ public class ResendConfirmationManager {
         }
     }
 
-    private void validateAndStoreRecoveryData(User user, String secretKey, String recoveryScenario, String recoveryStep,
-                                              String code) throws IdentityRecoveryException {
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
-        validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
-
-        //Invalidate the old confirmation code
-        userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, userRecoveryData.getRecoveryScenario(),
-                userRecoveryData.getRecoveryStep());
-        userRecoveryDataStore.store(recoveryDataDO);
-    }
-
+    /**
+     * Validate the previously issued code, recovery scenario and recovery step with the data in the UserRecoveryData
+     * object.
+     *
+     * @param code             Previously issued code
+     * @param recoveryScenario Recovery scenario
+     * @param recoveryStep     Recovery step
+     * @param userRecoveryData UserRecoveryData which holds recovery information.
+     * @throws IdentityRecoveryClientException If code or recovery scenario or recovery step not matched with the
+     *                                         data in UserRecoveryData object.
+     */
     private void validateWithOldConfirmationCode(String code, String recoveryScenario, String recoveryStep,
                                                  UserRecoveryData userRecoveryData)
             throws IdentityRecoveryClientException {
+
         if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) ||
                 !recoveryScenario.equals(userRecoveryData.getRecoveryScenario().toString()) ||
                 !recoveryStep.equals(userRecoveryData.getRecoveryStep().toString())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_OLD_CODE_NOT_FOUND,
                     null);
         }
-        //Validate the provided confirmation code with previously issued code
+        // Validate the provided confirmation code with previously issued code.
         if (code != null && !userRecoveryData.getSecret().equals(code)) {
             throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PROVIDED_CONFIRMATION_CODE_NOT_VALID,
-                    code);
-        }
-    }
-
-    private void triggerNotification(User user, String type, String code, Property[] metaProperties) throws
-            IdentityRecoveryException {
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-
-        if (metaProperties != null) {
-            for (Property metaProperty : metaProperties) {
-                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
-                    properties.put(metaProperty.getKey(), metaProperty.getValue());
-                }
-            }
-        }
-
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PROVIDED_CONFIRMATION_CODE_NOT_VALID, code);
         }
     }
 }

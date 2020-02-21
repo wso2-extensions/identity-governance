@@ -49,23 +49,18 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     public Response resendCodePost(ResendCodeRequestDTO resendCodeRequestDTO) {
 
         String tenantFromContext = getTenantDomainFromContext();
-
-        if(StringUtils.isNotBlank(tenantFromContext)) {
+        if (StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
-
         NotificationResponseBean notificationResponseBean = null;
-        List<PropertyDTO> recoveryScenarioProperty = resendCodeRequestDTO.getProperties();
 
-        if (recoveryScenarioProperty.isEmpty()) {
+        String recoveryScenario = getRecoveryScenarioFromProperties(resendCodeRequestDTO.getProperties());
+        if (StringUtils.isBlank(recoveryScenario)) {
             notificationResponseBean = doResendConfirmationCodeForSelfSignUp(notificationResponseBean,
                     resendCodeRequestDTO);
         } else {
-            String recoveryScenario = validateRecoveryScenarioPropertyList(recoveryScenarioProperty);
-            if (recoveryScenario != null) {
-                notificationResponseBean = doResendConfirmationCode(recoveryScenario, notificationResponseBean,
-                        resendCodeRequestDTO);
-            }
+            notificationResponseBean = doResendConfirmationCode(recoveryScenario, notificationResponseBean,
+                    resendCodeRequestDTO);
         }
 
         if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
@@ -74,11 +69,11 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 
-    private String validateRecoveryScenarioPropertyList(List<PropertyDTO> recoveryScenarioProperty) {
+    private String getRecoveryScenarioFromProperties(List<PropertyDTO> propertyDTOS) {
 
         String recoveryScenario = null;
         Map<String, List<PropertyDTO>> filteredList =
-                recoveryScenarioProperty.stream().collect(Collectors.groupingBy(PropertyDTO::getKey));
+                propertyDTOS.stream().collect(Collectors.groupingBy(PropertyDTO::getKey));
 
         if (!filteredList.containsKey(RECOVERY_SCENARIO_KEY) || filteredList.get(RECOVERY_SCENARIO_KEY).size() > 1) {
             return recoveryScenario;

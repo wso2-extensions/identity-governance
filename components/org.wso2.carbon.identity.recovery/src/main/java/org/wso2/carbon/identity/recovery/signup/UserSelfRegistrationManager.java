@@ -58,6 +58,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -81,6 +82,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +92,7 @@ import java.util.Set;
 
 
 /**
- * Manager class which can be used to recover passwords using a notification
+ * Manager class which can be used to recover passwords using a notification.
  */
 public class UserSelfRegistrationManager {
 
@@ -677,7 +679,7 @@ public class UserSelfRegistrationManager {
         if (StringUtils.isNotEmpty(verifiedChannelType) && StringUtils.isNotEmpty(verifiedChannelClaim)) {
 
             // Get the notification channel which matches the given channel type
-            NotificationChannels channel = getNotificationChannel(username,verifiedChannelType);
+            NotificationChannels channel = getNotificationChannel(username, verifiedChannelType);
             String channelClaim = channel.getClaimUri();
 
             // Check whether the channels claims are matching.
@@ -776,7 +778,7 @@ public class UserSelfRegistrationManager {
      * @param userClaims                     User claims for the user
      */
     private void setVerificationClaims(User user, String verificationChannel, String externallyVerifiedChannelClaim,
-            String recoveryScenario,HashMap<String, String> userClaims) {
+                                       String recoveryScenario, HashMap<String, String> userClaims) {
 
         // Externally verified channel claims are sent with the code validation request.
         if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(verificationChannel)) {
@@ -794,8 +796,8 @@ public class UserSelfRegistrationManager {
                 if (log.isDebugEnabled()) {
                     String message = String
                             .format("Externally verified channel claims are not available for user : %s in tenant "
-                                            + "domain : %s. Therefore, setting %s claim as the default " + "verified channel.",
-                                    user.getUserName(), user.getTenantDomain(),
+                                            + "domain : %s. Therefore, setting %s claim as the default " +
+                                            "verified channel.", user.getUserName(), user.getTenantDomain(),
                                     NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl());
                     log.debug(message);
                 }
@@ -832,55 +834,53 @@ public class UserSelfRegistrationManager {
         }
     }
 
-    public NotificationResponseBean resendConfirmationCode(User user, Property[] properties) throws IdentityRecoveryException {
+    /**
+     * This method is deprecated.
+     *
+     * @since 1.3.51
+     * @deprecated New APIs have been provided.
+     * Use
+     * {@link org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager#resendConfirmationCode(User, String, String, String, Property[])}
+     * method.
+     */
+    @Deprecated
+    public NotificationResponseBean resendConfirmationCode(User user, Property[] properties)
+            throws IdentityRecoveryException {
 
         if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            if (StringUtils.isBlank(tenantDomain)) {
+                tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+            }
+            user.setTenantDomain(tenantDomain);
+            log.info("confirmUserSelfRegistration :Tenant domain is not in the request. set to default for " +
+                    "user : " + user.getUserName());
         }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default for user : " + user.getUserName());
+            log.info("confirmUserSelfRegistration :User store domain is not in the request. set to default " +
+                    "for user : " + user.getUserName());
         }
 
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs
+        boolean selfRegistrationEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
+        if (!selfRegistrationEnabled) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP,
+                    user.getUserName());
         }
 
-        boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
-
-        NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
-
-        if (userRecoveryData == null || StringUtils.isBlank(userRecoveryData.getSecret()) || !RecoverySteps
-                .CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_OLD_CODE_NOT_FOUND, null);
-        }
-        //Invalid old code
-        userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
-
-        String secretKey = UUIDGenerator.generateUUID();
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
-                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
-
-        userRecoveryDataStore.store(recoveryDataDO);
-
-        if (isNotificationInternallyManage) {
-            triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM.toString(), secretKey, properties);
-        } else {
-            notificationResponseBean.setKey(secretKey);
-        }
-
+        ResendConfirmationManager resendConfirmationManager = ResendConfirmationManager.getInstance();
+        NotificationResponseBean notificationResponseBean =
+                resendConfirmationManager.resendConfirmationCode(user, RecoveryScenarios.SELF_SIGN_UP.toString()
+                        , RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, properties);
+        notificationResponseBean.setCode(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
+        notificationResponseBean.setMessage(
+                IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getMessage());
         return notificationResponseBean;
-
     }
 
     /**
@@ -961,34 +961,6 @@ public class UserSelfRegistrationManager {
                     + tenantDomain, e);
         }
         return propertyValue;
-    }
-
-    private void triggerNotification(User user, String type, String code, Property[] props) throws
-            IdentityRecoveryException {
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-
-        if (props != null && props.length > 0) {
-            for (int i = 0; i < props.length; i++) {
-                properties.put(props[i].getKey(), props[i].getValue());
-            }
-        }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
-        }
     }
 
     private void addConsent(String consent, String tenantDomain) throws ConsentManagementException, IdentityRecoveryServerException {
