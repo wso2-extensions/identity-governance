@@ -364,20 +364,21 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(emailAddress)) {
 
             String existingEmail;
-            String username = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            String username = user.getUserName();
             try {
                 existingEmail = userStoreManager.getUserClaimValue(username,
                         IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
             } catch (UserStoreException e) {
-                throw new IdentityEventException("Error occurred while retrieving existing email address for user: "
-                        + username, e);
+                String error = String.format("Error occurred while retrieving existing email address for user: %s in " +
+                        "domain : %s", username, user.getTenantDomain());
+                throw new IdentityEventException(error, e);
             }
 
             if (emailAddress.equals(existingEmail)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The email address to be updated: %s is same as the existing email " +
-                                    "address for user: %s . Hence an email verification will not be triggered.",
-                            emailAddress, username));
+                            "address for user: %s in domain %s. Hence an email verification will not be " +
+                            "triggered.", emailAddress, username, user.getTenantDomain()));
                 }
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
@@ -421,8 +422,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         Map<String, String> verificationPendingEmailClaimMap;
         try {
-            verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName(
-                    user.getUserName(), user.getUserStoreDomain()), new String[]{
+            verificationPendingEmailClaimMap = userStoreManager.getUserClaimValues(user.getUserName(), new String[]{
                     IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM}, null);
         } catch (UserStoreException e) {
             throw new IdentityEventException("Error while retrieving verification pending email claim value for user: "
