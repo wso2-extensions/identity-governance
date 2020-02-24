@@ -370,7 +370,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
             } catch (UserStoreException e) {
                 String error = String.format("Error occurred while retrieving existing email address for user: %s in " +
-                        "domain : %s", user, user.getTenantDomain());
+                        "domain : %s", username, user.getTenantDomain());
                 throw new IdentityEventException(error, e);
             }
 
