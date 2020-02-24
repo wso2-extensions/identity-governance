@@ -171,7 +171,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 OMElement claim = (OMElement) claims.next();
                 String claimURI = claim.getAttributeValue(new QName(CLAIM_URI));
                 // Currently claim verification on update support is only there for http://wso2.org/claims/emailaddress.
-                if (claimURI.equals(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                if (IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM.equals(claimURI)) {
                     OMElement verificationOnUpdate = claim.getFirstChildWithName(new QName(IdentityCoreConstants
                             .IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_ON_UPDATE_ELEMENT));
                     if (verificationOnUpdate != null) {
