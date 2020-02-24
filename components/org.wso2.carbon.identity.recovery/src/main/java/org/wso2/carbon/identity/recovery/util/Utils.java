@@ -598,10 +598,8 @@ public class Utils {
                 .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
                 .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
-            String errorMessage = passwordErrorMessage;
-
             throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), errorMessage, exception);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage, exception);
         }
     }
 
