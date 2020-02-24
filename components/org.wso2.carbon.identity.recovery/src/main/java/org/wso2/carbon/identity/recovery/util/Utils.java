@@ -598,12 +598,8 @@ public class Utils {
                 .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
                 .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
-            String errorMessage = String.format(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD
-                            .getMessage(),
-                    realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
-
             throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), errorMessage, exception);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage, exception);
         }
     }
 
