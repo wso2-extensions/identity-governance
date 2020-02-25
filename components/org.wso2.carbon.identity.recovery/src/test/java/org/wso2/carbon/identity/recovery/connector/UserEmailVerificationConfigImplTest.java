@@ -34,7 +34,7 @@ import java.util.Properties;
 import static org.testng.Assert.assertEquals;
 
 /**
- * This class does unit test coverage for UserEmailVerificationConfigImpl class
+ * This class does unit test coverage for UserEmailVerificationConfigImpl class.
  */
 public class UserEmailVerificationConfigImplTest {
 
@@ -57,31 +57,37 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetName() {
+
         assertEquals(userEmailVerificationConfig.getName(), "user-email-verification");
     }
 
     @Test
     public void testGetFriendlyName() {
+
         assertEquals(userEmailVerificationConfig.getFriendlyName(), FRIENDLY_NAME);
     }
 
     @Test
     public void testGetCategory() {
+
         assertEquals(userEmailVerificationConfig.getCategory(), CATEGORY);
     }
 
     @Test
     public void testGetSubCategory() {
+
         assertEquals(userEmailVerificationConfig.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() {
+
         assertEquals(userEmailVerificationConfig.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() {
+
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
                 "Enable User Email Verification");
@@ -103,6 +109,7 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
                 "Enable to trigger a verification notification during user creation");
@@ -127,13 +134,14 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetPropertyNames() {
+
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME);
-        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
+        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = userEmailVerificationConfig.getPropertyNames();
 
@@ -144,6 +152,7 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
+
         String testEnableEmailVerification = "false";
         String testEnableEmailAccountLockOnCreation = "true";
         String testEnableNotificationInternallyManage = "true";
@@ -180,6 +189,7 @@ public class UserEmailVerificationConfigImplTest {
 
     @Test
     public void testGetDefaultProperties() throws IdentityGovernanceException {
+
         String tenantDomain = "admin";
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 

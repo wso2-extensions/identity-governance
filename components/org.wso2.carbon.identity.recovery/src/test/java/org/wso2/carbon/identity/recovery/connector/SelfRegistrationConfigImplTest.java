@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -35,7 +34,7 @@ import java.util.Properties;
 import static org.testng.Assert.assertEquals;
 
 /**
- * This class does unit test coverage for SelfRegistrationConfigImpl class
+ * This class does unit test coverage for SelfRegistrationConfigImpl class.
  */
 public class SelfRegistrationConfigImplTest {
 
@@ -47,40 +46,48 @@ public class SelfRegistrationConfigImplTest {
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
-    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
+    private static final String CONSENT_LIST_URL = "/carbon/consent/list-purposes.jsp?purposeGroup=" +
+            SYSTEM_PURPOSE_GROUP + "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
+
     @BeforeTest
     public void Init() {
+
         selfRegistrationConfigImpl = new SelfRegistrationConfigImpl();
     }
 
     @Test
     public void testGetName() {
+
         assertEquals(selfRegistrationConfigImpl.getName(), "self-sign-up");
     }
 
     @Test
     public void testGetFriendlyName() {
+
         assertEquals(selfRegistrationConfigImpl.getFriendlyName(), "User Self Registration");
     }
 
     @Test
     public void testGetCategory() {
+
         assertEquals(selfRegistrationConfigImpl.getCategory(), "Account Management Policies");
     }
 
     @Test
     public void testGetSubCategory() {
+
         assertEquals(selfRegistrationConfigImpl.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() {
+
         assertEquals(selfRegistrationConfigImpl.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() {
+
         Map<String, String> nameMappingExpected = new HashMap<String, String>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable Self User Registration");
@@ -104,6 +111,7 @@ public class SelfRegistrationConfigImplTest {
 
     @Test
     public void testGetPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Enable self user registration");
@@ -129,6 +137,7 @@ public class SelfRegistrationConfigImplTest {
 
     @Test
     public void testGetPropertyNames() {
+
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
@@ -139,7 +148,7 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected
                 .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
-        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
+        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = selfRegistrationConfigImpl.getPropertyNames();
 
@@ -150,6 +159,7 @@ public class SelfRegistrationConfigImplTest {
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
+
         String testEnableSelfSignUp = "false";
         String testEnableAccountLockOnCreation = "true";
         String testEnableNotificationInternallyManage = "true";
@@ -175,7 +185,7 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 selfRegistrationCallbackRegex);
         try {
-            propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + (URLEncoder.encode
+            propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, CONSENT_LIST_URL + "&callback=" + (URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name())));
         } catch (UnsupportedEncodingException e) {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
@@ -190,6 +200,7 @@ public class SelfRegistrationConfigImplTest {
 
     @Test
     public void testGetDefaultProperties() throws IdentityGovernanceException {
+
         String tenantDomain = "admin";
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 

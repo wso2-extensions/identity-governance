@@ -31,7 +31,7 @@ import java.util.Properties;
 import static org.testng.Assert.assertEquals;
 
 /**
- * This class does unit test coverage for RecoveryConfigImpl class
+ * This class does unit test coverage for RecoveryConfigImpl class.
  */
 public class RecoveryConfigImplTest {
 
@@ -39,36 +39,43 @@ public class RecoveryConfigImplTest {
 
     @BeforeTest
     public void Init() {
+
         recoveryConfigImpl = new RecoveryConfigImpl();
     }
 
     @Test
     public void testGetName() {
+
         assertEquals(recoveryConfigImpl.getName(), "account-recovery");
     }
 
     @Test
     public void testGetFriendlyName() {
+
         assertEquals(recoveryConfigImpl.getFriendlyName(), "Account Recovery");
     }
 
     @Test
     public void testGetCategory() {
+
         assertEquals(recoveryConfigImpl.getCategory(), "Account Management Policies");
     }
 
     @Test
     public void testGetSubCategory() {
+
         assertEquals(recoveryConfigImpl.getSubCategory(), "DEFAULT");
     }
 
     @Test
     public void testGetOrder() {
+
         assertEquals(recoveryConfigImpl.getOrder(), 0);
     }
 
     @Test
     public void testGetPropertyNameMapping() {
+
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
                 "Notification Based Password Recovery");
@@ -108,6 +115,7 @@ public class RecoveryConfigImplTest {
 
     @Test
     public void testGetPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMappingExpected = new HashMap<String, String>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 "Set false if the client application handles notification sending");
@@ -126,6 +134,7 @@ public class RecoveryConfigImplTest {
 
     @Test
     public void testGetPropertyNames() {
+
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
@@ -143,7 +152,7 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
 
-        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[propertiesExpected.size()]);
+        String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = recoveryConfigImpl.getPropertyNames();
 
@@ -154,6 +163,7 @@ public class RecoveryConfigImplTest {
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
+
         String testEnableNotificationBasedPasswordRecovery = "false";
         String testEnableQuestionBasedPasswordRecovery = "false";
         String testMinimumAnswers = "2";
@@ -211,6 +221,7 @@ public class RecoveryConfigImplTest {
 
     @Test
     public void testGetDefaultProperties() throws IdentityGovernanceException {
+
         String tenantDomain = "admin";
         String[] propertyNames = new String[]{"property1", "property2", "property3"};
 
