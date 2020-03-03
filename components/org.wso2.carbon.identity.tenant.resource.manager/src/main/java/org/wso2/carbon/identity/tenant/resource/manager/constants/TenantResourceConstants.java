@@ -43,7 +43,7 @@ public class TenantResourceConstants {
         ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES("TRM-10007","Error occurred while fetching the"
                 + " tenant specific publisher configuration files from configuration store for the tenant domain: %s"),
         ERROR_CODE_ERROR_WHEN_ADDING_EVENT_PUBLISHER_CONFIGURATION("TRM-10008","Error occurred while adding the event"
-                + " publisher configuration for the tenant domain: %"),
+                + " publisher configuration for the tenant domain: %s"),
         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG(
                 "TRM-10009", "Error occurred while creating tenant event publisher configuration: %s.Using super"
                 + "tenant configuration, for the tenant domain: %s");

@@ -59,7 +59,8 @@ public class ResourceManagerImpl implements ResourceManager {
             throw handleServerException(ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION, e,
                     resourceFile.getName());
         } catch (ConfigurationManagementException e) {
-            throw handleServerException(ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE, e, resourceFile.getName());
+            throw handleServerException(ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE, e,
+                    resourceFile.getName() ,PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
         }
     }
 
