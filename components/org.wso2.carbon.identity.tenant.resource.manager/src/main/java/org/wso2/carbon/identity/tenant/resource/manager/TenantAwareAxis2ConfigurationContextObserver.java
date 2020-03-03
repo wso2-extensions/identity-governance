@@ -213,6 +213,7 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             } catch (EventPublisherConfigurationException e) {
                 log.error(populateMessageWithData(
                         ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_PUBLISHER_CONFIGURATION_USING_SUPER_TENANT_CONFIG,
+                        eventPublisherConfiguration.getEventPublisherName(),
                         PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
             }
         }
