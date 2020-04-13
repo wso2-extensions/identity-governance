@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -30,7 +29,6 @@ import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationCon
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
-import org.wso2.carbon.identity.configuration.mgt.core.model.Resources;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
@@ -123,6 +121,11 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             } else if (e.getErrorCode()
                     .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCES_DOES_NOT_EXISTS.getCode())) {
                 log.warn("Configuration store does not contain any resources under resource type publisher. Super "
+                        + "tenant configurations will be used for the tenant domain: " + PrivilegedCarbonContext
+                        .getThreadLocalCarbonContext().getTenantDomain());
+            } else if (e.getErrorCode()
+                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS.getCode())) {
+                log.warn("Configuration store does not contain  publisher resource type. Super "
                         + "tenant configurations will be used for the tenant domain: " + PrivilegedCarbonContext
                         .getThreadLocalCarbonContext().getTenantDomain());
             } else {
