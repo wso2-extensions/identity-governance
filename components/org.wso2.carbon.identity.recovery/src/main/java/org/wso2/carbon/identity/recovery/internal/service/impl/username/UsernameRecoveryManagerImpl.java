@@ -104,8 +104,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                 if (Boolean.parseBoolean(
                         IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
                     throw Utils.handleClientException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_OR_MORE_THAN_ONE_USER_FOUND,
-                            null);
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null);
                 }
                 return null;
             }
