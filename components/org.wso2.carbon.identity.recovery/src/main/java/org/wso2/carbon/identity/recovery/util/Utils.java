@@ -745,4 +745,11 @@ public class Utils {
             return IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         }
     }
+
+    public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
+
+        if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") != 1) {
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
+        }
+    }
 }

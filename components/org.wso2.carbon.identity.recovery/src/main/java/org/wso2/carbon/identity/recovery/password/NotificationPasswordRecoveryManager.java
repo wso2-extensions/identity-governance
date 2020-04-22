@@ -93,6 +93,7 @@ public class NotificationPasswordRecoveryManager {
                 IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION);
 
         // Resolve user attributes.
+        Utils.validateEmailUsername(user.getUserName());
         resolveUserAttributes(user);
         validatePasswordRecoveryConfiguration(user.getTenantDomain());
         validateCallback(properties, user.getTenantDomain());

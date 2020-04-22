@@ -265,6 +265,7 @@ public class IdentityRecoveryConstants {
                 + "recovery request"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
+        ERROR_CODE_INVALID_USERNAME("PWR-1009", "Invalid username! Username should be an email."),
 
         // Resend Account Confirmation.
         ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request");
