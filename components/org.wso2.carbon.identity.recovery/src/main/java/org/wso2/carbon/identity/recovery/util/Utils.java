@@ -746,6 +746,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Validate username.
+     *
+     * @param username tenant aware username of the user.
+     * @throws IdentityRecoveryClientException if username is not valid.
+     */
     public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
 
         if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") != 1) {
