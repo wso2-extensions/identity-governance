@@ -322,6 +322,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.mgt.endpoint.util</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
@@ -621,7 +626,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.17.54</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.17.56</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.28, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 

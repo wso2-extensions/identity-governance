@@ -19,7 +19,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
+import org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.ValidateUsernameApiService;
@@ -45,14 +47,17 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         }
 
         try {
-            String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
             List<PropertyDTO> propertyDTOList = user.getProperties();
+            String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
             boolean skipSelfSignUpEnabledCheck = false;
 
             if (CollectionUtils.isNotEmpty(propertyDTOList)) {
                 for (PropertyDTO propertyDTO : propertyDTOList) {
                     if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
                         skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
+                    } else if (StringUtils.equals(IdentityManagementEndpointConstants.TENANT_DOMAIN,
+                            propertyDTO.getKey())) {
+                        tenantDomain = propertyDTO.getValue();
                     }
                 }
             }
@@ -63,7 +68,12 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
             }
             UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
 
-            if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
+            if (IdentityUtil.isEmailUsernameEnabled() &&
+                    StringUtils.containsNone(user.getUsername(), "@")) {
+                logDebug("Username is invalid. Username should be in email format.");
+                responseDTO.setStatusCode(Integer.parseInt(
+                        SelfRegistrationStatusCodes.ERROR_CODE_INVALID_EMAIL_USERNAME));
+            } else if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
                 logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ", tenantDomain,
                         SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
                 responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
