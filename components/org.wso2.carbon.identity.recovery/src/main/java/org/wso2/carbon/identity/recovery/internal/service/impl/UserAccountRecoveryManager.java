@@ -74,7 +74,7 @@ public class UserAccountRecoveryManager {
     /**
      * Get an instance of UserAccountRecoveryManager.
      *
-     * @return UserAccountRecoveryManager instance
+     * @return UserAccountRecoveryManager instance.
      */
     public static UserAccountRecoveryManager getInstance() {
 
@@ -88,7 +88,7 @@ public class UserAccountRecoveryManager {
      * @param tenantDomain     Tenant domain
      * @param recoveryScenario Recovery scenario
      * @param properties       Meta properties
-     * @return RecoveryChannelInfoDTO object
+     * @return RecoveryChannelInfoDTO object.
      */
     public RecoveryChannelInfoDTO retrieveUserRecoveryInformation(Map<String, String> claims, String tenantDomain,
                                                                   RecoveryScenarios recoveryScenario,
@@ -129,7 +129,7 @@ public class UserAccountRecoveryManager {
      * Check whether the account is locked or disabled.
      *
      * @param user User
-     * @throws IdentityRecoveryException If account is in locked or disabled status
+     * @throws IdentityRecoveryException If account is in locked or disabled status.
      */
     private void checkAccountLockedStatus(User user) throws IdentityRecoveryException {
 
@@ -154,8 +154,8 @@ public class UserAccountRecoveryManager {
      *
      * @param claims       List of UserClaims
      * @param tenantDomain Tenant domain
-     * @return Username (Return null if there are no users)
-     * @throws IdentityRecoveryException Error while retrieving the users list
+     * @return Username (Return null if there are no users).
+     * @throws IdentityRecoveryException Error while retrieving the users list.
      */
     public String getUsernameByClaims(Map<String, String> claims, String tenantDomain)
             throws IdentityRecoveryException {
@@ -220,7 +220,7 @@ public class UserAccountRecoveryManager {
     /**
      * Get the notification channel list when the notification channel is external.
      *
-     * @return External notification channel information
+     * @return External notification channel information.
      */
     private List<NotificationChannel> getExternalNotificationChannelList() {
 
@@ -237,8 +237,8 @@ public class UserAccountRecoveryManager {
      * @param username     Username
      * @param tenantDomain Tenant domain
      * @return Notification channel list
-     * @throws IdentityRecoveryClientException No notification channels available for the user
-     * @throws IdentityRecoveryException       Error getting user claim values
+     * @throws IdentityRecoveryClientException No notification channels available for the user.
+     * @throws IdentityRecoveryException       If an error occurred while getting user claim values.
      */
     private List<NotificationChannel> getInternalNotificationChannelList(String username, String tenantDomain)
             throws IdentityRecoveryClientException, IdentityRecoveryException {
@@ -264,12 +264,12 @@ public class UserAccountRecoveryManager {
      * Prepare the response to be sent to the recovery APIs.
      *
      * @param username                Username of the user
-     * @param recoveryCode            Recovery code given to the user.
+     * @param recoveryCode            Recovery code given to the user
      * @param notificationChannelDTOs List of NotificationChannelsResponseDTOs available for the user.
-     * @return RecoveryChannelInfoDTO object
+     * @return RecoveryChannelInfoDTO object.
      */
     private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryCode,
-                                                                           NotificationChannelDTO[] notificationChannelDTOs) {
+                                                                    NotificationChannelDTO[] notificationChannelDTOs) {
 
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
         recoveryChannelInfoDTO.setUsername(username);
@@ -284,14 +284,13 @@ public class UserAccountRecoveryManager {
      *
      * @param userName             UserName of the user
      * @param recoveryID           RecoveryId
-     * @param tenantDomain         Tenant domain.
+     * @param tenantDomain         Tenant domain
      * @param notificationChannels Notification channels list
      * @param recoveryScenario     Recovery scenario
-     * @return NotificationChannelsResponseDTSs list
+     * @return NotificationChannelsResponseDTSs list.
      */
     private NotificationChannelDTO[] getNotificationChannelsResponseDTOList(String userName, String recoveryID,
-                                                                            String tenantDomain,
-                                                                            List<NotificationChannel> notificationChannels,
+                                           String tenantDomain, List<NotificationChannel> notificationChannels,
                                                                             RecoveryScenarios recoveryScenario)
             throws IdentityRecoveryException {
 
@@ -360,7 +359,7 @@ public class UserAccountRecoveryManager {
      * Encode the email address of the user.
      *
      * @param email Email address
-     * @return Encoded email address (Empty String if user has no email)
+     * @return Encoded email address (Empty String if user has no email).
      */
     private String maskEmailAddress(String email) {
 
@@ -378,7 +377,7 @@ public class UserAccountRecoveryManager {
      * @param claimUri   Claim to be searched
      * @param claimValue Claim value to be matched
      * @return Matched users list
-     * @throws IdentityRecoveryServerException Error while retrieving claims from the userstore manager
+     * @throws IdentityRecoveryServerException If an error occurred while retrieving claims from the userstore manager.
      */
     private String[] getUserList(int tenantId, String claimUri, String claimValue)
             throws IdentityRecoveryServerException {
@@ -419,7 +418,7 @@ public class UserAccountRecoveryManager {
      *
      * @param tenantId Tenant id
      * @return UserStoreManager object
-     * @throws IdentityRecoveryServerException Error getting UserStoreManager
+     * @throws IdentityRecoveryServerException If an error occurred while getting UserStoreManager.
      */
     private UserStoreManager getUserStoreManager(int tenantId) throws IdentityRecoveryServerException {
 
@@ -451,7 +450,7 @@ public class UserAccountRecoveryManager {
      * @param matchedUserList  Retrieved users list for the given claim
      * @param claim            Claim used for filtering
      * @param value            Value given for the claim
-     * @return Users list with no duplicates
+     * @return Users list with no duplicates.
      */
     private String[] getCommonUserEntries(String[] resultedUserList, String[] matchedUserList, String claim,
                                           String value) {
@@ -484,7 +483,7 @@ public class UserAccountRecoveryManager {
      * @param tenantDomain      tenant domain
      * @param requiredClaimURLs Claims that needs to be retrieved.
      * @return Map of claims and values
-     * @throws IdentityRecoveryException Error while getting the user claims of the user
+     * @throws IdentityRecoveryException If an error occurred while getting the user claims of the user
      */
     private Map<String, String> getClaimListOfUser(String username, String tenantDomain, String[] requiredClaimURLs)
             throws IdentityRecoveryException {
@@ -513,7 +512,7 @@ public class UserAccountRecoveryManager {
      * Create required claim list from the attributes in the Notification channel list. The required claims will be
      * used to get user's attributes.
      *
-     * @return Required claims list
+     * @return Required claims list.
      */
     private String[] createRequiredChannelClaimsList() {
 
@@ -573,7 +572,7 @@ public class UserAccountRecoveryManager {
      * Checks whether the user is a self signed-up user or not.
      *
      * @param rolesList Roles that the user has
-     * @return TRUE of the user has self sign-up role
+     * @return TRUE of the user has self sign-up role.
      */
     private boolean isSelfSignUpUser(String rolesList) {
 
@@ -586,7 +585,7 @@ public class UserAccountRecoveryManager {
      *
      * @param code Code given for recovery
      * @param step Recovery step
-     * @throws IdentityRecoveryException Error validating the recoveryId
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
      */
     public UserRecoveryData getUserRecoveryData(String code, RecoverySteps step) throws IdentityRecoveryException {
 
@@ -628,7 +627,7 @@ public class UserAccountRecoveryManager {
      * @param secretKey    RecoveryId
      * @param scenario     RecoveryScenario
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
-     * @throws IdentityRecoveryServerException Error storing recovery data
+     * @throws IdentityRecoveryServerException If an error occurred while storing recovery data.
      */
     private void addRecoveryDataObject(String username, String tenantDomain, String secretKey,
                                        RecoveryScenarios scenario, String recoveryData)
@@ -656,12 +655,12 @@ public class UserAccountRecoveryManager {
      *
      * @param username     Username of the user
      * @param tenantDomain Tenant domain of the user
-     * @return User
+     * @return User object.
      */
     private User buildUser(String username, String tenantDomain) {
 
         User user = new User();
-        user.setUserName(UserCoreUtil.removeDomainFromName(username));
+        user.setUserName(username);
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
         return user;

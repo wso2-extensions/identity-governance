@@ -544,7 +544,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
         String resendCode = UUIDGenerator.generateUUID();
         User user = userRecoveryData.getUser();
-        addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), resendCode, notificationChannel);
+        addRecoveryDataObject(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                user.getTenantDomain(), resendCode, notificationChannel);
         return resendCode;
     }
 
