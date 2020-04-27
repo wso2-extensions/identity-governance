@@ -46,7 +46,6 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,7 +99,7 @@ public class UserAccountRecoveryManager {
         if (StringUtils.isNotEmpty(username)) {
 
             // If the account is locked or disabled, do not let the user to recover the account.
-            checkAccountLockedStatus(buildUser(username, tenantDomain));
+            checkAccountLockedStatus(Utils.buildUser(username, tenantDomain));
             List<NotificationChannel> notificationChannels;
             // Get the notification management mechanism.
             boolean isNotificationsInternallyManaged = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
@@ -634,7 +633,7 @@ public class UserAccountRecoveryManager {
             throws IdentityRecoveryServerException {
 
         // Create a user object.
-        User user = buildUser(username, tenantDomain);
+        User user = Utils.buildUser(username, tenantDomain);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, scenario,
                 RecoverySteps.SEND_RECOVERY_INFORMATION);
         // Store available channels in remaining setIDs.
@@ -648,21 +647,5 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,
                     "Error Storing Recovery Data", e);
         }
-    }
-
-    /**
-     * Build a User object.
-     *
-     * @param username     Username of the user
-     * @param tenantDomain Tenant domain of the user
-     * @return User object.
-     */
-    private User buildUser(String username, String tenantDomain) {
-
-        User user = new User();
-        user.setUserName(username);
-        user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
-        return user;
     }
 }

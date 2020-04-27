@@ -165,8 +165,8 @@ public class ResendConfirmationManager {
             resendConfirmationDTO.setExternalConfirmationCode(confirmationCode);
         }
         // Store new confirmation code.
-        addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), confirmationCode, notificationChannel,
-                scenario, step);
+        addRecoveryDataObject(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                user.getTenantDomain(), confirmationCode, notificationChannel, scenario, step);
         resendCode = generateResendCode(notificationChannel, scenario, userRecoveryData);
         resendConfirmationDTO.setNotificationChannel(notificationChannel);
         resendConfirmationDTO.setResendCode(resendCode);
@@ -259,7 +259,8 @@ public class ResendConfirmationManager {
 
         String resendCode = UUIDGenerator.generateUUID();
         User user = userRecoveryData.getUser();
-        addRecoveryDataObject(user.getUserName(), user.getTenantDomain(), resendCode, notificationChannel, scenario,
+        addRecoveryDataObject(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                user.getTenantDomain(), resendCode, notificationChannel, scenario,
                 RecoverySteps.RESEND_CONFIRMATION_CODE);
         return resendCode;
     }
@@ -280,10 +281,7 @@ public class ResendConfirmationManager {
             throws IdentityRecoveryServerException {
 
         // Create a user object.
-        User user = new User();
-        user.setUserName(userName);
-        user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
+        User user = Utils.buildUser(userName, tenantDomain);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
 
         // Store available channels in remaining setIDs.

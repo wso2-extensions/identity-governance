@@ -51,6 +51,7 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -757,5 +758,21 @@ public class Utils {
         if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
         }
+    }
+
+    /**
+     * Build a User object.
+     *
+     * @param username     Username of the user with userstore domain (Ex: PRIMARY/user1).
+     * @param tenantDomain Tenant domain of the user.
+     * @return User object.
+     */
+    public static User buildUser(String username, String tenantDomain) {
+
+        User user = new User();
+        user.setUserName(UserCoreUtil.removeDomainFromName(username));
+        user.setTenantDomain(tenantDomain);
+        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
+        return user;
     }
 }

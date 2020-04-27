@@ -552,19 +552,16 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     /**
      * Add the notification channel recovery data to the store.
      *
-     * @param userName     Username
+     * @param username     Username with userstore domain name
      * @param tenantDomain Tenant domain
      * @param secretKey    RecoveryId
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
      * @throws IdentityRecoveryServerException Error storing recovery data
      */
-    private void addRecoveryDataObject(String userName, String tenantDomain, String secretKey, String recoveryData)
+    private void addRecoveryDataObject(String username, String tenantDomain, String secretKey, String recoveryData)
             throws IdentityRecoveryServerException {
 
-        User user = new User();
-        user.setUserName(userName);
-        user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userName));
+        User user = Utils.buildUser(username, tenantDomain);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.RESEND_CONFIRMATION_CODE);
         // Store available channels in remaining setIDs.
