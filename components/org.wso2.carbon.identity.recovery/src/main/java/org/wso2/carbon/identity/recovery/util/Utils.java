@@ -745,4 +745,17 @@ public class Utils {
             return IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         }
     }
+
+    /**
+     * Validate email username.
+     *
+     * @param username Tenant aware username of the user.
+     * @throws IdentityRecoveryClientException If username is not an email when email username is enabled.
+     */
+    public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
+
+        if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
+        }
+    }
 }
