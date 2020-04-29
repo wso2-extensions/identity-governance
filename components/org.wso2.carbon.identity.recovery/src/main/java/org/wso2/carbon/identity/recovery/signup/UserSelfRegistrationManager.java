@@ -911,11 +911,28 @@ public class UserSelfRegistrationManager {
      *
      * @param username Username.
      * @return True if the username is already taken, else false.
+     * @Deprecated Use isUsernameAlreadyTaken(String username, String tenantDomain)
      */
+    @Deprecated
     public boolean isUsernameAlreadyTaken(String username) throws IdentityRecoveryException {
 
+        return isUsernameAlreadyTaken(username, null);
+    }
+
+    /**
+     * Returns whether a given username is already taken.
+     *
+     * @param username Username
+     * @param tenantDomain Tenant domain in the request.
+     * @return True if username is already taken, else false.
+     * @throws IdentityRecoveryException
+     */
+    public boolean isUsernameAlreadyTaken(String username, String tenantDomain) throws IdentityRecoveryException {
+
         boolean isUsernameAlreadyTaken = true;
-        String tenantDomain = MultitenantUtils.getTenantDomain(username);
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = MultitenantUtils.getTenantDomain(username);
+        }
         try {
             String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
 
