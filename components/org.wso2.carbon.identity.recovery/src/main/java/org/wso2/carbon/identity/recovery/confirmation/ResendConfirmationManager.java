@@ -418,8 +418,8 @@ public class ResendConfirmationManager {
             }
         }
         String secretKey = generateSecretKey(preferredChannel);
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.valueOf
-                (recoveryScenario), RecoverySteps.valueOf(recoveryStep));
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.getRecoveryScenario
+                (recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
         /*
         Notified channel is stored in remaining setIds for recovery purposes.
         Having a EMPTY preferred channel states that the notification channel should not be stored.

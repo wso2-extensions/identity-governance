@@ -66,10 +66,17 @@ public class TenantRegistrationVerificationHandler extends UserEmailVerification
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
-        if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName) && Boolean.valueOf(claims.
-                get(IdentityRecoveryConstants.TENANT_ADMIN_ASK_PASSWORD_CLAIM))) {
+
+        if (isTenantRegistrationRequest(claims, eventName)) {
             handleClaimUpdate(eventProperties, userStoreManager, claims);
         }
+    }
+
+    private boolean isTenantRegistrationRequest(Map<String, String> claims, String eventName)
+            throws IdentityEventException {
+
+        return IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName) && Boolean.valueOf(claims.
+                get(IdentityRecoveryConstants.TENANT_ADMIN_ASK_PASSWORD_CLAIM));
     }
 
     @Override
@@ -90,26 +97,23 @@ public class TenantRegistrationVerificationHandler extends UserEmailVerification
         User user = getUser(eventProperties, userStoreManager);
 
         if (log.isDebugEnabled()) {
-            log.debug("PreSetUserClaim - TenantRegistrationVerificationHandler for : " + user.toString() + ". This is " +
-                    "an update request for the claim:  " + IdentityRecoveryConstants.TENANT_ADMIN_ASK_PASSWORD_CLAIM);
+            log.debug("PreSetUserClaim - TenantRegistrationVerificationHandler for : " + user.toString() +
+                    ". This is an update request for the claim:  " + IdentityRecoveryConstants.
+                    TENANT_ADMIN_ASK_PASSWORD_CLAIM);
         }
 
         // Remove claim to prevent persisting this temporary claim.
         claims.remove(IdentityRecoveryConstants.TENANT_ADMIN_ASK_PASSWORD_CLAIM);
 
         String uuid = UUIDGenerator.generateUUID();
-        String notificationType;
-        Enum recoveryScenario = RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD;
-
-        notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_EMAIL_CONFIRM;
+        String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION;
 
         if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
             claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
         }
 
-        setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, uuid);
+        setRecoveryData(user, RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, uuid);
         lockAccount(user, userStoreManager);
-
         try {
             triggerNotification(user, notificationType, uuid, Utils.getArbitraryProperties());
         } catch (IdentityRecoveryException e) {

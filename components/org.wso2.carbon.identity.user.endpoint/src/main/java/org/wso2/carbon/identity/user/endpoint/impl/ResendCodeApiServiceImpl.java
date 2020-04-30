@@ -145,7 +145,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
                 notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.toString(), RecoverySteps.UPDATE_PASSWORD.toString(),
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_EMAIL_CONFIRM, resendCodeRequestDTO);
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION, resendCodeRequestDTO);
         }
 
         return notificationResponseBean;
