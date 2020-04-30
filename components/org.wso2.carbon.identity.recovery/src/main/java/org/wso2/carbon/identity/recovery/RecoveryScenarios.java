@@ -30,7 +30,8 @@ public enum RecoveryScenarios {
     ASK_PASSWORD,
     ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK,
     ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
-    EMAIL_VERIFICATION_ON_UPDATE;
+    EMAIL_VERIFICATION_ON_UPDATE,
+    TENANT_ADMIN_ASK_PASSWORD;
 
     /**
      * Get recovery scenario which matches the given scenario name.
