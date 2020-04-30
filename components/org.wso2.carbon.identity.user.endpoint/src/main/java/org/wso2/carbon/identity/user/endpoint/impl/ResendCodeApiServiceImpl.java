@@ -85,7 +85,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario)) {
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.toString().equals(recoveryScenario)) {
             return recoveryScenario;
         }
 
@@ -139,6 +140,12 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     RecoverySteps.UPDATE_PASSWORD.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP,
                     resendCodeRequestDTO);
+        } else if (RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.toString(), RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_EMAIL_CONFIRM, resendCodeRequestDTO);
         }
 
         return notificationResponseBean;
