@@ -44,7 +44,8 @@ public enum RecoveryScenarios {
 
         RecoveryScenarios[] scenarios = {
                 NOTIFICATION_BASED_PW_RECOVERY, QUESTION_BASED_PWD_RECOVERY, USERNAME_RECOVERY, SELF_SIGN_UP,
-                ASK_PASSWORD, ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, ADMIN_FORCED_PASSWORD_RESET_VIA_OTP
+                ASK_PASSWORD, ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
+                TENANT_ADMIN_ASK_PASSWORD
         };
         if (StringUtils.isNotEmpty(scenarioName)) {
             for (RecoveryScenarios scenario : scenarios) {
