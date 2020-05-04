@@ -80,11 +80,11 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         }
 
 
-        if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(event.getEventName())) {
-                if(log.isDebugEnabled()){
-                    log.debug("PreAuthenticate");
-                }
-            boolean isAccountLocked = true ;
+        if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Handling PostAuthenticate for " + user);
+            }
+            boolean isAccountLocked;
             try {
                 if (isAuthPolicyAccountExistCheck() && !isUserExistsInDomain(userStoreManager, userName)) {
                     IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
@@ -98,7 +98,8 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             } catch (UserStoreException e) {
                 throw new IdentityEventException("Error while retrieving account lock claim value", e);
             }
-            if (isAccountLocked && !isUserAccountConfirmed(user)) {
+            if ((Boolean) event.getEventProperties().get(IdentityEventConstants.EventProperty.OPERATION_STATUS) &&
+                    isAccountLocked && !isUserAccountConfirmed(user)) {
                 IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
                         IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
