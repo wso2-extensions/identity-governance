@@ -143,10 +143,12 @@ public class ResendConfirmationManager {
         RecoverySteps step = RecoverySteps.getRecoveryStep(recoveryStep);
         RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
+
         // Validate the tenant domain and the recovery scenario in the request.
         validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
         validateCallback(properties, user.getTenantDomain());
@@ -156,6 +158,9 @@ public class ResendConfirmationManager {
         String confirmationCode = generateSecretKey(notificationChannel);
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
+        // Store new confirmation code.
+        addRecoveryDataObject(confirmationCode, notificationChannel, scenario, step, user);
+
         // Notification needs to trigger if the notification channel is not equal to EXTERNAL.
         if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             String eventName = Utils.resolveEventName(notificationChannel);
@@ -164,9 +169,7 @@ public class ResendConfirmationManager {
         } else {
             resendConfirmationDTO.setExternalConfirmationCode(confirmationCode);
         }
-        // Store new confirmation code.
-        addRecoveryDataObject(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
-                user.getTenantDomain(), confirmationCode, notificationChannel, scenario, step);
+
         resendCode = generateResendCode(notificationChannel, scenario, userRecoveryData);
         resendConfirmationDTO.setNotificationChannel(notificationChannel);
         resendConfirmationDTO.setResendCode(resendCode);
@@ -258,30 +261,25 @@ public class ResendConfirmationManager {
                                       UserRecoveryData userRecoveryData) throws IdentityRecoveryServerException {
 
         String resendCode = UUIDGenerator.generateUUID();
-        User user = userRecoveryData.getUser();
-        addRecoveryDataObject(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
-                user.getTenantDomain(), resendCode, notificationChannel, scenario,
-                RecoverySteps.RESEND_CONFIRMATION_CODE);
+        addRecoveryDataObject(resendCode, notificationChannel, scenario, RecoverySteps.RESEND_CONFIRMATION_CODE,
+                userRecoveryData.getUser());
         return resendCode;
     }
 
     /**
      * Add the notification channel recovery data to the store.
      *
-     * @param userName         Username
-     * @param tenantDomain     Tenant domain
      * @param secretKey        RecoveryId
      * @param recoveryData     Data to be stored as mata which are needed to evaluate the recovery data object
      * @param recoveryScenario Recovery scenario
      * @param recoveryStep     Recovery step
+     * @param user             User object
      * @throws IdentityRecoveryServerException Error storing recovery data
      */
-    private void addRecoveryDataObject(String userName, String tenantDomain, String secretKey, String recoveryData,
-                                       RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep)
+    private void addRecoveryDataObject(String secretKey, String recoveryData, RecoveryScenarios recoveryScenario,
+                                       RecoverySteps recoveryStep, User user)
             throws IdentityRecoveryServerException {
 
-        // Create a user object.
-        User user = Utils.buildUser(userName, tenantDomain);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
 
         // Store available channels in remaining setIDs.
