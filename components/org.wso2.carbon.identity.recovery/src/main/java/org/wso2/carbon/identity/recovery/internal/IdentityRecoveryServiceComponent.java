@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
+import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
@@ -120,6 +121,8 @@ public class IdentityRecoveryServiceComponent {
                     .getInstance();
             bundleContext.registerService(PostAuthenticationHandler.class.getName(),
                     postAuthnMissingChallengeQuestions, null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new ChallengeAnswerValidationHandler(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

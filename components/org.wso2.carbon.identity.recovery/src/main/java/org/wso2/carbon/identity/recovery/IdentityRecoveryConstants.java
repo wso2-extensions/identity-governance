@@ -27,6 +27,7 @@ public class IdentityRecoveryConstants {
     public static final String IDENTITY_I18N_QUESTIONS =
             IDENTITY_MANAGEMENT_I18N_PATH + "/questionCollection";
     public static final String LINE_SEPARATOR = "!";
+    public static final String DEFAULT_REGEX = ".*";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
     public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET = "resendPasswordReset";
@@ -56,6 +57,9 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
+
+    public static final String USER_NEW_CHALLENGE_ANSWERS = "userNewChallengeAnswers";
+    public static final String USER_OLD_CHALLENGE_ANSWERS = "userOldChallengeAnswers";
 
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
@@ -271,7 +275,17 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
 
         // Resend Account Confirmation.
-        ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request");
+        ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request"),
+
+        /**
+         * CQM - Challenge Question Manager.
+         *
+         * @see <href="https://github.com/wso2/identity-api-user/blob/master/components/org.wso2.carbon.identity.api.user.challenge/org.wso2.carbon.identity.api.user.challenge.common/src/main/java/org/wso2/carbon/identity/api/user/challenge/common/Constant.java">identity-api.user</>
+         */
+        ERROR_CODE_INVALID_ANSWER_FORMAT("10016", "Invalid answer format in the given answer " +
+                "for the challenge question '%s'."),
+        ERROR_CODE_NOT_UNIQUE_ANSWER("10017", "The given answer for the challenge question, " +
+                "'%s' has been used more than once.");
 
         private final String code;
         private final String message;
@@ -427,6 +441,8 @@ public class IdentityRecoveryConstants {
         public static final String PASSWORD_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Password.Enable";
         public static final String USERNAME_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Username.Enable";
 
+        public static final String CHALLENGE_QUESTION_ANSWER_REGEX = "Recovery.Question.Answer.Regex";
+        public static final String ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS = "Recovery.Question.Answer.Uniqueness";
     }
 
     public static class SQLQueries {
