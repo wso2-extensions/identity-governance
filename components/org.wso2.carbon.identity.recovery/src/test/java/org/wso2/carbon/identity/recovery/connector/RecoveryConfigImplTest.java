@@ -17,6 +17,7 @@
  */
 package org.wso2.carbon.identity.recovery.connector;
 
+import org.apache.commons.lang.StringUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
@@ -105,6 +106,8 @@ public class RecoveryConfigImplTest {
                 .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable " +
                 "forced challenge questions");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
+                "Minimum Number of Forced Challenge Questions to be Answered");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
 
@@ -123,6 +126,9 @@ public class RecoveryConfigImplTest {
                 "Show captcha for challenge question based password recovery");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
                 "Force users to provide answers to challenge questions during sign in");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
+                "Force users to provide answers to challenge questions during sign in " +
+                        "if user has answered lesser than this value");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
@@ -150,6 +156,7 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
 
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
@@ -178,6 +185,7 @@ public class RecoveryConfigImplTest {
         String testForceChallengeQuestions = "false";
         String enablePasswordRecoveryReCaptcha = "false";
         String enableUsernameRecoveryReCaptcha = "false";
+        String testMinimumForcedChallengeQuestionsAnswered = StringUtils.EMPTY;
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
@@ -209,6 +217,8 @@ public class RecoveryConfigImplTest {
                 testNotifyStart);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
                 testForceChallengeQuestions);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
+                testMinimumForcedChallengeQuestionsAnswered);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 recoveryCallbackRegex);
 
