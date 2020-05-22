@@ -43,17 +43,20 @@ import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -106,6 +109,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
 
         String forceChallengeQuestionConfig = getResidentIdpProperty(authenticationContext.getTenantDomain(),
                 IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
+        String minimumForcedChallengeQuestionsAnswered = getResidentIdpProperty(authenticationContext.getTenantDomain(),
+                IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
 
         if (StringUtils.isBlank(forceChallengeQuestionConfig)) {
             // Exit post authentication handler if the value for the resident IDP setting not found
@@ -131,8 +136,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             if (user.isFederatedUser()) {
                 return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
             }
-            // Check whether the user already added the security questions
-            if (isChallengeQuestionsProvided(user)) {
+            // Check whether the user already added sufficient security questions.
+            if (isChallengeQuestionsProvided(user, minimumForcedChallengeQuestionsAnswered)) {
                 // Return from post authenticator with Success status
                 return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
             }
@@ -212,27 +217,27 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
     /**
      * Returns whether the user has already provided the challenge questions.
      *
-     * @param user Authenticated User.
-     * @return boolean value indicating whether the user has already provided challenge questions.
+     * @param user                                    User Authenticated User.
+     * @param minimumForcedChallengeQuestionsAnswered Minimum number of challenge questions forced should be answered.
+     * @return Boolean value indicating whether the user has already provided challenge questions.
      */
-    private boolean isChallengeQuestionsProvided(AuthenticatedUser user) {
-        try {
-            String userName = UserCoreUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            int tenantId = Utils.getTenantId(user.getTenantDomain());
-            UserStoreManager userStoreManager =
-                    IdentityRecoveryServiceDataHolder.getInstance().getRealmService()
-                            .getTenantUserRealm(tenantId)
-                            .getUserStoreManager();
-            Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userName, new String[]{IdentityRecoveryConstants.CHALLENGE_QUESTION_URI},
-                            UserCoreConstants.DEFAULT_PROFILE);
-            String claimValue = claimsMap.get(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
-            return StringUtils.isNotBlank(claimValue);
+    private boolean isChallengeQuestionsProvided(AuthenticatedUser user,
+                                                 String minimumForcedChallengeQuestionsAnswered) {
 
-        } catch (IdentityException | UserStoreException e) {
-            log.error("Exception occurred while retrieving tenant ID for the user :" + user.getUserName(), e);
+        int questionsAnswered = getUserAnsweredChallengeSetUris(user).size();
+        int challengeQuestionSets = getChallengeSetUris(user).size();
+        /* If "Minimum Number of Forced Challenge Questions to be Answered" property is not configured,
+        check whether the user has answered for at least one question.
+        */
+        if (StringUtils.isEmpty(minimumForcedChallengeQuestionsAnswered)) {
+            return (questionsAnswered > 0);
         }
-        return false;
+        /* If "Minimum Number of Forced Challenge Questions to be Answered" property is configured,
+        check whether the user has answered at least minimum number of forced questions or check whether the
+        user has already answered to all available question sets.
+         */
+        return (Integer.parseInt(minimumForcedChallengeQuestionsAnswered) <= questionsAnswered) ||
+                (questionsAnswered == challengeQuestionSets);
     }
 
     /**
@@ -250,6 +255,91 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             log.error("Identity recovery server error occurred for user:" + user.getUserName(), e);
             return null;
         }
+    }
+
+    /**
+     * Return a list of challenge questions set URIs for a given user.
+     *
+     * @param user Authenticated User.
+     * @return List of Challenge question sets URI.
+     */
+    private List<String> getChallengeSetUris(AuthenticatedUser user) {
+
+        List<ChallengeQuestion> challengeQuestions = getChallengeQuestions(user);
+        HashSet<String> questionSetNames = new HashSet<>();
+        if (CollectionUtils.isEmpty(challengeQuestions)) {
+            return new ArrayList<>();
+        }
+        for (ChallengeQuestion question : challengeQuestions) {
+            if (StringUtils.isNotBlank(question.getQuestionSetId())) {
+                questionSetNames.add(question.getQuestionSetId());
+            }
+        }
+        List<String> challengeSetUriList = new ArrayList<>(questionSetNames);
+        Collections.sort(challengeSetUriList);
+        return challengeSetUriList;
+    }
+
+    /**
+     * Return a list of challenge question sets URIs that user answered.
+     *
+     * @param user Authenticated user.
+     * @return List of challenge question set URIs answered by user.
+     * @throws IdentityException  Exception occurred while retrieving tenant ID for the user.
+     * @throws UserStoreException Exception occurred while retrieving tenant ID for the user.
+     */
+    private List<String> getUserAnsweredChallengeSetUris(AuthenticatedUser user) {
+
+        List<String> questionSetsAnswered = new ArrayList<>();
+        String userName = UserCoreUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        try {
+            int tenantId = Utils.getTenantId(user.getTenantDomain());
+            UserStoreManager userStoreManager = getUserStoreManager(tenantId);
+            if (userStoreManager != null) {
+                Map<String, String> claimsMap = userStoreManager
+                        .getUserClaimValues(userName, new String[]{IdentityRecoveryConstants.CHALLENGE_QUESTION_URI},
+                                UserCoreConstants.DEFAULT_PROFILE);
+                String claimValue = claimsMap.get(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI);
+                if (StringUtils.isBlank(claimValue)) {
+                    return questionSetsAnswered;
+                }
+                questionSetsAnswered =
+                        Arrays.asList(claimValue.split(IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR));
+            }
+        } catch (IdentityException | UserStoreException e) {
+            log.error("Exception occurred while retrieving tenant ID for the user :" + userName, e);
+        }
+        return questionSetsAnswered;
+    }
+
+    /**
+     * Get UserStoreManager.
+     *
+     * @param tenantId Tenant id.
+     * @return UserStoreManager object.
+     * @throws IdentityRecoveryServerException Error getting UserStoreManager
+     */
+    private UserStoreManager getUserStoreManager(int tenantId) throws IdentityRecoveryServerException {
+
+        UserStoreManager userStoreManager;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            if (realmService.getTenantUserRealm(tenantId) != null) {
+                userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                        getUserStoreManager();
+            } else {
+                throw org.wso2.carbon.identity.recovery.util.Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null);
+            }
+        } catch (UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                String error = String.format("Error retrieving the user store manager for the tenant : %s", tenantId);
+                log.debug(error, e);
+            }
+            throw org.wso2.carbon.identity.recovery.util.Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
+        }
+        return userStoreManager;
     }
 
     /**
