@@ -386,7 +386,7 @@ public class IdentityRecoveryConstants {
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
         public static final String QUESTION_BASED_PW_RECOVERY = "Recovery.Question.Password.Enable";
         public static final String FORCE_ADD_PW_RECOVERY_QUESTION = "Recovery.Question.Password.Forced.Enable";
-        public static final String FORCE_MIN_NO_QUESTION_ANSWERED = "Recovery.Question.Password.Forced.MinAnswers";
+        public static final String FORCE_MIN_NO_QUESTION_ANSWERED = "Recovery.Question.MinQuestionsToAnswer";
         public static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
         public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.Question.Password.Separator";
         public static final String QUESTION_MIN_NO_ANSWER = "Recovery.Question.Password.MinAnswers";
