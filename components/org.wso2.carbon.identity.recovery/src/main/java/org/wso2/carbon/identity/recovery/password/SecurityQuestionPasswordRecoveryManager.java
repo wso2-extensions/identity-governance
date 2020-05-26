@@ -291,6 +291,8 @@ public class SecurityQuestionPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         //if return data from load, it means the code is validated. Otherwise it returns exceptions.
+        User user = userRecoveryData.getUser();
+
 
         try {
             boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
@@ -298,7 +300,15 @@ public class SecurityQuestionPasswordRecoveryManager {
             if (!isRecoveryEnable) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
             }
+            verifyUserExists(user);
 
+            if (Utils.isAccountDisabled(user)) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, user.getUserName());
+            } else if (Utils.isAccountLocked(user)) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, user.getUserName());
+            }
             if (userChallengeAnswer == null) {
                 String error = "Challenge answers cannot be found for user: " + userRecoveryData.getUser();
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
