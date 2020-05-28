@@ -37,6 +37,9 @@ public class PasswordHistoryConstants {
         public static final String DELETE_USER_HISTORY = "DELETE FROM IDN_PASSWORD_HISTORY_DATA WHERE USER_NAME = ? " +
                 "AND USER_DOMAIN =? AND TENANT_ID =?";
 
+        public static final String DELETE_PASSWORD_HISTORY_DATA_BY_TENANT_ID = "DELETE FROM " +
+                "IDN_PASSWORD_HISTORY_DATA WHERE TENANT_ID = ?";
+
     }
 
     public enum ErrorMessages {

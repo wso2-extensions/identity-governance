@@ -49,6 +49,10 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
         this.maxHistoryCount = maxHistoryCount;
     }
 
+    public DefaultPasswordHistoryDataStore() {
+
+    }
+
     @Override
     public void store(User user, Object credential) throws
             IdentityPasswordHistoryException {
@@ -133,6 +137,38 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             IdentityDatabaseUtil.closeConnection(connection);
         }
 
+    }
+
+    /**
+     * Delete password history data of a tenant.
+     *
+     * @param tenantId Id of the tenant
+     * @throws IdentityPasswordHistoryException
+     */
+    @Override
+    public void deletePasswordHistoryData(int tenantId) throws IdentityPasswordHistoryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting all password history data of the tenant: " + tenantId);
+        }
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+        PreparedStatement prepStmt = null;
+
+        try {
+            prepStmt = connection.prepareStatement(PasswordHistoryConstants.SQLQueries
+                    .DELETE_PASSWORD_HISTORY_DATA_BY_TENANT_ID);
+            prepStmt.setInt(1, tenantId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw new IdentityPasswordHistoryException(
+                    "Error while deleting password history data of tenant" + tenantId, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
     }
 
     @Override
