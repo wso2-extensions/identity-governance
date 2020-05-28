@@ -306,6 +306,36 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     /**
+     * Delete all recovery data by tenant id
+     *
+     * @param tenantId Id of the tenant
+     */
+    public void deleteRecoveryDataByTenantId(int tenantId) throws IdentityRecoveryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting User Recovery Data of the tenant: " + tenantId);
+        }
+
+        PreparedStatement prepStmt = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        try {
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.DELETE_USER_RECOVERY_DATA_BY_TENANT_ID);
+            prepStmt.setInt(1, tenantId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_RECOVERY_DATA,
+                    Integer.toString(tenantId), e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    /**
      * Checks whether the code has expired or not.
      *
      * @param tenantDomain     Tenant domain
