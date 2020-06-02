@@ -18,16 +18,22 @@
 
 package org.wso2.carbon.identity.recovery;
 
-
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.IdentityEventServerException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
@@ -39,15 +45,17 @@ import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENG_ANSWER_MISSING;
@@ -426,7 +434,6 @@ public class ChallengeQuestionManager {
         }
     }
 
-
     /**
      * Retrieve the challenge question answered from a particular challenge question set.
      *
@@ -464,7 +471,6 @@ public class ChallengeQuestionManager {
         return userChallengeQuestion;
 
     }
-
 
     public String[] getUserChallengeQuestionIds(User user)
             throws IdentityRecoveryException {
@@ -534,6 +540,29 @@ public class ChallengeQuestionManager {
         return challenges;
     }
 
+    /**
+     * Get the existing answers for the challenge questions.
+     *
+     * @param user                 User
+     * @param userChallengeAnswers List of UserChallengeAnswer objects
+     * @return Existing challenge questions and answers.
+     */
+    private Map<String, String> retrieveAnsweredChallenges(User user, UserChallengeAnswer[] userChallengeAnswers)
+            throws IdentityRecoveryException {
+
+        List<String> claimsList = new ArrayList<>();
+        for (UserChallengeAnswer answer : userChallengeAnswers) {
+            claimsList.add(answer.getQuestion().getQuestionSetId().trim());
+        }
+        Map<String, String> existingQuestionAndAnswers = Utils.getClaimListOfUser(user,
+                claimsList.toArray(new String[0]));
+        if (log.isDebugEnabled()) {
+            if (MapUtils.isEmpty(existingQuestionAndAnswers)) {
+                log.debug("No previous questions set for the user: " + user.getUserName());
+            }
+        }
+        return existingQuestionAndAnswers;
+    }
 
     /**
      * @param user
@@ -543,7 +572,6 @@ public class ChallengeQuestionManager {
     public void setChallengesOfUser(User user, UserChallengeAnswer[] userChallengeAnswers) throws IdentityRecoveryException {
 
         validateUser(user);
-
         if (log.isDebugEnabled()) {
             log.debug(String.format("Setting user challenge question answers in %s's profile.", user.toString()));
         }
@@ -558,30 +586,42 @@ public class ChallengeQuestionManager {
             // check whether the answered questions exist in the tenant domain
             checkChallengeQuestionExists(userChallengeAnswers, tenantDomain);
 
+            // Get the existing challenge questions and answers for the user.
+            Map<String, String> existingQuestionAndAnswers = retrieveAnsweredChallenges(user, userChallengeAnswers);
+
+            triggerChallengeAnswersValidation(user, userChallengeAnswers,
+                    existingQuestionAndAnswers, IdentityEventConstants.Event.PRE_SET_CHALLENGE_QUESTION_ANSWERS);
+
             List<String> challengesUris = new ArrayList<String>();
             String challengesUrisValue = "";
             String separator = getChallengeSeparator();
 
+            Map<String, String> challengeQuestionToUpdate = new HashMap<>();
+
             if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
                 for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
-                    if (userChallengeAnswer.getQuestion().getQuestionSetId() != null && userChallengeAnswer.getQuestion().getQuestion() !=
-                            null && userChallengeAnswer.getAnswer() != null) {
-                        String oldValue = Utils.
-                                    getClaimFromUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+
+                    if (StringUtils.isNotBlank(userChallengeAnswer.getQuestion().getQuestionSetId()) &&
+                            StringUtils.isNotBlank(userChallengeAnswer.getQuestion().getQuestion()) &&
+                            StringUtils.isNotBlank(userChallengeAnswer.getAnswer())) {
+
+                        // Get the previous answer for the question.
+                        String oldValue = existingQuestionAndAnswers
+                                .get(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
 
                         if (oldValue != null && oldValue.contains(separator)) {
                             String oldAnswer = oldValue.split(separator)[1];
                             if (!oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
                                 String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
-                                            Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
-                                Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
-                                        claimValue);
+                                        Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
+                                challengeQuestionToUpdate
+                                        .put(userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                             }
                         } else {
                             String claimValue = userChallengeAnswer.getQuestion().getQuestion().trim() + separator +
                                     Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
-                            Utils.setClaimInUserStoreManager(user, userChallengeAnswer.getQuestion().getQuestionSetId().trim(),
-                                    claimValue);
+                            challengeQuestionToUpdate
+                                    .put(userChallengeAnswer.getQuestion().getQuestionSetId().trim(), claimValue);
                         }
                         challengesUris.add(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
                     }
@@ -595,11 +635,62 @@ public class ChallengeQuestionManager {
                                 separator + challengesUri;
                     }
                 }
-                Utils.setClaimInUserStoreManager(user, IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
+                challengeQuestionToUpdate.put(IdentityRecoveryConstants.CHALLENGE_QUESTION_URI, challengesUrisValue);
+                if (MapUtils.isNotEmpty(challengeQuestionToUpdate)) {
+                    Utils.setClaimsListOfUser(user, challengeQuestionToUpdate);
+                }
+                triggerChallengeAnswersValidation(user, userChallengeAnswers,
+                        existingQuestionAndAnswers, IdentityEventConstants.Event.POST_SET_CHALLENGE_QUESTION_ANSWERS);
             }
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             throw Utils.handleServerException(
                     ERROR_CODE_REMOVING_CHALLENGE_QUESTIONS, user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Trigger challenge question answers validation according to the given event name.
+     *
+     * @param user                 User
+     * @param userChallengeAnswers Array of challenge answers
+     * @param eventName            Event name
+     * @throws IdentityRecoveryClientException Error while validating the challenge answers
+     * @throws IdentityRecoveryServerException Error while getting the user store manager or triggering the event.
+     */
+    private void triggerChallengeAnswersValidation(User user, UserChallengeAnswer[] userChallengeAnswers,
+                                                   Map<String, String> existingQuestionAndAnswers, String eventName)
+            throws IdentityRecoveryClientException, IdentityRecoveryServerException {
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.USER_CHALLENGE_ANSWERS, userChallengeAnswers);
+        properties.put(IdentityEventConstants.EventProperty.USER_OLD_CHALLENGE_ANSWERS, existingQuestionAndAnswers);
+
+        try {
+            UserStoreManager userStoreManager;
+            if (IdentityUtil.getPrimaryDomainName().equals(user.getUserStoreDomain())) {
+                userStoreManager = (UserStoreManager) CarbonContext.getThreadLocalCarbonContext().getUserRealm()
+                        .getUserStoreManager();
+            } else {
+                userStoreManager = ((UserStoreManager) CarbonContext.getThreadLocalCarbonContext().getUserRealm()
+                        .getUserStoreManager()).getSecondaryUserStoreManager(user.getUserStoreDomain());
+            }
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null, e);
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventClientException e) {
+            throw new IdentityRecoveryClientException(e.getErrorCode(), e.getMessage(), e);
+        } catch (IdentityEventServerException e) {
+            throw new IdentityRecoveryServerException(e.getErrorCode(), e.getMessage(), e);
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_PUBLISH_EVENT, eventName, e);
         }
     }
 

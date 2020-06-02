@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.recovery.util;
 
 import org.apache.axiom.om.util.Base64;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -373,6 +374,90 @@ public class Utils {
             }
         }
 
+    }
+
+    /**
+     * Get the claim values for given claim list of user.
+     *
+     * @param user       User.
+     * @param claimsList Claims list to retrieve.
+     * @return Map of claims list with corresponding values.
+     * @throws IdentityRecoveryClientException If an invalid input is detected.
+     * @throws IdentityRecoveryServerException If an error occurred while retrieving claims.
+     */
+    public static Map<String, String> getClaimListOfUser(User user, String[] claimsList)
+            throws IdentityRecoveryClientException, IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = getUserStoreManager(user);
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+        if (ArrayUtils.isEmpty(claimsList)) {
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS,
+                    null);
+        }
+        try {
+            return userStoreManager
+                    .getUserClaimValues(userStoreQualifiedUsername, claimsList, UserCoreConstants.DEFAULT_PROFILE);
+        } catch (UserStoreException e) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS,
+                    user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Set user claims list.
+     *
+     * @param user      User.
+     * @param claimsMap Map of claims list to update.
+     * @throws IdentityRecoveryClientException If an invalid input is detected.
+     * @throws IdentityRecoveryServerException If an error occurred while updating user claims.
+     */
+    public static void setClaimsListOfUser(User user, Map<String, String> claimsMap)
+            throws IdentityRecoveryClientException, IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = getUserStoreManager(user);
+        String userStoreQualifiedUsername = IdentityUtil.addDomainToName(user.getUserName(),
+                user.getUserStoreDomain());
+        try {
+            if (MapUtils.isNotEmpty(claimsMap)) {
+                userStoreManager.setUserClaimValues(userStoreQualifiedUsername, claimsMap,
+                        UserCoreConstants.DEFAULT_PROFILE);
+            }
+        } catch (UserStoreException e) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS,
+                    null, e);
+        }
+    }
+
+    private static org.wso2.carbon.user.core.UserStoreManager getUserStoreManager(User user)
+            throws IdentityRecoveryClientException, IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
+
+        // Validate method inputs.
+        if (user == null) {
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                    "Invalid User Data provided.");
+        }
+
+        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        try {
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            if (realmService == null || realmService.getTenantUserRealm(tenantId) == null) {
+                throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain());
+            }
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, user.getTenantDomain(), e);
+        }
+
+        if (userStoreManager == null) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER, null);
+        }
+        return userStoreManager;
     }
 
     public static String getRecoveryConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
