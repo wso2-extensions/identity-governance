@@ -516,6 +516,11 @@
                 <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
                 <version>${identity.data.publisher.authentication.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.user.core</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
             <!-- Pax Logging -->
             <dependency>
                 <groupId>org.ops4j.pax.logging</groupId>

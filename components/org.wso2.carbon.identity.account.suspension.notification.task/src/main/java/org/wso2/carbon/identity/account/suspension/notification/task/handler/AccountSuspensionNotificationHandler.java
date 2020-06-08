@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -73,15 +74,18 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                 boolean useIdentityClaimForLastLoginTime = StringUtils.isBlank(identityClaimForLastLoginTime) ||
                         Boolean.parseBoolean(identityClaimForLastLoginTime);
                 String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
+                userClaims.put(lastLoginClaim, Long.toString(System.currentTimeMillis()));
 
                 if (!useIdentityClaimForLastLoginTime) {
-                    lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+
                     if (log.isDebugEnabled()) {
                         log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
                                 " is enabled in identity.xml file hence using last login time as default claim");
                     }
+                    String currentTime = getLastLoginTimeValue(userStoreManager);
+                    userClaims.put(NotificationConstants.LAST_LOGIN_TIME, currentTime);
                 }
-                userClaims.put(lastLoginClaim, Long.toString(System.currentTimeMillis()));
+
                 userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
@@ -266,5 +270,18 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         }
 
         return isEnabled;
+    }
+
+    /**
+     * If the user-store has specific timestamp format defined, calculate login time in the defined format
+     */
+    protected String getLastLoginTimeValue(UserStoreManager userStoreManager) {
+        String timeStampFormat = userStoreManager.getRealmConfiguration().getUserStoreProperty
+                (UserStoreConfigConstants.dateAndTimePattern);
+        String currentTime = Long.toString(System.currentTimeMillis());
+        if (StringUtils.isNotEmpty(timeStampFormat)) {
+            currentTime = new SimpleDateFormat(timeStampFormat).format(new Date());
+        }
+        return currentTime;
     }
 }
