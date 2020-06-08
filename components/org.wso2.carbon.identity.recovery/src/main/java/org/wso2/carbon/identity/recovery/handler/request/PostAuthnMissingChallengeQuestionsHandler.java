@@ -469,7 +469,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             httpServletResponse.sendRedirect
                     (ConfigurationFacade.getInstance().getAuthenticationEndpointURL().replace("/login.do", ""
                     ) + "/add-security-questions" + ".jsp?sessionDataKey=" +
-                            authenticationContext.getContextIdentifier() + "&data=" + encodedData);
+                            authenticationContext.getContextIdentifier() + "&data=" + encodedData + "&sp=" +
+                            authenticationContext.getServiceProviderName());
             setChallengeQuestionRequestedState(authenticationContext);
             return PostAuthnHandlerFlowStatus.INCOMPLETE;
 
