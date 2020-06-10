@@ -87,12 +87,14 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("Pre authenticator is called in IdentityMgtEventListener");
         }
         IdentityUtil.clearIdentityErrorMsg();
-        IdentityUtil.threadLocalProperties.get().remove(RE_CAPTCHA_USER_DOMAIN);
 
         // This is used set domain of the user when authentication is failed for an existing user. This is required
         // for re-captcha feature.
-        IdentityUtil.threadLocalProperties.get().put(RE_CAPTCHA_USER_DOMAIN,
-                IdentityGovernanceUtil.getUserStoreDomainName(userStoreManager));
+        if (userStoreManager.isExistingUser(userName)) {
+            IdentityUtil.threadLocalProperties.get().remove(RE_CAPTCHA_USER_DOMAIN);
+            IdentityUtil.threadLocalProperties.get()
+                    .put(RE_CAPTCHA_USER_DOMAIN, IdentityGovernanceUtil.getUserStoreDomainName(userStoreManager));
+        }
         String eventName = IdentityEventConstants.Event.PRE_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credential);
