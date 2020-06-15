@@ -19,8 +19,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
@@ -32,9 +39,9 @@ import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
-import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
@@ -53,16 +60,11 @@ import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManag
 import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(
         name = "org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent",
@@ -311,9 +313,57 @@ public class IdentityRecoveryServiceComponent {
         dataHolder.setConsentUtilityService(null);
     }
 
+    /**
+     * Sets User Functionality Manager OSGI Service.
+     *
+     * @param userFunctionalityManager User Functionality Manager.
+     */
+    @Reference(
+            name = "UserFunctionalityManager",
+            service = org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetUserFunctionalityMgtService")
+    protected void setUserFunctionalityManagerService(UserFunctionalityManager userFunctionalityManager) {
+
+        dataHolder.getInstance().setUserFunctionalityManagerService(userFunctionalityManager);
+    }
+
+    /**
+     * Unset User Functionality Manager OSGI service.
+     *
+     * @param userFunctionalityManager User Functionality Manager.
+     */
+    protected void unsetUserFunctionalityMgtService(UserFunctionalityManager userFunctionalityManager) {
+
+        dataHolder.getInstance().setUserFunctionalityManagerService(null);
+    }
+
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
 
         String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions(tenantDomain);
+    }
+
+    @Reference(
+            name = "carbon.configuration.mgt.component",
+            service = ConfigurationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetConfigurationManager")
+    protected void setConfigurationManager(ConfigurationManager configurationManager) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Configuration Manager service is set in the Template Manager component.");
+        }
+        dataHolder.getInstance().setConfigurationManager(configurationManager);
+    }
+
+    protected void unsetConfigurationManager(ConfigurationManager configurationManager) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Configuration Manager service is unset in the Template Manager component.");
+        }
+        dataHolder.getInstance().setConfigurationManager(null);
     }
 }
