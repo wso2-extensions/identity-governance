@@ -229,8 +229,7 @@ public class Utils {
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
-            throws IdentityRecoveryServerException {
+                                                                                error, String data) {
 
         String errorDescription;
         if (StringUtils.isNotBlank(data)) {

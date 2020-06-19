@@ -21,10 +21,12 @@ package org.wso2.carbon.identity.recovery.handler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementClientException;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.handler.function.ResourceToProperties;
@@ -39,21 +41,21 @@ import java.util.Map;
 public class ConfigStoreFunctionalityLockPropertyHandler {
 
     private static final Log log = LogFactory.getLog(ConfigStoreFunctionalityLockPropertyHandler.class);
-
+    private static final boolean isDetailedErrorMessagesEnabled = Utils.isDetailedErrorResponseEnabled();
     private static ConfigStoreFunctionalityLockPropertyHandler
             instance = new ConfigStoreFunctionalityLockPropertyHandler();
+
+    private ConfigStoreFunctionalityLockPropertyHandler() {
+
+    }
 
     public static ConfigStoreFunctionalityLockPropertyHandler getInstance() {
 
         return instance;
     }
 
-    private ConfigStoreFunctionalityLockPropertyHandler() {
-
-    }
-
     public Map<String, String> getConfigStoreProperties(String tenantDomain, String functionalityIdentifier)
-            throws IdentityRecoveryServerException {
+            throws IdentityRecoveryClientException {
 
         Map<String, String> properties;
         try {
@@ -62,16 +64,25 @@ public class ConfigStoreFunctionalityLockPropertyHandler {
                 if (isFunctionalityLockResourceTypeExists()) {
                     Resource resource =
                             IdentityRecoveryServiceDataHolder.getInstance().getConfigurationManager()
-                                    .getResource(IdentityRecoveryConstants.FUNCTIONALITY_LOCK_RESOURCE_TYPE, functionalityIdentifier);
+                                    .getResource(IdentityRecoveryConstants.FUNCTIONALITY_LOCK_RESOURCE_TYPE,
+                                            functionalityIdentifier);
                     properties = new ResourceToProperties().apply(resource);
                 } else {
                     throw new UnsupportedOperationException("User Functionality properties are not configured.");
                 }
 
             } catch (ConfigurationManagementException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE,
-                        null);
+                StringBuilder message = new StringBuilder(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE
+                                .getMessage());
+                if (isDetailedErrorMessagesEnabled) {
+                    message.append("\nresource type: ")
+                            .append(IdentityRecoveryConstants.FUNCTIONALITY_LOCK_RESOURCE_TYPE);
+                    message.append("\nresource: ").append(functionalityIdentifier);
+                }
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE
+                                .getCode(), message.toString());
             }
         } finally {
             FrameworkUtils.endTenantFlow();
