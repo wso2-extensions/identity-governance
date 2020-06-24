@@ -311,51 +311,6 @@ paths:
         404:
           description: User not found
 
-  /update-username:
-      put:
-        description: >
-          This API is used to update the username of a User.
-        x-wso2-request: >
-          curl -k -v -X PUT -H "Authorization: Basic
-          <Base64Encoded_username:password>" -H "Content-Type: application/json"
-          -d '{ "tenantDomain": "<tenantDomain>", "realm": "<userstore-domain>", "existingUsername": "<existing-username>", "newUsername": "<new-username>"}'
-          "https://localhost:9443/api/identity/user/v1.0/update-username"
-        x-wso2-curl: >
-          curl -k -v -X PUT -H "Authorization: Basic
-          <Base64Encoded_username:password>" -H "Content-Type: application/json"
-          -d '{ "tenantDomain": "foo.com", "realm": "sales", "existingUsername": "john@abc.com", "newUsername": "john@xyz.com"}'
-          "https://localhost:9443/api/identity/user/v1.0/update-username"
-        x-wso2-response: |
-          "HTTP/1.1 200 OK"
-        summary: |
-          Update username
-        parameters:
-          - name: user
-            in: body
-            description: User to be updated.
-            required: true
-            schema:
-              $ref: '#/definitions/UsernameUpdateRequest'
-        responses:
-          '200':
-            description: Successful
-          '400':
-            description: Bad Request
-            schema:
-              $ref: '#/definitions/Error'
-          '401':
-            description: Unauthorized
-          '404':
-            description: User not found
-            schema:
-              $ref: '#/definitions/Error'
-          '500':
-            description: Server Error
-            schema:
-              $ref: '#/definitions/Error'
-        tags:
-          - Username Update
-
 definitions:
   #-----------------------------------------------------
   # SuccessfulUserCreation object
