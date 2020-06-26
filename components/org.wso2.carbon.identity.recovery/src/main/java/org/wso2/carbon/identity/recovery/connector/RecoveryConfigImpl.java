@@ -100,6 +100,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Minimum Number of Forced Challenge Questions to be Answered");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "Enable Auto Login After Password Reset");
         return nameMapping;
     }
 
@@ -125,6 +127,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Expiration time of the SMS OTP code for password recovery");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, "Regex for "
                 + "SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, 0-9.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "User will be logged in automatically after completing the Password Reset wizard");
         return descriptionMapping;
     }
 
@@ -151,6 +155,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
         return properties.toArray(new String[0]);
     }
 
@@ -176,6 +181,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableUsernameRecoveryReCaptcha = "false";
         String minimumForcedChallengeQuestionsAnswered = StringUtils.EMPTY;
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
+        String enableAdminPasswordResetAutoLoginProperty = "false";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -214,6 +220,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 USERNAME_RECOVERY_RECAPTCHA_ENABLE);
         String recoveryCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
+        String adminPasswordResetAutoLoginProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
 
         if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
             expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
@@ -272,6 +280,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(recoveryCallbackRegexProperty)) {
             recoveryCallbackRegex = recoveryCallbackRegexProperty;
         }
+        if (StringUtils.isNotEmpty(adminPasswordResetAutoLoginProperty)) {
+            enableAdminPasswordResetAutoLoginProperty = adminPasswordResetAutoLoginProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -311,6 +322,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
                 minimumForcedChallengeQuestionsAnswered);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX, recoveryCallbackRegex);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                enableAdminPasswordResetAutoLoginProperty);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
