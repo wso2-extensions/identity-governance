@@ -80,6 +80,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
+        boolean isLiteSignUp = Utils.isLiteSignUp(Utils.getArbitraryProperties());
 
         User user = new User();
         user.setUserName(userName);
@@ -141,6 +142,11 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
                     UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                             RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+
+                    if (isLiteSignUp) {
+                        recoveryDataDO = new UserRecoveryData(user, secretKey,
+                                RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP);
+                    }
 
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
@@ -416,8 +422,15 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+
+        if (Utils.isLiteSignUp(props)) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+        }
+
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
