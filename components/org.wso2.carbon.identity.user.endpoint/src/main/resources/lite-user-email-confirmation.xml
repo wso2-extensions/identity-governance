@@ -22,8 +22,8 @@
                                 Hi,
                             </p>
                             <p style="font-size: 18px; margin: 0; line-height: 24px; font-family: 'Nunito Sans', Arial, Verdana, Helvetica, sans-serif; color: #666; text-align: left; padding-bottom: 3%;">
-                                You have created an account with the following user name. <br>
-                                User Name: <b>{{user-name}}</b><br>
+                                It's amazing to get you on-board. Please click the button below to proceed and own a domain. <br>
+                                User Email: <b>{{user-name}}</b><br>
                                 Please click the button below to confirm your account.
                             </p>
                         </td>
