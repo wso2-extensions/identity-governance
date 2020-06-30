@@ -124,6 +124,54 @@ paths:
         401:
           description: Unauthorized request
 
+  # The endpoint that is used to self register lite accounts with email/SMS verification.
+  /lite:
+    post:
+      description: |
+        This API is used for lite user self registration.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{"email": "<username>","realm": "<user_store>","properties": []}' "https://localhost:9443/api/identity/user/v1.0/lite"
+      x-wso2-curl: |
+        curl -X POST -H "Authorization: Basic YWRtaW5Ad3NvMi5jb206YWRtaW4=" -H "Content-Type: application/json" -d '{"email": "lanka@wso2.com","realm": "PRIMARY","properties": []}' "https://localhost:9443/api/identity/user/v1.0/lite"
+        curl -X POST -H "Authorization: Basic YWRtaW5Ad3NvMi5jb206YWRtaW4=" -H "Content-Type: application/json" -d '{"email": "lanka@wso2.com","realm": "PRIMARY","preferredChannel":"Email","claims":[], "properties": []}' "https://localhost:9443/api/identity/user/v1.0/lite"
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+
+      summary: |
+        Register user
+
+      # These are the post parameters:
+      parameters:
+        - name: user
+          in: body
+          description:  Sends optional property parameters over email based on an email template.
+          required: true
+          schema:
+            $ref: '#/definitions/LiteUserRegistrationRequest'
+
+      responses:
+        201:
+          description: Successfully created
+          schema:
+            $ref: '#/definitions/SuccessfulUserCreation'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+
+        409:
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Self Register
+        - Lite
+
   /validate-code:
     post:
       description: |
@@ -453,6 +501,31 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 
+  #-----------------------------------------------------
+  # The Lite SelfRegistrationUser Registration Request
+  #-----------------------------------------------------
+  LiteUserRegistrationRequest:
+    type: object
+    properties:
+      email:
+        type: string
+      mobile:
+        type: string
+      realm:
+        type: string
+      preferredChannel:
+        type: string
+        enum:
+          - Mobile
+          - Email
+      claims:
+        type: array
+        items:
+          $ref: '#/definitions/Claim'
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'
 
 #-----------------------------------------------------
 # The CodeValidationRequest  object

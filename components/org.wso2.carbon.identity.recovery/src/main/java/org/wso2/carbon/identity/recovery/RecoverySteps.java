@@ -29,6 +29,7 @@ public enum RecoverySteps {
     CONFIRM_SIGN_UP,
     SEND_RECOVERY_INFORMATION,
     RESEND_CONFIRMATION_CODE,
+    CONFIRM_LITE_SIGN_UP,
     VERIFY_EMAIL;
 
     /**
@@ -42,7 +43,7 @@ public enum RecoverySteps {
 
         RecoverySteps[] recoverySteps = {
                 NOTIFY, UPDATE_PASSWORD, VALIDATE_CHALLENGE_QUESTION, VALIDATE_ALL_CHALLENGE_QUESTION, CONFIRM_SIGN_UP,
-                SEND_RECOVERY_INFORMATION, RESEND_CONFIRMATION_CODE
+                CONFIRM_LITE_SIGN_UP, SEND_RECOVERY_INFORMATION, RESEND_CONFIRMATION_CODE
         };
         if (StringUtils.isNotEmpty(stepName)) {
             for (RecoverySteps step : recoverySteps) {

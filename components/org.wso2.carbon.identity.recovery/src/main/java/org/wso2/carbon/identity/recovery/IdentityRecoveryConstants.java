@@ -39,6 +39,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
+    public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
@@ -95,6 +96,7 @@ public class IdentityRecoveryConstants {
     public static final String EXECUTE_ACTION = "ui.execute";
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
+    public static final String IS_LITE_SIGN_UP = "isLiteSignUp";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
     public static final String IS_USER_PORTAL_URL = "isUserPortalURL";
     public static final String NOTIFY_CHANNEL_LIST_SEPARATOR = ",";
@@ -207,6 +209,8 @@ public class IdentityRecoveryConstants {
                 "challenge question of locale %s in set %s"),
         ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
                 " question %s of the set %s"),
+        ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
+
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
 
@@ -217,6 +221,9 @@ public class IdentityRecoveryConstants {
                 "User specified communication channel does not have any value"),
         ERROR_CODE_BAD_SELF_REGISTER_REQUEST("USR-10003",
                 "Bad Request"),
+        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004","Either email or mobile should be submitted."),
+        ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST("USR-10005",
+                "Lite self registration is not supported."),
 
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
@@ -420,6 +427,17 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
         public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
+
+        public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
+        public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless
+        public static final String LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "LiteRegistration.Notification" +
+                ".InternallyManage";
+        public static final String LITE_REGISTRATION_RE_CAPTCHA = "LiteRegistration.ReCaptcha";
+        public static final String LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "LiteRegistration" +
+                ".VerificationCode.ExpiryTime";
+        public static final String LITE_REGISTRATION_CALLBACK_REGEX = "LiteRegistration.CallbackRegex";
+        public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
+                "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
