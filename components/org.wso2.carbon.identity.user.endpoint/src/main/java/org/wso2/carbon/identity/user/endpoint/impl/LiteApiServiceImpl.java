@@ -49,11 +49,6 @@ public class LiteApiServiceImpl extends LiteApiService {
 
     @Override
     public Response litePost(LiteUserRegistrationRequestDTO liteUserRegistrationRequestDTO) {
-        //reject if email as username is not enabled.
-        if (!MultitenantUtils.isEmailUserName()) {
-            Utils.handleBadRequest(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST.getMessage(),
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST.getCode());
-        }
 
         //reject if username is not present.
         if (liteUserRegistrationRequestDTO == null ||
