@@ -1374,6 +1374,7 @@ public class UserSelfRegistrationManager {
     }
 
     private char[] getRandomPassword() {
+        //ToDO get rid of this with password-less lite user creation
         SecureRandom random = new SecureRandom();
         byte seed[] = random.generateSeed(20);
         return (seed+"A$g0").toCharArray();
