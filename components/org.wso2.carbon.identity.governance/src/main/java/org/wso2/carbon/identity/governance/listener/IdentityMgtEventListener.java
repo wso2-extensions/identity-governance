@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
+import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -117,6 +118,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 log.debug("IdentityMgtEventListener returns since user: " + userName + " not available in current " +
                         "user store domain: " + userStoreManager.getRealmConfiguration().getUserStoreProperty
                         (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
+            }
+            if (isAuthPolicyAccountExistCheck()) {
+                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
+                        .ErrorCode.USER_DOES_NOT_EXIST);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
             }
             return true;
         }
@@ -1725,4 +1731,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         }
         return isExists;
     }
+
+    private boolean isAuthPolicyAccountExistCheck() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist"));
+    }
+
 }
