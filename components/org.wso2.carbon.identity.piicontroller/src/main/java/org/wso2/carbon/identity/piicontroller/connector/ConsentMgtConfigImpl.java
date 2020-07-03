@@ -81,7 +81,7 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
     private static final String DISPLAY_DESCRIPTION_POSTAL_CODE = "Postal Code of the Controller";
     private static final String DISPLAY_DESCRIPTION_STREET_ADDRESS = "Street Address of the Controller";
     private static final String EMPTY = "";
-    private IdentityGovernanceService identityGovernanceService;
+    private final IdentityGovernanceService identityGovernanceService;
 
     public ConsentMgtConfigImpl(IdentityGovernanceService identityGovernanceService) {
 
@@ -153,7 +153,7 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
         properties.add(ConsentConstants.POST_OFFICE_BOX_NUMBER);
         properties.add(ConsentConstants.POSTAL_CODE);
         properties.add(ConsentConstants.STREET_ADDRESS);
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     @Override
@@ -179,7 +179,8 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
 
         return null;
     }
