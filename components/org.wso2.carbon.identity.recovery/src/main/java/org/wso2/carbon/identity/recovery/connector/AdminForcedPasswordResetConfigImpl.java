@@ -29,7 +29,7 @@ import java.util.Properties;
 
 public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConfig {
 
-    private static String connectorName = "admin-forced-password-reset";
+    private static final String connectorName = "admin-forced-password-reset";
 
     @Override
     public String getName() {
@@ -43,7 +43,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return "Account Management";
     }
 
     @Override
@@ -60,11 +60,11 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                "Enable Password Reset via Recovery Email");
+                "Enable password reset via recovery e-mail");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "Enable Password Reset via OTP");
+                "Enable password reset via OTP");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                "Enable Password Reset Offline");
+                "Enable password reset offline");
         return nameMapping;
     }
 
@@ -129,7 +129,8 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
         return null;
     }
 

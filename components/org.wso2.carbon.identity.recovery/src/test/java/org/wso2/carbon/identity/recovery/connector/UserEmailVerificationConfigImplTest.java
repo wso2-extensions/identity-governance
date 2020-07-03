@@ -89,7 +89,7 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> nameMappingExpected = new HashMap<>();
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "Enable User Email Verification");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Enable Account Lock On Creation");
@@ -111,7 +111,7 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMappingExpected = new HashMap<>();
-        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "Enable to trigger a verification notification during user creation");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account during user creation");
@@ -136,7 +136,7 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyNames() {
 
         List<String> propertiesExpected = new ArrayList<>();
-        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
@@ -161,7 +161,7 @@ public class UserEmailVerificationConfigImplTest {
         String testAskPasswordTempPassExtension = "org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
-        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 testEnableEmailVerification);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 testEmailVerificationCodeExpiry);
