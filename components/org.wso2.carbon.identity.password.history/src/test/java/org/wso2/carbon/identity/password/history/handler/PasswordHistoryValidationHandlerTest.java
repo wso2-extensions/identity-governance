@@ -41,31 +41,35 @@ public class PasswordHistoryValidationHandlerTest {
     @Test
     public void testGetName() throws Exception {
 
-        assertEquals(passwordHistoryValidationHandler.getName(), "passwordHistory");
+        assertEquals(passwordHistoryValidationHandler.getName(), "passwordHistory",
+                "getName() has been changed.");
     }
 
     @Test
     public void testGetFriendlyName() throws Exception {
 
-        assertEquals(passwordHistoryValidationHandler.getFriendlyName(), "Password History");
+        assertEquals(passwordHistoryValidationHandler.getFriendlyName(), "Password History",
+                "getFriendlyName() has been changed.");
     }
 
     @Test
     public void testGetCategory() throws Exception {
 
-        assertEquals(passwordHistoryValidationHandler.getCategory(), "User Passwords");
+        assertEquals(passwordHistoryValidationHandler.getCategory(), "User Passwords",
+                "getCategory() has been changed.");
     }
 
     @Test
     public void testGetSubCategory() throws Exception {
 
-        assertEquals(passwordHistoryValidationHandler.getSubCategory(), "DEFAULT");
+        assertEquals(passwordHistoryValidationHandler.getSubCategory(), "DEFAULT",
+                "getSubCategory() has been changed.");
     }
 
     @Test
     public void testGetOrder() throws Exception {
 
-        assertEquals(passwordHistoryValidationHandler.getOrder(), 0);
+        assertEquals(passwordHistoryValidationHandler.getOrder(), 0, "getOrder() has been changed.");
     }
 
     @Test
@@ -75,7 +79,7 @@ public class PasswordHistoryValidationHandlerTest {
         expectedMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "Validate password history");
         expectedMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Password history validation count");
         assertEquals(passwordHistoryValidationHandler.getPropertyNameMapping(), expectedMapping,
-                "Property names has been changed.");
+                "getPropertyNameMapping() has been changed.");
     }
 
     @Test
@@ -87,7 +91,7 @@ public class PasswordHistoryValidationHandlerTest {
         expectedDescriptionMappingTrue.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict reusing last n " +
                 "number of passwords during password update.");
         assertEquals(passwordHistoryValidationHandler.getPropertyDescriptionMapping(),
-                expectedDescriptionMappingTrue, "Property descriptions has been changed.");
+                expectedDescriptionMappingTrue, "getPropertyDescriptionMapping() has been changed.");
     }
 
     @Test

@@ -32,7 +32,7 @@ import java.util.Properties;
 
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
-    private static String connectorName = "self-sign-up";
+    private static final String CONNECTOR_NAME = "self-sign-up";
     private static final String CATEGORY = "User Onboarding";
     private static final String FRIENDLY_NAME = "Self Registration";
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
@@ -40,12 +40,12 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
-    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+    private static final String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
-        return connectorName;
+        return CONNECTOR_NAME;
     }
 
     @Override
