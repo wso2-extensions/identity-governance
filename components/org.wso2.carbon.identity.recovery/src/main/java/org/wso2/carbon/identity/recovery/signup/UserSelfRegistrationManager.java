@@ -1295,7 +1295,7 @@ public class UserSelfRegistrationManager {
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, user.getTenantDomain()));
 
         if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_LITE_SIGN_UP, user
                     .getUserName());
         }
         NotificationResponseBean notificationResponseBean;
@@ -1319,6 +1319,9 @@ public class UserSelfRegistrationManager {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
 
+            //Set lite user sign up claim to indicate the profile
+            claimsMap.put(IdentityRecoveryConstants.LITE_USER_CLAIM,Boolean.TRUE.toString());
+
             //Set arbitrary properties to use in UserSelfRegistrationHandler
             Utils.setArbitraryProperties(properties);
             validateAndFilterFromReceipt(consent, claimsMap);
@@ -1326,13 +1329,7 @@ public class UserSelfRegistrationManager {
             // User preferred notification channel.
             String preferredChannel;
             try {
-
-                //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
-                if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
-                    Permission permission = new Permission("/permission/admin/login", IdentityRecoveryConstants.EXECUTE_ACTION);
-                    userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null, new Permission[]{permission});
-                }
-                String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
+                String[] userRoles = new String[]{};
                 try {
                     NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
                     preferredChannel = notificationChannelManager
