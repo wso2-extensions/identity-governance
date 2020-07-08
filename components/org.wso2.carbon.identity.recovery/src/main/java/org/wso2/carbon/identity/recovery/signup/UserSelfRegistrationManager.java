@@ -595,12 +595,15 @@ public class UserSelfRegistrationManager {
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         validateSelfRegistrationCode(code, verifiedChannelType, verifiedChannelClaim, properties);
+        // Invalidate code.
+        userRecoveryDataStore.invalidate(code);
     }
 
     /**
      * Introspect the user self registration by validating the confirmation code, sets externally verified claims and
-     * return the details.
+     * return the details. Does not invalidate the code.
      *
      * @param code                 Confirmation code
      * @param verifiedChannelType  Type of the verified channel (SMS or EMAIL)
@@ -667,9 +670,6 @@ public class UserSelfRegistrationManager {
 
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
-
-        // Invalidate code.
-        userRecoveryDataStore.invalidate(code);
 
         return recoveryData;
     }
