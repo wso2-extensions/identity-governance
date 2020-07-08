@@ -319,7 +319,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     private boolean isCodeExpired(String tenantDomain, Enum recoveryScenario, Enum recoveryStep, long createdTimestamp,
             String recoveryData) throws IdentityRecoveryServerException {
 
-        int notificationExpiryTimeInMinutes;
+        int notificationExpiryTimeInMinutes = 0;
         // Self sign up scenario has two sub scenarios as verification via email or verification via SMS.
         if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) && RecoverySteps.CONFIRM_SIGN_UP
                 .equals(recoveryStep)) {
@@ -386,6 +386,41 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } else if (RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(IdentityUtil.getProperty(IdentityRecoveryConstants
                     .ConnectorConfig.TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME));
+        } else if (RecoveryScenarios.LITE_SIGN_UP.equals(recoveryScenario) &&
+                RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryStep)) {
+            // If the verification channel is email, use verification link timeout configs to validate.
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(recoveryData)) {
+                if (log.isDebugEnabled()) {
+                    String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
+                            + "and recovery step: %s", recoveryData, recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain));
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(recoveryData)) {
+                // If the verification channel is SMS, use SMS OTP timeout configs to validate.
+                if (log.isDebugEnabled()) {
+                    String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
+                            + "and recovery step: %s", recoveryData, recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer
+                        .parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                                LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, tenantDomain));
+            } else {
+                // If the verification channel is not specified, verification will takes place according to default
+                // verification link timeout configs.
+                if (log.isDebugEnabled()) {
+                    String message = String.format("No verification channel for recovery scenario: %s and recovery " +
+                                    "step: %s .Therefore, using verification link default timeout configs",
+                            recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain));
+            }
         } else {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.EXPIRY_TIME, tenantDomain));
