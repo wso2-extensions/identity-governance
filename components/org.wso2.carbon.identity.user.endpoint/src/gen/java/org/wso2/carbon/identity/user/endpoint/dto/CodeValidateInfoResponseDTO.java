@@ -1,6 +1,6 @@
 package org.wso2.carbon.identity.user.endpoint.dto;
 
-import org.wso2.carbon.identity.user.endpoint.dto.ExtendedUserDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 
 import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.*;
@@ -16,7 +16,7 @@ public class CodeValidateInfoResponseDTO  {
   
   
   
-  private ExtendedUserDTO user = null;
+  private UserDTO user = null;
   
   
   private String recoveryScenario = null;
@@ -29,10 +29,10 @@ public class CodeValidateInfoResponseDTO  {
    **/
   @ApiModelProperty(value = "")
   @JsonProperty("user")
-  public ExtendedUserDTO getUser() {
+  public UserDTO getUser() {
     return user;
   }
-  public void setUser(ExtendedUserDTO user) {
+  public void setUser(UserDTO user) {
     this.user = user;
   }
 

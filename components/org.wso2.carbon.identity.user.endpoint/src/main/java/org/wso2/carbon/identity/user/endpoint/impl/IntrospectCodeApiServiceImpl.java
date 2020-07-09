@@ -27,17 +27,15 @@ import org.wso2.carbon.identity.user.endpoint.dto.*;
 
 
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidationRequestDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidateInfoResponseDTO;
 
 import java.util.HashMap;
-import java.util.List;
 
-import java.io.InputStream;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.user.endpoint.util.Utils.getCodeIntrospectResponse;
 
 public class IntrospectCodeApiServiceImpl extends IntrospectCodeApiService {
     private static final Log LOG = LogFactory.getLog(IntrospectCodeApiServiceImpl.class);
@@ -46,7 +44,8 @@ public class IntrospectCodeApiServiceImpl extends IntrospectCodeApiService {
     @Override
     public Response introspectCodePost(CodeValidationRequestDTO codeValidationRequestDTO){
         UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
-        UserRecoveryData codeDetails = null ;
+        CodeValidateInfoResponseDTO codeDetails = null ;
+        UserRecoveryData recoveryData = null ;
         try {
             // Get the map of properties in the request.
             HashMap<String, String> propertyMap = Utils.getPropertiesMap(codeValidationRequestDTO.getProperties());
@@ -62,9 +61,16 @@ public class IntrospectCodeApiServiceImpl extends IntrospectCodeApiService {
                 verifiedChannelType = verifiedChannelDTO.getType();
             }
             // Confirm code.
-            codeDetails = userSelfRegistrationManager
+            recoveryData = userSelfRegistrationManager
                     .introspectUserSelfRegistration(codeValidationRequestDTO.getCode(), verifiedChannelType,
                             verifiedChannelClaim, propertyMap);
+            if (recoveryData != null && recoveryData.getUser() != null && recoveryData.getUser().getUserName() != null) {
+                codeDetails = getCodeIntrospectResponse(recoveryData);
+            } else {
+                Utils.handleNotFound(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode());
+            }
+
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while confirming sent in code", e);

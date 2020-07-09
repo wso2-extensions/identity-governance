@@ -585,7 +585,7 @@ definitions:
     type: object
     properties:
       user:
-        $ref: '#/definitions/ExtendedUser'
+        $ref: '#/definitions/User'
       recoveryScenario:
         type: string
       recoveryStep:
@@ -627,21 +627,6 @@ definitions:
       value:
         type: string
         description: 'Claim value'
-
-#-----------------------------------------------------
-# The Extended User Object
-#-----------------------------------------------------
-  ExtendedUser:
-    type: object
-    properties:
-      username:
-        type: string
-      realm:
-        type: string
-      tenant:
-        type: string
-      isUsernameCaseSensitive:
-        type: boolean
 
 #-----------------------------------------------------
 # The Consent Receipt  object
