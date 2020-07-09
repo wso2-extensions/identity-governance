@@ -213,6 +213,47 @@ paths:
       tags:
         - Self Register
 
+  #valid the code and retrieve related information.
+  /introspect-code:
+    post:
+      description: |
+        This API is used to validate the code used by self registered users and retrieve the details.
+      x-wso2-request: |
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW5Ad3NvMi5jb206YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "17f00958-a1d7-47b9-8183-be99c08a800f"}' "https://localhost:9443/api/identity/user/v1.0/introspect-code"
+      x-wso2-curl: |
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW5Ad3NvMi5jb206YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "17f00958-a1d7-47b9-8183-be99c08a800f"}' "https://localhost:9443/api/identity/user/v1.0/introspect-code"
+
+      x-wso2-response: |
+        "HTTP/1.1 200 OK"
+
+      summary: |
+        Validate code
+
+      # This are the post parameters:
+      parameters:
+        - name: code
+          in: body
+          description:  The validation code retrieved after user self registration, and optional property parameters.
+          required: true
+          schema:
+            $ref: '#/definitions/CodeValidationRequest'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/CodeValidateInfoResponse'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Self Register
+        - Verification
+
   /validate-username:
     post:
       description: |
@@ -536,6 +577,19 @@ definitions:
       statusCode:
         type: 'integer'
         description: 'status code'
+
+#-----------------------------------------------------
+# Validated code information object
+#-----------------------------------------------------
+  CodeValidateInfoResponse:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/User'
+      recoveryScenario:
+        type: string
+      recoveryStep:
+        type: string
 
 
 #-----------------------------------------------------

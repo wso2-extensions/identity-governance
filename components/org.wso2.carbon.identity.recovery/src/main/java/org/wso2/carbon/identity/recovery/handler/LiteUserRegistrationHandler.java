@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.governance.exceptions.notiification.Notification
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.mgt.IdentityMgtConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -57,16 +58,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UserSelfRegistrationHandler extends AbstractEventHandler {
+public class LiteUserRegistrationHandler extends AbstractEventHandler {
 
-    private static final Log log = LogFactory.getLog(UserSelfRegistrationHandler.class);
+    private static final Log log = LogFactory.getLog(LiteUserRegistrationHandler.class);
 
     public String getName() {
-        return "userSelfRegistration";
+        return "liteUserRegistration";
     }
 
     public String getFriendlyName() {
-        return "User Self Registration";
+        return "Lite User Registration";
     }
 
     @Override
@@ -79,7 +80,14 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
         String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
-        String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
+        boolean isLiteSignUp = Utils.isLiteSignUp(Utils.getArbitraryProperties());
+        if (!isLiteSignUp) {
+            //Lite sign up feature is disabled
+            if (log.isDebugEnabled()) {
+                log.debug("Not lite sign up flow for the user.");
+            }
+            return; //this handler will not do anything. just return
+        }
 
         User user = new User();
         user.setUserName(userName);
@@ -87,32 +95,22 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         user.setUserStoreDomain(domainName);
 
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, user.getTenantDomain()));
 
         if (!enable) {
-            //Self signup feature is disabled
-
+            //Lite sign up feature is disabled
             if (log.isDebugEnabled()) {
-                log.debug("Self signup feature is disabled in tenant: " + tenantDomain);
+                log.debug("Lite sign up feature is disabled in tenant: " + tenantDomain);
             }
-            return;
-        }
-
-        //Check selfSignupRole is in the request. If it is not there, this handler will not do anything. just retrun
-        if (roleList == null) {
-            return;
-        } else {
-            List<String> roles = Arrays.asList(roleList);
-            if (!roles.contains(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
-                return;
-            }
+            return; //this handler will not do anything. just return
         }
 
         boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                        user.getTenantDomain()));
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -140,7 +138,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
 
                     UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                            RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+                            RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP);
 
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
@@ -148,7 +146,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     triggerNotification(user, preferredChannel, secretKey, Utils.getArbitraryProperties(), eventName);
                 }
             } catch (IdentityRecoveryException e) {
-                throw new IdentityEventException("Error while sending self sign up notification ", e);
+                throw new IdentityEventException("Error while sending lite sign up notification ", e);
             }
             if (isAccountLockOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
@@ -156,7 +154,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                 if (Utils.isAccountStateClaimExisting(tenantDomain)) {
                     userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                            IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+                            IdentityRecoveryConstants.PENDING_LITE_REGISTRATION);
                 }
                 try {
                     userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
@@ -353,39 +351,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         return 60;
     }
 
-
-    protected void triggerNotification(User user, String type, String code, Property[] props) throws
-            IdentityRecoveryException {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
-        }
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-
-        if (props != null && props.length > 0) {
-            for (int i = 0; i < props.length; i++) {
-                properties.put(props[i].getKey(), props[i].getValue());
-            }
-        }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
-        }
-    }
-
     /**
      * Triggers notifications according to the given event name.
      *
@@ -400,7 +365,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             String eventName) throws IdentityRecoveryException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
+            log.debug("Sending lite user registration notification user: " + user.getUserName());
         }
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
@@ -416,8 +381,11 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
+
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
+
+
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

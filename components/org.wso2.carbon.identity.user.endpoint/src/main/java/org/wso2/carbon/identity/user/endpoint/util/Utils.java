@@ -18,12 +18,10 @@
 
 package org.wso2.carbon.identity.user.endpoint.util;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -33,6 +31,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.CodeValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
@@ -242,6 +241,23 @@ public class Utils {
         return roleList.toArray(new String[roleList.size()]);
     }
 
+    public static CodeValidateInfoResponseDTO getCodeIntrospectResponse(UserRecoveryData userRecoveryData) {
+
+        CodeValidateInfoResponseDTO codeValidateInfoResponseDTO = new CodeValidateInfoResponseDTO();
+        codeValidateInfoResponseDTO.setUser(getRecoveryUser(userRecoveryData.getUser()));
+        codeValidateInfoResponseDTO.setRecoveryStep(userRecoveryData.getRecoveryStep().name());
+        codeValidateInfoResponseDTO.setRecoveryScenario(userRecoveryData.getRecoveryScenario().name());
+        return codeValidateInfoResponseDTO;
+    }
+
+    public static UserDTO getRecoveryUser(User user) {
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setRealm(user.getUserStoreDomain());
+        userDTO.setTenantDomain(user.getTenantDomain());
+        userDTO.setUsername(user.getUserName());
+        return userDTO;
+    }
 
     public static Property[] getProperties(List<PropertyDTO> propertyDTOs) {
         if (propertyDTOs == null) {

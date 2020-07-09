@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandle
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
+import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
@@ -94,6 +95,8 @@ public class IdentityRecoveryServiceComponent {
             bundleContext.registerService(AbstractEventHandler.class.getName(), new
                     AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserSelfRegistrationHandler(),
+                    null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new LiteUserRegistrationHandler(),
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserEmailVerificationHandler(),
                     null);
