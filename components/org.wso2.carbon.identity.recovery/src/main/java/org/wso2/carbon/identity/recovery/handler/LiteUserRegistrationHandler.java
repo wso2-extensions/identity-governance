@@ -351,39 +351,6 @@ public class LiteUserRegistrationHandler extends AbstractEventHandler {
         return 60;
     }
 
-
-    protected void triggerNotification(User user, String type, String code, Property[] props) throws
-            IdentityRecoveryException {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
-        }
-
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-
-        if (props != null && props.length > 0) {
-            for (int i = 0; i < props.length; i++) {
-                properties.put(props[i].getKey(), props[i].getValue());
-            }
-        }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
-        }
-    }
-
     /**
      * Triggers notifications according to the given event name.
      *
