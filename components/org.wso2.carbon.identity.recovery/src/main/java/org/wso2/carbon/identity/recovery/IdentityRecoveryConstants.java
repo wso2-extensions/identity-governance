@@ -40,6 +40,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
+    public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
