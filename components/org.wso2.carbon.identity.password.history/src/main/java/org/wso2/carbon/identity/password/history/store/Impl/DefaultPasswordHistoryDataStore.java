@@ -20,7 +20,6 @@ import org.apache.axiom.om.util.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
@@ -32,8 +31,13 @@ import org.wso2.carbon.user.core.UserStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This interface provides to plug module for preferred persistence store.
@@ -47,6 +51,10 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
     public DefaultPasswordHistoryDataStore(String digestFunction, int maxHistoryCount) {
         this.digestFunction = digestFunction;
         this.maxHistoryCount = maxHistoryCount;
+    }
+
+    public DefaultPasswordHistoryDataStore() {
+
     }
 
     @Override
@@ -133,6 +141,32 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             IdentityDatabaseUtil.closeConnection(connection);
         }
 
+    }
+
+    /**
+     * Delete password history data of a tenant.
+     *
+     * @param tenantId Id of the tenant
+     * @throws IdentityPasswordHistoryException
+     */
+    @Override
+    public void deletePasswordHistoryData(int tenantId) throws IdentityPasswordHistoryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting all password history data of the tenant: " + tenantId);
+        }
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(PasswordHistoryConstants.SQLQueries
+                        .DELETE_PASSWORD_HISTORY_DATA_BY_TENANT_ID)) {
+                prepStmt.setInt(1, tenantId);
+                prepStmt.execute();
+                IdentityDatabaseUtil.commitTransaction(connection);
+            }
+        } catch (SQLException e) {
+            throw new IdentityPasswordHistoryException(
+                    "Error while deleting password history data of tenant" + tenantId, e);
+        }
     }
 
     @Override
