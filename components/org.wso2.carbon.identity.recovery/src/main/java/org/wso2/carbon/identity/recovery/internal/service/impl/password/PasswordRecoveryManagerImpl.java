@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -92,13 +93,20 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                         properties);
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
-        recoveryInformationDTO.setUsername(recoveryChannelInfoDTO.getUsername());
+        String username = recoveryChannelInfoDTO.getUsername();
+        recoveryInformationDTO.setUsername(username);
         // Do not add recovery channel information if Notification based recovery is not enabled.
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         if (isNotificationBasedRecoveryEnabled) {
             recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         }
-        recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
+
+        /* Checks if at least the minimum number of recovery question answers required for password recovery are set
+         for the user. */
+        boolean isMinNoOfRecoveryQuestionsAnswered = isMinNoOfRecoveryQuestionsAnswered(username, tenantDomain);
+
+        recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
+                isMinNoOfRecoveryQuestionsAnswered);
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }
@@ -586,4 +594,35 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                             .getMessage(), null);
         }
     }
+
+    /**
+     * Checks if user has set answers for at least the minimum number of questions with answers required for password
+     * recovery.
+     *
+     * @param username     The username of the user.
+     * @param tenantDomain The tenant domain of the user.
+     * @return True if expected number of challenge question answers have been set for the user.
+     * @throws IdentityRecoveryException Error while retrieving challenge question Ids for user.
+     */
+    private boolean isMinNoOfRecoveryQuestionsAnswered(String username, String tenantDomain) throws
+            IdentityRecoveryException {
+
+        User user = Utils.buildUser(username, tenantDomain);
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
+        String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
+        boolean isMinNoOfRecoveryQuestionsAnswered = false;
+
+        if (ids != null) {
+            int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_MIN_NO_ANSWER, tenantDomain));
+            isMinNoOfRecoveryQuestionsAnswered = ids.length >= minNoOfQuestionsToAnswer;
+            if (isMinNoOfRecoveryQuestionsAnswered && log.isDebugEnabled()) {
+                log.debug(String.format("User: %s in tenant domain %s has set answers for at least the minimum number" +
+                        " of questions with answers required for password recovery.", username, tenantDomain));
+            }
+        }
+
+        return isMinNoOfRecoveryQuestionsAnswered;
+    }
+
 }
