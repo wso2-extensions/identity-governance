@@ -55,7 +55,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 for (PropertyDTO propertyDTO : propertyDTOList) {
                     if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
                         skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
-                    } else if (StringUtils.equals(IdentityManagementEndpointConstants.TENANT_DOMAIN,
+                    } else if (IdentityManagementEndpointConstants.TENANT_DOMAIN.equals(
                             propertyDTO.getKey())) {
                         tenantDomain = propertyDTO.getValue();
                     }

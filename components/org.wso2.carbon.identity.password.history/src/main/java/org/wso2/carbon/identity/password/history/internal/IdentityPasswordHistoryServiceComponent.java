@@ -28,6 +28,8 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.identity.password.history.listener.PasswordHistoryTenantMgtListener;
+import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 
 @Component(
         name = "org.wso2.carbon.identity.password.history.internal.IdentityPasswordHistoryServiceComponent",
@@ -47,6 +49,8 @@ public class IdentityPasswordHistoryServiceComponent {
             IdentityPasswordHistoryServiceDataHolder.getInstance().setBundleContext(bundleContext);
             PasswordHistoryValidationHandler handler = new PasswordHistoryValidationHandler();
             context.getBundleContext().registerService(AbstractEventHandler.class.getName(), handler, null);
+            context.getBundleContext().registerService(TenantMgtListener.class.getName(),
+                    new PasswordHistoryTenantMgtListener(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }

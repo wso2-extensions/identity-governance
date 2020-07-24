@@ -27,6 +27,7 @@ public class IdentityRecoveryConstants {
     public static final String IDENTITY_I18N_QUESTIONS =
             IDENTITY_MANAGEMENT_I18N_PATH + "/questionCollection";
     public static final String LINE_SEPARATOR = "!";
+    public static final String DEFAULT_REGEX = ".*";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
     public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET = "resendPasswordReset";
@@ -38,6 +39,8 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
+    public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
+    public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
@@ -54,8 +57,12 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
+    public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
+
+    public static final String USER_NEW_CHALLENGE_ANSWERS = "userNewChallengeAnswers";
+    public static final String USER_OLD_CHALLENGE_ANSWERS = "userOldChallengeAnswers";
 
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
@@ -74,6 +81,7 @@ public class IdentityRecoveryConstants {
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
+    public static final String PENDING_LITE_REGISTRATION = "PENDING_LR";
     public static final String PENDING_ASK_PASSWORD = "PENDING_AP";
     public static final String PENDING_EMAIL_VERIFICATION = "PENDING_EV";
     public static final String ACCOUNT_STATE_UNLOCKED = "UNLOCKED";
@@ -91,6 +99,7 @@ public class IdentityRecoveryConstants {
     public static final String EXECUTE_ACTION = "ui.execute";
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
+    public static final String IS_LITE_SIGN_UP = "isLiteSignUp";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
     public static final String IS_USER_PORTAL_URL = "isUserPortalURL";
     public static final String NOTIFY_CHANNEL_LIST_SEPARATOR = ",";
@@ -203,7 +212,9 @@ public class IdentityRecoveryConstants {
                 "challenge question of locale %s in set %s"),
         ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
                 " question %s of the set %s"),
-        ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20060", "Error deleting user recovery data of the tenant: %s"),
+        ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
+        ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
+
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
 
@@ -214,6 +225,9 @@ public class IdentityRecoveryConstants {
                 "User specified communication channel does not have any value"),
         ERROR_CODE_BAD_SELF_REGISTER_REQUEST("USR-10003",
                 "Bad Request"),
+        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004","Either email or mobile should be submitted."),
+        ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST("USR-10005",
+                "Lite self registration is not supported."),
 
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
@@ -272,7 +286,17 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
 
         // Resend Account Confirmation.
-        ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request");
+        ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request"),
+
+        /**
+         * CQM - Challenge Question Manager.
+         *
+         * @see <href="https://github.com/wso2/identity-api-user/blob/master/components/org.wso2.carbon.identity.api.user.challenge/org.wso2.carbon.identity.api.user.challenge.common/src/main/java/org/wso2/carbon/identity/api/user/challenge/common/Constant.java">identity-api.user</>
+         */
+        ERROR_CODE_INVALID_ANSWER_FORMAT("10016", "Invalid answer format in the given answer " +
+                "for the challenge question '%s'."),
+        ERROR_CODE_NOT_UNIQUE_ANSWER("10017", "The given answer for the challenge question, " +
+                "'%s' has been used more than once.");
 
         private final String code;
         private final String message;
@@ -408,6 +432,17 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
+        public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
+        public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless
+        public static final String LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "LiteRegistration.Notification" +
+                ".InternallyManage";
+        public static final String LITE_REGISTRATION_RE_CAPTCHA = "LiteRegistration.ReCaptcha";
+        public static final String LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "LiteRegistration" +
+                ".VerificationCode.ExpiryTime";
+        public static final String LITE_REGISTRATION_CALLBACK_REGEX = "LiteRegistration.CallbackRegex";
+        public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
+                "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";
+
         public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
@@ -429,6 +464,8 @@ public class IdentityRecoveryConstants {
         public static final String PASSWORD_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Password.Enable";
         public static final String USERNAME_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Username.Enable";
 
+        public static final String CHALLENGE_QUESTION_ANSWER_REGEX = "Recovery.Question.Answer.Regex";
+        public static final String ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS = "Recovery.Question.Answer.Uniqueness";
     }
 
     public static class SQLQueries {

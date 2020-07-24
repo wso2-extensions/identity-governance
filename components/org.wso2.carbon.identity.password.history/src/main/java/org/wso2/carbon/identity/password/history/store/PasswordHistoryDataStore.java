@@ -40,6 +40,16 @@ public interface PasswordHistoryDataStore {
     void remove(User user) throws IdentityPasswordHistoryException;
 
     /**
+     * Delete password history data of a tenant.
+     *
+     * @param tenantId Id of the tenant
+     * @throws IdentityPasswordHistoryException
+     */
+    default void deletePasswordHistoryData(int tenantId) throws IdentityPasswordHistoryException {
+
+    }
+
+    /**
      * validate
      *
      * @param user,credential

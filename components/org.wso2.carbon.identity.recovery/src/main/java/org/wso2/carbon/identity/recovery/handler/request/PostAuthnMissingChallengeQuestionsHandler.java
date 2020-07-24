@@ -387,7 +387,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         for (String questionKey : questionsMap.keySet()) {
             String challengeQuestion = questionsMap.get(questionKey);
             for (ChallengeQuestion question : challengeQuestionsList) {
-                if (StringUtils.equals(question.getQuestion(), challengeQuestion)) {
+                if (StringUtils.equals(question.getQuestionSetId(), questionKey) &&
+                        StringUtils.equals(question.getQuestion(), challengeQuestion)) {
                     UserChallengeAnswer questionAndAnswer = new UserChallengeAnswer();
                     questionAndAnswer.setQuestion(question);
                     if (StringUtils.isEmpty(answersMap.get(questionKey))) {
@@ -468,7 +469,8 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
             httpServletResponse.sendRedirect
                     (ConfigurationFacade.getInstance().getAuthenticationEndpointURL().replace("/login.do", ""
                     ) + "/add-security-questions" + ".jsp?sessionDataKey=" +
-                            authenticationContext.getContextIdentifier() + "&data=" + encodedData);
+                            authenticationContext.getContextIdentifier() + "&data=" + encodedData + "&sp=" +
+                            authenticationContext.getServiceProviderName());
             setChallengeQuestionRequestedState(authenticationContext);
             return PostAuthnHandlerFlowStatus.INCOMPLETE;
 

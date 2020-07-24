@@ -6,8 +6,8 @@ import org.wso2.carbon.identity.user.endpoint.factories.ResendCodeApiServiceFact
 
 import io.swagger.annotations.ApiParam;
 
-import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class ResendCodeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Resend Code\n", notes = "This API is used to resend confirmation code, if it is missing.\n", response = String.class)
+    @io.swagger.annotations.ApiOperation(value = "Resend code\n", notes = "This API is used to resend the confirmation code if it is missing.\n", response = String.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "Successful"),
         
@@ -38,7 +38,7 @@ public class ResendCodeApi  {
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 
-    public Response resendCodePost(@ApiParam(value = "It can be sent optional property parameters over email based on email template." ,required=true ) ResendCodeRequestDTO user)
+    public Response resendCodePost(@ApiParam(value = "Sends optional property parameters over email based on an email template." ,required=true ) ResendCodeRequestDTO user)
     {
     return delegate.resendCodePost(user);
     }
