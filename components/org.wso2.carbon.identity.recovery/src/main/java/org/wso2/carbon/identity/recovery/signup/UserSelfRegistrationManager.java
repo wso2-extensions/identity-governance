@@ -941,7 +941,8 @@ public class UserSelfRegistrationManager {
      *
      * @param username Username.
      * @return True if the username is already taken, else false.
-     * @Deprecated Use isUsernameAlreadyTaken(String username, String tenantDomain)
+     * @deprecated  After v1.4.5 due to inability to support tenant based username check.
+     *              Use isUsernameAlreadyTaken(String username, String tenantDomain)
      */
     @Deprecated
     public boolean isUsernameAlreadyTaken(String username) throws IdentityRecoveryException {
@@ -955,7 +956,7 @@ public class UserSelfRegistrationManager {
      * @param username Username
      * @param tenantDomain Tenant domain in the request.
      * @return True if username is already taken, else false.
-     * @throws IdentityRecoveryException
+     * @throws IdentityRecoveryException Error occurred while retrieving user realm.
      */
     public boolean isUsernameAlreadyTaken(String username, String tenantDomain) throws IdentityRecoveryException {
 
