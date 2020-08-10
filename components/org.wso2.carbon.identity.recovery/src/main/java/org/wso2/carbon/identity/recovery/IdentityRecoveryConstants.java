@@ -213,6 +213,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_REGISTRY_EXCEPTION_DELETE_CHALLENGE_QUESTION("20059", "Registry exception while deleting challenge" +
                 " question %s of the set %s"),
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
+        ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
@@ -489,6 +490,8 @@ public class IdentityRecoveryConstants {
 
         public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String DELETE_USER_RECOVERY_DATA_BY_TENANT_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE TENANT_ID = ?";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";

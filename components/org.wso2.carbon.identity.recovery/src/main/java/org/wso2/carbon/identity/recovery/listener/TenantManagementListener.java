@@ -21,6 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.stratos.common.beans.TenantInfoBean;
 import org.wso2.carbon.stratos.common.exception.StratosException;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
@@ -95,7 +97,13 @@ public class TenantManagementListener implements TenantMgtListener {
     }
 
     @Override
-    public void onPreDelete(int i) throws StratosException {
+    public void onPreDelete(int tenantId) throws StratosException {
 
+        try {
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            userRecoveryDataStore.deleteRecoveryDataByTenantId(tenantId);
+        } catch (IdentityRecoveryException e) {
+            throw new StratosException("Error in deleting recovery data of the tenant:" + tenantId, e);
+        }
     }
 }
