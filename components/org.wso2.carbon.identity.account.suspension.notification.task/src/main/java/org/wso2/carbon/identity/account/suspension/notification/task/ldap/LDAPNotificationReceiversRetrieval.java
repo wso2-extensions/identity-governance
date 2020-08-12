@@ -98,6 +98,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     log.debug("Retrieving ldap user list for lookupMin: " + lookupMin + " - lookupMax: " + lookupMax);
                 }
 
+                String[] returnedAttrs = {emailMapAttribute, usernameMapAttribute, firstNameMapAttribute, lastLoginTimeAttribute};
+
                 LDAPConnectionContext ldapConnectionContext = new LDAPConnectionContext(realmConfiguration);
                 DirContext ctx = ldapConnectionContext.getContext();
 
@@ -107,6 +109,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                searchControls.setReturningAttributes(returnedAttrs);
 
                 NamingEnumeration<SearchResult> results = ctx.search(ldapSearchBase, searchFilter, searchControls);
 
