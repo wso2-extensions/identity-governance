@@ -61,6 +61,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(PasswordRecoveryManagerImpl.class);
 
+    private static final boolean isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled =
+            Utils.isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled();
+
     /**
      * Get the username recovery information with available verified channel details.
      *
@@ -101,12 +104,13 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         }
 
-        /* Checks if at least the minimum number of recovery question answers required for password recovery are set
-         for the user. */
-        boolean isMinNoOfRecoveryQuestionsAnswered = isMinNoOfRecoveryQuestionsAnswered(username, tenantDomain);
+        if (isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled) {
+            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
+                    isMinNoOfRecoveryQuestionsAnswered(username, tenantDomain));
+        } else {
+            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled);
+        }
 
-        recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
-                isMinNoOfRecoveryQuestionsAnswered);
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }

@@ -881,4 +881,16 @@ public class Utils {
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
         return user;
     }
+
+    /**
+     * Check for the configuration to skip challenge question-based password recovery if the user has not set answers
+     * for a sufficient number of questions.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(IdentityRecoveryConstants
+                .RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS));
+    }
 }
