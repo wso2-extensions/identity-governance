@@ -24,8 +24,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
-import org.json.JSONObject;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -53,7 +51,6 @@ import org.wso2.carbon.identity.governance.exceptions.notiification.Notification
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -89,12 +86,10 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
 
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -643,8 +638,6 @@ public class UserSelfRegistrationManager {
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
-            auditRecoveryConfirm(recoveryData,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
         // Get the userstore manager for the user.
@@ -677,7 +670,7 @@ public class UserSelfRegistrationManager {
 
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
-        auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
+
         return recoveryData;
     }
 
@@ -1456,19 +1449,5 @@ public class UserSelfRegistrationManager {
         }
 
         return notificationResponseBean;
-    }
-
-    private void auditRecoveryConfirm(UserRecoveryData recoveryData, String errorMsg, String result) {
-
-        JSONObject dataObject = new JSONObject();
-        dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
-        dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
-        dataObject.put(AuditConstants.EMAIL_TO_BE_CHANGED, recoveryData.getRemainingSetIds());
-        dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
-        if (AUDIT_FAILED.equals(result)) {
-            dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
-        }
-        Utils.createAuditMessage(recoveryData.getRecoveryScenario().toString(), recoveryData.getUser().getUserName(),
-                dataObject, result);
     }
 }

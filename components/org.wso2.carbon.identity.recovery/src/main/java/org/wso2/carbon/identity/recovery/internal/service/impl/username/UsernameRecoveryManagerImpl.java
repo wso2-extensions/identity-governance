@@ -21,16 +21,12 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
-import org.json.JSONObject;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
-import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -47,7 +43,6 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
-import org.wso2.carbon.user.mgt.listeners.utils.ListenerUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -56,16 +51,12 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
-
 /**
  * Class that implements the UsernameRecoveryManager.
  */
 public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
     private static final Log log = LogFactory.getLog(UsernameRecoveryManagerImpl.class);
-    private static final String NOTIFICATION_TYPE_INTERNAL = "Internal";
-    private static final String NOTIFICATION_TYPE_EXTERNAL = "External";
 
     /**
      * Get the username recovery information with available verified channel details.
@@ -100,24 +91,16 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                         log.debug("Successful username recovery for user: " + username + ". " +
                                 "User notified Internally");
                     }
-                    auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_INTERNAL,
-                            username, null, FrameworkConstants.AUDIT_SUCCESS);
                     return null;
                 }
                 if (log.isDebugEnabled()) {
                     log.debug("Successful username recovery for user: " + username + ". User notified Externally");
                 }
-                auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_EXTERNAL,
-                        username, null, FrameworkConstants.AUDIT_SUCCESS);
                 recoveryInformationDTO.setUsername(username);
             } else {
-                String errorMsg =
-                        String.format("No user found for the given claims in tenant domain : %s", tenantDomain);
                 if (log.isDebugEnabled()) {
-                    log.debug(errorMsg);
+                    log.debug("No user found for the given claims in tenant domain : " + tenantDomain);
                 }
-                auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, "N/A", username, errorMsg,
-                        FrameworkConstants.AUDIT_FAILED);
                 if (Boolean.parseBoolean(
                         IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
                     throw Utils.handleClientException(
@@ -436,19 +419,5 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN
                             .getMessage(), null);
         }
-    }
-
-    private void auditUserNameRecovery(String action, Map<String, String> claims, String notificationType,
-                                       String target, String errorMsg, String result) {
-
-        JSONObject dataObject = new JSONObject();
-        dataObject.put(ListenerUtils.CLAIMS_FIELD, new JSONObject(claims));
-        dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
-        dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
-        dataObject.put(AuditConstants.USER_NOTIFIED_TYPE_KEY, notificationType);
-        if (AUDIT_FAILED.equals(result)) {
-            dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
-        }
-        Utils.createAuditMessage(action, target, dataObject, result);
     }
 }
