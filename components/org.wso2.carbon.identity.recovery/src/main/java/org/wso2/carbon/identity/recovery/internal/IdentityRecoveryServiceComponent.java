@@ -21,6 +21,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
@@ -315,6 +316,22 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetConsentUtilityService(ConsentUtilityService utilityService) {
 
         dataHolder.setConsentUtilityService(null);
+    }
+
+    @Reference(
+            name = "claim.meta.mgt.service",
+            service = ClaimMetadataManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimMetaMgtService")
+    protected void setClaimMetaMgtService(ClaimMetadataManagementService claimMetaMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setClaimMetadataManagementService(claimMetaMgtService);
+    }
+
+    protected void unsetClaimMetaMgtService(ClaimMetadataManagementService claimMetaMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setClaimMetadataManagementService(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {

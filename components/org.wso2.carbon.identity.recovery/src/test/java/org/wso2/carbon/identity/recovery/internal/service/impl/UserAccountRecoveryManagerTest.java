@@ -29,6 +29,7 @@ import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -69,6 +70,9 @@ public class UserAccountRecoveryManagerTest {
 
     @Mock
     RealmService realmService;
+
+    @Mock
+    ClaimMetadataManagementService claimMetadataManagementService;
 
     @Mock
     UserRealm userRealm;
@@ -233,6 +237,7 @@ public class UserAccountRecoveryManagerTest {
 
         try {
             mockGetUserList(new String[]{});
+            mockClaimMetadataManagementService();
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -414,6 +419,14 @@ public class UserAccountRecoveryManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(realmService.getTenantUserRealm(Matchers.anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+    }
+
+    private void mockClaimMetadataManagementService() {
+
+        mockStatic(IdentityRecoveryServiceDataHolder.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
+                .thenReturn(claimMetadataManagementService);
     }
 
     /**
