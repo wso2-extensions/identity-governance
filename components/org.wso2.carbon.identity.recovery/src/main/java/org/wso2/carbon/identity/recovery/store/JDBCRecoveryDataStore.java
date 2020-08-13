@@ -33,7 +33,11 @@ import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +57,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
             prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
@@ -69,7 +74,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -77,13 +83,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws IdentityRecoveryException {
+    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code)
+            throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
         String sql;
         try {
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_CASE_INSENSITIVE;
@@ -124,6 +133,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData load(String code) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
@@ -170,8 +180,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         try {
             String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_CODE;
 
@@ -191,13 +202,15 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData load(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
@@ -238,13 +251,15 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
@@ -280,11 +295,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES_CASE_INSENSITIVE;
@@ -299,6 +316,38 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    /**
+     * Delete all recovery data by tenant id
+     *
+     * @param tenantId Id of the tenant
+     */
+    @Override
+    public void deleteRecoveryDataByTenantId(int tenantId) throws IdentityRecoveryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting User Recovery Data of the tenant: " + tenantId);
+        }
+
+        PreparedStatement prepStmt = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        try {
+            prepStmt = connection.prepareStatement(
+                    IdentityRecoveryConstants.SQLQueries.DELETE_USER_RECOVERY_DATA_BY_TENANT_ID);
+            prepStmt.setInt(1, tenantId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_RECOVERY_DATA,
+                    Integer.toString(tenantId), e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);

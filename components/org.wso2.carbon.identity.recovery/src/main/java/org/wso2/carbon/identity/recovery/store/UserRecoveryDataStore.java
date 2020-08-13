@@ -46,4 +46,12 @@ public interface UserRecoveryDataStore {
     void invalidate(User user) throws
             IdentityRecoveryException;
 
+    /**
+     * Delete all recovery data by tenant id
+     *
+     * @param tenantId Id of the tenant
+     */
+    default void deleteRecoveryDataByTenantId(int tenantId) throws IdentityRecoveryException {
+
+    }
 }

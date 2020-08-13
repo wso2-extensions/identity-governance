@@ -152,6 +152,12 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.LITE_SIGN_UP.toString(), RecoverySteps.CONFIRM_LITE_SIGN_UP.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString(), RecoverySteps.VERIFY_EMAIL.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE, resendCodeRequestDTO);
         }
 
         return notificationResponseBean;
