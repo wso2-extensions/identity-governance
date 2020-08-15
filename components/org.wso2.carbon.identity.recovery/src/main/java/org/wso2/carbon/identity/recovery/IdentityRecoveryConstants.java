@@ -230,7 +230,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER("55002", "Server error occurred while unlocking " +
                 "functionality."),
         ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY("55003", "Error occurred while fetching lock status."),
-        ERROR_CODE_FAILED_TO_GET_PROPERTIES_FOR_FUNCTIONALITY("55004", "Error occurred while fetching  functionality " +
+        ERROR_CODE_FAILED_TO_GET_PROPERTIES_FOR_FUNCTIONALITY("55004", "Error occurred while fetching functionality " +
                 "lock properties."),
         ERROR_CODE_FAILED_TO_ADD_PROPERTIES_FOR_FUNCTIONALITY("55005", "Error occurred while adding functionality " +
                 "lock properties."),
@@ -307,7 +307,7 @@ public class IdentityRecoveryConstants {
                 + "password reset"),
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
         ERROR_CODE_SECURITY_QUESTION_BASED_PWR_LOCKED("PWR-15007", "Security question based password recovery" +
-                " is locked"),
+                " is locked."),
         // Resend Account Confirmation.
         ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request"),
 

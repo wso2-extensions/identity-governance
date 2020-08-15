@@ -58,7 +58,6 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.Map;
 
-
 /**
  * Class that implements the PasswordRecoveryManager.
  */
