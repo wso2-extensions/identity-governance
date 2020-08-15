@@ -33,7 +33,11 @@ import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -53,7 +57,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
             prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
@@ -69,7 +74,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -77,13 +83,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws IdentityRecoveryException {
+    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code)
+            throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
         String sql;
         try {
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_CASE_INSENSITIVE;
@@ -124,6 +133,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData load(String code) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
@@ -170,8 +180,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         try {
             String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_CODE;
 
@@ -191,13 +202,15 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData load(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
@@ -238,13 +251,15 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE;
@@ -280,11 +295,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES_CASE_INSENSITIVE;
@@ -306,6 +323,38 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     /**
+     * Delete all recovery data by tenant id
+     *
+     * @param tenantId Id of the tenant
+     */
+    @Override
+    public void deleteRecoveryDataByTenantId(int tenantId) throws IdentityRecoveryException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting User Recovery Data of the tenant: " + tenantId);
+        }
+
+        PreparedStatement prepStmt = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        try {
+            prepStmt = connection.prepareStatement(
+                    IdentityRecoveryConstants.SQLQueries.DELETE_USER_RECOVERY_DATA_BY_TENANT_ID);
+            prepStmt.setInt(1, tenantId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_RECOVERY_DATA,
+                    Integer.toString(tenantId), e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    /**
      * Checks whether the code has expired or not.
      *
      * @param tenantDomain     Tenant domain
@@ -319,7 +368,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     private boolean isCodeExpired(String tenantDomain, Enum recoveryScenario, Enum recoveryStep, long createdTimestamp,
             String recoveryData) throws IdentityRecoveryServerException {
 
-        int notificationExpiryTimeInMinutes;
+        int notificationExpiryTimeInMinutes = 0;
         // Self sign up scenario has two sub scenarios as verification via email or verification via SMS.
         if (RecoveryScenarios.SELF_SIGN_UP.equals(recoveryScenario) && RecoverySteps.CONFIRM_SIGN_UP
                 .equals(recoveryStep)) {
@@ -386,6 +435,41 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } else if (RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(IdentityUtil.getProperty(IdentityRecoveryConstants
                     .ConnectorConfig.TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME));
+        } else if (RecoveryScenarios.LITE_SIGN_UP.equals(recoveryScenario) &&
+                RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryStep)) {
+            // If the verification channel is email, use verification link timeout configs to validate.
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(recoveryData)) {
+                if (log.isDebugEnabled()) {
+                    String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
+                            + "and recovery step: %s", recoveryData, recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain));
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(recoveryData)) {
+                // If the verification channel is SMS, use SMS OTP timeout configs to validate.
+                if (log.isDebugEnabled()) {
+                    String message = String.format("Verification channel: %s was detected for recovery scenario: %s "
+                            + "and recovery step: %s", recoveryData, recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer
+                        .parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                                LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, tenantDomain));
+            } else {
+                // If the verification channel is not specified, verification will takes place according to default
+                // verification link timeout configs.
+                if (log.isDebugEnabled()) {
+                    String message = String.format("No verification channel for recovery scenario: %s and recovery " +
+                                    "step: %s .Therefore, using verification link default timeout configs",
+                            recoveryScenario, recoveryStep);
+                    log.debug(message);
+                }
+                notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain));
+            }
         } else {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.EXPIRY_TIME, tenantDomain));

@@ -7,6 +7,8 @@
     <bean class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer"/>
     <jaxrs:server id="services" address="/">
         <jaxrs:serviceBeans>
+            <bean class="org.wso2.carbon.identity.user.endpoint.IntrospectCodeApi"/>
+            <bean class="org.wso2.carbon.identity.user.endpoint.LiteApi"/>
             <bean class="org.wso2.carbon.identity.user.endpoint.MeApi"/>
             <bean class="org.wso2.carbon.identity.user.endpoint.PiInfoApi"/>
             <bean class="org.wso2.carbon.identity.user.endpoint.ResendCodeApi"/>

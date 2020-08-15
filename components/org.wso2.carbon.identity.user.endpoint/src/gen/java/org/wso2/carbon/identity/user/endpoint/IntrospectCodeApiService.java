@@ -5,6 +5,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.*;
 
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.CodeValidateInfoResponseDTO;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
 import javax.ws.rs.core.Response;
 
-public abstract class ValidateCodeApiService {
-    public abstract Response validateCodePost(CodeValidationRequestDTO code);
+public abstract class IntrospectCodeApiService {
+    public abstract Response introspectCodePost(CodeValidationRequestDTO code);
 }
 

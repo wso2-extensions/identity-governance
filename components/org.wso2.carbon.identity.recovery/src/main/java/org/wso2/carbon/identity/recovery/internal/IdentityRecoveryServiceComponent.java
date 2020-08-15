@@ -39,6 +39,8 @@ import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.LiteRegistrationConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
@@ -49,6 +51,7 @@ import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandle
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
+import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
@@ -96,6 +99,8 @@ public class IdentityRecoveryServiceComponent {
                     AccountConfirmationValidationHandler(), null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserSelfRegistrationHandler(),
                     null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new LiteUserRegistrationHandler(),
+                    null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserEmailVerificationHandler(),
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new AdminForcedPasswordResetHandler()
@@ -104,6 +109,8 @@ public class IdentityRecoveryServiceComponent {
                     new TenantRegistrationVerificationHandler(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new RecoveryConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new SelfRegistrationConfigImpl(),
+                    null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(), new LiteRegistrationConfigImpl(),
                     null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new
                     UserEmailVerificationConfigImpl(), null);

@@ -31,7 +31,7 @@ public class ValidateUsernameApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Check whether a given username is avaiable or not for self registration\n", notes = "This API is used to validate a given username\n", response = UsernameValidateInfoResponseDTO.class)
+    @io.swagger.annotations.ApiOperation(value = "Validate username\n", notes = "This API is used to check whether a given username is available for self registration.\n", response = UsernameValidateInfoResponseDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
         

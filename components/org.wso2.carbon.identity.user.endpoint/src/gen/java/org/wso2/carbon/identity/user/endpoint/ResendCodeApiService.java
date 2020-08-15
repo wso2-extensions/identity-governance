@@ -3,8 +3,8 @@ package org.wso2.carbon.identity.user.endpoint;
 import org.wso2.carbon.identity.user.endpoint.*;
 import org.wso2.carbon.identity.user.endpoint.dto.*;
 
-import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 
 import java.util.List;
 

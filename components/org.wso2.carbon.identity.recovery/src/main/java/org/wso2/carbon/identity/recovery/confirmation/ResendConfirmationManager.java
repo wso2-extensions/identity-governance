@@ -424,6 +424,15 @@ public class ResendConfirmationManager {
             recoveryDataDO.setRemainingSetIds(preferredChannel);
             notificationResponseBean.setNotificationChannel(preferredChannel);
         }
+
+        if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
+            String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
+            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                    verificationPendingEmailClaimValue)};
+            recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
+        }
+
         userRecoveryDataStore.store(recoveryDataDO);
 
         if (notificationInternallyManage) {

@@ -662,6 +662,27 @@ public class Utils {
     }
 
     /**
+     * Get whether this is tenant flow
+     * @param properties
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws URISyntaxException
+     */
+    public static boolean isLiteSignUp(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
+        if (properties == null) {
+            return false;
+        }
+        boolean isLiteSignUp = false;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.IS_LITE_SIGN_UP.equals(property.getKey())) {
+                isLiteSignUp = Boolean.parseBoolean(property.getValue());
+            }
+        }
+        return isLiteSignUp;
+    }
+
+    /**
      * Extracts the boolean value of 'isUserPortalURL' from the properties.
      *
      * @param properties from the request
