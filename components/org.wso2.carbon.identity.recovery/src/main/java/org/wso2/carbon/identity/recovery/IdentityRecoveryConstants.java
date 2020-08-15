@@ -56,6 +56,7 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String SMS_NOTIFICATION_CHANNEL = "SMS";
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
@@ -81,6 +82,8 @@ public class IdentityRecoveryConstants {
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
+    public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
+            "http://wso2.org/claims/identity/mobileNumber.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
@@ -90,6 +93,7 @@ public class IdentityRecoveryConstants {
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
     public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
+    public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -489,6 +493,10 @@ public class IdentityRecoveryConstants {
                 "EnableVerification";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.Email.VerificationCode" +
                 ".ExpiryTime";
+        public static final String ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE = "UserClaimUpdate.MobileNumber." +
+                "EnableVerification";
+        public static final String MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.MobileNumber." +
+                "VerificationCode.ExpiryTime";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
@@ -688,5 +696,22 @@ public class IdentityRecoveryConstants {
                 functionalityToTypeMapping.put(types.functionalityName, types);
             }
         }
+    }
+
+    /**
+     * Enum which contains scenarios where it is not required to trigger an SMS OTP verification.
+     */
+    public enum SkipMobileNumberVerificationOnUpdateStates {
+
+        // State maintained to skip re-triggering an SMS OTP verification when confirming the verification code.
+        SKIP_ON_CONFIRM,
+
+        /* State maintained to skip triggering an SMS OTP verification when the mobile number to be updated is the same
+        as the existing mobile number. */
+        SKIP_ON_EXISTING_MOBILE_NUM,
+
+        /* State maintained to skip triggering an SMS OTP verification when the update request contains other claims
+        without the mobile number claim. */
+        SKIP_ON_INAPPLICABLE_CLAIMS
     }
 }

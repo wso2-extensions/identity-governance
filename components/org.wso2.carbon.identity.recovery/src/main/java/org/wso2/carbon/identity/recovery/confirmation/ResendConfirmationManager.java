@@ -381,6 +381,9 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
+        }
         String secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.getRecoveryScenario
                 (recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
@@ -399,6 +402,12 @@ public class ResendConfirmationManager {
             properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
                     verificationPendingEmailClaimValue)};
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
+            String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
+            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                    verificationPendingMobileNumber)};
+            recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
         }
 
         userRecoveryDataStore.store(recoveryDataDO);

@@ -26,18 +26,23 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternalResponseDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.*;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
 /**
@@ -46,6 +51,7 @@ import javax.ws.rs.core.Response;
 public class MeApiServiceImpl extends MeApiService {
 
     private static final Log LOG = LogFactory.getLog(MeApiServiceImpl.class);
+    private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
 
     // Default value for enabling API response.
     private static final boolean ENABLE_DETAILED_API_RESPONSE = false;
@@ -105,6 +111,47 @@ public class MeApiServiceImpl extends MeApiService {
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
         return buildSuccessfulAPIResponse(notificationResponseBean);
+    }
+
+    @Override
+    public Response meResendCodePost(MeResendCodeRequestDTO meResendCodeRequestDTO) {
+
+        ResendCodeRequestDTO resendCodeRequestDTO = convertToResendCodeRequest(meResendCodeRequestDTO);
+        NotificationResponseBean notificationResponseBean = null;
+
+        String recoveryScenario = getRecoveryScenarioFromProperties(resendCodeRequestDTO.getProperties());
+        if (!StringUtils.isBlank(recoveryScenario)) {
+            notificationResponseBean = doResendConfirmationCode(recoveryScenario, notificationResponseBean,
+                    resendCodeRequestDTO);
+        }
+
+        if (notificationResponseBean == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
+    }
+
+    @Override
+    public Response meValidateCodePost(MeCodeValidationRequestDTO meCodeValidationRequestDTO) {
+
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
+        try {
+            // Get the map of properties in the request.
+            HashMap<String, String> propertyMap = Utils.getPropertiesMap(meCodeValidationRequestDTO.getProperties());
+            // Confirm verification code.
+            userSelfRegistrationManager.confirmVerificationCodeMe(meCodeValidationRequestDTO.getCode(), propertyMap);
+        } catch (IdentityRecoveryClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client Error while confirming verification code ", e);
+            }
+            Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
+        } catch (IdentityRecoveryException e) {
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+        } catch (Throwable throwable) {
+            Utils.handleInternalServerError(Constants.SERVER_ERROR,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+        }
+        return Response.accepted().build();
     }
 
     /**
@@ -191,6 +238,105 @@ public class MeApiServiceImpl extends MeApiService {
         } else {
             return Boolean.parseBoolean(enableDetailedResponseConfig);
         }
+    }
+
+    private String getRecoveryScenarioFromProperties(List<PropertyDTO> propertyDTOS) {
+
+        String recoveryScenario = null;
+        Map<String, List<PropertyDTO>> filteredList =
+                propertyDTOS.stream().collect(Collectors.groupingBy(PropertyDTO::getKey));
+
+        if (!filteredList.containsKey(RECOVERY_SCENARIO_KEY) || filteredList.get(RECOVERY_SCENARIO_KEY).size() > 1) {
+            return recoveryScenario;
+        } else {
+            recoveryScenario = filteredList.get(RECOVERY_SCENARIO_KEY).get(0).getValue();
+        }
+
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            return recoveryScenario;
+        }
+
+        return recoveryScenario;
+    }
+
+    private NotificationResponseBean doResendConfirmationCode(String recoveryScenario,
+                                                              NotificationResponseBean notificationResponseBean,
+                                                              ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO);
+        if (userRecoveryData == null) {
+            return notificationResponseBean;
+        }
+
+        ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
+
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE,
+                    resendCodeRequestDTO);
+        }
+
+        return notificationResponseBean;
+    }
+
+    private NotificationResponseBean setNotificationResponseBean(ResendConfirmationManager resendConfirmationManager,
+                                                                 String recoveryScenario, String recoveryStep,
+                                                                 String notificationType,
+                                                                 ResendCodeRequestDTO resendCodeRequestDTO) {
+
+        NotificationResponseBean notificationResponseBean = null;
+        try {
+            notificationResponseBean =
+                    resendConfirmationManager.resendConfirmationCode(Utils.getUser(resendCodeRequestDTO.getUser()),
+                            recoveryScenario, recoveryStep, notificationType,
+                            Utils.getProperties(resendCodeRequestDTO.getProperties()));
+        } catch (IdentityRecoveryException e) {
+            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+        }
+
+        return notificationResponseBean;
+    }
+
+    /**
+     * Converts MeResendCodeRequestDTO to ResendCodeRequestDTO with user details from context.
+     *
+     * @param meResendCodeRequestDTO meResendCodeRequestDTO.
+     * @return resendCodeRequestDTO.
+     */
+    private ResendCodeRequestDTO convertToResendCodeRequest(MeResendCodeRequestDTO meResendCodeRequestDTO) {
+
+        String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
+        if (meResendCodeRequestDTO != null) {
+            resendCodeRequestDTO.setProperties(meResendCodeRequestDTO.getProperties());
+        }
+        resendCodeRequestDTO.setUser(getUser(usernameFromContext));
+        return resendCodeRequestDTO;
+    }
+
+    /**
+     * Form UserDTO using username and tenant from context.
+     *
+     * @param usernameFromContext usernameFromContext.
+     * @return userDTO.
+     */
+    private UserDTO getUser(String usernameFromContext) {
+
+        String tenantFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername(UserCoreUtil.removeDomainFromName(usernameFromContext));
+        userDTO.setRealm(UserCoreUtil.extractDomainFromName(usernameFromContext));
+        userDTO.setTenantDomain(tenantFromContext);
+        return userDTO;
     }
 }
 
