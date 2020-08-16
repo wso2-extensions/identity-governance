@@ -24,11 +24,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
-import org.json.JSONObject;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -39,7 +36,6 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
-import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -61,8 +57,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
 import java.util.HashMap;
-
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -476,11 +470,8 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, StringUtils.EMPTY,
                         eventName, properties);
             } catch (IdentityRecoveryException e) {
-                String errorMsg = String.format("Error while sending password reset success notification to user : %s",
-                        userRecoveryData.getUser().getUserName());
-                log.error(errorMsg);
-                auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser().getUserName(),
-                        errorMsg, FrameworkConstants.AUDIT_SUCCESS);
+                log.error("Error while sending password reset success notification to user :" + userRecoveryData.
+                        getUser().getUserName());
             }
         }
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
@@ -489,8 +480,6 @@ public class NotificationPasswordRecoveryManager {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
-        auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser().getUserName(), null,
-                FrameworkConstants.AUDIT_SUCCESS);
     }
 
     /**
@@ -650,11 +639,7 @@ public class NotificationPasswordRecoveryManager {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user.getUserName(),
-                    null, FrameworkConstants.AUDIT_SUCCESS);
         } catch (IdentityEventException e) {
-            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user.getUserName(),
-                    e.getMessage(), FrameworkConstants.AUDIT_FAILED);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
@@ -722,30 +707,5 @@ public class NotificationPasswordRecoveryManager {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
 
-    }
-
-    private void auditPasswordRecovery(String action, String notificationChannel, String target, String errorMsg,
-                                       String result) {
-
-        JSONObject dataObject = new JSONObject();
-        dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
-        dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
-        dataObject.put(AuditConstants.NOTIFICATION_CHANNEL, notificationChannel);
-        if (AUDIT_FAILED.equals(result)) {
-            dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
-        }
-        Utils.createAuditMessage(action, target, dataObject, result);
-    }
-
-    private void auditPasswordReset(String action, String target, String errorMsg, String result) {
-
-        JSONObject dataObject = new JSONObject();
-        dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
-        dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
-
-        if (AUDIT_FAILED.equals(result)) {
-            dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
-        }
-        Utils.createAuditMessage(action, target, dataObject, result);
     }
 }
