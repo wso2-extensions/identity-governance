@@ -670,6 +670,7 @@
         <jacoco.version>0.7.9</jacoco.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
+        <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.6.4</powermock.version>
         <mokito.version>1.6.6</mokito.version>

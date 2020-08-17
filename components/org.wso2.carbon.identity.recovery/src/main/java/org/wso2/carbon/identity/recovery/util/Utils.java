@@ -24,6 +24,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -68,11 +70,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
+
 /**
  * Class which contains the Utils for user recovery.
  */
 public class Utils {
 
+    private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
@@ -199,7 +204,8 @@ public class Utils {
 
         if (userStoreManager != null) {
             Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
+                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim},
+                            UserCoreConstants.DEFAULT_PROFILE);
             if (claimsMap != null && !claimsMap.isEmpty()) {
                 claimValue = claimsMap.get(claim);
             }
@@ -222,7 +228,8 @@ public class Utils {
         }
 
         if (userStoreManager != null) {
-            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+            userStoreManager
+                    .deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
         }
     }
 
@@ -472,9 +479,11 @@ public class Utils {
                     return connectorConfig.getValue();
                 }
             }
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
         }
     }
 
@@ -487,7 +496,8 @@ public class Utils {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }
     }
 
@@ -511,7 +521,7 @@ public class Utils {
             return challengeSetUri;
         }
 
-        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" );
+        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/");
         return components.length > 1 ? components[1] : components[0];
     }
 
@@ -616,9 +626,9 @@ public class Utils {
         }
 
         if (StringUtils.isNotBlank(callbackURL)) {
-                URL url = new URL(callbackURL);
-                callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
-                        .toString();
+            URL url = new URL(callbackURL);
+            callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
+                    .toString();
         }
         return callbackURL;
     }
@@ -647,6 +657,7 @@ public class Utils {
 
     /**
      * Get whether this is tenant flow
+     *
      * @param properties
      * @return
      * @throws UnsupportedEncodingException
@@ -706,7 +717,8 @@ public class Utils {
                 .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
             throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage, exception);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage,
+                    exception);
         }
     }
 
@@ -729,7 +741,7 @@ public class Utils {
                     null, userStoreException);
         }
 
-        return ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
+        return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
                 .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
 
@@ -892,5 +904,24 @@ public class Utils {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty(IdentityRecoveryConstants
                 .RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS));
+    }
+
+    /**
+     * To create an audit message based on provided parameters.
+     *
+     * @param action     Activity
+     * @param target     Target affected by this activity.
+     * @param dataObject Information passed along with the request.
+     * @param result     Result value.
+     */
+    public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
+
+        String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        if (StringUtils.isBlank(loggedInUser)) {
+            loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+        }
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
+        AUDIT_LOG.info(String.format(AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
     }
 }
