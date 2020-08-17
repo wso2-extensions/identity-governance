@@ -38,6 +38,12 @@ public class RecoveryInformationDTO {
     private boolean isQuestionBasedRecoveryEnabled;
 
     /**
+     * Whether question based recovery is enabled for the user and the user has set answers for minimum no. of questions
+     * required for recovery.
+     */
+    private boolean isQuestionBasedRecoveryAllowedForUser;
+
+    /**
      * Whether notification based recovery is enabled for the user.
      */
     private boolean isNotificationBasedRecoveryEnabled;
@@ -60,6 +66,30 @@ public class RecoveryInformationDTO {
     public void setQuestionBasedRecoveryEnabled(boolean questionBasedRecoveryEnabled) {
 
         isQuestionBasedRecoveryEnabled = questionBasedRecoveryEnabled;
+    }
+
+    /**
+     * Get whether user has set answers for at least the minimum no. of questions required for recovery and whether
+     * question based recovery is enabled for the user.
+     *
+     * @return True if question based recovery is enabled for the user
+     */
+    public boolean isQuestionBasedRecoveryAllowedForUser() {
+
+        return isQuestionBasedRecoveryAllowedForUser;
+    }
+
+    /**
+     * Set whether question based recovery is enabled for the user and the user has set answers for minimum no. of
+     * questions required for recovery.
+     *
+     * @param questionBasedRecoveryAllowedForUser Question based recovery enabled and at least
+     *                                                                answers have been set for minimum no. of questions
+     *                                                                required.
+     */
+    public void setQuestionBasedRecoveryAllowedForUser(boolean questionBasedRecoveryAllowedForUser) {
+
+        isQuestionBasedRecoveryAllowedForUser = questionBasedRecoveryAllowedForUser;
     }
 
     /**

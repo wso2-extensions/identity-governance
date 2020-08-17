@@ -125,6 +125,9 @@ public class IdentityRecoveryConstants {
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
 
+    public static final String RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS =
+            "Recovery.Question.Password.SkipOnInsufficientAnswers";
+
     private IdentityRecoveryConstants() {
 
     }
