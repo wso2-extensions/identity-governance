@@ -43,8 +43,10 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -65,10 +67,12 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
 
@@ -923,5 +927,79 @@ public class Utils {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
         AUDIT_LOG.info(String.format(AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
+    }
+
+    /**
+     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
+     * UUID for other channels. OTP is generated based on the defined regex.
+     *
+     * @param channel          Recovery notification channel.
+     * @param tenantDomain     Tenant domain.
+     * @param recoveryScenario Recovery scenario.
+     * @return Secret key.
+     * @throws IdentityRecoveryServerException while getting password recovery sms otp regex.
+     */
+    public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
+            throws IdentityRecoveryServerException {
+
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
+            String charSet = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET;
+            int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
+            if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
+                String otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
+                if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
+                    throw new IdentityRecoveryServerException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+                }
+                String charsRegex = otpRegex.replaceAll("[{].*", "");
+                otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
+                // Generate a charset based on regex.
+                charSet = generateCharSet(charsRegex);
+            }
+            return generateSMSOTP(charSet, otpLength);
+        } else {
+            return UUIDGenerator.generateUUID();
+        }
+    }
+
+    /**
+     * Generate the compatible character set for the given regex.
+     *
+     * @param regex The regular expression.
+     * @return Character set for the given regex.
+     */
+    private static String generateCharSet(String regex) {
+
+        StringBuilder charSet = new StringBuilder();
+        if (regex.contains("A-Z")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
+        }
+        if (regex.contains("a-z")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
+        }
+        if (regex.contains("0-9")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
+        }
+        return charSet.toString();
+    }
+
+    /**
+     * Generate an OTP for password recovery via mobile Channel.
+     *
+     * @param charSet   Matching character set for the defined regex.
+     * @param otpLength Length of OTP.
+     * @return OTP.
+     */
+    private static String generateSMSOTP(String charSet, int otpLength) {
+
+        char[] chars = charSet.toCharArray();
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < otpLength; i++) {
+            sb.append(chars[rnd.nextInt(chars.length)]);
+        }
+        return sb.toString();
     }
 }

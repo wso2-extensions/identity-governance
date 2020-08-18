@@ -98,6 +98,8 @@ public class RecoveryConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery Link Expiry Time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "SMS OTP Expiry Time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                "SMS OTP regex");
 
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 "Notify when Recovery Success");
@@ -137,6 +139,9 @@ public class RecoveryConfigImplTest {
                 "Recovery callback URL regex");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "Expiration time of the SMS OTP code for password recovery");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                "Regex for SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, " +
+                        "0-9.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
                 "Challenge question answer regex");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
@@ -165,6 +170,7 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
@@ -190,6 +196,7 @@ public class RecoveryConfigImplTest {
         String testEnableNotificationInternallyManage = "true";
         String testExpiryTime = "1440";
         String testExpiryTimeSMSOTP = "1";
+        String smsOtpRegex = "[a-zA-Z0-9]{6}";
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
         String testForceChallengeQuestions = "false";
@@ -223,6 +230,8 @@ public class RecoveryConfigImplTest {
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 testExpiryTimeSMSOTP);
+        defaultPropertiesExpected
+                .put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, smsOtpRegex);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 testNotifySuccess);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
