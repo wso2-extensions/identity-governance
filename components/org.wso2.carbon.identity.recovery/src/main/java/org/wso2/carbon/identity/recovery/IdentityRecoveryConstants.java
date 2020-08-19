@@ -267,6 +267,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED("UNR-10001", "Username recovery is not enabled"),
         ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN("UNR-10002", "Empty tenant domain in username "
                 + "recovery request"),
+        ERROR_CODE_USERNAME_RECOVERY_VALIDATION_FAILED("UNR-10003",
+                "Username recovery validation failed for user account : '%s'"),
 
         // UAR - User Account Recovery.
         ERROR_CODE_INVALID_RECOVERY_CODE("UAR-10001", "Invalid recoveryCode : '%s'"),
@@ -285,6 +287,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_RECOVERY_SCENARIO("UAR-10011", "Invalid recovery scenario : '%s'"),
         ERROR_CODE_INVALID_RESEND_CODE("UAR-10012", "Invalid resend code : '%s'"),
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code : '%s'"),
+        ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
+                "User account recovery validation failed for user account : '%s'"),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims : '%s' "
@@ -309,6 +313,8 @@ public class IdentityRecoveryConstants {
                 "reset request"),
         ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("PWR-10008", "Empty tenant domain in password "
                 + "recovery request"),
+        ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED("PWR-10009",
+                "Password recovery validation failed for user account : '%s'"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
         ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX("PWR-15008", "SMS OTP regex pattern is not supported."),
