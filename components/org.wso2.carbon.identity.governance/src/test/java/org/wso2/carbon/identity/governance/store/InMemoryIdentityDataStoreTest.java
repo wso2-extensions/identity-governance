@@ -47,9 +47,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 @PrepareForTest({IdentityUtil.class, UserCoreUtil.class, PrivilegedCarbonContext.class})
-@PowerMockIgnore({"javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "javax.management.*"
-      //  , "org.wso2.carbon.context.*"
-})
+@PowerMockIgnore({"javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "javax.management.*"})
 public class InMemoryIdentityDataStoreTest {
 
     @Mock
