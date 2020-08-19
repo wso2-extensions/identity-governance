@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.account.suspension.notification.task.exception.A
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
+import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiversRetrievalUtil;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -87,11 +88,12 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
             String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
 
             if (!useIdentityClaimForLastLoginTime) {
-                lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
                 if (log.isDebugEnabled()) {
                     log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
                             " is enabled in identity.xml file hence using last login time as default claim");
                 }
+                return NotificationReceiversRetrievalUtil.getNotificationReceiversFromIdentityClaim(lookupMin,
+                        lookupMax, delayForSuspension, realmService, tenantDomain, userStoreDomain);
             }
             String lastLoginTimeAttribute = claimManager
                     .getAttributeName(userStoreDomain, lastLoginClaim);
