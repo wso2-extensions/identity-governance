@@ -16,6 +16,12 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.recovery.util.Utils;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Identity management related constants.
  */
@@ -588,47 +594,5 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an email verification when the update request contains other claims
         without the email address claim. */
         SKIP_ON_INAPPLICABLE_CLAIMS
-    }
-
-    /**
-     * Enum contains the codes and status messages for per-user functionality locking.
-     */
-    public enum RecoveryLockReasons {
-
-        PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED("FL_001", "Maximum attempts exceeded for password recovery.");
-
-        private final String functionalityLockCode;
-        private final String functionalityLockReason;
-
-        /**
-         * Per-user lock code constructor.
-         *
-         * @param functionalityLockCode   Lock reason code.
-         * @param functionalityLockReason Reason for the functionality lock.
-         */
-        RecoveryLockReasons(String functionalityLockCode, String functionalityLockReason) {
-
-            this.functionalityLockCode = functionalityLockCode;
-            this.functionalityLockReason = functionalityLockReason;
-        }
-
-        public String getFunctionalityLockReason() {
-
-            return functionalityLockReason;
-        }
-
-        public String getFunctionalityLockCode() {
-
-            return functionalityLockCode;
-        }
-    }
-
-    /**
-     * Constants used for masking the functionality types.
-     */
-    public static class FunctionalityTypes {
-
-        public static final String FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY =
-                "SecurityQuestionBasedPasswordRecovery";
     }
 }

@@ -52,6 +52,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -116,8 +117,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         if (isPerUserFunctionalityLockingEnabled) {
             boolean isQuestionBasedRecoveryLocked = getFunctionalityStatusOfUser(tenantDomain,
                     recoveryChannelInfoDTO.getUsername(),
-                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY)
-                    .getLockStatus();
+                    UserFunctionalityMgtConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                            .getFunctionalityIdentifier()).getLockStatus();
             recoveryInformationDTO.setQuestionBasedRecoveryEnabled(!isQuestionBasedRecoveryLocked);
         } else {
             recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
@@ -649,7 +650,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                                     .getMessage());
             if (isDetailedErrorMessagesEnabled) {
                 message.append(String.format("functionality: %s for %s.",
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
+                        UserFunctionalityMgtConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                                .getFunctionalityIdentifier(),
                         userName));
             }
             throw Utils.handleServerException(mappedErrorCode, message.toString(), null);

@@ -51,6 +51,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementServerException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
@@ -207,7 +208,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
         if (isPerUserFunctionalityLockingEnabled) {
             FunctionalityLockStatus functionalityLockStatus = getFunctionalityStatusOfUser(user,
-                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY);
+                    getSecurityQueFunctionalityIdentifier());
 
             if (functionalityLockStatus.getLockStatus()) {
                 StringBuilder message = new StringBuilder(
@@ -613,28 +614,25 @@ public class SecurityQuestionPasswordRecoveryManager {
         if (resetFailedLoginLockOutCount) {
             try {
                 userFunctionalityManager.unlock(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY);
+                        getSecurityQueFunctionalityIdentifier());
                 userFunctionalityManager.deleteAllPropertiesForUser(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY);
-            } catch (UserFunctionalityManagementServerException e) {
+                        getSecurityQueFunctionalityIdentifier());
+            } catch (UserFunctionalityManagementException e) {
                 throw Utils.handleFunctionalityLockMgtServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER, userId,
-                        tenantId, IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        isDetailedErrorMessagesEnabled);
+                        tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
             }
         } else {
             try {
                 Map<String, String> propertiesToUpdate = new HashMap<String, String>();
                 propertiesToUpdate.put(IdentityRecoveryConstants.FUNCTION_FAILED_ATTEMPTS_PROPERTY, "0");
                 userFunctionalityManager.setProperties(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        propertiesToUpdate);
-            } catch (UserFunctionalityManagementServerException e) {
+                        getSecurityQueFunctionalityIdentifier(), propertiesToUpdate);
+            } catch (UserFunctionalityManagementException e) {
                 throw Utils.handleFunctionalityLockMgtServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_PROPERTIES_FOR_FUNCTIONALITY,
                         userId,
-                        tenantId, IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        isDetailedErrorMessagesEnabled);
+                        tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
             }
         }
     }
@@ -759,7 +757,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         Map<String, String> configStoreProperties =
                 ConfigStoreFunctionalityLockPropertyHandler
                         .getInstance().getConfigStoreProperties(user.getTenantDomain(),
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY);
+                        getSecurityQueFunctionalityIdentifier());
 
         validateUserFunctionalityProperties(configStoreProperties);
 
@@ -778,12 +776,11 @@ public class SecurityQuestionPasswordRecoveryManager {
         Map<String, String> functionalityLockProperties;
         try {
             functionalityLockProperties = userFunctionalityManager.getProperties(userId, tenantId,
-                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY);
-        } catch (UserFunctionalityManagementServerException e) {
+                    getSecurityQueFunctionalityIdentifier());
+        } catch (UserFunctionalityManagementException e) {
             throw Utils.handleFunctionalityLockMgtServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_GET_PROPERTIES_FOR_FUNCTIONALITY, userId,
-                    tenantId, IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                    isDetailedErrorMessagesEnabled);
+                    tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
         }
         if (functionalityLockProperties.isEmpty()) {
             functionalityLockProperties.put(IdentityRecoveryConstants.FUNCTION_LOCKOUT_COUNT_PROPERTY,
@@ -794,13 +791,11 @@ public class SecurityQuestionPasswordRecoveryManager {
                     .put(IdentityRecoveryConstants.FUNCTION_MAX_ATTEMPTS_PROPERTY, String.valueOf(maxAttempts));
             try {
                 userFunctionalityManager.setProperties(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        functionalityLockProperties);
-            } catch (UserFunctionalityManagementServerException e) {
+                        getSecurityQueFunctionalityIdentifier(), functionalityLockProperties);
+            } catch (UserFunctionalityManagementException e) {
                 throw Utils.handleFunctionalityLockMgtServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_ADD_PROPERTIES_FOR_FUNCTIONALITY, userId,
-                        tenantId, IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        isDetailedErrorMessagesEnabled);
+                        tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
             }
         } else {
             if (NumberUtils.isNumber(
@@ -825,20 +820,17 @@ public class SecurityQuestionPasswordRecoveryManager {
                 updatedFunctionalityLockProperties.put(IdentityRecoveryConstants.FUNCTION_LOCKOUT_COUNT_PROPERTY,
                         String.valueOf(failedLoginLockoutCountValue + 1));
                 userFunctionalityManager.lock(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        unlockTimePropertyValue,
-                        IdentityRecoveryConstants.RecoveryLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
+                        getSecurityQueFunctionalityIdentifier(), unlockTimePropertyValue,
+                        UserFunctionalityMgtConstants.FunctionalityLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
                                 .getFunctionalityLockCode(),
-                        IdentityRecoveryConstants.RecoveryLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
+                        UserFunctionalityMgtConstants.FunctionalityLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
                                 .getFunctionalityLockReason());
                 userFunctionalityManager.setProperties(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        updatedFunctionalityLockProperties);
+                       getSecurityQueFunctionalityIdentifier(), updatedFunctionalityLockProperties);
             } catch (UserFunctionalityManagementServerException e) {
                 throw Utils.handleFunctionalityLockMgtServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_LOCK_FUNCTIONALITY_FOR_USER, userId,
-                        tenantId, IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        isDetailedErrorMessagesEnabled);
+                        tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
             } catch (UserFunctionalityManagementException e) {
                 e.printStackTrace();
             }
@@ -847,7 +839,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                             .getMessage());
             if (isDetailedErrorMessagesEnabled) {
                 message.append(": ")
-                        .append(IdentityRecoveryConstants.RecoveryLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
+                        .append(UserFunctionalityMgtConstants.FunctionalityLockReasons.PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED
                                 .getFunctionalityLockReason());
             }
             throw IdentityException.error(IdentityRecoveryClientException.class,
@@ -860,14 +852,11 @@ public class SecurityQuestionPasswordRecoveryManager {
                 propertiesToUpdate.put(IdentityRecoveryConstants.FUNCTION_FAILED_ATTEMPTS_PROPERTY,
                         String.valueOf(currentAttempts + 1));
                 userFunctionalityManager.setProperties(userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        propertiesToUpdate);
-            } catch (UserFunctionalityManagementServerException e) {
+                        getSecurityQueFunctionalityIdentifier(), propertiesToUpdate);
+            } catch (UserFunctionalityManagementException e) {
                 throw Utils.handleFunctionalityLockMgtServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_PROPERTIES_FOR_FUNCTIONALITY,
-                        userId, tenantId,
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        isDetailedErrorMessagesEnabled);
+                        userId, tenantId, getSecurityQueFunctionalityIdentifier(), isDetailedErrorMessagesEnabled);
             }
         }
     }
@@ -958,10 +947,15 @@ public class SecurityQuestionPasswordRecoveryManager {
                                     .getMessage());
             if (isDetailedErrorMessagesEnabled) {
                 message.append(String.format("functionalityIdentifier: %s for %s.",
-                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY,
-                        user.getUserName()));
+                        getSecurityQueFunctionalityIdentifier(), user.getUserName()));
             }
             throw Utils.handleServerException(mappedErrorCode, message.toString(), null);
         }
+    }
+
+    private String getSecurityQueFunctionalityIdentifier(){
+
+        return UserFunctionalityMgtConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                .getFunctionalityIdentifier();
     }
 }
