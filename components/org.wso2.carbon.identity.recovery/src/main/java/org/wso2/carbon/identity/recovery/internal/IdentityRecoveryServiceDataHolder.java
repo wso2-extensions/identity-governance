@@ -17,11 +17,13 @@
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -37,7 +39,9 @@ public class IdentityRecoveryServiceDataHolder {
     private RegistryResourceMgtService resourceMgtService;
     private AccountLockService accountLockService;
     private ConsentManager consentManager;
+    private ConfigurationManager configurationManager;
     private ConsentUtilityService consentUtilityService;
+    private UserFunctionalityManager userFunctionalityManagerService;
     public static IdentityRecoveryServiceDataHolder getInstance() {
         return instance;
     }
@@ -139,5 +143,45 @@ public class IdentityRecoveryServiceDataHolder {
     public void setConsentUtilityService(ConsentUtilityService consentUtilityService) {
 
         this.consentUtilityService = consentUtilityService;
+    }
+
+    /**
+     * Get user functionality manager service.
+     *
+     * @return User Functionality Manager service.
+     */
+    public UserFunctionalityManager getUserFunctionalityManagerService() {
+
+        return userFunctionalityManagerService;
+    }
+
+    /**
+     * Set User Functionality Manager service.
+     *
+     * @param userFunctionalityManagerService User functionality manager object.
+     */
+    public void setUserFunctionalityManagerService(UserFunctionalityManager userFunctionalityManagerService) {
+
+        this.userFunctionalityManagerService = userFunctionalityManagerService;
+    }
+
+    /**
+     * Get the ConfigurationManager object held at the data holder.
+     *
+     * @return Configuration manger object.
+     */
+    public ConfigurationManager getConfigurationManager() {
+
+        return this.configurationManager;
+    }
+
+    /**
+     * Set the ConfigurationManager.
+     *
+     * @param configurationManager configuration manger object.
+     */
+    public void setConfigurationManager(ConfigurationManager configurationManager) {
+
+        this.configurationManager = configurationManager;
     }
 }

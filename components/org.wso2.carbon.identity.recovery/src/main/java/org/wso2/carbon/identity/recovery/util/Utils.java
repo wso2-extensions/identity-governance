@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -52,6 +53,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -234,8 +236,7 @@ public class Utils {
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
-                                                                                error, String data)
-            throws IdentityRecoveryServerException {
+                                                                                error, String data) {
 
         String errorDescription;
         if (StringUtils.isNotBlank(data)) {
@@ -246,6 +247,21 @@ public class Utils {
 
         return IdentityException.error(
                 IdentityRecoveryServerException.class, error.getCode(), errorDescription);
+    }
+
+    public static IdentityRecoveryServerException handleFunctionalityLockMgtServerException(
+            IdentityRecoveryConstants.ErrorMessages error, String userId, int tenantId, String functionalityIdentifier,
+            boolean isDetailedErrorMessagesEnabled) throws IdentityRecoveryServerException {
+
+        String mappedErrorCode = Utils.prependOperationScenarioToErrorCode(error.getCode(),
+                IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
+        StringBuilder message = new StringBuilder(error.getMessage());
+        if (isDetailedErrorMessagesEnabled) {
+            message.append(
+                    String.format("functionality: %s \nuserId: %s \ntenantId: %d.", functionalityIdentifier, userId,
+                            tenantId));
+        }
+        throw handleServerException(mappedErrorCode, message.toString(), null);
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -892,6 +908,62 @@ public class Utils {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
         return user;
+    }
+
+    /**
+     * Checks whether the per-user functionality locking is enabled.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isPerUserFunctionalityLockingEnabled() {
+
+        return Boolean.parseBoolean(
+                IdentityUtil.getProperty(UserFunctionalityMgtConstants.ENABLE_PER_USER_FUNCTIONALITY_LOCKING));
+    }
+
+    /**
+     * Checks whether detailed error messages are enabled.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isDetailedErrorResponseEnabled() {
+
+        return Boolean
+                .parseBoolean(IdentityUtil.getProperty(IdentityRecoveryConstants.ENABLE_DETAILED_ERROR_RESPONSE));
+    }
+
+    /**
+     * Get the unique user ID of a user given the tenant domain and the user name.
+     *
+     * @param tenantId Tenant Id of the user.
+     * @param userName Username of the user.
+     * @return Unique identifier of the user.
+     */
+    public static String getUserId(String userName, int tenantId)
+            throws IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
+        String userId;
+
+        try {
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            if (realmService == null || realmService.getTenantUserRealm(tenantId) == null) {
+                throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, String.valueOf(tenantId));
+            }
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        } catch (UserStoreException | IdentityRecoveryServerException e) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, String.valueOf(tenantId), e);
+        }
+        try {
+            userId = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(userName);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+        }
+        return userId;
     }
 
     /**

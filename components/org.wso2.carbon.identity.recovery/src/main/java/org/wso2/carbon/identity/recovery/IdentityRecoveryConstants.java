@@ -62,8 +62,16 @@ public class IdentityRecoveryConstants {
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
 
+    public static final String FUNCTION_LOCKOUT_COUNT_PROPERTY = "LockoutCount";
+    public static final String FUNCTION_FAILED_ATTEMPTS_PROPERTY = "FailedAttempts";
+    public static final String FUNCTION_MAX_ATTEMPTS_PROPERTY = "MaxAttempts";
+    public static final String FUNCTION_LOCKOUT_TIME_PROPERTY = "LockoutTime";
+    public static final String FUNCTION_LOGIN_FAIL_TIMEOUT_RATIO_PROPERTY = "TimeoutRatio";
+
     public static final String USER_NEW_CHALLENGE_ANSWERS = "userNewChallengeAnswers";
     public static final String USER_OLD_CHALLENGE_ANSWERS = "userOldChallengeAnswers";
+
+    public static final String FUNCTIONALITY_LOCK_RESOURCE_TYPE = "functionalityLock";
 
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
@@ -120,7 +128,7 @@ public class IdentityRecoveryConstants {
     public static final String USER_ACCOUNT_RECOVERY = "UAR";
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
-
+    public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
     // Recovery code given at the username and password recovery initiation.
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
@@ -221,7 +229,20 @@ public class IdentityRecoveryConstants {
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
-
+        ERROR_CODE_FAILED_TO_LOCK_FUNCTIONALITY_FOR_USER("55001", "Server error occurred while locking functionality."),
+        ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER("55002", "Server error occurred while unlocking " +
+                "functionality."),
+        ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY("55003", "Error occurred while fetching lock status."),
+        ERROR_CODE_FAILED_TO_GET_PROPERTIES_FOR_FUNCTIONALITY("55004", "Error occurred while fetching functionality " +
+                "lock properties."),
+        ERROR_CODE_FAILED_TO_ADD_PROPERTIES_FOR_FUNCTIONALITY("55005", "Error occurred while adding functionality " +
+                "lock properties."),
+        ERROR_CODE_FAILED_TO_UPDATE_PROPERTIES_FOR_FUNCTIONALITY("55006", "Error occurred while updating " +
+                "functionality lock property."),
+        ERROR_CODE_FAILED_TO_ADD_RESOURCE_TYPE_TO_CONFIG_STORE("55007", "Error occurred while adding resource type to" +
+                " config store."),
+        ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE("55008", "Error occurred while fetching " +
+                "resource from config store."),
         // USR - User Self Registration.
         ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS("USR-10001",
                 "User specified communication channel is not supported by the server"),
@@ -288,7 +309,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
-
+        ERROR_CODE_SECURITY_QUESTION_BASED_PWR_LOCKED("PWR-15007", "Security question based password recovery" +
+                " is locked."),
         // Resend Account Confirmation.
         ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request"),
 
@@ -566,5 +588,47 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an email verification when the update request contains other claims
         without the email address claim. */
         SKIP_ON_INAPPLICABLE_CLAIMS
+    }
+
+    /**
+     * Enum contains the codes and status messages for per-user functionality locking.
+     */
+    public enum RecoveryLockReasons {
+
+        PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED("FL_001", "Maximum attempts exceeded for password recovery.");
+
+        private final String functionalityLockCode;
+        private final String functionalityLockReason;
+
+        /**
+         * Per-user lock code constructor.
+         *
+         * @param functionalityLockCode   Lock reason code.
+         * @param functionalityLockReason Reason for the functionality lock.
+         */
+        RecoveryLockReasons(String functionalityLockCode, String functionalityLockReason) {
+
+            this.functionalityLockCode = functionalityLockCode;
+            this.functionalityLockReason = functionalityLockReason;
+        }
+
+        public String getFunctionalityLockReason() {
+
+            return functionalityLockReason;
+        }
+
+        public String getFunctionalityLockCode() {
+
+            return functionalityLockCode;
+        }
+    }
+
+    /**
+     * Constants used for masking the functionality types.
+     */
+    public static class FunctionalityTypes {
+
+        public static final String FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY =
+                "SecurityQuestionBasedPasswordRecovery";
     }
 }
