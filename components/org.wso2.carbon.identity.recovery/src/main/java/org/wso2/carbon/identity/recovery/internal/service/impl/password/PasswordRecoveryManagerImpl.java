@@ -52,7 +52,6 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
-import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -113,16 +112,6 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         if (isNotificationBasedRecoveryEnabled) {
             recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         }
-        // Check if question based password recovery is unlocked in per-user functionality locking mode.
-        if (isPerUserFunctionalityLockingEnabled) {
-            boolean isQuestionBasedRecoveryLocked = getFunctionalityStatusOfUser(tenantDomain,
-                    recoveryChannelInfoDTO.getUsername(),
-                    UserFunctionalityMgtConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
-                            .getFunctionalityIdentifier()).getLockStatus();
-            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(!isQuestionBasedRecoveryLocked);
-        } else {
-            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
-        }
 
         if (isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled) {
             recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
@@ -131,6 +120,16 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled);
         }
 
+        // Check if question based password recovery is unlocked in per-user functionality locking mode.
+        if (isPerUserFunctionalityLockingEnabled) {
+            boolean isQuestionBasedRecoveryLocked = getFunctionalityStatusOfUser(tenantDomain,
+                    recoveryChannelInfoDTO.getUsername(),
+                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY)
+                    .getLockStatus();
+            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(!isQuestionBasedRecoveryLocked);
+        } else {
+            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
+        }
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }
