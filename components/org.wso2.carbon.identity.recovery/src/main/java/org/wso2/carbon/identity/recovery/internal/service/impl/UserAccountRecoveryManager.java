@@ -43,7 +43,6 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
-import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -68,6 +67,7 @@ public class UserAccountRecoveryManager {
             NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
     private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
     private static final String NOTIFICATION_BASED_PW_RECOVERY_SMS = "NOTIFICATION_BASED_PW_RECOVERY_SMS";
+    private static final String FUNCTIONALITY_PREFIX = "FUNCTIONALITY_";
 
 
     /**
@@ -595,12 +595,12 @@ public class UserAccountRecoveryManager {
                                           RecoveryScenarios recoveryScenarios) throws IdentityRecoveryServerException {
 
         if (PER_USER_FUNCTIONALITY_LOCKING_ENABLED) {
-            String functionalityType = "FUNCTIONALITY_" + recoveryScenarios.name() + "_" + channelType;
+            String functionalityType = FUNCTIONALITY_PREFIX + recoveryScenarios.name() + "_" + channelType;
             // Check whether the functionality is locked ot not. If it is locked, stop from sending that channel
             // for recovery.
-            if( UserFunctionalityMgtConstants.FunctionalityTypes.getFunctionality(functionalityType) != null){
-                String functionalityIdentifier =
-                        UserFunctionalityMgtConstants.FunctionalityTypes.getFunctionality(functionalityType).getFunctionalityIdentifier();
+            if (IdentityRecoveryConstants.FunctionalityTypes.getFunctionality(functionalityType) != null) {
+                String functionalityIdentifier = IdentityRecoveryConstants.FunctionalityTypes.
+                        getFunctionality(functionalityType).getFunctionalityIdentifier();
                 FunctionalityLockStatus functionalityLockStatus = getFunctionalityStatusOfUser(username, tenantDomain,
                         functionalityIdentifier);
                 return functionalityLockStatus.getLockStatus();

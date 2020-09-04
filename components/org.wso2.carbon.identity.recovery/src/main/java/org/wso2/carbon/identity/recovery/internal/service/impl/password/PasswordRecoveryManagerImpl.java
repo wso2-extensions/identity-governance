@@ -112,20 +112,12 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         if (isNotificationBasedRecoveryEnabled) {
             recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         }
-
-        if (isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled) {
-            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
-                    isMinNoOfRecoveryQuestionsAnswered(username, tenantDomain));
-        } else {
-            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled);
-        }
-
         // Check if question based password recovery is unlocked in per-user functionality locking mode.
         if (isPerUserFunctionalityLockingEnabled) {
             boolean isQuestionBasedRecoveryLocked = getFunctionalityStatusOfUser(tenantDomain,
                     recoveryChannelInfoDTO.getUsername(),
-                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY)
-                    .getLockStatus();
+                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                            .getFunctionalityIdentifier()).getLockStatus();
             recoveryInformationDTO.setQuestionBasedRecoveryEnabled(!isQuestionBasedRecoveryLocked);
         } else {
             recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
@@ -649,9 +641,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                                     .getMessage());
             if (isDetailedErrorMessagesEnabled) {
                 message.append(String.format("functionality: %s for %s.",
-                        UserFunctionalityMgtConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
-                                .getFunctionalityIdentifier(),
-                        userName));
+                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                                .getFunctionalityIdentifier(), userName));
             }
             throw Utils.handleServerException(mappedErrorCode, message.toString(), null);
         }
