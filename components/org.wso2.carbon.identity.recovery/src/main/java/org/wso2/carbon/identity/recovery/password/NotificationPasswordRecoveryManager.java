@@ -53,13 +53,11 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
@@ -132,7 +130,8 @@ public class NotificationPasswordRecoveryManager {
         checkAccountLockedStatus(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
-        String secretKey = generateSecretKey(notificationChannel);
+        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
@@ -152,38 +151,6 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(user, String.valueOf(notify), null, null, properties,
                 IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION);
         return notificationResponseBean;
-    }
-
-    /**
-     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
-     * UUID for other channels.
-     *
-     * @param channel Recovery notification channel.
-     * @return Secret key
-     */
-    private String generateSecretKey(String channel) {
-
-        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            return generateSMSOTP();
-        } else {
-            return UUIDGenerator.generateUUID();
-        }
-    }
-
-    /**
-     * Generate an OTP for password recovery via mobile Channel.
-     *
-     * @return OTP
-     */
-    private String generateSMSOTP() {
-
-        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
     }
 
     /**
