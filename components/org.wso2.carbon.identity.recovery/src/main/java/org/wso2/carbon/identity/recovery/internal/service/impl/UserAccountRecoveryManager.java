@@ -49,8 +49,6 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
-
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,9 +66,7 @@ public class UserAccountRecoveryManager {
     private static final NotificationChannels[] notificationChannels = {
             NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
     private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
-    private static final String NOTIFICATION_BASED_PW_RECOVERY_SMS = "NOTIFICATION_BASED_PW_RECOVERY_SMS";
     private static final String FUNCTIONALITY_PREFIX = "FUNCTIONALITY_";
-
 
     /**
      * Constructor.
