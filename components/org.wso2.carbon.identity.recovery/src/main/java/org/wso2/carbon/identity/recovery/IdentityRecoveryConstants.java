@@ -117,6 +117,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFY_CHANNEL_LIST_SEPARATOR = ",";
     public static final String CHANNEL_ATTRIBUTE_SEPARATOR = ":";
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
+    public static final String VALID_SMS_OTP_REGEX_PATTERN = "^\\[((a-z)|(A-Z)|(0-9)){1,3}\\]\\{[0-9]+\\}$";
     public static final String EXCEPTION_SCENARIO_SEPARATOR = "-";
 
     public static final String USE_LEGACY_API_PROPERTY_KEY = "useLegacyAPI";
@@ -311,6 +314,7 @@ public class IdentityRecoveryConstants {
                 + "recovery request"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
+        ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX("PWR-15008", "SMS OTP regex pattern is not supported."),
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
         ERROR_CODE_SECURITY_QUESTION_BASED_PWR_LOCKED("PWR-15007", "Security question based password recovery" +
                 " is locked."),
@@ -429,6 +433,7 @@ public class IdentityRecoveryConstants {
 
         public static final String PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME =
                 "Recovery.Notification.Password.ExpiryTime.smsOtp";
+        public static final String PASSWORD_RECOVERY_SMS_OTP_REGEX = "Recovery.Notification.Password.smsOtp.Regex";
         public static final String RESEND_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.ResendCode";
         public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
