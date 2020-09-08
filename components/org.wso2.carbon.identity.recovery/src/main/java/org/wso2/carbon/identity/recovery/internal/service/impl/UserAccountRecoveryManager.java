@@ -121,8 +121,7 @@ public class UserAccountRecoveryManager {
                 notificationChannels = getExternalNotificationChannelList();
             }
             // Validate whether the user account is eligible for account recovery.
-            checkUserValidityForAccountRecovery(IdentityEventConstants.Event.PRE_ACCOUNT_RECOVERY, user,
-                    recoveryScenario, notificationChannels, properties);
+            checkUserValidityForAccountRecovery(user, recoveryScenario, notificationChannels, properties);
             // This flow will be initiated only if the user has any verified channels.
             String recoveryCode = UUIDGenerator.generateUUID();
             return buildUserRecoveryInformationResponseDTO(username, recoveryCode,
@@ -163,14 +162,13 @@ public class UserAccountRecoveryManager {
     /**
      * Check whether the user account is eligible for account recovery.
      *
-     * @param eventName                    Name of the event.
      * @param user                         The user.
      * @param recoveryScenario             Account recovery scenario.
      * @param recoveryNotificationChannels Notification channel.
      * @param metaProperties               Meta details.
      * @throws IdentityRecoveryException If account doesn't satisfy the conditions to recover.
      */
-    private void checkUserValidityForAccountRecovery(String eventName, User user, RecoveryScenarios recoveryScenario,
+    private void checkUserValidityForAccountRecovery(User user, RecoveryScenarios recoveryScenario,
                                                      List<NotificationChannel> recoveryNotificationChannels,
                                                      Map<String, String> metaProperties)
             throws IdentityRecoveryException {
@@ -188,7 +186,7 @@ public class UserAccountRecoveryManager {
                 }
             }
         }
-        Event identityMgtEvent = new Event(eventName, properties);
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_ACCOUNT_RECOVERY, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
