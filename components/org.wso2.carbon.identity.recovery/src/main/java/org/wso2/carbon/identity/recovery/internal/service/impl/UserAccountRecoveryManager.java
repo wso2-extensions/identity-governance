@@ -26,6 +26,9 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -43,14 +46,20 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
+import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.wso2.carbon.identity.recovery.RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY;
+import static org.wso2.carbon.identity.recovery.RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY;
+import static org.wso2.carbon.identity.recovery.RecoveryScenarios.USERNAME_RECOVERY;
 
 /**
  * Manager class which can be used to recover user account with available verified communication channels for a user.
@@ -97,9 +106,9 @@ public class UserAccountRecoveryManager {
         // Retrieve the user who matches the given set of claims.
         String username = getUsernameByClaims(claims, tenantDomain);
         if (StringUtils.isNotEmpty(username)) {
-
+            User user = Utils.buildUser(username, tenantDomain);
             // If the account is locked or disabled, do not let the user to recover the account.
-            checkAccountLockedStatus(Utils.buildUser(username, tenantDomain));
+            checkAccountLockedStatus(user);
             List<NotificationChannel> notificationChannels;
             // Get the notification management mechanism.
             boolean isNotificationsInternallyManaged = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
@@ -111,6 +120,8 @@ public class UserAccountRecoveryManager {
             } else {
                 notificationChannels = getExternalNotificationChannelList();
             }
+            // Validate whether the user account is eligible for account recovery.
+            checkUserValidityForAccountRecovery(user, recoveryScenario, notificationChannels, properties);
             // This flow will be initiated only if the user has any verified channels.
             String recoveryCode = UUIDGenerator.generateUUID();
             return buildUserRecoveryInformationResponseDTO(username, recoveryCode,
@@ -145,6 +156,56 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
             throw Utils.handleClientException(errorCode,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getMessage(), user.getUserName());
+        }
+    }
+
+    /**
+     * Check whether the user account is eligible for account recovery.
+     *
+     * @param user                         The user.
+     * @param recoveryScenario             Account recovery scenario.
+     * @param recoveryNotificationChannels Notification channel.
+     * @param metaProperties               Meta details.
+     * @throws IdentityRecoveryException If account doesn't satisfy the conditions to recover.
+     */
+    private void checkUserValidityForAccountRecovery(User user, RecoveryScenarios recoveryScenario,
+                                                     List<NotificationChannel> recoveryNotificationChannels,
+                                                     Map<String, String> metaProperties)
+            throws IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, getUserStoreManager(user));
+        properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, recoveryNotificationChannels);
+
+        if (MapUtils.isNotEmpty(metaProperties)) {
+            for (Map.Entry<String, String> metaProperty : metaProperties.entrySet()) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_ACCOUNT_RECOVERY, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while validating user account " + user.getUserName() +
+                        " for account recovery.");
+            }
+            String errorMessage = e.getMessage();
+            String errorCode = IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED.getCode();
+            if (USERNAME_RECOVERY.equals(recoveryScenario)) {
+                errorCode = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USERNAME_RECOVERY_VALIDATION_FAILED
+                        .getCode();
+            } else if (NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario) ||
+                    QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)) {
+                errorCode = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED
+                        .getCode();
+            }
+            throw Utils.handleClientException(errorCode, errorMessage, user.getUserName());
         }
     }
 
@@ -440,6 +501,35 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
         }
         return userStoreManager;
+    }
+
+    /**
+     * Get the userstore manager for the user.
+     *
+     * @param user User.
+     * @return Userstore manager.
+     * @throws IdentityRecoveryException Error getting the userstore manager.
+     */
+    private UserStoreManager getUserStoreManager(User user) throws IdentityRecoveryException {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            UserRealm tenantUserRealm = realmService.getTenantUserRealm(IdentityTenantUtil.
+                    getTenantId(user.getTenantDomain()));
+            if (IdentityUtil.getPrimaryDomainName().equals(user.getUserStoreDomain())) {
+                return (UserStoreManager) tenantUserRealm.getUserStoreManager();
+            }
+            return ((UserStoreManager) tenantUserRealm.getUserStoreManager())
+                    .getSecondaryUserStoreManager(user.getUserStoreDomain());
+        } catch (UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                String error = String.format("Error retrieving the user store manager for the user : %s",
+                        user.getUserName());
+                log.debug(error, e);
+            }
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
+        }
     }
 
     /**
