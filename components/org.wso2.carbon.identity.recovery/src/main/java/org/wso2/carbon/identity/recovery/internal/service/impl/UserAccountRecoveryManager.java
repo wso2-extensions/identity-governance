@@ -42,10 +42,15 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
+import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +67,10 @@ public class UserAccountRecoveryManager {
     private static final String FORWARD_SLASH = "/";
     private static final NotificationChannels[] notificationChannels = {
             NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
+    private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
+    private static final String NOTIFICATION_BASED_PW_RECOVERY_SMS = "NOTIFICATION_BASED_PW_RECOVERY_SMS";
+    private static final String FUNCTIONALITY_PREFIX = "FUNCTIONALITY_";
+
 
     /**
      * Constructor.
@@ -107,7 +116,8 @@ public class UserAccountRecoveryManager {
             /* If the notification is internally managed, then notification channels available for the user needs to
             be retrieved. If external notifications are enabled, external channel list should be returned.*/
             if (isNotificationsInternallyManaged) {
-                notificationChannels = getInternalNotificationChannelList(username, tenantDomain);
+                notificationChannels = getInternalNotificationChannelList(username, tenantDomain,
+                        recoveryScenario);
             } else {
                 notificationChannels = getExternalNotificationChannelList();
             }
@@ -239,7 +249,8 @@ public class UserAccountRecoveryManager {
      * @throws IdentityRecoveryClientException No notification channels available for the user.
      * @throws IdentityRecoveryException       If an error occurred while getting user claim values.
      */
-    private List<NotificationChannel> getInternalNotificationChannelList(String username, String tenantDomain)
+    private List<NotificationChannel> getInternalNotificationChannelList(String username, String tenantDomain,
+                                                                         RecoveryScenarios recoveryScenarios)
             throws IdentityRecoveryClientException, IdentityRecoveryException {
 
         // Create a list of required claims that needs to be retrieved from the user attributes.
@@ -251,7 +262,8 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_NOTIFICATION_CHANNELS_FOR_USER, null);
         }
         // Get the channel list with details.
-        List<NotificationChannel> notificationChannels = getNotificationChannelDetails(claimValues);
+        List<NotificationChannel> notificationChannels = getNotificationChannelDetails(username, tenantDomain,
+                claimValues, recoveryScenarios);
         if (notificationChannels.size() == 0) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_VERIFIED_CHANNELS_FOR_USER, null);
@@ -533,7 +545,8 @@ public class UserAccountRecoveryManager {
      * @param claimValues Claim values related to the notification channels
      * @return Verified notification channels for the user.
      */
-    private List<NotificationChannel> getNotificationChannelDetails(Map<String, String> claimValues) {
+    private List<NotificationChannel> getNotificationChannelDetails(String username, String tenantDomain, Map<String,
+            String> claimValues, RecoveryScenarios recoveryScenarios) throws IdentityRecoveryServerException {
 
         // Check whether the user is self registered user.
         boolean isSelfRegisteredUser = isSelfSignUpUser(claimValues.get(IdentityRecoveryConstants.USER_ROLES_CLAIM));
@@ -542,11 +555,13 @@ public class UserAccountRecoveryManager {
         for (NotificationChannels channel : notificationChannels) {
             String channelValue = claimValues.get(channel.getClaimUri());
             boolean channelVerified = Boolean.parseBoolean(claimValues.get(channel.getVerifiedClaimUrl()));
+            boolean isFunctionalityLocked = isFunctionalityLocked(username, tenantDomain, channel.getChannelType(),
+                    recoveryScenarios);
             NotificationChannel channelDataModel = new NotificationChannel();
 
             // If the user is self registered, then user has to have the verified channel claims. Check whether channel
             // is verified and not empty.
-            if (isSelfRegisteredUser && channelVerified && StringUtils.isNotEmpty(channelValue)) {
+            if (!isFunctionalityLocked && isSelfRegisteredUser && channelVerified && StringUtils.isNotEmpty(channelValue)) {
                 channelDataModel.setType(channel.getChannelType());
                 channelDataModel.setChannelValue(channelValue);
                 // Check whether the preferred channel matches the given channel.
@@ -554,7 +569,7 @@ public class UserAccountRecoveryManager {
                     channelDataModel.setPreferredStatus(true);
                 }
                 verifiedChannels.add(channelDataModel);
-            } else if (StringUtils.isNotEmpty(channelValue)) {
+            } else if (!isFunctionalityLocked && StringUtils.isNotEmpty(channelValue)) {
                 channelDataModel.setType(channel.getChannelType());
                 channelDataModel.setChannelValue(channelValue);
                 // Check whether the preferred channel matches the given channel.
@@ -565,6 +580,65 @@ public class UserAccountRecoveryManager {
             }
         }
         return verifiedChannels;
+    }
+
+    /**
+     * Verify whether the functionality is locked or not and return true if it is locked. Else return false.
+     *
+     * @param username          Username.
+     * @param tenantDomain      TenantDomain.
+     * @param channelType       ChannelType (SMS or EMail).
+     * @param recoveryScenarios RecoveryScenarios.
+     * @return Return true if it is locked. Else return false.
+     * @throws IdentityRecoveryServerException
+     */
+    private boolean isFunctionalityLocked(String username, String tenantDomain, String channelType,
+                                          RecoveryScenarios recoveryScenarios) throws IdentityRecoveryServerException {
+
+        if (PER_USER_FUNCTIONALITY_LOCKING_ENABLED) {
+            String functionalityType = FUNCTIONALITY_PREFIX + recoveryScenarios.name() + "_" + channelType;
+            // Check whether the functionality is locked ot not. If it is locked, stop from sending that channel
+            // for recovery.
+            if (IdentityRecoveryConstants.FunctionalityTypes.getFunctionality(functionalityType) != null) {
+                String functionalityIdentifier = IdentityRecoveryConstants.FunctionalityTypes.
+                        getFunctionality(functionalityType).getFunctionalityIdentifier();
+                FunctionalityLockStatus functionalityLockStatus = getFunctionalityStatusOfUser(username, tenantDomain,
+                        functionalityIdentifier);
+                return functionalityLockStatus.getLockStatus();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get the lock status of a functionality given the tenant domain, user name and the functionality identifier.
+     *
+     * @param tenantDomain            Tenant domain of the user.
+     * @param userName                Username of the user.
+     * @param functionalityIdentifier Identifier of the the functionality.
+     * @return The status of the functionality, {@link FunctionalityLockStatus}.
+     */
+    private FunctionalityLockStatus getFunctionalityStatusOfUser(String userName, String tenantDomain,
+                                                                 String functionalityIdentifier)
+            throws IdentityRecoveryServerException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        String userId = Utils.getUserId(userName, tenantId);
+
+        UserFunctionalityManager userFunctionalityManager =
+                IdentityRecoveryServiceDataHolder.getInstance().getUserFunctionalityManagerService();
+
+        try {
+            return userFunctionalityManager.getLockStatus(userId, tenantId, functionalityIdentifier);
+        } catch (UserFunctionalityManagementException e) {
+            String mappedErrorCode =
+                    Utils.prependOperationScenarioToErrorCode(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY
+                                    .getCode(), IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
+            String message = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY
+                    .getMessage();
+            throw Utils.handleServerException(mappedErrorCode, message, null);
+        }
     }
 
     /**
