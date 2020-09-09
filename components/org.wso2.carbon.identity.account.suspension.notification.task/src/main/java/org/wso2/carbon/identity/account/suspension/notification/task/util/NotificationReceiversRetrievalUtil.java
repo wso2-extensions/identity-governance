@@ -202,9 +202,9 @@ public class NotificationReceiversRetrievalUtil {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
                 prepStmt.setString(1, NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM);
-                prepStmt.setLong(2, lookupMin);
-                prepStmt.setLong(3, lookupMax);
-                prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+                prepStmt.setString(2, String.valueOf(lookupMin));
+                prepStmt.setString(3, String.valueOf(lookupMax));
+                prepStmt.setInt(4, IdentityTenantUtil.getTenantId(tenantDomain));
                 try (ResultSet resultSet = prepStmt.executeQuery()) {
                     while (resultSet.next()) {
                         String userName = resultSet.getString(1);
