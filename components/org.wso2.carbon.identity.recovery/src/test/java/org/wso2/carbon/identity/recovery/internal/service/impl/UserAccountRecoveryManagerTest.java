@@ -31,6 +31,7 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -78,6 +79,9 @@ public class UserAccountRecoveryManagerTest {
 
     @Mock
     UserRecoveryDataStore userRecoveryDataStore;
+    
+    @Mock
+    IdentityEventService identityEventService;
 
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
@@ -124,6 +128,7 @@ public class UserAccountRecoveryManagerTest {
         mockRecoveryConfigs(true);
         mockUserstoreManager();
         mockJDBCRecoveryDataStore();
+        mockBuildUser();
         // Test when the user is self-registered.
         testGetSelfSignUpUsers();
         // Test when the user is not self registered.
@@ -210,6 +215,8 @@ public class UserAccountRecoveryManagerTest {
         mockGetUserList(new String[]{UserProfile.USERNAME.getValue()});
         mockRecoveryConfigs(false);
         mockJDBCRecoveryDataStore();
+        mockIdentityEventService();
+        mockBuildUser();
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                         null);
@@ -265,6 +272,7 @@ public class UserAccountRecoveryManagerTest {
 
         mockStatic(IdentityUtil.class);
         when(IdentityUtil.extractDomainFromName(Matchers.anyString())).thenReturn("PRIMARY");
+        when(IdentityUtil.getPrimaryDomainName()).thenReturn("PRIMARY");
         mockStatic(Utils.class);
         when(Utils.isAccountDisabled(Matchers.any(User.class))).thenReturn(false);
         when(Utils.isAccountLocked(Matchers.any(User.class))).thenReturn(false);
@@ -414,6 +422,21 @@ public class UserAccountRecoveryManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(realmService.getTenantUserRealm(Matchers.anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+    }
+
+    private void mockBuildUser() {
+
+        User user = new User();
+        user.setUserName(UserProfile.USERNAME.value);
+        user.setUserStoreDomain("PRIMARY");
+        when(Utils.buildUser(Matchers.anyString(), Matchers.anyString())).thenReturn(user);
+    }
+
+    private void mockIdentityEventService() {
+
+        mockStatic(IdentityRecoveryServiceDataHolder.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
     }
 
     /**
