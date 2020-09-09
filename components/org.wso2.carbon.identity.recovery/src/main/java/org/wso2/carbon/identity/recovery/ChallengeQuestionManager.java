@@ -52,6 +52,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -550,12 +551,18 @@ public class ChallengeQuestionManager {
     private Map<String, String> retrieveAnsweredChallenges(User user, UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
 
-        List<String> claimsList = new ArrayList<>();
-        for (UserChallengeAnswer answer : userChallengeAnswers) {
-            claimsList.add(answer.getQuestion().getQuestionSetId().trim());
+        Map<String, String> existingQuestionAndAnswers;
+        if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
+            List<String> claimsList = new ArrayList<>();
+            for (UserChallengeAnswer answer : userChallengeAnswers) {
+                if (answer.getQuestion() != null && StringUtils.isNotBlank(answer.getQuestion().getQuestionSetId())) {
+                    claimsList.add(answer.getQuestion().getQuestionSetId().trim());
+                }
+            }
+            existingQuestionAndAnswers = Utils.getClaimListOfUser(user, claimsList.toArray(new String[0]));
+        } else {
+            existingQuestionAndAnswers = Collections.<String, String>emptyMap();
         }
-        Map<String, String> existingQuestionAndAnswers = Utils.getClaimListOfUser(user,
-                claimsList.toArray(new String[0]));
         if (log.isDebugEnabled()) {
             if (MapUtils.isEmpty(existingQuestionAndAnswers)) {
                 log.debug("No previous questions set for the user: " + user.getUserName());

@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserChallengeAnswer;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -133,11 +134,12 @@ public class ChallengeAnswerValidationHandler extends AbstractEventHandler {
         String separator = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .QUESTION_CHALLENGE_SEPARATOR);
         for (UserChallengeAnswer userChallengeAnswer : userChallengeAnswers) {
-            if (StringUtils.isNotBlank(userChallengeAnswer.getQuestion().getQuestionSetId()) &&
-                    StringUtils.isNotBlank(userChallengeAnswer.getQuestion().getQuestion())
+            ChallengeQuestion challengeQuestion = userChallengeAnswer.getQuestion();
+            if (StringUtils.isNotBlank(challengeQuestion.getQuestionSetId()) &&
+                    StringUtils.isNotBlank(challengeQuestion.getQuestion())
                     && StringUtils.isNotBlank(userChallengeAnswer.getAnswer())) {
                 String oldValue = existingQuestionAndAnswers
-                        .get(userChallengeAnswer.getQuestion().getQuestionSetId().trim());
+                        .get(challengeQuestion.getQuestionSetId().trim());
                 if (StringUtils.isNotBlank(oldValue) && oldValue.contains(separator)) {
                     String oldAnswer = oldValue.split(separator)[1];
                     if (oldAnswer.trim().equals(userChallengeAnswer.getAnswer().trim())) {
@@ -168,15 +170,15 @@ public class ChallengeAnswerValidationHandler extends AbstractEventHandler {
             throws IdentityRecoveryClientException, IdentityEventException {
 
         for (UserChallengeAnswer userChallengeAnswer : newChallengeAnswers) {
+            String challengeQuestion = userChallengeAnswer.getQuestion().getQuestion();
             if (!(userChallengeAnswer.getAnswer()).matches(Utils.getConnectorConfig(IdentityRecoveryConstants.
                     ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX, tenantDomain))) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The challenge question answer for the question, '%s' is not in the " +
-                            "expected format.", userChallengeAnswer.getQuestion().getQuestion()));
+                            "expected format.", challengeQuestion));
                 }
                 throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FORMAT,
-                        userChallengeAnswer.getQuestion().getQuestion());
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FORMAT, challengeQuestion);
             }
         }
     }
@@ -200,6 +202,7 @@ public class ChallengeAnswerValidationHandler extends AbstractEventHandler {
 
         String hashedNewChallengeAnswer;
         for (UserChallengeAnswer userChallengeAnswer : newChallengeAnswers) {
+            String challengeQuestion = userChallengeAnswer.getQuestion().getQuestion();
             try {
                 hashedNewChallengeAnswer = Utils.doHash(userChallengeAnswer.getAnswer().trim().toLowerCase());
             } catch (UserStoreException e) {
@@ -209,11 +212,10 @@ public class ChallengeAnswerValidationHandler extends AbstractEventHandler {
             if (!uniqueChallengeAnswerHashSet.add(hashedNewChallengeAnswer)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The challenge question answer is not unique. The given answer for " +
-                                    "the challenge question '%s' has been used more than once.",
-                            userChallengeAnswer.getQuestion().getQuestion()));
+                                    "the challenge question '%s' has been used more than once.", challengeQuestion));
                 }
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOT_UNIQUE_ANSWER,
-                        userChallengeAnswer.getQuestion().getQuestion());
+                        challengeQuestion);
             }
         }
     }
