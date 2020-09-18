@@ -118,6 +118,8 @@ public class RecoveryConfigImplTest {
                 "Minimum number of forced security questions to be answered");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "Enable Auto Login After Password Reset");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -148,6 +150,8 @@ public class RecoveryConfigImplTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
                 "Regex for SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, " +
                         "0-9.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "User will be logged in automatically after completing the Password Reset wizard");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -176,6 +180,7 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
 
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
@@ -208,6 +213,7 @@ public class RecoveryConfigImplTest {
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
         String enforceChallengeQuestionAnswerUniqueness = "false";
+        String enableAutoLoginAfterPasswordReset = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -248,6 +254,8 @@ public class RecoveryConfigImplTest {
                 challengeQuestionAnswerRegex);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, enforceChallengeQuestionAnswerUniqueness);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, enableAutoLoginAfterPasswordReset);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
