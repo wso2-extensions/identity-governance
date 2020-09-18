@@ -96,12 +96,12 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public String getFriendlyName() {
-        return "Lock Idle Accounts";
+        return "Idle Account Suspend";
     }
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return "Account Management";
     }
 
     @Override
@@ -117,16 +117,24 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert Users before account locking in " +
-                "days (comma-separated list)");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Suspend idle user accounts");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Allowed idle time span " +
+                "in days");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert sending time periods in days");
         return nameMapping;
+
     }
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
-        return new HashMap<>();
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Lock user account after a " +
+                "given idle period.");
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Time period in " +
+                "days before locking the user account.");
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Send warning alerts to users " +
+                "before locking the account, after each period. Comma separated multiple values accepted.");
+        return descriptionMapping;
     }
 
     @Override
@@ -153,7 +161,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
@@ -259,5 +267,4 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
         return isEnabled;
     }
-
 }

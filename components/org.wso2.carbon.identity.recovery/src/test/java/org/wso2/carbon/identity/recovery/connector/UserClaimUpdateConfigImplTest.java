@@ -50,7 +50,7 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
 
     private UserClaimUpdateConfigImpl userClaimUpdateConfig;
     private static final String CONNECTOR_NAME = "user-claim-update";
-    private static final String CATEGORY = "Account Management Policies";
+    private static final String CATEGORY = "Other Settings";
     private static final String FRIENDLY_NAME = "User Claim Update";
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String TENANT_DOMAIN = "carbon.super";

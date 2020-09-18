@@ -32,7 +32,7 @@ import java.util.Properties;
  */
 public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
-    private static String connectorName = "account-recovery";
+    private static final String connectorName = "account-recovery";
 
     @Override
     public String getName() {
@@ -46,7 +46,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return "Account Management";
     }
 
     @Override
@@ -63,41 +63,42 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
-                "Notification Based Password Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
-                "Internal Notification Management");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
-                "reCaptcha for Password Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
-                "Question Based Password Recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                "Notification based password recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                "Manage notifications sending internally");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
+                "Enable reCaptcha for password recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+                "Security question based password recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
-                "Challenge question answer regex");
+                "Security question answer regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
-                "Enforce challenge question answer uniqueness");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
-                "Required For Password Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
-                "reCaptcha for Username Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery Link Expiry Time");
+                "Enforce security question answer uniqueness");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number of questions " +
+                "Required for password recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Username recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
+                "Enable reCaptcha for username recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery link expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
-                "SMS OTP Expiry Time");
+                "SMS OTP expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, "SMS OTP regex");
 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
-                "Notify when Recovery Success");
+                "Notify when recovery success");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
-                "Notify when Questions Based Recovery Starts");
+                "Notify when security questions based recovery starts");
 
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
-                "Enable reCaptcha for Security Questions Based Password Recovery");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig
-                .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
+                "Enable reCaptcha for security questions based password recovery");
+        nameMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS,
+                "Max failed attempts for reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable forced " +
-                "challenge questions");
+                "security questions");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
-                "Minimum Number of Forced Challenge Questions to be Answered");
+                "Minimum number of forced security questions to be answered");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
         return nameMapping;
@@ -107,17 +108,17 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyDescriptionMapping() {
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "Disable if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
-                "Challenge question answer regex");
+                "Security question answer regex");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
-                "Enforce challenge question answer uniqueness");
+                "Enforce security question answer uniqueness");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
-                "Show captcha for challenge question based password recovery");
+                "Prompt reCaptcha for security question based password recovery");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
-                "Force users to provide answers to challenge questions during sign in");
+                "Force users to provide answers to security questions during sign in");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
-                "Force users to provide answers to challenge questions during sign in " +
+                "Force users to provide answers to security questions during sign in " +
                         "if user has answered lesser than this value");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
@@ -318,7 +319,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
+
         return null;
     }
 

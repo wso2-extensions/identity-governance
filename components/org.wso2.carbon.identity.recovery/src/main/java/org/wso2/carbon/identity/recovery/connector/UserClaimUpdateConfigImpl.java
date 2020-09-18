@@ -38,7 +38,7 @@ import javax.xml.namespace.QName;
 public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
     private static final String CONNECTOR_NAME = "user-claim-update";
-    private static final String CATEGORY = "Account Management Policies";
+    private static final String CATEGORY = "Other Settings";
     private static final String FRIENDLY_NAME = "User Claim Update";
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
