@@ -64,7 +64,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         }
 
         if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
-            return Response.status(Response.Status.CREATED).build();
+            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
         }
         return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
