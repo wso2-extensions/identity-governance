@@ -234,7 +234,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Always prompt " +
                 "reCaptcha verification during SSO login flow.");
         descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Prompt reCaptcha " +
-                "verification during SSO login floe only after the max failed attempts exceeded.");
+                "verification during SSO login flow only after the max failed attempts exceeded.");
         descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                 "Number of failed attempts allowed without prompting reCaptcha verification.");
         return descriptionMapping;
