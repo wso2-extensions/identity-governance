@@ -206,7 +206,8 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
                 "Minimum number of characters in the password.");
         descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH,
                 "Maximum number of characters in the password.");
-        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "A regex pattern to validate the password.");
+        descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "The regular expression pattern to validate" +
+                " the password.");
         descriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG,
                 "This error message will be displayed when a pattern violation is detected.");
         return descriptionMapping;

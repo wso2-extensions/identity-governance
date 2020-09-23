@@ -88,8 +88,8 @@ public class PasswordHistoryValidationHandlerTest {
         Map<String, String> expectedDescriptionMappingTrue = new HashMap<>();
         expectedDescriptionMappingTrue.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "User will not be allowed to " +
                 "use previously used passwords.");
-        expectedDescriptionMappingTrue.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict reusing last n " +
-                "number of passwords during password update.");
+        expectedDescriptionMappingTrue.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict using this number of " +
+                "last used passwords during password update.");
         assertEquals(passwordHistoryValidationHandler.getPropertyDescriptionMapping(),
                 expectedDescriptionMappingTrue, "getPropertyDescriptionMapping() has been changed.");
     }

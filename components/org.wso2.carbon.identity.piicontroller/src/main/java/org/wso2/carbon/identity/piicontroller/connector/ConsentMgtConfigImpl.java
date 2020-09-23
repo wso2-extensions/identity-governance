@@ -103,7 +103,7 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
     @Override
     public String getCategory() {
 
-        return ConsentConstants.PII_CONTROLLER_CONNECTOR_CATEGORY;
+        return ConsentConstants.CONNECTOR_CATEGORY;
     }
 
     @Override

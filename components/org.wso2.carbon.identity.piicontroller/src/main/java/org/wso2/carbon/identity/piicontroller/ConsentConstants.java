@@ -35,7 +35,10 @@ public class ConsentConstants {
 
     public static final String PII_CONTROLLER_CONNECTOR_NAME = "pii-controller";
     public static final String PII_CONTROLLER_CONNECTOR_FAMILY_NAME = "Consent Information Controller";
-    public static final String PII_CONTROLLER_CONNECTOR_CATEGORY = "Other Settings";
+    @Deprecated
+    /** @deprecated Please use {@link #CONNECTOR_CATEGORY instead. */
+    public static final String PII_CONTROLLER_CONNECTOR_CATEGORY = "Consent Management";
+    public static final String CONNECTOR_CATEGORY = "Other Settings";
     public static final String PII_CONTROLLER_CONNECTOR_SUB_CATEGORY = "DEFAULT";
 
 }

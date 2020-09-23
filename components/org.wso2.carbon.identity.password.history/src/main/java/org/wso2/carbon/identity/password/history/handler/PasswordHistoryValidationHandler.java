@@ -197,7 +197,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "User will not be allowed to use " +
                 "previously used passwords.");
-        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict reusing last n number of " +
+        descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Restrict using this number of last used " +
                 "passwords during password update.");
         return descriptionMapping;
     }
