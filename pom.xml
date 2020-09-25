@@ -669,7 +669,7 @@
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
         <cxf-bundle.version>3.3.7</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
-        <spring-web.version>4.1.6.RELEASE</spring-web.version>
+        <spring-web.version>4.3.29.RELEASE</spring-web.version>
         <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.12</junit.version>
