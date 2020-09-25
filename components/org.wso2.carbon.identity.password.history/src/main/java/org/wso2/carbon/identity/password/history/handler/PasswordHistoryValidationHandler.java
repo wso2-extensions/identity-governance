@@ -68,7 +68,6 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         user.setUserStoreDomain(domainName);
         user.setTenantDomain(tenantDomain);
 
-
         Property[] identityProperties;
         try {
             identityProperties = IdentityPasswordHistoryServiceDataHolder.getInstance()
@@ -102,7 +101,8 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
         hashingAlgorithm = configs.getModuleProperties().getProperty(PasswordHistoryConstants.PW_HISTORY_HASHING_ALGORITHM);
         String passwordHistoryDataStoreClass = configs.getModuleProperties().getProperty(
-                PasswordHistoryConstants.PW_HISTORY_DATA_STORE);;
+                PasswordHistoryConstants.PW_HISTORY_DATA_STORE);
+
         if (StringUtils.isBlank(passwordHistoryDataStoreClass)) {
             passwordHistoryDataStoreClass = "org.wso2.carbon.identity.password.history.store.Impl.DefaultPasswordHistoryDataStore";
         }
@@ -163,29 +163,37 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
     @Override
     public String getName() {
+
         return "passwordHistory";
     }
 
     @Override
     public String getFriendlyName() {
+
         return "Password History";
     }
 
     @Override
     public String getCategory() {
-        return "User Passwords";
+
+        return "Password Policies";
     }
 
     @Override
     public String getSubCategory() {
+
         return "DEFAULT";
     }
 
     @Override
-    public int getOrder() { return 0; }
+    public int getOrder() {
+
+        return 0;
+    }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "Validate password history");
         nameMapping.put(PasswordHistoryConstants.PW_HISTORY_COUNT, "Password history validation count");
@@ -194,6 +202,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, "User will not be allowed to use " +
                 "previously used passwords.");
@@ -204,6 +213,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
 
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
+
         super.init(configuration);
         IdentityPasswordHistoryServiceDataHolder.getInstance().getBundleContext().registerService
                 (IdentityConnectorConfig.class.getName(), this, null);
@@ -218,6 +228,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     }
 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
+
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(PasswordHistoryConstants.PW_HISTORY_ENABLE, configs.getModuleProperties()
                 .getProperty(PasswordHistoryConstants.PW_HISTORY_ENABLE));
@@ -231,6 +242,7 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
     @Override
     public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
             throws IdentityGovernanceException {
+
         return null;
     }
 }

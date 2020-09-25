@@ -57,7 +57,7 @@ public class PasswordPolicyValidationHandlerTest {
     @Test
     public void testGetCategory() throws Exception {
 
-        assertEquals(passwordPolicyValidationHandler.getCategory(), "User Passwords",
+        assertEquals(passwordPolicyValidationHandler.getCategory(), "Password Policies",
                 "getCategory() has been changed.");
     }
 
