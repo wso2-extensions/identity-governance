@@ -104,6 +104,8 @@ public class SelfRegistrationConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                "Enable notification for self sign up confirmation");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -130,6 +132,9 @@ public class SelfRegistrationConfigImplTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
+        descriptionMappingExpected
+                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                        "Enable sending notification for self sign up confirmation.");
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -167,6 +172,7 @@ public class SelfRegistrationConfigImplTest {
         String testVerificationCodeExpiryTime = "1440";
         String testVerificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
+        String enableSelfSignUpConfirmationNotification = "false";
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
@@ -190,6 +196,8 @@ public class SelfRegistrationConfigImplTest {
         } catch (UnsupportedEncodingException e) {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                enableSelfSignUpConfirmationNotification);
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
         Properties properties = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);

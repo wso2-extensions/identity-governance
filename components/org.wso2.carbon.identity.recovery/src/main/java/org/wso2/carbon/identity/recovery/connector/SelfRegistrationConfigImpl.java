@@ -86,6 +86,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                "Enable notification for self sign up confirmation");
         return nameMapping;
     }
 
@@ -110,6 +112,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                "Enable sending notification for self sign up confirmation.");
         return descriptionMapping;
     }
 
@@ -126,6 +130,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
         return properties.toArray(new String[0]);
     }
 
@@ -139,6 +144,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
+        String enableSelfSignUpConfirmationNotification = "false";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -154,6 +160,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
+        String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -176,7 +184,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
-
+        if (StringUtils.isNotEmpty(selfSignUpConfirmationNotificationProperty)) {
+            enableSelfSignUpConfirmationNotification = selfSignUpConfirmationNotificationProperty;
+        }
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
@@ -198,6 +208,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX, selfRegistrationCallbackRegex);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                enableSelfSignUpConfirmationNotification);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
