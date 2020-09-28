@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * This class does unit test coverage for SelfRegistrationConfigImpl class.
@@ -39,8 +40,9 @@ import static org.testng.Assert.assertEquals;
 public class SelfRegistrationConfigImplTest {
 
     private SelfRegistrationConfigImpl selfRegistrationConfigImpl;
-    private static final String CATEGORY = "Account Management Policies";
-    private static final String FRIENDLY_NAME = "User Self Registration";
+    private static final String CONNECTOR_NAME = "self-sign-up";
+    private static final String CATEGORY = "User Onboarding";
+    private static final String FRIENDLY_NAME = "Self Registration";
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
     private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
@@ -58,19 +60,19 @@ public class SelfRegistrationConfigImplTest {
     @Test
     public void testGetName() {
 
-        assertEquals(selfRegistrationConfigImpl.getName(), "self-sign-up");
+        assertEquals(selfRegistrationConfigImpl.getName(), CONNECTOR_NAME);
     }
 
     @Test
     public void testGetFriendlyName() {
 
-        assertEquals(selfRegistrationConfigImpl.getFriendlyName(), "User Self Registration");
+        assertEquals(selfRegistrationConfigImpl.getFriendlyName(), FRIENDLY_NAME);
     }
 
     @Test
     public void testGetCategory() {
 
-        assertEquals(selfRegistrationConfigImpl.getCategory(), "Account Management Policies");
+        assertEquals(selfRegistrationConfigImpl.getCategory(), CATEGORY);
     }
 
     @Test
@@ -89,14 +91,12 @@ public class SelfRegistrationConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> nameMappingExpected = new HashMap<String, String>();
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                "Enable Self User Registration");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "User self registration");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation");
+                "Lock user account on creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Internal Notification Management");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                "Enable reCaptcha");
+                "Manage notifications sending internally");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration verification link expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
@@ -114,21 +114,21 @@ public class SelfRegistrationConfigImplTest {
 
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                "Enable self user registration");
+                "Allow user's to self register to the system.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Lock user account during user registration");
+                "Lock self registered user account until e-mail verification.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "Disable if the client application handles notification sending");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                "Enable captcha verification during self registration");
+                "Enable reCaptcha verification during self registration.");
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes the user self registration verification mail would be valid");
+                "Specify the expiry time in minutes for the verification link.");
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes that the SMS OTP would be valid");
+                "Specify the expiry time in minutes for the SMS OTP.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
-                "User self registration callback URL regex");
+                "This prefix will be used to validate the callback URL.");
         descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
@@ -207,7 +207,6 @@ public class SelfRegistrationConfigImplTest {
         // Here tenantDomain and propertyNames parameters are not used by method itself
         Map<String, String> defaultPropertyValues = selfRegistrationConfigImpl.getDefaultPropertyValues(propertyNames,
                 tenantDomain);
-        assertEquals(defaultPropertyValues, null);
+        assertNull(defaultPropertyValues);
     }
-
 }

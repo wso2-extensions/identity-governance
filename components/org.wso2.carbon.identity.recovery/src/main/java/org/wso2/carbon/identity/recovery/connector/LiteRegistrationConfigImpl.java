@@ -32,16 +32,16 @@ import java.util.Properties;
 
 public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
-    private static String connectorName = "lite-user-sign-up";
-    private static final String CATEGORY = "Account Management Policies";
+    private static final String connectorName = "lite-user-sign-up";
+    private static final String CATEGORY = "User Onboarding";
     private static final String FRIENDLY_NAME = "Lite User Registration";
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeLiteUserSignUp";
     private static final String SYSTEM_PURPOSE_GROUP = "LITE-SIGNUP";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
-    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
+    private static final String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" +
+            SYSTEM_PURPOSE_GROUP + "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
@@ -72,12 +72,12 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, "Enable Lite User Registration");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, "Lite user registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation");
+                "Lock user account on creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Internal Notification Management");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA, "Enable reCaptcha");
+                "Manage notifications sending internally");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "Lite user registration verification link expiry time");
         nameMapping
@@ -94,21 +94,21 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP,
-                "Enable lite user registration");
+                "Allow user's to self register to the system without a password.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
-                "Lock user account during lite user registration");
+                "Lock self registered user account until e-mail verification.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "Disable if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA,
-                "Enable captcha verification during lite user registration");
+                "Enable reCaptcha verification during self registration.");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes the lite user registration verification mail would be valid");
+                "Specify the expiry time in minutes for the verification link.");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes that the SMS OTP would be valid");
+                "Specify the expiry time in minutes for the SMS OTP.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
-                "Lite user registration callback URL regex");
+                "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Lite-Sign-Up purposes");
         return descriptionMapping;
     }
@@ -206,7 +206,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
+
         return null;
     }
 
