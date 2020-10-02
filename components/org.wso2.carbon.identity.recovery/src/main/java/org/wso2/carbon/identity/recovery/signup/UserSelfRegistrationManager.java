@@ -1545,16 +1545,7 @@ public class UserSelfRegistrationManager {
                 }
             }
         }
-
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            log.error("Error occurred while publishing event " + eventName + " for user " + user);
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
-                    eventName, e);
-        }
-
+        handleEvent(eventName,properties,user);
     }
 
     /**
@@ -1594,16 +1585,7 @@ public class UserSelfRegistrationManager {
                 }
             }
         }
-
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            log.error("Error occurred while publishing event " + eventName + " for user " + user);
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
-                    eventName, e);
-        }
-
+        handleEvent(eventName,properties,user);
     }
 
     /**
@@ -1645,6 +1627,19 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             log.error("Error occurred while publishing event " + eventName);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
+        }
+
+    }
+
+    private void handleEvent(String eventName, HashMap<String, Object> properties, User user)
+            throws IdentityRecoveryServerException {
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
                     eventName, e);
         }
