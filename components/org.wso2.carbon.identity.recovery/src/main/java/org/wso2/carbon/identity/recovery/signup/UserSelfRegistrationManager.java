@@ -613,7 +613,14 @@ public class UserSelfRegistrationManager {
         User user = userRecoveryData.getUser();
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
-        triggerNotification(user);
+
+        boolean isSelfRegistrationConfirmationNotify = false;
+        isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
+                (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                        user.getTenantDomain()));
+        if (isSelfRegistrationConfirmationNotify) {
+            triggerNotification(user);
+        }
         publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
     }
