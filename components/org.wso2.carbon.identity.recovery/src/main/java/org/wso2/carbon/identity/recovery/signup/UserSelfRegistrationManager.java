@@ -120,7 +120,7 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
-        publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP);
+        publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
@@ -234,6 +234,7 @@ public class UserSelfRegistrationManager {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
+        publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         return notificationResponseBean;
     }
 
@@ -604,6 +605,8 @@ public class UserSelfRegistrationManager {
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
+        publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
+                IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
                 verifiedChannelClaim, properties);
@@ -612,7 +615,7 @@ public class UserSelfRegistrationManager {
         userRecoveryDataStore.invalidate(code);
         triggerNotification(user);
         publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
-                IdentityEventConstants.Event.POST_SELF_SIGNUP);
+                IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
     }
 
     /**
@@ -1510,11 +1513,12 @@ public class UserSelfRegistrationManager {
     }
 
     /**
-     * Method to publish pre self sign up event.
-     * @param user
-     * @param claims
-     * @param metaProperties
-     * @param eventName
+     * Method to publish pre and post self sign up register event.
+     *
+     * @param user           self sign up user
+     * @param claims         claims of the user
+     * @param metaProperties other properties of the request
+     * @param eventName      event name (PRE_SELF_SIGNUP_REGISTER,POST_SELF_SIGNUP_REGISTER)
      * @throws IdentityRecoveryException
      */
     private void publishEvent(User user, Claim[] claims, Property[] metaProperties,
@@ -1546,6 +1550,17 @@ public class UserSelfRegistrationManager {
 
     }
 
+    /**
+     * Method to publish post self sign up confirm event.
+     *
+     * @param user                 self sign up user
+     * @param code                 self signup confirmation code
+     * @param verifiedChannelType  verified channel type
+     * @param verifiedChannelClaim verified channel claim.
+     * @param metaProperties       metaproperties of the request
+     * @param eventName            event name (POST_SELF_SIGNUP_CONFIRM)
+     * @throws IdentityRecoveryException
+     */
     private void publishEvent(User user, String code, String verifiedChannelType,String verifiedChannelClaim,
                               Map<String, String> metaProperties,
                               String eventName) throws
@@ -1567,7 +1582,6 @@ public class UserSelfRegistrationManager {
         }
         if (metaProperties != null) {
             for (Map.Entry<String, String> entry : metaProperties.entrySet()) {
-                System.out.println(entry.getKey() + ":" + entry.getValue());
                 if (StringUtils.isNotBlank(entry.getValue()) && StringUtils.isNotBlank(entry.getKey())) {
                     properties.put(entry.getKey(), entry.getValue());
                 }
@@ -1579,6 +1593,51 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             log.error("Error occurred while publishing event " + eventName + " for user " + user);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
+        }
+
+    }
+
+    /**
+     * Method to publish pre self sign up confirm event.
+     *
+     * @param code self signup confirmation code
+     * @param verifiedChannelType verified channel type
+     * @param verifiedChannelClaim verified channel claim.
+     * @param metaProperties metaproperties of the request
+     * @param eventName event name (PRE_SELF_SIGNUP_CONFIRM)
+     * @throws IdentityRecoveryException
+     */
+    private void publishEvent(String code, String verifiedChannelType,String verifiedChannelClaim,
+                              Map<String, String> metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_CODE, code);
+        }
+        if (StringUtils.isNotBlank(verifiedChannelType)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
+        }
+        if (StringUtils.isNotBlank(verifiedChannelClaim)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
+        }
+        if (metaProperties != null) {
+            for (Map.Entry<String, String> entry : metaProperties.entrySet()) {
+                if (StringUtils.isNotBlank(entry.getValue()) && StringUtils.isNotBlank(entry.getKey())) {
+                    properties.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while publishing event " + eventName);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
                     eventName, e);
         }
