@@ -105,7 +105,7 @@ public class SelfRegistrationConfigImplTest {
                 "User self registration callback URL regex");
         nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                "Enable notification for self sign up confirmation");
+                "Send sign up confirmation email");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");

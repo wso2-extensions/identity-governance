@@ -87,7 +87,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                "Enable notification for self sign up confirmation");
+                "Send sign up confirmation email");
         return nameMapping;
     }
 

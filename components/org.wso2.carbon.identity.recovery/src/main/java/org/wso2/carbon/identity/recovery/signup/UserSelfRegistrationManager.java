@@ -86,6 +86,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +119,8 @@ public class UserSelfRegistrationManager {
     }
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
+
+        publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
@@ -601,9 +605,14 @@ public class UserSelfRegistrationManager {
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        validateSelfRegistrationCode(code, verifiedChannelType, verifiedChannelClaim, properties);
+        UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
+                verifiedChannelClaim, properties);
+        User user = userRecoveryData.getUser();
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
+        triggerNotification(user);
+        publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
+                IdentityEventConstants.Event.POST_SELF_SIGNUP);
     }
 
     /**
@@ -1475,5 +1484,104 @@ public class UserSelfRegistrationManager {
         }
         Utils.createAuditMessage(recoveryData.getRecoveryScenario().toString(), recoveryData.getUser().getUserName(),
                 dataObject, result);
+    }
+
+    private void triggerNotification(User user) throws IdentityRecoveryServerException {
+
+        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_SELF_SIGNUP_SUCCESS);
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
+        String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
+        properties.put(IdentityRecoveryConstants.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Method to publish pre self sign up event.
+     * @param user
+     * @param claims
+     * @param metaProperties
+     * @param eventName
+     * @throws IdentityRecoveryException
+     */
+    private void publishEvent(User user, Claim[] claims, Property[] metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while publishing event " + eventName + " for user " + user);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
+        }
+
+    }
+
+    private void publishEvent(User user, String code, String verifiedChannelType,String verifiedChannelClaim,
+                              Map<String, String> metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_CODE, code);
+        }
+        if (StringUtils.isNotBlank(verifiedChannelType)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
+        }
+        if (StringUtils.isNotBlank(verifiedChannelClaim)) {
+            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
+        }
+        if (metaProperties != null) {
+            for (Map.Entry<String, String> entry : metaProperties.entrySet()) {
+                System.out.println(entry.getKey() + ":" + entry.getValue());
+                if (StringUtils.isNotBlank(entry.getValue()) && StringUtils.isNotBlank(entry.getKey())) {
+                    properties.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while publishing event " + eventName + " for user " + user);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
+        }
+
     }
 }
