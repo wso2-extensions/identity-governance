@@ -1126,7 +1126,8 @@ public class UserSelfRegistrationManager {
             RealmConfiguration realmConfiguration = userRealm.getUserStoreManager().getSecondaryUserStoreManager
                     (userDomain).getRealmConfiguration();
             String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            isValidUsername = checkUserNameValid(tenantAwareUsername, realmConfiguration);
+            String userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(tenantAwareUsername);
+            isValidUsername = checkUserNameValid(userStoreDomainAwareUsername, realmConfiguration);
 
         } catch (CarbonException e) {
             if (log.isDebugEnabled()) {
