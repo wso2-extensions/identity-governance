@@ -1508,7 +1508,7 @@ public class UserSelfRegistrationManager {
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
         String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
-        properties.put(IdentityRecoveryConstants.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
+        properties.put(IdentityEventConstants.EventProperty.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
 
         Event identityMgtEvent = new Event(eventName, properties);
         try {
@@ -1570,13 +1570,13 @@ public class UserSelfRegistrationManager {
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_CODE, code);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_CODE, code);
         }
         if (StringUtils.isNotBlank(verifiedChannelType)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
         }
         if (StringUtils.isNotBlank(verifiedChannelClaim)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
         }
         if (metaProperties != null) {
             for (Map.Entry<String, String> entry : metaProperties.entrySet()) {
@@ -1606,13 +1606,13 @@ public class UserSelfRegistrationManager {
         HashMap<String, Object> properties = new HashMap<>();
 
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_CODE, code);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_CODE, code);
         }
         if (StringUtils.isNotBlank(verifiedChannelType)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_VERIFIED_CHANNEL, verifiedChannelType);
         }
         if (StringUtils.isNotBlank(verifiedChannelClaim)) {
-            properties.put(IdentityRecoveryConstants.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
+            properties.put(IdentityEventConstants.EventProperty.SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM, verifiedChannelClaim);
         }
         if (metaProperties != null) {
             for (Map.Entry<String, String> entry : metaProperties.entrySet()) {

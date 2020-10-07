@@ -143,11 +143,6 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS =
             "Recovery.Question.Password.SkipOnInsufficientAnswers";
 
-    public static final String SELF_REGISTRATION_CODE = "selfsignup-code";
-    public static final String SELF_REGISTRATION_VERIFIED_CHANNEL = "selfsignup-verify-channel";
-    public static final String SELF_REGISTRATION_VERIFIED_CHANNEL_CLAIM = "selfsignup-verify-channel-claim";
-    public static final String SELF_SIGNUP_CONFIRM_TIME = "selfsignup-confirm-time";
-
     private IdentityRecoveryConstants() {
 
     }
