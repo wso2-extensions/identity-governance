@@ -46,6 +46,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
+    public static final String NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE = "verifyMobileOnUpdate";
     public static final String NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE = "resendVerifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
@@ -535,18 +536,37 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
-                "USER_DOMAIN = ? AND TENANT_ID =?";
+                "USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", " +
+                "\"MOBILE_VERIFICATION_ON_UPDATE\")";
 
         public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
-                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =?";
+                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN " +
+                "(\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
+
+        public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
+                "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String INVALIDATE_USER_CODE_BY_SCENARIO_CASE_INSENSITIVE = "DELETE FROM " +
+                "IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND STEP = ? AND " +
+                "USER_DOMAIN = ? AND TENANT_ID =?";
 
         public static final String DELETE_USER_RECOVERY_DATA_BY_TENANT_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE TENANT_ID = ?";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
+                "AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ?";
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ?" +
+                "AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND SCENARIO = ? AND USER_DOMAIN = ? " +
+                "AND TENANT_ID = ?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO_CASE_INSENSITIVE = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND " +
+                "USER_DOMAIN = ? AND TENANT_ID = ?";
 
     }
 

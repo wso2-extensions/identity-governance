@@ -684,9 +684,9 @@ public class UserSelfRegistrationManager {
     /**
      * Validates the verification code and update verified claims of the authenticated user.
      *
-     * @param code                 Confirmation code
-     * @param properties           Properties sent with the validate code request
-     * @throws IdentityRecoveryException Error validating the confirmation code
+     * @param code                 Confirmation code.
+     * @param properties           Properties sent with the validate code request.
+     * @throws IdentityRecoveryException Error validating the confirmation code.
      */
     public void confirmVerificationCodeMe(String code, Map<String, String> properties) throws
             IdentityRecoveryException {
@@ -696,15 +696,18 @@ public class UserSelfRegistrationManager {
 
         // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
         UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
-        User user = recoveryData.getUser();
-
-        // Validate context username and tenant domain name with user from recovery data.
-        validateUser(user);
 
         // Validate the recovery step to verify mobile claim scenario.
         if (!RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            auditRecoveryConfirm(recoveryData,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
+
+        User user = recoveryData.getUser();
+        // Validate context username and tenant domain name with user from recovery data.
+        validateUser(user);
+
         // Get the userstore manager for the user.
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
@@ -714,6 +717,7 @@ public class UserSelfRegistrationManager {
             if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
@@ -722,7 +726,7 @@ public class UserSelfRegistrationManager {
         updateUserClaims(userStoreManager, user, userClaims);
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
-        return;
+        auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
     }
 
     /**

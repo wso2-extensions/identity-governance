@@ -48,6 +48,10 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This event handler is used to send a verification SMS when a claim update event to update the mobile number
+ * is triggered.
+ */
 public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(MobileNumberVerificationHandler.class);
@@ -73,18 +77,19 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
 
-        boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, user.getTenantDomain()));
+        boolean enable = isMobileVerificationOnUpdateEnabled(user.getTenantDomain());
 
         if (!enable) {
             // Mobile Number Verification feature is disabled.
             if (log.isDebugEnabled()) {
-                log.debug("Mobile Number verification Handler is disabled in tenant: " + user.getTenantDomain() +
+                log.debug("Mobile number verification handler is disabled in tenant: " + user.getTenantDomain() +
                         " for event: " + eventName);
             }
             /* We need to empty 'MOBILE_NUMBER_PENDING_VALUE_CLAIM' because having a value in that claim implies
             a verification is pending. But verification is not enabled anymore. */
-            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
+                invalidatePendingMobileVerification(user, userStoreManager, claims);
+            }
             return;
         }
 
@@ -112,26 +117,27 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Store verification details in the recovery data store and initiate notification.
      *
-     * @param user User.
+     * @param user  User.
      * @param verificationPendingMobileNumber Updated mobile number that is pending verification.
      * @throws IdentityEventException
      */
     private void initNotificationForMobileNumberVerificationOnUpdate(User user, String verificationPendingMobileNumber)
             throws IdentityEventException {
 
-        String secretKey = generateSMSOTP();
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
-            userRecoveryDataStore.invalidate(user);
+            userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                    RecoverySteps.VERIFY_MOBILE_NUMBER);
+            String secretKey = Utils.generateSecretKey(IdentityRecoveryConstants.SMS_NOTIFICATION_CHANNEL,
+                    user.getTenantDomain(), String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE));
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
             /* Mobile number is persisted in remaining set ids to maintain context information about the mobile number
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, secretKey,
-                    Utils.getArbitraryProperties(), verificationPendingMobileNumber);
+            triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
@@ -141,9 +147,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Trigger the SMS notification.
      *
-     * @param user User.
-     * @param code SMS OTP.
-     * @param props Other properties.
+     * @param user      User.
+     * @param code      SMS OTP.
+     * @param props     Other properties.
      * @param verificationPendingMobileNumber Mobile number to which the SMS should be sent.
      * @throws IdentityRecoveryException
      */
@@ -153,7 +159,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE;
 
         if (log.isDebugEnabled()) {
-            log.debug("Sending : " + notificationType + " notification to user : " + user.toString());
+            log.debug("Sending : " + notificationType + " notification to user : " + user.toFullQualifiedUsername());
         }
 
         String eventName = IdentityEventConstants.Event.TRIGGER_SMS_NOTIFICATION;
@@ -181,22 +187,23 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
+                    user.toFullQualifiedUsername(), e);
         }
     }
 
     /**
      * Form User object from event properties.
      *
-     * @param eventProperties Event properties.
-     * @param userStoreManager User store manager.
-     * @return
+     * @param eventProperties   Event properties.
+     * @param userStoreManager  User store manager.
+     * @return User.
      */
     private User getUser(Map eventProperties, UserStoreManager userStoreManager) {
 
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        String domainName = userStoreManager.getRealmConfiguration().
+                getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         User user = new User();
         user.setUserName(userName);
@@ -209,9 +216,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * If the mobile claim is updated, set it to the 'MOBILE_NUMBER_PENDING_VALUE_CLAIM' claim.
      * Set thread local state to skip sending verification notification in inapplicable claim update scenarios.
      *
-     * @param claims Map of claims to be updated.
-     * @param userStoreManager User store manager.
-     * @param user User.
+     * @param claims            Map of claims to be updated.
+     * @param userStoreManager  User store manager.
+     * @param user              User.
      * @throws IdentityEventException
      */
     private void preSetUserClaimOnMobileNumberUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
@@ -229,7 +236,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         if (MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
-            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
             return;
@@ -245,7 +251,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         MOBILE_NUMBER_CLAIM, null);
             } catch (UserStoreException e) {
                 String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
-                        "domain : %s", username, user.getTenantDomain());
+                        "domain : %s and user store : %s", username, user.getTenantDomain(), user.getUserStoreDomain());
                 throw new IdentityEventException(error, e);
             }
 
@@ -257,19 +263,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 }
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
-                claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                try {
-                    UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-                    userRecoveryDataStore.invalidate(user);
-                } catch (IdentityRecoveryException e) {
-                    throw new IdentityEventException("Error while invalidating previous mobile verification data " +
-                            "from recovery store for user: " + user.toFullQualifiedUsername(), e);
-                }
+                invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } else {
+            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }
@@ -278,8 +278,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Initiate notification sending process if the thread local is not set to skip verification process.
      *
-     * @param user User.
-     * @param userStoreManager User store manager.
+     * @param user              User.
+     * @param userStoreManager  User store manager.
      * @throws IdentityEventException
      */
     private void postSetUserClaimOnMobileNumberUpdate(User user, UserStoreManager userStoreManager) throws
@@ -309,8 +309,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Get the 'http://wso2.org/claims/identity/mobileNumber.pendingValue' claim value.
      *
-     * @param userStoreManager User store manager.
-     * @param user User.
+     * @param userStoreManager  User store manager.
+     * @param user              User.
      * @return Claim value.
      * @throws IdentityEventException
      */
@@ -332,8 +332,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         for (Map.Entry<String, String> entry : verificationPendingMobileNumClaimMap.entrySet()) {
             String pendingVerificationMobileNumClaimURI = entry.getKey();
-            if (pendingVerificationMobileNumClaimURI
-                    .equals(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM)) {
+            if (IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM
+                    .equals(pendingVerificationMobileNumClaimURI)) {
                 return entry.getValue();
             }
         }
@@ -341,21 +341,39 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Generate an OTP for password recovery via mobile Channel.
+     * Check whether mobile verification on update feature is enabled via connector configuration.
      *
-     * @return SMS OTP.
+     * @param userTenantDomain      Tenant domain of the user.
+     * @return True if the feature is enabled, false otherwise.
+     * @throws IdentityEventException
      */
-    private String generateSMSOTP() {
+    private boolean isMobileVerificationOnUpdateEnabled(String userTenantDomain) throws IdentityEventException {
 
-        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, userTenantDomain));
+    }
+
+    /**
+     * Invalidate pending mobile number verification.
+     *
+     * @param user              User.
+     * @param userStoreManager  User store manager.
+     * @param claims            User claims.
+     * @throws IdentityEventException
+     */
+    private void invalidatePendingMobileVerification(User user, UserStoreManager userStoreManager,
+                                                    Map<String, String> claims ) throws IdentityEventException {
+
+        if (StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
+            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            try {
+                UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+            } catch (IdentityRecoveryException e) {
+                throw new IdentityEventException("Error while invalidating previous mobile verification data " +
+                        "from recovery store for user: " + user.toFullQualifiedUsername(), e);
+            }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("OTP was generated for the user");
-        }
-        return sb.toString();
     }
 }

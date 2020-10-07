@@ -109,7 +109,7 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Enable user mobile number verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                "Mobile Number verification on update SMS OTP expiry time");
+                "Mobile number verification on update SMS OTP expiry time");
         Map<String, String> nameMapping = userClaimUpdateConfig.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal.");
     }

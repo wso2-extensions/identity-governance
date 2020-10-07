@@ -98,7 +98,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Enable user mobile number verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                "Mobile Number verification on update SMS OTP expiry time");
+                "Mobile number verification on update SMS OTP expiry time");
         return nameMapping;
     }
 

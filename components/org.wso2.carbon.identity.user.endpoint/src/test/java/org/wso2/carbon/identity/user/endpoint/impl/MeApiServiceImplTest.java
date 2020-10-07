@@ -146,7 +146,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
             when(resendConfirmationManager.resendConfirmationCode(any(User.class), anyString(), anyString(),
                     anyString(), any(Property[].class))).thenReturn(notificationResponseBean);
-            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class))).thenReturn(userRecoveryData);
+            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(userRecoveryData);
             when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
             when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
                     getRecoveryScenario("MOBILE_VERIFICATION_ON_UPDATE"));
@@ -156,7 +156,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
             assertEquals(meApiService.meResendCodePost(
                     meResendCodeRequestDTOWithInvalidScenarioProperty()).getStatus(), 400);
 
-            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class))).thenReturn(null);
+            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(null);
             assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
 
             when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.

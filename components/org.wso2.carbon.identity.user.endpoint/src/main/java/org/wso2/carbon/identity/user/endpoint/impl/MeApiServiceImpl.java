@@ -126,7 +126,10 @@ public class MeApiServiceImpl extends MeApiService {
         }
 
         if (notificationResponseBean == null) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            ErrorDTO errorDTO = Utils.getErrorDTO(Constants.STATUS_BAD_REQUEST_MESSAGE_DEFAULT,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_SCENARIO.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_SCENARIO.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
         }
         return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
@@ -142,7 +145,7 @@ public class MeApiServiceImpl extends MeApiService {
             userSelfRegistrationManager.confirmVerificationCodeMe(meCodeValidationRequestDTO.getCode(), propertyMap);
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client Error while confirming verification code ", e);
+                LOG.debug("Client error while confirming verification code ", e);
             }
             Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
@@ -257,6 +260,7 @@ public class MeApiServiceImpl extends MeApiService {
                 RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
             return recoveryScenario;
         }
@@ -268,7 +272,11 @@ public class MeApiServiceImpl extends MeApiService {
                                                               NotificationResponseBean notificationResponseBean,
                                                               ResendCodeRequestDTO resendCodeRequestDTO) {
 
-        UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO);
+        UserRecoveryData userRecoveryData = null;
+        // Currently this me/resend-code API supports resend code during mobile verification scenario only.
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
+        }
         if (userRecoveryData == null) {
             return notificationResponseBean;
         }

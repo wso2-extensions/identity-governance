@@ -362,7 +362,8 @@ public class ResendConfirmationManager {
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         // Validate the previous confirmation code with the data retrieved by the user recovery information.
         validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
