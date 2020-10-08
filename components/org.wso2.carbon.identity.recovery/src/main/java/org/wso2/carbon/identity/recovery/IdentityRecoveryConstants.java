@@ -57,7 +57,6 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
-    public static final String SMS_NOTIFICATION_CHANNEL = "SMS";
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
@@ -536,12 +535,12 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
-                "USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", " +
-                "\"MOBILE_VERIFICATION_ON_UPDATE\")";
+                "USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', " +
+                "'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN " +
-                "(\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
+                "('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
@@ -554,11 +553,11 @@ public class IdentityRecoveryConstants {
 
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
-                "AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
+                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ?" +
-                "AND SCENARIO NOT IN (\"EMAIL_VERIFICATION_ON_UPDATE\", \"MOBILE_VERIFICATION_ON_UPDATE\")";
+                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND SCENARIO = ? AND USER_DOMAIN = ? " +

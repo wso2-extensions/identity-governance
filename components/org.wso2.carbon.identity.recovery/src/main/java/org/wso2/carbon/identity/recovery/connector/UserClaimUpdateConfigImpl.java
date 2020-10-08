@@ -43,7 +43,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE = "false";
-    private static final String DEFAULT_SMS_OTP_ON_UPDATE_CODE_EXPIRY_TIME = "1";
+    private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "15";
     private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
     private static final String ENABLE_ELEMENT = "Enable";
@@ -134,7 +134,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         String enableEmailVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE;
         String emailVerificationOnUpdateCodeExpiry = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME;
         String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
-        String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_SMS_OTP_ON_UPDATE_CODE_EXPIRY_TIME;
+        String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
 
         loadConfigurations();
 

@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -129,7 +130,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         try {
             userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
                     RecoverySteps.VERIFY_MOBILE_NUMBER);
-            String secretKey = Utils.generateSecretKey(IdentityRecoveryConstants.SMS_NOTIFICATION_CHANNEL,
+            String secretKey = Utils.generateSecretKey(NotificationChannels.SMS_CHANNEL.getChannelType(),
                     user.getTenantDomain(), String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE));
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
@@ -139,8 +140,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             userRecoveryDataStore.store(recoveryDataDO);
             triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
         } catch (IdentityRecoveryException e) {
-            throw new IdentityEventException("Error while sending notification for user: " +
-                    user.toFullQualifiedUsername(), e);
+            throw new IdentityEventException("Error while sending notification to user: " +
+                    user.toFullQualifiedUsername() + " for mobile verification on update.", e);
         }
     }
 
@@ -167,8 +168,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, IdentityRecoveryConstants.
-                SMS_NOTIFICATION_CHANNEL);
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL,
+                NotificationChannels.SMS_CHANNEL.getChannelType());
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, notificationType);
         if (StringUtils.isNotBlank(verificationPendingMobileNumber)) {
             properties.put(IdentityRecoveryConstants.SEND_TO, verificationPendingMobileNumber);
