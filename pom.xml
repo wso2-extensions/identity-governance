@@ -199,9 +199,9 @@
                 <version>${servlet-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>jstl</artifactId>
-                <version>${javax.servelet.jstl.version}</version>
+                <groupId>org.apache.taglibs</groupId>
+                <artifactId>taglibs-standard-impl</artifactId>
+                <version>${taglibs-standard-impl.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
@@ -614,8 +614,7 @@
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
         <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
         <servlet-api.version>2.5</servlet-api.version>
-        <javax.servelet.jstl.version>1.2</javax.servelet.jstl.version>
-        <imp.pkg.version.javax.servlet.jsp.jstl>[1.2.1, 2.0.0)</imp.pkg.version.javax.servlet.jsp.jstl>
+        <taglibs-standard-impl.version>1.2.5</taglibs-standard-impl.version>
         <httpcomponents-httpclient.wso2.version>4.3.6.wso2v2</httpcomponents-httpclient.wso2.version>
         <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2,5.0.0)
         </httpcomponents-httpclient.imp.pkg.version.range>
@@ -641,7 +640,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.18.78</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.18.103</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.28, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
