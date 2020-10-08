@@ -54,13 +54,9 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConfig.class);
 
     private static final String CONNECTOR_NAME = "sso.login.recaptcha";
-
     private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
-
     private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
-
     private static final String SECURED_DESTINATIONS = "/commonauth,/samlsso,/oauth2";
-
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
 
     private IdentityGovernanceService identityGovernanceService;
@@ -100,8 +96,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         }
 
         if (ArrayUtils.isEmpty(connectorConfigs) || connectorConfigs.length != 2 ||
-                !(Boolean.valueOf(connectorConfigs[0].getValue()) ||
-                        Boolean.valueOf(connectorConfigs[1].getValue()))) {
+                !(Boolean.parseBoolean(connectorConfigs[0].getValue()) ||
+                        Boolean.parseBoolean(connectorConfigs[1].getValue()))) {
             return false;
         }
 
@@ -140,7 +136,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         }
 
         if (connectorConfigs != null && connectorConfigs.length != 0 &&
-                (Boolean.valueOf(connectorConfigs[0].getValue()))) {
+                (Boolean.parseBoolean(connectorConfigs[0].getValue()))) {
 
             Map<String, String> params = new HashMap<>();
             params.put("authFailure", "true");
@@ -198,13 +194,13 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public String getFriendlyName() {
 
-        return "Captcha for SSO Login";
+        return "reCaptcha for SSO Login";
     }
 
     @Override
     public String getCategory() {
 
-        return "Login Policies";
+        return "Login Attempts Security";
     }
 
     @Override
@@ -223,11 +219,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Enable captcha always");
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Enable captcha after the Max " +
-                "failed attempts");
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Always prompt reCaptcha");
+        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                "Prompt reCaptcha after max failed attempts");
         nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
-                "Max failed attempts");
+                "Max failed attempts for reCaptcha");
         return nameMapping;
     }
 
@@ -235,12 +231,12 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     public Map<String, String> getPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMapping = new HashMap<>();
-        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Enable captcha " +
-                "verification always during SSO login");
-        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Enable captcha " +
-                "verification during SSO login after allowed number of failed attempts");
+        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Always prompt " +
+                "reCaptcha verification during SSO login flow.");
+        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Prompt reCaptcha " +
+                "verification during SSO login flow only after the max failed attempts exceeded.");
         descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
-                "Number of failed attempts allows without showing the captcha");
+                "Number of failed attempts allowed without prompting reCaptcha verification.");
         return descriptionMapping;
     }
 

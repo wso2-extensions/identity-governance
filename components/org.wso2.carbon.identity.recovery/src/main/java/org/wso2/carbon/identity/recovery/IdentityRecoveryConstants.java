@@ -486,7 +486,7 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
-        public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
+        public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
