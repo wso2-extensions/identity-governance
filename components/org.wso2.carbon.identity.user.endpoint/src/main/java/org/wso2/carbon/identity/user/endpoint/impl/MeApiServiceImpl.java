@@ -34,7 +34,15 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.MeApiService;
-import org.wso2.carbon.identity.user.endpoint.dto.*;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternalResponseDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -322,23 +330,22 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private ResendCodeRequestDTO convertToResendCodeRequest(MeResendCodeRequestDTO meResendCodeRequestDTO) {
 
-        String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();
         if (meResendCodeRequestDTO != null) {
             resendCodeRequestDTO.setProperties(meResendCodeRequestDTO.getProperties());
         }
-        resendCodeRequestDTO.setUser(getUser(usernameFromContext));
+        resendCodeRequestDTO.setUser(getUser());
         return resendCodeRequestDTO;
     }
 
     /**
      * Form UserDTO using username and tenant from context.
      *
-     * @param usernameFromContext usernameFromContext.
      * @return userDTO.
      */
-    private UserDTO getUser(String usernameFromContext) {
+    private UserDTO getUser() {
 
+        String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername(UserCoreUtil.removeDomainFromName(usernameFromContext));

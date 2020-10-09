@@ -850,18 +850,12 @@ public class UserSelfRegistrationManager {
      */
     private void validateUser(User user) throws IdentityRecoveryException {
 
+        validateContextTenantDomainWithUserTenantDomain(user);
         String contextUsername = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String username = user.getUserName();
         if (!StringUtils.equalsIgnoreCase(contextUsername, username)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
                     contextUsername);
-        }
-
-        String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        String userTenantDomain = user.getTenantDomain();
-        if (!StringUtils.equalsIgnoreCase(contextTenantDomain, userTenantDomain)) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT,
-                    contextTenantDomain);
         }
     }
 

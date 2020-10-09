@@ -137,7 +137,7 @@ paths:
       summary: |
         Resend code
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         - name: meResendCodeRequest
           in: body
@@ -180,7 +180,7 @@ paths:
       summary: |
         Validate code
 
-      # This are the post parameters:
+      # These are the post parameters:
       parameters:
         - name: code
           in: body
