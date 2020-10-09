@@ -62,6 +62,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
     private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
 
+    /**
+     * USER_EXIST_THREAD_LOCAL_PROPERTY is used to maintain the state of user existence
+     * which has used in org.wso2.carbon.identity.governance.listener.BasicAuthenticator.
+     */
+    private static String USER_EXIST_THREAD_LOCAL_PROPERTY = "userExistThreadLocalProperty";
+
     @Override
     public int getExecutionOrderId() {
 
@@ -119,12 +125,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                         "user store domain: " + userStoreManager.getRealmConfiguration().getUserStoreProperty
                         (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
             }
-            if (isAuthPolicyAccountExistCheck()) {
-                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
-                        .ErrorCode.USER_DOES_NOT_EXIST);
-                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-            }
             return true;
+        } else {
+            setUserExistThreadLocal();
         }
         IdentityUtil.threadLocalProperties.get().remove(IdentityCoreConstants.USER_ACCOUNT_STATE);
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
@@ -1732,9 +1735,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         return isExists;
     }
 
-    private boolean isAuthPolicyAccountExistCheck() {
+    private void setUserExistThreadLocal() {
 
-        return Boolean.parseBoolean(IdentityUtil.getProperty("AuthenticationPolicy.CheckAccountExist"));
+        IdentityUtil.threadLocalProperties.get().put(USER_EXIST_THREAD_LOCAL_PROPERTY, true);
+        if (log.isDebugEnabled()) {
+            log.debug(USER_EXIST_THREAD_LOCAL_PROPERTY + " is added as true to the thread local.");
+        }
     }
-
 }
