@@ -1740,8 +1740,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
         IdentityUtil.threadLocalProperties.get().put(USER_EXIST_THREAD_LOCAL_PROPERTY, true);
         if (log.isDebugEnabled()) {
-            log.debug(USER_EXIST_THREAD_LOCAL_PROPERTY + " is added as true to the thread local for the user: " +
-                    userName + "in the user store domain: " + userStoreDomain);
+            log.debug(String.format("The %s is added as true to the thread local for the user: %s " +
+                    "in the user store domain: %s.", USER_EXIST_THREAD_LOCAL_PROPERTY, userName, userStoreDomain));
         }
     }
 }
