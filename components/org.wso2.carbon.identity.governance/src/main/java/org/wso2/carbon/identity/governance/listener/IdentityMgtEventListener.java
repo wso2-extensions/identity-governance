@@ -127,7 +127,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             }
             return true;
         } else {
-            setUserExistThreadLocal();
+            setUserExistThreadLocal(userName, userStoreManager.getRealmConfiguration().getUserStoreProperty
+                    (UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
         }
         IdentityUtil.threadLocalProperties.get().remove(IdentityCoreConstants.USER_ACCOUNT_STATE);
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
@@ -1735,11 +1736,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         return isExists;
     }
 
-    private void setUserExistThreadLocal() {
+    private void setUserExistThreadLocal(String userName, String userStoreDomain) {
 
         IdentityUtil.threadLocalProperties.get().put(USER_EXIST_THREAD_LOCAL_PROPERTY, true);
         if (log.isDebugEnabled()) {
-            log.debug(USER_EXIST_THREAD_LOCAL_PROPERTY + " is added as true to the thread local.");
+            log.debug(USER_EXIST_THREAD_LOCAL_PROPERTY + " is added as true to the thread local for the user: " +
+                    userName + "in the user store domain: " + userStoreDomain);
         }
     }
 }
