@@ -35,6 +35,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
     @Override
     public Response recoverPasswordPost(RecoveryInitiatingRequestDTO recoveryInitiatingRequest, String type,
                                         Boolean notify){
+        
         String tenantDomainFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants
                 .TENANT_NAME_FROM_CONTEXT);
 
