@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.account.suspension.notification.task.internal.No
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiver;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationReceiversRetrievalUtil;
+import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -61,15 +62,11 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
 
     @Override
     public List<NotificationReceiver> getNotificationReceivers(long lookupMin, long lookupMax,
-            long delayForSuspension, String tenantDomain) throws AccountSuspensionNotificationException {
+                                                               long delayForSuspension, String tenantDomain)
+            throws AccountSuspensionNotificationException {
 
-        List<NotificationReceiver> users = new ArrayList<NotificationReceiver>();
+        List<NotificationReceiver> users = new ArrayList<>();
         RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
-
-        Connection dbConnection = null;
-        String sqlStmt = null;
-        PreparedStatement prepStmt = null;
-        ResultSet resultSet = null;
 
         try {
             ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
@@ -98,57 +95,60 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
             String lastLoginTimeAttribute = claimManager
                     .getAttributeName(userStoreDomain, lastLoginClaim);
 
-            dbConnection = getDBConnection(realmConfiguration);
-            sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
-            prepStmt = dbConnection.prepareStatement(sqlStmt);
-            prepStmt.setString(1, lastLoginTimeAttribute);
-            prepStmt.setString(2, String.valueOf(lookupMin));
-            prepStmt.setString(3, String.valueOf(lookupMax));
-            prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
-            prepStmt.setString(5, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+            try (Connection dbConnection = getDBConnection(realmConfiguration)) {
+                String sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
+                try (PreparedStatement prepStmt = dbConnection.prepareStatement(sqlStmt)) {
 
-            resultSet = prepStmt.executeQuery();
+                    prepStmt.setString(1, lastLoginTimeAttribute);
+                    prepStmt.setString(2, String.valueOf(lookupMin));
+                    prepStmt.setString(3, String.valueOf(lookupMax));
+                    prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+                    prepStmt.setString(5, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
 
-            while (resultSet.next()) {
+                    try (ResultSet resultSet = prepStmt.executeQuery()) {
 
-                String userName = resultSet.getString(1);
+                        while (resultSet.next()) {
+                            String userName = resultSet.getString(1);
 
-                if (StringUtils.isNotBlank(userName)) {
+                            if (StringUtils.isNotBlank(userName)) {
 
-                    String[] claims = new String[3];
-                    claims[0] = NotificationConstants.FIRST_NAME_CLAIM;
-                    claims[1] = NotificationConstants.EMAIL_CLAIM;
-                    claims[2] = lastLoginClaim;
+                                String[] claims = new String[3];
+                                claims[0] = NotificationConstants.FIRST_NAME_CLAIM;
+                                claims[1] = NotificationConstants.EMAIL_CLAIM;
+                                claims[2] = lastLoginClaim;
 
-                    UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(IdentityTenantUtil
-                            .getTenantId(tenantDomain)).getUserStoreManager();
+                                UserStoreManager userStoreManager =
+                                        (UserStoreManager) realmService.getTenantUserRealm(IdentityTenantUtil
+                                                .getTenantId(tenantDomain)).getUserStoreManager();
 
-                    Map<String, String> map = userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
-                            (userName, userStoreDomain), claims, null);
+                                Map<String, String> map =
+                                        userStoreManager.getUserClaimValues(IdentityUtil.addDomainToName
+                                                (userName, userStoreDomain), claims, null);
 
-                    NotificationReceiver receiver = new NotificationReceiver();
-                    receiver.setEmail(map.get(NotificationConstants.EMAIL_CLAIM));
-                    receiver.setUsername(userName);
-                    receiver.setFirstName(map.get(NotificationConstants.FIRST_NAME_CLAIM));
-                    receiver.setUserStoreDomain(userStoreDomain);
+                                NotificationReceiver receiver = new NotificationReceiver();
+                                receiver.setEmail(map.get(NotificationConstants.EMAIL_CLAIM));
+                                receiver.setUsername(userName);
+                                receiver.setFirstName(map.get(NotificationConstants.FIRST_NAME_CLAIM));
+                                receiver.setUserStoreDomain(userStoreDomain);
 
-                    long lastLoginTime = Long.parseLong(map.get(lastLoginClaim));
-                    long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
-                    receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
-                    users.add(receiver);
+                                long lastLoginTime = Long.parseLong(map.get(lastLoginClaim));
+                                long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
+                                receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
+                                users.add(receiver);
+                            }
+                        }
+                    }
+                    dbConnection.commit();
+                } catch (SQLException e) {
+                    DatabaseUtil.rollBack(dbConnection);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using sql : " + sqlStmt);
+                    }
+                    throw new AccountSuspensionNotificationException(e.getMessage(), e);
                 }
             }
-            dbConnection.commit();
-        } catch (SQLException e) {
-            DatabaseUtil.rollBack(dbConnection);
-            if (log.isDebugEnabled()) {
-                log.debug("Using sql : " + sqlStmt);
-            }
+        } catch (IdentityRuntimeException | SQLException | NumberFormatException | UserStoreException e) {
             throw new AccountSuspensionNotificationException(e.getMessage(), e);
-        } catch (Exception e) {
-            throw new AccountSuspensionNotificationException(e.getMessage(), e);
-        } finally {
-            DatabaseUtil.closeAllConnections(dbConnection, resultSet, prepStmt);
         }
         return users;
     }

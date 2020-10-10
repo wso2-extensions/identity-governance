@@ -26,6 +26,7 @@ import java.util.Map;
  */
 public class UserIdentityClaim implements Serializable {
 
+    private static final long serialVersionUID = 6722253136997067191L;
     private String userName;
     private Map<String, String> userIdentityDataMap = new HashMap<>();
     private int tenantId;

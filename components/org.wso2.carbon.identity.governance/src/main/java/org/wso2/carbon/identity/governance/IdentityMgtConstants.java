@@ -29,13 +29,13 @@ public class IdentityMgtConstants {
     /**
      * Class that contains the error scenarios.
      */
-    public class Error_Scenario {
+    public static class Error_Scenario {
 
         public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
         public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";
     }
 
-    public class PropertyConfig {
+    public static class PropertyConfig {
 
         private PropertyConfig(){}
 
@@ -53,7 +53,7 @@ public class IdentityMgtConstants {
 
     }
 
-    public class Event {
+    public static class Event {
 
         private Event(){}
 
@@ -62,7 +62,7 @@ public class IdentityMgtConstants {
     }
 
 
-    public class EventProperty {
+    public static class EventProperty {
 
         private EventProperty(){}
 
@@ -73,7 +73,7 @@ public class IdentityMgtConstants {
 
     }
 
-    public class ErrorMessage {
+    public static class ErrorMessage {
 
         private ErrorMessage(){}
 
@@ -83,8 +83,7 @@ public class IdentityMgtConstants {
 
     }
 
-
-    public class Claim {
+    public static class Claim {
 
         private Claim(){}
 
@@ -95,7 +94,7 @@ public class IdentityMgtConstants {
 
     }
 
-    public class NotificationChannelConstants {
+    public static class NotificationChannelConstants {
 
         private NotificationChannelConstants() {
         }

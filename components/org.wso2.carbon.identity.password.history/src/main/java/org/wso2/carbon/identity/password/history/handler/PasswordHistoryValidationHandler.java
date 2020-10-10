@@ -38,6 +38,7 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,11 +111,12 @@ public class PasswordHistoryValidationHandler extends AbstractEventHandler imple
         PasswordHistoryDataStore passwordHistoryDataStore;
         try {
             Class<?> cls = Class.forName(passwordHistoryDataStoreClass);
-            Class[] parameterTypes = new Class[]{String.class, java.lang.Integer.TYPE};
+            Class[] parameterTypes = new Class[]{String.class, Integer.TYPE};
             Constructor<?> cons = cls.getConstructor(parameterTypes);
             Object[] arguments = {hashingAlgorithm, historyCount};
             passwordHistoryDataStore = (PasswordHistoryDataStore) cons.newInstance(arguments);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | InvocationTargetException | SecurityException | NoSuchMethodException |
+                InstantiationException | IllegalArgumentException | IllegalAccessException e) {
             throw Utils.handleEventException(
                     PasswordHistoryConstants.ErrorMessages.ERROR_CODE_LOADING_HISTORY_DATA_SOURCE, null, e);
         }
