@@ -90,7 +90,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
-                return;
             }
         }
 

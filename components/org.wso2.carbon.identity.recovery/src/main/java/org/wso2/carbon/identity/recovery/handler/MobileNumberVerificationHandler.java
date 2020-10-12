@@ -259,8 +259,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
-                            "number for user: %s in domain %s. Hence an SMS OTP verification will not be " +
-                            "triggered.", mobileNumber, username, user.getTenantDomain()));
+                            "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP verification " +
+                            "will not be triggered.", mobileNumber, username, user.getTenantDomain(),
+                            user.getUserStoreDomain()));
                 }
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
@@ -270,7 +271,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } else {
-            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }

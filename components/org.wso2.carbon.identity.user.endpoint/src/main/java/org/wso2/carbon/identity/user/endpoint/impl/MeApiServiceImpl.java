@@ -153,7 +153,7 @@ public class MeApiServiceImpl extends MeApiService {
             userSelfRegistrationManager.confirmVerificationCodeMe(meCodeValidationRequestDTO.getCode(), propertyMap);
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client error while confirming verification code ", e);
+                LOG.debug("Client error while confirming verification code.", e);
             }
             Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
