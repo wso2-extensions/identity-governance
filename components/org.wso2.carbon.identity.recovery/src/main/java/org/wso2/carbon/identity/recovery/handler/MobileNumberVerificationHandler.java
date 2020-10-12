@@ -160,7 +160,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE;
 
         if (log.isDebugEnabled()) {
-            log.debug("Sending : " + notificationType + " notification to user : " + user.toFullQualifiedUsername());
+            log.debug("Sending: " + notificationType + " notification to user: " + user.toFullQualifiedUsername());
         }
 
         String eventName = IdentityEventConstants.Event.TRIGGER_SMS_NOTIFICATION;
@@ -252,7 +252,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         MOBILE_NUMBER_CLAIM, null);
             } catch (UserStoreException e) {
                 String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
-                        "domain : %s and user store : %s", username, user.getTenantDomain(), user.getUserStoreDomain());
+                        "domain: %s and user store: %s", username, user.getTenantDomain(), user.getUserStoreDomain());
                 throw new IdentityEventException(error, e);
             }
 

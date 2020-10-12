@@ -299,7 +299,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-
         try {
             String sql;
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
@@ -340,6 +339,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     @Override
     public void invalidate(User user) throws IdentityRecoveryException {
+
         PreparedStatement prepStmt = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection();
         try {
