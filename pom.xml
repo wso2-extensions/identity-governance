@@ -695,7 +695,7 @@
         <spring-web.version>4.3.29.RELEASE</spring-web.version>
         <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
 
         <!-- Unit test versions -->
