@@ -701,6 +701,54 @@ public class UserSelfRegistrationManager {
     }
 
     /**
+     * Validates the verification code and update verified claims of the authenticated user.
+     *
+     * @param code                 Confirmation code.
+     * @param properties           Properties sent with the validate code request.
+     * @throws IdentityRecoveryException Error validating the confirmation code.
+     */
+    public void confirmVerificationCodeMe(String code, Map<String, String> properties) throws
+            IdentityRecoveryException {
+
+        Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
+        UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
+
+        // Validate the recovery step to verify mobile claim scenario.
+        if (!RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            auditRecoveryConfirm(recoveryData,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
+        }
+
+        User user = recoveryData.getUser();
+        // Validate context username and tenant domain name with user from recovery data.
+        validateUser(user);
+
+        // Get the userstore manager for the user.
+        UserStoreManager userStoreManager = getUserStoreManager(user);
+        HashMap<String, String> userClaims = new HashMap<>();
+
+        if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
+            if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+            }
+        }
+        // Update the user claims.
+        updateUserClaims(userStoreManager, user, userClaims);
+        // Invalidate code.
+        userRecoveryDataStore.invalidate(code);
+        auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
+    }
+
+    /**
      * Update the user claims.
      *
      * @param userStoreManager Userstore manager
@@ -810,6 +858,23 @@ public class UserSelfRegistrationManager {
             }
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Validate context username and tenant with the stored user's username and tenant domain..
+     *
+     * @param user User
+     * @throws IdentityRecoveryException Invalid Username/Tenant.
+     */
+    private void validateUser(User user) throws IdentityRecoveryException {
+
+        validateContextTenantDomainWithUserTenantDomain(user);
+        String contextUsername = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String username = user.getUserName();
+        if (!StringUtils.equalsIgnoreCase(contextUsername, username)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                    contextUsername);
         }
     }
 

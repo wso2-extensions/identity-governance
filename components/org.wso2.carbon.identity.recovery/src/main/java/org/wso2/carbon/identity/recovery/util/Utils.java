@@ -101,6 +101,13 @@ public class Utils {
      */
     private static ThreadLocal<String> skipSendingEmailVerificationOnUpdateState = new ThreadLocal<>();
 
+    /**
+     * This thread local variable is used to pass the state to prevent sending a verification SMS OTP when
+     * SetUserClaimsListener is triggered in the MobileNumberVerificationHandler in other update scenarios where the
+     * purpose is not to update the mobile number with a new value.
+     */
+    private static ThreadLocal<String> skipSendingSmsOtpVerificationOnUpdate = new ThreadLocal<>();
+
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
             .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL_BY_ADMIN.getCode(), UserCoreErrorConstants.ErrorMessages
@@ -193,6 +200,34 @@ public class Utils {
     public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(String value) {
 
         skipSendingEmailVerificationOnUpdateState.set(value);
+    }
+
+    /**
+     * Clear the thread local used to maintain the SMS OTP verification skipping state.
+     */
+    public static void unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        skipSendingSmsOtpVerificationOnUpdate.remove();
+    }
+
+    /**
+     * Retrieve the state to skip mobile verification.
+     *
+     * @return The state to be skipped.
+     */
+    public static String getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        return skipSendingSmsOtpVerificationOnUpdate.get();
+    }
+
+    /**
+     * Set the thread local value to represent the state whether mobile verification is to be skipped.
+     *
+     * @param value The mobile verification state to be skipped.
+     */
+    public static void setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(String value) {
+
+        skipSendingSmsOtpVerificationOnUpdate.set(value);
     }
 
     public static String getClaimFromUserStoreManager(User user, String claim)

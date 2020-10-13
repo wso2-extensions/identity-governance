@@ -106,6 +106,10 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
                 "Enable user email verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Email verification on update link expiry time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                "Enable user mobile number verification on update");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                "Mobile number verification on update SMS OTP expiry time");
         Map<String, String> nameMapping = userClaimUpdateConfig.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal.");
     }
@@ -119,6 +123,10 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, "Validity time of the email confirmation link in " +
                 "minutes.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                "Trigger a verification SMS OTP when user's mobile number is updated.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                "Validity time of the mobile number confirmation OTP in minutes.");
         Map<String, String> descriptionMapping = userClaimUpdateConfig.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal.");
     }
@@ -129,6 +137,8 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = userClaimUpdateConfig.getPropertyNames();
@@ -167,6 +177,10 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
     }
 
     @Test
@@ -174,7 +188,9 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
 
         String[] propertyNames = new String[]{IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, IdentityRecoveryConstants.ConnectorConfig
-                .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, "testproperty"};
+                .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, IdentityRecoveryConstants.ConnectorConfig
+                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,"testproperty"};
 
         IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
         mockStatic(IdentityConfigParser.class);

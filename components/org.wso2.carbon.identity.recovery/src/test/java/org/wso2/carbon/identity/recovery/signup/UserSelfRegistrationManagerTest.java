@@ -189,7 +189,8 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
 
         mockStatic(JDBCRecoveryDataStore.class);
         when(JDBCRecoveryDataStore.getInstance()).thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(Matchers.anyObject())).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(Matchers.anyObject(), Matchers.anyObject())).
+                thenReturn(userRecoveryData);
         doNothing().when(userRecoveryDataStore).invalidate(Matchers.anyString());
         doNothing().when(userRecoveryDataStore).store(Matchers.any(UserRecoveryData.class));
     }

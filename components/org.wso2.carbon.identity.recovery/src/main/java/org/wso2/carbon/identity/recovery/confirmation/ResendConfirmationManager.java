@@ -362,7 +362,8 @@ public class ResendConfirmationManager {
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         // Validate the previous confirmation code with the data retrieved by the user recovery information.
         validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
@@ -380,6 +381,9 @@ public class ResendConfirmationManager {
             if (!notificationInternallyManage) {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
+        }
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
         String secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.getRecoveryScenario
@@ -399,6 +403,12 @@ public class ResendConfirmationManager {
             properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
                     verificationPendingEmailClaimValue)};
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
+            String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
+            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                    verificationPendingMobileNumber)};
+            recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
         }
 
         userRecoveryDataStore.store(recoveryDataDO);

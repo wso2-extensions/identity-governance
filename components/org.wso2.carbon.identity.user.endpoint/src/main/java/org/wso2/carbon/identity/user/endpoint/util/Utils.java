@@ -23,6 +23,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -342,6 +343,30 @@ public class Utils {
         } catch (IdentityRecoveryException e) {
             throw new InternalServerErrorException("Error in loading user recovery data for "
                     + Utils.getUser(resendCodeRequestDTO.getUser()), e);
+        }
+
+        return userRecoveryData;
+    }
+
+    /**
+     * Gets user recovery data for a specific user by recovery scenario.
+     *
+     * @param resendCodeRequestDTO  ResendCodeRequestDTO.
+     * @param recoveryScenario      Recovery Scenario.
+     * @return User Recovery Data.
+     */
+    public static UserRecoveryData getUserRecoveryData(ResendCodeRequestDTO resendCodeRequestDTO,
+                                                       String recoveryScenario) {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = null;
+        try {
+            userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    Utils.getUser(resendCodeRequestDTO.getUser()),
+                    RecoveryScenarios.getRecoveryScenario(recoveryScenario));
+        } catch (IdentityRecoveryException e) {
+            throw new InternalServerErrorException("Error in loading user recovery data for "
+                    + Utils.getUser(resendCodeRequestDTO.getUser()) + " for scenario " + recoveryScenario, e);
         }
 
         return userRecoveryData;

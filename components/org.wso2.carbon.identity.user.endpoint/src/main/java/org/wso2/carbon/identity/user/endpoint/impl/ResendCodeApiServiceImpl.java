@@ -97,7 +97,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                                                               NotificationResponseBean notificationResponseBean,
                                                               ResendCodeRequestDTO resendCodeRequestDTO) {
 
-        UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO);
+        UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
         if (userRecoveryData == null) {
             return notificationResponseBean;
         }
