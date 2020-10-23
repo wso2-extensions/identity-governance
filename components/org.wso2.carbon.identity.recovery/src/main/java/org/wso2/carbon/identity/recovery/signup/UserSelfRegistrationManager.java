@@ -696,20 +696,16 @@ public class UserSelfRegistrationManager {
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
-
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
-
         String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
         // Verify the user account.
         triggerPostUserAccountConfirmationEvent(user, userStoreManager, verifiedChannelURI);
-
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
     }
 
-    private String extractVerifiedChannelURI(HashMap<String, String> userClaims,
-                                             String externallyVerifiedClaim) {
+    private String extractVerifiedChannelURI(HashMap<String, String> userClaims, String externallyVerifiedClaim) {
 
         String verifiedChannelURI = null;
         for (Map.Entry<String, String> entry : userClaims.entrySet()) {
