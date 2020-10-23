@@ -43,8 +43,10 @@ import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceExce
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.IdentityEventServerException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
@@ -87,6 +89,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -696,8 +699,51 @@ public class UserSelfRegistrationManager {
 
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
+
+        String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
+        // Verify the user account.
+        triggerPostUserAccountConfirmationEvent(user, userStoreManager, verifiedChannelURI);
+
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
+    }
+
+    private String extractVerifiedChannelURI(HashMap<String, String> userClaims,
+                                             String externallyVerifiedClaim) {
+
+        String verifiedChannelURI = null;
+        for (Map.Entry<String, String> entry : userClaims.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals(externallyVerifiedClaim) || key.equals(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM) ||
+                    key.equals(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl())) {
+                verifiedChannelURI = key;
+                break;
+            }
+        }
+        return verifiedChannelURI;
+    }
+
+    private void triggerPostUserAccountConfirmationEvent(User user, UserStoreManager userStoreManager,
+                                                         String verifiedChannelURI)
+            throws IdentityRecoveryServerException, IdentityRecoveryClientException {
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventClientException e) {
+            throw new IdentityRecoveryClientException(e.getErrorCode(), e.getMessage(), e);
+        } catch (IdentityEventServerException e) {
+            throw new IdentityRecoveryServerException(e.getErrorCode(), e.getMessage(), e);
+        } catch (IdentityEventException e) {
+            throw Utils
+                    .handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                            IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION, e);
+        }
     }
 
     /**
@@ -827,6 +873,8 @@ public class UserSelfRegistrationManager {
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
+        //Set account verified time claim.
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
         return userClaims;
     }
 
