@@ -29,29 +29,25 @@ import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
-import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.core.Response;
 
 import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * This is a test class for {@link ValidateUsernameApiServiceImpl}.
  */
-@PrepareForTest({Utils.class, IdentityUtil.class})
+@PrepareForTest({Utils.class})
 public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
 
     @InjectMocks
@@ -59,11 +55,6 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
 
     @Mock
     private UserSelfRegistrationManager userSelfRegistrationManager;
-
-    private final String SUPER_TENANT_USER = "test";
-    private static final String DUMMY_TENANT_DOMAIN = "test.com";
-    private static final String TEST_DOMAIN_USER = "test" + UserCoreConstants.TENANT_DOMAIN_COMBINER +
-            DUMMY_TENANT_DOMAIN;
 
     @Test (description = "This test case tests the behaviour of the API when username is empty.")
     public void testEmptyUserName() {
@@ -104,28 +95,6 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
                 "Expected error code is not received.");
     }
 
-    @Test(description = "This test method checks the API response to test backward compatibility")
-    public void tenantDomainNotMatchedWithRequest() {
-
-        UsernameValidationRequestDTO usernameValidationRequestDTO = new UsernameValidationRequestDTO();
-        usernameValidationRequestDTO.setUsername(TEST_DOMAIN_USER);
-        List<PropertyDTO> propertyDTOList = new ArrayList<>();
-        PropertyDTO propertyDTO = new PropertyDTO();
-        propertyDTO.setKey("skipSignUpEnableCheck");
-        propertyDTO.setValue("true");
-        propertyDTOList.add(propertyDTO);
-        usernameValidationRequestDTO.setProperties(propertyDTOList);
-
-        Response response = validateUsernameApiService.validateUsernamePost(usernameValidationRequestDTO);
-        Assert.assertEquals(response.getStatus(),Response.Status.OK.getStatusCode(),
-                "Expected response error is not received.");
-
-        mockIdentityUtilConfig();
-        Response response2 = validateUsernameApiService.validateUsernamePost(usernameValidationRequestDTO);
-        Assert.assertEquals(response2.getStatus(),Response.Status.BAD_REQUEST.getStatusCode(),
-                "Expected response error is not received.");
-    }
-
     @ObjectFactory
     public IObjectFactory getObjectFactory() {
 
@@ -142,19 +111,7 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
         Mockito.doReturn(false).when(userSelfRegistrationManager)
                 .isSelfRegistrationEnabled(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         Mockito.doReturn(true).when(userSelfRegistrationManager)
-                .isMatchUserNameRegex(DUMMY_TENANT_DOMAIN, MultitenantUtils.getTenantAwareUsername(TEST_DOMAIN_USER));
-
-        String fullyQualifiedUsername = SUPER_TENANT_USER + UserCoreConstants.TENANT_DOMAIN_COMBINER
-                + MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        Mockito.doReturn(true).when(userSelfRegistrationManager)
-                .isUsernameAlreadyTaken(fullyQualifiedUsername,MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-    }
-
-    private void mockIdentityUtilConfig() {
-
-        PowerMockito.mockStatic(IdentityUtil.class);
-        // Mock ENABLE_TENANT_QUALIFIED_URLS config.
-        when(IdentityUtil.getProperty(IdentityRecoveryConstants.ENABLE_TENANT_QUALIFIED_URLS)).thenReturn("true");
+                .isUsernameAlreadyTaken("test", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
     }
 
 }
