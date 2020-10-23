@@ -107,8 +107,6 @@ public class IdentityRecoveryConstants {
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
 
-    public static final String ENABLE_TENANT_QUALIFIED_URLS = "EnableTenantQualifiedUrls";
-
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
     public static final String SEND_TO = "send-to";
