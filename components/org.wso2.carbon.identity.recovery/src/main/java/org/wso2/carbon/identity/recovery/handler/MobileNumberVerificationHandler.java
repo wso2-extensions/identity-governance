@@ -43,9 +43,9 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -287,13 +287,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        String userRealm = UserStoreConfigConstants.PRIMARY;
-        String[] strComponent = usernameFromContext.split("/");
-        if (usernameFromContext.split("/").length == 2) {
-            userRealm = strComponent[0];
-            usernameFromContext = strComponent[1];
-        }
-        User invokingUser = getUser(usernameFromContext, tenantDomainFromContext, userRealm);
+        String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
+        User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
+                userDomain);
         return user.equals(invokingUser);
     }
 
