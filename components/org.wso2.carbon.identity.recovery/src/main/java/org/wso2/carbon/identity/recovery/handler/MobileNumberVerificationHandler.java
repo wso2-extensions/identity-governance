@@ -22,6 +22,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
@@ -42,10 +43,10 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,7 +75,10 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         String eventName = event.getEventName();
         UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.
                 EventProperty.USER_STORE_MANAGER);
-        User user = getUser(eventProperties, userStoreManager);
+        User user = getUser((String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME),
+                (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN),
+                userStoreManager.getRealmConfiguration().
+                        getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
 
@@ -193,23 +197,19 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Form User object from event properties.
+     * Form User object from username, tenant domain, and user store domain.
      *
-     * @param eventProperties   Event properties.
-     * @param userStoreManager  User store manager.
+     * @param userName          UserName.
+     * @param tenantDomain      Tenant Domain.
+     * @param userStoreDomain   User Domain.
      * @return User.
      */
-    private User getUser(Map eventProperties, UserStoreManager userStoreManager) {
-
-        String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().
-                getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+    private User getUser(String userName, String tenantDomain, String userStoreDomain) {
 
         User user = new User();
         user.setUserName(userName);
         user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(domainName);
+        user.setUserStoreDomain(userStoreDomain);
         return user;
     }
 
@@ -235,7 +235,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
 
-        if (MapUtils.isEmpty(claims)) {
+        if (!isInvokedByUser(user) || MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
@@ -274,6 +274,27 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }
+    }
+
+    /**
+     * Verify whether the mobile number update is invoked by the user himself, but not by another privileged user
+     * on behalf.
+     *
+     * @param user User whose claims are being updates.
+     * @return True if the user in the context is the same as the user whose claims are being updated, false otherwise.
+     */
+    private boolean isInvokedByUser(User user) {
+
+        String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userRealm = UserStoreConfigConstants.PRIMARY;
+        String[] strComponent = usernameFromContext.split("/");
+        if (usernameFromContext.split("/").length == 2) {
+            userRealm = strComponent[0];
+            usernameFromContext = strComponent[1];
+        }
+        User invokingUser = getUser(usernameFromContext, tenantDomainFromContext, userRealm);
+        return user.equals(invokingUser);
     }
 
     /**
