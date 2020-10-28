@@ -27,6 +27,16 @@ public class IdentityMgtConstants {
     public static final String ERROR_CODE_DELIMITER = "-";
 
     /**
+     * User account states.
+     */
+    public class AccountStates {
+
+        private AccountStates() {}
+
+        public static final String PENDING_ADMIN_FORCED_USER_PASSWORD_RESET = "PENDING_FUPR";
+    }
+
+    /**
      * Class that contains the error scenarios.
      */
     public static class Error_Scenario {
