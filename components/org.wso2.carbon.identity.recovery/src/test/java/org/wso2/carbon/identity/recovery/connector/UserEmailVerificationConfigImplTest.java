@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * This class does unit test coverage for UserEmailVerificationConfigImpl class.
@@ -39,8 +40,8 @@ import static org.testng.Assert.assertEquals;
 public class UserEmailVerificationConfigImplTest {
 
     private UserEmailVerificationConfigImpl userEmailVerificationConfig;
-    private static final String CATEGORY = "Account Management Policies";
-    private static final String FRIENDLY_NAME = "User Onboarding";
+    private static final String CATEGORY = "User Onboarding";
+    private static final String FRIENDLY_NAME = "Ask Password";
     private static final String SYSTEM_PURPOSE_GROUP = "JIT";
     private static final String JIT_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeJITProvisioning";
@@ -89,19 +90,19 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> nameMappingExpected = new HashMap<>();
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
-                "Enable User Email Verification");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
+                "Enable user email verification");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation");
+                "Enable account lock on creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                "Internal Notification Management");
+                "Manage notifications sending internally");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 "Email verification code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
                 "Ask password code expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 "Temporary password generation extension class");
-        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Just In Time Provisioning purposes");
+        nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage JIT provisioning purposes");
         Map<String, String> nameMapping = userEmailVerificationConfig.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -111,21 +112,23 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMappingExpected = new HashMap<>();
-        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
-                "Enable to trigger a verification notification during user creation");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
+                "A verification notification will be triggered during user creation.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                "Lock user account during user creation");
-        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "The user account will be locked during user creation.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                        EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                "Disable if the client application handles notification sending.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
-                "Set the number of minutes the email verification mail would be valid.(Negative value for infinite " +
-                        "validity)");
+                "Set the time span that the verification e-mail would be valid, in minutes. (For infinite validity " +
+                        "period, set -1)");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
-                "Set the number of minutes the ask password mail would be valid. (Negative value for infinite " +
-                        "validity)");
+                "Set the time span that the ask password e-mail would be valid, in minutes. (For infinite validity " +
+                        "period, set -1)");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
-                "Temporary password generation extension point in ask password feature)");
-        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage JIT purposes");
+                "Temporary password generation extension point in ask password feature.)");
+        descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY,
+                "Click here to manage just in time provisioning purposes.");
 
         Map<String, String> descriptionMapping = userEmailVerificationConfig.getPropertyDescriptionMapping();
 
@@ -136,7 +139,7 @@ public class UserEmailVerificationConfigImplTest {
     public void testGetPropertyNames() {
 
         List<String> propertiesExpected = new ArrayList<>();
-        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
@@ -161,7 +164,7 @@ public class UserEmailVerificationConfigImplTest {
         String testAskPasswordTempPassExtension = "org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
-        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMIL_VERIFICATION,
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 testEnableEmailVerification);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 testEmailVerificationCodeExpiry);
@@ -195,7 +198,6 @@ public class UserEmailVerificationConfigImplTest {
 
         // Here tenantDomain and propertyNames parameters are not used by method itself
         Map<String, String> defaultPropertyValues = userEmailVerificationConfig.getDefaultPropertyValues(propertyNames, tenantDomain);
-        assertEquals(defaultPropertyValues, null);
+        assertNull(defaultPropertyValues);
     }
-
 }

@@ -40,10 +40,16 @@ public interface UserRecoveryDataStore {
     UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws
             IdentityRecoveryException;
 
+    UserRecoveryData loadWithoutCodeExpiryValidation(User user, Enum recoveryScenario) throws
+            IdentityRecoveryException;
+
     void invalidate(String code) throws
             IdentityRecoveryException;
 
     void invalidate(User user) throws
+            IdentityRecoveryException;
+
+    void invalidate(User user, Enum recoveryScenario, Enum recoveryStep) throws
             IdentityRecoveryException;
 
     /**

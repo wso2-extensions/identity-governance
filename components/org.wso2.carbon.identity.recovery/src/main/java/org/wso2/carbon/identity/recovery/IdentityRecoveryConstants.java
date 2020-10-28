@@ -16,6 +16,9 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Identity management related constants.
  */
@@ -43,12 +46,14 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
+    public static final String NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE = "verifyMobileOnUpdate";
     public static final String NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE = "resendVerifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
+    public static final String NOTIFICATION_TYPE_SELF_SIGNUP_SUCCESS = "selfSignUpSuccess";
     public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
@@ -61,15 +66,26 @@ public class IdentityRecoveryConstants {
     public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
+    public static final String ACCOUNT_CONFIRMED_TIME_CLAIM = "http://wso2.org/claims/identity/accountConfirmedTime";
+
+    public static final String FUNCTION_LOCKOUT_COUNT_PROPERTY = "LockoutCount";
+    public static final String FUNCTION_FAILED_ATTEMPTS_PROPERTY = "FailedAttempts";
+    public static final String FUNCTION_MAX_ATTEMPTS_PROPERTY = "MaxAttempts";
+    public static final String FUNCTION_LOCKOUT_TIME_PROPERTY = "LockoutTime";
+    public static final String FUNCTION_LOGIN_FAIL_TIMEOUT_RATIO_PROPERTY = "TimeoutRatio";
 
     public static final String USER_NEW_CHALLENGE_ANSWERS = "userNewChallengeAnswers";
     public static final String USER_OLD_CHALLENGE_ANSWERS = "userOldChallengeAnswers";
+
+    public static final String FUNCTIONALITY_LOCK_RESOURCE_TYPE = "functionalityLock";
 
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
+    public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
+            "http://wso2.org/claims/identity/mobileNumber.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
 
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
@@ -79,6 +95,7 @@ public class IdentityRecoveryConstants {
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
     public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
+    public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -106,6 +123,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFY_CHANNEL_LIST_SEPARATOR = ",";
     public static final String CHANNEL_ATTRIBUTE_SEPARATOR = ":";
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
+    public static final String VALID_SMS_OTP_REGEX_PATTERN = "^\\[((a-z)|(A-Z)|(0-9)){1,3}\\]\\{[0-9]+\\}$";
     public static final String EXCEPTION_SCENARIO_SEPARATOR = "-";
 
     public static final String USE_LEGACY_API_PROPERTY_KEY = "useLegacyAPI";
@@ -120,10 +140,13 @@ public class IdentityRecoveryConstants {
     public static final String USER_ACCOUNT_RECOVERY = "UAR";
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
-
+    public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
     // Recovery code given at the username and password recovery initiation.
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
+
+    public static final String RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS =
+            "Recovery.Question.Password.SkipOnInsufficientAnswers";
 
     private IdentityRecoveryConstants() {
 
@@ -218,7 +241,20 @@ public class IdentityRecoveryConstants {
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
-
+        ERROR_CODE_FAILED_TO_LOCK_FUNCTIONALITY_FOR_USER("55001", "Server error occurred while locking functionality."),
+        ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER("55002", "Server error occurred while unlocking " +
+                "functionality."),
+        ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY("55003", "Error occurred while fetching lock status."),
+        ERROR_CODE_FAILED_TO_GET_PROPERTIES_FOR_FUNCTIONALITY("55004", "Error occurred while fetching functionality " +
+                "lock properties."),
+        ERROR_CODE_FAILED_TO_ADD_PROPERTIES_FOR_FUNCTIONALITY("55005", "Error occurred while adding functionality " +
+                "lock properties."),
+        ERROR_CODE_FAILED_TO_UPDATE_PROPERTIES_FOR_FUNCTIONALITY("55006", "Error occurred while updating " +
+                "functionality lock property."),
+        ERROR_CODE_FAILED_TO_ADD_RESOURCE_TYPE_TO_CONFIG_STORE("55007", "Error occurred while adding resource type to" +
+                " config store."),
+        ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE("55008", "Error occurred while fetching " +
+                "resource from config store."),
         // USR - User Self Registration.
         ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS("USR-10001",
                 "User specified communication channel is not supported by the server"),
@@ -240,6 +276,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_USERNAME_RECOVERY_NOT_ENABLED("UNR-10001", "Username recovery is not enabled"),
         ERROR_CODE_USERNAME_RECOVERY_EMPTY_TENANT_DOMAIN("UNR-10002", "Empty tenant domain in username "
                 + "recovery request"),
+        ERROR_CODE_USERNAME_RECOVERY_VALIDATION_FAILED("UNR-10003",
+                "Username recovery validation failed for user account : '%s'"),
 
         // UAR - User Account Recovery.
         ERROR_CODE_INVALID_RECOVERY_CODE("UAR-10001", "Invalid recoveryCode : '%s'"),
@@ -258,6 +296,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_RECOVERY_SCENARIO("UAR-10011", "Invalid recovery scenario : '%s'"),
         ERROR_CODE_INVALID_RESEND_CODE("UAR-10012", "Invalid resend code : '%s'"),
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code : '%s'"),
+        ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
+                "User account recovery validation failed for user account : '%s'"),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims : '%s' "
@@ -282,10 +322,14 @@ public class IdentityRecoveryConstants {
                 "reset request"),
         ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("PWR-10008", "Empty tenant domain in password "
                 + "recovery request"),
+        ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED("PWR-10009",
+                "Password recovery validation failed for user account : '%s'"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
+        ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX("PWR-15008", "SMS OTP regex pattern is not supported."),
         ERROR_CODE_INVALID_USERNAME("PWR-10009", "Invalid username! Username should be in email format."),
-
+        ERROR_CODE_SECURITY_QUESTION_BASED_PWR_LOCKED("PWR-15007", "Security question based password recovery" +
+                " is locked."),
         // Resend Account Confirmation.
         ERROR_CODE_USER_OBJECT_NOT_FOUND("PWR-60001", "User object not found in the request"),
 
@@ -401,6 +445,7 @@ public class IdentityRecoveryConstants {
 
         public static final String PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME =
                 "Recovery.Notification.Password.ExpiryTime.smsOtp";
+        public static final String PASSWORD_RECOVERY_SMS_OTP_REGEX = "Recovery.Notification.Password.smsOtp.Regex";
         public static final String RESEND_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.ResendCode";
         public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
@@ -432,6 +477,8 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
         public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
+        public static final String SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION = "SelfRegistration" +
+                ".NotifyAccountConfirmation";
 
         public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
         public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless
@@ -444,12 +491,16 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";
 
-        public static final String ENABLE_EMIL_VERIFICATION = "EmailVerification.Enable";
+        public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.Email.VerificationCode" +
                 ".ExpiryTime";
+        public static final String ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE = "UserClaimUpdate.MobileNumber." +
+                "EnableVerification";
+        public static final String MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.MobileNumber." +
+                "VerificationCode.ExpiryTime";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
@@ -467,6 +518,7 @@ public class IdentityRecoveryConstants {
 
         public static final String CHALLENGE_QUESTION_ANSWER_REGEX = "Recovery.Question.Answer.Regex";
         public static final String ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS = "Recovery.Question.Answer.Uniqueness";
+        public static final String ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET = "Recovery.AutoLogin.Enable";
     }
 
     public static class SQLQueries {
@@ -487,18 +539,37 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
         public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
-                "USER_DOMAIN = ? AND TENANT_ID =?";
+                "USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', " +
+                "'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
-                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =?";
+                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN " +
+                "('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
+
+        public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
+                "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String INVALIDATE_USER_CODE_BY_SCENARIO_CASE_INSENSITIVE = "DELETE FROM " +
+                "IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND STEP = ? AND " +
+                "USER_DOMAIN = ? AND TENANT_ID =?";
 
         public static final String DELETE_USER_RECOVERY_DATA_BY_TENANT_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE TENANT_ID = ?";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ?";
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
+                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ?";
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? " +
+                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND SCENARIO = ? AND USER_DOMAIN = ? " +
+                "AND TENANT_ID = ?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO_CASE_INSENSITIVE = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND " +
+                "USER_DOMAIN = ? AND TENANT_ID = ?";
 
     }
 
@@ -562,6 +633,108 @@ public class IdentityRecoveryConstants {
 
         /* State maintained to skip triggering an email verification when the update request contains other claims
         without the email address claim. */
+        SKIP_ON_INAPPLICABLE_CLAIMS
+    }
+
+    /**
+     * Enum contains the codes and status messages for per-user functionality locking.
+     */
+    public enum RecoveryLockReasons {
+
+        PWD_RECOVERY_MAX_ATTEMPTS_EXCEEDED("RFL_001", "Maximum attempts exceeded for password recovery.");
+
+        private final String functionalityLockCode;
+        private final String functionalityLockReason;
+
+        /**
+         * Per-user lock code constructor.
+         *
+         * @param functionalityLockCode   Lock reason code.
+         * @param functionalityLockReason Reason for the functionality lock.
+         */
+        RecoveryLockReasons(String functionalityLockCode, String functionalityLockReason) {
+
+            this.functionalityLockCode = functionalityLockCode;
+            this.functionalityLockReason = functionalityLockReason;
+        }
+
+        public String getFunctionalityLockReason() {
+
+            return functionalityLockReason;
+        }
+
+        public String getFunctionalityLockCode() {
+
+            return functionalityLockCode;
+        }
+    }
+
+    /**
+     * Enum contains the Functionality and Functionality Identifier.
+     */
+    public enum FunctionalityTypes {
+
+        FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY("FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY",
+                "SecurityQuestionBasedPasswordRecovery"),
+        FUNCTIONALITY_NOTIFICATION_BASED_PW_RECOVERY_SMS("FUNCTIONALITY_NOTIFICATION_BASED_PW_RECOVERY_SMS",
+                "SMSBasedPasswordRecovery");
+
+        private final String functionalityName;
+        private final String functionalityIdentifier;
+        private static Map<String, FunctionalityTypes> functionalityToTypeMapping;
+
+        private FunctionalityTypes(String functionalityName, String functionalityIdentifier) {
+
+            this.functionalityName = functionalityName;
+            this.functionalityIdentifier = functionalityIdentifier;
+        }
+
+        public String getFunctionalityIdentifier() {
+
+            return this.functionalityIdentifier;
+        }
+
+        public String getDescription() {
+
+            return this.functionalityName;
+        }
+
+        public String toString() {
+
+            return this.functionalityIdentifier + " - " + this.functionalityName;
+        }
+
+        public static FunctionalityTypes getFunctionality(String functionalityName) {
+
+            if (functionalityToTypeMapping == null) {
+                initMapping();
+            }
+            return functionalityToTypeMapping.get(functionalityName);
+        }
+
+        private static void initMapping() {
+
+            functionalityToTypeMapping = new HashMap<>();
+            for (FunctionalityTypes types : values()) {
+                functionalityToTypeMapping.put(types.functionalityName, types);
+            }
+        }
+    }
+
+    /**
+     * Enum which contains scenarios where it is not required to trigger an SMS OTP verification.
+     */
+    public enum SkipMobileNumberVerificationOnUpdateStates {
+
+        // State maintained to skip re-triggering an SMS OTP verification when confirming the verification code.
+        SKIP_ON_CONFIRM,
+
+        /* State maintained to skip triggering an SMS OTP verification when the mobile number to be updated is the same
+        as the existing mobile number. */
+        SKIP_ON_EXISTING_MOBILE_NUM,
+
+        /* State maintained to skip triggering an SMS OTP verification when the update request contains other claims
+        without the mobile number claim. */
         SKIP_ON_INAPPLICABLE_CLAIMS
     }
 }

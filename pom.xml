@@ -18,7 +18,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.4.27-SNAPSHOT</version>
+    <version>1.4.57-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -199,9 +199,9 @@
                 <version>${servlet-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>jstl</artifactId>
-                <version>${javax.servelet.jstl.version}</version>
+                <groupId>org.apache.taglibs</groupId>
+                <artifactId>taglibs-standard-impl</artifactId>
+                <version>${taglibs-standard-impl.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
@@ -311,6 +311,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.user.functionality.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.mgt</artifactId>
                 <exclusions>
                     <exclusion>
@@ -328,6 +333,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
             <dependency>
@@ -530,6 +540,26 @@
                         </instructions>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>${maven.findbugsplugin.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>analyze-compile</id>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -579,6 +609,10 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
 
@@ -604,9 +638,8 @@
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
         <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
         <servlet-api.version>2.5</servlet-api.version>
-        <javax.servelet.jstl.version>1.2</javax.servelet.jstl.version>
-        <imp.pkg.version.javax.servlet.jsp.jstl>[1.2.1, 2.0.0)</imp.pkg.version.javax.servlet.jsp.jstl>
-        <httpcomponents-httpclient.wso2.version>4.3.1.wso2v2</httpcomponents-httpclient.wso2.version>
+        <taglibs-standard-impl.version>1.2.5</taglibs-standard-impl.version>
+        <httpcomponents-httpclient.wso2.version>4.3.6.wso2v2</httpcomponents-httpclient.wso2.version>
         <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2,5.0.0)
         </httpcomponents-httpclient.imp.pkg.version.range>
         <com.google.code.gson.version>2.3.1</com.google.code.gson.version>
@@ -631,7 +664,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.18.52-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.18.138</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.15.28, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -654,13 +687,13 @@
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <maven.compiler.plugin.version>2.3.1</maven.compiler.plugin.version>
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
-        <jackson-jaxrs-json-provider.version>2.9.7</jackson-jaxrs-json-provider.version>
-        <jackson-databind.version>2.9.7</jackson-databind.version>
+        <jackson-jaxrs-json-provider.version>2.10.5</jackson-jaxrs-json-provider.version>
+        <jackson-databind.version>2.10.5</jackson-databind.version>
         <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
-        <cxf-bundle.version>3.2.8</cxf-bundle.version>
+        <cxf-bundle.version>3.3.7</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
-        <spring-web.version>4.1.6.RELEASE</spring-web.version>
-        <swagger-jaxrs.version>1.5.20</swagger-jaxrs.version>
+        <spring-web.version>4.3.29.RELEASE</spring-web.version>
+        <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.12</junit.version>
         <hibernate-validator.version>5.0.2.Final</hibernate-validator.version>
@@ -670,6 +703,7 @@
         <jacoco.version>0.7.9</jacoco.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
+        <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
         <mockito.version>1.10.19</mockito.version>
         <powermock.version>1.6.4</powermock.version>
         <mokito.version>1.6.6</mokito.version>
@@ -683,6 +717,8 @@
 
         <carbon.analytics.common.version>5.2.15</carbon.analytics.common.version>
         <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
+
+        <maven.findbugsplugin.version>3.0.5</maven.findbugsplugin.version>
     </properties>
 
 </project>

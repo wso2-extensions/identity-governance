@@ -21,8 +21,8 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
 import org.json.JSONObject;
+import org.slf4j.MDC;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -446,6 +446,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
         dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
         dataObject.put(AuditConstants.USER_NOTIFIED_TYPE_KEY, notificationType);
+        dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
         if (AUDIT_FAILED.equals(result)) {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }

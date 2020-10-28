@@ -50,7 +50,6 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 
 /**
@@ -155,7 +154,8 @@ public class ResendConfirmationManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
-        String confirmationCode = generateSecretKey(notificationChannel);
+        String confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
+                recoveryScenario);
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
         // Store new confirmation code.
@@ -295,38 +295,6 @@ public class ResendConfirmationManager {
     }
 
     /**
-     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
-     * UUID for other channels.
-     *
-     * @param channel Recovery notification channel.
-     * @return Secret key
-     */
-    private String generateSecretKey(String channel) {
-
-        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            return generateSMSOTP();
-        } else {
-            return UUIDGenerator.generateUUID();
-        }
-    }
-
-    /**
-     * Generate an OTP for password recovery via mobile Channel.
-     *
-     * @return OTP
-     */
-    private String generateSMSOTP() {
-
-        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
-    }
-
-    /**
      * Validate the callback Url.
      *
      * @param properties   Properties
@@ -394,7 +362,8 @@ public class ResendConfirmationManager {
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         // Validate the previous confirmation code with the data retrieved by the user recovery information.
         validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
@@ -413,7 +382,10 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
-        String secretKey = generateSecretKey(preferredChannel);
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
+        }
+        String secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.getRecoveryScenario
                 (recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
         /*
@@ -431,6 +403,12 @@ public class ResendConfirmationManager {
             properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
                     verificationPendingEmailClaimValue)};
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
+            String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
+            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                    verificationPendingMobileNumber)};
+            recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
         }
 
         userRecoveryDataStore.store(recoveryDataDO);

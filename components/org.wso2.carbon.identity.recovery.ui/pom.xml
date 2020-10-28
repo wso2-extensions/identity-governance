@@ -18,7 +18,7 @@
     <parent>
         <artifactId>identity-governance</artifactId>
         <groupId>org.wso2.carbon.identity.governance</groupId>
-        <version>1.4.27-SNAPSHOT</version>
+        <version>1.4.57-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -88,6 +88,13 @@
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Carbon-Component>UIBundle</Carbon-Component>
                     </instructions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
         </plugins>

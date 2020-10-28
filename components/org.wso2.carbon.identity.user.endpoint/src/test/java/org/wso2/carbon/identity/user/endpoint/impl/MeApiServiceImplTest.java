@@ -30,11 +30,18 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.Property;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
@@ -60,6 +67,12 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     private static final String USERNAME = "dummyUser";
     @Mock
     private UserSelfRegistrationManager userSelfRegistrationManager;
+
+    @Mock
+    private ResendConfirmationManager resendConfirmationManager;
+
+    @Mock
+    private UserRecoveryData userRecoveryData;
 
     @Mock
     private NotificationResponseBean notificationResponseBean;
@@ -108,6 +121,47 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
             when(Utils.getUserInformationService()).thenReturn(new MockUserInformationService());
 
             assertEquals(meApiService.getMe().getStatus(), 200);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    @Test
+    public void testMeValidateCodePost() {
+
+        mockClasses();
+        assertEquals(meApiService.meValidateCodePost(createMeCodeValidationRequestDTO()).getStatus(), 202);
+        assertEquals(meApiService.meValidateCodePost(null).getStatus(), 202);
+    }
+
+    @Test
+    public void testMeResendCodePost() throws IdentityRecoveryException {
+
+        mockClasses();
+        try {
+            String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
+            System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
+            when(resendConfirmationManager.resendConfirmationCode(any(User.class), anyString(), anyString(),
+                    anyString(), any(Property[].class))).thenReturn(notificationResponseBean);
+            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(userRecoveryData);
+            when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
+            when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
+                    getRecoveryScenario("MOBILE_VERIFICATION_ON_UPDATE"));
+            when(userRecoveryData.getRecoveryStep()).thenReturn(RecoverySteps.getRecoveryStep("VERIFY_MOBILE_NUMBER"));
+
+            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 201);
+            assertEquals(meApiService.meResendCodePost(
+                    meResendCodeRequestDTOWithInvalidScenarioProperty()).getStatus(), 400);
+
+            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(null);
+            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
+
+            when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
+                    getRecoveryScenario("ASK_PASSWORD"));
+            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
@@ -163,5 +217,38 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
         selfUserRegistrationRequestDTO.setProperties(listPropertyDTOs);
         selfUserRegistrationRequestDTO.setUser(buildSelfRegistartion());
         return selfUserRegistrationRequestDTO;
+    }
+
+    private MeCodeValidationRequestDTO createMeCodeValidationRequestDTO() {
+
+        MeCodeValidationRequestDTO codeValidationRequestDTO = new MeCodeValidationRequestDTO();
+        codeValidationRequestDTO.setCode("TestCode");
+        return codeValidationRequestDTO;
+    }
+
+    private MeResendCodeRequestDTO meResendCodeRequestDTO() {
+
+        MeResendCodeRequestDTO meResendCodeRequestDTO = new MeResendCodeRequestDTO();
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        listProperty.add(buildPropertyDTO("RecoveryScenario", "MOBILE_VERIFICATION_ON_UPDATE"));
+        meResendCodeRequestDTO.setProperties(listProperty);
+        return meResendCodeRequestDTO;
+    }
+
+    private MeResendCodeRequestDTO meResendCodeRequestDTOWithInvalidScenarioProperty() {
+
+        MeResendCodeRequestDTO meResendCodeRequestDTO = new MeResendCodeRequestDTO();
+        List<PropertyDTO> listProperty = new ArrayList<>();
+        listProperty.add(buildPropertyDTO("RecoveryScenario", "INVALID_SCENARIO"));
+        meResendCodeRequestDTO.setProperties(listProperty);
+        return meResendCodeRequestDTO;
+    }
+
+    private PropertyDTO buildPropertyDTO(String key, String value) {
+
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setKey(key);
+        propertyDTO.setValue(value);
+        return propertyDTO;
     }
 }

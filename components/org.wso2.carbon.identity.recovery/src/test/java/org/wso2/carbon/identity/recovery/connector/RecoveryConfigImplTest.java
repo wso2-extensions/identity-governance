@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * This class does unit test coverage for RecoveryConfigImpl class.
@@ -59,7 +60,7 @@ public class RecoveryConfigImplTest {
     @Test
     public void testGetCategory() {
 
-        assertEquals(recoveryConfigImpl.getCategory(), "Account Management Policies");
+        assertEquals(recoveryConfigImpl.getCategory(), "Account Management");
     }
 
     @Test
@@ -78,42 +79,47 @@ public class RecoveryConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> nameMappingExpected = new HashMap<>();
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, "Enable " +
-                "Notification Based Password Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, "Enable " +
-                "Internal Notification Management");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, "Enable " +
-                "reCaptcha for Password Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, "Enable Security " +
-                "Question Based Password Recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                "Notification based password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                "Manage notifications sending internally");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
+                "Enable reCaptcha for password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+                "Security question based password recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
-                "Challenge question answer regex");
+                "Security question answer regex");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
-                "Enforce challenge question answer uniqueness");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number Of Questions " +
-                "Required For Password Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Enable Username Recovery");
+                "Enforce security question answer uniqueness");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number of " +
+                "questions required for password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Username recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
-                "Enable reCaptcha for Username Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery Link Expiry Time");
+                "Enable reCaptcha for username recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery link expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
-                "SMS OTP Expiry Time");
+                "SMS OTP expiry time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                "SMS OTP regex");
 
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
-                "Notify when Recovery Success");
+                "Notify when recovery success");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
-                "Notify when Questions Based Recovery Starts");
+                "Notify when security questions based recovery starts");
 
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
-                "Enable reCaptcha for Security Questions Based Password Recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
-                .RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, "Max Failed Attempts for ReCaptcha");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable " +
-                "forced challenge questions");
+                "Enable reCaptcha for security questions based password recovery");
+        nameMappingExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS,
+                "Max failed attempts for reCaptcha");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, "Enable forced " +
+                "security questions");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
-                "Minimum Number of Forced Challenge Questions to be Answered");
+                "Minimum number of forced security questions to be answered");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "Enable Auto Login After Password Reset");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -125,22 +131,27 @@ public class RecoveryConfigImplTest {
 
         Map<String, String> descriptionMappingExpected = new HashMap<String, String>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "Disable if the client application handles notification sending");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
+                "Security question answer regex");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
+                "Enforce security question answer uniqueness");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
-                "Show captcha for challenge question based password recovery");
+                "Prompt reCaptcha for security question based password recovery");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
-                "Force users to provide answers to challenge questions during sign in");
+                "Force users to provide answers to security questions during sign in");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
-                "Force users to provide answers to challenge questions during sign in " +
+                "Force users to provide answers to security questions during sign in " +
                         "if user has answered lesser than this value");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 "Recovery callback URL regex");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "Expiration time of the SMS OTP code for password recovery");
-        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
-                "Challenge question answer regex");
-        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
-                "Enforce challenge question answer uniqueness");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                "Regex for SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, " +
+                        "0-9.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                "User will be logged in automatically after completing the Password Reset wizard");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -165,9 +176,11 @@ public class RecoveryConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
 
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
@@ -190,6 +203,7 @@ public class RecoveryConfigImplTest {
         String testEnableNotificationInternallyManage = "true";
         String testExpiryTime = "1440";
         String testExpiryTimeSMSOTP = "1";
+        String smsOtpRegex = "[a-zA-Z0-9]{6}";
         String testNotifySuccess = "false";
         String testNotifyStart = "false";
         String testForceChallengeQuestions = "false";
@@ -199,6 +213,7 @@ public class RecoveryConfigImplTest {
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
         String enforceChallengeQuestionAnswerUniqueness = "false";
+        String enableAutoLoginAfterPasswordReset = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -223,6 +238,8 @@ public class RecoveryConfigImplTest {
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 testExpiryTimeSMSOTP);
+        defaultPropertiesExpected
+                .put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, smsOtpRegex);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 testNotifySuccess);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
@@ -237,6 +254,8 @@ public class RecoveryConfigImplTest {
                 challengeQuestionAnswerRegex);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, enforceChallengeQuestionAnswerUniqueness);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, enableAutoLoginAfterPasswordReset);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
@@ -253,7 +272,6 @@ public class RecoveryConfigImplTest {
 
         // Here tenantDomain and propertyNames parameters are not used by method itself
         Map<String, String> defaultPropertyValues = recoveryConfigImpl.getDefaultPropertyValues(propertyNames, tenantDomain);
-        assertEquals(defaultPropertyValues, null);
+        assertNull(defaultPropertyValues);
     }
-
 }

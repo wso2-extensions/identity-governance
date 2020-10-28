@@ -35,12 +35,12 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.user.api.Tenant;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.tenant.Tenant;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.ArrayList;
@@ -65,10 +65,10 @@ public class AccountValidatorThread implements Runnable {
 
         RealmService realmService = NotificationTaskDataHolder.getInstance().getRealmService();
 
-        Tenant tenants[] = new Tenant[0];
+        Tenant[] tenants = new Tenant[0];
 
         try {
-            tenants = (Tenant[]) realmService.getTenantManager().getAllTenants();
+            tenants = realmService.getTenantManager().getAllTenants();
         } catch (UserStoreException e) {
             log.error("Error occurred while retrieving tenants", e);
         }
@@ -255,7 +255,7 @@ public class AccountValidatorThread implements Runnable {
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     private void triggerNotification(User user) throws IdentityException {

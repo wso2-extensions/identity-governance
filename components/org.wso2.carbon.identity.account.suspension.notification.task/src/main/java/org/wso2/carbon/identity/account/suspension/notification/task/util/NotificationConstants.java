@@ -36,6 +36,9 @@ public class NotificationConstants {
     + "= ? AND UM_USER_ATTRIBUTE.UM_ATTR_VALUE BETWEEN ? AND ? AND UM_USER_ATTRIBUTE.UM_TENANT_ID=? AND "
     + "UM_USER.UM_TENANT_ID=?";
 
+    public static final String GET_USERS_FILTERED_BY_LAST_LOGIN_TIME_IDENTITY_CLAIM = "SELECT USER_NAME, DATA_VALUE " +
+            "FROM IDN_IDENTITY_USER_DATA WHERE DATA_KEY = ? AND DATA_VALUE BETWEEN ? AND ? AND TENANT_ID = ?";
+
     public final static String USERNAME_CLAIM = "http://wso2.org/claims/username";
     public final static String FIRST_NAME_CLAIM = "http://wso2.org/claims/givenname";
     public final static String EMAIL_CLAIM = "http://wso2.org/claims/emailaddress";

@@ -39,12 +39,16 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
+import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
+import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -52,6 +56,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -65,10 +70,12 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
 
@@ -93,6 +100,13 @@ public class Utils {
      * email address claim with a new email address.
      */
     private static ThreadLocal<String> skipSendingEmailVerificationOnUpdateState = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to pass the state to prevent sending a verification SMS OTP when
+     * SetUserClaimsListener is triggered in the MobileNumberVerificationHandler in other update scenarios where the
+     * purpose is not to update the mobile number with a new value.
+     */
+    private static ThreadLocal<String> skipSendingSmsOtpVerificationOnUpdate = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -188,6 +202,34 @@ public class Utils {
         skipSendingEmailVerificationOnUpdateState.set(value);
     }
 
+    /**
+     * Clear the thread local used to maintain the SMS OTP verification skipping state.
+     */
+    public static void unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        skipSendingSmsOtpVerificationOnUpdate.remove();
+    }
+
+    /**
+     * Retrieve the state to skip mobile verification.
+     *
+     * @return The state to be skipped.
+     */
+    public static String getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        return skipSendingSmsOtpVerificationOnUpdate.get();
+    }
+
+    /**
+     * Set the thread local value to represent the state whether mobile verification is to be skipped.
+     *
+     * @param value The mobile verification state to be skipped.
+     */
+    public static void setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(String value) {
+
+        skipSendingSmsOtpVerificationOnUpdate.set(value);
+    }
+
     public static String getClaimFromUserStoreManager(User user, String claim)
             throws UserStoreException {
 
@@ -204,7 +246,8 @@ public class Utils {
 
         if (userStoreManager != null) {
             Map<String, String> claimsMap = userStoreManager
-                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim}, UserCoreConstants.DEFAULT_PROFILE);
+                    .getUserClaimValues(userStoreQualifiedUsername, new String[]{claim},
+                            UserCoreConstants.DEFAULT_PROFILE);
             if (claimsMap != null && !claimsMap.isEmpty()) {
                 claimValue = claimsMap.get(claim);
             }
@@ -227,7 +270,8 @@ public class Utils {
         }
 
         if (userStoreManager != null) {
-            userStoreManager.deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
+            userStoreManager
+                    .deleteUserClaimValues(userStoreQualifiedUsername, claims, UserCoreConstants.DEFAULT_PROFILE);
         }
     }
 
@@ -244,6 +288,21 @@ public class Utils {
 
         return IdentityException.error(
                 IdentityRecoveryServerException.class, error.getCode(), errorDescription);
+    }
+
+    public static IdentityRecoveryServerException handleFunctionalityLockMgtServerException(
+            IdentityRecoveryConstants.ErrorMessages error, String userId, int tenantId, String functionalityIdentifier,
+            boolean isDetailedErrorMessagesEnabled) throws IdentityRecoveryServerException {
+
+        String mappedErrorCode = Utils.prependOperationScenarioToErrorCode(error.getCode(),
+                IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
+        StringBuilder message = new StringBuilder(error.getMessage());
+        if (isDetailedErrorMessagesEnabled) {
+            message.append(
+                    String.format("functionality: %s \nuserId: %s \ntenantId: %d.", functionalityIdentifier, userId,
+                            tenantId));
+        }
+        throw handleServerException(mappedErrorCode, message.toString(), null);
     }
 
     public static IdentityRecoveryServerException handleServerException(IdentityRecoveryConstants.ErrorMessages
@@ -477,9 +536,11 @@ public class Utils {
                     return connectorConfig.getValue();
                 }
             }
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null);
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_RECOVERY_CONFIGS, null, e);
         }
     }
 
@@ -492,7 +553,8 @@ public class Utils {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
         }
     }
 
@@ -516,7 +578,7 @@ public class Utils {
             return challengeSetUri;
         }
 
-        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" );
+        String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/");
         return components.length > 1 ? components[1] : components[0];
     }
 
@@ -621,9 +683,9 @@ public class Utils {
         }
 
         if (StringUtils.isNotBlank(callbackURL)) {
-                URL url = new URL(callbackURL);
-                callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
-                        .toString();
+            URL url = new URL(callbackURL);
+            callbackURL = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath(), null)
+                    .toString();
         }
         return callbackURL;
     }
@@ -652,6 +714,7 @@ public class Utils {
 
     /**
      * Get whether this is tenant flow
+     *
      * @param properties
      * @return
      * @throws UnsupportedEncodingException
@@ -711,7 +774,8 @@ public class Utils {
                 .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
             throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage, exception);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage,
+                    exception);
         }
     }
 
@@ -734,7 +798,7 @@ public class Utils {
                     null, userStoreException);
         }
 
-        return ((org.wso2.carbon.user.core.UserStoreManager)userStoreManager)
+        return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
                 .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
 
@@ -888,6 +952,74 @@ public class Utils {
     }
 
     /**
+     * Checks whether the per-user functionality locking is enabled.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isPerUserFunctionalityLockingEnabled() {
+
+        return Boolean.parseBoolean(
+                IdentityUtil.getProperty(UserFunctionalityMgtConstants.ENABLE_PER_USER_FUNCTIONALITY_LOCKING));
+    }
+
+    /**
+     * Checks whether detailed error messages are enabled.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isDetailedErrorResponseEnabled() {
+
+        return Boolean
+                .parseBoolean(IdentityUtil.getProperty(IdentityRecoveryConstants.ENABLE_DETAILED_ERROR_RESPONSE));
+    }
+
+    /**
+     * Get the unique user ID of a user given the tenant domain and the user name.
+     *
+     * @param tenantId Tenant Id of the user.
+     * @param userName Username of the user.
+     * @return Unique identifier of the user.
+     */
+    public static String getUserId(String userName, int tenantId)
+            throws IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager;
+        String userId;
+
+        try {
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            if (realmService == null || realmService.getTenantUserRealm(tenantId) == null) {
+                throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, String.valueOf(tenantId));
+            }
+            userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm(tenantId).
+                    getUserStoreManager();
+        } catch (UserStoreException | IdentityRecoveryServerException e) {
+            throw handleServerException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE, String.valueOf(tenantId), e);
+        }
+        try {
+            userId = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(userName);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS, null, e);
+        }
+        return userId;
+    }
+
+    /**
+     * Check for the configuration to skip challenge question-based password recovery if the user has not set answers
+     * for a sufficient number of questions.
+     *
+     * @return true if the config is set to true, false otherwise.
+     */
+    public static boolean isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(IdentityRecoveryConstants
+                .RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS));
+    }
+
+    /**
      * To create an audit message based on provided parameters.
      *
      * @param action     Activity
@@ -903,6 +1035,80 @@ public class Utils {
         }
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
-        AUDIT_LOG.info(String.format(AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
+        AUDIT_LOG.info(String.format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
+    }
+
+    /**
+     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
+     * UUID for other channels. OTP is generated based on the defined regex.
+     *
+     * @param channel          Recovery notification channel.
+     * @param tenantDomain     Tenant domain.
+     * @param recoveryScenario Recovery scenario.
+     * @return Secret key.
+     * @throws IdentityRecoveryServerException while getting password recovery sms otp regex.
+     */
+    public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
+            throws IdentityRecoveryServerException {
+
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
+            String charSet = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET;
+            int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
+            if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
+                String otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
+                if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
+                    throw new IdentityRecoveryServerException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+                }
+                String charsRegex = otpRegex.replaceAll("[{].*", "");
+                otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
+                // Generate a charset based on regex.
+                charSet = generateCharSet(charsRegex);
+            }
+            return generateSMSOTP(charSet, otpLength);
+        } else {
+            return UUIDGenerator.generateUUID();
+        }
+    }
+
+    /**
+     * Generate the compatible character set for the given regex.
+     *
+     * @param regex The regular expression.
+     * @return Character set for the given regex.
+     */
+    private static String generateCharSet(String regex) {
+
+        StringBuilder charSet = new StringBuilder();
+        if (regex.contains("A-Z")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
+        }
+        if (regex.contains("a-z")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
+        }
+        if (regex.contains("0-9")) {
+            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
+        }
+        return charSet.toString();
+    }
+
+    /**
+     * Generate an OTP for password recovery via mobile Channel.
+     *
+     * @param charSet   Matching character set for the defined regex.
+     * @param otpLength Length of OTP.
+     * @return OTP.
+     */
+    private static String generateSMSOTP(String charSet, int otpLength) {
+
+        char[] chars = charSet.toCharArray();
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < otpLength; i++) {
+            sb.append(chars[rnd.nextInt(chars.length)]);
+        }
+        return sb.toString();
     }
 }

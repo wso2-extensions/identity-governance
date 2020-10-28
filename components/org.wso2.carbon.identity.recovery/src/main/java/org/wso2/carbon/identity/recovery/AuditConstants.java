@@ -36,4 +36,6 @@ public class AuditConstants {
     public static final String ACTION_PASSWORD_RECOVERY = "Password recovery";
     public static final String ACTION_USERNAME_RECOVERY = "Username recovery";
     public static final String ACTION_PASSWORD_RESET = "Password reset";
+    public static final String USER_STORE_DOMAIN = "UserStoreDomain";
+    public static final String AUDIT_MESSAGE = "Initiator : %s | Action : %s | Target : %s | Data : %s | Result : %s ";
 }

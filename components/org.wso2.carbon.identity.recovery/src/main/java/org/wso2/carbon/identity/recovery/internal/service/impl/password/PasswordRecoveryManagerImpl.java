@@ -23,9 +23,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -40,6 +42,7 @@ import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.dto.ResendConfirmationDTO;
 import org.wso2.carbon.identity.recovery.dto.SuccessfulPasswordResetDTO;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -48,6 +51,9 @@ import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManag
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
+import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
 import java.util.ArrayList;
@@ -59,6 +65,13 @@ import java.util.Map;
 public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(PasswordRecoveryManagerImpl.class);
+
+    private static final boolean isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled =
+            Utils.isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled();
+
+    private static final boolean isPerUserFunctionalityLockingEnabled = Utils.isPerUserFunctionalityLockingEnabled();
+
+    private static final boolean isDetailedErrorMessagesEnabled = Utils.isDetailedErrorResponseEnabled();
 
     /**
      * Get the username recovery information with available verified channel details.
@@ -92,13 +105,31 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                         properties);
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
-        recoveryInformationDTO.setUsername(recoveryChannelInfoDTO.getUsername());
+        String username = recoveryChannelInfoDTO.getUsername();
+        recoveryInformationDTO.setUsername(username);
         // Do not add recovery channel information if Notification based recovery is not enabled.
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         if (isNotificationBasedRecoveryEnabled) {
             recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         }
-        recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
+
+        if (isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled) {
+            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled &&
+                    isMinNoOfRecoveryQuestionsAnswered(username, tenantDomain));
+        } else {
+            recoveryInformationDTO.setQuestionBasedRecoveryAllowedForUser(isQuestionBasedRecoveryEnabled);
+        }
+
+        // Check if question based password recovery is unlocked in per-user functionality locking mode.
+        if (isPerUserFunctionalityLockingEnabled) {
+            boolean isQuestionBasedRecoveryLocked = getFunctionalityStatusOfUser(tenantDomain,
+                    recoveryChannelInfoDTO.getUsername(),
+                    IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                            .getFunctionalityIdentifier()).getLockStatus();
+            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(!isQuestionBasedRecoveryLocked);
+        } else {
+            recoveryInformationDTO.setQuestionBasedRecoveryEnabled(isQuestionBasedRecoveryEnabled);
+        }
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }
@@ -586,4 +617,73 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                             .getMessage(), null);
         }
     }
+
+    /**
+     * Get the lock status of a functionality given the tenant domain, user name and the functionality type.
+     *
+     * @param tenantDomain            Tenant domain of the user.
+     * @param userName                Username of the user.
+     * @param functionalityIdentifier Identifier of the the functionality.
+     * @return The status of the functionality, {@link FunctionalityLockStatus}.
+     */
+    private FunctionalityLockStatus getFunctionalityStatusOfUser(String tenantDomain, String userName,
+                                                                 String functionalityIdentifier)
+            throws IdentityRecoveryServerException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        String userId = Utils.getUserId(userName, tenantId);
+
+        UserFunctionalityManager userFunctionalityManager =
+                IdentityRecoveryServiceDataHolder.getInstance().getUserFunctionalityManagerService();
+
+        try {
+            return userFunctionalityManager.getLockStatus(userId, tenantId, functionalityIdentifier);
+        } catch (UserFunctionalityManagementException e) {
+            String mappedErrorCode =
+                    Utils.prependOperationScenarioToErrorCode(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY
+                                    .getCode(), IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
+            StringBuilder message =
+                    new StringBuilder(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_GET_LOCK_STATUS_FOR_FUNCTIONALITY
+                                    .getMessage());
+            if (isDetailedErrorMessagesEnabled) {
+                message.append(String.format("functionality: %s for %s.",
+                        IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
+                                .getFunctionalityIdentifier(), userName));
+            }
+            throw Utils.handleServerException(mappedErrorCode, message.toString(), null);
+        }
+    }
+
+    /**
+     * Checks if user has set answers for at least the minimum number of questions with answers required for password
+     * recovery.
+     *
+     * @param username     The username of the user.
+     * @param tenantDomain The tenant domain of the user.
+     * @return True if expected number of challenge question answers have been set for the user.
+     * @throws IdentityRecoveryException Error while retrieving challenge question Ids for user.
+     */
+    private boolean isMinNoOfRecoveryQuestionsAnswered(String username, String tenantDomain) throws
+            IdentityRecoveryException {
+
+        User user = Utils.buildUser(username, tenantDomain);
+        ChallengeQuestionManager challengeQuestionManager = ChallengeQuestionManager.getInstance();
+        String[] ids = challengeQuestionManager.getUserChallengeQuestionIds(user);
+        boolean isMinNoOfRecoveryQuestionsAnswered = false;
+
+        if (ids != null) {
+            int minNoOfQuestionsToAnswer = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.QUESTION_MIN_NO_ANSWER, tenantDomain));
+            isMinNoOfRecoveryQuestionsAnswered = ids.length >= minNoOfQuestionsToAnswer;
+            if (isMinNoOfRecoveryQuestionsAnswered && log.isDebugEnabled()) {
+                log.debug(String.format("User: %s in tenant domain %s has set answers for at least the minimum number" +
+                        " of questions with answers required for password recovery.", username, tenantDomain));
+            }
+        }
+
+        return isMinNoOfRecoveryQuestionsAnswered;
+    }
+
 }

@@ -81,7 +81,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         for (Map.Entry<String, String> entry : data.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            boolean isUserExists = false;
+            boolean isUserExists;
             try {
                 isUserExists = isExistingUserDataValue(userName, tenantId, key);
             } catch (SQLException e) {
@@ -105,28 +105,24 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
     private boolean isExistingUserDataValue(String userName, int tenantId, String key) throws SQLException {
 
-        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-        PreparedStatement prepStmt = null;
-        ResultSet results;
-        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
-        try {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+            boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
             String query;
             if (isUsernameCaseSensitive) {
                 query = SQLQuery.CHECK_EXIST_USER_DATA;
             } else {
                 query = SQLQuery.CHECK_EXIST_USER_DATA_CASE_INSENSITIVE;
             }
-            prepStmt = connection.prepareStatement(query);
-            prepStmt.setInt(1, tenantId);
-            prepStmt.setString(2, userName);
-            prepStmt.setString(3, key);
-            results = prepStmt.executeQuery();
-            if (results.next()) {
-                return true;
+            try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
+                prepStmt.setInt(1, tenantId);
+                prepStmt.setString(2, userName);
+                prepStmt.setString(3, key);
+                try (ResultSet results = prepStmt.executeQuery()) {
+                    if (results.next()) {
+                        return true;
+                    }
+                }
             }
-        } finally {
-            IdentityDatabaseUtil.closeStatement(prepStmt);
-            IdentityDatabaseUtil.closeConnection(connection);
         }
         return false;
     }

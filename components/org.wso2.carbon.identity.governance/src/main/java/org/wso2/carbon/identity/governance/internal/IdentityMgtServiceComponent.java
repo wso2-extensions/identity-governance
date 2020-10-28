@@ -46,13 +46,11 @@ public class IdentityMgtServiceComponent {
 
     private static final Log log = LogFactory.getLog(IdentityMgtServiceComponent.class);
 
-    private static IdentityMgtEventListener listener = null;
-
     @Activate
     protected void activate(ComponentContext context) {
 
         try {
-            listener = new IdentityMgtEventListener();
+            IdentityMgtEventListener listener = new IdentityMgtEventListener();
             context.getBundleContext().registerService(UserOperationEventListener.class, listener, null);
             context.getBundleContext().registerService(UserOperationEventListener.class, new
                     IdentityStoreEventListener(), null);

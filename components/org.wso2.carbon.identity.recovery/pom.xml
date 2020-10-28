@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.4.27-SNAPSHOT</version>
+        <version>1.4.57-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -51,6 +51,10 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.consent.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json.wso2</groupId>
@@ -99,9 +103,18 @@
             <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.user.functionality.mgt</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -132,12 +145,15 @@
                             org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.handler.event.account.lock.service;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.slf4j; version="${org.slf4j.imp.pkg.version.range}",
                             org.wso2.carbon.identity.handler.event.account.lock.exception;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                             org.wso2.carbon.consent.mgt.core;version="${carbon.consent.mgt.version.range}",
                             org.wso2.carbon.identity.application.authentication.framework.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.model;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.configuration.mgt.core.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.base; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.mgt.util;
@@ -215,6 +231,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

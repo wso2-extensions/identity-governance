@@ -24,8 +24,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.MDC;
 import org.json.JSONObject;
+import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
@@ -53,13 +53,11 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
-import java.security.SecureRandom;
 import java.util.HashMap;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
@@ -132,7 +130,8 @@ public class NotificationPasswordRecoveryManager {
         checkAccountLockedStatus(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
-        String secretKey = generateSecretKey(notificationChannel);
+        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
@@ -152,38 +151,6 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(user, String.valueOf(notify), null, null, properties,
                 IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION);
         return notificationResponseBean;
-    }
-
-    /**
-     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
-     * UUID for other channels.
-     *
-     * @param channel Recovery notification channel.
-     * @return Secret key
-     */
-    private String generateSecretKey(String channel) {
-
-        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            return generateSMSOTP();
-        } else {
-            return UUIDGenerator.generateUUID();
-        }
-    }
-
-    /**
-     * Generate an OTP for password recovery via mobile Channel.
-     *
-     * @return OTP
-     */
-    private String generateSMSOTP() {
-
-        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
     }
 
     /**
@@ -479,8 +446,8 @@ public class NotificationPasswordRecoveryManager {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
                 log.error(errorMsg);
-                auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser().getUserName(),
-                        errorMsg, FrameworkConstants.AUDIT_SUCCESS);
+                auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), errorMsg,
+                        FrameworkConstants.AUDIT_SUCCESS);
             }
         }
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
@@ -489,7 +456,7 @@ public class NotificationPasswordRecoveryManager {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
-        auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser().getUserName(), null,
+        auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), null,
                 FrameworkConstants.AUDIT_SUCCESS);
     }
 
@@ -650,11 +617,11 @@ public class NotificationPasswordRecoveryManager {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user.getUserName(),
-                    null, FrameworkConstants.AUDIT_SUCCESS);
+            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user, null,
+                    FrameworkConstants.AUDIT_SUCCESS);
         } catch (IdentityEventException e) {
-            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user.getUserName(),
-                    e.getMessage(), FrameworkConstants.AUDIT_FAILED);
+            auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user, e.getMessage(),
+                    FrameworkConstants.AUDIT_FAILED);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
@@ -724,28 +691,32 @@ public class NotificationPasswordRecoveryManager {
 
     }
 
-    private void auditPasswordRecovery(String action, String notificationChannel, String target, String errorMsg,
+    private void auditPasswordRecovery(String action, String notificationChannel, User user, String errorMsg,
                                        String result) {
 
         JSONObject dataObject = new JSONObject();
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
         dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
         dataObject.put(AuditConstants.NOTIFICATION_CHANNEL, notificationChannel);
+        dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
+        dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
         if (AUDIT_FAILED.equals(result)) {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
-        Utils.createAuditMessage(action, target, dataObject, result);
+        Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
     }
 
-    private void auditPasswordReset(String action, String target, String errorMsg, String result) {
+    private void auditPasswordReset(String action, User user, String errorMsg, String result) {
 
         JSONObject dataObject = new JSONObject();
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
         dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
+        dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
+        dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
 
         if (AUDIT_FAILED.equals(result)) {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
-        Utils.createAuditMessage(action, target, dataObject, result);
+        Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
     }
 }

@@ -18,10 +18,12 @@ package org.wso2.carbon.identity.password.policy.handler;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertFalse;
@@ -33,113 +35,92 @@ public class PasswordPolicyValidationHandlerTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
+
         passwordPolicyValidationHandler = new PasswordPolicyValidationHandler();
     }
 
+
     @Test
     public void testGetName() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getName(),
-                "passwordPolicy", "Valid getName().");
-        assertNotEquals(passwordPolicyValidationHandler.getName(),
-                "passwordkshfy", "Invalid getName().");
-        assertFalse(Boolean.parseBoolean(passwordPolicyValidationHandler.getName()),
-                "Invalid getName().");
+
+        assertEquals(passwordPolicyValidationHandler.getName(), "passwordPolicy",
+                "getName() has been changed.");
     }
 
     @Test
     public void testGetFriendlyName() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getFriendlyName(),
-                "Password Patterns", "Valid getFriendlyName().");
-        assertNotEquals(passwordPolicyValidationHandler.getFriendlyName(),
-                "passwordHistory", "Invalid getFriendlyName().");
+
+        assertEquals(passwordPolicyValidationHandler.getFriendlyName(), "Password Patterns",
+                "getFriendlyName() has been changed.");
     }
 
     @Test
     public void testGetCategory() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getCategory(),
-                "Password Policies", "Valid getCategory().");
-        assertNotEquals(passwordPolicyValidationHandler.getCategory(),
-                "PasswordPolicies", "Invalid getCategory().");
+
+        assertEquals(passwordPolicyValidationHandler.getCategory(), "Password Policies",
+                "getCategory() has been changed.");
     }
 
     @Test
     public void testGetSubCategory() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getSubCategory(),
-                "DEFAULT", "Valid getSubCategory().");
-        assertNotEquals(passwordPolicyValidationHandler.getSubCategory(),
-                "PasswordPolicies", "Invalid getSubCategory().");
+
+        assertEquals(passwordPolicyValidationHandler.getSubCategory(), "DEFAULT",
+                "getSubCategory() has been changed.");
     }
 
     @Test
     public void testGetOrder() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getOrder(),
-                0, "Valid getOrder().");
-        assertNotEquals(passwordPolicyValidationHandler.getOrder(),
-                2, "Invalid getOrder().");
+
+        assertEquals(passwordPolicyValidationHandler.getOrder(), 0, "getOrder() has been changed.");
     }
 
     @Test
     public void testGetPropertyNameMapping() throws Exception {
-        Map<String, String> expectedMappingTrue = new HashMap<>();
-        expectedMappingTrue.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable Password Policy Feature");
-        expectedMappingTrue.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH, "Password Policy Min Length");
-        expectedMappingTrue.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, "Password Policy Max Length");
-        expectedMappingTrue.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Password Policy Pattern");
-        expectedMappingTrue.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Password Policy Error Message");
-        assertEquals(passwordPolicyValidationHandler.getPropertyNameMapping(), expectedMappingTrue,
-                "Valid getPropertyNameMapping() .");
 
-        Map<String, String> expectedMappingFalse = new HashMap<>();
-        expectedMappingFalse.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable Password Policy");
-        expectedMappingFalse.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH, "Password Policy Length");
-        expectedMappingFalse.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, "Password Policy  Length");
-        expectedMappingFalse.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Password PolicyPattern");
-        expectedMappingFalse.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Password Policy Error ");
-        assertNotEquals(passwordPolicyValidationHandler.getPropertyNameMapping(), expectedMappingFalse,
-                "Invalid getPropertyNameMapping() .");
+        Map<String, String> expectedNameMapping = new HashMap<>();
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Validate passwords based on a policy pattern");
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH, "Minimum number of characters");
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH, "Maximum number of characters");
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Password pattern regex");
+        expectedNameMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG, "Error message on pattern violation");
+        assertEquals(passwordPolicyValidationHandler.getPropertyNameMapping(), expectedNameMapping,
+                "getPropertyNameMapping() has been changed.");
     }
 
     @Test
     public void testGetPropertyDescriptionMapping() throws Exception {
-        Map<String, String> expecteddescriptionMappingTrue = new HashMap<>();
-        expecteddescriptionMappingTrue.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable password pattern policy");
-        expecteddescriptionMappingTrue.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Allowed password regex pattern");
-        expecteddescriptionMappingTrue.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG,
-                "Error message for invalid password patterns");
-        assertEquals(passwordPolicyValidationHandler.getPropertyDescriptionMapping(), expecteddescriptionMappingTrue,
-                "Valid getPropertyDescriptionMapping().");
 
-        Map<String, String> expecteddescriptionMappingFalse = new HashMap<>();
-        expecteddescriptionMappingFalse.put(PasswordPolicyConstants.PW_POLICY_ENABLE, "Enable passwordpattern policy");
-        expecteddescriptionMappingFalse.put(PasswordPolicyConstants.PW_POLICY_PATTERN, "Allow password regex pattern");
-        expecteddescriptionMappingFalse.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG,
-                "Error message for valid password patterns");
-        assertNotEquals(passwordPolicyValidationHandler.getPropertyDescriptionMapping(), expecteddescriptionMappingFalse,
-                "Invalid getPropertyDescriptionMapping().");
+        Map<String, String> expectedDescriptionMapping = new HashMap<>();
+        expectedDescriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ENABLE,
+                "Validate user passwords against a policy");
+        expectedDescriptionMapping.put(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH,
+                "Minimum number of characters in the password.");
+        expectedDescriptionMapping.put(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH,
+                "Maximum number of characters in the password.");
+        expectedDescriptionMapping.put(PasswordPolicyConstants.PW_POLICY_PATTERN,
+                "The regular expression pattern to validate the password.");
+        expectedDescriptionMapping.put(PasswordPolicyConstants.PW_POLICY_ERROR_MSG,
+                "This error message will be displayed when a pattern violation is detected.");
+        assertEquals(passwordPolicyValidationHandler.getPropertyDescriptionMapping(), expectedDescriptionMapping,
+                "getPropertyDescriptionMapping() has been changed.");
     }
 
     @Test
     public void testGetPropertyNames() throws Exception {
-        List<String> expectedpropertiesTrue = new ArrayList<>();
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_ENABLE);
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH);
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH);
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_PATTERN);
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_ERROR_MSG);
-        assertEquals(passwordPolicyValidationHandler.getPropertyNames().length,
-                expectedpropertiesTrue.size(), "Valid getPropertyDescriptionMapping().");
 
-        List<String> expectedpropertiesFalse = new ArrayList<>();
-        expectedpropertiesTrue.add(PasswordPolicyConstants.PW_POLICY_ENABLE);
-        expectedpropertiesFalse.add(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH);
-        expectedpropertiesFalse.add(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH);
-        assertNotEquals(passwordPolicyValidationHandler.getPropertyNames().length,
-                expectedpropertiesFalse.size(), "Invalid getPropertyDescriptionMapping().");
+        List<String> expectedPropertyName = new ArrayList<>();
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_ENABLE);
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_MIN_LENGTH);
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_MAX_LENGTH);
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_PATTERN);
+        expectedPropertyName.add(PasswordPolicyConstants.PW_POLICY_ERROR_MSG);
+        assertEquals(passwordPolicyValidationHandler.getPropertyNames().length, expectedPropertyName.size(),
+                "getPropertyNames() has been changed.");
     }
 
     @Test
     public void testGetDefaultPropertyValues() throws Exception {
-        assertEquals(passwordPolicyValidationHandler.getOrder(), 0, "Valid getOrder().");
-        assertNotEquals(passwordPolicyValidationHandler.getOrder(), null, "Invalid getOrder().");
+
+        assertEquals(passwordPolicyValidationHandler.getOrder(), 0, "getOrder() has been changed.");
     }
 }
