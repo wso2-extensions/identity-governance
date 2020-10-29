@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -368,7 +369,7 @@ public class UserAccountRecoveryManager {
         StringBuilder recoveryChannels = new StringBuilder();
         for (NotificationChannel channel : notificationChannels) {
             NotificationChannelDTO dto = buildNotificationChannelsResponseDTO(channelId, channel.getType(),
-                    channel.getChannelValue(), channel.isPreferredStatus());
+                    channel.getChannelValue(), channel.isPreferredStatus(), tenantDomain);
             notificationChannelDTOs.add(dto);
             // Creating the notification channel list for recovery.
             String channelEntry = channel.getType() + IdentityRecoveryConstants.CHANNEL_ATTRIBUTE_SEPARATOR + channel
@@ -384,21 +385,24 @@ public class UserAccountRecoveryManager {
     /**
      * Set notification channel details for each communication channels available for the user.
      *
-     * @param channelId   Channel Id
-     * @param channelType Channel Type (Eg: EMAIL)
-     * @param value       Channel Value (Eg: wso2@gmail.com)
-     * @param preference  Whether user marked the channel as a preferred channel of communication
+     * @param channelId    Channel Id
+     * @param channelType  Channel Type (Eg: EMAIL)
+     * @param value        Channel Value (Eg: wso2@gmail.com)
+     * @param preference   Whether user marked the channel as a preferred channel of communication
+     * @param tenantDomain Tenant domain
      * @return NotificationChannelDTO object.
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException
      */
     private NotificationChannelDTO buildNotificationChannelsResponseDTO(int channelId, String channelType, String value,
-                                                                        boolean preference) {
+                                                                        boolean preference, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
         NotificationChannelDTO notificationChannelDTO = new NotificationChannelDTO();
         notificationChannelDTO.setId(channelId);
         notificationChannelDTO.setType(channelType);
         // Encode the channel Values.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskEmailAddress(value));
+            notificationChannelDTO.setValue(maskEmailAddress(value, tenantDomain));
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channelType)) {
             notificationChannelDTO.setValue(maskMobileNumber(value));
         } else {
@@ -426,14 +430,29 @@ public class UserAccountRecoveryManager {
     /**
      * Encode the email address of the user.
      *
-     * @param email Email address
-     * @return Encoded email address (Empty String if user has no email).
+     * @param email        Email address
+     * @param tenantDomain Tenant domain
+     * @return Encoded email address (Empty String if user has no email)
+     * @throws IdentityRecoveryServerException Error while retrieving masking regex pattern for local claim in a given
+     *                                         tenant domain.
      */
-    private String maskEmailAddress(String email) {
+    private String maskEmailAddress(String email, String tenantDomain) throws IdentityRecoveryServerException {
 
+        String emailMaskingRegex;
+        String claimURI = IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM;
+        try {
+            emailMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                    .getMaskingRegexForLocalClaim(claimURI, tenantDomain);
+        } catch (ClaimMetadataException e) {
+            throw new IdentityRecoveryServerException(String.format("Error while retrieving masking regex pattern " +
+                    "for claim URI: %s in tenant domain: %s", claimURI, tenantDomain), e);
+        }
+
+        if (StringUtils.isBlank(emailMaskingRegex)) {
+            emailMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+        }
         if (StringUtils.isNotEmpty(email)) {
-            email = email.replaceAll(IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX,
-                    IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
+            email = email.replaceAll(emailMaskingRegex, IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
         }
         return email;
     }
