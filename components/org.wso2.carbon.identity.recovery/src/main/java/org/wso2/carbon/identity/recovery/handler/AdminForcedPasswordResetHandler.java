@@ -130,7 +130,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
             if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
                 try {
-                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
+                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties(),
+                            new UserRecoveryData(user, OTP, recoveryScenario, RecoverySteps.UPDATE_PASSWORD));
                 } catch (IdentityRecoveryException e) {
                     throw new IdentityEventException("Error while sending  notification ", e);
                 }

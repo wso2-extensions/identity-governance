@@ -94,7 +94,7 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityRecoveryException {
 
         publishEvent(user, String.valueOf(notify), null, null, properties,
-                IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION);
+                IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION, null);
 
         Utils.validateEmailUsername(user.getUserName());
 
@@ -143,13 +143,13 @@ public class NotificationPasswordRecoveryManager {
             // Manage notifications by the identity server.
             String eventName = Utils.resolveEventName(notificationChannel);
             triggerNotification(user, notificationChannel, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET,
-                    secretKey, eventName, properties);
+                    secretKey, eventName, properties, recoveryDataDO);
         } else {
             // Set password recovery key since the notifications are managed by an external mechanism.
             notificationResponseBean.setKey(secretKey);
         }
         publishEvent(user, String.valueOf(notify), null, null, properties,
-                IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION);
+                IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION, recoveryDataDO);
         return notificationResponseBean;
     }
 
@@ -412,7 +412,7 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
-                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD);
+                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
         validateTenantDomain(userRecoveryData.getUser());
 
         // Validate recovery step.
@@ -441,23 +441,23 @@ public class NotificationPasswordRecoveryManager {
                 String eventName = Utils.resolveEventName(notificationChannel);
                 triggerNotification(userRecoveryData.getUser(), notificationChannel,
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, StringUtils.EMPTY,
-                        eventName, properties);
+                        eventName, properties, userRecoveryData);
             } catch (IdentityRecoveryException e) {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
                 log.error(errorMsg);
                 auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), errorMsg,
-                        FrameworkConstants.AUDIT_SUCCESS);
+                        FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
             }
         }
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
-                IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD);
+                IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, userRecoveryData);
         if (log.isDebugEnabled()) {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
         auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), null,
-                FrameworkConstants.AUDIT_SUCCESS);
+                FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
     }
 
     /**
@@ -596,13 +596,19 @@ public class NotificationPasswordRecoveryManager {
      * @throws IdentityRecoveryException Error while triggering notification.
      */
     private void triggerNotification(User user, String notificationChannel, String templateName, String code,
-                                     String eventName, Property[] metaProperties) throws IdentityRecoveryException {
+                                     String eventName, Property[] metaProperties, UserRecoveryData userRecoveryData)
+            throws IdentityRecoveryException {
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+
+        if (userRecoveryData != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    userRecoveryData.getRecoveryScenario().name());
+        }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
@@ -618,10 +624,10 @@ public class NotificationPasswordRecoveryManager {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
             auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user, null,
-                    FrameworkConstants.AUDIT_SUCCESS);
+                    FrameworkConstants.AUDIT_SUCCESS, userRecoveryData, templateName);
         } catch (IdentityEventException e) {
             auditPasswordRecovery(AuditConstants.ACTION_PASSWORD_RECOVERY, notificationChannel, user, e.getMessage(),
-                    FrameworkConstants.AUDIT_FAILED);
+                    FrameworkConstants.AUDIT_FAILED, userRecoveryData, templateName);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
         }
@@ -629,14 +635,17 @@ public class NotificationPasswordRecoveryManager {
     }
 
     private void publishEvent(User user, String notify, String code, String password, Property[] metaProperties,
-                              String eventName) throws
+                              String eventName, UserRecoveryData userRecoveryData) throws
             IdentityRecoveryException {
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-
+        if (userRecoveryData != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    userRecoveryData.getRecoveryScenario().name());
+        }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
@@ -688,11 +697,11 @@ public class NotificationPasswordRecoveryManager {
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
-
     }
 
     private void auditPasswordRecovery(String action, String notificationChannel, User user, String errorMsg,
-                                       String result) {
+                                       String result, UserRecoveryData userRecoveryData,
+                                       String notificationTemplateType) {
 
         JSONObject dataObject = new JSONObject();
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
@@ -700,19 +709,32 @@ public class NotificationPasswordRecoveryManager {
         dataObject.put(AuditConstants.NOTIFICATION_CHANNEL, notificationChannel);
         dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
         dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        if (userRecoveryData != null) {
+            dataObject.put(AuditConstants.RECOVERY_SCENARIO, userRecoveryData.getRecoveryScenario().name());
+            dataObject.put(AuditConstants.RECOVERY_STEP, userRecoveryData.getRecoveryStep().name());
+        }
+        dataObject.put(AuditConstants.TENANT_DOMAIN, user.getTenantDomain());
+        dataObject.put(AuditConstants.NOTIFICATION_TEMPLATE_TYPE, notificationTemplateType);
+
         if (AUDIT_FAILED.equals(result)) {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
         Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
     }
 
-    private void auditPasswordReset(String action, User user, String errorMsg, String result) {
+    private void auditPasswordReset(String action, User user, String errorMsg, String result,
+                                    UserRecoveryData userRecoveryData) {
 
         JSONObject dataObject = new JSONObject();
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
         dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
         dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
         dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        if (userRecoveryData != null) {
+            dataObject.put(AuditConstants.RECOVERY_SCENARIO, userRecoveryData.getRecoveryScenario().name());
+            dataObject.put(AuditConstants.RECOVERY_STEP, userRecoveryData.getRecoveryStep().name());
+        }
+        dataObject.put(AuditConstants.TENANT_DOMAIN, user.getTenantDomain());
 
         if (AUDIT_FAILED.equals(result)) {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);

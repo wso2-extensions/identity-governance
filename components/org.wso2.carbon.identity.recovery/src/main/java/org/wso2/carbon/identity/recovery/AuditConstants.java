@@ -36,6 +36,18 @@ public class AuditConstants {
     public static final String ACTION_PASSWORD_RECOVERY = "Password recovery";
     public static final String ACTION_USERNAME_RECOVERY = "Username recovery";
     public static final String ACTION_PASSWORD_RESET = "Password reset";
+    public static final String ACTION_NOTIFICATION_FOR_ASK_PASSWORD = "Ask password notification";
+    public static final String ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_EMAIL_LINK
+            = "Forced password reset via email link notification";
+    public static final String ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_OTP
+            = "Forced password reset via OTP notification";
+    public static final String ACTION_NOTIFICATION_EMAIL_CONFIRMATION_REQUEST
+            = "Email confirmation request notification";
+    public static final String ACTION_NOTIFICATION_GENERAL = "General notification";
+    public static final String NOTIFICATION_TEMPLATE_TYPE = "Notification template";
     public static final String USER_STORE_DOMAIN = "UserStoreDomain";
+    public static final String RECOVERY_SCENARIO = "RecoveryScenario";
+    public static final String RECOVERY_STEP = "RecoveryStep";
+    public static final String TENANT_DOMAIN = "Tenant";
     public static final String AUDIT_MESSAGE = "Initiator : %s | Action : %s | Target : %s | Data : %s | Result : %s ";
 }
