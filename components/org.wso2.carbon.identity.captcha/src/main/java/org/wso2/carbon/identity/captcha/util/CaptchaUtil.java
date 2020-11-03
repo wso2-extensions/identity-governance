@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.captcha.util;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -36,6 +37,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -473,11 +476,16 @@ public class CaptchaUtil {
                                                              String currentAuthenticatorName) {
 
         int currentStep = authenticationContext.getCurrentStep();
-        List<AuthenticatorConfig> authenticatorList = authenticationContext.getSequenceConfig().getStepMap()
-                .get(currentStep).getAuthenticatorList();
-        for (AuthenticatorConfig authenticatorConfig : authenticatorList) {
-            if (authenticatorConfig.getName().equals(currentAuthenticatorName)) {
-                return authenticatorConfig.getApplicationAuthenticator();
+        SequenceConfig sequenceConfig = authenticationContext.getSequenceConfig();
+        if (sequenceConfig != null) {
+            Map<Integer, StepConfig> stepConfigMap = sequenceConfig.getStepMap();
+            if (MapUtils.isNotEmpty(stepConfigMap) && stepConfigMap.containsKey(currentStep)) {
+                List<AuthenticatorConfig> authenticatorList = stepConfigMap.get(currentStep).getAuthenticatorList();
+                for (AuthenticatorConfig authenticatorConfig : authenticatorList) {
+                    if (authenticatorConfig.getName().equals(currentAuthenticatorName)) {
+                        return authenticatorConfig.getApplicationAuthenticator();
+                    }
+                }
             }
         }
         return null;
