@@ -34,6 +34,9 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
@@ -66,6 +69,7 @@ import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletRequest;
 
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_MECHANISM;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
 /**
@@ -439,5 +443,43 @@ public class CaptchaUtil {
                 new String[]{PROPERTY_ENABLE_RECAPTCHA}, tenantDomain);
 
         return connectorConfigs;
+    }
+
+    /**
+     * Validate whether the authentication mechanism of the current authenticator is 'basic'.
+     *
+     * @param authenticationContext     Authentication context.
+     * @param currentAuthenticatorName  Name of the current authenticator.
+     * @return  True if auth mechanism is 'basic', false otherwise.
+     */
+    public static boolean isValidAuthenticator(AuthenticationContext authenticationContext, String currentAuthenticatorName) {
+
+        ApplicationAuthenticator currentApplicationAuthenticator =
+                getCurrentAuthenticator(authenticationContext, currentAuthenticatorName);
+        if (currentApplicationAuthenticator != null) {
+            return (BASIC_AUTH_MECHANISM.equals(currentApplicationAuthenticator.getAuthMechanism()));
+        }
+        return false;
+    }
+
+    /**
+     * Get the current authenticator from the sequence configuration in the authentication context.
+     *
+     * @param authenticationContext     Authentication context.
+     * @param currentAuthenticatorName  Name of the current authenticator.
+     * @return Current authenticator object.
+     */
+    private static ApplicationAuthenticator getCurrentAuthenticator(AuthenticationContext authenticationContext,
+                                                             String currentAuthenticatorName) {
+
+        int currentStep = authenticationContext.getCurrentStep();
+        List<AuthenticatorConfig> authenticatorList = authenticationContext.getSequenceConfig().getStepMap()
+                .get(currentStep).getAuthenticatorList();
+        for (AuthenticatorConfig authenticatorConfig : authenticatorList) {
+            if (authenticatorConfig.getName().equals(currentAuthenticatorName)) {
+                return authenticatorConfig.getApplicationAuthenticator();
+            }
+        }
+        return null;
     }
 }
