@@ -39,6 +39,9 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTHENTICATOR;
+import static org.wso2.carbon.identity.captcha.util.CaptchaUtil.isValidAuthenticator;
+
 /**
  * FailLoginAttemptValidator is changed to act as an event handler for its' subscribed event in
  * {@link FailLoginAttemptValidationHandler} with this release.
@@ -79,7 +82,8 @@ public class FailLoginAttemptValidator extends AbstractIdentityMessageHandler im
         if (StringUtils.isBlank(currentAuthenticator) && MapUtils.isNotEmpty(map)) {
             currentAuthenticator = (String) map.get(FrameworkConstants.AUTHENTICATOR);
         }
-        if ("BasicAuthenticator".equals(currentAuthenticator) && map != null && map.get
+        if ((BASIC_AUTHENTICATOR.equals(currentAuthenticator) ||
+                isValidAuthenticator(authenticationContext, currentAuthenticator)) && map != null && map.get
                 (FrameworkConstants.AnalyticsAttributes.USER) != null) {
 
             if (map.get(FrameworkConstants.AnalyticsAttributes.USER) instanceof User) {
