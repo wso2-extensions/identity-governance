@@ -689,7 +689,7 @@
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
         <jackson-jaxrs-json-provider.version>2.10.5</jackson-jaxrs-json-provider.version>
         <jackson-databind.version>2.10.5</jackson-databind.version>
-        <synapse-core.version>2.1.2-wso2v6</synapse-core.version>
+        <synapse-core.version>3.0.1</synapse-core.version>
         <cxf-bundle.version>3.3.7</cxf-bundle.version>
         <jackson.version>1.9.13</jackson.version>
         <spring-web.version>4.3.29.RELEASE</spring-web.version>
