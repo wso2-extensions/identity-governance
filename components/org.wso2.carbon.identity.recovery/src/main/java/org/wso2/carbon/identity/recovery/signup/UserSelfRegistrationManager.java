@@ -671,6 +671,15 @@ public class UserSelfRegistrationManager {
         }
         // Get the userstore manager for the user.
         UserStoreManager userStoreManager = getUserStoreManager(user);
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_USER_ACCOUNT_CONFIRMATION);
+        } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_EMAIL_CHANGE_VERIFICATION);
+        }
 
         String externallyVerifiedClaim = null;
 
@@ -685,10 +694,6 @@ public class UserSelfRegistrationManager {
         // NOTE: Verification channel is stored in Remaining_Sets in user recovery data.
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, recoveryData.getRemainingSetIds(),
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
-
-        Map<String, Object> eventProperties = new HashMap<>();
-        eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
-        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
@@ -707,9 +712,9 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
             String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
-            triggerPostConfirmationEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
+            triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
         } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
-            triggerPostConfirmationEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
+            triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
         }
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
@@ -729,7 +734,7 @@ public class UserSelfRegistrationManager {
         return verifiedChannelURI;
     }
 
-    private void triggerPostConfirmationEvent(Map<String, Object> properties, String eventName)
+    private void triggerEvent(Map<String, Object> properties, String eventName)
             throws IdentityRecoveryServerException, IdentityRecoveryClientException {
 
         Event identityMgtEvent = new Event(eventName, properties);
