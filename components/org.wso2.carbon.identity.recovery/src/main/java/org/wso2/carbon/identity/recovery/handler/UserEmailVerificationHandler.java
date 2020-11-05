@@ -298,7 +298,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (UserStoreException e) {
             throw new IdentityEventException("Error while setting user claim value :" + user.getUserName(), e);
         }
+    }
 
+    protected void triggerNotification(User user, String type, String code, Property[] props) throws
+            IdentityRecoveryException {
+
+        triggerNotification(user, type, code, props, null);
     }
 
     protected void triggerNotification(User user, String type, String code, Property[] props,
@@ -340,7 +345,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario()
                 == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK) {
             action = AuditConstants.ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_EMAIL_LINK;
-        } else if(recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario()
+        } else if (recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario()
                 == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP) {
             action = AuditConstants.ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_OTP;
         } else if (recoveryDataDO !=null && (recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.ASK_PASSWORD
