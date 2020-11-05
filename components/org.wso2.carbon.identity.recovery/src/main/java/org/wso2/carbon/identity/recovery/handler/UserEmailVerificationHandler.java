@@ -90,6 +90,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
+                claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
             }
         }
 
@@ -178,6 +179,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
             preSetUserClaimsOnEmailUpdate(claims, userStoreManager, user);
+            claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
         }
 
         if (IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
@@ -400,7 +402,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 invalidatePendingEmailVerification(user, userStoreManager, claims);
                 return;
             }
-
+            // If this the first time addition, the verification should happen only if the claims list includes
+            // 'verifyEmail' claim set to true.
+            if (StringUtils.isBlank(existingEmail) && !isVerifyEmailClaimAvailable(claims)) {
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                return;
+            }
             claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
         } else {
@@ -481,5 +489,17 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         "from recovery store for user: " + user.toFullQualifiedUsername(), e);
             }
         }
+    }
+
+    /**
+     * Check if the claims contain the temporary claim 'verifyEmail' and it is set to true.
+     *
+     * @param claims    User claims.
+     * @return True if 'verifyEmail' claim is available as true, false otherwise.
+     */
+    private boolean isVerifyEmailClaimAvailable(Map<String, String> claims) {
+
+        return (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) &&
+                Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM)));
     }
 }

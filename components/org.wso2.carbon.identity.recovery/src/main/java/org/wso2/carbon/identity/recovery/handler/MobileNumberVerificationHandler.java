@@ -95,11 +95,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
             return;
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
             preSetUserClaimOnMobileNumberUpdate(claims, userStoreManager, user);
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
         }
 
         if (IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
@@ -235,7 +237,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
 
-        if (!isInvokedByUser(user) || MapUtils.isEmpty(claims)) {
+        if (MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
@@ -268,6 +270,14 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
+            // The verification should not happen if the claim update is invoked by a user other than the claim owner,
+            // or if the 'verifyMobile' claim is not existing in the claim list during a first time mobile claim update.
+            if ((StringUtils.isBlank(existingMobileNumber) && !isVerifyMobileClaimAvailable(claims)) ||
+                    !isInvokedByUser(user)) {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                return;
+            }
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } else {
@@ -281,16 +291,21 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * on behalf.
      *
      * @param user User whose claims are being updates.
-     * @return True if the user in the context is the same as the user whose claims are being updated, false otherwise.
+     * @return True if the user in the context is the same as the user whose claims are being updated, or if a username
+     * does not exist in the context (This happens when the claim update call is triggered during the
+     * SMS OTP authentication flow or during requested claims update in the authentication flow).
      */
     private boolean isInvokedByUser(User user) {
 
         String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
-        User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
-                userDomain);
-        return user.equals(invokingUser);
+        if (StringUtils.isNotBlank(usernameFromContext)) {
+            String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
+            User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
+                    userDomain);
+            return user.equals(invokingUser);
+        }
+        return true;
     }
 
     /**
@@ -393,5 +408,17 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         "from recovery store for user: " + user.toFullQualifiedUsername(), e);
             }
         }
+    }
+
+    /**
+     * Check if the claims contain the temporary claim 'verifyMobile' and it is set to true.
+     *
+     * @param claims    User claims.
+     * @return True if 'verifyMobile' claim is available as true, false otherwise.
+     */
+    private boolean isVerifyMobileClaimAvailable(Map<String, String> claims) {
+
+        return (claims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM) &&
+                Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM)));
     }
 }
