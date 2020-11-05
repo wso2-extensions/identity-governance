@@ -342,16 +342,16 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         Event identityMgtEvent = new Event(eventName, properties);
 
         String action;
-        if (recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario()
+        if (recoveryDataDO != null && recoveryDataDO.getRecoveryScenario()
                 == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK) {
             action = AuditConstants.ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_EMAIL_LINK;
-        } else if (recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario()
+        } else if (recoveryDataDO != null && recoveryDataDO.getRecoveryScenario()
                 == RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP) {
             action = AuditConstants.ACTION_NOTIFICATION_FOR_FORCED_PASSWORD_REST_VIA_OTP;
-        } else if (recoveryDataDO !=null && (recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.ASK_PASSWORD
+        } else if (recoveryDataDO != null && (recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.ASK_PASSWORD
                 || recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD)) {
             action = AuditConstants.ACTION_NOTIFICATION_FOR_ASK_PASSWORD;
-        } else if (recoveryDataDO !=null && recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.SELF_SIGN_UP) {
+        } else if (recoveryDataDO != null && recoveryDataDO.getRecoveryScenario() == RecoveryScenarios.SELF_SIGN_UP) {
             action = AuditConstants.ACTION_NOTIFICATION_EMAIL_CONFIRMATION_REQUEST;
         } else {
             action = AuditConstants.ACTION_NOTIFICATION_GENERAL;
