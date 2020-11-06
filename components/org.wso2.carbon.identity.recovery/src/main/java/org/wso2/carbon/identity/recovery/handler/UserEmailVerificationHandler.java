@@ -402,12 +402,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 invalidatePendingEmailVerification(user, userStoreManager, claims);
                 return;
             }
-            // If this the first time addition, the verification should happen only if the claims list includes
-            // 'verifyEmail' claim set to true.
-            if (StringUtils.isBlank(existingEmail) && !isVerifyEmailClaimAvailable(claims)) {
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                return;
+            /*
+            When 'CheckForVerifyClaimOnAddition' is enabled, the verification should happen only if the 'verifyEmail'
+            temporary claim exists as 'true' in the claim list during a first time email address claim update.
+            If 'CheckForVerifyClaimOnAddition' is disabled, no need to check for 'verifyEmail' claim.
+             */
+            if (StringUtils.isBlank(existingEmail) && Utils.isCheckForVerifyClaimOnAdditionEnabled()) {
+                if (!isVerifyEmailClaimAvailable(claims)) {
+                    Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                            .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                    invalidatePendingEmailVerification(user, userStoreManager, claims);
+                    return;
+                }
             }
             claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);

@@ -1111,4 +1111,19 @@ public class Utils {
         }
         return sb.toString();
     }
+
+    /**
+     * When adding a new email/mobile claim value instead of updating an exiting value, the verification notification
+     * can be controlled by sending an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update
+     * request. This option can be enabled form identity.xml by setting 'CheckForVerifyClaimOnAddition' to true.
+     * When this option is enabled, email/mobile verification notification on a new addition will be triggered based on
+     * the 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
+     *
+     * @return True if 'CheckForVerifyClaimOnAddition' config is set to true, false otherwise.
+     */
+    public static boolean isCheckForVerifyClaimOnAdditionEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.CHECK_FOR_VERIFY_CLAIM_ON_ADDITION));
+    }
 }

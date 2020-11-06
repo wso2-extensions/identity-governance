@@ -270,10 +270,21 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
-            // The verification should not happen if the claim update is invoked by a user other than the claim owner,
-            // or if the 'verifyMobile' claim is not existing in the claim list during a first time mobile claim update.
-            if ((StringUtils.isBlank(existingMobileNumber) && !isVerifyMobileClaimAvailable(claims)) ||
-                    !isInvokedByUser(user)) {
+            /*
+            When 'CheckForVerifyClaimOnAddition' is enabled, the verification should happen only if the 'verifyMobile'
+            temporary claim exists as 'true' in the claim list during a first time mobile claim update.
+            If 'CheckForVerifyClaimOnAddition' is disabled, no need to check for 'verifyMobile' claim.
+             */
+            if (StringUtils.isBlank(existingMobileNumber) && Utils.isCheckForVerifyClaimOnAdditionEnabled()) {
+                if (!isVerifyMobileClaimAvailable(claims)) {
+                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                    invalidatePendingMobileVerification(user, userStoreManager, claims);
+                    return;
+                }
+            }
+            // The verification should not happen if the claim update is invoked by a user other than the claim owner.
+            if (!isInvokedByUser(user)) {
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
                 return;
