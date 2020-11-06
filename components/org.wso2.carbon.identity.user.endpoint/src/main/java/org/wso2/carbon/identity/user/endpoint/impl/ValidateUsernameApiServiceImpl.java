@@ -49,86 +49,9 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
     private static final String SKIP_SIGN_UP_ENABLE_CHECK_KEY = "skipSignUpEnableCheck";
     private static final String USERNAME_JAVA_REG_EX_VIOLATION_ERROR_MSG = "UsernameJavaRegExViolationErrorMsg";
-    private static final String DISABLE_USER_NAME_VALIDITY_API_ERROR_RESPONSES =
-            "DisableUserNameValidityApiErrorResponses";
 
     @Override
     public Response validateUsernamePost(UsernameValidationRequestDTO user) {
-
-        // Checking the property DisableUserNameValidityApiErrorResponses in identity.xml to decide whether to use the
-        // newly improved method or the old one.
-
-        if (isUserNameValidityApiErrorResponsesDisabled()) {
-            return checkUserNameValidity(user);
-        } else {
-            return checkUserNameValidityStatus(user);
-        }
-    }
-
-    /**
-     * This is the old way of checking username validity, where we return 200 ok for any instance. Keeping this to
-     * preserve backward compatibility. Need to use {@link #checkUserNameValidityStatus(UsernameValidationRequestDTO)}
-     * instead.
-     *
-     * @param user Username validation request.
-     * @return Response object.
-     */
-    private Response checkUserNameValidity(UsernameValidationRequestDTO user) {
-
-        if (StringUtils.isEmpty(user.getUsername())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Username cannot be empty.").build();
-        }
-        try {
-            String tenantDomain = MultitenantUtils.getTenantDomain(user.getUsername());
-            List<PropertyDTO> propertyDTOList = user.getProperties();
-            boolean skipSelfSignUpEnabledCheck = false;
-            if (CollectionUtils.isNotEmpty(propertyDTOList)) {
-                for (PropertyDTO propertyDTO : propertyDTOList) {
-                    if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
-                        skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
-                    }
-                }
-            }
-            UserSelfRegistrationManager userSelfRegistrationManager = Utils
-                    .getUserSelfRegistrationManager();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("Validating username for user %s", user.getUsername()));
-            }
-            UsernameValidateInfoResponseDTO responseDTO = new UsernameValidateInfoResponseDTO();
-            if (!userSelfRegistrationManager.isValidTenantDomain(tenantDomain)) {
-                logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ", tenantDomain,
-                        SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
-            } else if (!skipSelfSignUpEnabledCheck &&
-                    !userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
-                logDebug(String.format("Self registration is not enabled for tenant domain: %s . Hence returning code" +
-                        ": %s", tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
-                responseDTO.setStatusCode(
-                        Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
-            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(user.getUsername())) {
-                logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
-                        user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
-                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
-            } else if (!userSelfRegistrationManager.isMatchUserNameRegex(tenantDomain, user.getUsername())) {
-                logDebug(String.format("%s is an invalid user name. Hence returning code %s: ",
-                        user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
-                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
-            } else {
-                logDebug(String.format("username : %s is available for self registration. Hence returning code %s: ",
-                        user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
-                responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
-            }
-            return Response.ok().entity(responseDTO).build();
-        } catch (IdentityRecoveryException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error while checking username validity for user " + user.getUsername(), e);
-            }
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error while checking user " +
-                    "existence").build();
-        }
-    }
-
-    private Response checkUserNameValidityStatus(UsernameValidationRequestDTO user) {
 
         if (StringUtils.isEmpty(user.getUsername())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Username cannot be empty.").build();
@@ -204,20 +127,6 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         } else {
             return user.getUsername() + " is an invalid user name. Please pick a valid username.";
         }
-    }
-
-    /**
-     * If the property DisableUserNameValidityApiErrorResponses is set to True in identity.xml, username validity API
-     * will not return error response for invalid usernames. All responses will be 200 OK with specific error codes.
-     */
-    public static boolean isUserNameValidityApiErrorResponsesDisabled() {
-
-        String enableUserNameValidationApiResponseProperty =
-                IdentityUtil.getProperty(DISABLE_USER_NAME_VALIDITY_API_ERROR_RESPONSES);
-        if (StringUtils.isNotBlank(enableUserNameValidationApiResponseProperty)) {
-            return Boolean.parseBoolean(enableUserNameValidationApiResponseProperty);
-        }
-        return false;
     }
 
     private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
