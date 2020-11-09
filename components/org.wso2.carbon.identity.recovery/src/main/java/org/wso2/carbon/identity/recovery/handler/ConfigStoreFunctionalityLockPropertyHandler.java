@@ -28,11 +28,11 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.handler.function.ResourceToProperties;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -68,7 +68,10 @@ public class ConfigStoreFunctionalityLockPropertyHandler {
                                             functionalityIdentifier);
                     properties = new ResourceToProperties().apply(resource);
                 } else {
-                    throw new UnsupportedOperationException("User Functionality properties are not configured.");
+                    if (log.isDebugEnabled()) {
+                        log.debug("User Functionality properties are not configured. Resorting to default values.");
+                    }
+                    return getDefaultConfigurationPropertiesMap();
                 }
 
             } catch (ConfigurationManagementException e) {
@@ -87,6 +90,18 @@ public class ConfigStoreFunctionalityLockPropertyHandler {
         } finally {
             FrameworkUtils.endTenantFlow();
         }
+        return properties;
+    }
+
+    private Map<String, String> getDefaultConfigurationPropertiesMap() {
+
+        Map<String, String> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.FUNCTION_MAX_ATTEMPTS_PROPERTY,
+                IdentityRecoveryConstants.MAX_ATTEMPTS_DEFAULT);
+        properties.put(IdentityRecoveryConstants.FUNCTION_LOCKOUT_TIME_PROPERTY,
+                IdentityRecoveryConstants.LOCKOUT_TIME_DEFAULT);
+        properties.put(IdentityRecoveryConstants.FUNCTION_LOGIN_FAIL_TIMEOUT_RATIO_PROPERTY,
+                IdentityRecoveryConstants.LOGIN_FAIL_TIMEOUT_RATIO_DEFAULT);
         return properties;
     }
 
