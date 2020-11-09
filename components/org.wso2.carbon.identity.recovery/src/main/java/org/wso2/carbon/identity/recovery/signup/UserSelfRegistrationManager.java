@@ -671,6 +671,15 @@ public class UserSelfRegistrationManager {
         }
         // Get the userstore manager for the user.
         UserStoreManager userStoreManager = getUserStoreManager(user);
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER, user);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_USER_ACCOUNT_CONFIRMATION);
+        } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, IdentityEventConstants.Event.PRE_EMAIL_CHANGE_VERIFICATION);
+        }
 
         String externallyVerifiedClaim = null;
 
@@ -689,6 +698,7 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
+                eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue); //todo??
                 // Todo passes when email address is properly set here.
@@ -698,9 +708,14 @@ public class UserSelfRegistrationManager {
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
-        String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
-        // Verify the user account.
-        triggerPostUserAccountConfirmationEvent(user, userStoreManager, verifiedChannelURI);
+
+        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+            String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
+            eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
+            triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
+        } else if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
+            triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
+        }
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
     }
@@ -719,16 +734,10 @@ public class UserSelfRegistrationManager {
         return verifiedChannelURI;
     }
 
-    private void triggerPostUserAccountConfirmationEvent(User user, UserStoreManager userStoreManager,
-                                                         String verifiedChannelURI)
+    private void triggerEvent(Map<String, Object> properties, String eventName)
             throws IdentityRecoveryServerException, IdentityRecoveryClientException {
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER, user);
-        properties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-
-        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION, properties);
+        Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventClientException e) {
@@ -738,7 +747,7 @@ public class UserSelfRegistrationManager {
         } catch (IdentityEventException e) {
             throw Utils
                     .handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
-                            IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION, e);
+                            eventName, e);
         }
     }
 
