@@ -551,17 +551,16 @@ public class ChallengeQuestionManager {
     private Map<String, String> retrieveAnsweredChallenges(User user, UserChallengeAnswer[] userChallengeAnswers)
             throws IdentityRecoveryException {
 
-        Map<String, String> existingQuestionAndAnswers;
-        if (!ArrayUtils.isEmpty(userChallengeAnswers)) {
+        Map<String, String> existingQuestionAndAnswers = new HashMap<>();
+        if (ArrayUtils.isNotEmpty(userChallengeAnswers)) {
             List<String> claimsList = new ArrayList<>();
             for (UserChallengeAnswer answer : userChallengeAnswers) {
-                if (answer.getQuestion() != null && StringUtils.isNotBlank(answer.getQuestion().getQuestionSetId())) {
+                if (answer != null && answer.getQuestion() != null
+                        && StringUtils.isNotBlank(answer.getQuestion().getQuestionSetId())) {
                     claimsList.add(answer.getQuestion().getQuestionSetId().trim());
                 }
             }
             existingQuestionAndAnswers = Utils.getClaimListOfUser(user, claimsList.toArray(new String[0]));
-        } else {
-            existingQuestionAndAnswers = Collections.<String, String>emptyMap();
         }
         if (log.isDebugEnabled()) {
             if (MapUtils.isEmpty(existingQuestionAndAnswers)) {
