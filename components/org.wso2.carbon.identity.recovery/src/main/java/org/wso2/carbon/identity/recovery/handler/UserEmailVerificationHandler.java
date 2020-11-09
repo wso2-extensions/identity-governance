@@ -403,11 +403,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
             }
             /*
-            When 'CheckForVerifyClaimOnUpdate' is enabled, the verification should happen only if the 'verifyEmail'
-            temporary claim exists as 'true' in the claim list.
-            If 'CheckForVerifyClaimOnUpdate' is disabled, no need to check for 'verifyEmail' claim.
+            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
+            claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
+            'verifyEmail' claim.
              */
-            if (Utils.isCheckForVerifyClaimOnUpdateEnabled() && !isVerifyEmailClaimAvailable(claims)) {
+            if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
                 invalidatePendingEmailVerification(user, userStoreManager, claims);

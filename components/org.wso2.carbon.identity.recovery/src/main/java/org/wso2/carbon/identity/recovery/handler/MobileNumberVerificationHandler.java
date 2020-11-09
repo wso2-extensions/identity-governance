@@ -118,7 +118,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     @Override
     public int getPriority(MessageContext messageContext) {
 
-        return 50;
+        int priority = super.getPriority(messageContext);
+        if (priority == -1) {
+            return 50;
+        }
+        return priority;
     }
 
     /**
@@ -271,11 +275,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 return;
             }
             /*
-            When 'CheckForVerifyClaimOnUpdate' is enabled, the verification should happen only if the 'verifyMobile'
-            temporary claim exists as 'true' in the claim list.
-            If 'CheckForVerifyClaimOnUpdate' is disabled, no need to check for 'verifyMobile' claim.
+            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
+            temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
+            check for 'verifyMobile' claim.
              */
-            if (Utils.isCheckForVerifyClaimOnUpdateEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+            if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
                 invalidatePendingMobileVerification(user, userStoreManager, claims);

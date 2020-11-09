@@ -1113,15 +1113,15 @@ public class Utils {
     /**
      * When updating email/mobile claim value, sending the verification notification can be controlled by sending
      * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
-     * This option can be enabled form identity.xml by setting 'CheckForVerifyClaimOnUpdate' to true.
-     * When this option is enabled, email/mobile verification notification on a claim update will be triggered based
-     * on the 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
+     * This option can be enabled form identity.xml by setting 'UseVerifyClaim' to true. When this option is enabled,
+     * email/mobile verification notification on a claim update will be triggered based on the
+     * 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
      *
-     * @return True if 'CheckForVerifyClaimOnUpdate' config is set to true, false otherwise.
+     * @return True if 'UseVerifyClaim' config is set to true, false otherwise.
      */
-    public static boolean isCheckForVerifyClaimOnUpdateEnabled() {
+    public static boolean isUseVerifyClaimEnabled() {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty
-                (IdentityRecoveryConstants.ConnectorConfig.CHECK_FOR_VERIFY_CLAIM_ON_UPDATE));
+                (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
     }
 }
