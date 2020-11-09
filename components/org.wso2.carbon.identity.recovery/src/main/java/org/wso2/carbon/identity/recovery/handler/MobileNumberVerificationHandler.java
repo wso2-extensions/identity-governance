@@ -271,17 +271,15 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 return;
             }
             /*
-            When 'CheckForVerifyClaimOnAddition' is enabled, the verification should happen only if the 'verifyMobile'
-            temporary claim exists as 'true' in the claim list during a first time mobile claim update.
-            If 'CheckForVerifyClaimOnAddition' is disabled, no need to check for 'verifyMobile' claim.
+            When 'CheckForVerifyClaimOnUpdate' is enabled, the verification should happen only if the 'verifyMobile'
+            temporary claim exists as 'true' in the claim list.
+            If 'CheckForVerifyClaimOnUpdate' is disabled, no need to check for 'verifyMobile' claim.
              */
-            if (StringUtils.isBlank(existingMobileNumber) && Utils.isCheckForVerifyClaimOnAdditionEnabled()) {
-                if (!isVerifyMobileClaimAvailable(claims)) {
-                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                    invalidatePendingMobileVerification(user, userStoreManager, claims);
-                    return;
-                }
+            if (Utils.isCheckForVerifyClaimOnUpdateEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                invalidatePendingMobileVerification(user, userStoreManager, claims);
+                return;
             }
             // The verification should not happen if the claim update is invoked by a user other than the claim owner.
             if (!isInvokedByUser(user)) {
@@ -301,12 +299,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * Verify whether the mobile number update is invoked by the user himself, but not by another privileged user
      * on behalf.
      *
-     * @param user User whose claims are being updates.
-     * @return True if the user in the context is the same as the user whose claims are being updated, or if a username
-     * does not exist in the context (This happens when the claim update call is triggered during the
-     * SMS OTP authentication flow or during requested claims update in the authentication flow).
+     * @param user  User whose claims are being updated.
+     * @return True if the user in the context is the same as the user whose claims are being updated, false otherwise.
+     * @throws IdentityEventException If username is not set in the CarbonContext.
      */
-    private boolean isInvokedByUser(User user) {
+    private boolean isInvokedByUser(User user) throws IdentityEventException {
 
         String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -316,7 +313,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                     userDomain);
             return user.equals(invokingUser);
         }
-        return true;
+        throw new IdentityEventException("Error while retrieving the username from CarbonContext during the " +
+                "mobile verification on update flow.");
     }
 
     /**

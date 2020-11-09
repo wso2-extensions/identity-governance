@@ -77,8 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
-
 /**
  * Class which contains the Utils for user recovery.
  */
@@ -1113,17 +1111,17 @@ public class Utils {
     }
 
     /**
-     * When adding a new email/mobile claim value instead of updating an exiting value, the verification notification
-     * can be controlled by sending an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update
-     * request. This option can be enabled form identity.xml by setting 'CheckForVerifyClaimOnAddition' to true.
-     * When this option is enabled, email/mobile verification notification on a new addition will be triggered based on
-     * the 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
+     * When updating email/mobile claim value, sending the verification notification can be controlled by sending
+     * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
+     * This option can be enabled form identity.xml by setting 'CheckForVerifyClaimOnUpdate' to true.
+     * When this option is enabled, email/mobile verification notification on a claim update will be triggered based
+     * on the 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
      *
-     * @return True if 'CheckForVerifyClaimOnAddition' config is set to true, false otherwise.
+     * @return True if 'CheckForVerifyClaimOnUpdate' config is set to true, false otherwise.
      */
-    public static boolean isCheckForVerifyClaimOnAdditionEnabled() {
+    public static boolean isCheckForVerifyClaimOnUpdateEnabled() {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty
-                (IdentityRecoveryConstants.ConnectorConfig.CHECK_FOR_VERIFY_CLAIM_ON_ADDITION));
+                (IdentityRecoveryConstants.ConnectorConfig.CHECK_FOR_VERIFY_CLAIM_ON_UPDATE));
     }
 }

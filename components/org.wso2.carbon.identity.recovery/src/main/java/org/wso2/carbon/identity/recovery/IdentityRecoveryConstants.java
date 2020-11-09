@@ -502,7 +502,7 @@ public class IdentityRecoveryConstants {
                 "EnableVerification";
         public static final String MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.MobileNumber." +
                 "VerificationCode.ExpiryTime";
-        public static final String CHECK_FOR_VERIFY_CLAIM_ON_ADDITION = "UserClaimUpdate.CheckForVerifyClaimOnAddition";
+        public static final String CHECK_FOR_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.CheckForVerifyClaimOnUpdate";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
