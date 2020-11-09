@@ -28,7 +28,6 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.handler.function.ResourceToProperties;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -69,7 +68,9 @@ public class ConfigStoreFunctionalityLockPropertyHandler {
                                             functionalityIdentifier);
                     properties = new ResourceToProperties().apply(resource);
                 } else {
-                    log.trace("User Functionality properties are not configured. Resorting to default values.");
+                    if (log.isDebugEnabled()) {
+                        log.debug("User Functionality properties are not configured. Resorting to default values.");
+                    }
                     return getDefaultConfigurationPropertiesMap();
                 }
 
