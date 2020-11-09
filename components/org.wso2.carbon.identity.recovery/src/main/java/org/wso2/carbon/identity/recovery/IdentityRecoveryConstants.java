@@ -74,6 +74,10 @@ public class IdentityRecoveryConstants {
     public static final String FUNCTION_LOCKOUT_TIME_PROPERTY = "LockoutTime";
     public static final String FUNCTION_LOGIN_FAIL_TIMEOUT_RATIO_PROPERTY = "TimeoutRatio";
 
+    public static final String MAX_ATTEMPTS_DEFAULT = "5";
+    public static final String LOCKOUT_TIME_DEFAULT = "5";
+    public static final String LOGIN_FAIL_TIMEOUT_RATIO_DEFAULT = "2";
+
     public static final String USER_NEW_CHALLENGE_ANSWERS = "userNewChallengeAnswers";
     public static final String USER_OLD_CHALLENGE_ANSWERS = "userOldChallengeAnswers";
 
