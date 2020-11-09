@@ -83,7 +83,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         } catch (Throwable throwable) {
             if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
                     throwable.getMessage())) {
-                LOG.error(throwable);
+                LOG.error(throwable.getMessage(), throwable);
                 RecoveryUtil.handleBadRequest(throwable.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
             }
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
