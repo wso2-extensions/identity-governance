@@ -28,6 +28,8 @@ public class UserRecoveryData {
     private User user;
     private String secret;
     private String remainingSetIds;
+    private boolean codeExpired;
+
 
     private Enum recoveryScenario;
     private Enum recoveryStep;
@@ -73,5 +75,25 @@ public class UserRecoveryData {
 
     public void setRecoveryStep(Enum recoveryStep) {
         this.recoveryStep = recoveryStep;
+    }
+
+    /**
+     * Get whether the confirmation code is expired.
+     *
+     * @return True if the confirmation is not expired.
+     */
+    public boolean isCodeExpired() {
+
+        return codeExpired;
+    }
+
+    /**
+     * Set whether the confirmation code is expired.
+     *
+     * @param codeExpired Confirmation code expiry status.
+     */
+    public void setCodeExpired(boolean codeExpired) {
+
+        this.codeExpired = codeExpired;
     }
 }

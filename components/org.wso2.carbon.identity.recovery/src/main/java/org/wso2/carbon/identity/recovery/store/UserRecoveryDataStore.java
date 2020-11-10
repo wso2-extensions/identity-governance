@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.store;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -36,6 +37,21 @@ public interface UserRecoveryDataStore {
 
     UserRecoveryData load(User user) throws
             IdentityRecoveryException;
+
+    /**
+     * Load UserRecoveryData from the
+     *
+     * @param code                 Confirmation code
+     * @param skipExpiryValidation Skip confirmation code validation.
+     * @return UserRecoveryData.
+     * @throws IdentityRecoveryException If the functionality is not implemented.
+     * @throws NotImplementedException   If an error occurred while getting the user recovery data.
+     */
+    default UserRecoveryData load(String code, boolean skipExpiryValidation) throws
+            IdentityRecoveryException, NotImplementedException {
+
+        throw new NotImplementedException("This functionality is not implemented");
+    }
 
     UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws
             IdentityRecoveryException;
