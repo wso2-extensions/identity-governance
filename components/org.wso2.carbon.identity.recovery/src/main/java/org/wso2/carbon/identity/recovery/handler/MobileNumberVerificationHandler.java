@@ -106,6 +106,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
             postSetUserClaimOnMobileNumberUpdate(user, userStoreManager);
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
         }
     }
 
