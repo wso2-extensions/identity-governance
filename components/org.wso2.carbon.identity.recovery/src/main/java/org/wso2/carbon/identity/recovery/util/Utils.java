@@ -77,8 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
-
 /**
  * Class which contains the Utils for user recovery.
  */
@@ -1110,5 +1108,20 @@ public class Utils {
             sb.append(chars[rnd.nextInt(chars.length)]);
         }
         return sb.toString();
+    }
+
+    /**
+     * When updating email/mobile claim value, sending the verification notification can be controlled by sending
+     * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
+     * This option can be enabled form identity.xml by setting 'UseVerifyClaim' to true. When this option is enabled,
+     * email/mobile verification notification on a claim update will be triggered based on the
+     * 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
+     *
+     * @return True if 'UseVerifyClaim' config is set to true, false otherwise.
+     */
+    public static boolean isUseVerifyClaimEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
     }
 }

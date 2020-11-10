@@ -95,15 +95,18 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
             return;
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
             preSetUserClaimOnMobileNumberUpdate(claims, userStoreManager, user);
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
         }
 
         if (IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
             postSetUserClaimOnMobileNumberUpdate(user, userStoreManager);
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
         }
     }
 
@@ -116,7 +119,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     @Override
     public int getPriority(MessageContext messageContext) {
 
-        return 50;
+        int priority = super.getPriority(messageContext);
+        if (priority == -1) {
+            return 50;
+        }
+        return priority;
     }
 
     /**
@@ -235,7 +242,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
 
-        if (!isInvokedByUser(user) || MapUtils.isEmpty(claims)) {
+        if (MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
@@ -268,6 +275,23 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
+            /*
+            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
+            temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
+            check for 'verifyMobile' claim.
+             */
+            if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                invalidatePendingMobileVerification(user, userStoreManager, claims);
+                return;
+            }
+            // The verification should not happen if the claim update is invoked by a user other than the claim owner.
+            if (!isInvokedByUser(user)) {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                return;
+            }
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } else {
@@ -280,17 +304,22 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * Verify whether the mobile number update is invoked by the user himself, but not by another privileged user
      * on behalf.
      *
-     * @param user User whose claims are being updates.
+     * @param user  User whose claims are being updated.
      * @return True if the user in the context is the same as the user whose claims are being updated, false otherwise.
+     * @throws IdentityEventException If username is not set in the CarbonContext.
      */
-    private boolean isInvokedByUser(User user) {
+    private boolean isInvokedByUser(User user) throws IdentityEventException {
 
         String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
-        User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
-                userDomain);
-        return user.equals(invokingUser);
+        if (StringUtils.isNotBlank(usernameFromContext)) {
+            String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
+            User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
+                    userDomain);
+            return user.equals(invokingUser);
+        }
+        throw new IdentityEventException("Error while retrieving the username from CarbonContext during the " +
+                "mobile verification on update flow.");
     }
 
     /**
@@ -393,5 +422,17 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         "from recovery store for user: " + user.toFullQualifiedUsername(), e);
             }
         }
+    }
+
+    /**
+     * Check if the claims contain the temporary claim 'verifyMobile' and it is set to true.
+     *
+     * @param claims    User claims.
+     * @return True if 'verifyMobile' claim is available as true, false otherwise.
+     */
+    private boolean isVerifyMobileClaimAvailable(Map<String, String> claims) {
+
+        return (claims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM) &&
+                Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM)));
     }
 }

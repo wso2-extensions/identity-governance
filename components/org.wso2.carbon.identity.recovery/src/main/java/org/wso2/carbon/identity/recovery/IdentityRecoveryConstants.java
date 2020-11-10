@@ -86,6 +86,7 @@ public class IdentityRecoveryConstants {
     // Notification channel claims.
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
+    public static final String VERIFY_MOBILE_CLAIM = "http://wso2.org/claims/identity/verifyMobile";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
@@ -505,6 +506,7 @@ public class IdentityRecoveryConstants {
                 "EnableVerification";
         public static final String MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.MobileNumber." +
                 "VerificationCode.ExpiryTime";
+        public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
