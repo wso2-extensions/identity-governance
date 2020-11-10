@@ -184,7 +184,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
             postSetUserClaimsOnEmailUpdate(user, userStoreManager);
-            claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+            claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
         }
     }
 
