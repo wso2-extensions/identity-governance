@@ -110,9 +110,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 DirContext ctx = ldapConnectionContext.getContext();
 
                 //carLicense is the mapped LDAP attribute for LastLoginTime claim
-                String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(|(!(" +
-                        lastLoginTimeAttribute + ">=" + lookupMax + "))(" + lastLoginTimeAttribute + "="
-                        + lookupMax + ")))";
+                String searchFilter = getSearchFilter(lookupMin, lookupMax,lastLoginTimeAttribute);
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -134,7 +132,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setUserStoreDomain(userStoreDomain);
 
                     String lastLoginTimeValue = result.getAttributes().get(lastLoginTimeAttribute).get().toString();
-                    long lastLoginTime = convertDateFormat(lastLoginTimeValue);
+                    long lastLoginTime = convertToWSO2DateFormat(lastLoginTimeValue);
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
                     receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
 
@@ -160,9 +158,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
      * @param date Date formatted in Active Directory date format.
      * @return Date formatted in WSO2 date format.
      */
-    private long convertDateFormat(String date) {
+    private long convertToWSO2DateFormat(String date) {
 
-        //If the user-store uses a different timestamp than WSO2 format
+        // If the user-store uses a different timestamp than WSO2 format.
         String dateTimeFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);
         if(StringUtils.isNotEmpty(dateTimeFormat)){
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
@@ -173,7 +171,13 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
         return  Long.parseLong(date.toString());
     }
 
-
+    /**
+     * Construct the search filter accroding to timestamps defined in the user-store configuration
+     * @param lookupMin search start time
+     * @param lookupMax search end time
+     * @param lastLoginTimeAttribute last login time
+     * @return constructed search filter
+     */
     protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
 
         //lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim
@@ -186,8 +190,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
 
             String lookUpMinDate = new SimpleDateFormat(timeStampFormat).format(new Date(lookupMin));
             String lookUpMaxDate = new SimpleDateFormat(timeStampFormat).format(new Date(lookupMax));
-            searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookUpMinDate + ")(" + lastLoginTimeAttribute + "<="
-                    + lookUpMaxDate + "))";
+            searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookUpMinDate + ")(|(!(" +
+                    lastLoginTimeAttribute + ">=" + lookUpMaxDate + "))(" + lastLoginTimeAttribute + "="
+                    + lookUpMaxDate + ")))";
         }
 
         if (log.isDebugEnabled()) {
