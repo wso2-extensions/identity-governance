@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.ldap.LDAPConnectionContext;
@@ -42,6 +43,9 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -106,9 +110,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 DirContext ctx = ldapConnectionContext.getContext();
 
                 //carLicense is the mapped LDAP attribute for LastLoginTime claim
-                String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(|(!(" +
-                        lastLoginTimeAttribute + ">=" + lookupMax + "))(" + lastLoginTimeAttribute + "="
-                        + lookupMax + ")))";
+                String searchFilter = getSearchFilter(lookupMin, lookupMax,lastLoginTimeAttribute);
 
                 SearchControls searchControls = new SearchControls();
                 searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -129,8 +131,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                     receiver.setFirstName((String) result.getAttributes().get(firstNameMapAttribute).get());
                     receiver.setUserStoreDomain(userStoreDomain);
 
-                    long lastLoginTime = Long.parseLong(result.getAttributes().get(lastLoginTimeAttribute).get().
-                            toString());
+                    String lastLoginTimeValue = result.getAttributes().get(lastLoginTimeAttribute).get().toString();
+                    long lastLoginTime = convertToWSO2DateFormat(lastLoginTimeValue);
                     long expireDate = lastLoginTime + TimeUnit.DAYS.toMillis(delayForSuspension);
                     receiver.setExpireDate(new SimpleDateFormat("dd-MM-yyyy").format(new Date(expireDate)));
 
@@ -149,6 +151,54 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
             }
         }
         return users;
+    }
+
+    /**
+     * Convert Active Directory date format (Generalized Time) to WSO2 format.
+     * @param date Date formatted in Active Directory date format.
+     * @return Date formatted in WSO2 date format.
+     */
+    private long convertToWSO2DateFormat(String date) {
+
+        // If the user-store uses a different timestamp than WSO2 format.
+        String dateTimeFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);
+        if(StringUtils.isNotEmpty(dateTimeFormat)){
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+            OffsetDateTime offsetDateTime = OffsetDateTime.parse(date, dateTimeFormatter);
+            Instant instant = offsetDateTime.toInstant();
+            return instant.toEpochMilli();
+        }
+        return  Long.parseLong(date);
+    }
+
+    /**
+     * Construct the search filter according to timestamps defined in the user-store configuration.
+     * @param lookupMin Search start time.
+     * @param lookupMax Search end time.
+     * @param lastLoginTimeAttribute Last login time.
+     * @return Constructed search filter.
+     */
+    protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
+
+        // The lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim.
+        String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute + "<="
+                + lookupMax + "))";
+
+        // If the user-store uses a different timestamp than WSO2 format.
+        String timeStampFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);
+        if (StringUtils.isNotEmpty(timeStampFormat)) {
+
+            String lookUpMinDate = new SimpleDateFormat(timeStampFormat).format(new Date(lookupMin));
+            String lookUpMaxDate = new SimpleDateFormat(timeStampFormat).format(new Date(lookupMax));
+            searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookUpMinDate + ")(|(!(" +
+                    lastLoginTimeAttribute + ">=" + lookUpMaxDate + "))(" + lastLoginTimeAttribute + "="
+                    + lookUpMaxDate + ")))";
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving LDAP user list for searchFilter: " + searchFilter);
+        }
+        return searchFilter;
     }
 
 }
