@@ -67,7 +67,7 @@ paths:
         "HTTP/1.1 201 Created"
 
       summary: |
-        Register user
+        Self register user
 
       # This are the post parameters:
       parameters:
@@ -135,7 +135,7 @@ paths:
       x-wso2-response: |
         "HTTP/1.1 201 Created"
       summary: |
-        Resend code
+        Self resend code
 
       # These are the post parameters:
       parameters:
@@ -178,7 +178,7 @@ paths:
         "HTTP/1.1 202 Accepted"
 
       summary: |
-        Validate code
+        Self validate code
 
       # These are the post parameters:
       parameters:
@@ -216,7 +216,7 @@ paths:
         "HTTP/1.1 201 Created"
 
       summary: |
-        Register user
+        Lite register user
 
       # These are the post parameters:
       parameters:
@@ -305,7 +305,7 @@ paths:
         "HTTP/1.1 200 OK"
 
       summary: |
-        Validate code
+        Introspect code
 
       # This are the post parameters:
       parameters:
