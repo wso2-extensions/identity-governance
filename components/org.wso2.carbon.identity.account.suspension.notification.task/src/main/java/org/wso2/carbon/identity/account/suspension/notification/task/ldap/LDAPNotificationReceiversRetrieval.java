@@ -153,8 +153,8 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
         return users;
     }
 
-    /* Convert Active Directory date format (Generalized Time) to WSO2 format.
-     *
+    /**
+     * Convert Active Directory date format (Generalized Time) to WSO2 format.
      * @param date Date formatted in Active Directory date format.
      * @return Date formatted in WSO2 date format.
      */
@@ -172,11 +172,11 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
     }
 
     /**
-     * Construct the search filter accroding to timestamps defined in the user-store configuration
-     * @param lookupMin search start time
-     * @param lookupMax search end time
-     * @param lastLoginTimeAttribute last login time
-     * @return constructed search filter
+     * Construct the search filter according to timestamps defined in the user-store configuration.
+     * @param lookupMin Search start time.
+     * @param lookupMax Search end time.
+     * @param lastLoginTimeAttribute Last login time.
+     * @return Constructed search filter.
      */
     protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
 

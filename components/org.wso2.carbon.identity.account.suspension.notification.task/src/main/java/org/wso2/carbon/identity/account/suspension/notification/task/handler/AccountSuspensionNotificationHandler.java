@@ -274,8 +274,8 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     /**
      * If the user-store has specific timestamp format defined, calculate login time in the defined format.
-     * @param userStoreManager userstor manager instance
-     * @return last login time in defined format
+     * @param userStoreManager User-store-manager instance.
+     * @return Last-login-time in the defined format.
      */
     protected String getLastLoginTimeValue(UserStoreManager userStoreManager) {
 
