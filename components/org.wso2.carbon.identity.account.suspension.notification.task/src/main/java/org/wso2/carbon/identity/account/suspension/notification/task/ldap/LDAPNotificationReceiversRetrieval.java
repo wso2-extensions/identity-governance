@@ -168,7 +168,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
             Instant instant = offsetDateTime.toInstant();
             return instant.toEpochMilli();
         }
-        return  Long.parseLong(date.toString());
+        return  Long.parseLong(date);
     }
 
     /**
@@ -180,11 +180,11 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
      */
     protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
 
-        //lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim
+        // The lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim.
         String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute + "<="
                 + lookupMax + "))";
 
-        //If the user-store uses a different timestamp than WSO2 format
+        // If the user-store uses a different timestamp than WSO2 format.
         String timeStampFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);
         if (StringUtils.isNotEmpty(timeStampFormat)) {
 

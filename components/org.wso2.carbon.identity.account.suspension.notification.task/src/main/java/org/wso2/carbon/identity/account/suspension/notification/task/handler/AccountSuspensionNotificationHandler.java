@@ -278,6 +278,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
      * @return last login time in defined format
      */
     protected String getLastLoginTimeValue(UserStoreManager userStoreManager) {
+
         String timeStampFormat = userStoreManager.getRealmConfiguration().getUserStoreProperty
                 (UserStoreConfigConstants.dateAndTimePattern);
         String currentTime = Long.toString(System.currentTimeMillis());
