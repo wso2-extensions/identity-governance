@@ -512,13 +512,6 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityEventException {
 
         HashMap<String, String> userClaims = new HashMap<>();
-
-        // If the scenario is initiated by the admin, set the account locked claim to TRUE.
-        if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())
-                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
-                equals(userRecoveryData.getRecoveryScenario())) {
-            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
-        }
         // If notifications are internally managed we try to set the verified claims since this is an opportunity
         // to verify a user channel.
         if (isNotificationInternallyManaged) {
@@ -540,6 +533,13 @@ public class NotificationPasswordRecoveryManager {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                         IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
             }
+        }
+        // If the scenario is initiated by the admin, set the account locked claim to TRUE.
+        if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
+                equals(userRecoveryData.getRecoveryScenario())) {
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
         }
         return userClaims;
     }
