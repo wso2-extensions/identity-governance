@@ -484,6 +484,8 @@ public class IdentityRecoveryConstants {
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
         public static final String SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION = "SelfRegistration" +
                 ".NotifyAccountConfirmation";
+        public static final String RESEND_CONFIRMATION_RECAPTCHA_ENABLE =
+                "SelfRegistration.ResendConfirmationReCaptcha";
 
         public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
         public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless

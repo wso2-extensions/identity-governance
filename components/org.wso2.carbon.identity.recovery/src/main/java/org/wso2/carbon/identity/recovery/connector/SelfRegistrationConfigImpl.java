@@ -87,6 +87,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 "Send sign up confirmation email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha on re-send confirmation");
         return nameMapping;
     }
 
@@ -113,6 +115,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 "Enable sending notification for self sign up confirmation.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha verification for resend confirmation");
         return descriptionMapping;
     }
 
@@ -130,6 +134,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         return properties.toArray(new String[0]);
     }
 
@@ -144,6 +149,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String verificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableSelfSignUpConfirmationNotification = "false";
+        String enableResendConfirmationRecaptcha = "false";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -161,6 +167,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
+        String selfRegistrationResendConfirmationCaptchaProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -186,6 +194,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfSignUpConfirmationNotificationProperty)) {
             enableSelfSignUpConfirmationNotification = selfSignUpConfirmationNotificationProperty;
         }
+        if (StringUtils.isNotEmpty(selfRegistrationResendConfirmationCaptchaProperty)) {
+            enableResendConfirmationRecaptcha = selfRegistrationResendConfirmationCaptchaProperty;
+        }
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
@@ -209,6 +220,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX, selfRegistrationCallbackRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 enableSelfSignUpConfirmationNotification);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                enableResendConfirmationRecaptcha);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);

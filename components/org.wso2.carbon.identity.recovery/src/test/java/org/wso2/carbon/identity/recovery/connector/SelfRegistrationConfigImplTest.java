@@ -106,6 +106,8 @@ public class SelfRegistrationConfigImplTest {
         nameMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 "Send sign up confirmation email");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha on re-send confirmation");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -135,6 +137,8 @@ public class SelfRegistrationConfigImplTest {
         descriptionMappingExpected
                 .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                         "Enable sending notification for self sign up confirmation.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha verification for resend confirmation");
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -173,6 +177,7 @@ public class SelfRegistrationConfigImplTest {
         String testVerificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableSelfSignUpConfirmationNotification = "false";
+        String enableResendConfirmationRecaptcha = "false";
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
@@ -198,6 +203,8 @@ public class SelfRegistrationConfigImplTest {
         }
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 enableSelfSignUpConfirmationNotification);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                enableResendConfirmationRecaptcha);
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
         Properties properties = selfRegistrationConfigImpl.getDefaultPropertyValues(tenantDomain);
