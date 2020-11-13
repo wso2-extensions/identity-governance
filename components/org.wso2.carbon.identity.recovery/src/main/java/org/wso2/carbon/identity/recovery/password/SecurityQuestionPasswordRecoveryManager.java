@@ -51,6 +51,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementClientException;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementServerException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
@@ -124,6 +125,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
+        verifyUserExists(user);
         validateFunctionalityForUser(user);
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -135,8 +137,6 @@ public class SecurityQuestionPasswordRecoveryManager {
         if (StringUtils.isEmpty(challengeQuestionSeparator)) {
             challengeQuestionSeparator = IdentityRecoveryConstants.DEFAULT_CHALLENGE_QUESTION_SEPARATOR;
         }
-
-        verifyUserExists(user);
 
         if (Utils.isAccountDisabled(user)) {
             throw Utils.handleClientException(
@@ -968,6 +968,14 @@ public class SecurityQuestionPasswordRecoveryManager {
                 message.append(String.format("functionalityIdentifier: %s for %s.",
                         IdentityRecoveryConstants.FunctionalityTypes.FUNCTIONALITY_SECURITY_QUESTION_PW_RECOVERY
                                 .getFunctionalityIdentifier(), user.getUserName()));
+            }
+            String errorMessage = "Error occurred while getting functionality status of user.";
+            if (e instanceof UserFunctionalityManagementClientException) {
+                if (log.isDebugEnabled()) {
+                    log.debug(errorMessage, e);
+                }
+            } else {
+                log.error(errorMessage, e);
             }
             throw Utils.handleServerException(mappedErrorCode, message.toString(), null);
         }
