@@ -102,8 +102,9 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     prepStmt.setString(1, lastLoginTimeAttribute);
                     prepStmt.setString(2, String.valueOf(lookupMin));
                     prepStmt.setString(3, String.valueOf(lookupMax));
-                    prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
-                    prepStmt.setString(5, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+                    // As UM_TENANT_ID is integer, this has to be set as an int to work with postgres.
+                    prepStmt.setInt(4, IdentityTenantUtil.getTenantId(tenantDomain));
+                    prepStmt.setInt(5, IdentityTenantUtil.getTenantId(tenantDomain));
 
                     try (ResultSet resultSet = prepStmt.executeQuery()) {
 
