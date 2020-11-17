@@ -770,13 +770,22 @@ public class Utils {
         RealmConfiguration realmConfig = getRealmConfiguration(user);
         String passwordErrorMessage = realmConfig.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG);
         String exceptionMessage = exception.getMessage();
-        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) && StringUtils
-                .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
-                .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
+        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) &&
+                StringUtils.containsIgnoreCase(exceptionMessage, passwordErrorMessage)) ||
+                exceptionMessage.contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
-            throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage,
-                    exception);
+            if (StringUtils.isNotEmpty(passwordErrorMessage)) {
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        passwordErrorMessage, exception);
+            } else {
+                String errorMessage = String.format(
+                        UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getMessage(),
+                        realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        errorMessage, exception);
+            }
         }
     }
 
@@ -798,7 +807,6 @@ public class Utils {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
         }
-
         return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
                 .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
