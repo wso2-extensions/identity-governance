@@ -31,7 +31,7 @@ public class IntrospectCodeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Validate code\n", notes = "This API is used to validate the code used by self registered users and retrieve the details.\n", response = CodeValidateInfoResponseDTO.class)
+    @io.swagger.annotations.ApiOperation(value = "Introspect code\n", notes = "This API is used to validate the code used by self registered users and retrieve the details.\n", response = CodeValidateInfoResponseDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "OK"),
         

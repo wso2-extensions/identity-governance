@@ -683,6 +683,8 @@ definitions:
         type: string
       recoveryStep:
         type: string
+      isExpired:
+        type: boolean
 
 
 #-----------------------------------------------------

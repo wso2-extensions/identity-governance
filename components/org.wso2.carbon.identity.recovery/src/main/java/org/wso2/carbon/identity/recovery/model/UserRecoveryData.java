@@ -45,6 +45,13 @@ public class UserRecoveryData {
         this.recoveryScenario = recoveryScenario;
     }
 
+    public UserRecoveryData(User user, String secret, Enum recoveryScenario, Enum recoveryStep, boolean isExpired) {
+        this.user = user;
+        this.secret = secret;
+        this.recoveryScenario = recoveryScenario;
+        this.recoveryStep = recoveryStep;
+        this.codeExpired = isExpired;
+    }
 
     public String getRemainingSetIds() {
         return remainingSetIds;

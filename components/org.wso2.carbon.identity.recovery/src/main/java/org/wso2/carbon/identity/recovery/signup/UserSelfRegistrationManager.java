@@ -612,7 +612,7 @@ public class UserSelfRegistrationManager {
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
-                verifiedChannelClaim, properties);
+                verifiedChannelClaim, properties, false);
         User user = userRecoveryData.getUser();
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
@@ -647,7 +647,7 @@ public class UserSelfRegistrationManager {
     }
 
     private UserRecoveryData validateSelfRegistrationCode(String code, String verifiedChannelType,
-                                                String verifiedChannelClaim, Map<String, String> properties)
+                                                          String verifiedChannelClaim, Map<String, String> properties, boolean skipExpiredCodeValidation)
             throws IdentityRecoveryException {
 
         Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
@@ -655,7 +655,12 @@ public class UserSelfRegistrationManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
-        UserRecoveryData recoveryData = userRecoveryDataStore.load(code);
+        UserRecoveryData recoveryData;
+        if (!skipExpiredCodeValidation) {
+             recoveryData = userRecoveryDataStore.load(code);
+        } else {
+            recoveryData = userRecoveryDataStore.load(code,skipExpiredCodeValidation);
+        }
         User user = recoveryData.getUser();
 
         // Validate context tenant domain name with user tenant domain.
