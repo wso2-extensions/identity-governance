@@ -643,7 +643,27 @@ public class UserSelfRegistrationManager {
                                                            String verifiedChannelClaim, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-        return validateSelfRegistrationCode(code,verifiedChannelType,verifiedChannelClaim,properties);
+        return introspectUserSelfRegistration(false, code,verifiedChannelType,verifiedChannelClaim,properties);
+    }
+
+    /**
+     * Introspect the user self registration by validating the confirmation code, sets externally verified claims and
+     * return the details. Does not invalidate the code.
+     *
+     * @param skipExpiredCodeValidation   Skip confirmation code validation against expiration.
+     * @param code                 Confirmation code
+     * @param verifiedChannelType  Type of the verified channel (SMS or EMAIL)
+     * @param verifiedChannelClaim Claim associated with verified channel
+     * @param properties           Properties sent with the validate code request
+     * @return
+     * @throws IdentityRecoveryException Error validating the confirmation code
+     */
+    public UserRecoveryData introspectUserSelfRegistration(boolean skipExpiredCodeValidation, String code,
+                                                           String verifiedChannelType,
+                                                           String verifiedChannelClaim, Map<String, String> properties)
+            throws IdentityRecoveryException {
+
+        return validateSelfRegistrationCode(code, verifiedChannelType, verifiedChannelClaim, properties, skipExpiredCodeValidation);
     }
 
     private UserRecoveryData validateSelfRegistrationCode(String code, String verifiedChannelType,
