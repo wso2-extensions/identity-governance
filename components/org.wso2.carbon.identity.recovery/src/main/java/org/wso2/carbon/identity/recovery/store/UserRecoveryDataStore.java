@@ -41,9 +41,9 @@ public interface UserRecoveryDataStore {
     /**
      * Load UserRecoveryData from the
      *
-     * @param code                 Confirmation code
-     * @param skipExpiryValidation Skip confirmation code validation.
-     * @return UserRecoveryData.
+     * @param code                  Confirmation code.
+     * @param skipExpiryValidation  Skip confirmation code validation.
+     * @return UserRecoveryData     Data associated with the provided code, including related user and scenarios.
      * @throws IdentityRecoveryException If the functionality is not implemented.
      * @throws NotImplementedException   If an error occurred while getting the user recovery data.
      */

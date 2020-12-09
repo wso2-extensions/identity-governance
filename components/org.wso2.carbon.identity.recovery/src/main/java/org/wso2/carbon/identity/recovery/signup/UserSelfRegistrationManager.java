@@ -651,12 +651,12 @@ public class UserSelfRegistrationManager {
      * return the details. Does not invalidate the code.
      *
      * @param skipExpiredCodeValidation   Skip confirmation code validation against expiration.
-     * @param code                 Confirmation code
-     * @param verifiedChannelType  Type of the verified channel (SMS or EMAIL)
-     * @param verifiedChannelClaim Claim associated with verified channel
-     * @param properties           Properties sent with the validate code request
-     * @return
-     * @throws IdentityRecoveryException Error validating the confirmation code
+     * @param code                        Confirmation code.
+     * @param verifiedChannelType         Type of the verified channel (SMS or EMAIL).
+     * @param verifiedChannelClaim        Claim associated with verified channel.
+     * @param properties                  Properties sent with the validate code request.
+     * @return UserRecoveryData           Data associated with the provided code, including related user and scenarios.
+     * @throws IdentityRecoveryException  Error validating the confirmation code
      */
     public UserRecoveryData introspectUserSelfRegistration(boolean skipExpiredCodeValidation, String code,
                                                            String verifiedChannelType,

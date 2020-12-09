@@ -35,6 +35,7 @@ public class UserRecoveryData {
     private Enum recoveryStep;
 
     public UserRecoveryData(User user, String secret, Enum recoveryScenario, Enum recoveryStep) {
+
         this.user = user;
         this.secret = secret;
         this.recoveryScenario = recoveryScenario;
@@ -42,12 +43,14 @@ public class UserRecoveryData {
     }
 
     public UserRecoveryData(User user, String secret, Enum recoveryScenario) {
+
         this.user = user;
         this.secret = secret;
         this.recoveryScenario = recoveryScenario;
     }
 
     public UserRecoveryData(User user, String secret, Enum recoveryScenario, Enum recoveryStep, boolean isExpired) {
+
         this.user = user;
         this.secret = secret;
         this.recoveryScenario = recoveryScenario;

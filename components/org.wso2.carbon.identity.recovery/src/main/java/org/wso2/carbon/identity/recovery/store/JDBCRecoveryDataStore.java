@@ -169,8 +169,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                if (isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
-                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds())) {
+                boolean isCodeExpired = isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
+                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds());
+                if (skipExpiryValidation) {
+                    userRecoveryData.setCodeExpired(isCodeExpired);
+                    return userRecoveryData;
+                }
+                if (isCodeExpired) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE,
                             code);
                 }
