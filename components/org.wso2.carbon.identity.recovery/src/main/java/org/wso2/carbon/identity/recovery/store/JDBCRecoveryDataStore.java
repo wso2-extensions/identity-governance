@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.store;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -134,6 +135,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     @Override
     public UserRecoveryData load(String code) throws IdentityRecoveryException {
 
+        return load(code, false);
+    }
+
+    @Override
+    public UserRecoveryData load(String code, boolean skipExpiryValidation) throws IdentityRecoveryException, NotImplementedException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
@@ -162,8 +169,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 }
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                if (isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
-                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds())) {
+                boolean isCodeExpired = isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
+                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds());
+                if (skipExpiryValidation) {
+                    userRecoveryData.setCodeExpired(isCodeExpired);
+                    return userRecoveryData;
+                }
+                if (isCodeExpired) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE,
                             code);
                 }
@@ -175,8 +187,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
         throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
-
     }
+
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {

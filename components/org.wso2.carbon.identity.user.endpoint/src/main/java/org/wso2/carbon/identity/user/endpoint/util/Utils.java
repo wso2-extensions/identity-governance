@@ -248,6 +248,7 @@ public class Utils {
         codeValidateInfoResponseDTO.setUser(getRecoveryUser(userRecoveryData.getUser()));
         codeValidateInfoResponseDTO.setRecoveryStep(userRecoveryData.getRecoveryStep().name());
         codeValidateInfoResponseDTO.setRecoveryScenario(userRecoveryData.getRecoveryScenario().name());
+        codeValidateInfoResponseDTO.setIsExpired(userRecoveryData.isCodeExpired());
         return codeValidateInfoResponseDTO;
     }
 
