@@ -28,4 +28,9 @@ public interface IdentityConnectorConfig extends ConnectorConfig {
 
     Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws
             IdentityGovernanceException;
+
+    default Map<String, String> getConfidentialPropertyValues(String tenantDomain) {
+
+        return null;
+    }
 }

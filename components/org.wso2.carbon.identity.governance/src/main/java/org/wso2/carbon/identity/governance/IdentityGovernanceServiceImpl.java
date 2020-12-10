@@ -150,6 +150,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             ConnectorConfig config = new ConnectorConfig();
             Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
             Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+            Map<String, String> confidentialProperties = list.get(i).getConfidentialPropertyValues(tenantDomain);
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setName(list.get(i).getName());
             config.setCategory(list.get(i).getCategory());
@@ -163,6 +164,11 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                         configProperties[j] = property;
                         configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
                         configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        if (confidentialProperties != null && confidentialProperties.get(configProperties[j].getName())
+                                != null) {
+                            configProperties[j].setConfidential(
+                                    Boolean.parseBoolean(confidentialProperties.get(configProperties[j].getName())));
+                        }
                         break;
                     }
                 }
