@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -98,6 +99,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             if (log.isDebugEnabled()) {
                 log.debug(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM + " update request.");
             }
+            publishPreAdminPasswordResetEvent(eventProperties);
             // Remove claim to prevent persisting this temporary claim
             claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
 
@@ -113,26 +115,24 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             }
 
             if (adminPasswordResetOTP) {
-                notificationType = IdentityRecoveryConstants
-                        .NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP.toString();
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP;
             }
 
             if (adminPasswordResetRecoveryLink) {
                 OTP = UUIDGenerator.generateUUID();
                 recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
-                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET
-                        .toString();
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET;
             }
 
-            if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {
-                claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
-            }
+            claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
             setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
             lockAccountOnAdminPasswordReset(user, userStoreManager);
 
             if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
                 try {
-                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties());
+                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties(),
+                            new UserRecoveryData(user, OTP, recoveryScenario, RecoverySteps.UPDATE_PASSWORD));
+                    publishPostAdminPasswordResetEvent(eventProperties, OTP);
                 } catch (IdentityRecoveryException e) {
                     throw new IdentityEventException("Error while sending  notification ", e);
                 }
@@ -205,6 +205,25 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                 IdentityMgtConstants.AccountStates.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET);
         setUserClaims(userClaims, user, userStoreManager);
+    }
+
+    private void publishPreAdminPasswordResetEvent( Map<String, Object> map) throws IdentityEventException {
+
+        Map<String, Object> eventProperties = Utils.cloneMap(map);
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_FORCE_PASSWORD_RESET_BY_ADMIN,
+                eventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()
+                .handleEvent(identityMgtEvent);
+    }
+
+    private void publishPostAdminPasswordResetEvent(Map<String, Object> map, String OTP) throws IdentityEventException {
+
+        Map<String, Object> eventProperties = Utils.cloneMap(map);
+        eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, OTP);
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_FORCE_PASSWORD_RESET_BY_ADMIN,
+                eventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()
+                .handleEvent(identityMgtEvent);
     }
 
     protected void setUserClaims(Map<String, String> userClaims, User user, UserStoreManager userStoreManager)

@@ -1124,4 +1124,21 @@ public class Utils {
         return Boolean.parseBoolean(IdentityUtil.getProperty
                 (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
     }
+
+    /**
+     * Clones the given map.
+     *
+     * @param map          Map.
+     * @return             Cloned Map.
+     */
+    public static Map<String, Object> cloneMap(Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
+        Map<String, Object> clonedMap = new HashMap<String, Object>();
+        for (String key : map.keySet()) {
+            clonedMap.put(key, map.get(key));
+        }
+        return clonedMap;
+    }
 }

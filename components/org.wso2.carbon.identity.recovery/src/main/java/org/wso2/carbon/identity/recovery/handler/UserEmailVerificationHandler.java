@@ -124,6 +124,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claim.setValue(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+                publishPreVerifyEmailClaimEvent(eventProperties);
 
             } else if (claims.containsKey(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
                 Claim claim = new Claim();
@@ -131,6 +132,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+                publishPreAddUserWithAskPasswordEvent(eventProperties);
 
             } else {
                 return;
@@ -153,27 +155,32 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
                 // Not required to handle in this handler.
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
+                String confirmationCode = UUIDGenerator.generateUUID();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                                 IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
                     }
-                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString());
+                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP,
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM);
                 }
 
                 // Need to lock user account.
                 if (isAccountLockOnCreation) {
                     lockAccount(user, userStoreManager);
                 }
+                publishPostVerifyEmailClaimEvent(eventProperties, confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
+                String confirmationCode = UUIDGenerator.generateUUID();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                                 IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
                     }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString());
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
                 }
+                publishPostAddUserWithAskPasswordEvent(eventProperties, confirmationCode);
             }
         }
 
@@ -225,7 +232,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
 
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, notificationType, secretKey, Utils.getArbitraryProperties());
+            triggerNotification(user, notificationType, secretKey, Utils.getArbitraryProperties(), recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending  notification ", e);
         }
@@ -254,7 +261,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
             userRecoveryDataStore.store(recoveryDataDO);
             triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE, secretKey,
-                    Utils.getArbitraryProperties(), verificationPendingEmailAddress);
+                    Utils.getArbitraryProperties(), verificationPendingEmailAddress, recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
@@ -307,8 +314,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         triggerNotification(user, type, code, props, null);
     }
 
+    protected void triggerNotification(User user, String type, String code, Property[] props,
+                                       UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
+
+        triggerNotification(user, type, code, props, null, recoveryDataDO);
+    }
+
     private void triggerNotification(User user, String type, String code, Property[] props, String
-            verificationPendingEmailAddress) throws IdentityRecoveryException {
+            verificationPendingEmailAddress, UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
 
         if (log.isDebugEnabled()) {
             log.debug("Sending : " + type + " notification to user : " + user.toString());
@@ -334,6 +347,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+
+        if (recoveryDataDO != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    recoveryDataDO.getRecoveryScenario().name());
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
@@ -506,5 +524,47 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         return (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) &&
                 Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM)));
+    }
+
+    private void publishPreVerifyEmailClaimEvent(Map<String, Object> eventProperties)
+            throws IdentityEventException {
+
+        Map<String, Object> verifyEmailEventProperties = Utils.cloneMap(eventProperties);
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM,
+                verifyEmailEventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    private void publishPostVerifyEmailClaimEvent(Map<String, Object> eventProperties, String confirmationCode)
+            throws IdentityEventException {
+
+        Map<String, Object> verifyEmailEventProperties = Utils.cloneMap(eventProperties);
+        if (StringUtils.isNotBlank(confirmationCode)) {
+            verifyEmailEventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, confirmationCode);
+        }
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
+                verifyEmailEventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    private void publishPreAddUserWithAskPasswordEvent(Map<String, Object> eventProperties)
+            throws IdentityEventException {
+
+        Map<String, Object> askPasswordEventProperties = Utils.cloneMap(eventProperties);
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD,
+                askPasswordEventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    private void publishPostAddUserWithAskPasswordEvent(Map<String, Object> eventProperties,
+                                                        String confirmationCode) throws IdentityEventException {
+
+        Map<String, Object> askPasswordEventProperties = Utils.cloneMap(eventProperties);
+        if (StringUtils.isNotBlank(confirmationCode)) {
+            askPasswordEventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, confirmationCode);
+        }
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
+                askPasswordEventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
     }
 }
