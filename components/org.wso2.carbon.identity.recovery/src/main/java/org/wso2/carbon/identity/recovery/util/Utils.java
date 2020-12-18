@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
@@ -1126,13 +1127,34 @@ public class Utils {
     }
 
     /**
+     * Trigger recovery event.
+     *
+     * @param map       Property map.
+     * @param eventName Event Name.
+     * @param OTP       OTP.
+     * @throws IdentityEventException If error occurred when handleEvent.
+     */
+    public static void publishRecoveryEvent(Map<String, Object> map, String eventName, String OTP)
+            throws IdentityEventException {
+
+        Map<String, Object> eventProperties = cloneMap(map);
+        if (StringUtils.isNotEmpty(OTP)) {
+            eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, OTP);
+        }
+
+        Event identityMgtEvent = new Event(eventName, eventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    /**
      * Clones the given map.
      *
      * @param map          Map.
      * @return             Cloned Map.
      */
-    public static Map<String, Object> cloneMap(Map<String, Object> map) {
-        if (map == null) {
+    private static Map<String, Object> cloneMap(Map<String, Object> map) {
+
+        if (MapUtils.isEmpty(map)) {
             return null;
         }
         Map<String, Object> clonedMap = new HashMap<String, Object>();

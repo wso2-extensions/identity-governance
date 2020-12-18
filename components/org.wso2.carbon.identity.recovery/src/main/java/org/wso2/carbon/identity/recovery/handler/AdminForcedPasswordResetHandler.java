@@ -99,7 +99,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             if (log.isDebugEnabled()) {
                 log.debug(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM + " update request.");
             }
-            publishPreAdminPasswordResetEvent(eventProperties);
+            Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_FORCE_PASSWORD_RESET_BY_ADMIN,
+                    null);
             // Remove claim to prevent persisting this temporary claim
             claims.remove(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM);
 
@@ -132,7 +133,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 try {
                     triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties(),
                             new UserRecoveryData(user, OTP, recoveryScenario, RecoverySteps.UPDATE_PASSWORD));
-                    publishPostAdminPasswordResetEvent(eventProperties, OTP);
+                    Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_FORCE_PASSWORD_RESET_BY_ADMIN,
+                            OTP);
                 } catch (IdentityRecoveryException e) {
                     throw new IdentityEventException("Error while sending  notification ", e);
                 }
@@ -205,25 +207,6 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                 IdentityMgtConstants.AccountStates.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET);
         setUserClaims(userClaims, user, userStoreManager);
-    }
-
-    private void publishPreAdminPasswordResetEvent( Map<String, Object> map) throws IdentityEventException {
-
-        Map<String, Object> eventProperties = Utils.cloneMap(map);
-        Event identityMgtEvent = new Event(IdentityEventConstants.Event.PRE_FORCE_PASSWORD_RESET_BY_ADMIN,
-                eventProperties);
-        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()
-                .handleEvent(identityMgtEvent);
-    }
-
-    private void publishPostAdminPasswordResetEvent(Map<String, Object> map, String OTP) throws IdentityEventException {
-
-        Map<String, Object> eventProperties = Utils.cloneMap(map);
-        eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, OTP);
-        Event identityMgtEvent = new Event(IdentityEventConstants.Event.POST_FORCE_PASSWORD_RESET_BY_ADMIN,
-                eventProperties);
-        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()
-                .handleEvent(identityMgtEvent);
     }
 
     protected void setUserClaims(Map<String, String> userClaims, User user, UserStoreManager userStoreManager)

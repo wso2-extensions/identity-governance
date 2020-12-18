@@ -447,7 +447,7 @@ public class NotificationPasswordRecoveryManager {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
                 log.error(errorMsg);
-                auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), errorMsg,
+                auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
                         FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
             }
         }
@@ -457,7 +457,7 @@ public class NotificationPasswordRecoveryManager {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
-        auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), null,
+        auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
                 FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
     }
 
@@ -724,7 +724,7 @@ public class NotificationPasswordRecoveryManager {
         Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
     }
 
-    private void auditPasswordReset(String action, User user, String errorMsg, String result,
+    private void auditPasswordReset(User user, String action, String errorMsg, String result,
                                     UserRecoveryData userRecoveryData) {
 
         JSONObject dataObject = new JSONObject();
