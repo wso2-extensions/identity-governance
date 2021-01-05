@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.mgt.policy.password.DefaultPasswordPatternPolicy
 import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.policy.internal.IdentityPasswordPolicyServiceDataHolder;
 import org.wso2.carbon.identity.password.policy.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,6 +51,11 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
+
+        // Skip password policy validation if the Ask Password is enabled for the flow.
+        if (UserCoreUtil.getSkipPasswordPatternValidationThreadLocal()) {
+            return;
+        }
 
         Map<String, Object> eventProperties = event.getEventProperties();
 
