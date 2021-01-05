@@ -1129,17 +1129,17 @@ public class Utils {
     /**
      * Trigger recovery event.
      *
-     * @param map       Property map.
-     * @param eventName Event Name.
-     * @param OTP       OTP.
+     * @param map              The map containing the event properties.
+     * @param eventName        The event name.
+     * @param confirmationCode The confirmation code.
      * @throws IdentityEventException If error occurred when handleEvent.
      */
-    public static void publishRecoveryEvent(Map<String, Object> map, String eventName, String OTP)
+    public static void publishRecoveryEvent(Map<String, Object> map, String eventName, String confirmationCode)
             throws IdentityEventException {
 
         Map<String, Object> eventProperties = cloneMap(map);
-        if (StringUtils.isNotEmpty(OTP)) {
-            eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, OTP);
+        if (MapUtils.isNotEmpty(eventProperties) && StringUtils.isNotEmpty(confirmationCode)) {
+            eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, confirmationCode);
         }
 
         Event identityMgtEvent = new Event(eventName, eventProperties);
@@ -1158,9 +1158,7 @@ public class Utils {
             return null;
         }
         Map<String, Object> clonedMap = new HashMap<String, Object>();
-        for (String key : map.keySet()) {
-            clonedMap.put(key, map.get(key));
-        }
+        clonedMap.putAll(map);
         return clonedMap;
     }
 }
