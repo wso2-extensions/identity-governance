@@ -124,14 +124,15 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claim.setValue(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
-
+                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM, null);
             } else if (claims.containsKey(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
                 Claim claim = new Claim();
                 claim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
                 claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
-
+                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD,
+                        null);
             } else {
                 return;
                 // Not required to handle in this handler.
@@ -153,27 +154,34 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
                 // Not required to handle in this handler.
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
+                String confirmationCode = UUIDGenerator.generateUUID();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                                 IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
                     }
-                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM.toString());
+                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP,
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM);
                 }
 
                 // Need to lock user account.
                 if (isAccountLockOnCreation) {
                     lockAccount(user, userStoreManager);
                 }
+                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
+                        confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
+                String confirmationCode = UUIDGenerator.generateUUID();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                                 IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
                     }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD.toString());
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
                 }
+                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
+                        confirmationCode);
             }
         }
 
@@ -225,7 +233,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
 
             userRecoveryDataStore.store(recoveryDataDO);
-            triggerNotification(user, notificationType, secretKey, Utils.getArbitraryProperties());
+            triggerNotification(user, notificationType, secretKey, Utils.getArbitraryProperties(), recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending  notification ", e);
         }
@@ -254,7 +262,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
             userRecoveryDataStore.store(recoveryDataDO);
             triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE, secretKey,
-                    Utils.getArbitraryProperties(), verificationPendingEmailAddress);
+                    Utils.getArbitraryProperties(), verificationPendingEmailAddress, recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
@@ -307,8 +315,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         triggerNotification(user, type, code, props, null);
     }
 
+    protected void triggerNotification(User user, String type, String code, Property[] props,
+                                       UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
+
+        triggerNotification(user, type, code, props, null, recoveryDataDO);
+    }
+
     private void triggerNotification(User user, String type, String code, Property[] props, String
-            verificationPendingEmailAddress) throws IdentityRecoveryException {
+            verificationPendingEmailAddress, UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
 
         if (log.isDebugEnabled()) {
             log.debug("Sending : " + type + " notification to user : " + user.toString());
@@ -334,6 +348,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+
+        if (recoveryDataDO != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    recoveryDataDO.getRecoveryScenario().name());
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
