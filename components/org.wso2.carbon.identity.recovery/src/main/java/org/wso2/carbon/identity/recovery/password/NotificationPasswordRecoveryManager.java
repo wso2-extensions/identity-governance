@@ -447,8 +447,10 @@ public class NotificationPasswordRecoveryManager {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
                 log.error(errorMsg);
+                String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+                String recoveryStep = userRecoveryData.getRecoveryStep().name();
                 auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
-                        FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
+                        FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
             }
         }
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
@@ -457,8 +459,10 @@ public class NotificationPasswordRecoveryManager {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
+        String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+        String recoveryStep = userRecoveryData.getRecoveryStep().name();
         auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
-                FrameworkConstants.AUDIT_SUCCESS, userRecoveryData);
+                FrameworkConstants.AUDIT_SUCCESS, recoveryScenario ,recoveryStep);
     }
 
     /**
@@ -724,18 +728,16 @@ public class NotificationPasswordRecoveryManager {
         Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
     }
 
-    private void auditPasswordReset(User user, String action, String errorMsg, String result,
-                                    UserRecoveryData userRecoveryData) {
+    private void auditPasswordReset(User user, String action, String errorMsg, String result, String recoveryScenario,
+                                    String recoveryStep) {
 
         JSONObject dataObject = new JSONObject();
         dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
         dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
         dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
         dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        if (userRecoveryData != null) {
-            dataObject.put(AuditConstants.RECOVERY_SCENARIO, userRecoveryData.getRecoveryScenario().name());
-            dataObject.put(AuditConstants.RECOVERY_STEP, userRecoveryData.getRecoveryStep().name());
-        }
+        dataObject.put(AuditConstants.RECOVERY_SCENARIO, recoveryScenario);
+        dataObject.put(AuditConstants.RECOVERY_STEP, recoveryStep);
         dataObject.put(AuditConstants.TENANT_DOMAIN, user.getTenantDomain());
 
         if (AUDIT_FAILED.equals(result)) {
