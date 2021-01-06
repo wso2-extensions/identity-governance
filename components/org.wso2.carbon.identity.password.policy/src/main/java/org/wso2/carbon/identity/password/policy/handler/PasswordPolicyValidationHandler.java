@@ -52,7 +52,7 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
 
-        // Skip password policy validation if the Ask Password is enabled for the flow.
+        // Skip password policy validation if skipPasswordPatternValidation thread local is set to true.
         if (UserCoreUtil.getSkipPasswordPatternValidationThreadLocal()) {
             return;
         }
