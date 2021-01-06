@@ -167,7 +167,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             }
         } catch (SQLException e) {
             throw new IdentityPasswordHistoryException(
-                    "Error while deleting password history data of tenant" + tenantId, e);
+                    "Error while deleting password history data of tenant: " + tenantId, e);
         }
     }
 

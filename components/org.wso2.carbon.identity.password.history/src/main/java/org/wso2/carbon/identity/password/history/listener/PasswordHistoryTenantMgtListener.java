@@ -25,22 +25,24 @@ import org.wso2.carbon.stratos.common.exception.StratosException;
  * Password History Tenant Management Listener.
  */
 public class PasswordHistoryTenantMgtListener extends AbstractIdentityTenantMgtListener {
+
     private static final int EXEC_ORDER = 41;
 
     /**
-     * Get listener order.
+     * Get the execution order of the listener.
      *
-     * @return
+     * @return int The order of the listener.
      */
     @Override
     public int getListenerOrder() {
+
         return EXEC_ORDER;
     }
 
     /**
      * Delete password history data before tenant deletion.
      *
-     * @param tenantId Id of the tenant
+     * @param tenantId The id of the tenant.
      * @throws StratosException
      */
     @Override
