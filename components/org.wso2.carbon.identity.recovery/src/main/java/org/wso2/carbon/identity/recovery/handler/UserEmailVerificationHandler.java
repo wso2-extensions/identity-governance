@@ -44,14 +44,18 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(UserEmailVerificationHandler.class);
+
+    private static final Random RANDOM = new SecureRandom();
 
     public String getName() {
 
@@ -131,6 +135,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+                Object credentials = eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
+                setRandomValueForCredentials(credentials);
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD,
                         null);
             } else {
@@ -237,6 +243,34 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending  notification ", e);
         }
+    }
+
+    /**
+     * This method sets a random value for the credentials, if the ask password flow is enabled.
+     * @param credentials   Credentials object
+     */
+    private void setRandomValueForCredentials(Object credentials) {
+
+        char[] temporaryPassword = generateRandomPassword(12);
+        ((StringBuffer) credentials).replace(0, temporaryPassword.length, new String(temporaryPassword));
+    }
+
+    /**
+     * Generate a random password in the given length.
+     * @param passwordLength Required length of the password.
+     * @return char array
+     */
+    private char[] generateRandomPassword(int passwordLength) {
+
+        String letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789+@";
+        StringBuilder pw = new StringBuilder();
+        for (int i = 0; i < passwordLength; i++) {
+            int index = (int) (RANDOM.nextDouble() * letters.length());
+            pw.append(letters.substring(index, index + 1));
+        }
+        char[] password = new char[pw.length()];
+        pw.getChars(0, pw.length(), password, 0);
+        return password;
     }
 
     private void initNotificationForEmailVerificationOnUpdate(String verificationPendingEmailAddress, User user)
