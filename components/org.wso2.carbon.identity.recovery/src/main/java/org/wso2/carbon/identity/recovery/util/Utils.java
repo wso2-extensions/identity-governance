@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
@@ -76,6 +77,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -1160,5 +1162,84 @@ public class Utils {
         Map<String, Object> clonedMap = new HashMap<String, Object>();
         clonedMap.putAll(map);
         return clonedMap;
+    }
+
+    /**
+     * Checks whether the existing confirmation code can be reused based on the configured email confirmation code
+     * tolerance period.
+     *
+     * @param recoveryDataDO Recovery data of the corresponding user.
+     * @param notificationChannel Method which is used to send the recovery code. eg:- EMAIL, SMS.
+     * @return True if the existing confirmation code can be used. Otherwise false.
+     */
+    public static boolean reIssueExistingConfirmationCode(UserRecoveryData recoveryDataDO, String notificationChannel) {
+
+        int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
+        if (recoveryDataDO != null && codeToleranceInMinutes != 0 &&
+                NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
+                    equals(recoveryDataDO.getRecoveryScenario().toString())) {
+                long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                        TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+                return System.currentTimeMillis() < codeToleranceTimeInMillis;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Retrieves the email confirmation code tolerance period in minutes.
+     *
+     * @return The email confirmation code tolerance in minutes.
+     */
+    private static int getEmailCodeToleranceInMinutes() {
+
+        String emailCodeTolerance = IdentityUtil.
+                getProperty(IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+        if (StringUtils.isEmpty(emailCodeTolerance)) {
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+        try {
+            int codeTolerance = Integer.parseInt(emailCodeTolerance);
+            int recoveryCodeExpiryTime = getRecoveryCodeExpiryTime();
+            if (recoveryCodeExpiryTime < 0 || recoveryCodeExpiryTime < codeTolerance) {
+                String message = String.format("Recovery code expiry is less than zero or code tolerance is less " +
+                                "than recovery code expiry. Therefore setting the DEFAULT time : %s minutes",
+                        IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+                log.warn(message);
+                return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+            }
+            return codeTolerance;
+        } catch (NumberFormatException e) {
+            String message = String.format("Recovery confirmation code tolerance parsing is failed. Therefore" +
+                            "setting the DEFAULT time : %s minutes",
+                    IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+            log.error(message);
+
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+    }
+
+    /**
+     * Get the expiry time of the recovery code given at username recovery and password recovery init.
+     *
+     * @return Expiry time of the recovery code (In minutes)
+     */
+    private static int getRecoveryCodeExpiryTime() {
+
+        String expiryTime = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME);
+        if (StringUtils.isEmpty(expiryTime)) {
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+        try {
+            return Integer.parseInt(expiryTime);
+        } catch (NumberFormatException e) {
+            String message = String
+                    .format("User recovery code expiry time parsing is failed. Therefore setting DEFAULT expiry time " +
+                            ": %s minutes", IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME);
+            log.error(message);
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
     }
 }

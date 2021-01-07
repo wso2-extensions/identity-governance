@@ -153,6 +153,9 @@ public class IdentityRecoveryConstants {
 
     public static final String RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS =
             "Recovery.Question.Password.SkipOnInsufficientAnswers";
+    public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
+    public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
 
     private IdentityRecoveryConstants() {
 
@@ -313,6 +316,8 @@ public class IdentityRecoveryConstants {
                 "Unsupported notification channel : '%s'"),
         ERROR_CODE_ERROR_GENERATING_NEW_RESET_CODE("UAR-15006", "Error while generating new "
                 + "password reset code"),
+        ERROR_CODE_ERROR_RETRIEVING_RECOVERY_DATA("UAR-15007","Error while retrieving the user recovery data - '%s'"),
+        ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA("UAR-15008", "Error while updating recovery data : '%s'"),
 
         // PWR - Password Recovery.
         ERROR_CODE_INVALID_TENANT_DOMAIN_PASSWORD_RESET("PWR-10001", "User's tenant domain does "
@@ -558,6 +563,9 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
 
+        public static final String UPDATE_CODE = "UPDATE IDN_RECOVERY_DATA SET CODE = ?, STEP = ?, REMAINING_SETS = ? " +
+                "WHERE CODE = ?";
+
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO_CASE_INSENSITIVE = "DELETE FROM " +
                 "IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND STEP = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID =?";
@@ -580,6 +588,13 @@ public class IdentityRecoveryConstants {
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND " +
                 "USER_DOMAIN = ? AND TENANT_ID = ?";
 
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_STEP = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND SCENARIO = ? AND USER_DOMAIN = ? " +
+                "AND TENANT_ID = ? AND STEP = ?";
+
+        public static final String LOAD_RECOVERY_DATA_OF_USER_BY_STEP_CASE_INSENSITIVE = "SELECT "
+                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND USER_DOMAIN = ? " +
+                "AND TENANT_ID = ? AND STEP = ?";
     }
 
     public static class Questions {
