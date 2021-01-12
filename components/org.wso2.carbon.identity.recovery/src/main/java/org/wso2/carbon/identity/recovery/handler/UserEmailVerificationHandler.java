@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -173,6 +174,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 // Need to lock user account.
                 if (isAccountLockOnCreation) {
                     lockAccount(user, userStoreManager);
+                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
+                            IdentityMgtConstants.LockedReason.PENDING_EMAIL_VERIFICATION.toString(),
+                            userStoreManager, user);
                 }
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
                         confirmationCode);
@@ -185,6 +189,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
                             IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
+                }
+
+                // Need to lock user account.
+                if (isAccountLockOnCreation) {
+                    lockAccount(user, userStoreManager);
+                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
+                            IdentityMgtConstants.LockedReason.PENDING_ASK_PASSWORD.toString(),
+                            userStoreManager, user);
                 }
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
                         confirmationCode);
