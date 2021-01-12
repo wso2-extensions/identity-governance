@@ -579,6 +579,7 @@ public class UserSelfRegistrationManager {
             HashMap<String, String> userClaims = new HashMap<>();
             //Need to lock user account
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
             userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
             try {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),

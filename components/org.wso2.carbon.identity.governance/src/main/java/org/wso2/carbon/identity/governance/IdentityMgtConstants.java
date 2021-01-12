@@ -112,6 +112,17 @@ public class IdentityMgtConstants {
         public static final String DEFAULT_NOTIFICATION_CHANNEL = "Notification.DefaultNotificationChannel";
     }
 
+    public enum LockedReason {
+
+        PENDING_SELF_REGISTRATION,
+        PENDING_ADMIN_FORCED_USER_PASSWORD_RESET,
+        PENDING_EMAIL_VERIFICATION,
+        PENDING_ASK_PASSWORD,
+        IDLE_ACCOUNT,
+        ADMIN_INITIATED,
+        MAX_ATTEMPTS_EXCEEDED
+    }
+
     public enum ErrorMessages {
 
         ERROR_CODE_DEFAULT_BAD_REQUEST("10000", "Bad Request"),

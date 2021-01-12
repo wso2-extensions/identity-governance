@@ -532,6 +532,8 @@ public class NotificationPasswordRecoveryManager {
             if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                         IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             }
         }
         // If the scenario is initiated by the admin, set the account locked claim to TRUE.
@@ -540,6 +542,7 @@ public class NotificationPasswordRecoveryManager {
                 equals(userRecoveryData.getRecoveryScenario())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
         }
         return userClaims;
     }
