@@ -900,6 +900,7 @@ public class UserSelfRegistrationManager {
 
         // Need to unlock user account
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);

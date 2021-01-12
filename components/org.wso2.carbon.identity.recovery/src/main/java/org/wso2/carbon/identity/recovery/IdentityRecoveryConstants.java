@@ -61,6 +61,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String ACCOUNT_LOCKED_REASON_CLAIM = "http://wso2.org/claims/identity/lockedReason";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
