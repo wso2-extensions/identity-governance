@@ -53,26 +53,26 @@ public class CaptchaComponent {
     protected void activate(ComponentContext context) {
 
         try {
-            // Initialize reCaptcha
+            // Initialize reCaptcha.
             CaptchaUtil.buildReCaptchaFilterProperties();
-            // Initialize and register SSOLoginReCaptchaConfig
+            // Initialize and register SSOLoginReCaptchaConfig.
             IdentityConnectorConfig connector = new SSOLoginReCaptchaConfig();
             ((SSOLoginReCaptchaConfig) connector).init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             context.getBundleContext().registerService(IdentityConnectorConfig.class, connector, null);
             CaptchaDataHolder.getInstance().addCaptchaConnector((SSOLoginReCaptchaConfig) connector);
-            // Initialize and register PathBasedReCaptchaConnector
+            // Initialize and register PathBasedReCaptchaConnector.
             CaptchaConnector captchaConnector = new SelfSignUpReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
-            // Initialize and register UsernameRecoveryReCaptchaConnector
+            // Initialize and register UsernameRecoveryReCaptchaConnector.
             captchaConnector = new UsernameRecoveryReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
-            // Initialize and register PasswordRecoveryReCaptchaConnector
+            // Initialize and register PasswordRecoveryReCaptchaConnector.
             captchaConnector = new PasswordRecoveryReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
-            // Initialize and register ResendConfirmationReCaptchaConnector
+            // Initialize and register ResendConfirmationReCaptchaConnector.
             captchaConnector = new ResendConfirmationReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
