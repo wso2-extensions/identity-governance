@@ -91,6 +91,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Prompt reCaptcha on re-send confirmation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 "Enable Auto Login After Account Confirmation");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                "Alias of the key used to sign to cookie");
         return nameMapping;
     }
 
@@ -121,6 +123,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Prompt reCaptcha verification for resend confirmation");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 "User will be logged in automatically after completing the Account Confirmation ");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                "Alias of the key used to sign to cookie. The public key has to be imported to the keystore. ");
         return descriptionMapping;
     }
 
@@ -140,6 +144,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
         return properties.toArray(new String[0]);
     }
 
@@ -156,6 +161,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableSelfSignUpConfirmationNotification = "false";
         String enableResendConfirmationRecaptcha = "false";
         String enableSelfRegistrationAutoLogin = "false";
+        String selfRegistrationAutoLoginAlias = "wso2carbon";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -177,6 +183,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         String selfRegistrationAutoLogin = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
+        String selfRegistrationAutoLoginAliasProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -208,6 +216,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfRegistrationAutoLogin)) {
             enableSelfRegistrationAutoLogin = selfRegistrationAutoLogin;
         }
+        if (StringUtils.isNotEmpty(selfRegistrationAutoLoginAliasProperty)) {
+            selfRegistrationAutoLoginAlias = selfRegistrationAutoLoginAliasProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
@@ -225,6 +236,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                         verificationSMSOTPExpiryTime);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 enableSelfRegistrationAutoLogin);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                selfRegistrationAutoLoginAlias);
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));
