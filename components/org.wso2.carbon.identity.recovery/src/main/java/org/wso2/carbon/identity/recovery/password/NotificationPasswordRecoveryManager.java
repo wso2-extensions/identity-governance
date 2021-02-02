@@ -59,6 +59,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 
@@ -130,15 +131,17 @@ public class NotificationPasswordRecoveryManager {
         }
         checkAccountLockedStatus(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.invalidate(user);
-        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
-                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+        String secretKey;
+        UserRecoveryData recoveryDataDO;
+        // Loading the existing user recovery details with the code created timestamp.
+        recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
-
-        // Store the notified channel in the recovery object for future reference.
-        recoveryDataDO.setRemainingSetIds(notificationChannel);
-        userRecoveryDataStore.store(recoveryDataDO);
+        /* Checking whether the existing confirmation code can be used based on the email confirmation code tolerance
+           and the existing recovery details. */
+        if (!Utils.reIssueExistingConfirmationCode(recoveryDataDO, notificationChannel)) {
+            recoveryDataDO = generateNewConfirmationCode(user, notificationChannel);
+        }
+        secretKey = recoveryDataDO.getSecret();
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
             // Manage notifications by the identity server.
@@ -152,6 +155,30 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(user, String.valueOf(notify), secretKey, null, properties,
                 IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION, recoveryDataDO);
         return notificationResponseBean;
+    }
+
+    /**
+     * Generates the new confirmation code details for a corresponding user.
+     *
+     * @param user Details of the user that needs the confirmation code.
+     * @param notificationChannel Method to send the recovery information. eg : EMAIL, SMS.
+     * @return Created recovery data object.
+     * @throws IdentityRecoveryException Error while generating the recovery information.
+     */
+    private UserRecoveryData generateNewConfirmationCode(User user, String notificationChannel)
+            throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidate(user);
+        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+
+        // Store the notified channel in the recovery object for future reference.
+        recoveryDataDO.setRemainingSetIds(notificationChannel);
+        userRecoveryDataStore.store(recoveryDataDO);
+        return recoveryDataDO;
     }
 
     /**
