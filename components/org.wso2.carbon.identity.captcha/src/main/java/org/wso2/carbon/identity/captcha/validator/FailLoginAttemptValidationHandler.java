@@ -39,6 +39,8 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.Map;
 
+import static org.wso2.carbon.identity.captcha.util.CaptchaUtil.isValidAuthenticator;
+
 /**
  * Validate no of failed login attempts against the no configured and engage captcha
  */
@@ -94,8 +96,9 @@ public class FailLoginAttemptValidationHandler extends AbstractEventHandler {
         if (StringUtils.isBlank(currentAuthenticator) && MapUtils.isNotEmpty(map)) {
             currentAuthenticator = (String) map.get(FrameworkConstants.AUTHENTICATOR);
         }
-        if ("BasicAuthenticator".equals(currentAuthenticator) && MapUtils.isNotEmpty(map) && map.get
-                (FrameworkConstants.AnalyticsAttributes.USER) != null) {
+        if (("BasicAuthenticator".equals(currentAuthenticator) ||
+                isValidAuthenticator(authenticationContext, currentAuthenticator)) &&
+                MapUtils.isNotEmpty(map) && map.get(FrameworkConstants.AnalyticsAttributes.USER) != null) {
 
             if (map.get(FrameworkConstants.AnalyticsAttributes.USER) instanceof User) {
                 User failedUser = (User) map.get(FrameworkConstants.AnalyticsAttributes.USER);

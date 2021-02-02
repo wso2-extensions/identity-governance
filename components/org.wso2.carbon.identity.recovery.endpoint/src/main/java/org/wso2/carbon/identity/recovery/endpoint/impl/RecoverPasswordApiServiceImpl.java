@@ -35,6 +35,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
     @Override
     public Response recoverPasswordPost(RecoveryInitiatingRequestDTO recoveryInitiatingRequest, String type,
                                         Boolean notify){
+        
         String tenantDomainFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants
                 .TENANT_NAME_FROM_CONTEXT);
 
@@ -80,6 +81,11 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         } catch (IdentityRecoveryException e) {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
+            if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
+                    throwable.getMessage())) {
+                LOG.error(throwable.getMessage(), throwable);
+                RecoveryUtil.handleBadRequest(throwable.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
+            }
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }

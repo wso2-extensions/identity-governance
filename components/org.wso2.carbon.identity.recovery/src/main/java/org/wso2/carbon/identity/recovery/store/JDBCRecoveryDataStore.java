@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.store;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -134,6 +135,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     @Override
     public UserRecoveryData load(String code) throws IdentityRecoveryException {
 
+        return load(code, false);
+    }
+
+    @Override
+    public UserRecoveryData load(String code, boolean skipExpiryValidation) throws IdentityRecoveryException, NotImplementedException {
+
         PreparedStatement prepStmt = null;
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
@@ -154,16 +161,22 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
                 Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 Enum recoveryStep = RecoverySteps.valueOf(resultSet.getString("STEP"));
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
 
-                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep);
+                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep,
+                        timeCreated);
 
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
                 long createdTimeStamp = timeCreated.getTime();
-                if (isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
-                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds())) {
+                boolean isCodeExpired = isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
+                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds());
+                if (skipExpiryValidation) {
+                    userRecoveryData.setCodeExpired(isCodeExpired);
+                    return userRecoveryData;
+                }
+                if (isCodeExpired) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE,
                             code);
                 }
@@ -175,8 +188,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
         throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
-
     }
+
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {
@@ -276,9 +289,102 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 String code = resultSet.getString("CODE");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
 
                 UserRecoveryData userRecoveryData =
-                        new UserRecoveryData(user, code, scenario, step);
+                        new UserRecoveryData(user, code, scenario, step, timeCreated);
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
+                }
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        return null;
+    }
+
+    @Override
+    public UserRecoveryData loadWithoutCodeExpiryValidation(User user, Enum recoveryScenario)
+            throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+        try {
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO_CASE_INSENSITIVE;
+            }
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, user.getUserName());
+            prepStmt.setString(2, String.valueOf(recoveryScenario));
+            prepStmt.setString(3, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setInt(4, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
+                RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
+                String code = resultSet.getString("CODE");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+
+                UserRecoveryData userRecoveryData =
+                        new UserRecoveryData(user, code, scenario, step, timeCreated);
+                if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
+                    userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
+                }
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        return null;
+    }
+
+    @Override
+    public UserRecoveryData loadWithoutCodeExpiryValidation(User user, Enum recoveryScenario, Enum recoveryStep)
+            throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        try {
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
+                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_BY_STEP;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_OF_USER_BY_STEP_CASE_INSENSITIVE;
+            }
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, user.getUserName());
+            prepStmt.setString(2, String.valueOf(recoveryScenario));
+            prepStmt.setString(3, user.getUserStoreDomain().toUpperCase());
+            prepStmt.setInt(4, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+            prepStmt.setString(5, String.valueOf(recoveryStep));
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
+                RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
+                String code = resultSet.getString("CODE");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+
+                UserRecoveryData userRecoveryData =
+                        new UserRecoveryData(user, code, scenario, step, timeCreated);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
@@ -297,11 +403,10 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     public void invalidate(User user) throws IdentityRecoveryException {
 
         PreparedStatement prepStmt = null;
-        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
         try {
             String sql;
-            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
-                    IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES;
             } else {
                 sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODES_CASE_INSENSITIVE;
@@ -311,6 +416,61 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setString(1, user.getUserName());
             prepStmt.setString(2, user.getUserStoreDomain());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void invalidate(User user, Enum recoveryScenario, Enum recoveryStep) throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        try {
+            String sql;
+            if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(), IdentityTenantUtil.getTenantId(user.getTenantDomain()))) {
+                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODE_BY_SCENARIO;
+            } else {
+                sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_USER_CODE_BY_SCENARIO_CASE_INSENSITIVE;
+            }
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, user.getUserName());
+            prepStmt.setString(2, String.valueOf(recoveryScenario));
+            prepStmt.setString(3, String.valueOf(recoveryStep));
+            prepStmt.setString(4, user.getUserStoreDomain());
+            prepStmt.setInt(5, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void invalidateWithoutChangeTimeCreated(String oldCode, String code, Enum recoveryStep, String channelList)
+            throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+        try {
+            String sql = IdentityRecoveryConstants.SQLQueries.UPDATE_CODE;
+
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, code);
+            prepStmt.setString(2, String.valueOf(recoveryStep));
+            prepStmt.setString(3, channelList);
+            prepStmt.setString(4, oldCode);
             prepStmt.execute();
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
@@ -470,6 +630,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                         IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                         tenantDomain));
             }
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(recoveryScenario)) {
+            notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                    .ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, tenantDomain));
         } else {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.EXPIRY_TIME, tenantDomain));

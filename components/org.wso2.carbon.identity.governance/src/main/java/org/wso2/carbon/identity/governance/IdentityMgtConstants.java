@@ -27,15 +27,25 @@ public class IdentityMgtConstants {
     public static final String ERROR_CODE_DELIMITER = "-";
 
     /**
+     * User account states.
+     */
+    public class AccountStates {
+
+        private AccountStates() {}
+
+        public static final String PENDING_ADMIN_FORCED_USER_PASSWORD_RESET = "PENDING_FUPR";
+    }
+
+    /**
      * Class that contains the error scenarios.
      */
-    public class Error_Scenario {
+    public static class Error_Scenario {
 
         public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
         public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";
     }
 
-    public class PropertyConfig {
+    public static class PropertyConfig {
 
         private PropertyConfig(){}
 
@@ -53,7 +63,7 @@ public class IdentityMgtConstants {
 
     }
 
-    public class Event {
+    public static class Event {
 
         private Event(){}
 
@@ -62,7 +72,7 @@ public class IdentityMgtConstants {
     }
 
 
-    public class EventProperty {
+    public static class EventProperty {
 
         private EventProperty(){}
 
@@ -73,7 +83,7 @@ public class IdentityMgtConstants {
 
     }
 
-    public class ErrorMessage {
+    public static class ErrorMessage {
 
         private ErrorMessage(){}
 
@@ -83,8 +93,7 @@ public class IdentityMgtConstants {
 
     }
 
-
-    public class Claim {
+    public static class Claim {
 
         private Claim(){}
 
@@ -95,12 +104,23 @@ public class IdentityMgtConstants {
 
     }
 
-    public class NotificationChannelConstants {
+    public static class NotificationChannelConstants {
 
         private NotificationChannelConstants() {
         }
 
         public static final String DEFAULT_NOTIFICATION_CHANNEL = "Notification.DefaultNotificationChannel";
+    }
+
+    public enum LockedReason {
+
+        PENDING_SELF_REGISTRATION,
+        PENDING_ADMIN_FORCED_USER_PASSWORD_RESET,
+        PENDING_EMAIL_VERIFICATION,
+        PENDING_ASK_PASSWORD,
+        IDLE_ACCOUNT,
+        ADMIN_INITIATED,
+        MAX_ATTEMPTS_EXCEEDED
     }
 
     public enum ErrorMessages {

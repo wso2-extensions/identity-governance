@@ -67,7 +67,7 @@ paths:
         "HTTP/1.1 201 Created"
 
       summary: |
-        Register user
+        Self register user
 
       # This are the post parameters:
       parameters:
@@ -124,6 +124,84 @@ paths:
         401:
           description: Unauthorized request
 
+  /me/resend-code:
+    post:
+      description: |
+        This API is used to resend the confirmation code to the authenticated user if it is missing.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic <Base64Encoded_username:password>" -H "Content-Type: application/json" -d '{"properties": [{"key":"RecoveryScenario","value": "SCENARIO_NAME"}]}' "https://localhost:9443/api/identity/user/v1.0/me/resend-code"
+      x-wso2-curl: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"properties": [{"key":"RecoveryScenario","value": "MOBILE_VERIFICATION_ON_UPDATE"}]}' "https://localhost:9443/api/identity/user/v1.0/me/resend-code"
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+      summary: |
+        Self resend code
+
+      # These are the post parameters:
+      parameters:
+        - name: meResendCodeRequest
+          in: body
+          description: Sends property parameters such as the recovery scenario.
+          required: true
+          schema:
+            $ref: '#/definitions/MeResendCodeRequest'
+
+      responses:
+        201:
+          description: Created
+          schema:
+            title: key
+            type: string
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Self Register
+
+  /me/validate-code:
+    post:
+      description: |
+        This API is used to validate the code submitted by the authenticated user in a verification scenario.
+      x-wso2-request: |
+        curl -k -v -X POST -H "Authorization: <Base64Encoded_username:password>" -H "Content-Type: application/json"
+         -d '{ "code": "<validation_code>","properties": []}' "https://localhost:9443/api/identity/user/v1.0/me/validate-code"
+      x-wso2-curl: |
+        curl -k -v -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{ "code": "84325529-8aa7-4851-8751-5980a7f2d9f7","properties": []}' "https://localhost:9443/api/identity/user/v1.0/me/validate-code"
+
+      x-wso2-response: |
+        "HTTP/1.1 202 Accepted"
+
+      summary: |
+        Self validate code
+
+      # These are the post parameters:
+      parameters:
+        - name: code
+          in: body
+          description:  The validation code retrieved for the verification scenario, and optional property parameters.
+          required: true
+          schema:
+            $ref: '#/definitions/MeCodeValidationRequest'
+      responses:
+        202:
+          description: Accepted
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Self Register
+
   # The endpoint that is used to self register lite accounts with email/SMS verification.
   /lite:
     post:
@@ -138,7 +216,7 @@ paths:
         "HTTP/1.1 201 Created"
 
       summary: |
-        Register user
+        Lite register user
 
       # These are the post parameters:
       parameters:
@@ -227,7 +305,7 @@ paths:
         "HTTP/1.1 200 OK"
 
       summary: |
-        Validate code
+        Introspect code
 
       # This are the post parameters:
       parameters:
@@ -538,6 +616,21 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 
+#-----------------------------------------------------
+# The MeCodeValidationRequest  object
+#-----------------------------------------------------
+  MeCodeValidationRequest:
+    type: object
+    required:
+      - code
+    properties:
+      code:
+        type: string
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'
+
   #-----------------------------------------------------
   # The VerifiedChannel  object
   #-----------------------------------------------------
@@ -590,6 +683,8 @@ definitions:
         type: string
       recoveryStep:
         type: string
+      isExpired:
+        type: boolean
 
 
 #-----------------------------------------------------
@@ -600,6 +695,19 @@ definitions:
     properties:
       user:
         $ref: '#/definitions/User'
+      properties:
+        type: array
+        items:
+          $ref: '#/definitions/Property'
+
+#-----------------------------------------------------
+# The MeResendCode Request
+#-----------------------------------------------------
+  MeResendCodeRequest:
+    type: object
+    required:
+      - properties
+    properties:
       properties:
         type: array
         items:

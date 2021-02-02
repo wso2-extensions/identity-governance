@@ -62,7 +62,7 @@ public class IntrospectCodeApiServiceImpl extends IntrospectCodeApiService {
             }
             // Confirm code.
             recoveryData = userSelfRegistrationManager
-                    .introspectUserSelfRegistration(codeValidationRequestDTO.getCode(), verifiedChannelType,
+                    .introspectUserSelfRegistration(true, codeValidationRequestDTO.getCode(), verifiedChannelType,
                             verifiedChannelClaim, propertyMap);
             if (recoveryData != null && recoveryData.getUser() != null && recoveryData.getUser().getUserName() != null) {
                 codeDetails = getCodeIntrospectResponse(recoveryData);

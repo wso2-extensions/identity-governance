@@ -89,6 +89,7 @@
 
     <filter-mapping>
         <filter-name>CaptchaFilter</filter-name>
+        <url-pattern>/resend-code</url-pattern>
         <url-pattern>/questions/initiate</url-pattern>
         <url-pattern>/questions/initiate-all</url-pattern>
         <url-pattern>/questions/verify</url-pattern>

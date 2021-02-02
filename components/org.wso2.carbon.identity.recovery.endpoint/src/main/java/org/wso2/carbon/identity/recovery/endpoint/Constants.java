@@ -36,5 +36,6 @@ public final class Constants {
 
     public static final String ERROR_MESSAGE_EMAIL_NOT_FOUND =
             "Email notification sending failed. Sending email address is not configured for the user.";
+    public static final String ERROR_CODE_EMAIL_NOT_FOUND = "20016";
 
 }

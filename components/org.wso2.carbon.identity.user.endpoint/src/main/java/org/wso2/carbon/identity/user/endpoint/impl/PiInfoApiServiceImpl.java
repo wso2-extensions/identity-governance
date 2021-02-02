@@ -59,12 +59,12 @@ public class PiInfoApiServiceImpl extends PiInfoApiService {
                     .entity(e.getMessage())
                     .build();
         }
-        Map userAttributes;
+        Map userAttributes = null;
         try {
             userAttributes = Utils.getUserInformationService().getRetainedUserInformation(username, userStoreDomain,
                     tenantId);
         } catch (UserExportException e) {
-            return Response.serverError().entity(e.getMessage()).build();
+            Utils.handleNotFound(e.getMessage(), String.valueOf(Response.Status.NOT_FOUND.getStatusCode()));
         }
         return Response.ok().status(Response.Status.OK).entity(userAttributes).build();
     }

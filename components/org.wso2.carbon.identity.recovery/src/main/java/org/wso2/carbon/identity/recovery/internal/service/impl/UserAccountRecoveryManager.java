@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -129,10 +130,26 @@ public class UserAccountRecoveryManager {
             // Validate whether the user account is eligible for account recovery.
             checkUserValidityForAccountRecovery(user, recoveryScenario, notificationChannels, properties);
             // This flow will be initiated only if the user has any verified channels.
+            NotificationChannelDTO[] notificationChannelDTOS = getNotificationChannelsResponseDTOList(
+                    tenantDomain, notificationChannels);
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            // Get the existing RESEND_CONFIRMATION_CODE details if there is any.
+            UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
             String recoveryCode = UUIDGenerator.generateUUID();
-            return buildUserRecoveryInformationResponseDTO(username, recoveryCode,
-                    getNotificationChannelsResponseDTOList(username, recoveryCode, tenantDomain, notificationChannels,
-                            recoveryScenario));
+            String notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
+            /* Check whether the existing confirmation code can be used based on the email confirmation code tolerance
+               with the extracted RESEND_CONFIRMATION_CODE details. */
+            if (Utils.reIssueExistingConfirmationCode(recoveryDataDO,
+                    NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+                /* Update the existing RESEND_CONFIRMATION_CODE details with new code details without changing the
+                   time created of the RESEND_CONFIRMATION_CODE. */
+                userRecoveryDataStore.invalidateWithoutChangeTimeCreated(recoveryDataDO.getSecret(), recoveryCode,
+                        RecoverySteps.SEND_RECOVERY_INFORMATION, notificationChannelList);
+            } else {
+                addRecoveryDataObject(username, tenantDomain, recoveryCode, recoveryScenario, notificationChannelList);
+            }
+            return buildUserRecoveryInformationResponseDTO(username, recoveryCode, notificationChannelDTOS);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("No valid user found for the given claims");
@@ -350,55 +367,64 @@ public class UserAccountRecoveryManager {
      * Get the list of available channels with the channel attributes associated to each channel as a list of
      * NotificationChannelsResponseDTOs.
      *
-     * @param userName             UserName of the user
-     * @param recoveryID           RecoveryId
-     * @param tenantDomain         Tenant domain
-     * @param notificationChannels Notification channels list
-     * @param recoveryScenario     Recovery scenario
+     * @param tenantDomain         Tenant domain.
+     * @param notificationChannels Notification channels list.
      * @return NotificationChannelsResponseDTSs list.
      */
-    private NotificationChannelDTO[] getNotificationChannelsResponseDTOList(String userName, String recoveryID,
-                                           String tenantDomain, List<NotificationChannel> notificationChannels,
-                                                                            RecoveryScenarios recoveryScenario)
-            throws IdentityRecoveryException {
+    private NotificationChannelDTO[] getNotificationChannelsResponseDTOList(
+            String tenantDomain, List<NotificationChannel> notificationChannels) throws IdentityRecoveryException {
 
         ArrayList<NotificationChannelDTO> notificationChannelDTOs = new ArrayList<>();
         // Store available channels as NotificationChannelDTO objects in the array.
         int channelId = 1;
-        StringBuilder recoveryChannels = new StringBuilder();
         for (NotificationChannel channel : notificationChannels) {
             NotificationChannelDTO dto = buildNotificationChannelsResponseDTO(channelId, channel.getType(),
-                    channel.getChannelValue(), channel.isPreferredStatus());
+                    channel.getChannelValue(), channel.isPreferredStatus(), tenantDomain);
             notificationChannelDTOs.add(dto);
+            channelId++;
+        }
+        return notificationChannelDTOs.toArray(new NotificationChannelDTO[0]);
+    }
+
+    /**
+     * Appends the notification channel list details for to a string and return it.
+     *
+     * @param notificationChannels List of notification channels for the corresponding user.
+     * @return String that contains the notification channel details.
+     */
+    private String getNotificationChannelListForRecovery(List<NotificationChannel> notificationChannels) {
+
+        StringBuilder recoveryChannels = new StringBuilder();
+        for (NotificationChannel channel : notificationChannels) {
             // Creating the notification channel list for recovery.
             String channelEntry = channel.getType() + IdentityRecoveryConstants.CHANNEL_ATTRIBUTE_SEPARATOR + channel
                     .getChannelValue();
             recoveryChannels.append(channelEntry).append(IdentityRecoveryConstants.NOTIFY_CHANNEL_LIST_SEPARATOR);
-            channelId++;
         }
-        // Notification channel list is stored as the recovery data.
-        addRecoveryDataObject(userName, tenantDomain, recoveryID, recoveryScenario, recoveryChannels.toString());
-        return notificationChannelDTOs.toArray(new NotificationChannelDTO[0]);
+        return recoveryChannels.toString();
     }
 
     /**
      * Set notification channel details for each communication channels available for the user.
      *
-     * @param channelId   Channel Id
-     * @param channelType Channel Type (Eg: EMAIL)
-     * @param value       Channel Value (Eg: wso2@gmail.com)
-     * @param preference  Whether user marked the channel as a preferred channel of communication
+     * @param channelId    Channel Id
+     * @param channelType  Channel Type (Eg: EMAIL)
+     * @param value        Channel Value (Eg: wso2@gmail.com)
+     * @param preference   Whether user marked the channel as a preferred channel of communication
+     * @param tenantDomain Tenant domain
      * @return NotificationChannelDTO object.
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException
      */
     private NotificationChannelDTO buildNotificationChannelsResponseDTO(int channelId, String channelType, String value,
-                                                                        boolean preference) {
+                                                                        boolean preference, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
         NotificationChannelDTO notificationChannelDTO = new NotificationChannelDTO();
         notificationChannelDTO.setId(channelId);
         notificationChannelDTO.setType(channelType);
         // Encode the channel Values.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskEmailAddress(value));
+            notificationChannelDTO.setValue(maskEmailAddress(value, tenantDomain));
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channelType)) {
             notificationChannelDTO.setValue(maskMobileNumber(value));
         } else {
@@ -426,14 +452,29 @@ public class UserAccountRecoveryManager {
     /**
      * Encode the email address of the user.
      *
-     * @param email Email address
-     * @return Encoded email address (Empty String if user has no email).
+     * @param email        Email address
+     * @param tenantDomain Tenant domain
+     * @return Encoded email address (Empty String if user has no email)
+     * @throws IdentityRecoveryServerException Error while retrieving masking regex pattern for local claim in a given
+     *                                         tenant domain.
      */
-    private String maskEmailAddress(String email) {
+    private String maskEmailAddress(String email, String tenantDomain) throws IdentityRecoveryServerException {
 
+        String emailMaskingRegex;
+        String claimURI = IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM;
+        try {
+            emailMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                    .getMaskingRegexForLocalClaim(claimURI, tenantDomain);
+        } catch (ClaimMetadataException e) {
+            throw new IdentityRecoveryServerException(String.format("Error while retrieving masking regex pattern " +
+                    "for claim URI: %s in tenant domain: %s", claimURI, tenantDomain), e);
+        }
+
+        if (StringUtils.isBlank(emailMaskingRegex)) {
+            emailMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+        }
         if (StringUtils.isNotEmpty(email)) {
-            email = email.replaceAll(IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX,
-                    IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
+            email = email.replaceAll(emailMaskingRegex, IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
         }
         return email;
     }

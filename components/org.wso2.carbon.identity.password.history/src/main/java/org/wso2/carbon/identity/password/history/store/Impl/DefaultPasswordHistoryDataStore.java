@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.password.history.store.PasswordHistoryDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -38,6 +39,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * This interface provides to plug module for preferred persistence store.
@@ -101,7 +103,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
 
             prepStmt3 = connection.prepareStatement(PasswordHistoryConstants.SQLQueries.STORE_HISTORY_DATA);
             prepStmt3.setString(1, user.getUserName());
-            prepStmt3.setString(2, user.getUserStoreDomain().toUpperCase());
+            prepStmt3.setString(2, user.getUserStoreDomain().toUpperCase(Locale.ENGLISH));
             prepStmt3.setInt(3, IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             prepStmt3.setString(4, saltValue);
             prepStmt3.setString(5, preparePassword(credential.toString(), saltValue));
@@ -165,7 +167,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
             }
         } catch (SQLException e) {
             throw new IdentityPasswordHistoryException(
-                    "Error while deleting password history data of tenant" + tenantId, e);
+                    "Error while deleting password history data of tenant: " + tenantId, e);
         }
     }
 
@@ -258,7 +260,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
                 }
 
                 MessageDigest dgst = MessageDigest.getInstance(digestFunction);
-                byte[] byteValue = dgst.digest(digestInput.getBytes());
+                byte[] byteValue = dgst.digest(digestInput.getBytes(StandardCharsets.UTF_8));
                 password = Base64.encode(byteValue);
             }
             return password;

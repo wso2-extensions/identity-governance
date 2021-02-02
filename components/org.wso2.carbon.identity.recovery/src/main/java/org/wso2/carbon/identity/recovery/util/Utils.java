@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
@@ -47,6 +48,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
@@ -75,9 +77,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
-import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_MESSAGE;
 
 /**
  * Class which contains the Utils for user recovery.
@@ -100,6 +101,13 @@ public class Utils {
      * email address claim with a new email address.
      */
     private static ThreadLocal<String> skipSendingEmailVerificationOnUpdateState = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to pass the state to prevent sending a verification SMS OTP when
+     * SetUserClaimsListener is triggered in the MobileNumberVerificationHandler in other update scenarios where the
+     * purpose is not to update the mobile number with a new value.
+     */
+    private static ThreadLocal<String> skipSendingSmsOtpVerificationOnUpdate = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -193,6 +201,34 @@ public class Utils {
     public static void setThreadLocalToSkipSendingEmailVerificationOnUpdate(String value) {
 
         skipSendingEmailVerificationOnUpdateState.set(value);
+    }
+
+    /**
+     * Clear the thread local used to maintain the SMS OTP verification skipping state.
+     */
+    public static void unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        skipSendingSmsOtpVerificationOnUpdate.remove();
+    }
+
+    /**
+     * Retrieve the state to skip mobile verification.
+     *
+     * @return The state to be skipped.
+     */
+    public static String getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() {
+
+        return skipSendingSmsOtpVerificationOnUpdate.get();
+    }
+
+    /**
+     * Set the thread local value to represent the state whether mobile verification is to be skipped.
+     *
+     * @param value The mobile verification state to be skipped.
+     */
+    public static void setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(String value) {
+
+        skipSendingSmsOtpVerificationOnUpdate.set(value);
     }
 
     public static String getClaimFromUserStoreManager(User user, String claim)
@@ -1075,5 +1111,135 @@ public class Utils {
             sb.append(chars[rnd.nextInt(chars.length)]);
         }
         return sb.toString();
+    }
+
+    /**
+     * When updating email/mobile claim value, sending the verification notification can be controlled by sending
+     * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
+     * This option can be enabled form identity.xml by setting 'UseVerifyClaim' to true. When this option is enabled,
+     * email/mobile verification notification on a claim update will be triggered based on the
+     * 'verifyEmail'/'verifyMobile' temporary claim sent along with the update request.
+     *
+     * @return True if 'UseVerifyClaim' config is set to true, false otherwise.
+     */
+    public static boolean isUseVerifyClaimEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
+    }
+
+    /**
+     * Trigger recovery event.
+     *
+     * @param map              The map containing the event properties.
+     * @param eventName        The event name.
+     * @param confirmationCode The confirmation code.
+     * @throws IdentityEventException If error occurred when handleEvent.
+     */
+    public static void publishRecoveryEvent(Map<String, Object> map, String eventName, String confirmationCode)
+            throws IdentityEventException {
+
+        Map<String, Object> eventProperties = cloneMap(map);
+        if (MapUtils.isNotEmpty(eventProperties) && StringUtils.isNotEmpty(confirmationCode)) {
+            eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, confirmationCode);
+        }
+
+        Event identityMgtEvent = new Event(eventName, eventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    /**
+     * Clones the given map.
+     *
+     * @param map          Map.
+     * @return             Cloned Map.
+     */
+    private static Map<String, Object> cloneMap(Map<String, Object> map) {
+
+        if (MapUtils.isEmpty(map)) {
+            return null;
+        }
+        Map<String, Object> clonedMap = new HashMap<String, Object>();
+        clonedMap.putAll(map);
+        return clonedMap;
+    }
+
+    /**
+     * Checks whether the existing confirmation code can be reused based on the configured email confirmation code
+     * tolerance period.
+     *
+     * @param recoveryDataDO Recovery data of the corresponding user.
+     * @param notificationChannel Method which is used to send the recovery code. eg:- EMAIL, SMS.
+     * @return True if the existing confirmation code can be used. Otherwise false.
+     */
+    public static boolean reIssueExistingConfirmationCode(UserRecoveryData recoveryDataDO, String notificationChannel) {
+
+        int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
+        if (recoveryDataDO != null && codeToleranceInMinutes != 0 &&
+                NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
+                    equals(recoveryDataDO.getRecoveryScenario().toString())) {
+                long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                        TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+                return System.currentTimeMillis() < codeToleranceTimeInMillis;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Retrieves the email confirmation code tolerance period in minutes.
+     *
+     * @return The email confirmation code tolerance in minutes.
+     */
+    private static int getEmailCodeToleranceInMinutes() {
+
+        String emailCodeTolerance = IdentityUtil.
+                getProperty(IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+        if (StringUtils.isEmpty(emailCodeTolerance)) {
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+        try {
+            int codeTolerance = Integer.parseInt(emailCodeTolerance);
+            int recoveryCodeExpiryTime = getRecoveryCodeExpiryTime();
+            if (recoveryCodeExpiryTime < 0 || recoveryCodeExpiryTime < codeTolerance) {
+                String message = String.format("Recovery code expiry is less than zero or code tolerance is less " +
+                                "than recovery code expiry. Therefore setting the DEFAULT time : %s minutes",
+                        IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+                log.warn(message);
+                return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+            }
+            return codeTolerance;
+        } catch (NumberFormatException e) {
+            String message = String.format("Recovery confirmation code tolerance parsing is failed. Therefore" +
+                            "setting the DEFAULT time : %s minutes",
+                    IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+            log.error(message);
+
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+    }
+
+    /**
+     * Get the expiry time of the recovery code given at username recovery and password recovery init.
+     *
+     * @return Expiry time of the recovery code (In minutes)
+     */
+    private static int getRecoveryCodeExpiryTime() {
+
+        String expiryTime = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME);
+        if (StringUtils.isEmpty(expiryTime)) {
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+        try {
+            return Integer.parseInt(expiryTime);
+        } catch (NumberFormatException e) {
+            String message = String
+                    .format("User recovery code expiry time parsing is failed. Therefore setting DEFAULT expiry time " +
+                            ": %s minutes", IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME);
+            log.error(message);
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
     }
 }

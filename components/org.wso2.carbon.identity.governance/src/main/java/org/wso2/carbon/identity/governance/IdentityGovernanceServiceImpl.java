@@ -150,6 +150,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             ConnectorConfig config = new ConnectorConfig();
             Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
             Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+            List<String> confidentialProperties = list.get(i).getConfidentialPropertyValues(tenantDomain);
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setName(list.get(i).getName());
             config.setCategory(list.get(i).getCategory());
@@ -163,6 +164,10 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                         configProperties[j] = property;
                         configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
                         configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        if (confidentialProperties != null &&
+                                confidentialProperties.contains(configProperties[j].getName())) {
+                            configProperties[j].setConfidential(true);
+                        }
                         break;
                     }
                 }
@@ -179,16 +184,15 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
 
         Map<String, List<ConnectorConfig>> categorizedConnectorListWithConfigs = new HashMap<>();
-        if (connectorListWithConfigs != null) {
-            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
-                String category = connectorConfig.getCategory();
-                if (categorizedConnectorListWithConfigs.get(category) == null) {
-                    List<ConnectorConfig> categorizedConnectors = new ArrayList<>();
-                    categorizedConnectors.add(connectorConfig);
-                    categorizedConnectorListWithConfigs.put(category, categorizedConnectors);
-                } else {
-                    categorizedConnectorListWithConfigs.get(category).add(connectorConfig);
-                }
+
+        for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+            String category = connectorConfig.getCategory();
+            if (categorizedConnectorListWithConfigs.get(category) == null) {
+                List<ConnectorConfig> categorizedConnectors = new ArrayList<>();
+                categorizedConnectors.add(connectorConfig);
+                categorizedConnectorListWithConfigs.put(category, categorizedConnectors);
+            } else {
+                categorizedConnectorListWithConfigs.get(category).add(connectorConfig);
             }
         }
 
@@ -202,11 +206,10 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
 
         List<ConnectorConfig> categorizedConnectorListWithConfigs = new ArrayList<>();
-        if (connectorListWithConfigs != null) {
-            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
-                if (connectorConfig.getCategory().equals(category)) {
-                    categorizedConnectorListWithConfigs.add(connectorConfig);
-                }
+
+        for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+            if (connectorConfig.getCategory().equals(category)) {
+                categorizedConnectorListWithConfigs.add(connectorConfig);
             }
         }
 
@@ -218,11 +221,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
         List<ConnectorConfig> connectorListWithConfigs = this.getConnectorListWithConfigs(tenantDomain);
 
-        if (connectorListWithConfigs != null) {
-            for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
-                if (connectorConfig.getName().equals(connectorName)) {
-                    return connectorConfig;
-                }
+        for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
+            if (connectorConfig.getName().equals(connectorName)) {
+                return connectorConfig;
             }
         }
         return null;

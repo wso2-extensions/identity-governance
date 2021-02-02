@@ -17,6 +17,7 @@
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
@@ -41,63 +42,78 @@ public class IdentityRecoveryServiceDataHolder {
     private ConsentManager consentManager;
     private ConfigurationManager configurationManager;
     private ConsentUtilityService consentUtilityService;
+    private ClaimMetadataManagementService claimMetadataManagementService;
     private UserFunctionalityManager userFunctionalityManagerService;
     public static IdentityRecoveryServiceDataHolder getInstance() {
+
         return instance;
     }
 
     public IdentityEventService getIdentityEventService() {
+
         return identityEventService;
     }
 
     public void setIdentityEventService(IdentityEventService identityEventService) {
+
         this.identityEventService = identityEventService;
     }
 
     public IdpManager getIdpManager() {
+
         return idpManager;
     }
 
     public void setIdpManager(IdpManager idpManager) {
+
         this.idpManager = idpManager;
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {
-        if(identityGovernanceService == null) {
+
+        if (identityGovernanceService == null) {
             throw new RuntimeException("IdentityGovernanceService not available. Component is not started properly.");
         }
         return identityGovernanceService;
     }
 
     public void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
+
         this.identityGovernanceService = identityGovernanceService;
     }
 
     public RegistryResourceMgtService getResourceMgtService() {
+
         return resourceMgtService;
     }
 
     public void setResourceMgtService(RegistryResourceMgtService resourceMgtService) {
+
         this.resourceMgtService = resourceMgtService;
     }
 
     public RealmService getRealmService() {
+
         return realmService;
     }
 
     public void setRealmService(RealmService realmService) {
+
         this.realmService = realmService;
     }
 
     public RegistryService getRegistryService() {
+
         return registryService;
     }
 
     public void setRegistryService(RegistryService registryService) {
+
         this.registryService = registryService;
     }
 
     public AccountLockService getAccountLockService() {
+
         return accountLockService;
     }
 
@@ -122,6 +138,7 @@ public class IdentityRecoveryServiceDataHolder {
     }
 
     public void setAccountLockService(AccountLockService accountLockService) {
+
         this.accountLockService = accountLockService;
     }
 
@@ -143,6 +160,27 @@ public class IdentityRecoveryServiceDataHolder {
     public void setConsentUtilityService(ConsentUtilityService consentUtilityService) {
 
         this.consentUtilityService = consentUtilityService;
+    }
+
+
+    /**
+     * Get {@link ClaimMetadataManagementService}.
+     *
+     * @return ClaimMetadataManagementService.
+     */
+    public ClaimMetadataManagementService getClaimMetadataManagementService() {
+
+        return claimMetadataManagementService;
+    }
+
+    /**
+     * Set {@link ClaimMetadataManagementService}.
+     *
+     * @param claimMetadataManagementService Instance of {@link ClaimMetadataManagementService}.
+     */
+    public void setClaimMetadataManagementService(ClaimMetadataManagementService claimMetadataManagementService) {
+
+        this.claimMetadataManagementService = claimMetadataManagementService;
     }
 
     /**

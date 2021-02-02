@@ -27,6 +27,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
@@ -43,12 +44,13 @@ import org.wso2.carbon.identity.recovery.connector.LiteRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
-import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
+import org.wso2.carbon.identity.recovery.handler.IdentityUserMetadataMgtHandler;
+import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
@@ -103,10 +105,14 @@ public class IdentityRecoveryServiceComponent {
                     null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new UserEmailVerificationHandler(),
                     null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new MobileNumberVerificationHandler(),
+                    null);
             bundleContext.registerService(AbstractEventHandler.class.getName(), new AdminForcedPasswordResetHandler()
                     , null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new TenantRegistrationVerificationHandler(), null);
+            bundleContext.registerService(AbstractEventHandler.class.getName(), new IdentityUserMetadataMgtHandler(),
+                    null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new RecoveryConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new SelfRegistrationConfigImpl(),
                     null);
@@ -344,6 +350,22 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetUserFunctionalityMgtService(UserFunctionalityManager userFunctionalityManager) {
 
         dataHolder.getInstance().setUserFunctionalityManagerService(null);
+    }
+
+    @Reference(
+            name = "claim.meta.mgt.service",
+            service = ClaimMetadataManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimMetaMgtService")
+    protected void setClaimMetaMgtService(ClaimMetadataManagementService claimMetaMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setClaimMetadataManagementService(claimMetaMgtService);
+    }
+
+    protected void unsetClaimMetaMgtService(ClaimMetadataManagementService claimMetaMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setClaimMetadataManagementService(null);
     }
 
     private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {

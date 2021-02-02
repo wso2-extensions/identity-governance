@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -73,15 +74,18 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
                 boolean useIdentityClaimForLastLoginTime = StringUtils.isBlank(identityClaimForLastLoginTime) ||
                         Boolean.parseBoolean(identityClaimForLastLoginTime);
                 String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
+                userClaims.put(lastLoginClaim, Long.toString(System.currentTimeMillis()));
 
                 if (!useIdentityClaimForLastLoginTime) {
-                    lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+
                     if (log.isDebugEnabled()) {
                         log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
                                 " is enabled in identity.xml file hence using last login time as default claim");
                     }
+                    String currentTime = getLastLoginTimeValue(userStoreManager);
+                    userClaims.put(NotificationConstants.LAST_LOGIN_TIME, currentTime);
                 }
-                userClaims.put(lastLoginClaim, Long.toString(System.currentTimeMillis()));
+
                 userStoreManager.setUserClaimValues(userName, userClaims, null);
             } catch (UserStoreException e) {
                 log.error("Error occurred while updating last login claim for user: ", e);
@@ -96,12 +100,12 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
     @Override
     public String getFriendlyName() {
-        return "Lock Idle Accounts";
+        return "Idle Account Suspend";
     }
 
     @Override
     public String getCategory() {
-        return "Account Management Policies";
+        return "Account Management";
     }
 
     @Override
@@ -117,16 +121,24 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
     @Override
     public Map<String, String> getPropertyNameMapping() {
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Enable");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Lock Account After (days)");
-        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert Users before account locking in " +
-                "days (comma-separated list)");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Suspend idle user accounts");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Allowed idle time span " +
+                "in days");
+        nameMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Alert sending time periods in days");
         return nameMapping;
+
     }
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
-        return new HashMap<>();
+        Map<String, String> descriptionMapping = new HashMap<>();
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED, "Lock user account after a " +
+                "given idle period.");
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY, "Time period in " +
+                "days before locking the user account.");
+        descriptionMapping.put(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS, "Send warning alerts to users " +
+                "before locking the account, after each period. Comma separated multiple values accepted.");
+        return descriptionMapping;
     }
 
     @Override
@@ -153,7 +165,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ENABLED);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_ACCOUNT_DISABLE_DELAY);
         properties.add(NotificationConstants.SUSPENSION_NOTIFICATION_DELAYS);
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
@@ -260,4 +272,19 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
         return isEnabled;
     }
 
+    /**
+     * If the user-store has specific timestamp format defined, calculate login time in the defined format.
+     * @param userStoreManager User-store-manager instance.
+     * @return Last-login-time in the defined format.
+     */
+    protected String getLastLoginTimeValue(UserStoreManager userStoreManager) {
+
+        String timeStampFormat = userStoreManager.getRealmConfiguration().getUserStoreProperty
+                (UserStoreConfigConstants.dateAndTimePattern);
+        String currentTime = Long.toString(System.currentTimeMillis());
+        if (StringUtils.isNotEmpty(timeStampFormat)) {
+            currentTime = new SimpleDateFormat(timeStampFormat).format(new Date());
+        }
+        return currentTime;
+    }
 }

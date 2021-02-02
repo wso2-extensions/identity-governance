@@ -38,11 +38,13 @@ import javax.xml.namespace.QName;
 public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
     private static final String CONNECTOR_NAME = "user-claim-update";
-    private static final String CATEGORY = "Account Management Policies";
+    private static final String CATEGORY = "Other Settings";
     private static final String FRIENDLY_NAME = "User Claim Update";
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE = "false";
+    private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "5";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
     private static final String ENABLE_ELEMENT = "Enable";
     private static final String CLAIM_ELEMENT = "Claim";
@@ -52,6 +54,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
     private static String enableEmailVerificationOnUpdateProperty = null;
     private static String emailVerificationOnUpdateCodeExpiryProperty = null;
+    private static String enableMobileNumVerificationOnUpdateProperty = null;
+    private static String mobileNumVerificationOnUpdateCodeExpiryProperty = null;
 
     @Override
     public String getName() {
@@ -91,6 +95,10 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Enable user email verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Email verification on update link expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                "Enable user mobile number verification on update");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                "Mobile number verification on update SMS OTP expiry time");
         return nameMapping;
     }
 
@@ -102,6 +110,10 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Trigger a verification notification when user's email address is updated.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Validity time of the email confirmation link in minutes.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                "Trigger a verification SMS OTP when user's mobile number is updated.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                "Validity time of the mobile number confirmation OTP in minutes.");
         return descriptionMapping;
     }
 
@@ -111,6 +123,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         return properties.toArray(new String[0]);
     }
 
@@ -119,6 +133,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         String enableEmailVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE;
         String emailVerificationOnUpdateCodeExpiry = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME;
+        String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
+        String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
 
         loadConfigurations();
 
@@ -128,12 +144,22 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotBlank(emailVerificationOnUpdateCodeExpiryProperty)) {
             emailVerificationOnUpdateCodeExpiry = emailVerificationOnUpdateCodeExpiryProperty;
         }
+        if (StringUtils.isNotBlank(enableMobileNumVerificationOnUpdateProperty)) {
+            enableMobileNumVerificationOnUpdate = enableMobileNumVerificationOnUpdateProperty;
+        }
+        if (StringUtils.isNotBlank(mobileNumVerificationOnUpdateCodeExpiryProperty)) {
+            mobileNumVerificationOnUpdateCodeExpiry = mobileNumVerificationOnUpdateCodeExpiryProperty;
+        }
 
         Properties properties = new Properties();
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 enableEmailVerificationOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 emailVerificationOnUpdateCodeExpiry);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                enableMobileNumVerificationOnUpdate);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                mobileNumVerificationOnUpdateCodeExpiry);
         return properties;
     }
 
@@ -170,7 +196,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
             while (claims.hasNext()) {
                 OMElement claim = (OMElement) claims.next();
                 String claimURI = claim.getAttributeValue(new QName(CLAIM_URI));
-                // Currently claim verification on update support is only there for http://wso2.org/claims/emailaddress.
+                /* Currently claim verification on update support is there only for http://wso2.org/claims/emailaddress
+                and http://wso2.org/claims/mobile. */
                 if (IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM.equals(claimURI)) {
                     OMElement verificationOnUpdate = claim.getFirstChildWithName(new QName(IdentityCoreConstants
                             .IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_ON_UPDATE_ELEMENT));
@@ -185,7 +212,20 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                     .getText();
                         }
                     }
-                    break;
+                } else if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claimURI)) {
+                    OMElement verificationOnUpdate = claim.getFirstChildWithName(new QName(IdentityCoreConstants
+                            .IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_ON_UPDATE_ELEMENT));
+                    if (verificationOnUpdate != null) {
+                        enableMobileNumVerificationOnUpdateProperty = verificationOnUpdate.getFirstChildWithName(new
+                                QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
+                        OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
+                                (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
+                        if (verificationCode != null) {
+                            mobileNumVerificationOnUpdateCodeExpiryProperty = verificationCode.getFirstChildWithName(
+                                    new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
+                                    .getText();
+                        }
+                    }
                 }
             }
         }

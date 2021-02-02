@@ -32,20 +32,20 @@ import java.util.Properties;
 
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
-    private static String connectorName = "self-sign-up";
-    private static final String CATEGORY = "Account Management Policies";
-    private static final String FRIENDLY_NAME = "User Self Registration";
+    private static final String CONNECTOR_NAME = "self-sign-up";
+    private static final String CATEGORY = "User Onboarding";
+    private static final String FRIENDLY_NAME = "Self Registration";
     private static final String LIST_PURPOSE_PROPERTY_KEY = "_url_listPurposeSelfSignUp";
     private static final String SYSTEM_PURPOSE_GROUP = "SELF-SIGNUP";
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
-    private static String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
+    private static final String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
             "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
-        return connectorName;
+        return CONNECTOR_NAME;
     }
 
     @Override
@@ -72,20 +72,27 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "Enable Self User Registration");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "User self registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Enable Account Lock On Creation");
+                "Lock user account on creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Internal Notification Management");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Enable reCaptcha");
+                "Manage notifications sending internally");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration verification link expiry time");
-        nameMapping
-                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                        "User self registration SMS OTP expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                "User self registration SMS OTP expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                "Send sign up confirmation email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha on re-send confirmation");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
+                "Enable Auto Login After Account Confirmation");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                "Alias of the key used to sign to cookie");
         return nameMapping;
     }
 
@@ -94,22 +101,30 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                "Enable self user registration");
+                "Allow user's to self register to the system.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                "Lock user account during user registration");
+                "Lock self registered user account until e-mail verification.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                "Set false if the client application handles notification sending");
+                "Disable if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                "Enable captcha verification during self registration");
+                "Enable reCaptcha verification during self registration.");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes the user self registration verification mail would be valid");
+                "Specify the expiry time in minutes for the verification link.");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                "Set the number of minutes that the SMS OTP would be valid");
+                "Specify the expiry time in minutes for the SMS OTP.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
-                "User self registration callback URL regex");
+                "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                "Enable sending notification for self sign up confirmation.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                "Prompt reCaptcha verification for resend confirmation");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
+                "User will be logged in automatically after completing the Account Confirmation ");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                "Alias of the key used to sign to cookie. The public key has to be imported to the keystore. ");
         return descriptionMapping;
     }
 
@@ -126,6 +141,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
         return properties.toArray(new String[0]);
     }
 
@@ -139,6 +158,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
+        String enableSelfSignUpConfirmationNotification = "false";
+        String enableResendConfirmationRecaptcha = "false";
+        String enableSelfRegistrationAutoLogin = "false";
+        String selfRegistrationAutoLoginAlias = "wso2carbon";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -154,6 +177,14 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
+        String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
+        String selfRegistrationResendConfirmationCaptchaProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
+        String selfRegistrationAutoLogin = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
+        String selfRegistrationAutoLoginAliasProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -176,6 +207,18 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
+        if (StringUtils.isNotEmpty(selfSignUpConfirmationNotificationProperty)) {
+            enableSelfSignUpConfirmationNotification = selfSignUpConfirmationNotificationProperty;
+        }
+        if (StringUtils.isNotEmpty(selfRegistrationResendConfirmationCaptchaProperty)) {
+            enableResendConfirmationRecaptcha = selfRegistrationResendConfirmationCaptchaProperty;
+        }
+        if (StringUtils.isNotEmpty(selfRegistrationAutoLogin)) {
+            enableSelfRegistrationAutoLogin = selfRegistrationAutoLogin;
+        }
+        if (StringUtils.isNotEmpty(selfRegistrationAutoLoginAliasProperty)) {
+            selfRegistrationAutoLoginAlias = selfRegistrationAutoLoginAliasProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
@@ -191,6 +234,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
+                enableSelfRegistrationAutoLogin);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                selfRegistrationAutoLoginAlias);
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));
@@ -198,6 +245,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX, selfRegistrationCallbackRegex);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                enableSelfSignUpConfirmationNotification);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                enableResendConfirmationRecaptcha);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -205,7 +256,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     }
 
     @Override
-    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) throws IdentityGovernanceException {
+    public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
+
         return null;
     }
 

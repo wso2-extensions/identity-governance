@@ -23,6 +23,9 @@ public class CodeValidateInfoResponseDTO  {
   
   
   private String recoveryStep = null;
+  
+  
+  private Boolean isExpired = null;
 
   
   /**
@@ -61,6 +64,18 @@ public class CodeValidateInfoResponseDTO  {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("isExpired")
+  public Boolean getIsExpired() {
+    return isExpired;
+  }
+  public void setIsExpired(Boolean isExpired) {
+    this.isExpired = isExpired;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -70,6 +85,7 @@ public class CodeValidateInfoResponseDTO  {
     sb.append("  user: ").append(user).append("\n");
     sb.append("  recoveryScenario: ").append(recoveryScenario).append("\n");
     sb.append("  recoveryStep: ").append(recoveryStep).append("\n");
+    sb.append("  isExpired: ").append(isExpired).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

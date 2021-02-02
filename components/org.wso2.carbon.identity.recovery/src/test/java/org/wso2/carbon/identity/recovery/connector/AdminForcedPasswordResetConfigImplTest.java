@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * This class does unit test coverage for AdminForcedPasswordResetConfigImpl class.
@@ -58,7 +59,7 @@ public class AdminForcedPasswordResetConfigImplTest {
     @Test
     public void testGetCategory() throws IdentityGovernanceException {
 
-        assertEquals(adminForcedPasswordResetConfigIml.getCategory(), "Account Management Policies");
+        assertEquals(adminForcedPasswordResetConfigIml.getCategory(), "Account Management");
     }
 
     @Test
@@ -78,11 +79,11 @@ public class AdminForcedPasswordResetConfigImplTest {
 
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                "Enable Password Reset via Recovery Email");
+                "Enable password reset via recovery e-mail");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "Enable Password Reset via OTP");
+                "Enable password reset via OTP");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                "Enable Password Reset Offline");
+                "Enable password reset offline");
 
         Map<String, String> nameMapping = adminForcedPasswordResetConfigIml.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -151,7 +152,6 @@ public class AdminForcedPasswordResetConfigImplTest {
         // Here tenantDomain and propertyNames parameters are not used by method itself
         Map<String, String> defaultPropertyValues =
                 adminForcedPasswordResetConfigIml.getDefaultPropertyValues(propertyNames, tenantDomain);
-        assertEquals(defaultPropertyValues, null);
+        assertNull(defaultPropertyValues);
     }
-
 }
