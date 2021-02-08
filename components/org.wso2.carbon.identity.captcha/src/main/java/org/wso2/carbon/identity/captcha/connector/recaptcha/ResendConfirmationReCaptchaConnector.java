@@ -73,7 +73,7 @@ public class ResendConfirmationReCaptchaConnector extends AbstractReCaptchaConne
             connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
                     RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         } catch (Exception e) {
-            // Can happen due to invalid tenant/ invalid configuration
+            // Can happen due to invalid tenant/ invalid configuration.
             if (log.isDebugEnabled()) {
                 log.debug("Unable to load connector configuration.", e);
             }
@@ -122,7 +122,7 @@ public class ResendConfirmationReCaptchaConnector extends AbstractReCaptchaConne
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        //No need post validation.
+        // No need post validation.
         return null;
     }
 }
