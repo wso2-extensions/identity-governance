@@ -39,13 +39,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
     private static UserRecoveryDataStore jdbcRecoveryDataStore = new JDBCRecoveryDataStore();
     private static final Log log = LogFactory.getLog(JDBCRecoveryDataStore.class);
+    private static final String UTC = "UTC";
 
     private JDBCRecoveryDataStore() {
 
@@ -69,7 +72,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setString(4, recoveryDataDO.getSecret());
             prepStmt.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
             prepStmt.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
-            prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()));
+            prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()),
+                    Calendar.getInstance(TimeZone.getTimeZone(UTC)));
             prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt.execute();
             IdentityDatabaseUtil.commitTransaction(connection);
@@ -114,7 +118,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
                 long createdTimeStamp = timeCreated.getTime();
                 String remainingSets = resultSet.getString("REMAINING_SETS");
                 if (isCodeExpired(user.getTenantDomain(), recoveryScenario, recoveryStep, createdTimeStamp,
@@ -161,7 +166,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
                 Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 Enum recoveryStep = RecoverySteps.valueOf(resultSet.getString("STEP"));
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
                 UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep,
                         timeCreated);
@@ -237,7 +243,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet = prepStmt.executeQuery();
 
             if (resultSet.next()) {
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 String code = resultSet.getString("CODE");
@@ -289,7 +296,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 String code = resultSet.getString("CODE");
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
                 UserRecoveryData userRecoveryData =
                         new UserRecoveryData(user, code, scenario, step, timeCreated);
@@ -334,7 +342,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 String code = resultSet.getString("CODE");
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
                 UserRecoveryData userRecoveryData =
                         new UserRecoveryData(user, code, scenario, step, timeCreated);
@@ -381,7 +390,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 String code = resultSet.getString("CODE");
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
                 UserRecoveryData userRecoveryData =
                         new UserRecoveryData(user, code, scenario, step, timeCreated);
