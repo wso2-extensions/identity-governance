@@ -18,10 +18,10 @@ public class UserDTO  {
   private String username = null;
   
   
-  private String tenantDomain = null;
-  
-  
   private String realm = null;
+  
+  
+  private String tenantDomain = null;
 
   
   /**
@@ -39,24 +39,24 @@ public class UserDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("tenant-domain")
-  public String getTenantDomain() {
-    return tenantDomain;
-  }
-  public void setTenantDomain(String tenantDomain) {
-    this.tenantDomain = tenantDomain;
-  }
-
-  
-  /**
-   **/
-  @ApiModelProperty(value = "")
   @JsonProperty("realm")
   public String getRealm() {
     return realm;
   }
   public void setRealm(String realm) {
     this.realm = realm;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("tenant-domain")
+  public String getTenantDomain() {
+    return tenantDomain;
+  }
+  public void setTenantDomain(String tenantDomain) {
+    this.tenantDomain = tenantDomain;
   }
 
   
@@ -67,8 +67,8 @@ public class UserDTO  {
     sb.append("class UserDTO {\n");
     
     sb.append("  username: ").append(username).append("\n");
-    sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
     sb.append("  realm: ").append(realm).append("\n");
+    sb.append("  tenantDomain: ").append(tenantDomain).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

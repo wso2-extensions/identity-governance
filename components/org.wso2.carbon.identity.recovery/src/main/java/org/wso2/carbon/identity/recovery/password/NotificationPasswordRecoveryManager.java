@@ -427,14 +427,29 @@ public class NotificationPasswordRecoveryManager {
     /**
      * Update the password of the user.
      *
-     * @param code       Password Reset code
-     * @param password   New password
-     * @param properties Properties
-     * @throws IdentityRecoveryException Error while updating the password
-     * @throws IdentityEventException    Error while updating the password
+     * @param code       Password Reset code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
      */
     public void updatePassword(String code, String password, Property[] properties)
             throws IdentityRecoveryException, IdentityEventException {
+        updateUserPassword(code, password, properties);
+    }
+
+    /**
+     * Update the password of the user.
+     *
+     * @param code       Password Reset code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
+     */
+    public User updateUserPassword(String code, String password, Property[] properties)
+            throws IdentityRecoveryException, IdentityEventException {
+
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
@@ -489,7 +504,9 @@ public class NotificationPasswordRecoveryManager {
         String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
         String recoveryStep = userRecoveryData.getRecoveryStep().name();
         auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
-                FrameworkConstants.AUDIT_SUCCESS, recoveryScenario ,recoveryStep);
+                FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
+
+        return userRecoveryData.getUser();
     }
 
     /**
@@ -717,6 +734,18 @@ public class NotificationPasswordRecoveryManager {
      */
     public void validateConfirmationCode(String code, String recoveryStep) throws IdentityRecoveryException {
 
+        getValidatedUser(code, recoveryStep);
+    }
+
+    /**
+     * Method to validate confirmation code of password reset flow.
+     *
+     * @param code         confirmation code
+     * @param recoveryStep recovery step
+     * @throws IdentityRecoveryException
+     */
+    public User getValidatedUser(String code, String recoveryStep) throws IdentityRecoveryException {
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -727,12 +756,13 @@ public class NotificationPasswordRecoveryManager {
         if (StringUtils.isNotBlank(recoveryStep) && !recoveryStep.equals(userRecoveryData.getRecoveryStep().name())) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
         }
-        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
-                userRecoveryData.getUser().getUserStoreDomain());
+        User user = userRecoveryData.getUser();
+        String domainQualifiedName = IdentityUtil
+                .addDomainToName(user.getUserName(), userRecoveryData.getUser().getUserStoreDomain());
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
-
+        return user;
     }
 
     private void auditPasswordRecovery(String action, String notificationChannel, User user, String errorMsg,
