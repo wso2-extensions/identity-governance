@@ -408,6 +408,22 @@ public class NotificationPasswordRecoveryManager {
     public void updatePassword(String code, String password, Property[] properties)
             throws IdentityRecoveryException, IdentityEventException {
 
+        updateUserPassword(code, password, properties);
+    }
+
+    /**
+     * Update the password of the user.
+     *
+     * @param code       Password Reset code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @return User object.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
+     */
+    public User updateUserPassword(String code, String password, Property[] properties)
+            throws IdentityRecoveryException, IdentityEventException {
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
@@ -458,6 +474,8 @@ public class NotificationPasswordRecoveryManager {
         }
         auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), null,
                 FrameworkConstants.AUDIT_SUCCESS);
+
+        return userRecoveryData.getUser();
     }
 
     /**
@@ -676,6 +694,18 @@ public class NotificationPasswordRecoveryManager {
      */
     public void validateConfirmationCode(String code, String recoveryStep) throws IdentityRecoveryException {
 
+        getValidatedUser(code, recoveryStep);
+    }
+
+    /**
+     * Method to validate confirmation code of password reset flow.
+     *
+     * @param code         confirmation code
+     * @param recoveryStep recovery step
+     * @throws IdentityRecoveryException
+     */
+    public User getValidatedUser(String code, String recoveryStep) throws IdentityRecoveryException {
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -691,7 +721,7 @@ public class NotificationPasswordRecoveryManager {
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
-
+        return userRecoveryData.getUser();
     }
 
     private void auditPasswordRecovery(String action, String notificationChannel, User user, String errorMsg,

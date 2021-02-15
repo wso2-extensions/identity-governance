@@ -2,6 +2,7 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -21,11 +22,13 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
     @Override
     public Response setPasswordPost(ResetPasswordRequestDTO resetPasswordRequest) {
 
-
-        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil.getNotificationBasedPwdRecoveryManager();
+        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
+                .getNotificationBasedPwdRecoveryManager();
+        User user = null;
         try {
-            notificationPasswordRecoveryManager.updatePassword(resetPasswordRequest.getKey(),
-                    resetPasswordRequest.getPassword(), RecoveryUtil.getProperties(resetPasswordRequest.getProperties()));
+            user = notificationPasswordRecoveryManager
+                    .updateUserPassword(resetPasswordRequest.getKey(), resetPasswordRequest.getPassword(),
+                            RecoveryUtil.getProperties(resetPasswordRequest.getProperties()));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resetting password ", e);
@@ -49,6 +52,6 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.ok().build();
+        return Response.ok(RecoveryUtil.getUserDTO(user)).build();
     }
 }

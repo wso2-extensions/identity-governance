@@ -14,7 +14,7 @@ info:
     name: "WSO2"
     url: "http://wso2.com/products/identity-server/"
     email: "architecture@wso2.com"
-  license: 
+  license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
 
@@ -23,7 +23,7 @@ info:
 ######################################################
 
 # The schemes supported by the API
-schemes: 
+schemes:
   - https
 
 # The domain of the API.
@@ -40,7 +40,7 @@ basePath: /t/{tenant-domain}/api/identity/recovery/v0.9
 # The actual media type must be specified in the Content-Type header field of the request.
 # The default is json, i.e. the Content-Type header is not needed to
 # be set, but supporting it serves extensibility.
-consumes: 
+consumes:
   - application/json
 
 # The following media types may be passed as output in message bodies of the API.
@@ -50,22 +50,22 @@ consumes:
 # of the response.
 # The default of the Accept header is JSON, i.e., it is not needed to
 # set the value, but supporting it serves extensibility.
-produces: 
+produces:
   - application/json
 paths:
   # The endpoint that is used to send recovery notifications.
   /recover-password:
     post:
       description: |
-         This API is used to send password recovery confirmation over defined channels like email/sms.
+        This API is used to send password recovery confirmation over defined channels like email/sms.
       x-wso2-request: |
         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"user": {"username": "isura","realm": "ENGINEERING","tenant-domain":"carbon.super"},"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/recover-password?type=email¬ify=true"
-        
+
       x-wso2-response: |
         "HTTP/1.1 202 Accepted"
       summary: |
         Send Recovery Notification
-       
+
       # These are the post parameters:
       parameters:
         -
@@ -81,13 +81,13 @@ paths:
           description: Notification Type
           required: false
           type: string
-          
+
         -
           name: notify
           in: query
-          description: If notify=true, notifications will be internally managed. 
+          description: If notify=true, notifications will be internally managed.
           required: false
-          type: boolean          
+          type: boolean
 
       responses:
         202:
@@ -98,16 +98,16 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
-          
+            $ref: '#/definitions/Error'
+
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
         - Notification
-            
+
     # The endpoint that is used to reset the user password.
   /set-password:
 
@@ -116,12 +116,12 @@ paths:
         This API is used to reset user password using the confirmation key recieved through the recovery process. Need to input `key` and the new `password`.
       x-wso2-request: |
         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "5c765a47-6764-4048-b5cf-55864cb654c0", "password": "P@ssW0rd","properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/set-password"
-            
+
       x-wso2-response: |
         "HTTP/1.1 200 OK"        
       summary: |
         Update Password
-       
+
       parameters:
         -
           name: ResetPasswordRequest
@@ -134,21 +134,23 @@ paths:
       responses:
         202:
           description: Successful response
-          
+          schema:
+            $ref: '#/definitions/User'
+
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
-             
+            $ref: '#/definitions/Error'
+
         412:
           description: Precondition Failed
           schema:
-             $ref: '#/definitions/RetryError'             
-          
+            $ref: '#/definitions/RetryError'
+
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
         - Notification
@@ -171,36 +173,38 @@ paths:
         -
           name: CodeValidationRequest
           in: body
-          description: Code, recovery step, and optional parameters. For recovery steps, you can use values from "UPDATE_PASSWORD","CONFIRM_SIGN_UP","VALIDATE_CHALLENGE_QUESTION", and "VALIDATE_ALL_CHALLENGE_QUESTION": four categories according to the recovery scenario you want to validate the code.
+          description: Code, recovery step, and optional parameters. For recovery steps, you can use values from "UPDATE_PASSWORD","CONFIRM_SIGN_UP","VALIDATE_CHALLENGE_QUESTION", and "VALIDATE_ALL_CHALLENGE_QUESTION" four categories according to the recovery scenario you want to validate the code.
           required: true
           schema:
             $ref: '#/definitions/CodeValidationRequest'
       responses:
         202:
           description: Accepted
+          schema:
+            $ref: '#/definitions/User'
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
 
 
-   # The endpoint that is used to initiate password reset with security questions.
+    # The endpoint that is used to initiate password reset with security questions.
   /security-question:
-     get:
+    get:
       description: |
-         This API is used to initiate password recovery using user challenge questions. Response will be a random challenge question with a confirmation key.
+        This API is used to initiate password recovery using user challenge questions. Response will be a random challenge question with a confirmation key.
       x-wso2-request: |
-         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
+        curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
 
       x-wso2-response: |
-          {"key":"7ced9ef0-7f3f-4f65-a115-ddbcce3a6b49","question":{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"}
+        {"key":"7ced9ef0-7f3f-4f65-a115-ddbcce3a6b49","question":{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"}
       summary: |
         Get Challenge Question of User
 
@@ -238,26 +242,26 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
         - Security Question
 
-   # The endpoint that is used to initiate password reset with security questions.
+    # The endpoint that is used to initiate password reset with security questions.
   /security-questions:
-     get:
+    get:
       description: |
-         This API is used to initiate password recovery using user challenge questions at once. Response will be a random challenge question with a confirmation key.
+        This API is used to initiate password recovery using user challenge questions at once. Response will be a random challenge question with a confirmation key.
       x-wso2-request: |
-         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
+        curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/security-question?username=isura"
 
       x-wso2-response: |
-          {"key":"f9f04fd7-3666-4bc6-bc99-9190b04b0ccc","questions":[{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"},{"question":"Model of your first car ?","question-set-id":"http://wso2.org/claims/challengeQuestion2"}],"link":{"rel":"validate-answer","uri":"/api/identity/recovery/v0.9"}}
+        {"key":"f9f04fd7-3666-4bc6-bc99-9190b04b0ccc","questions":[{"question":"City where you were born ?","question-set-id":"http://wso2.org/claims/challengeQuestion1"},{"question":"Model of your first car ?","question-set-id":"http://wso2.org/claims/challengeQuestion2"}],"link":{"rel":"validate-answer","uri":"/api/identity/recovery/v0.9"}}
       summary: |
         Get Challenge Questions of User
 
@@ -296,26 +300,26 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
         - Security Question
 
   /validate-answer:
-     post:
+    post:
       description: |
-         This is used to validate the user challenge answer. If the user challenge answer is valid, it sends another challenge question to answer until the status becomes `COMPLETE`. If the answer is wrong, user can retry the answer.
+        This is used to validate the user challenge answer. If the user challenge answer is valid, it sends another challenge question to answer until the status becomes `COMPLETE`. If the answer is wrong, user can retry the answer.
       x-wso2-request: |
-         curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "0b20bd4d-cd82-4e8f-8ca4-4d265360b56b","answers": [{ "question-set-id": "http://wso2.org/claims/challengeQuestion1","answer": "born"},{"question-set-id": "http://wso2.org/claims/challengeQuestion2","answer": "car"}],"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/validate-answer"
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"key": "0b20bd4d-cd82-4e8f-8ca4-4d265360b56b","answers": [{ "question-set-id": "http://wso2.org/claims/challengeQuestion1","answer": "born"},{"question-set-id": "http://wso2.org/claims/challengeQuestion2","answer": "car"}],"properties": []}' "https://localhost:9443/api/identity/recovery/v0.9/validate-answer"
 
 
       x-wso2-response: |
-          {"key":"c45d7251-59f1-468d-9844-8a6d7c5fe9d9","question":null,"link":{"rel":"set-password","uri":"/api/identity/recovery/v0.9"}}
+        {"key":"c45d7251-59f1-468d-9844-8a6d7c5fe9d9","question":null,"link":{"rel":"set-password","uri":"/api/identity/recovery/v0.9"}}
       summary: |
         Validate user challenge answer/answers.
 
@@ -337,12 +341,12 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/RetryError'
+            $ref: '#/definitions/RetryError'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Password Recovery
         - Security Question
@@ -351,9 +355,9 @@ paths:
   /recover-username/:
     post:
       description: |
-       This API can be used to recover a forgotten username.
+        This API can be used to recover a forgotten username.
       x-wso2-request: |
-         curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '[{"uri": "http://wso2.org/claims/givenname","value": "isura"},{"uri": "http://wso2.org/claims/emailaddress", "value": "isuradil@email.com"},{"uri": "http://wso2.org/claims/lastname","value": "karunaratne" }]' "https://localhost:9443/api/identity/recovery/v0.9/recover-username/"
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '[{"uri": "http://wso2.org/claims/givenname","value": "isura"},{"uri": "http://wso2.org/claims/emailaddress", "value": "isuradil@email.com"},{"uri": "http://wso2.org/claims/lastname","value": "karunaratne" }]' "https://localhost:9443/api/identity/recovery/v0.9/recover-username/"
 
       x-wso2-response: |
         "HTTP/1.1 202 Accepted"
@@ -393,12 +397,12 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Username Recovery
         - Notification
@@ -406,15 +410,15 @@ paths:
   /claims:
     get:
       description: |
-       return the recovery supported claims in the given tenant.
+        return the recovery supported claims in the given tenant.
       x-wso2-request: |
-         curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/claims?tenant-domain=carbon.super"
+        curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" "https://localhost:9443/api/identity/recovery/v0.9/claims?tenant-domain=carbon.super"
 
       x-wso2-response: |
         [{"uri":"http://wso2.org/claims/mobile","value":null,"description":"Mobile","display-name":"Mobile","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/role","value":null,"description":"Role","display-name":"Role","dialect":"http://wso2.org/claims","required":false,"readOnly":true},{"uri":"http://wso2.org/claims/givenname","value":null,"description":"First Name","display-name":"First Name","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/organization","value":null,"description":"Organization","display-name":"Organization","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/im","value":null,"description":"IM","display-name":"IM","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/lastname","value":null,"description":"Last Name","display-name":"Last Name","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/telephone","value":null,"description":"Telephone","display-name":"Telephone","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/country","value":null,"description":"Country","display-name":"Country","dialect":"http://wso2.org/claims","required":false,"readOnly":false},{"uri":"http://wso2.org/claims/emailaddress","value":null,"description":"Email Address","display-name":"Email","dialect":"http://wso2.org/claims","required":true,"readOnly":false},{"uri":"http://wso2.org/claims/url","value":null,"description":"URL","display-name":"URL","dialect":"http://wso2.org/claims","required":false,"readOnly":false}]
 
       summary: |
-       Get Supported Claims
+        Get Supported Claims
 
       parameters:
         -
@@ -436,84 +440,84 @@ paths:
         400:
           description: Bad Request
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
 
         500:
           description: Server Error
           schema:
-             $ref: '#/definitions/Error'
+            $ref: '#/definitions/Error'
       tags:
         - Username Recovery
 
   /captcha:
-      get:
-        description: |
-          return the reCaptcha information if its supported for the given tenant.
-        x-wso2-request: |
-          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha&recovery-type=username-recovery"
-        x-wso2-response: |
-          {"reCaptchaEnabled":true,"reCaptchaKey":"6LctLW4UAAAA5YWxy93f7yBQlzMh_RdkmUxd-J","reCaptchaAPI":"https://www.google.com/recaptcha/api.js"}
-        operationId: getCaptcha
+    get:
+      description: |
+        return the reCaptcha information if its supported for the given tenant.
+      x-wso2-request: |
+        curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json"  "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha&recovery-type=username-recovery"
+      x-wso2-response: |
+        {"reCaptchaEnabled":true,"reCaptchaKey":"6LctLW4UAAAA5YWxy93f7yBQlzMh_RdkmUxd-J","reCaptchaAPI":"https://www.google.com/recaptcha/api.js"}
+      operationId: getCaptcha
 
-        summary: |
-         Get Captcha
+      summary: |
+        Get Captcha
 
-        parameters:
-          -
-            name: tenant-domain
-            in: query
-            description: tenant domain. Default `carbon.super`
-            required: false
-            type: string
+      parameters:
+        -
+          name: tenant-domain
+          in: query
+          description: tenant domain. Default `carbon.super`
+          required: false
+          type: string
 
-          -
-            name: captcha-type
-            in: query
-            description: type of captcha
-            required: true
-            type: string
+        -
+          name: captcha-type
+          in: query
+          description: type of captcha
+          required: true
+          type: string
 
-          -
-            name: recovery-type
-            in: query
-            description: username recovery or password recovery
-            required: true
-            type: string
+        -
+          name: recovery-type
+          in: query
+          description: username recovery or password recovery
+          required: true
+          type: string
 
-        responses:
-          200:
-            description: Successful response
-            schema:
-              $ref: '#/definitions/ReCaptchaProperties'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ReCaptchaProperties'
 
-          400:
-            description: Bad Request
-            schema:
-               $ref: '#/definitions/Error'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
 
-          500:
-            description: Server Error
-            schema:
-               $ref: '#/definitions/Error'
-        tags:
-          - Password Recovery
-          - Username Recovery
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Password Recovery
+        - Username Recovery
 
-      post:
-        description: |
-         return true or false after verify the captcha response.
-        x-wso2-request: |
-           curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"token": "xsfwewfcavfrwafrawva"}' "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha"
+    post:
+      description: |
+        return true or false after verify the captcha response.
+      x-wso2-request: |
+        curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{"token": "xsfwewfcavfrwafrawva"}' "https://localhost:9443/api/identity/recovery/v0.9/captcha?tenant-domain=carbon.super&captcha-type=ReCaptcha"
 
-        x-wso2-response: |
-          {"success":true}
+      x-wso2-response: |
+        {"success":true}
 
-        operationId: verifyCaptcha
+      operationId: verifyCaptcha
 
-        summary: |
-         Verify Captcha
+      summary: |
+        Verify Captcha
 
-        parameters:
+      parameters:
         -
           name: reCaptcha-response
           in: body
@@ -536,29 +540,29 @@ paths:
           required: true
           type: string
 
-        responses:
-          200:
-            description: Successful response
-            schema:
-              $ref: '#/definitions/ReCaptchaVerificationResponse'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/ReCaptchaVerificationResponse'
 
-          400:
-            description: Bad Request
-            schema:
-               $ref: '#/definitions/Error'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
 
-          500:
-            description: Server Error
-            schema:
-               $ref: '#/definitions/Error'
-        tags:
-          - Password Recovery
-          - Username Recovery
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+        - Password Recovery
+        - Username Recovery
 
 definitions:
-#-----------------------------------------------------
-# The User Object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The User Object
+  #-----------------------------------------------------
   User:
     type: object
     properties:
@@ -566,9 +570,11 @@ definitions:
         type: string
       realm:
         type: string
-#-----------------------------------------------------
-# The Credential object
-#-----------------------------------------------------
+      tenant-domain:
+        type: string
+  #-----------------------------------------------------
+  # The Credential object
+  #-----------------------------------------------------
   ResetPasswordRequest:
     type: object
     properties:
@@ -581,9 +587,9 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 
-#-----------------------------------------------------
-# The Error Response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The Error Response object
+  #-----------------------------------------------------
   Error:
     type: object
     properties:
@@ -593,9 +599,9 @@ definitions:
         type: string
       description:
         type: string
-#-----------------------------------------------------
-# The Security Question object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The Security Question object
+  #-----------------------------------------------------
   Question:
     type: object
     properties:
@@ -603,9 +609,9 @@ definitions:
         type: string
       question-set-id:
         type: string
-#-----------------------------------------------------
-# Security Answers verificiaton request object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # Security Answers verificiaton request object
+  #-----------------------------------------------------
   AnswerVerificationRequest:
     type: object
     properties:
@@ -620,9 +626,9 @@ definitions:
         items:
           $ref: '#/definitions/Property'
 
-#-----------------------------------------------------
-# The Error Response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The Error Response object
+  #-----------------------------------------------------
   RetryError:
     type: object
     properties:
@@ -634,9 +640,9 @@ definitions:
         type: string
       key:
         type: string
-#-----------------------------------------------------
-# The Property object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The Property object
+  #-----------------------------------------------------
   Property:
     type: object
     properties:
@@ -644,9 +650,9 @@ definitions:
         type: string
       value:
         type: string
-#-----------------------------------------------------
-# Security Answers verificiaton response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # Security Answers verificiaton response object
+  #-----------------------------------------------------
   RecoveryInitiatingRequest:
     type: object
     properties:
@@ -656,9 +662,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Property'
-#-----------------------------------------------------
-# The InitiateAllQuestionResponse response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The InitiateAllQuestionResponse response object
+  #-----------------------------------------------------
   InitiateAllQuestionResponse:
     type: object
     properties:
@@ -671,9 +677,9 @@ definitions:
       link:
         $ref: '#/definitions/Link'
 
-#-----------------------------------------------------
-# The InitiateQuestionResponse response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The InitiateQuestionResponse response object
+  #-----------------------------------------------------
   InitiateQuestionResponse:
     type: object
     properties:
@@ -685,9 +691,9 @@ definitions:
         $ref: '#/definitions/Link'
 
 
-#-----------------------------------------------------
-# User Security Answer object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # User Security Answer object
+  #-----------------------------------------------------
   SecurityAnswer:
     type: object
     properties:
@@ -695,9 +701,9 @@ definitions:
         type: string
       answer:
         type: string
-#-----------------------------------------------------
-# Claim object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # Claim object
+  #-----------------------------------------------------
   Claim:
     type: object
     properties:
@@ -717,9 +723,9 @@ definitions:
         type: boolean
       read-only:
         type: boolean
-#-----------------------------------------------------
-# Link object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # Link object
+  #-----------------------------------------------------
   Link:
     type: object
     properties:
@@ -728,9 +734,9 @@ definitions:
       uri:
         type: string
 
-#-----------------------------------------------------
-# User Claim object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # User Claim object
+  #-----------------------------------------------------
   UserClaim:
     type: object
     properties:
@@ -738,11 +744,11 @@ definitions:
         type: string
       value:
         type: string
-#-----------------------------------------------------
+  #-----------------------------------------------------
 
-#-----------------------------------------------------
-# The CodeValidationRequest object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # The CodeValidationRequest object
+  #-----------------------------------------------------
   CodeValidationRequest:
     type: object
     properties:
@@ -754,31 +760,31 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Property'
-#-----------------------------------------------------
+  #-----------------------------------------------------
 
-#-----------------------------------------------------
-# ReCaptcha Response Token object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # ReCaptcha Response Token object
+  #-----------------------------------------------------
   ReCaptchaResponseToken:
     type: object
     properties:
       token:
         type: string
-#-----------------------------------------------------
+  #-----------------------------------------------------
 
-#-----------------------------------------------------
-# ReCaptcha verification response object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # ReCaptcha verification response object
+  #-----------------------------------------------------
   ReCaptchaVerificationResponse:
     type: object
     properties:
       success:
         type: boolean
-#-----------------------------------------------------
+  #-----------------------------------------------------
 
-#-----------------------------------------------------
-# ReCaptcha Properties object
-#-----------------------------------------------------
+  #-----------------------------------------------------
+  # ReCaptcha Properties object
+  #-----------------------------------------------------
   ReCaptchaProperties:
     type: object
     properties:
