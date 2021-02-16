@@ -133,7 +133,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     return;
                 }
                 // If notifications are externally managed, no send notifications.
-                if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage ){
+                if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage) {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
@@ -156,7 +156,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             if (isAccountLockOnCreation || isEnableConfirmationOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
                 if (isAccountLockOnCreation) {
-                    //Need to lock user account
+                    // Need to lock user account.
                     userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
                     userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
                             IdentityMgtConstants.LockedReason.PENDING_SELF_REGISTRATION.toString());
