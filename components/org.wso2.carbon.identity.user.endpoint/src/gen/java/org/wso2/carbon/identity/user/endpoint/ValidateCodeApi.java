@@ -30,7 +30,7 @@ public class ValidateCodeApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Validate code\n", notes = "This API is used to validate the code used by self registered users.\n", response = void.class)
+    @io.swagger.annotations.ApiOperation(value = "Validate code\n", notes = "This API is used to validate the code used by self registered users.\n", response = UserDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 202, message = "Accepted"),
         
@@ -38,7 +38,7 @@ public class ValidateCodeApi  {
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 
-    public Response validateCodePost(@ApiParam(value = "The validation code retrieved after user self registration, and optional property parameters." ,required=true ) CodeValidationRequestDTO code)
+    public Response validateCodePost(@ApiParam(value = "The relevant userDTO is retrieved after user self registration, and optional property parameters." ,required=true ) CodeValidationRequestDTO code)
     {
     return delegate.validateCodePost(code);
     }

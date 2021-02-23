@@ -192,6 +192,7 @@ public class SelfRegistrationConfigImplTest {
         String enableSelfSignUpConfirmationNotification = "false";
         String enableResendConfirmationRecaptcha = "false";
         String enableSelfRegistrationAutoLogin = "false";
+        String enableSelfRegistrationAutoLoginAlias = "wso2carbon";
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);

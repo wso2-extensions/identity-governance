@@ -167,7 +167,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableResendConfirmationRecaptcha = "false";
         String enableSelfRegistrationAutoLogin = "false";
         String selfRegistrationAutoLoginAlias = "wso2carbon";
-        String enableSelfRegistrationAutoLogin = "false";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -187,8 +186,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
         String selfRegistrationResendConfirmationCaptchaProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
-        String selfRegistrationAutoLogin = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         String selfRegistrationAutoLogin = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         String selfRegistrationAutoLoginAliasProperty = IdentityUtil.getProperty(
