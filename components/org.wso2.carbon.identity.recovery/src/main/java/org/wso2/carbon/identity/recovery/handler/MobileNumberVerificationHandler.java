@@ -42,9 +42,13 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.ClaimManager;
+import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
@@ -251,7 +255,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
-        if (StringUtils.isNotBlank(mobileNumber)) {
+        if (StringUtils.isNotBlank(mobileNumber) &&
+                isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
             String existingMobileNumber;
             String username = user.getUserName();
             try {
@@ -411,7 +416,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     private void invalidatePendingMobileVerification(User user, UserStoreManager userStoreManager,
                                                     Map<String, String> claims ) throws IdentityEventException {
 
-        if (StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
+        if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain()) &&
+                StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             try {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -434,5 +440,56 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         return (claims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM) &&
                 Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM)));
+    }
+
+    private boolean isVerificationPendingMobileClaimConfigAvailable(String tenantDomain) {
+
+        UserRealm userRealm = getUserRealm(tenantDomain);
+        ClaimManager claimManager = null;
+
+        if (userRealm != null) {
+            // Get claim manager for manipulating attributes.
+            claimManager = getClaimManager(userRealm);
+        }
+
+        try {
+            if (claimManager != null) {
+                Claim claim = claimManager.getClaim(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
+                if (claim != null) {
+                    return true;
+                }
+            }
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            log.error("Error while looking for the pendingMobileNumber claim from claim manager " +
+                    "in tenant: " + tenantDomain, e);
+            return false;
+        }
+        return false;
+    }
+
+    private UserRealm getUserRealm(String tenantDomain) {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        if (realmService != null) {
+            // Get tenant's user realm.
+            try {
+                int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+                return realmService.getTenantUserRealm(tenantId);
+            } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                log.error("Error while retrieving user realm in mobile verification handler for tenant domain: "
+                        + tenantDomain, e);
+            }
+        }
+        return null;
+    }
+
+    private ClaimManager getClaimManager(UserRealm userRealm) {
+
+        try {
+            return userRealm.getClaimManager();
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            log.error("Error while retrieving claim manager.", e);
+        }
+        return null;
     }
 }

@@ -39,7 +39,7 @@ public class RecoverUsernameApiServiceImpl extends RecoverUsernameApiService {
                 LOG.debug(e.getMessage(), e);
             }
 
-            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND_FOR_RECOVERY.getCode()
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND.getCode()
                     .equals(e.getErrorCode())) {
                 return Response.noContent().build();
             }

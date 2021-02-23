@@ -152,14 +152,22 @@ public class ResendConfirmationManager {
         validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
         validateCallback(properties, user.getTenantDomain());
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.invalidate(user);
         String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
-        String confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
-                recoveryScenario);
-        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
-        // Store new confirmation code.
-        addRecoveryDataObject(confirmationCode, notificationChannel, scenario, step, user);
+        String confirmationCode;
+        UserRecoveryData confirmationCodeRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                scenario, step);
+        /* Checking whether the existing confirmation code can be used based on the email confirmation code tolerance
+           and the existing recovery details. */
+        if (Utils.reIssueExistingConfirmationCode(confirmationCodeRecoveryData, notificationChannel)) {
+            confirmationCode = confirmationCodeRecoveryData.getSecret();
+        } else {
+            userRecoveryDataStore.invalidate(user);
+            confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(), recoveryScenario);
+            // Store new confirmation code.
+            addRecoveryDataObject(confirmationCode, notificationChannel, scenario, step, user);
+        }
+        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
         // Notification needs to trigger if the notification channel is not equal to EXTERNAL.
         if (!NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
@@ -261,9 +269,62 @@ public class ResendConfirmationManager {
                                       UserRecoveryData userRecoveryData) throws IdentityRecoveryServerException {
 
         String resendCode = UUIDGenerator.generateUUID();
+        /* Checking whether the existing confirmation code issued time is in the tolerance period. If so this code
+           updates the existing RESEND_CONFIRMATION_CODE with the new one by not changing the TIME_CREATED. */
+        if (Utils.reIssueExistingConfirmationCode(getResendConfirmationCodeData(userRecoveryData.getUser()),
+                notificationChannel)){
+            invalidateResendConfirmationCode(resendCode, notificationChannel, userRecoveryData);
+            return resendCode;
+        }
         addRecoveryDataObject(resendCode, notificationChannel, scenario, RecoverySteps.RESEND_CONFIRMATION_CODE,
                 userRecoveryData.getUser());
         return resendCode;
+    }
+
+
+    /**
+     * Retrieves the existing confirmation code details.
+     *
+     * @param user User object of the corresponding user that needs to resend the confirmation code.
+     * @return An UserRecoveryData object with the confirmation data.
+     * @throws IdentityRecoveryServerException will be thrown if there is any error.
+     */
+    private UserRecoveryData getResendConfirmationCodeData(User user) throws IdentityRecoveryServerException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            return userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    user, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
+                    RecoverySteps.RESEND_CONFIRMATION_CODE);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_RECOVERY_DATA,
+                    "Error Retrieving Recovery Data", e);
+        }
+    }
+
+    /**
+     * Invalidates the existing resend code and add the new resend code by not changing the existing resend code's
+     * time created.
+     *
+     * @param resendCode New resend code that needs to be sent.
+     * @param notificationChannel Channel that needs to send the recovery information.
+     * @param userRecoveryData Existing resend code details.
+     * @throws IdentityRecoveryServerException Will be thrown if there is any error.
+     */
+    private void invalidateResendConfirmationCode(String resendCode, String notificationChannel,
+                                                  UserRecoveryData userRecoveryData)
+            throws IdentityRecoveryServerException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            userRecoveryDataStore.invalidateWithoutChangeTimeCreated(userRecoveryData.getSecret(), resendCode,
+                    RecoverySteps.RESEND_CONFIRMATION_CODE, notificationChannel);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA,
+                    "Error Updating Recovery Data : RESEND_CONFIRMATION_CODE", e);
+        }
     }
 
     /**
@@ -367,15 +428,13 @@ public class ResendConfirmationManager {
 
         // Validate the previous confirmation code with the data retrieved by the user recovery information.
         validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
-        // Invalid previous confirmation code.
-        userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
 
         // Get the notification channel details stored in the remainingSetIds.
         String storedNotificationChannel = userRecoveryData.getRemainingSetIds();
 
         String preferredChannel = StringUtils.EMPTY;
         /* Having a not supported storedNotificationChannel implies that the particular recovery scenario does not store
-            the notification channel in remainingSetIds column. In that case the notification channel should be EMAIL.*/
+        the notification channel in remainingSetIds column. In that case the notification channel should be EMAIL.*/
         if (isServerSupportedNotificationChannel(storedNotificationChannel)) {
             preferredChannel = storedNotificationChannel;
             if (!notificationInternallyManage) {
@@ -385,33 +444,39 @@ public class ResendConfirmationManager {
         if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
-        String secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.getRecoveryScenario
-                (recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
-        /*
-        Notified channel is stored in remaining setIds for recovery purposes.
-        Having a EMPTY preferred channel states that the notification channel should not be stored.
-        */
-        if (StringUtils.isNotBlank(preferredChannel)) {
-            recoveryDataDO.setRemainingSetIds(preferredChannel);
-            notificationResponseBean.setNotificationChannel(preferredChannel);
-        }
 
-        if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
-                RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
-            String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
-            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                    verificationPendingEmailClaimValue)};
-            recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
-        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
-                RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
-            String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
-            properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                    verificationPendingMobileNumber)};
-            recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
-        }
+        String secretKey;
+        if (Utils.reIssueExistingConfirmationCode(userRecoveryData, preferredChannel)) {
+            secretKey = userRecoveryData.getSecret();
+        } else {
+            // Invalid previous confirmation code.
+            userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
+            secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
+            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                    .getRecoveryScenario(recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
+            /* Notified channel is stored in remaining setIds for recovery purposes. Having a EMPTY preferred channel
+            states that the notification channel should not be stored. */
+            if (StringUtils.isNotBlank(preferredChannel)) {
+                recoveryDataDO.setRemainingSetIds(preferredChannel);
+                notificationResponseBean.setNotificationChannel(preferredChannel);
+            }
 
-        userRecoveryDataStore.store(recoveryDataDO);
+            if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                    RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
+                String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
+                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                        verificationPendingEmailClaimValue)};
+                recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
+            } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
+                String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
+                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
+                        verificationPendingMobileNumber)};
+                recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
+            }
+
+            userRecoveryDataStore.store(recoveryDataDO);
+        }
 
         if (notificationInternallyManage) {
             String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),

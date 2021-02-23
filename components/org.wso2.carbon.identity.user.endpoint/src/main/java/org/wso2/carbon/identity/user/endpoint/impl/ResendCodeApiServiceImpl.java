@@ -63,9 +63,15 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     resendCodeRequestDTO);
         }
 
-        if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
+        if (notificationResponseBean == null ) {
+            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+        }
+
+        //when notifications internally managed key might not be set.
+        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
             return Response.status(Response.Status.CREATED).build();
         }
+
         return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getKey()).build();
     }
 

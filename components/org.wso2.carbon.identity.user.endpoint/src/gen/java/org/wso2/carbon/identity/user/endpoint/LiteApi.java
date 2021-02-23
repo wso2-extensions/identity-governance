@@ -31,7 +31,7 @@ public class LiteApi  {
     
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @io.swagger.annotations.ApiOperation(value = "Register user\n", notes = "This API is used for lite user self registration.\n", response = SuccessfulUserCreationDTO.class)
+    @io.swagger.annotations.ApiOperation(value = "Lite register user\n", notes = "This API is used for lite user self registration.\n", response = SuccessfulUserCreationDTO.class)
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 201, message = "Successfully created"),
         

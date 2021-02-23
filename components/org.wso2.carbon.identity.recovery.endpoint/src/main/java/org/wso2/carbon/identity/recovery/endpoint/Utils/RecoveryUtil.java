@@ -261,6 +261,22 @@ public class RecoveryUtil {
         return user;
     }
 
+    public static UserDTO getUserDTO(User user) {
+
+        UserDTO userDTO = new UserDTO();
+        if (user == null) {
+            return userDTO;
+        }
+        userDTO.setTenantDomain(user.getTenantDomain());
+        if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+            userDTO.setRealm(user.getUserStoreDomain());
+        } else {
+            userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
+        }
+        userDTO.setUsername(user.getUserName());
+        return userDTO;
+    }
+
     public static UserChallengeAnswer[] getUserChallengeAnswers(List<SecurityAnswerDTO> securityAnswerDTOs) {
 
         UserChallengeAnswer[] userChallengeAnswers = new UserChallengeAnswer[securityAnswerDTOs.size()];

@@ -574,8 +574,61 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             throws IdentityRecoveryServerException {
 
         String resendCode = UUIDGenerator.generateUUID();
+        /* Checking whether the existing confirmation code can be used based on the email confirmation code tolerance
+           and the existing recovery details. If so this code updates the existing SEND_RECOVERY_INFORMATION code
+           with the new RESEND_CONFIRMATION_CODE by not changing the TIME_CREATED. */
+        if (Utils.reIssueExistingConfirmationCode(getSendRecoveryCodeData(userRecoveryData), notificationChannel)){
+            invalidateRecoveryInfoSendCode(resendCode, notificationChannel, userRecoveryData);
+            return resendCode;
+        }
         addRecoveryDataObject(resendCode, notificationChannel, userRecoveryData.getUser());
         return resendCode;
+    }
+
+    /**
+     * Retrieves the send recovery information code details.
+     *
+     * @param userRecoveryData Recovery details of the corresponding user.
+     * @return Existing send recovery information code details.
+     * @throws IdentityRecoveryServerException Will be thrown when an error occurred.
+     */
+    private UserRecoveryData getSendRecoveryCodeData(UserRecoveryData userRecoveryData)
+            throws IdentityRecoveryServerException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            return userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    userRecoveryData.getUser(), RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
+                    RecoverySteps.SEND_RECOVERY_INFORMATION);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,
+                    "Error Storing Recovery Data", e);
+        }
+    }
+
+    /**
+     * Invalidates the existing send recovery code and add the new resend code by not changing the existing code's
+     * time created.
+     *
+     * @param resendCode New resend code that needs to be sent.
+     * @param notificationChannel Channel that needs to send the recovery information.
+     * @param userRecoveryData Existing resend code details.
+     * @throws IdentityRecoveryServerException Will be thrown if there is any error.
+     */
+    private void invalidateRecoveryInfoSendCode(String resendCode, String notificationChannel,
+                                                UserRecoveryData userRecoveryData)
+            throws IdentityRecoveryServerException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            userRecoveryDataStore.invalidateWithoutChangeTimeCreated(userRecoveryData.getSecret(), resendCode,
+                    RecoverySteps.RESEND_CONFIRMATION_CODE, notificationChannel);
+        } catch (IdentityRecoveryException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA,
+                    "Error Updating Recovery Data : RESEND_CONFIRMATION_CODE", e);
+        }
     }
 
     /**

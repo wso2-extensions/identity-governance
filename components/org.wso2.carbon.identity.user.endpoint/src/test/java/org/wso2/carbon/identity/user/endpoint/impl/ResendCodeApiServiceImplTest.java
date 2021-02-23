@@ -74,10 +74,10 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         assertEquals(resendCodeApiService.resendCodePost(multipleResendCodeRequestDTO()).getStatus(), 201);
 
         when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 501);
 
         when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(userRecoveryData);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 501);
         assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(), 201);
     }
 
@@ -88,7 +88,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
-        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
-        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
     }
 
 
