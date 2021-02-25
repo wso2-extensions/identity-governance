@@ -32,15 +32,16 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.ws.rs.core.Response;
 
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -65,19 +66,18 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
     }
 
     @Test(description = "This test method checks the behaviour of validateUserNameApi when self signup is false.")
-    public void testSkipSelfSignUpFalse() {
+    public void testSelfSignUpDisabled() {
 
         UsernameValidationRequestDTO usernameValidationRequestDTO = new UsernameValidationRequestDTO();
         usernameValidationRequestDTO.setUsername("test");
-        UsernameValidateInfoResponseDTO usernameValidateInfoResponseDTO = (UsernameValidateInfoResponseDTO)
+        ErrorDTO errorDTO = (ErrorDTO)
                 validateUsernameApiService.validateUsernamePost(usernameValidationRequestDTO).getEntity();
-        Assert.assertEquals(usernameValidateInfoResponseDTO.getStatusCode().intValue(),
-                Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED),
+        Assert.assertEquals(errorDTO.getCode(), SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED,
                 "Expected error code is not received.");
     }
 
     @Test(description = "This test method checks the behaviour of validateUserNameApi when self signup is true.")
-    public void testSkipSelfSignUpTrue() {
+    public void testSelfSignUpUserExists() {
 
         UsernameValidationRequestDTO usernameValidationRequestDTO = new UsernameValidationRequestDTO();
         usernameValidationRequestDTO.setUsername("test");
@@ -88,10 +88,9 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
         propertyDTOList.add(propertyDTO);
         usernameValidationRequestDTO.setProperties(propertyDTOList);
 
-        UsernameValidateInfoResponseDTO usernameValidateInfoResponseDTO = (UsernameValidateInfoResponseDTO)
+        ErrorDTO errorDTO = (ErrorDTO)
                 validateUsernameApiService.validateUsernamePost(usernameValidationRequestDTO).getEntity();
-        Assert.assertEquals(usernameValidateInfoResponseDTO.getStatusCode().intValue(),
-                Integer.parseInt(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS),
+        Assert.assertEquals(errorDTO.getCode(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS,
                 "Expected error code is not received.");
     }
 
