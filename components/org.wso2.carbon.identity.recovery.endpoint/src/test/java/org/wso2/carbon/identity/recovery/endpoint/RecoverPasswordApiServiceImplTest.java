@@ -26,6 +26,7 @@ import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
@@ -33,6 +34,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.impl.RecoverPasswordApiServiceImpl;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
@@ -42,6 +44,7 @@ import java.util.List;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
@@ -49,14 +52,18 @@ import static org.testng.Assert.assertEquals;
 /**
  * This class covers unit tests for RecoverPasswordApiServiceImpl.java
  */
-@PrepareForTest({RecoveryUtil.class, IdentityTenantUtil.class})
+@PrepareForTest({RecoveryUtil.class, IdentityTenantUtil.class, IdentityRecoveryServiceDataHolder.class})
 public class RecoverPasswordApiServiceImplTest extends PowerMockTestCase {
-    
+
+    private MultiAttributeLoginService multiAttributeLoginService;
     @Mock
     NotificationPasswordRecoveryManager notificationPasswordRecoveryManager;
 
     @Mock
     NotificationResponseBean notificationResponseBean;
+
+    @Mock
+    IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
 
     @InjectMocks
     RecoverPasswordApiServiceImpl recoverPasswordApiService;
@@ -70,6 +77,10 @@ public class RecoverPasswordApiServiceImplTest extends PowerMockTestCase {
         when(RecoveryUtil.getNotificationBasedPwdRecoveryManager()).thenReturn(notificationPasswordRecoveryManager);
         when(notificationPasswordRecoveryManager.sendRecoveryNotification(any(User.class), anyString(), anyBoolean(),
                 any(Property[].class))).thenReturn(notificationResponseBean);
+        multiAttributeLoginService = mock(MultiAttributeLoginService.class);
+        mockStatic(IdentityRecoveryServiceDataHolder.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
         assertEquals(recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true).
                 getStatus(), 202);
     }
