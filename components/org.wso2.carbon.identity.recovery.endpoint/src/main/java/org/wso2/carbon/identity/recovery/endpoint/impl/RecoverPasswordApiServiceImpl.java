@@ -8,6 +8,7 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -48,6 +49,18 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         UserDTO user = recoveryInitiatingRequest.getUser();
         int tenantIdFromContext = IdentityTenantUtil.getTenantId(user.getTenantDomain());
 
+        if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService().
+                isEnabled(user.getTenantDomain())) {
+            ResolvedUserResult resolvedUser = IdentityRecoveryServiceDataHolder.getInstance().
+                    getMultiAttributeLoginService().resolveUser(user.getUsername(), user.getTenantDomain());
+            if (resolvedUser != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
+                    equals(resolvedUser.getResolvedStatus())) {
+                user.setUsername(resolvedUser.getUser().getUsername());
+                UserDTO userDTO = recoveryInitiatingRequest.getUser();
+                userDTO.setUsername(user.getUsername());
+                recoveryInitiatingRequest.setUser(userDTO);
+            }
+        }
         if (StringUtils.isBlank(user.getRealm())) {
             String[] userList = RecoveryUtil.getUserList(tenantIdFromContext, user.getUsername());
 
