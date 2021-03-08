@@ -23,6 +23,7 @@ import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
+import org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -65,6 +66,8 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 for (PropertyDTO propertyDTO : propertyDTOList) {
                     if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
                         skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
+                    } else if (IdentityManagementEndpointConstants.TENANT_DOMAIN.equals(propertyDTO.getKey())) {
+                        tenantDomain = propertyDTO.getValue();
                     }
                 }
             }
