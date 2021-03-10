@@ -127,7 +127,21 @@ public class NotificationPasswordRecoveryManager {
                 return new NotificationResponseBean(user);
             }
         }
-        checkAccountLockedStatus(user);
+        if (Utils.isAccountDisabled(user)) {
+            // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
+            if (getNotifyUserAccountStatus()) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
+                        user.getUserName());
+            }
+            return new NotificationResponseBean(user);
+        } else if (Utils.isAccountLocked(user)) {
+            // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
+            if (getNotifyUserAccountStatus()) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
+                        user.getUserName());
+            }
+            return new NotificationResponseBean(user);
+        }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
@@ -154,20 +168,22 @@ public class NotificationPasswordRecoveryManager {
     }
 
     /**
-     * Check whether the account is locked or disabled.
+     * Whether to inform the user if the user's account is locked.
      *
-     * @param user User
-     * @throws IdentityRecoveryException If account is in locked or disabled status
+     * @return True, if notify user account status is enabled in the identity.xml. Also, true will be returned if the
+     * property is not configured.
      */
-    private void checkAccountLockedStatus(User user) throws IdentityRecoveryException {
+    private boolean getNotifyUserAccountStatus() {
 
-        if (Utils.isAccountDisabled(user)) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
-                    user.getUserName());
-        } else if (Utils.isAccountLocked(user)) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                    user.getUserName());
+        String notifyStatus =
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_ACCOUNT_STATUS);
+        if (StringUtils.isBlank(notifyStatus)) {
+            /*
+            This indicates config not in the identity.xml. In that case the we need to maintain backward compatibility.
+             */
+            return true;
         }
+        return Boolean.parseBoolean(notifyStatus);
     }
 
     /**
