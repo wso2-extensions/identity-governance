@@ -44,7 +44,6 @@ public class IdentityRecoveryServiceDataHolder {
     private ConsentUtilityService consentUtilityService;
     private ClaimMetadataManagementService claimMetadataManagementService;
     private UserFunctionalityManager userFunctionalityManagerService;
-    private MultiAttributeLoginService multiAttributeLoginService;
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -222,25 +221,5 @@ public class IdentityRecoveryServiceDataHolder {
     public void setConfigurationManager(ConfigurationManager configurationManager) {
 
         this.configurationManager = configurationManager;
-    }
-    /**
-     * Get multi attribute login OSGI service.
-     *
-     * @return MultiAttributeLoginService service.
-     */
-    public MultiAttributeLoginService getMultiAttributeLoginService() {
-
-        return multiAttributeLoginService;
-    }
-
-    /**
-     * Set multi attribute login OSGI service.
-     *
-     *
-     * @param multiAttributeLoginService
-     */
-    public void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
-
-        this.multiAttributeLoginService = multiAttributeLoginService;
     }
 }
