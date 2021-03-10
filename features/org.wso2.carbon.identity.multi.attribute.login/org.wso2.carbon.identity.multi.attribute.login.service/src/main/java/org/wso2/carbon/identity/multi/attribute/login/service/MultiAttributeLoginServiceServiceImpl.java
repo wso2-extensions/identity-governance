@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.multi.attribute.login.constants.MultiAttributeLoginConstants;
+import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginDataHolder;
 import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginServiceComponent;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
@@ -104,7 +105,7 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
                 new AuthenticationResult(AuthenticationResult.AuthenticationStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifierValue) && StringUtils.isNotBlank(tenantDomain)) {
             List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
-            authenticationResult = MultiAttributeLoginServiceComponent.getMultiAttributeLoginResolver().
+            authenticationResult = MultiAttributeLoginDataHolder.getInstance().getMultiAttributeLoginResolver().
                     authenticateWithIdentifier(loginIdentifierValue, allowedAttributes, credential, tenantDomain);
         }
         return authenticationResult;
@@ -123,7 +124,7 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifierValue) && StringUtils.isNotBlank(tenantDomain)) {
             List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
-            resolvedUserResult = MultiAttributeLoginServiceComponent.getMultiAttributeLoginResolver().
+            resolvedUserResult = MultiAttributeLoginDataHolder.getInstance().getMultiAttributeLoginResolver().
                     resolveUser(loginIdentifierValue, allowedAttributes, tenantDomain);
         }
         return resolvedUserResult;
@@ -143,7 +144,7 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifierValue) && StringUtils.isNotBlank(tenantDomain)) {
             List<String> allowedClaimList = getAllowedClaimsForTenant(tenantDomain);
-            resolvedUserResult = MultiAttributeLoginServiceComponent.getMultiAttributeLoginResolver().
+            resolvedUserResult = MultiAttributeLoginDataHolder.getInstance().getMultiAttributeLoginResolver().
                     resolveUser(loginIdentifierValue, allowedClaimList, tenantDomain, hint);
         }
         return resolvedUserResult;

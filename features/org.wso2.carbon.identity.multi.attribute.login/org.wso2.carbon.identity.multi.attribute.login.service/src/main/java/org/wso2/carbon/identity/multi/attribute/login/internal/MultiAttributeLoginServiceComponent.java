@@ -45,24 +45,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 public class MultiAttributeLoginServiceComponent {
 
     private static final Log log = LogFactory.getLog(MultiAttributeLoginServiceComponent.class);
-    private static RealmService realmService;
-    private static IdentityGovernanceService identityGovernanceService;
-    private static MultiAttributeLoginResolver multiAttributeLoginResolver;
-
-    public static MultiAttributeLoginResolver getMultiAttributeLoginResolver() {
-
-        return multiAttributeLoginResolver;
-    }
-
-    public static RealmService getRealmService() {
-
-        return realmService;
-    }
-
-    public static IdentityGovernanceService getIdentityGovernanceService() {
-
-        return identityGovernanceService;
-    }
 
     @Activate
     protected void activate(ComponentContext context) {
@@ -98,12 +80,12 @@ public class MultiAttributeLoginServiceComponent {
             unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
 
-        MultiAttributeLoginServiceComponent.realmService = realmService;
+        MultiAttributeLoginDataHolder.getInstance().setRealmService(realmService);
     }
 
     protected void unsetRealmService(RealmService realmService) {
 
-        MultiAttributeLoginServiceComponent.realmService = null;
+        MultiAttributeLoginDataHolder.getInstance().setRealmService(null);
     }
 
     @Reference(
@@ -115,12 +97,12 @@ public class MultiAttributeLoginServiceComponent {
     )
     protected void setMultiAttributeLoginResolver(MultiAttributeLoginResolver multiAttributeLoginResolver) {
 
-        MultiAttributeLoginServiceComponent.multiAttributeLoginResolver = multiAttributeLoginResolver;
+        MultiAttributeLoginDataHolder.getInstance().setMultiAttributeLoginResolver(multiAttributeLoginResolver);
     }
 
     protected void unsetMultiAttributeLoginResolver(MultiAttributeLoginResolver multiAttributeLoginResolver) {
 
-        MultiAttributeLoginServiceComponent.multiAttributeLoginResolver = null;
+        MultiAttributeLoginDataHolder.getInstance().setMultiAttributeLoginResolver(null);
     }
 
     @Reference(
@@ -132,11 +114,11 @@ public class MultiAttributeLoginServiceComponent {
     )
     protected void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
 
-        MultiAttributeLoginServiceComponent.identityGovernanceService = identityGovernanceService;
+        MultiAttributeLoginDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
     }
 
     protected void unsetIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
 
-        MultiAttributeLoginServiceComponent.identityGovernanceService = null;
+        MultiAttributeLoginDataHolder.getInstance().setIdentityGovernanceService(null);
     }
 }

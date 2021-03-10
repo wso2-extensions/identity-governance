@@ -42,13 +42,6 @@ public class RegexResolverServiceComponent {
 
     private static final Log log = LogFactory.getLog(RegexResolverServiceComponent.class);
 
-    private static RealmService realmService;
-
-    public static RealmService getRealmService() {
-
-        return realmService;
-    }
-
     @Activate
     protected void activate(ComponentContext context) {
 
@@ -74,11 +67,11 @@ public class RegexResolverServiceComponent {
             unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
 
-        RegexResolverServiceComponent.realmService = realmService;
+        RegexResolverServiceDataHolder.getInstance().setRealmService(realmService);
     }
 
     protected void unsetRealmService(RealmService realmService) {
 
-        RegexResolverServiceComponent.realmService = null;
+        RegexResolverServiceDataHolder.getInstance().setRealmService(null);
     }
 }
