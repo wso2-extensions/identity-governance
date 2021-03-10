@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginDataHolder;
 import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginServiceComponent;
 
 /**
@@ -34,7 +35,7 @@ public class MultiAttributeLoginUtil {
 
         try {
             Property[] connectorConfigs;
-            IdentityGovernanceService identityGovernanceService = MultiAttributeLoginServiceComponent
+            IdentityGovernanceService identityGovernanceService = MultiAttributeLoginDataHolder.getInstance()
                     .getIdentityGovernanceService();
             if (identityGovernanceService != null) {
                 connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key}, tenantDomain);

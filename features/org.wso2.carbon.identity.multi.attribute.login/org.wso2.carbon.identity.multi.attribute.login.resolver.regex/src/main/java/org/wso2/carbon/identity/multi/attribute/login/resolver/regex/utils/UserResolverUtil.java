@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils;
 
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceComponent;
+import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
@@ -35,11 +36,11 @@ public class UserResolverUtil {
 
     public static UserRealm getUserRealm(String tenantDomain) throws UserStoreException {
 
-        RealmService realmService = RegexResolverServiceComponent.getRealmService();
+        RealmService realmService = RegexResolverServiceDataHolder.getInstance().getRealmService();
         UserRealm userRealm = null;
         if (realmService != null) {
-            int tenantId = RegexResolverServiceComponent.getRealmService().getTenantManager().getTenantId(tenantDomain);
-            userRealm = (UserRealm) RegexResolverServiceComponent.getRealmService().getTenantUserRealm(tenantId);
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            userRealm = (UserRealm) realmService.getTenantUserRealm(tenantId);
         }
         return userRealm;
     }

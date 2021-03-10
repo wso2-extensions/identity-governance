@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.testng.annotations.BeforeTest;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceComponent;
+import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils.UserResolverUtil;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserRealm;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-@PrepareForTest({RegexResolverServiceComponent.class, User.class, ResolvedUserResult.class})
+@PrepareForTest({RegexResolverServiceDataHolder.class, User.class, ResolvedUserResult.class})
 public class RegexResolverTest {
 
     private RegexResolver regexResolver;
@@ -75,6 +76,9 @@ public class RegexResolverTest {
     @Mock
     TenantManager mockTenantManager;
 
+    @Mock
+    RegexResolverServiceDataHolder mockRegexResolverServiceDataHolder;
+
     @BeforeTest
     public void init() throws Exception {
 
@@ -91,8 +95,9 @@ public class RegexResolverTest {
     @Test
     public void testResolveUser() throws Exception {
 
-        mockStatic(RegexResolverServiceComponent.class);
-        when(RegexResolverServiceComponent.getRealmService()).thenReturn(mockRealmService);
+        mockStatic(RegexResolverServiceDataHolder.class);
+        when(RegexResolverServiceDataHolder.getInstance()).thenReturn(mockRegexResolverServiceDataHolder);
+        when(mockRegexResolverServiceDataHolder.getRealmService()).thenReturn(mockRealmService);
         when(mockRealmService.getTenantManager()).thenReturn(mockTenantManager);
         when(mockTenantManager.getTenantId(TEST_TENANT_DOMAIN)).thenReturn(-1234);
         when(mockUserRealm.getClaimManager()).thenReturn(mockClaimManager);

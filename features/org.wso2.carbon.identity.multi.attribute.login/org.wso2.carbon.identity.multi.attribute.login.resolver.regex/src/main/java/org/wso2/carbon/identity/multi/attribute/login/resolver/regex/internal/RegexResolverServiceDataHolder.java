@@ -18,31 +18,33 @@
 
 package org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal;
 
-import org.mockito.Mock;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import static org.mockito.MockitoAnnotations.initMocks;
-import static org.testng.Assert.assertNotNull;
+/**
+ * RegexResolverService data holder class
+ */
+public class RegexResolverServiceDataHolder {
 
-public class RegexResolverServiceComponentTest {
-    private RegexResolverServiceDataHolder regexResolverServiceDataHolder;
+    private static RegexResolverServiceDataHolder instance = new RegexResolverServiceDataHolder();
 
-    @Mock
-    RealmService mockRealmService;
+    private RealmService realmService;
 
-    @BeforeTest
-    public void setup() {
-        initMocks(this);
-        regexResolverServiceDataHolder = RegexResolverServiceDataHolder.getInstance();
+    private RegexResolverServiceDataHolder() {
+
     }
 
-    @Test
-    public void testSetRealmService() throws Exception {
+    public static RegexResolverServiceDataHolder getInstance() {
 
-        regexResolverServiceDataHolder.setRealmService(mockRealmService);
-        assertNotNull(regexResolverServiceDataHolder.getRealmService());
+        return instance;
     }
 
+    public RealmService getRealmService() {
+
+        return realmService;
+    }
+
+    public void setRealmService(RealmService realmService) {
+
+        this.realmService = realmService;
+    }
 }
