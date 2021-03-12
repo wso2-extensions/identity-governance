@@ -24,8 +24,10 @@ import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.IObjectFactory;
 import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
@@ -49,7 +51,7 @@ import static org.testng.Assert.assertEquals;
 /**
  * This class covers unit tests for RecoverPasswordApiServiceImpl.java
  */
-@PrepareForTest({RecoveryUtil.class, IdentityTenantUtil.class})
+@PrepareForTest({RecoveryUtil.class, IdentityTenantUtil.class, FrameworkUtils.class})
 public class RecoverPasswordApiServiceImplTest extends PowerMockTestCase {
     
     @Mock
@@ -66,10 +68,13 @@ public class RecoverPasswordApiServiceImplTest extends PowerMockTestCase {
 
         mockStatic(IdentityTenantUtil.class);
         mockStatic(RecoveryUtil.class);
+        mockStatic(FrameworkUtils.class);
+        ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
         when(RecoveryUtil.getNotificationBasedPwdRecoveryManager()).thenReturn(notificationPasswordRecoveryManager);
         when(notificationPasswordRecoveryManager.sendRecoveryNotification(any(User.class), anyString(), anyBoolean(),
                 any(Property[].class))).thenReturn(notificationResponseBean);
+        when(FrameworkUtils.processMultiAttributeLoginIdentification(anyString(), anyString())).thenReturn(resolvedUserResult);
         assertEquals(recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true).
                 getStatus(), 202);
     }
