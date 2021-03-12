@@ -30,7 +30,7 @@ public class MultiAttributeLoginConstants {
 
     public static final String HANDLER_NAME = "multiattribute.login.handler";
     public static final String HANDLER_FRIENDLY_NAME = "Multi Attribute Login";
-    public static final String HANDLER_CATEGORY = "Login Policies";
+    public static final String HANDLER_CATEGORY = "Account Management";
     public static final String HANDLER_SUB_CATEGORY = "DEFAULT";
 
     public static final class MultiAttributeLoginNameMapping {
