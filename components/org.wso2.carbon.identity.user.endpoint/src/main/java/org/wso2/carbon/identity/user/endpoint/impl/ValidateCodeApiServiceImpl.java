@@ -69,6 +69,6 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.ok(Utils.getUserDTO(user)).build();
+        return Response.accepted(Utils.getUserDTO(user)).build();
     }
 }

@@ -54,8 +54,8 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
     public void testValidateCodePost() {
 
         mockClasses();
-        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 200);
-        assertEquals(validateCodeApiServiceImpl.validateCodePost(null).getStatus(), 200);
+        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
+        assertEquals(validateCodeApiServiceImpl.validateCodePost(null).getStatus(), 202);
     }
 
     private void mockClasses() {
@@ -70,7 +70,7 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
         mockClasses();
         doThrow(new IdentityRecoveryException("Recovery Exception")).when(userSelfRegistrationManager).
                 confirmUserSelfRegistration(anyString());
-        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 200);
+        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
         mockClasses();
         doThrow(new IdentityRecoveryClientException("Recovery Exception")).when(userSelfRegistrationManager).
                 confirmUserSelfRegistration(anyString());
-        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 200);
+        assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
     }
 
     @ObjectFactory
