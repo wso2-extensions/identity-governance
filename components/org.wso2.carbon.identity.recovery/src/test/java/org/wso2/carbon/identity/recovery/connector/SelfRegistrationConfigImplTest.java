@@ -94,6 +94,8 @@ public class SelfRegistrationConfigImplTest {
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "User self registration");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account on creation");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
+                "Enable Account Confirmation On Creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Manage notifications sending internally");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
@@ -125,6 +127,8 @@ public class SelfRegistrationConfigImplTest {
                 "Allow user's to self register to the system.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock self registered user account until e-mail verification.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
+                "Enable user account confirmation when the user account is not locked on creation");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Disable if the client application handles notification sending");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -158,6 +162,7 @@ public class SelfRegistrationConfigImplTest {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         propertiesExpected
@@ -184,6 +189,7 @@ public class SelfRegistrationConfigImplTest {
 
         String testEnableSelfSignUp = "false";
         String testEnableAccountLockOnCreation = "true";
+        String testEnableSendNotificationOnCreation = "false";
         String testEnableNotificationInternallyManage = "true";
         String testEnableSelfRegistrationReCaptcha = "true";
         String testVerificationCodeExpiryTime = "1440";
@@ -198,6 +204,8 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 testEnableAccountLockOnCreation);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
+                testEnableSendNotificationOnCreation);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,

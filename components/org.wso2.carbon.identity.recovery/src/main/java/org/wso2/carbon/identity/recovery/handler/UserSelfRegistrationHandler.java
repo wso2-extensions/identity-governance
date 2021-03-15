@@ -111,6 +111,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
                 (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
+        boolean isEnableConfirmationOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
+                (IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION, user.getTenantDomain()));
+
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
@@ -130,7 +133,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     return;
                 }
                 // If notifications are externally managed, no send notifications.
-                if (isNotificationInternallyManage && isAccountLockOnCreation) {
+                if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage) {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
@@ -150,20 +153,27 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while sending self sign up notification ", e);
             }
-            if (isAccountLockOnCreation) {
+            if (isAccountLockOnCreation || isEnableConfirmationOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
-                //Need to lock user account
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
-                        IdentityMgtConstants.LockedReason.PENDING_SELF_REGISTRATION.toString());
+                if (isAccountLockOnCreation) {
+                    // Need to lock user account.
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
+                            IdentityMgtConstants.LockedReason.PENDING_SELF_REGISTRATION.toString());
+                }
                 if (Utils.isAccountStateClaimExisting(tenantDomain)) {
                     userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                             IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
                 }
                 try {
-                    userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
+                    userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
                     if (log.isDebugEnabled()) {
-                        log.debug("Locked user account: " + user.getUserName());
+                        if (isAccountLockOnCreation) {
+                            log.debug("Locked user account: " + user.getUserName());
+                        }
+                        if (isEnableConfirmationOnCreation) {
+                            log.debug("Send verification notification for user account: " + user.getUserName());
+                        }
                     }
                 } catch (UserStoreException e) {
                     throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);

@@ -905,6 +905,11 @@ public class UserSelfRegistrationManager {
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
+
+        // Set accountState claim UNLOCK.
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+
         //Set account verified time claim.
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
         return userClaims;
