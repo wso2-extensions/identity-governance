@@ -128,6 +128,7 @@
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
         <module>components/org.wso2.carbon.identity.user.endpoint</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
+        <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
 
         <module>service-stubs/identity</module>
 
@@ -142,7 +143,7 @@
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
-        <module>features/org.wso2.carbon.identity.multi.attribute.login</module>
+        <module>features/org.wso2.carbon.identity.multi.attribute.login.server.feature</module>
     </modules>
 
     <dependencyManagement>
