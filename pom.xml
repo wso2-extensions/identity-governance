@@ -142,6 +142,7 @@
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
+        <module>features/org.wso2.carbon.identity.multi.attribute.login</module>
     </modules>
 
     <dependencyManagement>
@@ -520,6 +521,11 @@
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.user.core</artifactId>
                 <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
             </dependency>
             <!-- Pax Logging -->
             <dependency>
