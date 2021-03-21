@@ -10,13 +10,22 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>org.wso2.carbon.identity.multi.attribute.login.server.feature</artifactId>
+    <artifactId>org.wso2.carbon.identity.multi.attribute.login.service.server.feature</artifactId>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Multi Attribute Login Feature</name>
     <url>http://wso2.org</url>
     <description>This feature contains the core bundles required for multi attribute login service
     </description>
-
+<dependencies>
+    <dependency>
+        <groupId>org.wso2.carbon.identity.governance</groupId>
+        <artifactId>org.wso2.carbon.identity.multi.attribute.login.service</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.wso2.carbon.identity.governance</groupId>
+        <artifactId>org.wso2.carbon.identity.multi.attribute.login.resolver.regex</artifactId>
+    </dependency>
+</dependencies>
     <build>
         <plugins>
             <plugin>
@@ -31,7 +40,7 @@
                             <goal>p2-feature-gen</goal>
                         </goals>
                         <configuration>
-                            <id>org.wso2.carbon.identity.multi.attribute.login.impl.server</id>
+                            <id>org.wso2.carbon.identity.multi.attribute.login.service.server</id>
                             <propertiesFile>../../etc/feature.properties</propertiesFile>
                             <adviceFile>
                                 <properties>
@@ -39,8 +48,8 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.multi.attribute.login.resolver.regex:${parent.version}</bundleDef>
-                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.multi.attribute.login.service:${parent.version}</bundleDef>
+                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.multi.attribute.login.resolver.regex</bundleDef>
+                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.multi.attribute.login.service</bundleDef>
                             </bundles>
                             <importFeatures>
                             </importFeatures>
@@ -50,5 +59,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

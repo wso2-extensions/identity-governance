@@ -143,7 +143,7 @@
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
-        <module>features/org.wso2.carbon.identity.multi.attribute.login.server.feature</module>
+        <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -527,6 +527,22 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.multi.attribute.login.service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.multi.attribute.login.server.feature</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.multi.attribute.login.resolver.regex</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <!-- Pax Logging -->
             <dependency>
