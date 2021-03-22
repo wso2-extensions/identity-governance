@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.user.endpoint.Util;
 
 import com.beust.jcommander.internal.Lists;
-
+import org.wso2.carbon.identity.application.common.model.User;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertEquals;
 
@@ -106,6 +106,14 @@ public class UtilsTest {
         assertEquals(Utils.getUser(buildUserDTO()).getUserStoreDomain(), "TESTREALM");
     }
 
+    @Test
+    public void testGetUserDTO() {
+
+        assertNotNull(Utils.getUserDTO(buildUser()), "Failed building user object.");
+        assertEquals(Utils.getUserDTO(buildUser()).getUsername(), "testUser");
+        assertEquals(Utils.getUserDTO(buildUser()).getRealm(), "TESTREALM");
+    }
+
     private SelfRegistrationUserDTO buildSelfRegistrationUserDTO() {
 
         SelfRegistrationUserDTO userDTO = new SelfRegistrationUserDTO();
@@ -121,6 +129,14 @@ public class UtilsTest {
         userDTO.setUsername("testUser");
         userDTO.setRealm("testRealm");
         return userDTO;
+    }
+
+    private User buildUser() {
+
+        User user = new User();
+        user.setUserName("testUser");
+        user.setUserStoreDomain("testRealm");
+        return user;
     }
 
     @Test
