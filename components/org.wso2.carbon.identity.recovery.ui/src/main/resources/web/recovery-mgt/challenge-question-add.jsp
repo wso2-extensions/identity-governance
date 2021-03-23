@@ -191,6 +191,7 @@
                 CARBON.showWarningDialog('Please enter a valid security question', null, null);
                 location.href = '#';
             } else {
+                question = question.trim();
                 location.href = 'challenge-question-add.jsp?updateRowId=' + encodeURIComponent(row) + '&setName=' +
                         encodeURIComponent(setName) + '&updatedQuestion=' + encodeURIComponent(question);
             }
@@ -226,6 +227,7 @@
                 if (!doValidateInput(document.getElementsByName("questionId0")[0], "Provided Question ID is invalid. Only {1} allowed.")) {
                     location.href = '#';
                 } else {
+                    question = question.trim();
                     location.href = 'challenge-question-add.jsp?addRowId=' + encodeURIComponent(question) +
                             '&setName=' + encodeURIComponent(setName) +
                             '&questionId=' + encodeURIComponent(questionId) +

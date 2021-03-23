@@ -606,15 +606,33 @@ public class UserSelfRegistrationManager {
      * @param properties           Properties sent with the validate code request
      * @throws IdentityRecoveryException Error validating the confirmation code
      */
+    @Deprecated
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
 
+        getConfirmedSelfRegisteredUser(code, verifiedChannelType, verifiedChannelClaim, properties);
+    }
+
+    /**
+     * Confirms the user self registration by validating the confirmation code and sets externally verified claims.
+     *
+     * @param code                 Confirmation code
+     * @param verifiedChannelType  Type of the verified channel (SMS or EMAIL)
+     * @param verifiedChannelClaim Claim associated with verified channel
+     * @param properties           Properties sent with the validate code request
+     * @throws IdentityRecoveryException Error validating the confirmation code
+     */
+    public User getConfirmedSelfRegisteredUser(String code, String verifiedChannelType,
+                                               String verifiedChannelClaim, Map<String, String> properties) throws
+            IdentityRecoveryException {
+
+        User user = null;
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
                 verifiedChannelClaim, properties, false);
-        User user = userRecoveryData.getUser();
+        user = userRecoveryData.getUser();
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
 
@@ -627,6 +645,8 @@ public class UserSelfRegistrationManager {
         }
         publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+
+        return user;
     }
 
     /**

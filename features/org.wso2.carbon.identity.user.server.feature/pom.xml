@@ -21,7 +21,7 @@
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
         <relativePath>../../pom.xml</relativePath>
-        <version>1.4.95-SNAPSHOT</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -55,6 +55,12 @@
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.user.endpoint</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -79,6 +85,13 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
                                     <destFileName>api#identity#user#v1.0.war</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.wso2.carbon.identity.governance</groupId>
+                                    <artifactId>org.wso2.carbon.identity.user.endpoint</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${basedir}/src/main/resources/api_resources</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
