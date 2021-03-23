@@ -625,6 +625,7 @@ public class UserSelfRegistrationManager {
     public User getConfirmedSelfRegisteredUser(String code, String verifiedChannelType,
                                                String verifiedChannelClaim, Map<String, String> properties) throws
             IdentityRecoveryException {
+
         User user = null;
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);

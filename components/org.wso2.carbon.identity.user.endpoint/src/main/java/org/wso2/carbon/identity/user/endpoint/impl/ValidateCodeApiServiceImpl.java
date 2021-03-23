@@ -38,6 +38,7 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
 
     @Override
     public Response validateCodePost(CodeValidationRequestDTO codeValidationRequestDTO) {
+
         User user = null;
         UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
         try {
