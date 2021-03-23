@@ -272,13 +272,15 @@ paths:
         -
           name: code
           in: body
-          description:  The validation code retrieved after user self registration, and optional property parameters.
+          description:  The relevant userDTO is retrieved after user self registration, and optional property parameters.
           required: true
           schema:
             $ref: '#/definitions/CodeValidationRequest'
       responses:
         202:
           description: Accepted
+          schema:
+            $ref: '#/definitions/User'
         400:
           description: Bad Request
           schema:
