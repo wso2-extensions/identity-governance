@@ -22,6 +22,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
@@ -29,6 +31,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -80,7 +83,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             return false;
         }
 
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+        String tenantDomain = getTenant(servletRequest, userName);
+        if (StringUtils.isBlank(tenantDomain)) {
+            return false;
+        }
+
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
@@ -123,7 +130,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
         String userName = servletRequest.getParameter("username");
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+
+        String tenantDomain = getTenant(servletRequest, userName);
 
         // Verify whether recaptcha is enforced always for basic authentication.
         Property[] connectorConfigs = null;
@@ -297,5 +305,30 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
         return failedRedirectUrls;
+    }
+
+    /**
+     * Get tenant from servlet request or username.
+     *
+     * @param servletRequest    Servlet request.
+     * @param username          Username.
+     * @return                  Derived tenant domain.
+     */
+    private String getTenant(ServletRequest servletRequest, String username) {
+
+        if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
+            String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+            if (sessionDataKey == null) {
+                return null;
+            }
+
+            AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+            if (context == null) {
+                return null;
+            }
+            return context.getUserTenantDomain();
+        } else {
+            return MultitenantUtils.getTenantDomain(username);
+        }
     }
 }
