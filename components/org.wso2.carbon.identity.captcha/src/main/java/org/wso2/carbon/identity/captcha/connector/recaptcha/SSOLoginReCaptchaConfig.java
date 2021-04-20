@@ -78,12 +78,21 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        String userName = servletRequest.getParameter("username");
-        if (StringUtils.isBlank(userName)) {
+        String username = servletRequest.getParameter("username");
+        if (StringUtils.isBlank(username)) {
             return false;
         }
 
-        String tenantDomain = getTenant(servletRequest, userName);
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        if (sessionDataKey == null) {
+            return false;
+        }
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (context == null) {
+            return false;
+        }
+
+        String tenantDomain = getTenant(context, username);
         if (StringUtils.isBlank(tenantDomain)) {
             return false;
         }
@@ -129,9 +138,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
-        String userName = servletRequest.getParameter("username");
+        String username = servletRequest.getParameter("username");
 
-        String tenantDomain = getTenant(servletRequest, userName);
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        String tenantDomain = getTenant(context, username);
 
         // Verify whether recaptcha is enforced always for basic authentication.
         Property[] connectorConfigs = null;
@@ -153,7 +164,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
             preValidationResponse.setCaptchaValidationRequired(true);
 
-        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(userName),
+        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
                 tenantDomain)) {
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
@@ -308,24 +319,15 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     }
 
     /**
-     * Get tenant from servlet request or username.
+     * Get tenant from authentication context or username.
      *
-     * @param servletRequest    Servlet request.
-     * @param username          Username.
-     * @return                  Derived tenant domain.
+     * @param context   Authentication context.
+     * @param username  Username.
+     * @return          Derived tenant domain.
      */
-    private String getTenant(ServletRequest servletRequest, String username) {
+    private String getTenant(AuthenticationContext context, String username) {
 
         if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
-            String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
-            if (sessionDataKey == null) {
-                return null;
-            }
-
-            AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
-            if (context == null) {
-                return null;
-            }
             return context.getUserTenantDomain();
         } else {
             return MultitenantUtils.getTenantDomain(username);
