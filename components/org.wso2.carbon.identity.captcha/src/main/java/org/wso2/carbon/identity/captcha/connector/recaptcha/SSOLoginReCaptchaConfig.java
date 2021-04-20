@@ -22,6 +22,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
@@ -29,6 +31,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -75,12 +78,25 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        String userName = servletRequest.getParameter("username");
-        if (StringUtils.isBlank(userName)) {
+        String username = servletRequest.getParameter("username");
+        if (StringUtils.isBlank(username)) {
             return false;
         }
 
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        if (sessionDataKey == null) {
+            return false;
+        }
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (context == null) {
+            return false;
+        }
+
+        String tenantDomain = getTenant(context, username);
+        if (StringUtils.isBlank(tenantDomain)) {
+            return false;
+        }
+
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
@@ -122,8 +138,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
 
-        String userName = servletRequest.getParameter("username");
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+        String username = servletRequest.getParameter("username");
+
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        String tenantDomain = getTenant(context, username);
 
         // Verify whether recaptcha is enforced always for basic authentication.
         Property[] connectorConfigs = null;
@@ -145,7 +164,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
             preValidationResponse.setCaptchaValidationRequired(true);
 
-        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(userName),
+        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
                 tenantDomain)) {
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
@@ -297,5 +316,21 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
         return failedRedirectUrls;
+    }
+
+    /**
+     * Get tenant from authentication context or username.
+     *
+     * @param context   Authentication context.
+     * @param username  Username.
+     * @return          Derived tenant domain.
+     */
+    private String getTenant(AuthenticationContext context, String username) {
+
+        if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
+            return context.getUserTenantDomain();
+        } else {
+            return MultitenantUtils.getTenantDomain(username);
+        }
     }
 }
