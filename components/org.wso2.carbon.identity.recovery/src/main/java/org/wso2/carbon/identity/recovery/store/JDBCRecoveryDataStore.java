@@ -106,7 +106,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws IdentityRecoveryException {
+    public UserRecoveryData load(User user, Enum recoveryScenario, Enum recoveryStep, String code) throws
+            IdentityRecoveryException {
 
         handleRecoveryDataEventPublishing(PRE_GET_USER_RECOVERY_DATA,
                 GET_USER_RECOVERY_DATA_SCENARIO_WITH_CODE_EXPIRY_VALIDATION,null, null, code, user,
