@@ -222,8 +222,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                     userRecoveryData.setCodeExpired(isCodeExpired);
                     return userRecoveryData;
                 }
-                if (isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
-                        userRecoveryData.getRecoveryStep(), createdTimeStamp, userRecoveryData.getRemainingSetIds())) {
+                if (isCodeExpired) {
                     isOperationSuccess = false;
                     description = ERROR_CODE_EXPIRED_CODE;
                     throw Utils.handleClientException(ERROR_CODE_EXPIRED_CODE, code);
