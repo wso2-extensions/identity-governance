@@ -30,12 +30,19 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidationRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.VerifiedChannelDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.anyMap;
 
 
 /**
@@ -68,8 +75,8 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
     public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
 
         mockClasses();
-        doThrow(new IdentityRecoveryException("Recovery Exception")).when(userSelfRegistrationManager).
-                confirmUserSelfRegistration(anyString());
+        when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(), anyMap()))
+                .thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
     }
 
@@ -77,8 +84,8 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
     public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
 
         mockClasses();
-        doThrow(new IdentityRecoveryClientException("Recovery Exception")).when(userSelfRegistrationManager).
-                confirmUserSelfRegistration(anyString());
+        when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(), anyMap()))
+                .thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
     }
 
@@ -92,6 +99,22 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
 
         CodeValidationRequestDTO codeValidationRequestDTO = new CodeValidationRequestDTO();
         codeValidationRequestDTO.setCode("TestCode");
+        VerifiedChannelDTO mockVerifiedChannelDTO =new VerifiedChannelDTO();
+        mockVerifiedChannelDTO.setClaim("claim");
+        mockVerifiedChannelDTO.setType("type");
+        codeValidationRequestDTO.setCode("DummyCode");
+        codeValidationRequestDTO.setProperties(buildPropertyListDTO());
+        codeValidationRequestDTO.setVerifiedChannel(mockVerifiedChannelDTO);
         return codeValidationRequestDTO;
+    }
+
+    private List<PropertyDTO> buildPropertyListDTO() {
+
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setKey("DummyPropertyKey");
+        propertyDTO.setValue("Dummy property value");
+        List<PropertyDTO> propertyDTOList = new ArrayList<>();
+        propertyDTOList.add(propertyDTO);
+        return propertyDTOList;
     }
 }

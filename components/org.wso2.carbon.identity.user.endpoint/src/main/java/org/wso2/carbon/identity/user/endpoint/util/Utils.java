@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.user.endpoint.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -209,6 +210,28 @@ public class Utils {
         user.setUserStoreDomain(userDTO.getRealm());
         user.setUserName(userDTO.getUsername());
         return user;
+    }
+
+    /**
+     * Returns a generic userDTO.
+     *
+     * @param user user.
+     * @return A generic userDTO with the specified details.
+     */
+    public static UserDTO getUserDTO(User user) {
+
+        UserDTO userDTO = new UserDTO();
+        if (user == null) {
+            return userDTO;
+        }
+        userDTO.setTenantDomain(user.getTenantDomain());
+        if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+            userDTO.setRealm(user.getUserStoreDomain());
+        } else {
+            userDTO.setRealm(IdentityUtil.getPrimaryDomainName());
+        }
+        userDTO.setUsername(user.getUserName());
+        return userDTO;
     }
 
     public static User getUser(SelfRegistrationUserDTO userDTO) {
