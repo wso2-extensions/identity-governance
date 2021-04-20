@@ -210,10 +210,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
-                UserRecoveryData userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep,
+                userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep,
                         timeCreated);
-
-                userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
@@ -244,10 +242,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                     userRecoveryData);
             IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
-        throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
         throw Utils.handleClientException(ERROR_CODE_INVALID_CODE, code);
     }
-
 
     @Override
     public void invalidate(String code) throws IdentityRecoveryException {
@@ -269,7 +265,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeConnection(connection);
         }
     }
-
 
     @Override
     public UserRecoveryData load(User user) throws IdentityRecoveryException {
@@ -310,8 +305,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 code = resultSet.getString("CODE");
                 String remainingSets = resultSet.getString("REMAINING_SETS");
 
-                userRecoveryData =
-                        new UserRecoveryData(user, code, scenario, step);
+                userRecoveryData = new UserRecoveryData(user, code, scenario, step);
 
                 if (isCodeExpired(user.getTenantDomain(), scenario, step, timeCreated.getTime(), remainingSets)) {
                     isOperationSuccess = false;
@@ -464,6 +458,10 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         ResultSet resultSet = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
+        UserRecoveryData userRecoveryData = null;
+        String code = null;
+        Boolean isOperationSuccess = false;
+        Enum description = ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER;
         try {
             String sql;
             if (IdentityUtil.isUserStoreCaseSensitive(user.getUserStoreDomain(),
@@ -485,12 +483,11 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             if (resultSet.next()) {
                 RecoveryScenarios scenario = RecoveryScenarios.valueOf(resultSet.getString("SCENARIO"));
                 RecoverySteps step = RecoverySteps.valueOf(resultSet.getString("STEP"));
-                String code = resultSet.getString("CODE");
+                code = resultSet.getString("CODE");
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
-                UserRecoveryData userRecoveryData =
-                        new UserRecoveryData(user, code, scenario, step, timeCreated);
+                userRecoveryData = new UserRecoveryData(user, code, scenario, step, timeCreated);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
