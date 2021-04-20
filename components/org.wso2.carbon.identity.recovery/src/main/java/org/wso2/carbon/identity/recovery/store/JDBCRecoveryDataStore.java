@@ -517,7 +517,6 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_RECOVERY_DATA,
                     Integer.toString(tenantId), e);
-            throw Utils.handleServerException(ERROR_CODE_UNEXPECTED, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
