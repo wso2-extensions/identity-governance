@@ -315,6 +315,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
     }
 
+    protected void invalidateRecoveryData(User user)
+            throws IdentityEventException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        try {
+            userRecoveryDataStore.invalidate(user);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while invalidate recovery data for user :" + user.getUserName(), e);
+        }
+    }
+
     protected void setRecoveryData(User user, Enum recoveryScenario, Enum recoveryStep, String secretKey)
             throws IdentityEventException {
 

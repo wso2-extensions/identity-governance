@@ -63,6 +63,28 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
             handleAuthenticate(eventProperties, userStoreManager);
         }
+        if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(eventName)) {
+            handleUpdateCredentialsByAdmin(eventProperties, userStoreManager);
+        }
+    }
+
+    private void handleUpdateCredentialsByAdmin(Map<String, Object> eventProperties, UserStoreManager userStoreManager)
+            throws IdentityEventException {
+
+        User user = getUser(eventProperties, userStoreManager);
+        if (log.isDebugEnabled()) {
+            log.debug("PostUpdateCredentialsByAdmin - AdminForcedPasswordResetHandler for user : "
+                    + user.toString());
+        }
+
+        UserRecoveryData userRecoveryData = getRecoveryData(user);
+        if (userRecoveryData != null) {
+            invalidateRecoveryData(user);
+            if (log.isDebugEnabled()) {
+                log.debug("PostUpdateCredentialsByAdmin - invalidate Recovery Data for user : "
+                        + user.toString());
+            }
+        }
 
     }
 
