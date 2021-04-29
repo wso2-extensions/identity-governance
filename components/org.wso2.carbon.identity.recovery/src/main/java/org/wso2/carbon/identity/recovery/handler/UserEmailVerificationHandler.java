@@ -323,7 +323,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         try {
             userRecoveryDataStore.invalidate(user);
         } catch (IdentityRecoveryException e) {
-            throw new IdentityEventException("Error while invalidate recovery data for user :" + user.getUserName(), e);
+            throw new IdentityEventException("Error while invalidate recovery data for user :" + user.toString(), e);
         }
     }
 
