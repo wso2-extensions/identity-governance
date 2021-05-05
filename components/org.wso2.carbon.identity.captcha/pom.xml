@@ -106,6 +106,10 @@
             <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.securevault</groupId>
+            <artifactId>org.wso2.securevault</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -171,6 +175,7 @@
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                             org.wso2.carbon.identity.handler.event.account.lock.exception;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
+                            org.wso2.securevault.*; version="${org.wso2.securevault.import.version.range}",
                         </Import-Package>
                     </instructions>
                 </configuration>
