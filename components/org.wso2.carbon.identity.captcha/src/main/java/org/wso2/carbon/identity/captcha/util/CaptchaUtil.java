@@ -55,6 +55,9 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,6 +110,7 @@ public class CaptchaUtil {
 
             if (reCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
+                resolveSecrets(properties);
                 setReCaptchaConfigs(properties);
                 //setSSOLoginConnectorConfigs(properties);
                 //setPathBasedConnectorConfigs(properties);
@@ -489,5 +493,31 @@ public class CaptchaUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolves site-key, secret-key and any other property if they are configured using secure vault.
+     *
+     * @param properties    Loaded reCaptcha properties.
+     */
+    private static void resolveSecrets(Properties properties) {
+
+        SecretResolver secretResolver = SecretResolverFactory.create(properties);
+        // Iterate through whole config file and find encrypted properties and resolve them
+        if (secretResolver != null && secretResolver.isInitialized()) {
+            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                String key = entry.getKey().toString();
+                String value = entry.getValue().toString();
+                if (value != null) {
+                    value = MiscellaneousUtil.resolve(value, secretResolver);
+                }
+                properties.put(key, value);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Secret Resolver is not present. Will not resolve encryptions for captcha");
+            }
+        }
+
     }
 }
