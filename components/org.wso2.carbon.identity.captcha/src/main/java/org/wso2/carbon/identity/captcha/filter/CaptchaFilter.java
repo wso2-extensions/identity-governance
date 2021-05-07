@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.filter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
@@ -26,6 +27,7 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 
@@ -48,6 +50,8 @@ public class CaptchaFilter implements Filter {
 
     private static final Log log = LogFactory.getLog(CaptchaFilter.class);
 
+    private static final String RECOVER_PASSWORD_URL = "/api/identity/recovery/v0.9/recover-password";
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -65,6 +69,17 @@ public class CaptchaFilter implements Filter {
             if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
+            }
+
+            // Wrap Servlet request for password recovery flow as the data are in POST body of request.
+            // May need multiple reads of request body value from connectors.
+            if (servletRequest instanceof HttpServletRequest) {
+                String currentPath = ((HttpServletRequest) servletRequest).getRequestURI();
+
+                if (StringUtils.isNotBlank(currentPath) &&
+                        CaptchaUtil.isPathAvailable(currentPath, RECOVER_PASSWORD_URL)) {
+                    servletRequest = new CaptchaHttpServletRequestWrapper((HttpServletRequest) servletRequest);
+                }
             }
 
             List<CaptchaConnector> captchaConnectors = CaptchaDataHolder.getInstance().getCaptchaConnectors();
