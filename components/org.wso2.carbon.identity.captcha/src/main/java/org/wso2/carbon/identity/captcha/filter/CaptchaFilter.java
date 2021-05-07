@@ -50,8 +50,6 @@ public class CaptchaFilter implements Filter {
 
     private static final Log log = LogFactory.getLog(CaptchaFilter.class);
 
-    private static final String RECOVER_PASSWORD_URL = "/api/identity/recovery/v0.9/recover-password";
-
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -77,7 +75,8 @@ public class CaptchaFilter implements Filter {
                 String currentPath = ((HttpServletRequest) servletRequest).getRequestURI();
 
                 if (StringUtils.isNotBlank(currentPath) &&
-                        CaptchaUtil.isPathAvailable(currentPath, RECOVER_PASSWORD_URL)) {
+                        CaptchaUtil.isPathAvailable(currentPath, CaptchaDataHolder.getInstance()
+                                .getReCaptchaRequestWrapUrls())) {
                     servletRequest = new CaptchaHttpServletRequestWrapper((HttpServletRequest) servletRequest);
                 }
             }

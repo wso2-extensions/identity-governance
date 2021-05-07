@@ -379,6 +379,12 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
         }
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
+
+        String reCaptchaRequestWrapUrls = properties.getProperty(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS);
+        if (reCaptchaRequestWrapUrls == null) {
+            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS));
+        }
+        CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {

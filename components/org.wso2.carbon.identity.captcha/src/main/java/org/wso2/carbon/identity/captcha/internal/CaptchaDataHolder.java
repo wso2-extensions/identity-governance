@@ -47,6 +47,8 @@ public class CaptchaDataHolder {
 
     private String reCaptchaErrorRedirectUrls;
 
+    private String reCaptchaRequestWrapUrls;
+
     private IdentityGovernanceService identityGovernanceService;
 
     private RealmService realmService;
@@ -107,6 +109,14 @@ public class CaptchaDataHolder {
 
     public void setReCaptchaSecretKey(String reCaptchaSecretKey) {
         this.reCaptchaSecretKey = reCaptchaSecretKey;
+    }
+
+    public String getReCaptchaRequestWrapUrls() {
+        return reCaptchaRequestWrapUrls;
+    }
+
+    public void setReCaptchaRequestWrapUrls(String reCaptchaRequestWrapUrls) {
+        this.reCaptchaRequestWrapUrls = reCaptchaRequestWrapUrls;
     }
 
     public String getReCaptchaErrorRedirectUrls() {
