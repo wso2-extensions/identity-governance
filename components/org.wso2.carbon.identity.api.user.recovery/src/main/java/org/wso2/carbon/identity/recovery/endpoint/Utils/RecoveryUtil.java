@@ -45,6 +45,9 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -56,6 +59,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class RecoveryUtil {
@@ -408,6 +412,8 @@ public class RecoveryUtil {
                         CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME),
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             }
+
+            resolveSecrets(properties);
         }
         return validateCaptchaConfigs(properties);
     }
@@ -467,5 +473,30 @@ public class RecoveryUtil {
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return response;
+    }
+
+    /**
+     * Resolves site-key, secret-key and any other property if they are configured using secure vault.
+     *
+     * @param properties    Loaded reCaptcha properties.
+     */
+    private static void resolveSecrets(Properties properties) {
+
+        SecretResolver secretResolver = SecretResolverFactory.create(properties);
+        // Iterate through whole config file and find encrypted properties and resolve them
+        if (secretResolver != null && secretResolver.isInitialized()) {
+            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                String key = entry.getKey().toString();
+                String value = entry.getValue().toString();
+                if (value != null) {
+                    value = MiscellaneousUtil.resolve(value, secretResolver);
+                }
+                properties.put(key, value);
+            }
+        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Secret Resolver is not present. Will not resolve encryptions for captcha configurations");
+            }
+        }
     }
 }
