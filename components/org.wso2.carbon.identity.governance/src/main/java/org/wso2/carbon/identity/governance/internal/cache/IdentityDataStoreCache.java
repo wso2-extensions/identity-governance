@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.governance.internal.cache;
 
-import org.wso2.carbon.identity.application.common.cache.RandomPasswordContainerCache;
 import org.wso2.carbon.identity.core.cache.BaseCache;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 
@@ -38,7 +37,7 @@ public class IdentityDataStoreCache extends BaseCache<IdentityDataStoreCacheKey,
     public static IdentityDataStoreCache getInstance() {
 
         if (instance == null) {
-            synchronized (RandomPasswordContainerCache.class) {
+            synchronized (IdentityDataStoreCache.class) {
                 if (instance == null) {
                     instance = new IdentityDataStoreCache();
                 }
