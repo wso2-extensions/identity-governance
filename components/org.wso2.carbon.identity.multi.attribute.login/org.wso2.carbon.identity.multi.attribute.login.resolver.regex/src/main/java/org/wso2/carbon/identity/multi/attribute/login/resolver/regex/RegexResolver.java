@@ -31,6 +31,7 @@ import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
 import org.wso2.carbon.user.core.common.User;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -61,13 +62,16 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                     continue;
                 }
                 Pattern pattern = Pattern.compile(regex);
-                if (pattern.matcher(loginAttribute).matches()) {
+                String domainSeparateAttribute = UserCoreUtil.removeDomainFromName(loginAttribute);
+                if (pattern.matcher(domainSeparateAttribute).matches()) {
                     List<User> userList = userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
                     if (userList.size() == 1) {
                         resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.SUCCESS);
                         resolvedUserResult.setResolvedClaim(claimURI);
                         resolvedUserResult.setResolvedValue(loginAttribute);
-                        resolvedUserResult.setUser(userList.get(0));
+                        User user = userList.get(0);
+                        user.setUsername(user.getDomainQualifiedUsername());
+                        resolvedUserResult.setUser(user);
                         break;
                     } else if (userList.size() > 1) {
                         resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.FAIL);
