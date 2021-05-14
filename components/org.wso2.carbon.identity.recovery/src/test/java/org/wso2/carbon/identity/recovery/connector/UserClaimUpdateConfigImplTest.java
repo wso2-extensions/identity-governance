@@ -106,6 +106,8 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
                 "Enable user email verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Email verification on update link expiry time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                "Enable user email notification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Enable user mobile number verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
@@ -123,6 +125,9 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, "Validity time of the email confirmation link in " +
                 "minutes.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                "Trigger a notification to the existing email address when the user attempts to update the existing " +
+                        "email address.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Trigger a verification SMS OTP when user's mobile number is updated.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
@@ -137,6 +142,7 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
