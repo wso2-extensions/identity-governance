@@ -611,6 +611,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         // Get existing email address.
         String existingEmail = getEmailClaimValue(user, userStoreManager);
         if (StringUtils.isBlank(existingEmail)) {
+            log.debug("Old email in not available for user : " + user.toFullQualifiedUsername() + ". " +
+                    "Terminated the notification sending process to existing email.");
             return;
         }
         HashMap<String, String> properties = new HashMap<>();
