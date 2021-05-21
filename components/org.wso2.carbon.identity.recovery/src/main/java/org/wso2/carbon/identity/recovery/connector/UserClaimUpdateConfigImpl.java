@@ -43,6 +43,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String SUB_CATEGORY = "DEFAULT";
     private static final String DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME = "1440";
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE = "false";
+    private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_NOTIFICATION_ON_UPDATE = "false";
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "5";
     private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
@@ -52,8 +53,10 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
     private static String enableEmailVerificationOnUpdateProperty = null;
     private static String emailVerificationOnUpdateCodeExpiryProperty = null;
+    private static String enableEmailNotificationOnUpdateProperty = null;
     private static String enableMobileNumVerificationOnUpdateProperty = null;
     private static String mobileNumVerificationOnUpdateCodeExpiryProperty = null;
 
@@ -95,6 +98,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Enable user email verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Email verification on update link expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                "Enable user email notification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Enable user mobile number verification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
@@ -110,6 +115,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Trigger a verification notification when user's email address is updated.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Validity time of the email confirmation link in minutes.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                "Trigger a notification to the existing email address when the user attempts to update the existing " +
+                        "email address.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Trigger a verification SMS OTP when user's mobile number is updated.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
@@ -123,6 +131,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         return properties.toArray(new String[0]);
@@ -133,6 +142,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         String enableEmailVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_VERIFICATION_ON_UPDATE;
         String emailVerificationOnUpdateCodeExpiry = DEFAULT_EMAIL_VERIFICATION_ON_UPDATE_CODE_EXPIRY_TIME;
+        String enableEmailNotificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_NOTIFICATION_ON_UPDATE;
         String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
         String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
 
@@ -143,6 +153,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotBlank(emailVerificationOnUpdateCodeExpiryProperty)) {
             emailVerificationOnUpdateCodeExpiry = emailVerificationOnUpdateCodeExpiryProperty;
+        }
+        if (StringUtils.isNotBlank(enableEmailNotificationOnUpdateProperty)) {
+            enableEmailNotificationOnUpdate = enableEmailNotificationOnUpdateProperty;
         }
         if (StringUtils.isNotBlank(enableMobileNumVerificationOnUpdateProperty)) {
             enableMobileNumVerificationOnUpdate = enableMobileNumVerificationOnUpdateProperty;
@@ -156,6 +169,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 enableEmailVerificationOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 emailVerificationOnUpdateCodeExpiry);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                enableEmailNotificationOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 enableMobileNumVerificationOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
@@ -211,6 +226,12 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                     QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
                                     .getText();
                         }
+                    }
+                    OMElement notificationOnUpdate = claim.getFirstChildWithName(new QName(IdentityCoreConstants
+                            .IDENTITY_DEFAULT_NAMESPACE, NOTIFICATION_ON_UPDATE_ELEMENT));
+                    if (notificationOnUpdate != null) {
+                        enableEmailNotificationOnUpdateProperty = notificationOnUpdate.getFirstChildWithName(new QName
+                                (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
                     }
                 } else if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claimURI)) {
                     OMElement verificationOnUpdate = claim.getFirstChildWithName(new QName(IdentityCoreConstants

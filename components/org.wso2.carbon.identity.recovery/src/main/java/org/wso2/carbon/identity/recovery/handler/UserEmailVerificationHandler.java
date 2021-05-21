@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -24,6 +25,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -515,7 +517,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
                 if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
                     initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
-
+                    // Trigger alert to existing email.
+                    sendNotificationToExistingEmailOnEmailUpdate(user, userStoreManager,
+                            pendingVerificationEmailClaimValue);
                 }
             }
         } finally {
@@ -583,5 +587,99 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         return (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) &&
                 Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM)));
+    }
+
+    /**
+     * Send email alert to existing email when trying to update email address.
+     *
+     * @param user                   User.
+     * @param userStoreManager       UserStoreManager.
+     * @param pendingEmailClaimValue Verification pending email.
+     * @throws IdentityEventException IdentityEventException.
+     */
+    private void sendNotificationToExistingEmailOnEmailUpdate(User user, UserStoreManager userStoreManager,
+                                                              String pendingEmailClaimValue) throws IdentityEventException {
+
+        boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_NOTIFICATION_ON_EMAIL_UPDATE, user.getTenantDomain()));
+        if (!enable) {
+            if (log.isDebugEnabled()) {
+                log.debug("Notify existing email on update feature is disabled for tenant: " + user.getTenantDomain());
+            }
+            return;
+        }
+        // Get existing email address.
+        String existingEmail = getEmailClaimValue(user, userStoreManager);
+        if (StringUtils.isBlank(existingEmail)) {
+            return;
+        }
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL, pendingEmailClaimValue);
+
+        triggerEmailNotificationToExistingEmail(existingEmail,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE, user, properties);
+    }
+
+    /**
+     * Get user email claim value.
+     *
+     * @param user             User.
+     * @param userStoreManager UserStoreManager.
+     * @return String user email address.
+     * @throws IdentityRecoveryException Error retrieving email address.
+     */
+    private String getEmailClaimValue(User user, UserStoreManager userStoreManager) throws IdentityEventException {
+
+        String email = StringUtils.EMPTY;
+        if (user != null && userStoreManager != null) {
+            String username = user.getUserName();
+            if (StringUtils.isNotBlank(user.getUserStoreDomain())) {
+                username = IdentityUtil.addDomainToName(username, user.getUserStoreDomain());
+            }
+            try {
+                email = userStoreManager.getUserClaimValue(username, IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                        null);
+            } catch (UserStoreException e) {
+                String error = String.format("Error occurred while retrieving existing email address for user: " +
+                        "%s in tenant domain : %s", username, user.getTenantDomain());
+                throw new IdentityEventException(error, e);
+            }
+        }
+        return email;
+    }
+
+    /**
+     * Trigger a notification to the existing email address when the user attempts to update the existing email
+     * address.
+     *
+     * @param sendTo       Send to email address.
+     * @param templateType Email template type.
+     * @param user         User.
+     * @param props        Other properties.
+     * @throws IdentityEventException IdentityEventException while sending notification to user.
+     */
+    private void triggerEmailNotificationToExistingEmail(String sendTo, String templateType, User user, Map<String,
+            String> props) throws IdentityEventException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Sending : " + templateType + " notification to user : " + user.toFullQualifiedUsername());
+        }
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityRecoveryConstants.SEND_TO, sendTo);
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateType);
+
+        if (CollectionUtils.size(props) > 0) {
+            properties.putAll(props);
+        }
+        Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw new IdentityEventException("Error while sending notification for user: " +
+                    user.toFullQualifiedUsername(), e);
+        }
     }
 }
