@@ -1077,6 +1077,14 @@ public class Utils {
                 charSet = generateCharSet(charsRegex);
             }
             return generateSMSOTP(charSet, otpLength);
+        } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario)) {
+            char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+            SecureRandom rnd = new SecureRandom();
+            StringBuilder sb = new StringBuilder("");
+            for (int i = 0; i < 6; i++) {
+                sb.append(chars[rnd.nextInt(chars.length)]);
+            }
+            return sb.toString();
         } else {
             return UUIDGenerator.generateUUID();
         }
