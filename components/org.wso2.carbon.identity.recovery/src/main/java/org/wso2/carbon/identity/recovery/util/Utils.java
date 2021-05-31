@@ -87,6 +87,7 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -940,6 +941,7 @@ public class Utils {
     public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
 
         if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
+            diagnosticLog.error("Email user validation failed for the username: " + username);
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
         }
     }

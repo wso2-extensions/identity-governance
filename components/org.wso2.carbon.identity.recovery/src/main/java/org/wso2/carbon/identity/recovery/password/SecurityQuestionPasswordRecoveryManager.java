@@ -77,6 +77,7 @@ import java.util.Set;
 public class SecurityQuestionPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(SecurityQuestionPasswordRecoveryManager.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE = "account.lock.handler.enable";
 
@@ -107,12 +108,16 @@ public class SecurityQuestionPasswordRecoveryManager {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for user : " +
                     user.getUserName());
+            diagnosticLog.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for" +
+                    " user: " + user.getUserName());
         }
 
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
             log.info("initiateUserChallengeQuestion :User store domain is not in the request. set to default for user" +
                     " : " + user.getUserName());
+            diagnosticLog.info("initiateUserChallengeQuestion :User store domain is not in the request. set to " +
+                    "default for user: " + user.getUserName());
         }
 
 
@@ -122,6 +127,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         boolean isRecoveryEnable = Boolean.parseBoolean(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                 .ConnectorConfig.QUESTION_BASED_PW_RECOVERY, user.getTenantDomain()));
         if (!isRecoveryEnable) {
+            diagnosticLog.error("Challenge question based account recovery is not enabled.");
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_QUESTION_BASED_RECOVERY_NOT_ENABLE, null);
         }
 
@@ -139,9 +145,11 @@ public class SecurityQuestionPasswordRecoveryManager {
         }
 
         if (Utils.isAccountDisabled(user)) {
+            diagnosticLog.info("Account is disabled for the user: " + user.getUserName());
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
+            diagnosticLog.info("Account is locked for the user: " + user.getUserName());
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, user.getUserName());
         }
@@ -154,6 +162,8 @@ public class SecurityQuestionPasswordRecoveryManager {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
             } catch (Exception e) {
                 log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
+                diagnosticLog.error("Error while sending password reset initiating notification to user :" +
+                        user.getUserName() + ". Error message: " + e.getMessage());
             }
         }
 
@@ -261,9 +271,11 @@ public class SecurityQuestionPasswordRecoveryManager {
         verifyUserExists(user);
 
         if (Utils.isAccountDisabled(user)) {
+            diagnosticLog.error("Account is disabled for the user: " + user.getUserName());
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT, null);
         } else if (Utils.isAccountLocked(user)) {
+            diagnosticLog.error("Account is locked for the user: " + user.getUserName());
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT, null);
         }
@@ -275,6 +287,8 @@ public class SecurityQuestionPasswordRecoveryManager {
             try {
                 triggerNotification(user, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE, null);
             } catch (Exception e) {
+                diagnosticLog.error("Error while sending password reset initiating notification to user :" +
+                        user.getUserName() + ". Error message: " + e.getMessage());
                 log.warn("Error while sending password reset initiating notification to user :" + user.getUserName());
             }
         }
@@ -349,6 +363,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
             if (userChallengeAnswer == null) {
                 String error = "Challenge answers cannot be found for user: " + userRecoveryData.getUser();
+                diagnosticLog.error(error);
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                                                           .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, error);
             }
@@ -434,6 +449,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 } else {
                     String error = "Could not find requested challenge questions for user: " + userRecoveryData
                             .getUser();
+                    diagnosticLog.error(error);
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
                             .ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND, error);
                 }
@@ -921,6 +937,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                 if (log.isDebugEnabled()) {
                     log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
                 }
+                diagnosticLog.info("No user found for recovery with username: " + user.toFullQualifiedUsername());
                 boolean notifyUserExistence = Boolean.parseBoolean(IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
                 if (notifyUserExistence) {
@@ -933,6 +950,7 @@ public class SecurityQuestionPasswordRecoveryManager {
             }
 
         } catch (UserStoreException e) {
+            diagnosticLog.error("Server error occurred during account recovery. Error message: " + e.getMessage());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null);
         }
     }

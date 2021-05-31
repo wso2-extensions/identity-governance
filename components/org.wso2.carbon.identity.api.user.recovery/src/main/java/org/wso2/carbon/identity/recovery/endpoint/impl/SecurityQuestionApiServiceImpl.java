@@ -28,10 +28,12 @@ import java.net.MalformedURLException;
 
 public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
     private static final Log LOG = LogFactory.getLog(SecurityQuestionApiServiceImpl.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     @Override
     public Response securityQuestionGet(String username, String realm, String tenantDomain) {
 
+        diagnosticLog.info("Retrieving security questions of user: " + username + " in userstore domain: " + realm);
         if (IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT) != null) {
             tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
         }
@@ -59,12 +61,14 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
             if (ArrayUtils.isEmpty(userList)) {
                 String msg = "Unable to find an user with username: " + username + " in the system.";
                 LOG.error(msg);
+                diagnosticLog.error(msg);
             } else if (userList.length == 1) {
                 user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
             } else {
                 String msg = "There are multiple users with username: " + username + " in the system, " +
                         "please send the correct user-store domain along with the username.";
                 LOG.error(msg);
+                diagnosticLog.error(msg);
                 RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_MULTIPLE_USERS_MATCHING);
             }
         }
@@ -82,6 +86,8 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while initiating password recovery flow using security questions ", e);
             }
+            diagnosticLog.error("Client Error while initiating password recovery flow using security questions. " +
+                    "Error message: " + e.getMessage());
 
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND.getCode()
                     .equals(e.getErrorCode())) {
@@ -91,9 +97,13 @@ public class SecurityQuestionApiServiceImpl extends SecurityQuestionApiService {
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
 
         } catch (IdentityRecoveryException e) {
+            diagnosticLog.error("Server error while initiating password recovery flow using security questions. " +
+                    "Error message: " + e.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
 
         } catch (Throwable throwable) {
+            diagnosticLog.error("Server error while initiating password recovery flow using security questions. " +
+                    "Error message: " + throwable.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }

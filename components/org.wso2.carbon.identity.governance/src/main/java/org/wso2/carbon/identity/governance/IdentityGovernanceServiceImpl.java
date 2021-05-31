@@ -38,6 +38,7 @@ import java.util.Map;
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -82,6 +83,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
+            diagnosticLog.error("Error while updating identityManagement Properties of Resident Idp. Error" +
+                    " message: " + e.getMessage());
         }
 
     }
@@ -95,6 +98,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             residentIdp = identityProviderManager.getResidentIdP(tenantDomain);
         } catch (IdentityProviderManagementException e) {
             String errorMsg = String.format("Error while retrieving resident Idp for %s tenant.", tenantDomain);
+            diagnosticLog.error(errorMsg);
             throw new IdentityGovernanceException(errorMsg, e);
         }
         IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
