@@ -51,6 +51,7 @@ import java.util.Map;
 public class NotificationUsernameRecoveryManager {
 
     private static final Log log = LogFactory.getLog(NotificationUsernameRecoveryManager.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
     private static final String FORWARD_SLASH = "/";
 
     private static NotificationUsernameRecoveryManager instance = new NotificationUsernameRecoveryManager();
@@ -177,6 +178,7 @@ public class NotificationUsernameRecoveryManager {
     private RecoveryInformationDTO initiateUsernameRecovery(Map<String, String> claims, String tenantDomain,
                                                             boolean manageNotificationsInternally) throws IdentityRecoveryException {
 
+        diagnosticLog.info("Initiating username recovery flow.");
         try {
             HashMap<String, String> properties = new HashMap<>();
             properties.put(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY, Boolean.toString(true));
@@ -184,6 +186,7 @@ public class NotificationUsernameRecoveryManager {
                     Boolean.toString(manageNotificationsInternally));
             return usernameRecoveryManagerImpl.initiate(claims, tenantDomain, properties);
         } catch (IdentityRecoveryServerException exception) {
+            diagnosticLog.error("Error occurred during username recovery. Error message: " + exception.getMessage());
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();
                 // Userstore not found error.
@@ -201,6 +204,7 @@ public class NotificationUsernameRecoveryManager {
             }
             throw exception;
         } catch (IdentityRecoveryClientException exception) {
+            diagnosticLog.error("Error occurred during username recovery. Error message: " + exception.getMessage());
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();
                 // Multiple users matched error.
