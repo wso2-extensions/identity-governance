@@ -443,11 +443,11 @@
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>junit</groupId>-->
+<!--                <artifactId>junit</artifactId>-->
+<!--                <version>${junit.version}</version>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>org.wso2.carbon.multitenancy</groupId>
                 <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
@@ -467,6 +467,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.jacoco</groupId>
                 <artifactId>org.jacoco.agent</artifactId>
                 <classifier>runtime</classifier>
@@ -477,18 +483,18 @@
                 <artifactId>testng</artifactId>
                 <version>${testng.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
-                <scope>test</scope>
-                <version>${mokito.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.poermock</groupId>-->
+<!--                <artifactId>powermock-module-testng</artifactId>-->
+<!--                <scope>test</scope>-->
+<!--                <version>${mokito.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.powermock</groupId>-->
+<!--                <artifactId>powermock-api-mockito</artifactId>-->
+<!--                <scope>test</scope>-->
+<!--                <version>${mokito.version}</version>-->
+<!--            </dependency>-->
 
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -732,11 +738,11 @@
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.7.9</jacoco.version>
+        <jacoco.version>0.8.2</jacoco.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
-        <mockito.version>1.10.19</mockito.version>
+        <mockito.version>3.8.0</mockito.version>
         <powermock.version>1.6.4</powermock.version>
         <mokito.version>1.6.6</mokito.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>

@@ -18,11 +18,10 @@ package org.wso2.carbon.identity.governance.listener;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -43,14 +42,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+
+//import static org.powermock.api.mockito.PowerMockito.doReturn;
+//import static org.powermock.api.mockito.PowerMockito.mock;
 
 /**
  * Test class for IdentityMgtEventListener.
@@ -81,17 +78,17 @@ public class IdentityMgtEventListenerTest {
     @Spy
     IdentityMgtEventListener identityMgtEventListener;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
+//    @ObjectFactory
+//    public IObjectFactory getObjectFactory() {
+//        return new org.powermock.modules.testng.PowerMockObjectFactory();
+//    }
 
     @BeforeTest
     public void setUp() throws Exception {
         instance = IdentityMgtServiceDataHolder.getInstance();
-        identityEventService = mock(IdentityEventService.class);
+        identityEventService = Mockito.mock(IdentityEventService.class);
         instance.setIdentityEventService(identityEventService);
-        realmService = mock(RealmService.class);
+        realmService = Mockito.mock(RealmService.class);
         instance.setRealmService(realmService);
         identityMgtEventListener = new IdentityMgtEventListener();
         mockHandleEvent();
@@ -103,7 +100,7 @@ public class IdentityMgtEventListenerTest {
         assertEquals(orderId, 95, "OrderId is not equal to IdentityCoreConstants.EVENT_LISTENER_ORDER_ID");
 
         IdentityMgtEventListener testIdentityMgtEventListener = spy(IdentityMgtEventListener.class);
-        doReturn(55).when(testIdentityMgtEventListener).getOrderId();
+        Mockito.doReturn(55).when(testIdentityMgtEventListener).getOrderId();
         orderId = testIdentityMgtEventListener.getExecutionOrderId();
         assertEquals(orderId, 55, "OrderId is not equal to IdentityCoreConstants.EVENT_LISTENER_ORDER_ID");
     }
@@ -531,9 +528,9 @@ public class IdentityMgtEventListenerTest {
 
     private void mockHandleEvent() throws Exception {
         identityMgtEventListener = spy(IdentityMgtEventListener.class);
-        userStoreManager = mock(UserStoreManager.class);
-        realmConfiguration = mock(RealmConfiguration.class);
-        tenantManager = mock(TenantManager.class);
+        userStoreManager = Mockito.mock(UserStoreManager.class);
+        realmConfiguration = Mockito.mock(RealmConfiguration.class);
+        tenantManager = Mockito.mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(SAMPLE_TENANT_ID)).thenReturn(SAMPLE_TENANT_DOMAIN);
 

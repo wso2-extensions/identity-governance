@@ -19,17 +19,12 @@
 package org.wso2.carbon.identity.governance.store;
 
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.Mockito;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
-import org.wso2.carbon.identity.governance.store.InMemoryIdentityDataStore;
-import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -42,12 +37,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
-@PrepareForTest({IdentityUtil.class, UserCoreUtil.class, PrivilegedCarbonContext.class})
-@PowerMockIgnore({"javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "javax.management.*"})
+//@PrepareForTest({IdentityUtil.class, UserCoreUtil.class, PrivilegedCarbonContext.class})
+//@PowerMockIgnore({"javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "javax.management.*"})
 public class InMemoryIdentityDataStoreTest {
 
     @Mock
@@ -65,10 +58,10 @@ public class InMemoryIdentityDataStoreTest {
     @Mock
     PrivilegedCarbonContext privilegedCarbonContext;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
+//    @ObjectFactory
+//    public IObjectFactory getObjectFactory() {
+//        return new org.powermock.modules.testng.PowerMockObjectFactory();
+//    }
 
     @Test(testName = "testStore", description = "Test whether the map in UserIdentityClaim object containing " +
             "identity claims gets modified after this method is executed.")
@@ -83,9 +76,9 @@ public class InMemoryIdentityDataStoreTest {
 
         Map<String, String> identityClaimsMapClone = new HashMap<>(identityClaimsMap);
 
-        mockStatic(IdentityUtil.class);
-        mockStatic(UserCoreUtil.class);
-        mockStatic(PrivilegedCarbonContext.class);
+        Mockito.mockStatic(IdentityUtil.class);
+        Mockito.mockStatic(UserCoreUtil.class);
+        Mockito.mockStatic(PrivilegedCarbonContext.class);
 
         userStoreManager = mock(JDBCUserStoreManager.class);
         userIdentityClaim = mock(UserIdentityClaim.class);
@@ -93,15 +86,15 @@ public class InMemoryIdentityDataStoreTest {
         userIdentityDataStore = mock(InMemoryIdentityDataStore.class);
         privilegedCarbonContext = mock(PrivilegedCarbonContext.class);
 
-        when(IdentityUtil.isUserStoreCaseSensitive(userStoreManager)).thenReturn(true);
-        when(UserCoreUtil.removeDomainFromName("gayashan")).thenReturn("gayashan");
-        when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        Mockito.when(IdentityUtil.isUserStoreCaseSensitive(userStoreManager)).thenReturn(true);
+        Mockito.when(UserCoreUtil.removeDomainFromName("gayashan")).thenReturn("gayashan");
+        Mockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
 
-        when(userStoreManager.getTenantId()).thenReturn(MultitenantConstants.SUPER_TENANT_ID);
-        when(userIdentityClaim.getUserName()).thenReturn("gayashan");
-        when(userIdentityClaim.getUserIdentityDataMap()).thenReturn(identityClaimsMap);
-        when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
-        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME))
+        Mockito.when(userStoreManager.getTenantId()).thenReturn(MultitenantConstants.SUPER_TENANT_ID);
+        Mockito.when(userIdentityClaim.getUserName()).thenReturn("gayashan");
+        Mockito.when(userIdentityClaim.getUserIdentityDataMap()).thenReturn(identityClaimsMap);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME))
                 .thenReturn("PRIMARY");
 
         InMemoryIdentityDataStore inMemoryIdentityDataStore = new InMemoryIdentityDataStore();
