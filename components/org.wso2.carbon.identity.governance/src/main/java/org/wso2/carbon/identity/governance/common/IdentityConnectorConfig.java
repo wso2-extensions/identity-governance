@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance.common;
 
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.ConnectorConfig;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 
@@ -23,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * IdentityConnectorConfig.
+ */
 public interface IdentityConnectorConfig extends ConnectorConfig {
 
     Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException;
@@ -32,6 +36,11 @@ public interface IdentityConnectorConfig extends ConnectorConfig {
 
     default List<String> getConfidentialPropertyValues(String tenantDomain) {
 
+        return null;
+    }
+
+    //meta method
+    default Map<String, Property> getMetaData() {
         return null;
     }
 }

@@ -26,6 +26,29 @@ public class IdentityMgtConstants {
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
     public static final String ERROR_CODE_DELIMITER = "-";
 
+    /**.
+     * DataType Constants
+     */
+    public enum DataTypes {
+
+        STRING("string"),
+        INTEGER("integer"),
+        FLOATING("float"),
+        BOOLEAN("boolean");
+
+        private final String value;
+
+        DataTypes(String values) {
+            this.value = values;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+
+    }
+
+
     /**
      * User account states.
      */

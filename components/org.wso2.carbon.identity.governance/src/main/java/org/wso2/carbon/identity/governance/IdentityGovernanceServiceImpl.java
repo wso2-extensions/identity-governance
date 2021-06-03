@@ -35,6 +35,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * IdentityGovernanceServiceImpl.
+ */
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
@@ -150,6 +153,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             ConnectorConfig config = new ConnectorConfig();
             Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
             Map<String, String> propertyDescriptions = list.get(i).getPropertyDescriptionMapping();
+
+            Map<String, Property> metaData = list.get(i).getMetaData();
+
             List<String> confidentialProperties = list.get(i).getConfidentialPropertyValues(tenantDomain);
             config.setFriendlyName(list.get(i).getFriendlyName());
             config.setName(list.get(i).getName());
@@ -162,8 +168,17 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 for (Property property : properties) {
                     if (connectorProperties[j].equals(property.getName())) {
                         configProperties[j] = property;
-                        configProperties[j].setDisplayName(propertyFriendlyNames.get(configProperties[j].getName()));
-                        configProperties[j].setDescription(propertyDescriptions.get(configProperties[j].getName()));
+                        String resourceName = configProperties[j].getName();
+                        configProperties[j].setDisplayName(propertyFriendlyNames.get(resourceName));
+                        configProperties[j].setDescription(propertyDescriptions.get(resourceName));
+
+                        if (metaData != null && metaData.containsKey(resourceName)) {
+
+                            configProperties[j].setType(metaData.get(resourceName).getType());
+                            configProperties[j].setRegex(metaData.get(resourceName).getRegex());
+
+                        }
+
                         if (confidentialProperties != null &&
                                 confidentialProperties.contains(configProperties[j].getName())) {
                             configProperties[j].setConfidential(true);
