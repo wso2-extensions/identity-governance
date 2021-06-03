@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -55,6 +56,7 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -100,6 +102,7 @@ public class NotificationPasswordRecoveryManager {
                 IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION, new UserRecoveryData(user, null,
                         RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD));
 
+        validateUserStoreDomain(user);
         Utils.validateEmailUsername(user.getUserName());
 
         // Resolve user attributes.
@@ -733,6 +736,7 @@ public class NotificationPasswordRecoveryManager {
             IdentityRecoveryException {
 
         HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
@@ -760,6 +764,9 @@ public class NotificationPasswordRecoveryManager {
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventClientException e) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_ERROR_HANDLING_THE_EVENT.getCode(), e.getMessage(), null);
         } catch (IdentityEventException e) {
             log.error("Error occurred while publishing event " + eventName + " for user " + user);
             diagnosticLog.error("Error occurred while publishing event " + eventName + " for user " + user +
@@ -849,5 +856,44 @@ public class NotificationPasswordRecoveryManager {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
         Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
+    }
+
+    private void validateUserStoreDomain(User user) throws IdentityRecoveryClientException,
+            IdentityRecoveryServerException {
+
+        int tenantID = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+        if (StringUtils.isBlank(user.getUserStoreDomain())) {
+            String[] userList = getUserList(tenantID, user.getUserName());
+
+            if (ArrayUtils.isEmpty(userList)) {
+                String msg = "Unable to find an user with username: " + user.getUserName() + " in the system.";
+                log.error(msg);
+            } else if (userList.length == 1) {
+                user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
+            } else {
+                String msg = "There are multiple users with username: " + user.getUserName() + " in the system, " +
+                        "please send the correct user-store domain along with the username.";
+                throw new IdentityRecoveryClientException(msg);
+            }
+        }
+    }
+
+    private static String[] getUserList(int tenantId, String username) throws IdentityRecoveryServerException {
+
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = null;
+        String[] userList = null;
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+        try {
+            if (realmService.getTenantUserRealm(tenantId) != null) {
+                userStoreManager = (org.wso2.carbon.user.core.UserStoreManager) realmService.getTenantUserRealm
+                        (tenantId).getUserStoreManager();
+                userList = userStoreManager.listUsers(username , 2) ;
+            }
+        } catch (UserStoreException e) {
+            String msg = "Error retrieving the user-list for the tenant : " + tenantId;
+            throw new IdentityRecoveryServerException(msg, e);
+        }
+        return userList;
     }
 }
