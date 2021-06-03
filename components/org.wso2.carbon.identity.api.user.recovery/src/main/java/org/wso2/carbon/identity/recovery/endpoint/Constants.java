@@ -38,4 +38,5 @@ public final class Constants {
             "Email notification sending failed. Sending email address is not configured for the user.";
     public static final String ERROR_CODE_EMAIL_NOT_FOUND = "20016";
 
+    public static final String ERROR_CODE_INVALID_PASSWORD_RECOVERY_REQUEST = "20017";
 }

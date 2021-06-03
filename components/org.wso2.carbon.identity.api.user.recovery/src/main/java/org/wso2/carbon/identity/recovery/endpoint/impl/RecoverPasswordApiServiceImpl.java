@@ -66,7 +66,21 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 String msg = "Unable to find an user with username: " + user.getUsername() + " in the system.";
                 LOG.error(msg);
             } else if (userList.length == 1) {
-                recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(userList[0]));
+                if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain()) &&
+                        IdentityUtil.getPrimaryDomainName().equals(IdentityUtil.extractDomainFromName(userList[0]))) {
+                    String msg = "Invalid password recovery request by the user: " + user.getUsername();
+                    LOG.error(msg);
+                    RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_INVALID_PASSWORD_RECOVERY_REQUEST);
+                } else {
+                    recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(userList[0]));
+                }
+            } else if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
+                for (String username : userList) {
+                    if (!IdentityUtil.getPrimaryDomainName().equals(IdentityUtil.extractDomainFromName(username))) {
+                        recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(username));
+                        break;
+                    }
+                }
             } else {
                 String msg = "There are multiple users with username: " + user.getUsername() + " in the system, " +
                         "please send the correct user-store domain along with the username.";
