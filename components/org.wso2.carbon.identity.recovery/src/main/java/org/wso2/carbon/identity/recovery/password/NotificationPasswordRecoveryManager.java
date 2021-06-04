@@ -864,10 +864,12 @@ public class NotificationPasswordRecoveryManager {
         int tenantID = IdentityTenantUtil.getTenantId(user.getTenantDomain());
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             String[] userList = getUserList(tenantID, user.getUserName());
-
             if (ArrayUtils.isEmpty(userList)) {
                 String msg = "Unable to find an user with username: " + user.getUserName() + " in the system.";
-                log.error(msg);
+                if (log.isDebugEnabled()) {
+                    log.debug(msg);
+                }
+                diagnosticLog.error(msg);
             } else if (userList.length == 1) {
                 user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
             } else {
