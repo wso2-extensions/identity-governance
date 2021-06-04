@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * AdminForcedPasswordResetConfigImpl.
+ * Class which contains Admin forced password reset configs.
  */
 public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConfig {
 
@@ -148,6 +148,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     }
 
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;
@@ -155,6 +156,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
     @Override
     public Map<String, Property> getMetaData() {
+
         Map<String, Property> meta = new HashMap<>();
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));

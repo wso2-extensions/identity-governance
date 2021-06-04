@@ -255,11 +255,11 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     }
 
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;
     }
-
 
     @Override
     public Map<String, Property> getMetaData() {

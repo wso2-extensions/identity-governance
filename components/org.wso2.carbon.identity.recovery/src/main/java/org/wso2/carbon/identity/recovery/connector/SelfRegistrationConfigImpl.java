@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * SelfRegistrationConfigImpl.
+ * Class which contains self sign up configs.
  */
 
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
@@ -292,8 +292,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         return null;
     }
 
-
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;

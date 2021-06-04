@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * IdentityConnectorConfig.
+ * This interface is used for create connectors.
  */
 public interface IdentityConnectorConfig extends ConnectorConfig {
 
@@ -39,8 +39,9 @@ public interface IdentityConnectorConfig extends ConnectorConfig {
         return null;
     }
 
-    //meta method
+    //Override this method to set meta data properties.
     default Map<String, Property> getMetaData() {
+
         return null;
     }
 }

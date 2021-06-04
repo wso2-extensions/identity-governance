@@ -31,8 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 /**
- * UserEmailVerificationConfigImpl.
+ * Class which contains user email verification configs.
  */
 public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig {
 
@@ -49,31 +50,37 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public String getName() {
+
         return connectorName;
     }
 
     @Override
     public String getFriendlyName() {
+
         return FRIENDLY_NAME;
     }
 
     @Override
     public String getCategory() {
+
         return CATEGORY;
     }
 
     @Override
     public String getSubCategory() {
+
         return "DEFAULT";
     }
 
     @Override
     public int getOrder() {
+
         return 0;
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "Enable user email verification");
@@ -93,6 +100,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "A verification notification will be triggered during user creation.");
@@ -203,6 +211,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     }
 
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;
@@ -210,7 +219,6 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public Map<String, Property> getMetaData() {
-
 
         Map<String, Property> meta = new HashMap<>();
 

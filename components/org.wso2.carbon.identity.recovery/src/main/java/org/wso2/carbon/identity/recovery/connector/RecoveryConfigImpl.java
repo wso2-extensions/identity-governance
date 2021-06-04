@@ -347,6 +347,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     }
 
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;

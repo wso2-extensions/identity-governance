@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * LiteRegistrationConfigImpl.
+ * Class which contains Lite user sign-up configs.
  */
 public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
@@ -223,6 +223,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
     }
 
     private Property getPropertyObject(String type) {
+
         Property property = new Property();
         property.setType(type);
         return property;
