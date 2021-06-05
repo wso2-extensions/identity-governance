@@ -338,6 +338,8 @@ public class IdentityRecoveryConstants {
                 + "recovery request"),
         ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED("PWR-10009",
                 "Password recovery validation failed for user account : '%s'"),
+        ERROR_CODE_ERROR_HANDLING_THE_EVENT("PWR-10010",
+                "Error encountered while handling the event: '%s'"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
         ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX("PWR-15008", "SMS OTP regex pattern is not supported."),

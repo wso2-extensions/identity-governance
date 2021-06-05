@@ -59,21 +59,6 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             userDTO.setUsername(user.getUsername());
             recoveryInitiatingRequest.setUser(userDTO);
         }
-        if (StringUtils.isBlank(user.getRealm())) {
-            String[] userList = RecoveryUtil.getUserList(tenantIdFromContext, user.getUsername());
-
-            if (ArrayUtils.isEmpty(userList)) {
-                String msg = "Unable to find an user with username: " + user.getUsername() + " in the system.";
-                LOG.error(msg);
-            } else if (userList.length == 1) {
-                recoveryInitiatingRequest.getUser().setRealm(IdentityUtil.extractDomainFromName(userList[0]));
-            } else {
-                String msg = "There are multiple users with username: " + user.getUsername() + " in the system, " +
-                        "please send the correct user-store domain along with the username.";
-                LOG.error(msg);
-                RecoveryUtil.handleBadRequest(msg, Constants.ERROR_CODE_MULTIPLE_USERS_MATCHING);
-            }
-        }
 
         NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                 .getNotificationBasedPwdRecoveryManager();
