@@ -210,10 +210,13 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         return null;
     }
 
-    private Property getPropertyObject(String type) {
+    private Property getPropertyObject(String type, String regex) {
 
         Property property = new Property();
         property.setType(type);
+        if (regex != null) {
+            property.setRegex(regex);
+        }
         return property;
     }
 
@@ -223,25 +226,25 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(), null));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
+                null));
 
         return meta;
     }

@@ -254,10 +254,13 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         }
     }
 
-    private Property getPropertyObject(String type) {
+    private Property getPropertyObject(String type, String regex) {
 
         Property property = new Property();
         property.setType(type);
+        if (regex != null) {
+            property.setRegex(regex);
+        }
         return property;
     }
 
@@ -267,19 +270,19 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
 
         return meta;
     }

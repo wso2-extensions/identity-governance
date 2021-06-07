@@ -147,10 +147,13 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         return null;
     }
 
-    private Property getPropertyObject(String type) {
+    private Property getPropertyObject(String type, String regex) {
 
         Property property = new Property();
         property.setType(type);
+        if (regex != null) {
+            property.setRegex(regex);
+        }
         return property;
     }
 
@@ -159,11 +162,11 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
         Map<String, Property> meta = new HashMap<>();
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
         return meta;
     }
 
