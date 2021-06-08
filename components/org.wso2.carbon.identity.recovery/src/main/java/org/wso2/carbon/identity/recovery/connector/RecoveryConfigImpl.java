@@ -368,7 +368,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
