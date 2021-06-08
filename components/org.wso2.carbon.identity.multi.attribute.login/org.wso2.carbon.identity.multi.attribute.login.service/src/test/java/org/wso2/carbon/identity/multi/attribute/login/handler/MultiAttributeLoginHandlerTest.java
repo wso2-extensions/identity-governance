@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
@@ -39,7 +39,7 @@ public class MultiAttributeLoginHandlerTest {
     @BeforeMethod
     public void setUp() {
 
-        initMocks(this);
+        openMocks(this);
         multiAttributeLoginHandler = new MultiAttributeLoginHandler();
     }
 

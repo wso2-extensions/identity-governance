@@ -18,7 +18,6 @@ package org.wso2.carbon.identity.governance.internal.service.impl.notification;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -47,10 +46,6 @@ import static org.testng.Assert.assertTrue;
 /**
  * Class contains test cases for DefaultNotificationChannelManager.
  */
-
-//@PrepareForTest({ IdentityUtil.class, IdentityTenantUtil.class, IdentityGovernanceUtil.class,
-//                  IdentityMgtServiceDataHolder.class })
-//@RunWith(MockitoJUnitRunner.class)
 public class DefaultNotificationChannelManagerTest {
 
     /**
@@ -73,16 +68,8 @@ public class DefaultNotificationChannelManagerTest {
     @Mock
     UserRealm userRealm;
 
-    //beforemethod
-
     @Mock
     IdentityMgtServiceDataHolder identityMgtServiceDataHolder;
-
-//    @ObjectFactory
-//    public IObjectFactory getObjectFactory() {
-//
-//        return new org.powermock.modules.testng.PowerMockObjectFactory();
-//    }
 
     private static final String SUCCESSFUL_CHANNEL_RESOLVE = "Successful channel resolve";
     private static final String ERROR_IN_CHANNEL_RESOLVE = "Error while resolving the channel";
@@ -254,11 +241,13 @@ public class DefaultNotificationChannelManagerTest {
      */
      private void mockSelfRegistrationConfigurations(String defaultNotificationChannel, boolean enableResolving) {
 
-         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL))
-                 .thenReturn(defaultNotificationChannel);
-         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))
-                 .thenReturn(Boolean.toString(enableResolving));
-     }
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL))
+                .thenReturn(defaultNotificationChannel);
+        mockedIdentityUtil.when(
+                () -> IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))
+                .thenReturn(Boolean.toString(enableResolving));
+    }
 
     /**
      * Mock userstore manager to get user claims.
@@ -268,15 +257,17 @@ public class DefaultNotificationChannelManagerTest {
      */
     private void mockUserstoreManager(HashMap<String, String> claimsMap) throws Exception {
 
-        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(Matchers.anyString())).thenReturn(-1234);
-
-        mockedIdentityMgtServiceDataHolder.when((MockedStatic.Verification) IdentityMgtServiceDataHolder.getInstance()).thenReturn(identityMgtServiceDataHolder);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(ArgumentMatchers.anyString())).thenReturn(
+                -1234);
+        mockedIdentityMgtServiceDataHolder.when(
+                (MockedStatic.Verification) IdentityMgtServiceDataHolder.getInstance())
+                .thenReturn(identityMgtServiceDataHolder);
         Mockito.when(identityMgtServiceDataHolder.getRealmService()).thenReturn(realmService);
         Mockito.when(realmService.getTenantUserRealm(ArgumentMatchers.anyInt())).thenReturn(userRealm);
         Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-        Mockito.when(userStoreManager.getUserClaimValues(ArgumentMatchers.anyString(), ArgumentMatchers.any(String[].class), ArgumentMatchers.isNull()))
-                .thenReturn(claimsMap);
-
+        Mockito.when(
+                userStoreManager.getUserClaimValues(ArgumentMatchers.anyString(), ArgumentMatchers.any(String[].class),
+                        ArgumentMatchers.isNull())).thenReturn(claimsMap);
     }
 
     /**

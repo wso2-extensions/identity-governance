@@ -18,11 +18,12 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ConsentInformationProviderTest {
 
@@ -36,14 +37,15 @@ public class ConsentInformationProviderTest {
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
-        ReceiptListResponse receiptListResponse = mock(ReceiptListResponse.class);
+        ReceiptListResponse receiptListResponse = new ReceiptListResponse("test1","test1",
+                "1",-1234,"test1","test1","test1");
         List<ReceiptListResponse> receiptListResponses = new ArrayList<>();
         receiptListResponses.add(receiptListResponse);
 
         ConsentManager consentManager = mock(ConsentManager.class);
-        when(consentManager.searchReceipts(eq(100), eq(0), anyString(), anyString(), anyString(), anyString()))
+        when(consentManager.searchReceipts(eq(100), eq(0), anyString(), anyString(), isNull(), anyString()))
                 .thenReturn(receiptListResponses);
-        when(consentManager.searchReceipts(eq(100), eq(100), anyString(), anyString(), anyString(), anyString()))
+        when(consentManager.searchReceipts(eq(100), eq(100), anyString(), anyString(), isNull(), anyString()))
                 .thenReturn(new ArrayList<ReceiptListResponse>());
         Receipt mockReceipt = mock(Receipt.class);
         when(mockReceipt.getPiiPrincipalId()).thenReturn(USERNAME_CLAIM_VALUE);
@@ -78,9 +80,9 @@ public class ConsentInformationProviderTest {
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         ConsentManager consentManager = mock(ConsentManager.class);
-        when(consentManager.searchReceipts(eq(100), eq(00), anyString(), anyString(), anyString(), anyString()))
+        when(consentManager.searchReceipts(eq(100), eq(00), anyString(), anyString(), isNull(), anyString()))
                 .thenThrow(new ConsentManagementException());
-        when(consentManager.searchReceipts(eq(100), eq(100), anyString(), anyString(), anyString(), anyString()))
+        when(consentManager.searchReceipts(eq(100), eq(100), anyString(), anyString(), isNull(), anyString()))
                 .thenReturn(new ArrayList<ReceiptListResponse>());
         Receipt mockReceipt = mock(Receipt.class);
         when(mockReceipt.getPiiPrincipalId()).thenReturn(USERNAME_CLAIM_VALUE);

@@ -18,14 +18,16 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.axiom.om.OMElement;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
-import org.wso2.carbon.identity.testutil.powermock.PowerMockIdentityBaseTest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,20 +35,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import javax.xml.namespace.QName;
 
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
  * This class does unit test coverage for UserClaimUpdateConfigImpl class.
  */
-@PrepareForTest({IdentityConfigParser.class})
-public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
+public class UserClaimUpdateConfigImplTest {
 
     private UserClaimUpdateConfigImpl userClaimUpdateConfig;
     private static final String CONNECTOR_NAME = "user-claim-update";
@@ -62,10 +61,24 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
 
+    private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
+
     @BeforeTest
     public void init() {
 
         userClaimUpdateConfig = new UserClaimUpdateConfigImpl();
+    }
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedIdentityConfigParser = Mockito.mockStatic(IdentityConfigParser.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityConfigParser.close();
     }
 
     @Test
@@ -157,9 +170,8 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
 
-        IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
-        mockStatic(IdentityConfigParser.class);
-        when(IdentityConfigParser.getInstance()).thenReturn(mockConfigParser);
+        IdentityConfigParser mockConfigParser = Mockito.mock(IdentityConfigParser.class);
+        mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
         OMElement mockOMElement = mock(OMElement.class);
         when(mockConfigParser.getConfigElement(USER_CLAIM_UPDATE_ELEMENT)).thenReturn(mockOMElement);
         ArrayList<OMElement> claimsList = new ArrayList<>();
@@ -199,8 +211,7 @@ public class UserClaimUpdateConfigImplTest extends PowerMockIdentityBaseTest {
                 .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,"testproperty"};
 
         IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
-        mockStatic(IdentityConfigParser.class);
-        when(IdentityConfigParser.getInstance()).thenReturn(mockConfigParser);
+        mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
         Map<String, String> defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(propertyNames,
                 TENANT_DOMAIN);
         assertEquals(defaultPropertyValues.size(), propertyNames.length - 1, "Maps are not equal as" +

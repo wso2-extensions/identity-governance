@@ -19,21 +19,9 @@
 package org.wso2.carbon.identity.user.export.core.internal.service.impl;
 
 import org.testng.Assert;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.tenant.TenantManager;
-import org.wso2.carbon.identity.user.export.core.UserExportException;
 
 import java.util.Map;
-
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 public class UserInformationServiceImplTest {
 
@@ -52,11 +40,5 @@ public class UserInformationServiceImplTest {
                 Assert.fail();
             }
         }
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

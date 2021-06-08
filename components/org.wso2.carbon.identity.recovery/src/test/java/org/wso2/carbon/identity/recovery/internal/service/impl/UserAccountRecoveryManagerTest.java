@@ -15,25 +15,26 @@
  */
 package org.wso2.carbon.identity.recovery.internal.service.impl;
 
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
 import org.apache.commons.lang.StringUtils;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -50,17 +51,18 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.testng.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Class which contains the test cases for UserAccountRecoveryManager.
  */
-@PrepareForTest({IdentityTenantUtil.class, IdentityRecoveryServiceDataHolder.class, IdentityUtil.class,
-        Utils.class, JDBCRecoveryDataStore.class})
 public class UserAccountRecoveryManagerTest {
 
     @InjectMocks
@@ -87,20 +89,40 @@ public class UserAccountRecoveryManagerTest {
     @Mock
     IdentityEventService identityEventService;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
     /**
      * User claims map.
      */
     private HashMap<String, String> userClaims;
+    private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<Utils> mockedUtils;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
+    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedJDBCRecoveryDataStore = Mockito.mockStatic(JDBCRecoveryDataStore.class);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
+        mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedJDBCRecoveryDataStore.close();
+        mockedIdentityUtil.close();
+        mockedUtils.close();
+        mockedIdentityTenantUtil.close();
+        mockedIdentityRecoveryServiceDataHolder.close();
+    }
 
     @BeforeTest
     private void setup() {
 
+        MockitoAnnotations.openMocks(this);
         userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         userClaims = buildUserClaimsMap();
     }
@@ -153,7 +175,7 @@ public class UserAccountRecoveryManagerTest {
         userClaims.remove(UserProfile.EMAIL_VERIFIED.key);
         userClaims.remove(UserProfile.PHONE_VERIFIED.key);
         when(userStoreManager
-                .getUserClaimValues(Matchers.anyString(), Matchers.any(String[].class), Matchers.anyString()))
+                .getUserClaimValues(anyString(), ArgumentMatchers.any(String[].class), anyString()))
                 .thenReturn(userClaims);
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
@@ -177,7 +199,7 @@ public class UserAccountRecoveryManagerTest {
     private void testGetSelfSignUpUsers() throws Exception {
 
         when(userStoreManager
-                .getUserClaimValues(Matchers.anyString(), Matchers.any(String[].class), Matchers.anyString()))
+                .getUserClaimValues(anyString(), ArgumentMatchers.any(String[].class), isNull()))
                 .thenReturn(userClaims);
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
@@ -245,6 +267,11 @@ public class UserAccountRecoveryManagerTest {
         try {
             mockGetUserList(new String[]{});
             mockClaimMetadataManagementService();
+            mockedUtils.when(
+                    () -> Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND,
+                            null))
+                    .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND.getCode(), ""));
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -261,10 +288,9 @@ public class UserAccountRecoveryManagerTest {
      */
     private void mockJDBCRecoveryDataStore() throws IdentityRecoveryException {
 
-        mockStatic(JDBCRecoveryDataStore.class);
-        when(JDBCRecoveryDataStore.getInstance()).thenReturn(userRecoveryDataStore);
-        doNothing().when(userRecoveryDataStore).invalidate(Matchers.any(User.class));
-        doNothing().when(userRecoveryDataStore).store(Matchers.any(UserRecoveryData.class));
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+        doNothing().when(userRecoveryDataStore).invalidate(ArgumentMatchers.any(User.class));
+        doNothing().when(userRecoveryDataStore).store(ArgumentMatchers.any(UserRecoveryData.class));
     }
 
     /**
@@ -275,13 +301,11 @@ public class UserAccountRecoveryManagerTest {
      */
     private void mockRecoveryConfigs(boolean isNotificationInternallyManaged) throws Exception {
 
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.extractDomainFromName(Matchers.anyString())).thenReturn("PRIMARY");
-        when(IdentityUtil.getPrimaryDomainName()).thenReturn("PRIMARY");
-        mockStatic(Utils.class);
-        when(Utils.isAccountDisabled(Matchers.any(User.class))).thenReturn(false);
-        when(Utils.isAccountLocked(Matchers.any(User.class))).thenReturn(false);
-        when(Utils.isNotificationsInternallyManaged(Matchers.anyString(), Matchers.anyMap()))
+        mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName(anyString())).thenReturn("PRIMARY");
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
+        mockedUtils.when(() -> Utils.isAccountDisabled(ArgumentMatchers.any(User.class))).thenReturn(false);
+        mockedUtils.when(() -> Utils.isAccountLocked(ArgumentMatchers.any(User.class))).thenReturn(false);
+        mockedUtils.when(() -> Utils.isNotificationsInternallyManaged(anyString(), isNull()))
                 .thenReturn(isNotificationInternallyManaged);
     }
 
@@ -317,7 +341,7 @@ public class UserAccountRecoveryManagerTest {
         String testUsername3 = "sominda3";
 
         mockUserstoreManager();
-        when(userStoreManager.getUserList(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
+        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
                 .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername3});
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -336,7 +360,7 @@ public class UserAccountRecoveryManagerTest {
         String testUsername3 = "sominda3";
 
         mockUserstoreManager();
-        when(userStoreManager.getUserList(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
+        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
                 .thenReturn(new String[]{testUsername1, testUsername2, testUsername3})
                 .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername1})
                 .thenReturn(new String[]{testUsername1});
@@ -365,6 +389,17 @@ public class UserAccountRecoveryManagerTest {
 
         // Test no claims provided scenario.
         try {
+            mockedUtils.when(() -> Utils.prependOperationScenarioToErrorCode(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
+                    IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY))
+                    .thenReturn(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode());
+            mockedUtils.when(() -> Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getMessage(),
+                    null)).thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
+                    ""));
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(new HashMap<String, String>(), MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             assertNull(username, "UserAccountRecoveryManager: No claims have provided to retrieve the user : ");
@@ -387,6 +422,10 @@ public class UserAccountRecoveryManagerTest {
 
         mockGetUserList(new String[]{"Sominda1", "Sominda2"});
         try {
+            mockedUtils.when(() -> Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
+                    .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(), ""));
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "
@@ -407,7 +446,7 @@ public class UserAccountRecoveryManagerTest {
     private void mockGetUserList(String[] matchedUsersForGivenClaim) throws Exception {
 
         mockUserstoreManager();
-        when(userStoreManager.getUserList(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
+        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
                 .thenReturn(matchedUsersForGivenClaim);
     }
 
@@ -419,13 +458,12 @@ public class UserAccountRecoveryManagerTest {
     private void mockUserstoreManager() throws Exception {
 
         // Mock getTenantId.
-        mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(Matchers.anyString())).thenReturn(-1234);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
         // Get UserStoreManager.
-        mockStatic(IdentityRecoveryServiceDataHolder.class);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
+                identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
-        when(realmService.getTenantUserRealm(Matchers.anyInt())).thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(ArgumentMatchers.anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
     }
 
@@ -434,20 +472,20 @@ public class UserAccountRecoveryManagerTest {
         User user = new User();
         user.setUserName(UserProfile.USERNAME.value);
         user.setUserStoreDomain("PRIMARY");
-        when(Utils.buildUser(Matchers.anyString(), Matchers.anyString())).thenReturn(user);
+        when(Utils.buildUser(anyString(), anyString())).thenReturn(user);
     }
 
     private void mockIdentityEventService() {
 
-        mockStatic(IdentityRecoveryServiceDataHolder.class);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
+                identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
     }
 
     private void mockClaimMetadataManagementService() {
 
-        mockStatic(IdentityRecoveryServiceDataHolder.class);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
+                identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
                 .thenReturn(claimMetadataManagementService);
     }

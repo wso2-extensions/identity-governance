@@ -39,8 +39,6 @@ import java.util.Map;
 import static org.mockito.Mockito.mock;
 import static org.testng.Assert.assertEquals;
 
-//@PrepareForTest({IdentityUtil.class, UserCoreUtil.class, PrivilegedCarbonContext.class})
-//@PowerMockIgnore({"javax.net.*", "javax.security.*", "javax.crypto.*", "javax.xml.*", "javax.management.*"})
 public class InMemoryIdentityDataStoreTest {
 
     @Mock
@@ -57,11 +55,6 @@ public class InMemoryIdentityDataStoreTest {
 
     @Mock
     PrivilegedCarbonContext privilegedCarbonContext;
-
-//    @ObjectFactory
-//    public IObjectFactory getObjectFactory() {
-//        return new org.powermock.modules.testng.PowerMockObjectFactory();
-//    }
 
     @Test(testName = "testStore", description = "Test whether the map in UserIdentityClaim object containing " +
             "identity claims gets modified after this method is executed.")

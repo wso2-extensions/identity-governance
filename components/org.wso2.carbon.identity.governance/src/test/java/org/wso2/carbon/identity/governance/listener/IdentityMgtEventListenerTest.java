@@ -46,9 +46,6 @@ import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-//import static org.powermock.api.mockito.PowerMockito.doReturn;
-//import static org.powermock.api.mockito.PowerMockito.mock;
-
 /**
  * Test class for IdentityMgtEventListener.
  */
@@ -77,11 +74,6 @@ public class IdentityMgtEventListenerTest {
     @InjectMocks
     @Spy
     IdentityMgtEventListener identityMgtEventListener;
-
-//    @ObjectFactory
-//    public IObjectFactory getObjectFactory() {
-//        return new org.powermock.modules.testng.PowerMockObjectFactory();
-//    }
 
     @BeforeTest
     public void setUp() throws Exception {

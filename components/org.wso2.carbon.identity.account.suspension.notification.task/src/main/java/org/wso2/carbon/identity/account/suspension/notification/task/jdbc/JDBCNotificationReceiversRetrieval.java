@@ -38,7 +38,6 @@ import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.DatabaseUtil;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,6 +48,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 
 public class JDBCNotificationReceiversRetrieval implements NotificationReceiversRetrieval {
 
@@ -166,7 +166,8 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
         //if primary user store, DB connection can be same as realm data source.
         if (dbConnection == null && realmConfiguration.isPrimary()) {
             dbConnection = IdentityDatabaseUtil.getUserDBConnection();
-        } else if (dbConnection == null) {
+        }
+        else if (dbConnection == null) {
             throw new UserStoreException("Could not create a database connection to " + realmConfiguration
                     .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
         } else {

@@ -43,10 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.doAnswer;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class IdentityStoreEventListenerTest {
 
@@ -88,7 +89,6 @@ public class IdentityStoreEventListenerTest {
     public void testGetExecutionOrderId() {
         int orderId = identityStoreEventListener.getExecutionOrderId();
         assertEquals(orderId, 97, "OrderId is not equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
-        //todo change message & test case issue
 
         Mockito.when(identityStoreEventListener.getOrderId()).thenReturn(0);
         orderId = identityStoreEventListener.getExecutionOrderId();
@@ -122,7 +122,7 @@ public class IdentityStoreEventListenerTest {
                                  String prof) throws Exception {
         userStoreManager = mock(UserStoreManager.class);
         Mockito.when(userStoreManager.getTenantId()).thenReturn(1001);
-        Assert.assertTrue(identityStoreEventListener.doPreAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
+        assertTrue(identityStoreEventListener.doPreAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
     }
 
     @Test(dataProvider = "addClaimHandler")
@@ -132,7 +132,7 @@ public class IdentityStoreEventListenerTest {
                                   Map<String, String> claims,
                                   String prof) throws Exception {
         TestUtils.startTenantFlow("carbon.super");
-        Assert.assertTrue(identityStoreEventListener.doPostAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
+        assertTrue(identityStoreEventListener.doPostAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
     }
 
     @Test(dataProvider = "addClaimHandler")
@@ -302,7 +302,7 @@ public class IdentityStoreEventListenerTest {
         Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
         Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(userStore);
 
-        Assert.assertTrue(identityStoreEventListener.doPreGetUserList(claimUri, claimValue, userList, userStoreManager));
+        assertTrue(identityStoreEventListener.doPreGetUserList(claimUri, claimValue, userList, userStoreManager));
     }
 
     @Test
