@@ -39,7 +39,10 @@ public interface IdentityConnectorConfig extends ConnectorConfig {
         return null;
     }
 
-    //Override this method to set meta data properties.
+    /**
+     * Override this method to set meta data properties.
+     * @return Map<String, Property>
+     */
     default Map<String, Property> getMetaData() {
 
         return null;
