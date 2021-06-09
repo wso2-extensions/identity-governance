@@ -239,7 +239,7 @@ public class DefaultNotificationChannelManagerTest {
      * @param defaultNotificationChannel Default notification channel
      * @param enableResolving            Enable channel resolving
      */
-     private void mockSelfRegistrationConfigurations(String defaultNotificationChannel, boolean enableResolving) {
+    private void mockSelfRegistrationConfigurations(String defaultNotificationChannel, boolean enableResolving) {
 
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                 IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL))
@@ -257,8 +257,8 @@ public class DefaultNotificationChannelManagerTest {
      */
     private void mockUserstoreManager(HashMap<String, String> claimsMap) throws Exception {
 
-        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(ArgumentMatchers.anyString())).thenReturn(
-                -1234);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(ArgumentMatchers.anyString()))
+                .thenReturn(-1234);
         mockedIdentityMgtServiceDataHolder.when(
                 (MockedStatic.Verification) IdentityMgtServiceDataHolder.getInstance())
                 .thenReturn(identityMgtServiceDataHolder);

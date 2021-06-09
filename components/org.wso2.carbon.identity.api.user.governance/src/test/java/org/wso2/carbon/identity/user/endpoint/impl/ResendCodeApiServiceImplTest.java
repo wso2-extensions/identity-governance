@@ -102,8 +102,7 @@ public class ResendCodeApiServiceImplTest {
 
         Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
-                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(
-                new IdentityRecoveryException("Recovery Exception"));
+                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
     }
 
@@ -112,8 +111,7 @@ public class ResendCodeApiServiceImplTest {
 
         Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
-                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(
-                new IdentityRecoveryClientException("Recovery Exception"));
+                Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
     }
 

@@ -166,8 +166,7 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
         //if primary user store, DB connection can be same as realm data source.
         if (dbConnection == null && realmConfiguration.isPrimary()) {
             dbConnection = IdentityDatabaseUtil.getUserDBConnection();
-        }
-        else if (dbConnection == null) {
+        } else if (dbConnection == null) {
             throw new UserStoreException("Could not create a database connection to " + realmConfiguration
                     .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
         } else {

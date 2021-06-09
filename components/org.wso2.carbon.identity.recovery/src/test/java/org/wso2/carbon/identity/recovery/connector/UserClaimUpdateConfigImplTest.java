@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import javax.xml.namespace.QName;
 
 import static org.mockito.Mockito.mock;
@@ -60,7 +61,6 @@ public class UserClaimUpdateConfigImplTest {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
-
     private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
 
     @BeforeTest
