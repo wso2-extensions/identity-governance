@@ -18,43 +18,46 @@
 
 package org.wso2.carbon.identity.user.endpoint.impl;
 
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.testng.Assert;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
 
-@PrepareForTest({Utils.class})
-public class PiInfoApiServiceImplTest extends PowerMockTestCase {
+public class PiInfoApiServiceImplTest {
+
+    private MockedStatic<Utils> mockedUtils;
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedUtils = Mockito.mockStatic(Utils.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedUtils.close();
+    }
 
     @Test
     public void testGetUserById() throws Exception {
 
-        RealmService realmService = mock(RealmService.class);
-        TenantManager tenantManager = mock(TenantManager.class);
-        when(tenantManager.getTenantId(anyString())).thenReturn(-1234);
-        when(realmService.getTenantManager()).thenReturn(tenantManager);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        Mockito.when(tenantManager.getTenantId(anyString())).thenReturn(-1234);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
 
         PiInfoApiServiceImpl piInfoApiService = new PiInfoApiServiceImpl();
-        mockStatic(Utils.class);
-        when(Utils.getRealmService()).thenReturn(realmService);
-        when(Utils.getUserInformationService()).thenReturn(new MockUserInformationService());
+        mockedUtils.when(Utils::getRealmService).thenReturn(realmService);
+        mockedUtils.when(Utils::getUserInformationService).thenReturn(new MockUserInformationService());
 
         Assert.assertEquals(piInfoApiService.getUserById("ZHVtbXlVc2Vy").getStatus(), 200);
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

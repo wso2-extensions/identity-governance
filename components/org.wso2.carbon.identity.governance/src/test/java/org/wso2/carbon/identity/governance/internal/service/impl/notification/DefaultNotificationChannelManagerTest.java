@@ -15,26 +15,20 @@
  */
 package org.wso2.carbon.identity.governance.internal.service.impl.notification;
 
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertEquals;
-
 import org.apache.commons.lang.StringUtils;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
-
+import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
@@ -45,13 +39,13 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 /**
  * Class contains test cases for DefaultNotificationChannelManager.
  */
-
-@PrepareForTest({ IdentityUtil.class, IdentityTenantUtil.class, IdentityGovernanceUtil.class,
-                  IdentityMgtServiceDataHolder.class })
-
 public class DefaultNotificationChannelManagerTest {
 
     /**
@@ -77,15 +71,28 @@ public class DefaultNotificationChannelManagerTest {
     @Mock
     IdentityMgtServiceDataHolder identityMgtServiceDataHolder;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
     private static final String SUCCESSFUL_CHANNEL_RESOLVE = "Successful channel resolve";
     private static final String ERROR_IN_CHANNEL_RESOLVE = "Error while resolving the channel";
     private static final String CHANNEL_RESOLVING_NOT_ENABLED = "Channel resolving not enabled";
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<IdentityMgtServiceDataHolder> mockedIdentityMgtServiceDataHolder;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedIdentityMgtServiceDataHolder = Mockito.mockStatic(IdentityMgtServiceDataHolder.class);
+        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedIdentityMgtServiceDataHolder.close();
+        mockedIdentityTenantUtil.close();
+    }
 
     /**
      * Initializing variables.
@@ -93,6 +100,7 @@ public class DefaultNotificationChannelManagerTest {
     @BeforeTest
     public void setup() {
 
+        MockitoAnnotations.openMocks(this);
         defaultNotificationChannelManager = new DefaultNotificationChannelManager();
 
         // Get the claims map with the corresponding channel claims and values.
@@ -199,9 +207,8 @@ public class DefaultNotificationChannelManagerTest {
 
         // Mock classes and configurations.
         mockUserstoreManager(channelClaims);
-        mockSelfRegistrationConfigurations(defaultNotificationChannel, true);
+        mockSelfRegistrationConfigurations(defaultNotificationChannel,true);
 
-        // Convert the empty strings to null objects, since null objects cannot be passed as method arguments.
         if (StringUtils.isEmpty(expectedChannel)) {
             expectedChannel = null;
         }
@@ -209,6 +216,7 @@ public class DefaultNotificationChannelManagerTest {
             String resolvedChannel = defaultNotificationChannelManager
                     .resolveCommunicationChannel(testUser, testTenantDomain, testUserstoreDomain);
             assertEquals(resolvedChannel, expectedChannel, scenario);
+
         } else if (ERROR_IN_CHANNEL_RESOLVE.equals(scenarioType)) {
             try {
                 String resolvedChannel = defaultNotificationChannelManager
@@ -233,10 +241,11 @@ public class DefaultNotificationChannelManagerTest {
      */
     private void mockSelfRegistrationConfigurations(String defaultNotificationChannel, boolean enableResolving) {
 
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.getProperty(IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL))
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                IdentityMgtConstants.NotificationChannelConstants.DEFAULT_NOTIFICATION_CHANNEL))
                 .thenReturn(defaultNotificationChannel);
-        when(IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))
+        mockedIdentityUtil.when(
+                () -> IdentityUtil.getProperty(IdentityMgtConstants.PropertyConfig.RESOLVE_NOTIFICATION_CHANNELS))
                 .thenReturn(Boolean.toString(enableResolving));
     }
 
@@ -248,18 +257,17 @@ public class DefaultNotificationChannelManagerTest {
      */
     private void mockUserstoreManager(HashMap<String, String> claimsMap) throws Exception {
 
-        mockStatic(IdentityTenantUtil.class);
-        when(IdentityTenantUtil.getTenantId(Matchers.anyString())).thenReturn(-1234);
-
-        mockStatic(IdentityMgtServiceDataHolder.class);
-        when(IdentityMgtServiceDataHolder.getInstance()).thenReturn(identityMgtServiceDataHolder);
-        when(identityMgtServiceDataHolder.getRealmService()).thenReturn(realmService);
-        when(realmService.getTenantUserRealm(Matchers.anyInt())).thenReturn(userRealm);
-        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-        when(userStoreManager
-                .getUserClaimValues(Matchers.anyString(), Matchers.any(String[].class), Matchers.anyString()))
-                .thenReturn(claimsMap);
-
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(ArgumentMatchers.anyString()))
+                .thenReturn(-1234);
+        mockedIdentityMgtServiceDataHolder.when(
+                (MockedStatic.Verification) IdentityMgtServiceDataHolder.getInstance())
+                .thenReturn(identityMgtServiceDataHolder);
+        Mockito.when(identityMgtServiceDataHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantUserRealm(ArgumentMatchers.anyInt())).thenReturn(userRealm);
+        Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(
+                userStoreManager.getUserClaimValues(ArgumentMatchers.anyString(), ArgumentMatchers.any(String[].class),
+                        ArgumentMatchers.isNull())).thenReturn(claimsMap);
     }
 
     /**

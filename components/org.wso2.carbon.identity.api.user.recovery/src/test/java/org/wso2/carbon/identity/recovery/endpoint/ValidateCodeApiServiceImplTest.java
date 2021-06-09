@@ -18,9 +18,11 @@ package org.wso2.carbon.identity.recovery.endpoint;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.CodeValidationRequestDTO;
@@ -31,14 +33,11 @@ import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryMa
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  * This class covers unit tests for ValidateCodeApiServiceImpl.java
  */
-@PrepareForTest({RecoveryUtil.class})
 public class ValidateCodeApiServiceImplTest {
 
     @Mock
@@ -47,10 +46,26 @@ public class ValidateCodeApiServiceImplTest {
     @InjectMocks
     ValidateCodeApiServiceImpl validateCodeApiService;
 
+    private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
+
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedRecoveryUtil.close();
+    }
+
     @Test
     public void testValidateCodePost() throws Exception {
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getNotificationBasedPwdRecoveryManager()).thenReturn(notificationPasswordRecoveryManager);
+
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
+                notificationPasswordRecoveryManager);
         assertEquals(validateCodeApiService.validateCodePost(buildCodeValidationRequestDTO()).getStatus(), 202);
     }
 
@@ -71,11 +86,5 @@ public class ValidateCodeApiServiceImplTest {
         List<PropertyDTO> propertyDTOList = new ArrayList<>();
         propertyDTOList.add(propertyDTO);
         return propertyDTOList;
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

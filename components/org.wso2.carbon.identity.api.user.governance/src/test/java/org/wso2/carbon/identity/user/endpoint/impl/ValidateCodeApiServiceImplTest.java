@@ -19,10 +19,11 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -35,18 +36,16 @@ import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.testng.Assert.assertEquals;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.anyMap;
-
 
 /**
  * This class contains Unit tests for ValidateCodeApiServiceImpl.java
  */
-@PrepareForTest(Utils.class)
-public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
+public class ValidateCodeApiServiceImplTest {
+
+    private MockedStatic<Utils> mockedUtils;
 
     @Mock
     private UserSelfRegistrationManager userSelfRegistrationManager;
@@ -54,42 +53,41 @@ public class ValidateCodeApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private ValidateCodeApiServiceImpl validateCodeApiServiceImpl;
 
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedUtils.close();
+    }
+
     @Test
     public void testValidateCodePost() {
 
-        mockClasses();
         assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
         assertEquals(validateCodeApiServiceImpl.validateCodePost(null).getStatus(), 202);
-    }
-
-    private void mockClasses() {
-
-        mockStatic(Utils.class);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
     }
 
     @Test
     public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(), anyMap()))
-                .thenThrow(new IdentityRecoveryException("Recovery Exception"));
+        Mockito.when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(),
+                anyMap())).thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
     }
 
     @Test
     public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(), anyMap()))
-                .thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
+        Mockito.when(userSelfRegistrationManager.getConfirmedSelfRegisteredUser(anyString(), anyString(), anyString(),
+                anyMap())).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(validateCodeApiServiceImpl.validateCodePost(createCodeValidationRequestDTO()).getStatus(), 202);
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
     private CodeValidationRequestDTO createCodeValidationRequestDTO() {

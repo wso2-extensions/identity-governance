@@ -20,10 +20,12 @@ package org.wso2.carbon.identity.tenant.resource.manager;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
@@ -45,12 +47,6 @@ import org.wso2.carbon.identity.tenant.resource.manager.core.ResourceManagerImpl
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils;
 
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -58,13 +54,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@PrepareForTest({
-                        TenantResourceManagerDataHolder.class, PrivilegedCarbonContext.class, ResourceUtils.class,
-                        EventPublisherServiceValueHolder.class, EventPublisherServiceValueHolder.class,
-                        IdentityTenantUtil.class
-                })
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 
-public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockTestCase {
+public class TenantAwareAxis2ConfigurationContextObserverTest {
 
     private static final String EMAIL_PUBLISHER = "EmailPublisher";
     private static final String SAMPLE_RESOURCE_FILE_TXT = "sample-resource-file.txt";
@@ -72,6 +66,11 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
     private static final String TENANT_SPECIFIC_EMAIL_PUBLISHER = "TENANT_SPECIFIC_EMAIL_PUBLISHER";
     private static final int TENANT_ID = 1;
     private CustomCarbonEventPublisherService carbonEventPublisherService = new CustomCarbonEventPublisherService();
+    private MockedStatic<TenantResourceManagerDataHolder> mockedTenantResourceManagerDataHolder;
+    private MockedStatic<ResourceUtils> mockedResourceUtils;
+    private MockedStatic<EventPublisherServiceValueHolder> mockedEventPublisherServiceValueHolder;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
+    private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
 
     @Mock
     TenantResourceManagerDataHolder tenantResourceManagerDataHolder;
@@ -87,24 +86,35 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
     @BeforeMethod
     public void setUp() throws Exception {
 
+        MockitoAnnotations.openMocks(this);
         String carbonHome = Paths.get(System.getProperty("user.dir"), "target", "test-classes").toString();
         System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
         System.setProperty(CarbonBaseConstants.CARBON_CONFIG_DIR_PATH, Paths.get(carbonHome, "conf").toString());
-        mockStatic(TenantResourceManagerDataHolder.class);
-        mockStatic(ResourceUtils.class);
-        mockStatic(EventPublisherServiceValueHolder.class);
-        mockStatic(EventPublisherServiceValueHolder.class);
-        mockStatic(IdentityTenantUtil.class);
+        mockedTenantResourceManagerDataHolder = Mockito.mockStatic(TenantResourceManagerDataHolder.class);
+        mockedResourceUtils = Mockito.mockStatic(ResourceUtils.class);
+        mockedEventPublisherServiceValueHolder = Mockito.mockStatic(EventPublisherServiceValueHolder.class);
+        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
+        mockedPrivilegedCarbonContext = Mockito.mockStatic(PrivilegedCarbonContext.class);
         prepareConfigs();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedTenantResourceManagerDataHolder.close();
+        mockedResourceUtils.close();
+        mockedEventPublisherServiceValueHolder.close();
+        mockedIdentityTenantUtil.close();
+        mockedPrivilegedCarbonContext.close();
     }
 
     private void mockCarbonContext() {
 
-        mockStatic(PrivilegedCarbonContext.class);
         PrivilegedCarbonContext privilegedCarbonContext = mock(PrivilegedCarbonContext.class);
-        when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
-        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
-        when(privilegedCarbonContext.getTenantId()).thenReturn(TENANT_ID);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(privilegedCarbonContext);
+        mockedPrivilegedCarbonContext.when(privilegedCarbonContext::getTenantDomain).thenReturn(TENANT_DOMAIN);
+        mockedPrivilegedCarbonContext.when(privilegedCarbonContext::getTenantId).thenReturn(TENANT_ID);
     }
 
     class CustomCarbonEventPublisherService extends CarbonEventPublisherService {
@@ -139,45 +149,48 @@ public class TenantAwareAxis2ConfigurationContextObserverTest extends PowerMockT
     private void prepareConfigs() throws Exception {
 
         mockCarbonContext();
-        when(TenantResourceManagerDataHolder.getInstance()).thenReturn(tenantResourceManagerDataHolder);
-        when(IdentityTenantUtil.getTenantDomain(anyInt())).thenReturn(TENANT_DOMAIN);
+        mockedTenantResourceManagerDataHolder.when(TenantResourceManagerDataHolder::getInstance)
+                .thenReturn(tenantResourceManagerDataHolder);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantDomain(anyInt())).thenReturn(TENANT_DOMAIN);
         ResourceFile resourceFile = new ResourceFile();
         resourceFile.setName(EMAIL_PUBLISHER);
         List<ResourceFile> resourceFiles = new ArrayList<>();
         resourceFiles.add(resourceFile);
 
         ResourceManager resourceManager = new ResourceManagerImpl();
-        when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
+        Mockito.when(tenantResourceManagerDataHolder.getResourceManager()).thenReturn(resourceManager);
 
-        when(tenantResourceManagerDataHolder.getCarbonEventPublisherService()).thenReturn(carbonEventPublisherService);
-        when(tenantResourceManagerDataHolder.getCarbonEventStreamService()).thenReturn(eventStreamService);
-        when(tenantResourceManagerDataHolder.getConfigurationManager()).thenReturn(configurationManager);
-        when(tenantResourceManagerDataHolder.getCarbonEventPublisherService()).thenReturn(carbonEventPublisherService);
+        Mockito.when(tenantResourceManagerDataHolder.getCarbonEventPublisherService())
+                .thenReturn(carbonEventPublisherService);
+        Mockito.when(tenantResourceManagerDataHolder.getCarbonEventStreamService()).thenReturn(eventStreamService);
+        Mockito.when(tenantResourceManagerDataHolder.getConfigurationManager()).thenReturn(configurationManager);
+        Mockito.when(tenantResourceManagerDataHolder.getCarbonEventPublisherService())
+                .thenReturn(carbonEventPublisherService);
 
         File sampleResourceFile = new File(getSamplesPath());
         InputStream fileStream = FileUtils.openInputStream(sampleResourceFile);
-        when(configurationManager.getFileById(anyString(), anyString(), anyString())).thenReturn(fileStream);
+        Mockito.when(configurationManager.getFileById(anyString(), anyString(), anyString())).thenReturn(fileStream);
         Resources resources = new Resources();
         Resource resource = new Resource();
         resource.setFiles(resourceFiles);
         List<Resource> resourceList = new ArrayList<Resource>();
         resourceList.add(resource);
         resources.setResources(resourceList);
-        when(configurationManager.getResourcesByType(anyString())).thenReturn(resources);
-        when(eventStreamService.getStreamDefinition(anyString(), anyString())).thenReturn(streamDefinition);
+        Mockito.when(configurationManager.getResourcesByType(anyString())).thenReturn(resources);
+        Mockito.when(eventStreamService.getStreamDefinition(anyString(), anyString())).thenReturn(streamDefinition);
         List<EventStreamConfiguration> eventStreamConfigurationsList = new ArrayList<>();
         EventStreamConfiguration eventStreamConfiguration = new EventStreamConfiguration();
         eventStreamConfiguration.setFileName(EMAIL_PUBLISHER);
-        when(TenantResourceManagerDataHolder.getInstance().getCarbonEventStreamService()
-                .getAllEventStreamConfigurations()).thenReturn(eventStreamConfigurationsList);
+        mockedTenantResourceManagerDataHolder.when(() -> TenantResourceManagerDataHolder.getInstance()
+                .getCarbonEventStreamService().getAllEventStreamConfigurations()).thenReturn(eventStreamConfigurationsList);
     }
 
     @Test
     public void testCreatingConfigurationContext() {
 
         new TenantAwareAxis2ConfigurationContextObserver().creatingConfigurationContext(TENANT_ID);
-        Assert.assertNotNull(TENANT_SPECIFIC_EMAIL_PUBLISHER,
-                carbonEventPublisherService.getEventPublisherConfigurationFromMap());
+        Assert.assertNotNull(carbonEventPublisherService.getEventPublisherConfigurationFromMap(),
+                TENANT_SPECIFIC_EMAIL_PUBLISHER);
     }
 
     private static String getSamplesPath() {

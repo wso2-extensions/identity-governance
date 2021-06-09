@@ -18,17 +18,18 @@
 
 package org.wso2.carbon.identity.user.rename.core.internal.service.impl;
 
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.testutil.powermock.PowerMockIdentityBaseTest;
 import org.wso2.carbon.identity.user.rename.core.dto.StatusDTO;
 import org.wso2.carbon.identity.user.rename.core.dto.UserDTO;
 import org.wso2.carbon.identity.user.rename.core.exception.UsernameUpdateException;
-import org.wso2.carbon.identity.user.rename.core.internal.service.impl.ForgetMeToolExecutor;
-import org.wso2.carbon.identity.user.rename.core.internal.service.impl.UsernameUpdateServiceImpl;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -38,18 +39,29 @@ import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.wso2.carbon.identity.user.rename.core.constants.UsernameUpdateServiceConstants.Status.STATUS_SUCCESS;
 
-@PrepareForTest({ForgetMeToolExecutor.class})
-@PowerMockIgnore({"org.apache.log4j.*"})
-public class UsernameUpdateServiceImplTest extends PowerMockIdentityBaseTest {
+public class UsernameUpdateServiceImplTest {
+
+    private MockedStatic<ForgetMeToolExecutor> mockedForgetMeToolExecutor;
+
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedForgetMeToolExecutor = Mockito.mockStatic(ForgetMeToolExecutor.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedForgetMeToolExecutor.close();
+    }
 
     @DataProvider
     public Object[][] getValidUsers() {
@@ -91,9 +103,9 @@ public class UsernameUpdateServiceImplTest extends PowerMockIdentityBaseTest {
         when(userStoreManager.isExistingUser(UserCoreUtil.addDomainToName(userDTO.getExistingUsername(), userDTO.getUserStoreDomain())))
                 .thenReturn(true);
 
-        mockStatic(ForgetMeToolExecutor.class);
-        doNothing().when(ForgetMeToolExecutor.class, "run", userDTO.getExistingUsername(), userDTO.getNewUsername()
-                , userDTO.getUserStoreDomain(), userDTO.getTenantDomain(), MultitenantConstants.SUPER_TENANT_ID);
+        mockedForgetMeToolExecutor.when(() -> ForgetMeToolExecutor.run( userDTO.getExistingUsername(), userDTO.getNewUsername()
+                , userDTO.getUserStoreDomain(), userDTO.getTenantDomain(), MultitenantConstants.SUPER_TENANT_ID))
+                .thenAnswer((Answer<Void>) invocation -> null);;
 
         UsernameUpdateServiceImpl usernameUpdateServiceImpl = new UsernameUpdateServiceImpl();
         usernameUpdateServiceImpl.setRealmService(realmService);
@@ -239,8 +251,8 @@ public class UsernameUpdateServiceImplTest extends PowerMockIdentityBaseTest {
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userStoreManager.isExistingUser(UserCoreUtil.addDomainToName(userDTO.getExistingUsername(), userDTO.getUserStoreDomain())))
                 .thenReturn(true);
-        doThrow(new UserStoreException("Error while setting account disable claim")).when(userStoreManager,
-                "setUserClaimValues", anyString(), anyMap(), anyString());
+        doThrow(new UserStoreException("Error while setting account disable claim"))
+                .when(userStoreManager).setUserClaimValues(anyString(), anyMap(), anyString());
 
         UsernameUpdateServiceImpl usernameUpdateServiceImpl = new UsernameUpdateServiceImpl();
         usernameUpdateServiceImpl.setRealmService(realmService);

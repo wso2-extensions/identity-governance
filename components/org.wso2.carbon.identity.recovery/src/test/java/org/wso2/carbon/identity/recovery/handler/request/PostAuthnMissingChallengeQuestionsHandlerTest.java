@@ -19,12 +19,12 @@
 package org.wso2.carbon.identity.recovery.handler.request;
 
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
@@ -45,30 +45,27 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.spy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * This class will test the Post Authentication Handler for Missing Challenge Questions
  **/
-@PrepareForTest({IdentityProviderManager.class, MultitenantUtils.class, Utils.class, IdentityRecoveryServiceDataHolder
-        .class, ChallengeQuestionManager.class, HttpServletResponse.class, ConfigurationFacade.class})
 public class PostAuthnMissingChallengeQuestionsHandlerTest {
     private static final String CHALLENGE_QUESTIONS_REQUESTED = "challengeQuestionsRequested";
     @Mock
@@ -84,24 +81,37 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
     @Mock
     private ConfigurationFacade configurationFacade;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
+    private MockedStatic<HttpServletResponse> mockedHttpServletResponse;
+    private MockedStatic<IdentityProviderManager> mockedIdentityProviderManager;
+    private MockedStatic<MultitenantUtils> mockedMultitenantUtils;
+    private MockedStatic<Utils> mockedUtils;
+    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+    private MockedStatic<ChallengeQuestionManager> mockedChallengeQuestionManager;
+    private MockedStatic<ConfigurationFacade> mockedConfigurationFacade;
 
     @BeforeMethod
     public void setup() {
 
         // initialize all the @Mock objects
-        MockitoAnnotations.initMocks(this);
-        // mock all the statics
-        mockStatic(HttpServletResponse.class);
-        mockStatic(IdentityProviderManager.class);
-        mockStatic(MultitenantUtils.class);
-        mockStatic(Utils.class);
-        mockStatic(IdentityRecoveryServiceDataHolder.class);
-        mockStatic(ChallengeQuestionManager.class);
-        mockStatic(ConfigurationFacade.class);
+        MockitoAnnotations.openMocks(this);
+        mockedHttpServletResponse = Mockito.mockStatic(HttpServletResponse.class);
+        mockedIdentityProviderManager = Mockito.mockStatic(IdentityProviderManager.class);
+        mockedMultitenantUtils = Mockito.mockStatic(MultitenantUtils.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedChallengeQuestionManager = Mockito.mockStatic(ChallengeQuestionManager.class);
+        mockedConfigurationFacade = Mockito.mockStatic(ConfigurationFacade.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        mockedHttpServletResponse.close();
+        mockedIdentityProviderManager.close();
+        mockedMultitenantUtils.close();
+        mockedUtils.close();
+        mockedIdentityRecoveryServiceDataHolder.close();
+        mockedChallengeQuestionManager.close();
+        mockedConfigurationFacade.close();
     }
 
     @Test(description = "Test get instance method")
@@ -141,7 +151,7 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         }
         idpProperties[0] = idpProp;
         residentIdp.setIdpProperties(idpProperties);
-        when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
         PostAuthnHandlerFlowStatus flowStatus = PostAuthnMissingChallengeQuestionsHandler.getInstance().handle
                 (httpServletRequest, httpServletResponse, context);
@@ -178,7 +188,7 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
         residentIdp.setIdpProperties(idpProperties);
-        when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(null);
@@ -201,16 +211,17 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
         residentIdp.setIdpProperties(idpProperties);
-        when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
         context.setSequenceConfig(sequenceConfig);
-        when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
-        when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
+        mockedMultitenantUtils.when(() -> MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
+        mockedUtils.when(() -> Utils.getTenantId("carbon.super")).thenReturn(-1234);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
         UserRealm userRealm = mock(UserRealm.class);
@@ -241,16 +252,17 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
         residentIdp.setIdpProperties(idpProperties);
-        when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
         context.setSequenceConfig(sequenceConfig);
-        when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
-        when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
+        mockedMultitenantUtils.when(() -> MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
+        mockedUtils.when(() -> Utils.getTenantId("carbon.super")).thenReturn(-1234);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
         UserRealm userRealm = mock(UserRealm.class);
@@ -268,7 +280,7 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         challengeQuestion.setQuestion("dummy_question");
         challengeQuestions.add(challengeQuestion);
         when(challengeQuestionManager.getAllChallengeQuestions("carbon.super")).thenReturn(challengeQuestions);
-        when(ChallengeQuestionManager.getInstance()).thenReturn(challengeQuestionManager);
+        mockedChallengeQuestionManager.when(ChallengeQuestionManager::getInstance).thenReturn(challengeQuestionManager);
         doNothing().doThrow(Exception.class).when(httpServletResponse).sendRedirect((String) any());
         when(configurationFacade.getAuthenticationEndpointURL()).thenReturn("");
         when(ConfigurationFacade.getInstance()).thenReturn(configurationFacade);
@@ -291,16 +303,17 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         idpProp.setValue("true");
         idpProperties[0] = idpProp;
         residentIdp.setIdpProperties(idpProperties);
-        when(IdentityProviderManager.getInstance()).thenReturn(identityProviderManager);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP("carbon.super")).thenReturn(residentIdp);
         SequenceConfig sequenceConfig = spy(new SequenceConfig());
         AuthenticatedUser user = spy(new AuthenticatedUser());
         user.setUserName("admin");
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(user);
         context.setSequenceConfig(sequenceConfig);
-        when(MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
-        when(Utils.getTenantId("carbon.super")).thenReturn(-1234);
-        when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
+        mockedMultitenantUtils.when(() -> MultitenantUtils.getTenantDomain("admin")).thenReturn("carbon.super");
+        mockedUtils.when(() -> Utils.getTenantId("carbon.super")).thenReturn(-1234);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(frameworkServiceDataHolder);
         RealmService realmService = mock(RealmService.class);
         UserStoreManager userStoreManager = mock(UserStoreManager.class);
         UserRealm userRealm = mock(UserRealm.class);
@@ -318,10 +331,10 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
         challengeQuestion.setQuestion("dummy_question");
         challengeQuestions.add(challengeQuestion);
         when(challengeQuestionManager.getAllChallengeQuestions("carbon.super")).thenReturn(challengeQuestions);
-        when(ChallengeQuestionManager.getInstance()).thenReturn(challengeQuestionManager);
+        mockedChallengeQuestionManager.when(ChallengeQuestionManager::getInstance).thenReturn(challengeQuestionManager);
         doNothing().doThrow(Exception.class).when(httpServletResponse).sendRedirect((String) any());
         when(configurationFacade.getAuthenticationEndpointURL()).thenReturn("");
-        when(ConfigurationFacade.getInstance()).thenReturn(configurationFacade);
+        mockedConfigurationFacade.when(ConfigurationFacade::getInstance).thenReturn(configurationFacade);
         when(context.getParameter(CHALLENGE_QUESTIONS_REQUESTED)).thenReturn(true);
         Vector<String> set = new Vector<>();
         set.add("Q-dummy_question");

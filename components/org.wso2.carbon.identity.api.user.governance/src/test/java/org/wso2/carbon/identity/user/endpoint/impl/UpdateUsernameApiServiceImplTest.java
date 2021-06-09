@@ -20,9 +20,12 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameUpdateRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
@@ -32,18 +35,16 @@ import org.wso2.carbon.identity.user.rename.core.exception.UsernameUpdateClientE
 import org.wso2.carbon.identity.user.rename.core.exception.UsernameUpdateException;
 import org.wso2.carbon.identity.user.rename.core.internal.service.impl.UsernameUpdateServiceImpl;
 
-import static org.mockito.Matchers.any;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Test class that include unit test cases for UpdateUsernameApiServiceImpl
  */
-@PrepareForTest({Utils.class})
-public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
+public class UpdateUsernameApiServiceImplTest {
 
     private static final String ERROR_MSG = "error";
     private static final String ERROR_CODE = "10001";
+    private MockedStatic<Utils> mockedUtils;
     @Mock
     private UsernameUpdateServiceImpl usernameUpdateService;
     @Mock
@@ -53,23 +54,34 @@ public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private UpdateUsernameApiServiceImpl usernameApiService;
 
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedUtils.close();
+    }
+
     @Test
     public void testSuccessStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenReturn(statusDTO);
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenReturn(statusDTO);
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
     }
 
     @Test
     public void testBadRequestStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new UsernameUpdateClientException
-                (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException
-                        .ErrorType.BAD_REQUEST));
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(
+                new UsernameUpdateClientException
+                        (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException.ErrorType.BAD_REQUEST));
         // The test method executes the lines but does not throw the 400 code.
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
     }
@@ -77,11 +89,10 @@ public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testNotAcceptableStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new UsernameUpdateClientException
-                (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException
-                        .ErrorType.NOT_ACCEPTABLE));
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(
+                new UsernameUpdateClientException
+                        (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException.ErrorType.NOT_ACCEPTABLE));
         // The test method executes the lines but does not throw the 406 code.
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
     }
@@ -89,11 +100,10 @@ public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testNotFoundStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new UsernameUpdateClientException
-                (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException
-                        .ErrorType.NOT_FOUND));
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(
+                new UsernameUpdateClientException
+                        (ERROR_MSG, ERROR_CODE, UsernameUpdateClientException.ErrorType.NOT_FOUND));
         // The test method executes the lines but does not throw the 404 code.
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
     }
@@ -101,9 +111,8 @@ public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testServerErrorStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new UsernameUpdateException
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new UsernameUpdateException
                 (ERROR_MSG, ERROR_CODE));
         // The test method executes the lines but does not throw the 500 code.
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
@@ -112,9 +121,9 @@ public class UpdateUsernameApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testUnexpectedServerErrorStatusOfUpdateUsername() throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getUsernameUpdateService()).thenReturn(usernameUpdateService);
-        when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(new RuntimeException(ERROR_MSG));
+        mockedUtils.when(Utils::getUsernameUpdateService).thenReturn(usernameUpdateService);
+        Mockito.when(usernameUpdateService.updateUsername(any(UserDTO.class))).thenThrow(
+                new RuntimeException(ERROR_MSG));
         // The test method executes the lines but does not throw the 500 code.
         Assert.assertEquals(usernameApiService.updateUsernamePut(usernameUpdateRequestDTO).getStatus(), 200);
     }

@@ -17,13 +17,13 @@
 package org.wso2.carbon.identity.governance.listener;
 
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
-import org.testng.IObjectFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.model.IdentityEventListenerConfig;
 import org.wso2.carbon.identity.core.model.IdentityEventListenerConfigKey;
@@ -43,12 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class IdentityStoreEventListenerTest {
 
@@ -74,13 +73,10 @@ public class IdentityStoreEventListenerTest {
 
     IdentityStoreEventListener identityStoreEventListener;
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
 
     @BeforeTest
     public void setUp() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+        MockitoAnnotations.openMocks(this);
         String carbonHome = IdentityStoreEventListenerTest.class.getResource("/").getFile();
         System.setProperty("carbon.home", carbonHome);
         Map<IdentityEventListenerConfigKey, IdentityEventListenerConfig> eventListenerConfiguration;
@@ -92,9 +88,9 @@ public class IdentityStoreEventListenerTest {
     @Test
     public void testGetExecutionOrderId() {
         int orderId = identityStoreEventListener.getExecutionOrderId();
-        assertEquals(orderId, 100, "OrderId is not equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
+        assertEquals(orderId, 97, "OrderId is not equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
 
-        when(identityStoreEventListener.getOrderId()).thenReturn(0);
+        Mockito.when(identityStoreEventListener.getOrderId()).thenReturn(0);
         orderId = identityStoreEventListener.getExecutionOrderId();
         assertEquals(orderId, 0, "OrderId is equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
     }
@@ -125,8 +121,8 @@ public class IdentityStoreEventListenerTest {
                                  Map<String, String> claims,
                                  String prof) throws Exception {
         userStoreManager = mock(UserStoreManager.class);
-        when(userStoreManager.getTenantId()).thenReturn(1001);
-        Assert.assertTrue(identityStoreEventListener.doPreAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
+        Mockito.when(userStoreManager.getTenantId()).thenReturn(1001);
+        assertTrue(identityStoreEventListener.doPreAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
     }
 
     @Test(dataProvider = "addClaimHandler")
@@ -169,8 +165,8 @@ public class IdentityStoreEventListenerTest {
             }
         }).when(userIdentityDataStore).store(userIdentityClaim, userStoreManager);
 
-        assertTrue("Do pre set claim values is invalid.", identityStoreEventListener
-                .doPreSetUserClaimValues(userName, claims, prof, userStoreManager));
+        Assert.assertTrue(identityStoreEventListener.doPreSetUserClaimValues
+                (userName, claims, prof, userStoreManager),"Do pre set claim values is invalid.");
     }
 
     @DataProvider(name = "getUserClaimHandler")
@@ -208,7 +204,7 @@ public class IdentityStoreEventListenerTest {
         fieldIdentityStore.setAccessible(true);
         fieldIdentityStore.set(identityStoreEventListener, userIdentityDataStore);
 
-        assertTrue(identityStoreEventListener.doPostGetUserClaimValues(userName, claimList,
+        Assert.assertTrue(identityStoreEventListener.doPostGetUserClaimValues(userName, claimList,
                 prof, claims, userStoreManager));
     }
 
@@ -229,12 +225,12 @@ public class IdentityStoreEventListenerTest {
                                            String claim,
                                            String profileName) throws Exception {
         boolean preGetUserClaims = identityStoreEventListener.doPreGetUserClaimValue(userName, claim, profileName, userStoreManager);
-        assertTrue(preGetUserClaims);
+        Assert.assertTrue(preGetUserClaims);
     }
 
     @Test(expectedExceptions = UserStoreException.class)
     public void testDoPreGetUserClaimValueException() throws Exception {
-        assertTrue(identityStoreEventListener.doPreGetUserClaimValue("admin",
+        Assert.assertTrue(identityStoreEventListener.doPreGetUserClaimValue("admin",
                 "http://wso2.org/claims/identity/email", "myprofile", userStoreManager));
     }
 
@@ -253,13 +249,13 @@ public class IdentityStoreEventListenerTest {
                                            String claimValue,
                                            String profileName) throws Exception {
 
-        assertTrue(identityStoreEventListener.doPreSetUserClaimValue(userName, claimUri,
+        Assert.assertTrue(identityStoreEventListener.doPreSetUserClaimValue(userName, claimUri,
                 claimValue, profileName, userStoreManager));
     }
 
     @Test(expectedExceptions = UserStoreException.class)
     public void testDoPreSetUserClaimValueException() throws Exception {
-        assertTrue(identityStoreEventListener.doPreSetUserClaimValue("admin",
+        Assert.assertTrue(identityStoreEventListener.doPreSetUserClaimValue("admin",
                 "http://wso2.org/claims/identity/email", "admin@wso2.com", "foo", userStoreManager));
     }
 
@@ -303,8 +299,8 @@ public class IdentityStoreEventListenerTest {
             }
         }).when(userIdentityDataStore).list(claimUri, claimValue, userStoreManager);
 
-        when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
-        when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(userStore);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(userStore);
 
         assertTrue(identityStoreEventListener.doPreGetUserList(claimUri, claimValue, userList, userStoreManager));
     }
@@ -329,6 +325,6 @@ public class IdentityStoreEventListenerTest {
             }
         }).when(userIdentityDataStore).remove(username, userStoreManager);
 
-        assertTrue(identityStoreEventListener.doPostDeleteUser(username, userStoreManager));
+        Assert.assertTrue(identityStoreEventListener.doPostDeleteUser(username, userStoreManager));
     }
 }

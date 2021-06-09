@@ -19,10 +19,11 @@ package org.wso2.carbon.identity.recovery.endpoint;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -39,17 +40,15 @@ import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecove
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
  * This class contains unit tests for ValidateAnswerApiServiceImpl.java
  */
-@PrepareForTest({RecoveryUtil.class})
-public class ValidateAnswerApiServiceImplTest extends PowerMockTestCase {
+public class ValidateAnswerApiServiceImplTest {
 
     @Mock
     SecurityQuestionPasswordRecoveryManager securityQuestionPasswordRecoveryManager;
@@ -86,25 +85,42 @@ public class ValidateAnswerApiServiceImplTest extends PowerMockTestCase {
         return propertyDTOList;
     }
 
+    private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
+
+    @BeforeMethod
+    public void setUp() throws IdentityRecoveryException {
+
+        MockitoAnnotations.openMocks(this);
+        mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
+        securityQuestionPasswordRecoveryManager = Mockito.mock(SecurityQuestionPasswordRecoveryManager.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedRecoveryUtil.close();
+    }
+
     @Test
     public void testValidateAnswerPost() {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
         UserChallengeAnswer[] userChallengeAnswers = new UserChallengeAnswer[1];
         Property[] properties = new Property[1];
-        when(RecoveryUtil.getUserChallengeAnswers(buildsecurityAnswerDTOList())).thenReturn(userChallengeAnswers);
-        when(RecoveryUtil.getProperties(buildPropertyListDTO())).thenReturn(properties);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.getUserChallengeAnswers(buildsecurityAnswerDTOList())).thenReturn(
+                userChallengeAnswers);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.getProperties(buildPropertyListDTO())).thenReturn(properties);
         assertEquals(validateAnswerApiService.validateAnswerPost(buildAnswerVerificationRequestDTO()).getStatus(), 200);
     }
 
     @Test
     public void testIdentityRecoveryClientExceptionwithCodeforValidateAnswerPost() throws IdentityRecoveryException {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
-        when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
-                (any(UserChallengeAnswer[].class), anyString(), any(Property[].class))).thenThrow
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
+        Mockito.when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
+                (isNull(), anyString(), isNull())).thenThrow
                 (new IdentityRecoveryClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION.getCode(), ""));
         assertEquals(validateAnswerApiService.validateAnswerPost(buildAnswerVerificationRequestDTO()).getStatus(), 412);
@@ -113,9 +129,9 @@ public class ValidateAnswerApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryClientExceptionforValidateAnswerPost() throws IdentityRecoveryException {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
-        when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
+        Mockito.when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
                 (any(UserChallengeAnswer[].class), anyString(), any(Property[].class))).thenThrow
                 (new IdentityRecoveryClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION.toString(), ""));
@@ -125,9 +141,9 @@ public class ValidateAnswerApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryExceptionforValidateAnswerPost() throws IdentityRecoveryException {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
-        when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
+        Mockito.when(securityQuestionPasswordRecoveryManager.validateUserChallengeQuestions
                 (any(UserChallengeAnswer[].class), anyString(), any(Property[].class))).thenThrow
                 (new IdentityRecoveryException(""));
         assertEquals(validateAnswerApiService.validateAnswerPost(buildAnswerVerificationRequestDTO()).getStatus(), 200);
@@ -136,15 +152,8 @@ public class ValidateAnswerApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testThrowableforValidateAnswerPost() throws IdentityRecoveryException {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
         assertEquals(validateAnswerApiService.validateAnswerPost(null).getStatus(), 200);
     }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
 }
