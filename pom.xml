@@ -721,7 +721,7 @@
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.8.2</jacoco.version>
+        <jacoco.version>0.8.7</jacoco.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>

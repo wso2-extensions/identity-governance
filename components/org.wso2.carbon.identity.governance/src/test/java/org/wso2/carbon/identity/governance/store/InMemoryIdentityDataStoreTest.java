@@ -19,7 +19,11 @@
 package org.wso2.carbon.identity.governance.store;
 
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -56,6 +60,27 @@ public class InMemoryIdentityDataStoreTest {
     @Mock
     PrivilegedCarbonContext privilegedCarbonContext;
 
+    MockedStatic<IdentityUtil> mockedIdentityUtil;
+    MockedStatic<UserCoreUtil> mockedUserCoreUtil;
+    MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
+
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedUserCoreUtil = Mockito.mockStatic(UserCoreUtil.class);
+        mockedPrivilegedCarbonContext = Mockito.mockStatic(PrivilegedCarbonContext.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedUserCoreUtil.close();
+        mockedPrivilegedCarbonContext.close();
+    }
+
     @Test(testName = "testStore", description = "Test whether the map in UserIdentityClaim object containing " +
             "identity claims gets modified after this method is executed.")
     public void testStore() throws Exception {
@@ -64,14 +89,9 @@ public class InMemoryIdentityDataStoreTest {
         identityClaimsMap.put("keyOne", "valueOne");
         identityClaimsMap.put("keyTwo", "valueTwo");
 
-       initPrivilegedCarbonContext();
-
+        initPrivilegedCarbonContext();
 
         Map<String, String> identityClaimsMapClone = new HashMap<>(identityClaimsMap);
-
-        Mockito.mockStatic(IdentityUtil.class);
-        Mockito.mockStatic(UserCoreUtil.class);
-        Mockito.mockStatic(PrivilegedCarbonContext.class);
 
         userStoreManager = mock(JDBCUserStoreManager.class);
         userIdentityClaim = mock(UserIdentityClaim.class);
@@ -79,9 +99,10 @@ public class InMemoryIdentityDataStoreTest {
         userIdentityDataStore = mock(InMemoryIdentityDataStore.class);
         privilegedCarbonContext = mock(PrivilegedCarbonContext.class);
 
-        Mockito.when(IdentityUtil.isUserStoreCaseSensitive(userStoreManager)).thenReturn(true);
-        Mockito.when(UserCoreUtil.removeDomainFromName("gayashan")).thenReturn("gayashan");
-        Mockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        mockedIdentityUtil.when(() -> IdentityUtil.isUserStoreCaseSensitive(userStoreManager)).thenReturn(true);
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName("gayashan")).thenReturn("gayashan");
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(privilegedCarbonContext);
 
         Mockito.when(userStoreManager.getTenantId()).thenReturn(MultitenantConstants.SUPER_TENANT_ID);
         Mockito.when(userIdentityClaim.getUserName()).thenReturn("gayashan");
