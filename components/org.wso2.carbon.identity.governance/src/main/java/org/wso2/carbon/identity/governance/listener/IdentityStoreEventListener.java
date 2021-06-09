@@ -69,7 +69,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
         }
-        return 97;
+        return 100;
     }
 
     /**

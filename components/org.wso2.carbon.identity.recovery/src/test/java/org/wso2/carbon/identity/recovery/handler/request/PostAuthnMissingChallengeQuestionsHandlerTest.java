@@ -94,7 +94,6 @@ public class PostAuthnMissingChallengeQuestionsHandlerTest {
 
         // initialize all the @Mock objects
         MockitoAnnotations.openMocks(this);
-//         mock all the statics
         mockedHttpServletResponse = Mockito.mockStatic(HttpServletResponse.class);
         mockedIdentityProviderManager = Mockito.mockStatic(IdentityProviderManager.class);
         mockedMultitenantUtils = Mockito.mockStatic(MultitenantUtils.class);
