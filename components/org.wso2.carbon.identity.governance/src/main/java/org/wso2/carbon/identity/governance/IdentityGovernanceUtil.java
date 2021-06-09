@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.governance;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
@@ -143,5 +144,22 @@ public class IdentityGovernanceUtil {
             return NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         return defaultNotificationChannel;
+    }
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @param regex, Regex string of the property object if it has.
+     * @return Property object that contains type and regex.
+     */
+    public static Property getPropertyObject(String type, String regex) {
+
+        Property property = new Property();
+        property.setType(type);
+        if (regex != null) {
+            property.setRegex(regex);
+        }
+        return property;
     }
 }

@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Properties;
 import javax.xml.namespace.QName;
 
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
+
 /**
  * Class which contains user claim update configs.
  */
@@ -254,16 +256,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         }
     }
 
-    private Property getPropertyObject(String type, String regex) {
-
-        Property property = new Property();
-        property.setType(type);
-        if (regex != null) {
-            property.setRegex(regex);
-        }
-        return property;
-    }
-
     @Override
     public Map<String, Property> getMetaData() {
 
@@ -286,4 +278,5 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         return meta;
     }
+
 }

@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
+
 /**
  * Class which contains user email verification configs.
  */
@@ -210,16 +212,6 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         return null;
     }
 
-    private Property getPropertyObject(String type, String regex) {
-
-        Property property = new Property();
-        property.setType(type);
-        if (regex != null) {
-            property.setRegex(regex);
-        }
-        return property;
-    }
-
     @Override
     public Map<String, Property> getMetaData() {
 
@@ -248,4 +240,5 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
         return meta;
     }
+
 }
