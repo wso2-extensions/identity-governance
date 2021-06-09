@@ -111,7 +111,8 @@ public class TenantAwareAxis2ConfigurationContextObserverTest {
     private void mockCarbonContext() {
 
         PrivilegedCarbonContext privilegedCarbonContext = mock(PrivilegedCarbonContext.class);
-        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(privilegedCarbonContext);
+        mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
+                .thenReturn(privilegedCarbonContext);
         mockedPrivilegedCarbonContext.when(privilegedCarbonContext::getTenantDomain).thenReturn(TENANT_DOMAIN);
         mockedPrivilegedCarbonContext.when(privilegedCarbonContext::getTenantId).thenReturn(TENANT_ID);
     }
@@ -188,7 +189,8 @@ public class TenantAwareAxis2ConfigurationContextObserverTest {
     public void testCreatingConfigurationContext() {
 
         new TenantAwareAxis2ConfigurationContextObserver().creatingConfigurationContext(TENANT_ID);
-        Assert.assertNotNull(carbonEventPublisherService.getEventPublisherConfigurationFromMap(), TENANT_SPECIFIC_EMAIL_PUBLISHER);
+        Assert.assertNotNull(carbonEventPublisherService.getEventPublisherConfigurationFromMap(),
+                TENANT_SPECIFIC_EMAIL_PUBLISHER);
     }
 
     private static String getSamplesPath() {
