@@ -70,6 +70,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -401,7 +402,7 @@ public class Utils {
         try {
             String digsestFunction = "SHA-256";
             MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes());
+            byte[] byteValue = dgst.digest(value.getBytes(Charset.forName("UTF-8")));
             return Base64.encode(byteValue);
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);

@@ -1080,6 +1080,7 @@ public class ChallengeQuestionManager {
                 Utils.handleClientException(ERROR_CODE_CHALLENG_ANSWER_MISSING, null);
             }
 
+            assert challengeQuestion != null;
             if (StringUtils.isBlank(challengeQuestion.getQuestion())) {
                 Utils.handleClientException(ERROR_CODE_INVALID_CHALLENGE_QUESTION_VALUE, null);
             }

@@ -16,7 +16,10 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -619,12 +622,13 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_LOCALE = "locale";
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET01 = new String[]{"City where you were born ?",
-                "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"};
+        public static final List<String> SECRET_QUESTIONS_SET01 = Collections.unmodifiableList(Arrays.asList("City " +
+                "where you were born ?", "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"));
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
-                "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
+        public static final List<String> SECRET_QUESTIONS_SET02 = Collections.unmodifiableList(Arrays.asList
+                ("Model of your first car ?", "Name of the hospital where you were born ?",
+                        "Name of your first pet ?", "Favorite sport ?"));
 
     }
 
