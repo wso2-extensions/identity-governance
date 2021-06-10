@@ -622,8 +622,9 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_LOCALE = "locale";
 
         // TODO remove this
-        public static final List<String> SECRET_QUESTIONS_SET01 = Collections.unmodifiableList(Arrays.asList("City " +
-                "where you were born ?", "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"));
+        public static final List<String> SECRET_QUESTIONS_SET01 = Collections.unmodifiableList(Arrays.asList
+                ("City where you were born ?", "Father's middle name ?", "Favorite food ?",
+                        "Favorite vacation location ?"));
 
         // TODO remove this
         public static final List<String> SECRET_QUESTIONS_SET02 = Collections.unmodifiableList(Arrays.asList
