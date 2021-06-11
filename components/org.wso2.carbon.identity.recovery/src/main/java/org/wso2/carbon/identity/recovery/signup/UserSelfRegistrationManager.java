@@ -90,6 +90,7 @@ import java.net.MalformedURLException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1577,7 +1578,7 @@ public class UserSelfRegistrationManager {
         //ToDO get rid of this with password-less lite user creation
         SecureRandom random = new SecureRandom();
         byte seed[] = random.generateSeed(20);
-        return (seed+"A$g0").toCharArray();
+        return (Arrays.toString(seed) +"A$g0").toCharArray();
     }
 
     /**
