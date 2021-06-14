@@ -230,25 +230,24 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                null));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
                         IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX));

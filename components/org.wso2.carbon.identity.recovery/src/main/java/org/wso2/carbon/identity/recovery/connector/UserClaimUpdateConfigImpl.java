@@ -262,19 +262,19 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         return meta;
     }

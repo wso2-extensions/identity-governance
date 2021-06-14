@@ -299,40 +299,39 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         Map<String, Property> meta = new HashMap<>();
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                null));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),

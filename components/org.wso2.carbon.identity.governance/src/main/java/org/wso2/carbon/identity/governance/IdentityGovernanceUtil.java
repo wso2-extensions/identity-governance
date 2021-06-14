@@ -151,15 +151,28 @@ public class IdentityGovernanceUtil {
      *
      * @param type, Type of property object.
      * @param regex, Regex string of the property object if it has.
+     * @param groupId, Group id of the element.
      * @return Property object that contains type and regex.
      */
-    public static Property getPropertyObject(String type, String regex) {
+    public static Property getPropertyObject(String type, String regex, int groupId) {
 
         Property property = new Property();
         property.setType(type);
+        property.setGroupId(groupId);
         if (regex != null) {
             property.setRegex(regex);
         }
         return property;
     }
+
+    public static Property getPropertyObject(String type, String regex) {
+
+    return getPropertyObject(type, regex, 0);
+    }
+
+    public static Property getPropertyObject(String type) {
+
+        return getPropertyObject(type, null, 0);
+    }
+
 }

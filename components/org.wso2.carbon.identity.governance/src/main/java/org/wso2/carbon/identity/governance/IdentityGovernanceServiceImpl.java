@@ -172,6 +172,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                         if (metaData != null && metaData.containsKey(resourceName)) {
                             configProperties[j].setType(metaData.get(resourceName).getType());
                             configProperties[j].setRegex(metaData.get(resourceName).getRegex());
+                            configProperties[j].setGroupId(metaData.get(resourceName).getGroupId());
                         }
                         if (confidentialProperties != null &&
                                 confidentialProperties.contains(configProperties[j].getName())) {

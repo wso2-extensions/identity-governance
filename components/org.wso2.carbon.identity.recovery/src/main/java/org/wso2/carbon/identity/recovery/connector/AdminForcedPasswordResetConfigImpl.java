@@ -154,11 +154,11 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
         Map<String, Property> meta = new HashMap<>();
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
         return meta;
     }
 

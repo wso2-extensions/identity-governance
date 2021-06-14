@@ -218,25 +218,25 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         Map<String, Property> meta = new HashMap<>();
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
-                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(), null));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                null));
+                null, 0));
 
         return meta;
     }
