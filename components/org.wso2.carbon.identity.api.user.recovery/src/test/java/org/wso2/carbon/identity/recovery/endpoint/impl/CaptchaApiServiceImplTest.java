@@ -18,12 +18,13 @@
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 
 import java.io.IOException;
@@ -35,18 +36,30 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
  * Unit tests for CaptchaApiServiceImpl.java
  */
-@PrepareForTest({IdentityGovernanceService.class, RecoveryUtil.class})
-public class CaptchaApiServiceImplTest extends PowerMockTestCase {
+public class CaptchaApiServiceImplTest{
+
+    private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
 
     @InjectMocks
     CaptchaApiServiceImpl captchaApiService;
+
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedRecoveryUtil.close();
+    }
 
     @Test(description = "This method test, getReCaptcha method for username recovery")
     public void testGetCaptcha() throws IOException {
@@ -62,10 +75,9 @@ public class CaptchaApiServiceImplTest extends PowerMockTestCase {
             }
         }
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getValidatedCaptchaConfigs()).thenReturn(sampleProperties);
-        when(RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(Mockito.anyString(), Mockito.anyString())).
-                thenReturn(true);
+        mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(Mockito.anyString(),
+                Mockito.anyString())).thenReturn(true);
         assertEquals(captchaApiService.getCaptcha("ReCaptcha", "username-recovery",
                 null).getStatus(), 200);
     }

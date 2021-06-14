@@ -18,35 +18,32 @@
 
 package org.wso2.carbon.identity.multi.attribute.login.resolver.regex;
 
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
-import org.testng.annotations.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
-import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceComponent;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils.UserResolverUtil;
 import org.wso2.carbon.user.api.Claim;
-import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.MockitoAnnotations.openMocks;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 
-@PrepareForTest({RegexResolverServiceDataHolder.class, User.class, ResolvedUserResult.class})
 public class RegexResolverTest {
 
     private RegexResolver regexResolver;
@@ -57,6 +54,8 @@ public class RegexResolverTest {
     private static final String TEST_CLAIM_REGEX = "^(\\+\\d{1,2}\\s?)?1?\\-?\\.?\\s?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$";
     private static final String TEST_LOGIN_IDENTIFIER = "+99777521771";
     private static final String TEST_TENANT_DOMAIN = "testTenantDomain";
+    private MockedStatic<RegexResolverServiceDataHolder> mockedRegexResolverServiceDataHolder;
+    private MockedStatic<ResolvedUserResult> mockedResolvedUserResult;
 
     @Mock
     UniqueIDUserStoreManager mockUserStoreManager;
@@ -79,10 +78,24 @@ public class RegexResolverTest {
     @Mock
     RegexResolverServiceDataHolder mockRegexResolverServiceDataHolder;
 
+    @BeforeMethod
+    public void setUp() {
+
+        mockedRegexResolverServiceDataHolder = Mockito.mockStatic(RegexResolverServiceDataHolder.class);
+        mockedResolvedUserResult = Mockito.mockStatic(ResolvedUserResult.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedRegexResolverServiceDataHolder.close();
+        mockedResolvedUserResult.close();
+    }
+
     @BeforeTest
     public void init() throws Exception {
 
-        initMocks(this);
+        openMocks(this);
         regexResolver = new RegexResolver();
         allowedAttributes = new ArrayList<>();
         allowedAttributes.add(TEST_CLAIM_URI);
@@ -95,8 +108,8 @@ public class RegexResolverTest {
     @Test
     public void testResolveUser() throws Exception {
 
-        mockStatic(RegexResolverServiceDataHolder.class);
-        when(RegexResolverServiceDataHolder.getInstance()).thenReturn(mockRegexResolverServiceDataHolder);
+        mockedRegexResolverServiceDataHolder.when(RegexResolverServiceDataHolder::getInstance)
+                .thenReturn(mockRegexResolverServiceDataHolder);
         when(mockRegexResolverServiceDataHolder.getRealmService()).thenReturn(mockRealmService);
         when(mockRealmService.getTenantManager()).thenReturn(mockTenantManager);
         when(mockTenantManager.getTenantId(TEST_TENANT_DOMAIN)).thenReturn(-1234);
@@ -108,17 +121,10 @@ public class RegexResolverTest {
         when(UserResolverUtil.getUserStoreManager(TEST_TENANT_DOMAIN)).thenReturn(mockUserStoreManager);
         when(mockUserStoreManager.getUserListWithID(TEST_CLAIM_URI, TEST_LOGIN_IDENTIFIER, null)).
                 thenReturn(userList);
-        mockStatic(ResolvedUserResult.class);
         regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER, allowedAttributes, TEST_TENANT_DOMAIN, "hint");
         assertEquals(regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER, allowedAttributes,
                 TEST_TENANT_DOMAIN).getUser().getUsername(), "chathuranga");
         assertNotEquals(regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER,
                 allowedAttributes, TEST_TENANT_DOMAIN).getUser().getUsername(), "+99777521771");
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 }

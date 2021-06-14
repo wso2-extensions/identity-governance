@@ -70,6 +70,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -87,6 +89,7 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -400,7 +403,7 @@ public class Utils {
         try {
             String digsestFunction = "SHA-256";
             MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes());
+            byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
             return Base64.encode(byteValue);
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);
@@ -940,6 +943,7 @@ public class Utils {
     public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
 
         if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
+            diagnosticLog.error("Email user validation failed for the username: " + username);
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
         }
     }

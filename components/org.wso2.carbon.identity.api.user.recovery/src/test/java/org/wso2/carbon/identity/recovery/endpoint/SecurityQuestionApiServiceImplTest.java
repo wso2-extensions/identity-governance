@@ -19,10 +19,11 @@ package org.wso2.carbon.identity.recovery.endpoint;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -35,8 +36,6 @@ import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.impl.SecurityQuestionApiServiceImpl;
 import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.testng.Assert.assertEquals;
@@ -45,9 +44,8 @@ import static org.testng.Assert.assertNotNull;
 /**
  * Unit tests for SecurityQuestionApiServiceImpl.java class
  */
+public class SecurityQuestionApiServiceImplTest {
 
-@PrepareForTest({RecoveryUtil.class, IdentityTenantUtil.class, IdentityUtil.class})
-public class SecurityQuestionApiServiceImplTest extends PowerMockTestCase {
     @Mock
     SecurityQuestionPasswordRecoveryManager securityQuestionPasswordRecoveryManager;
 
@@ -56,6 +54,27 @@ public class SecurityQuestionApiServiceImplTest extends PowerMockTestCase {
 
     @InjectMocks
     SecurityQuestionApiServiceImpl securityQuestionApiService;
+
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
+
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
+        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedRecoveryUtil.close();
+        mockedIdentityTenantUtil.close();
+    }
 
     @Test
     public void testSecurityQuestionGet() {
@@ -68,7 +87,7 @@ public class SecurityQuestionApiServiceImplTest extends PowerMockTestCase {
     public void testIdentityRecoveryClientExceptionforSecurityQuestionGet() throws IdentityRecoveryException {
 
         mockClasses();
-        when(securityQuestionPasswordRecoveryManager.initiateUserChallengeQuestion(any(User.class))).thenThrow
+        Mockito.when(securityQuestionPasswordRecoveryManager.initiateUserChallengeQuestion(any(User.class))).thenThrow
                 (new IdentityRecoveryClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND.getCode(), ""));
         assertNotNull(securityQuestionApiService.securityQuestionGet("admin", null, null));
@@ -78,30 +97,20 @@ public class SecurityQuestionApiServiceImplTest extends PowerMockTestCase {
     public void testIdentityRecoveryExceptionforSecurityQuestionGet() throws IdentityRecoveryException {
 
         mockClasses();
-        when(securityQuestionPasswordRecoveryManager.initiateUserChallengeQuestion(any(User.class))).thenThrow
+        Mockito.when(securityQuestionPasswordRecoveryManager.initiateUserChallengeQuestion(any(User.class))).thenThrow
                 (new IdentityRecoveryException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND.getCode(), ""));
         assertNotNull(securityQuestionApiService.securityQuestionGet("admin", null, null));
     }
 
-
     private void mockClasses() {
 
-        mockStatic(IdentityTenantUtil.class);
-        mockStatic(RecoveryUtil.class);
-        mockStatic(IdentityUtil.class);
-        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
         String[] userList = new String[1];
         userList[0] = "admin";
-        when(RecoveryUtil.getUserList(-1234, "admin")).thenReturn(userList);
-        when(IdentityUtil.extractDomainFromName(userList[0])).thenReturn("PRIMARY");
-        when(RecoveryUtil.getSecurityQuestionBasedPwdRecoveryManager()).thenReturn(securityQuestionPasswordRecoveryManager);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.getUserList(-1234, "admin")).thenReturn(userList);
+        mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName(userList[0])).thenReturn("PRIMARY");
+        mockedRecoveryUtil.when(RecoveryUtil::getSecurityQuestionBasedPwdRecoveryManager).thenReturn(
+                securityQuestionPasswordRecoveryManager);
     }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
 }

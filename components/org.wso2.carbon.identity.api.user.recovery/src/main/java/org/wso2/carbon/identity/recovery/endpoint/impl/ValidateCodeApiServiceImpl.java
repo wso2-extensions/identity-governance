@@ -20,6 +20,7 @@ import javax.ws.rs.core.Response;
 public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
 
     private static final Log LOG = LogFactory.getLog(ValidateCodeApiServiceImpl.class);
+    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     @Override
     public Response validateCodePost(CodeValidationRequestDTO codeValidationRequestDTO) {
@@ -34,10 +35,16 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while validating the confirmation code ", e);
             }
+            diagnosticLog.error("Client Error while validating the confirmation code. Error message: " +
+                    e.getMessage());
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
+            diagnosticLog.error("Server Error while validating the confirmation code. Error message: " +
+                    e.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
+            diagnosticLog.error("Server Error while validating the confirmation code. Error message: " +
+                    throwable.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }

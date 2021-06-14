@@ -19,10 +19,11 @@ package org.wso2.carbon.identity.recovery.endpoint;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
@@ -31,15 +32,15 @@ import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryMa
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.core.claim.Claim;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
  * Unit tests for ClaimsApiServiceImpl.java
  */
-@PrepareForTest({RecoveryUtil.class})
-public class ClaimsApiServiceImplTest extends PowerMockTestCase {
+public class ClaimsApiServiceImplTest {
+
+    private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
+
     @Mock
     NotificationPasswordRecoveryManager notificationPasswordRecoveryManager;
 
@@ -49,28 +50,34 @@ public class ClaimsApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     ClaimsApiServiceImpl claimsApiService;
 
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedRecoveryUtil.close();
+    }
+
     @Test
     public void testClaimsGet() throws IdentityException {
 
-        mockStatic(RecoveryUtil.class);
-        when(RecoveryUtil.getNotificationBasedUsernameRecoveryManager()).thenReturn(notificationUsernameRecoveryManager);
+        mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedUsernameRecoveryManager).thenReturn(
+                notificationUsernameRecoveryManager);
         Claim[] userClaims = new Claim[2];
-        when(notificationUsernameRecoveryManager.getIdentitySupportedClaims("test", "carbon.super")).thenReturn(userClaims);
+        Mockito.when(notificationUsernameRecoveryManager
+                .getIdentitySupportedClaims("test", "carbon.super")).thenReturn(userClaims);
         assertEquals(claimsApiService.claimsGet(null).getStatus(), 200);
     }
 
     @Test
     public void testThrowableinClaimsGet() throws IdentityException {
 
-        mockStatic(RecoveryUtil.class);
         claimsApiService.claimsGet("dummy");
-    }
-
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
 }

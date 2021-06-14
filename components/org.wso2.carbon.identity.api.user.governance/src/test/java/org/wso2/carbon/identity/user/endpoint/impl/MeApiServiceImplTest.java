@@ -19,10 +19,11 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -52,24 +53,23 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.testng.Assert.assertEquals;
 
 /**
  * This class contains unit tests for MeApiServiceImpl.java
  */
-@PrepareForTest({IdentityUtil.class, Utils.class})
-public class MeApiServiceImplTest extends PowerMockTestCase {
+public class MeApiServiceImplTest {
 
     private static final String USERNAME = "dummyUser";
-    @Mock
-    private UserSelfRegistrationManager userSelfRegistrationManager;
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<Utils> mockedUtils;
+    private ResendConfirmationManager resendConfirmationManager;
 
     @Mock
-    private ResendConfirmationManager resendConfirmationManager;
+    private UserSelfRegistrationManager userSelfRegistrationManager;
 
     @Mock
     private UserRecoveryData userRecoveryData;
@@ -80,11 +80,27 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private MeApiServiceImpl meApiService;
 
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        resendConfirmationManager = Mockito.mock(ResendConfirmationManager.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedUtils.close();
+    }
+
     @Test
     public void testMePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+        Mockito.when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
                 any(Property[].class))).thenReturn(notificationResponseBean);
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
         assertEquals(meApiService.mePost(null).getStatus(), 201);
@@ -93,8 +109,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryExceptionInMePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+        Mockito.when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
                 any(Property[].class))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
     }
@@ -102,8 +117,7 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryClientExceptionInMePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
+        Mockito.when(userSelfRegistrationManager.registerUser(any(User.class), anyString(), any(Claim[].class),
                 any(Property[].class))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(meApiService.mePost(selfUserRegistrationRequestDTO()).getStatus(), 201);
     }
@@ -111,14 +125,13 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testMeGet() throws UserExportException {
 
-        mockClasses();
         try {
             String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
             System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
-            when(Utils.getUserInformationService()).thenReturn(new MockUserInformationService());
+            mockedUtils.when(Utils::getUserInformationService).thenReturn(new MockUserInformationService());
 
             assertEquals(meApiService.getMe().getStatus(), 200);
         } finally {
@@ -129,7 +142,6 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testMeValidateCodePost() {
 
-        mockClasses();
         assertEquals(meApiService.meValidateCodePost(createMeCodeValidationRequestDTO()).getStatus(), 202);
         assertEquals(meApiService.meValidateCodePost(null).getStatus(), 202);
     }
@@ -137,47 +149,36 @@ public class MeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testMeResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
         try {
             String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
             System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
-            when(resendConfirmationManager.resendConfirmationCode(any(User.class), anyString(), anyString(),
-                    anyString(), any(Property[].class))).thenReturn(notificationResponseBean);
-            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(userRecoveryData);
-            when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
-            when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
+            Mockito.when(resendConfirmationManager.resendConfirmationCode(isNull(), anyString(), anyString(),
+                    anyString(), isNull())).thenReturn(notificationResponseBean);
+            mockedUtils.when(() -> Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString()))
+                    .thenReturn(userRecoveryData);
+            mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+            Mockito.when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
                     getRecoveryScenario("MOBILE_VERIFICATION_ON_UPDATE"));
-            when(userRecoveryData.getRecoveryStep()).thenReturn(RecoverySteps.getRecoveryStep("VERIFY_MOBILE_NUMBER"));
+            Mockito.when(userRecoveryData.getRecoveryStep()).thenReturn(
+                    RecoverySteps.getRecoveryStep("VERIFY_MOBILE_NUMBER"));
 
             assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 201);
             assertEquals(meApiService.meResendCodePost(
                     meResendCodeRequestDTOWithInvalidScenarioProperty()).getStatus(), 400);
 
-            when(Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString())).thenReturn(null);
+            mockedUtils.when(() -> Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString()))
+                    .thenReturn(null);
             assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
 
-            when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
+            Mockito.when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
                     getRecoveryScenario("ASK_PASSWORD"));
             assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
-    }
-
-    private void mockClasses() {
-
-        mockStatic(IdentityUtil.class);
-        mockStatic(Utils.class);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-    }
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
     private SelfRegistrationUserDTO buildSelfRegistartion() {

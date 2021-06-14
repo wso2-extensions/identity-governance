@@ -17,11 +17,8 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.testng.annotations.Test;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 
 import java.io.IOException;
@@ -38,7 +35,6 @@ import static org.testng.Assert.assertEquals;
 /**
  * Unit tests for RecoveryUtils.java
  */
-@PrepareForTest({ IdentityGovernanceService.class, PrivilegedCarbonContext.class })
 public class RecoveryUtilsTest {
 
     @Test(description = "To test the getValidatedCaptchaConfigs method.")

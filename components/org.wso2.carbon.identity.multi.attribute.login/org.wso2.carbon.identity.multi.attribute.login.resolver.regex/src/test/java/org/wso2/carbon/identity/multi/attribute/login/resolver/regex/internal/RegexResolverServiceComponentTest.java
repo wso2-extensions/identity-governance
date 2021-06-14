@@ -23,7 +23,7 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertNotNull;
 
 public class RegexResolverServiceComponentTest {
@@ -34,7 +34,7 @@ public class RegexResolverServiceComponentTest {
 
     @BeforeTest
     public void setup() {
-        initMocks(this);
+        openMocks(this);
         regexResolverServiceDataHolder = RegexResolverServiceDataHolder.getInstance();
     }
 

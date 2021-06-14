@@ -60,6 +60,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     private static final Random RANDOM = new SecureRandom();
 
+    private static final Boolean isRandomValueForCredentialsDisabled = isRandomValueForCredentialsDisabled();
+
     public String getName() {
 
         return "userEmailVerification";
@@ -139,7 +141,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
                 Object credentials = eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                setRandomValueForCredentials(credentials);
+                if (!isRandomValueForCredentialsDisabled) {
+                    setRandomValueForCredentials(credentials);
+                }
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD,
                         null);
             } else {
@@ -267,6 +271,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         char[] temporaryPassword = generateRandomPassword(12);
         ((StringBuffer) credentials).replace(0, temporaryPassword.length, new String(temporaryPassword));
+    }
+
+    private static boolean isRandomValueForCredentialsDisabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS));
     }
 
     /**

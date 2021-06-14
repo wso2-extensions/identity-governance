@@ -16,7 +16,10 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -338,6 +341,8 @@ public class IdentityRecoveryConstants {
                 + "recovery request"),
         ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED("PWR-10009",
                 "Password recovery validation failed for user account : '%s'"),
+        ERROR_CODE_ERROR_HANDLING_THE_EVENT("PWR-10010",
+                "Error encountered while handling the event: '%s'"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
                 + "password reset"),
         ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX("PWR-15008", "SMS OTP regex pattern is not supported."),
@@ -523,6 +528,8 @@ public class IdentityRecoveryConstants {
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
+        public static final String ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS = "EmailVerification.AskPassword" +
+                ".DisableRandomValueForCredentials";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
 
@@ -615,12 +622,14 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_LOCALE = "locale";
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET01 = new String[]{"City where you were born ?",
-                "Father's middle name ?", "Favorite food ?", "Favorite vacation location ?"};
+        public static final List<String> SECRET_QUESTIONS_SET01 = Collections.unmodifiableList(Arrays.asList
+                ("City where you were born ?", "Father's middle name ?", "Favorite food ?",
+                        "Favorite vacation location ?"));
 
         // TODO remove this
-        public static final String[] SECRET_QUESTIONS_SET02 = new String[]{"Model of your first car ?",
-                "Name of the hospital where you were born ?", "Name of your first pet ?", "Favorite sport ?"};
+        public static final List<String> SECRET_QUESTIONS_SET02 = Collections.unmodifiableList(Arrays.asList
+                ("Model of your first car ?", "Name of the hospital where you were born ?",
+                        "Name of your first pet ?", "Favorite sport ?"));
 
     }
 

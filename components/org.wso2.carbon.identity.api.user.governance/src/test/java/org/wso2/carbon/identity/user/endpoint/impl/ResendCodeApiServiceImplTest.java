@@ -16,13 +16,13 @@
  */
 package org.wso2.carbon.identity.user.endpoint.impl;
 
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
-import org.testng.IObjectFactory;
-import org.testng.annotations.ObjectFactory;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -30,23 +30,23 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
-import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
  * This class contains unit tests for ResendCodeApiServiceImpl.java
  */
-@PrepareForTest({IdentityUtil.class, Utils.class})
-public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
+public class ResendCodeApiServiceImplTest {
+
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<Utils> mockedUtils;
 
     @Mock
     private UserSelfRegistrationManager userSelfRegistrationManager;
@@ -60,12 +60,27 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
 
+    @BeforeMethod
+    public void setUp() {
+
+        MockitoAnnotations.openMocks(this);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+        mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedUtils.close();
+    }
 
     @Test
     public void testResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.resendConfirmationCode(
+        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenReturn(notificationResponseBean);
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
@@ -73,10 +88,11 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
         assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(), 201);
         assertEquals(resendCodeApiService.resendCodePost(multipleResendCodeRequestDTO()).getStatus(), 201);
 
-        when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
         assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 501);
 
-        when(Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(userRecoveryData);
+        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(
+                userRecoveryData);
         assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 501);
         assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(), 201);
     }
@@ -84,8 +100,7 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.resendConfirmationCode(
+        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
@@ -94,28 +109,10 @@ public class ResendCodeApiServiceImplTest extends PowerMockTestCase {
     @Test
     public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        mockClasses();
-        when(userSelfRegistrationManager.resendConfirmationCode(
+        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 501);
-    }
-
-
-  
-    private void mockClasses() {
-
-        mockStatic(IdentityUtil.class);
-        mockStatic(Utils.class);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
-    }
-
-
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
     }
 
     private ResendCodeRequestDTO resendCodeRequestDTO() {

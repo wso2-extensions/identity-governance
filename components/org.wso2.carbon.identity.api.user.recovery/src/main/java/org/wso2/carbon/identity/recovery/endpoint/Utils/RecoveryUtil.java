@@ -257,8 +257,6 @@ public class RecoveryUtil {
         user.setTenantDomain(userDTO.getTenantDomain());
         if (StringUtils.isNotBlank(userDTO.getRealm())) {
             user.setUserStoreDomain(userDTO.getRealm());
-        } else {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
         }
 
         user.setUserName(userDTO.getUsername());

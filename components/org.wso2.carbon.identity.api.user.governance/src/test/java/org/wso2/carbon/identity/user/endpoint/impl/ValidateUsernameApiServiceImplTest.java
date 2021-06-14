@@ -20,14 +20,12 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
-import org.testng.IObjectFactory;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.ObjectFactory;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -40,16 +38,14 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.ws.rs.core.Response;
-
-import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * This is a test class for {@link ValidateUsernameApiServiceImpl}.
  */
-@PrepareForTest({Utils.class})
-public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
+public class ValidateUsernameApiServiceImplTest {
+
+    private MockedStatic<Utils> mockedUtils;
 
     @InjectMocks
     private ValidateUsernameApiServiceImpl validateUsernameApiService;
@@ -94,17 +90,12 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
                 "Expected error code is not received.");
     }
 
-    @ObjectFactory
-    public IObjectFactory getObjectFactory() {
-
-        return new org.powermock.modules.testng.PowerMockObjectFactory();
-    }
-
     @BeforeMethod
     private void init() throws IdentityRecoveryException {
 
-        PowerMockito.mockStatic(Utils.class);
-        when(Utils.getUserSelfRegistrationManager()).thenReturn(userSelfRegistrationManager);
+        MockitoAnnotations.openMocks(this);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
         Mockito.doReturn(true).when(userSelfRegistrationManager)
                 .isValidTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         Mockito.doReturn(false).when(userSelfRegistrationManager)
@@ -113,4 +104,9 @@ public class ValidateUsernameApiServiceImplTest extends PowerMockTestCase {
                 .isUsernameAlreadyTaken("test", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
     }
 
+    @AfterMethod
+    public void tearDown() {
+
+        mockedUtils.close();
+    }
 }
