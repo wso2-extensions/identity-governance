@@ -97,6 +97,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 /* We need to empty 'EMAIL_ADDRESS_PENDING_VALUE_CLAIM' because having a value in that claim implies
                 a verification is pending. But verification is not enabled anymore. */
                 if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                    if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+                        sendNotificationToExistingEmailOnEmailUpdate(
+                                user, userStoreManager, claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
+                                IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_UPDATE_WITHOUT_VERIFICATION);
+                    }
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
@@ -528,8 +533,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
                     initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
                     // Trigger alert to existing email.
-                    sendNotificationToExistingEmailOnEmailUpdate(user, userStoreManager,
-                            pendingVerificationEmailClaimValue);
+                    sendNotificationToExistingEmailOnEmailUpdate(
+                            user, userStoreManager, pendingVerificationEmailClaimValue,
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE);
                 }
             }
         } finally {
@@ -600,16 +606,19 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     }
 
     /**
-     * Send email alert to existing email when trying to update email address.
+     * Send an email notification to existing email when a request is made to update the email address with either
+     * email verification on update feature enabled or not.
      *
-     * @param user                   User.
-     * @param userStoreManager       UserStoreManager.
-     * @param pendingEmailClaimValue Verification pending email.
+     * @param user             User.
+     * @param userStoreManager UserStoreManager.
+     * @param newEmailAddress  The new email address provided the user to update the existing email address.
+     *                         When the email verification on update feature is enabled, this variable contains the
+     *                         verification pending email.
+     * @param templateType     Email template type.
      * @throws IdentityEventException IdentityEventException.
      */
     private void sendNotificationToExistingEmailOnEmailUpdate(User user, UserStoreManager userStoreManager,
-                                                              String pendingEmailClaimValue) throws IdentityEventException {
-
+                                         String newEmailAddress, String templateType) throws IdentityEventException {
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_NOTIFICATION_ON_EMAIL_UPDATE, user.getTenantDomain()));
         if (!enable) {
@@ -620,7 +629,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
         // Get existing email address.
         String existingEmail = getEmailClaimValue(user, userStoreManager);
-        if (StringUtils.isBlank(existingEmail)) {
+        if (StringUtils.isBlank(existingEmail) || existingEmail.equals(newEmailAddress)) {
             log.debug("Old email in not available for user : " + user.toFullQualifiedUsername() + ". " +
                     "Terminated the notification sending process to existing email.");
             return;
@@ -629,10 +638,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL, pendingEmailClaimValue);
-
-        triggerEmailNotificationToExistingEmail(existingEmail,
-                IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE, user, properties);
+        if (IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE.equals(templateType)) {
+            properties.put(IdentityRecoveryConstants.VERIFICATION_PENDING_EMAIL, newEmailAddress);
+        } else if (IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_UPDATE_WITHOUT_VERIFICATION.
+                equals(templateType)) {
+            properties.put(IdentityRecoveryConstants.NEW_EMAIL_ADDRESS, newEmailAddress);
+        }
+        triggerEmailNotificationToExistingEmail(existingEmail, templateType, user, properties);
     }
 
     /**
