@@ -37,7 +37,6 @@ import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getProp
 /**
  * Class which contains self sign up configs.
  */
-
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     private static final String CONNECTOR_NAME = "self-sign-up";
@@ -331,11 +330,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.COMPLEX.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                        IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         return meta;
     }

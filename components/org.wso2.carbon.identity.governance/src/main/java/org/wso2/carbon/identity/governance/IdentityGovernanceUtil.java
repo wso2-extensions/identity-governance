@@ -152,7 +152,7 @@ public class IdentityGovernanceUtil {
      * @param type, Type of property object.
      * @param regex, Regex string of the property object if it has.
      * @param groupId, Group id of the element.
-     * @return Property object that contains type and regex.
+     * @return Property object that contains type, groupID and regex.
      */
     public static Property getPropertyObject(String type, String regex, int groupId) {
 
@@ -165,11 +165,26 @@ public class IdentityGovernanceUtil {
         return property;
     }
 
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @param regex, Regex string of the property object if it has.
+     * @return Property object that contains type, groupID and regex.
+     */
     public static Property getPropertyObject(String type, String regex) {
 
     return getPropertyObject(type, regex, 0);
     }
 
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @return Property object that contains, groupID type and regex.
+     */
     public static Property getPropertyObject(String type) {
 
         return getPropertyObject(type, null, 0);

@@ -35,7 +35,9 @@ public class IdentityMgtConstants {
         STRING("string"),
         INTEGER("integer"),
         FLOATING("float"),
-        BOOLEAN("boolean");
+        BOOLEAN("boolean"),
+        // Data type for complex objects.
+        COMPLEX("complex");
 
         private final String value;
 

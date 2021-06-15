@@ -405,12 +405,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                        IdentityRecoveryConstants.DEFAULT_REGEX));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue(),
-                        IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX));
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         return meta;
     }
