@@ -49,7 +49,11 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
     public static final String NOTIFICATION_TYPE_VERIFY_EMAIL_ON_UPDATE = "verifyEmailOnUpdate";
+    // This type of notification is used to send a notification when the user updates the email with verification.
     public static final String NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE = "notifyOnExistingEmailUpdate";
+    // This type of notification is used to send a notification when the user updates the email without verification.
+    public static final String NOTIFICATION_TYPE_NOTIFY_EMAIL_UPDATE_WITHOUT_VERIFICATION =
+            "notifyOnExistingEmailUpdateWithoutVerification";
     public static final String NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE = "verifyMobileOnUpdate";
     public static final String NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE = "resendVerifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
@@ -63,6 +67,7 @@ public class IdentityRecoveryConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
+    public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
