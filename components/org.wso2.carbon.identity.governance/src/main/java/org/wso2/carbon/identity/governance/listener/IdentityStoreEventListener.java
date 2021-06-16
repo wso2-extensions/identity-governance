@@ -301,7 +301,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        if (!claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+        if (!StringUtils.contains(claimUri, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
             return true;
         }
 
