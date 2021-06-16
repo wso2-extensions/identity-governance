@@ -176,6 +176,7 @@
                             org.wso2.carbon.identity.handler.event.account.lock.exception;
                             version="${carbon.identity.account.lock.handler.imp.pkg.version.range}",
                             org.wso2.securevault.*; version="${org.wso2.securevault.import.version.range}",
+                            org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                         </Import-Package>
                     </instructions>
                 </configuration>
