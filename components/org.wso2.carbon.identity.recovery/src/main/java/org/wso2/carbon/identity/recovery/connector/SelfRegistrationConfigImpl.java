@@ -330,7 +330,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.COMPLEX.getValue()));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));

@@ -235,7 +235,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.COMPLEX.getValue()));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
 
         return meta;
     }

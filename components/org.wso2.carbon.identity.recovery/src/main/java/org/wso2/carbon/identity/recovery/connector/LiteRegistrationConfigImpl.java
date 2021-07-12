@@ -247,7 +247,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
-        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.COMPLEX.getValue()));
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
