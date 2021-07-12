@@ -18,9 +18,11 @@ package org.wso2.carbon.identity.recovery.connector;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -31,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.xml.namespace.QName;
+
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
 
 /**
  * Class which contains user claim update configs.
@@ -251,4 +255,28 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
             }
         }
     }
+
+    @Override
+    public Map<String, Property> getMetaData() {
+
+        Map<String, Property> meta = new HashMap<>();
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        return meta;
+    }
+
 }

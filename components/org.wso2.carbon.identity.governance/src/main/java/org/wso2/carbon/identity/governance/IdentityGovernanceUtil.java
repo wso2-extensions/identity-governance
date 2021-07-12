@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.governance;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
@@ -144,4 +145,49 @@ public class IdentityGovernanceUtil {
         }
         return defaultNotificationChannel;
     }
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @param regex, Regex string of the property object if it has.
+     * @param groupId, Group id of the element.
+     * @return Property object that contains type, groupID and regex.
+     */
+    public static Property getPropertyObject(String type, String regex, int groupId) {
+
+        Property property = new Property();
+        property.setType(type);
+        property.setGroupId(groupId);
+        if (regex != null) {
+            property.setRegex(regex);
+        }
+        return property;
+    }
+
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @param regex, Regex string of the property object if it has.
+     * @return Property object that contains type, groupID and regex.
+     */
+    public static Property getPropertyObject(String type, String regex) {
+
+    return getPropertyObject(type, regex, 0);
+    }
+
+
+    /**
+     * Get the meta data property object.
+     *
+     * @param type, Type of property object.
+     * @return Property object that contains, groupID type and regex.
+     */
+    public static Property getPropertyObject(String type) {
+
+        return getPropertyObject(type, null, 0);
+    }
+
 }

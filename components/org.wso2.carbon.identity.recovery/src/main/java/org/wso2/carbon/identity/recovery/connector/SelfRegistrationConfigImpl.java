@@ -16,8 +16,10 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -30,6 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
+
+/**
+ * Class which contains self sign up configs.
+ */
 public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
     private static final String CONNECTOR_NAME = "self-sign-up";
@@ -40,31 +47,36 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
     private static final String SIGNUP_PURPOSE_GROUP_TYPE = "SYSTEM";
     private static final String CALLBACK_URL = "/carbon/idpmgt/idp-mgt-edit-local.jsp?category=" + CATEGORY +
             "&subCategory=" + FRIENDLY_NAME;
-    private static final String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" + SYSTEM_PURPOSE_GROUP +
-            "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
+    private static final String consentListURL = "/carbon/consent/list-purposes.jsp?purposeGroup=" +
+            SYSTEM_PURPOSE_GROUP + "&purposeGroupType=" + SIGNUP_PURPOSE_GROUP_TYPE;
 
     @Override
     public String getName() {
+
         return CONNECTOR_NAME;
     }
 
     @Override
     public String getFriendlyName() {
+
         return FRIENDLY_NAME;
     }
 
     @Override
     public String getCategory() {
+
         return CATEGORY;
     }
 
     @Override
     public String getSubCategory() {
+
         return "DEFAULT";
     }
 
     @Override
     public int getOrder() {
+
         return 0;
     }
 
@@ -178,7 +190,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         String accountLockProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
-        String SendNotificationOnCreationProperty = IdentityUtil.getProperty(
+        String sendNotificationOnCreationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
         String notificationInternallyMangedProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
@@ -205,8 +217,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(accountLockProperty)) {
             enableAccountLockOnCreation = accountLockProperty;
         }
-        if (StringUtils.isNotEmpty(SendNotificationOnCreationProperty)) {
-            enableSendNotificationOnCreation = SendNotificationOnCreationProperty;
+        if (StringUtils.isNotEmpty(sendNotificationOnCreationProperty)) {
+            enableSendNotificationOnCreation = sendNotificationOnCreationProperty;
         }
         if (StringUtils.isNotEmpty(notificationInternallyMangedProperty)) {
             enableNotificationInternallyManage = notificationInternallyMangedProperty;
@@ -262,7 +274,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         } catch (UnsupportedEncodingException e) {
             throw new IdentityGovernanceException("Error while encoding callback url: " + CALLBACK_URL, e);
         }
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX, selfRegistrationCallbackRegex);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
+                selfRegistrationCallbackRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
                 enableSelfSignUpConfirmationNotification);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
@@ -278,6 +291,51 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
             throws IdentityGovernanceException {
 
         return null;
+    }
+
+    @Override
+    public Map<String, Property> getMetaData() {
+
+        Map<String, Property> meta = new HashMap<>();
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        return meta;
     }
 
 }

@@ -16,8 +16,10 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -27,37 +29,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
+
+/**
+ * Class which contains Admin forced password reset configs.
+ */
 public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConfig {
 
     private static final String connectorName = "admin-forced-password-reset";
 
     @Override
     public String getName() {
+
         return connectorName;
     }
 
     @Override
     public String getFriendlyName() {
+
         return "Password Reset";
     }
 
     @Override
     public String getCategory() {
+
         return "Account Management";
     }
 
     @Override
     public String getSubCategory() {
+
         return "DEFAULT";
     }
 
     @Override
     public int getOrder() {
+
         return 0;
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "Enable password reset via recovery e-mail");
@@ -70,6 +83,7 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "User gets notified with a link to reset password");
@@ -133,6 +147,19 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
             throws IdentityGovernanceException {
 
         return null;
+    }
+
+    @Override
+    public Map<String, Property> getMetaData() {
+
+        Map<String, Property> meta = new HashMap<>();
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+        return meta;
     }
 
 }
