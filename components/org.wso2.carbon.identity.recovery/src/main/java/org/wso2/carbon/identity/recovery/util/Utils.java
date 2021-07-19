@@ -1042,13 +1042,16 @@ public class Utils {
      */
     public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
 
-        String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        if (StringUtils.isBlank(loggedInUser)) {
-            loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+        if (!Boolean.parseBoolean(System.getProperty(CarbonConstants.DISABLE_LEGACY_LOGS))) {
+            String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+            if (StringUtils.isBlank(loggedInUser)) {
+                loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+            }
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
+            AUDIT_LOG.info(String
+                    .format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
         }
-        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
-        AUDIT_LOG.info(String.format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
     }
 
     /**
