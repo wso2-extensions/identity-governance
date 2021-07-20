@@ -18,7 +18,6 @@ import javax.ws.rs.core.Response;
 public class SetPasswordApiServiceImpl extends SetPasswordApiService {
 
     private static final Log LOG = LogFactory.getLog(SetPasswordApiServiceImpl.class);
-    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     @Override
     public Response setPasswordPost(ResetPasswordRequestDTO resetPasswordRequest) {
@@ -34,7 +33,6 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while resetting password ", e);
             }
-            diagnosticLog.error("Client error while resetting the password. Error message: " + e.getMessage());
 
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_HISTORY_VIOLATE.getCode()
                     .equals(e.getErrorCode())) {
@@ -49,10 +47,8 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
 
         } catch (IdentityRecoveryException e) {
-            diagnosticLog.error("Server error while resetting the passwor. Error message: " + e.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            diagnosticLog.error("Server error while resetting the passwor. Error message: " + throwable.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
