@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.captcha.internal;
 
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.strategy.StrategyConnector;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -56,6 +57,10 @@ public class CaptchaDataHolder {
     private AccountLockService accountLockService;
 
     private List<CaptchaConnector> captchaConnectors = new ArrayList<>();
+
+    private List<StrategyConnector> strategyConnectors = new ArrayList<>();
+
+    private List<CaptchaConnector> captchaFlowConnectors = new ArrayList<>();
 
     private Map<String, String> ssoLoginReCaptchaConnectorPropertyMap = new HashMap<>();
 
@@ -168,6 +173,13 @@ public class CaptchaDataHolder {
         this.captchaConnectors.add(captchaConnector);
     }
 
+    public List<StrategyConnector> getStrategyConnectors() { return strategyConnectors; }
+
+    public void addStrategyConnectors(StrategyConnector strategyConnectors) { this.strategyConnectors.add(strategyConnectors); }
+
+    public List<CaptchaConnector> getCaptchaFlowConnectors() { return captchaFlowConnectors ; }
+
+    public void addCaptchaFlowConnector(CaptchaConnector captchaFlowConnector) { this.captchaFlowConnectors.add(captchaFlowConnector); }
     public void setRealmService(RealmService realmService) {
         this.realmService = realmService;
     }

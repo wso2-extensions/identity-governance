@@ -35,11 +35,29 @@ public interface CaptchaConnector {
 
     boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException;
 
+    @Deprecated
     CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws
             CaptchaException;
 
-    boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException;
+    default CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider) throws
+            CaptchaException {
+        return null;
+    }
 
+    @Deprecated
     CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws
             CaptchaException;
+
+    default CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider) throws
+            CaptchaException{
+        return null;
+    }
+
+    @Deprecated
+    boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException;
+
+    default boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider) throws CaptchaException{
+        return false;
+    }
+
 }
