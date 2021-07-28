@@ -840,7 +840,6 @@ public class NotificationPasswordRecoveryManager {
                 if (log.isDebugEnabled()) {
                     log.debug(msg);
                 }
-                diagnosticLog.error(msg);
             } else if (userList.length == 1) {
                 user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
             } else {
