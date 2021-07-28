@@ -71,7 +71,6 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 public class NotificationPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(NotificationPasswordRecoveryManager.class);
-    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
     private static NotificationPasswordRecoveryManager instance = new NotificationPasswordRecoveryManager();
 
     private NotificationPasswordRecoveryManager() {
@@ -97,7 +96,6 @@ public class NotificationPasswordRecoveryManager {
                                                              Property[] properties)
             throws IdentityRecoveryException {
 
-        diagnosticLog.info("Sending password recovery information to the user: " + user.getUserName());
         publishEvent(user, String.valueOf(notify), null, null, properties,
                 IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION, new UserRecoveryData(user, null,
                         RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD));
@@ -128,7 +126,6 @@ public class NotificationPasswordRecoveryManager {
                 boolean notifyUserExistence = Boolean.parseBoolean(
                         IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
                 if (notifyUserExistence) {
-                    diagnosticLog.error("A valid user could not be found for the username: " + user.getUserName());
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
                             user.getUserName());
                 }
@@ -138,7 +135,6 @@ public class NotificationPasswordRecoveryManager {
         if (Utils.isAccountDisabled(user)) {
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
-                diagnosticLog.error("Account is disabled for the user: " + user.getUserName());
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
                         user.getUserName());
             }
@@ -146,7 +142,6 @@ public class NotificationPasswordRecoveryManager {
         } else if (Utils.isAccountLocked(user)) {
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
-                diagnosticLog.error("Account is locked for the user: " + user.getUserName());
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
                         user.getUserName());
             }
@@ -242,12 +237,10 @@ public class NotificationPasswordRecoveryManager {
                 if (log.isDebugEnabled()) {
                     log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
                 }
-                diagnosticLog.info("No user found for recovery with username: " + user.toFullQualifiedUsername());
                 return false;
             }
             return true;
         } catch (UserStoreException e) {
-            diagnosticLog.error("Error occurred while checking user existence. Error message: " + e.getMessage());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
     }
@@ -271,14 +264,11 @@ public class NotificationPasswordRecoveryManager {
                 log.debug("Notify parameter not in the request. ManageNotificationsInternally set to " +
                         "server default value: " + manageNotificationsInternally);
             }
-            diagnosticLog.info("Notify parameter not in the request. ManageNotificationsInternally set to " +
-                    "server default value: " + manageNotificationsInternally);
             return manageNotificationsInternally;
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Notify parameter in the request. ManageNotificationsInternally set to : " + notify);
             }
-            diagnosticLog.info("Notify parameter in the request. ManageNotificationsInternally set to : " + notify);
             return notify;
         }
     }
@@ -349,8 +339,6 @@ public class NotificationPasswordRecoveryManager {
                                 " to: " + NotificationChannels.EMAIL_CHANNEL.getChannelType();
                 log.debug(message);
             }
-            diagnosticLog.info("No notification channel in the request properties. Configuring the notification " +
-                    "channel to: " + NotificationChannels.EMAIL_CHANNEL.getChannelType());
             return NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         // Validate notification channels.
@@ -368,9 +356,6 @@ public class NotificationPasswordRecoveryManager {
                         defaultNotificationChannel);
                 log.debug(message);
             }
-            diagnosticLog.info(String.format("Not a server supported notification channel : %s. Therefore "
-                            + "default notification channel : %s will be used.", channel,
-                    defaultNotificationChannel));
             return defaultNotificationChannel;
         }
     }
@@ -408,13 +393,10 @@ public class NotificationPasswordRecoveryManager {
             callbackURL = Utils.getCallbackURL(properties);
             if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
                     IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
-                diagnosticLog.error("Callback URL validation failed for the URL: " + callbackURL);
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
             }
         } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
-            diagnosticLog.error("Callback URL validation failed for the URL: " + callbackURL + ". Error message: "
-            + e.getMessage());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
                     callbackURL);
         }
@@ -432,7 +414,6 @@ public class NotificationPasswordRecoveryManager {
                 Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                         tenantDomain));
         if (!isRecoveryEnable) {
-            diagnosticLog.error("Password recovery is disabled in the tenant domain: " + tenantDomain);
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOTIFICATION_BASED_PASSWORD_RECOVERY_NOT_ENABLE,
                     null);
@@ -452,8 +433,6 @@ public class NotificationPasswordRecoveryManager {
                 log.debug("SendRecoveryNotification :Tenant domain is not in the request. set to default for " +
                         "user : " + user.getUserName());
             }
-            diagnosticLog.info("SendRecoveryNotification :Tenant domain is not in the request. set to default for " +
-                    "user : " + user.getUserName());
         }
         if (StringUtils.isBlank(user.getUserStoreDomain())) {
             user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
@@ -461,8 +440,6 @@ public class NotificationPasswordRecoveryManager {
                 log.debug("SendRecoveryNotification : User store domain is not in the request. set to " +
                         "default for user : " + user.getUserName());
             }
-            diagnosticLog.info("SendRecoveryNotification : User store domain is not in the request. set to " +
-                    "default for user : " + user.getUserName());
         }
     }
 
@@ -531,7 +508,6 @@ public class NotificationPasswordRecoveryManager {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
                 log.error(errorMsg);
-                diagnosticLog.error(errorMsg + ". Error message: " + e.getMessage());
                 String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
                 String recoveryStep = userRecoveryData.getRecoveryStep().name();
                 auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
@@ -544,7 +520,6 @@ public class NotificationPasswordRecoveryManager {
             String msg = "Password is updated for  user: " + domainQualifiedName;
             log.debug(msg);
         }
-        diagnosticLog.info("Password is updated for  user: " + domainQualifiedName);
         String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
         String recoveryStep = userRecoveryData.getRecoveryStep().name();
         auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
@@ -588,8 +563,6 @@ public class NotificationPasswordRecoveryManager {
                 log.debug("NotificationPasswordRecoveryManager: Unexpected Error occurred while updating password "
                         + "for the user: " + domainQualifiedName, e);
             }
-            diagnosticLog.error("NotificationPasswordRecoveryManager: Unexpected Error occurred while updating password "
-                    + "for the user: " + domainQualifiedName + ". Error message: " + e.getMessage());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
     }
@@ -769,8 +742,6 @@ public class NotificationPasswordRecoveryManager {
                     ERROR_CODE_ERROR_HANDLING_THE_EVENT.getCode(), e.getMessage(), null);
         } catch (IdentityEventException e) {
             log.error("Error occurred while publishing event " + eventName + " for user " + user);
-            diagnosticLog.error("Error occurred while publishing event " + eventName + " for user " + user +
-                    ". Error message: " + e.getMessage());
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
                     eventName, e);
         }
@@ -869,7 +840,6 @@ public class NotificationPasswordRecoveryManager {
                 if (log.isDebugEnabled()) {
                     log.debug(msg);
                 }
-                diagnosticLog.error(msg);
             } else if (userList.length == 1) {
                 user.setUserStoreDomain(IdentityUtil.extractDomainFromName(userList[0]));
             } else {

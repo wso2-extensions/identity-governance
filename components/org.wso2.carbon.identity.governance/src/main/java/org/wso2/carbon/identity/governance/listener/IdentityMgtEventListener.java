@@ -59,7 +59,6 @@ import java.util.Map;
 public class IdentityMgtEventListener extends AbstractIdentityUserOperationEventListener {
 
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
-    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
     private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
 
@@ -264,7 +263,6 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
      */
     private Map<String, String> getUserIdentityDataMap(String username) {
 
-        diagnosticLog.info("Retrieving identity claims of user: " + username);
         if (IdentityUtil.threadLocalProperties != null) {
             UserIdentityClaim userIdentityClaims = (UserIdentityClaim) IdentityUtil.threadLocalProperties.get()
                     .get(IdentityMgtConstants.USER_IDENTITY_CLAIMS);
@@ -274,7 +272,6 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 if (log.isDebugEnabled()) {
                     log.debug("No identity claims for user : " + username);
                 }
-                diagnosticLog.info("No identity claims found for user: " + username);
                 return null;
             } else {
                 return userIdentityClaims.getUserIdentityDataMap();

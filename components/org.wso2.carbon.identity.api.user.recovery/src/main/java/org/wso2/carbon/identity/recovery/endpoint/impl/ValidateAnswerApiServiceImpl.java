@@ -19,7 +19,6 @@ import javax.ws.rs.core.Response;
 
 public class ValidateAnswerApiServiceImpl extends ValidateAnswerApiService {
     private static final Log LOG = LogFactory.getLog(ValidateAnswerApiServiceImpl.class);
-    private static final Log diagnosticLog = LogFactory.getLog("diagnostics");
 
     @Override
     public Response validateAnswerPost(AnswerVerificationRequestDTO answerVerificationRequest) {
@@ -34,8 +33,6 @@ public class ValidateAnswerApiServiceImpl extends ValidateAnswerApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while verifying challenge answers in recovery flow", e);
             }
-            diagnosticLog.error("Client Error while verifying challenge answers in recovery flow. Error message: "
-            + e.getMessage());
 
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION.getCode()
                     .equals(e.getErrorCode())) {
@@ -49,12 +46,8 @@ public class ValidateAnswerApiServiceImpl extends ValidateAnswerApiService {
 
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
-            diagnosticLog.error("Server Error while verifying challenge answers in recovery flow. Error message: "
-                    + e.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            diagnosticLog.error("Server Error while verifying challenge answers in recovery flow. Error message: "
-                    + throwable.getMessage());
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
