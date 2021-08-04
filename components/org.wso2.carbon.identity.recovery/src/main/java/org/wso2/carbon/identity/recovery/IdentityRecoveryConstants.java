@@ -544,6 +544,7 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
         public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
         public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK = "Recovery.AdminPasswordReset.RecoveryLink";
+        public static final String ADMIN_PASSWORD_RESET_EXPIRY_TIME = "Recovery.AdminPasswordReset.ExpiryTime";
 
         public static final String PASSWORD_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Password.Enable";
         public static final String USERNAME_RECOVERY_RECAPTCHA_ENABLE = "Recovery.ReCaptcha.Username.Enable";
