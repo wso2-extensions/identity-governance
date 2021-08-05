@@ -114,7 +114,7 @@ public class CaptchaFilter implements Filter {
 
             // Check whether captcha is required or will reach to the max failed attempts with the current attempt.
             CaptchaPreValidationResponse captchaPreValidationResponse = selectedCaptchaFlowConnector
-                    .preValidate(servletRequest, servletResponse);
+                    .preValidate(servletRequest, servletResponse, selectedCaptchaProvider);
 
             if (captchaPreValidationResponse == null) {
                 // Captcha connector failed to response. Default is success.
@@ -127,7 +127,7 @@ public class CaptchaFilter implements Filter {
 
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
-                    boolean validCaptcha = selectedCaptchaFlowConnector.verifyCaptcha(servletRequest, servletResponse);
+                    boolean validCaptcha = selectedCaptchaFlowConnector.verifyCaptcha(servletRequest, servletResponse, selectedCaptchaProvider);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
                         httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
@@ -167,7 +167,7 @@ public class CaptchaFilter implements Filter {
             doFilter(captchaPreValidationResponse, servletRequest, responseWrapper, filterChain);
 
             CaptchaPostValidationResponse postValidationResponse = selectedCaptchaFlowConnector
-                    .postValidate(servletRequest, responseWrapper);
+                    .postValidate(servletRequest, responseWrapper, selectedCaptchaProvider);
 
             // Check whether this attempt is failed
             if (postValidationResponse == null || postValidationResponse.isSuccessfulAttempt()) {
