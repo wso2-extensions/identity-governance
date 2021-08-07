@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * //TODO remove method when user is deleted
+ *
  */
 public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
@@ -47,7 +47,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
     private static final String QUERY_FILTER_STRING_ANY = "*";
     private static final String SQL_FILTER_STRING_ANY = "%";
-    private static final char SQL_FILTER_CHAR_ESCAPE = '\\';
 
     @Override
     public void store(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
@@ -57,9 +56,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             return;
         }
 
-        // Before putting to cache, has to check this whether this available in the database
         // Putting into cache
-
         String userName = userIdentityDTO.getUserName();
         String domainName = ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration().
                 getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
@@ -75,109 +72,118 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             log.error("Error while getting tenant Id.", e);
         }
 
-
         Map<String, String> data = userIdentityDTO.getUserIdentityDataMap();
 
-        for (Map.Entry<String, String> entry : data.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            boolean isUserExists;
-            try {
-                isUserExists = isExistingUserDataValue(userName, tenantId, key);
-            } catch (SQLException e) {
-                throw IdentityException.error("Error occurred while checking if user existing", e);
-            }
-            if (isUserExists) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Key:" + key + ", Value:" + value + " updated for user:" + userName + " in "
-                            + "JDBCIdentityDataStore");
+        Connection connection = IdentityDatabaseUtil.getDBConnection();
+        try {
+            Map<String, String> existingDataValues = getUserDataValues(connection, userName, tenantId);
+            Map<String, String> newClaims = new HashMap<>();
+            Map<String, String> availableClaims = new HashMap<>();
+
+            // Divide claim list to already available claims (need to update those) and new claims (need to add those)
+            for (Map.Entry<String, String> entry : data.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (existingDataValues.containsKey(key)) {
+                    String existingValue = existingDataValues.get(key);
+                    if (existingValue == null || !existingValue.equals(value)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Key:" + key + ", Value:" + value + " to be updated for user:" + userName
+                                    + " in JDBCIdentityDataStore");
+                        }
+                        availableClaims.put(key, value);
+                    }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Key:" + key + ", Value:" + value + " to be added for user:" + userName + " in "
+                                + "JDBCIdentityDataStore");
+                    }
+                    newClaims.put(key, value);
                 }
-                updateUserDataValue(userName, tenantId, key, value);
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Key:" + key + ", Value:" + value + " added for user:" + userName + " in "
-                            + "JDBCIdentityDataStore");
-                }
-                addUserDataValue(userName, tenantId, key, value);
             }
+
+            addUserDataValues(connection, userName, tenantId, newClaims);
+            updateUserDataValues(connection, userName, tenantId, availableClaims);
+
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            log.error("Error while persisting user identity data", e);
+        } finally {
+            IdentityDatabaseUtil.closeConnection(connection);
         }
     }
 
-    private boolean isExistingUserDataValue(String userName, int tenantId, String key) throws SQLException {
+    private Map<String, String> getUserDataValues(Connection connection, String userName, int tenantId)
+            throws SQLException {
 
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+        Map<String, String> dataValues = new HashMap<>();
+        PreparedStatement prepStmt = null;
+        ResultSet results = null;
+        try {
             boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
             String query;
             if (isUsernameCaseSensitive) {
-                query = SQLQuery.CHECK_EXIST_USER_DATA;
+                query = SQLQuery.LOAD_USER_DATA;
             } else {
-                query = SQLQuery.CHECK_EXIST_USER_DATA_CASE_INSENSITIVE;
-            }
-            try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
-                prepStmt.setInt(1, tenantId);
-                prepStmt.setString(2, userName);
-                prepStmt.setString(3, key);
-                try (ResultSet results = prepStmt.executeQuery()) {
-                    if (results.next()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-
-    private void addUserDataValue(String userName, int tenantId, String key, String value) {
-
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
-        PreparedStatement prepStmt = null;
-
-        try {
-            prepStmt = connection.prepareStatement(SQLQuery.STORE_USER_DATA);
-            prepStmt.setInt(1, tenantId);
-            prepStmt.setString(2, userName);
-            prepStmt.setString(3, key);
-            prepStmt.setString(4, value);
-            prepStmt.execute();
-            IdentityDatabaseUtil.commitTransaction(connection);
-        } catch (SQLException e) {
-            IdentityDatabaseUtil.rollbackTransaction(connection);
-            log.error("Error occurred while persisting user data", e);
-        } finally {
-            IdentityDatabaseUtil.closeStatement(prepStmt);
-            IdentityDatabaseUtil.closeConnection(connection);
-        }
-    }
-
-
-    private void updateUserDataValue(String userName, int tenantId, String key, String value) {
-
-        Connection connection = IdentityDatabaseUtil.getDBConnection();
-        PreparedStatement prepStmt = null;
-        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
-        try {
-            String query;
-            if (isUsernameCaseSensitive) {
-                query = SQLQuery.UPDATE_USER_DATA;
-            } else {
-                query = SQLQuery.UPDATE_USER_DATA_CASE_INSENSITIVE;
+                query = SQLQuery.LOAD_USER_DATA_CASE_INSENSITIVE;
             }
             prepStmt = connection.prepareStatement(query);
-            prepStmt.setString(1, value);
-            prepStmt.setInt(2, tenantId);
-            prepStmt.setString(3, userName);
-            prepStmt.setString(4, key);
-            prepStmt.executeUpdate();
-            IdentityDatabaseUtil.commitTransaction(connection);
-        } catch (SQLException e) {
-            IdentityDatabaseUtil.rollbackTransaction(connection);
-            log.error("Error occurred while persisting user data", e);
+            prepStmt.setInt(1, tenantId);
+            prepStmt.setString(2, userName);
+            results = prepStmt.executeQuery();
+            while (results.next()) {
+                dataValues.put(results.getString(1), results.getString(2));
+            }
+        } finally {
+            IdentityDatabaseUtil.closeResultSet(results);
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+        }
+        return dataValues;
+    }
+    private void addUserDataValues(Connection connection, String userName, int tenantId,
+                                   Map<String, String> properties) throws SQLException {
+
+        PreparedStatement prepStmt = null;
+        try {
+            prepStmt = connection.prepareStatement(SQLQuery.STORE_USER_DATA);
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                prepStmt.setInt(1, tenantId);
+                prepStmt.setString(2, userName);
+                prepStmt.setString(3, entry.getKey());
+                prepStmt.setString(4, entry.getValue());
+                prepStmt.addBatch();
+            }
+            prepStmt.executeBatch();
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
-            IdentityDatabaseUtil.closeConnection(connection);
         }
+    }
 
+    private void updateUserDataValues(Connection connection, String userName, int tenantId,
+                                      Map<String, String> properties) throws SQLException {
+
+        PreparedStatement prepStmt = null;
+        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
+        String query;
+        if (isUsernameCaseSensitive) {
+            query = SQLQuery.UPDATE_USER_DATA;
+        } else {
+            query = SQLQuery.UPDATE_USER_DATA_CASE_INSENSITIVE;
+        }
+        try {
+            prepStmt = connection.prepareStatement(query);
+            for (Map.Entry<String, String> entry : properties.entrySet()) {
+                prepStmt.setString(1, entry.getValue());
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, userName);
+                prepStmt.setString(4, entry.getKey());
+                prepStmt.addBatch();
+            }
+            prepStmt.executeBatch();
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+        }
     }
 
     @Override
@@ -194,25 +200,9 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         }
 
         Connection connection = IdentityDatabaseUtil.getDBConnection();
-        PreparedStatement prepStmt = null;
-        ResultSet results = null;
         try {
             int tenantId = userStoreManager.getTenantId();
-            boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(userName, tenantId);
-            String query;
-            if (isUsernameCaseSensitive) {
-                query = SQLQuery.LOAD_USER_DATA;
-            } else {
-                query = SQLQuery.LOAD_USER_DATA_CASE_INSENSITIVE;
-            }
-            prepStmt = connection.prepareStatement(query);
-            prepStmt.setInt(1, tenantId);
-            prepStmt.setString(2, userName);
-            results = prepStmt.executeQuery();
-            Map<String, String> data = new HashMap<String, String>();
-            while (results.next()) {
-                data.put(results.getString(1), results.getString(2));
-            }
+            Map<String, String> data = getUserDataValues(connection, userName, tenantId);
             IdentityDatabaseUtil.commitTransaction(connection);
             if (log.isDebugEnabled()) {
                 log.debug("Retrieved identity data for:" + tenantId + ":" + userName);
@@ -232,8 +222,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             log.error("Error while reading user identity data", e);
         } finally {
-            IdentityDatabaseUtil.closeResultSet(results);
-            IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
         }
 
@@ -339,11 +327,6 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
      * The primary key is tenantId, userName, DatKey combination
      */
     private static class SQLQuery {
-        public static final String CHECK_EXIST_USER_DATA = "SELECT DATA_VALUE FROM IDN_IDENTITY_USER_DATA WHERE " +
-                "TENANT_ID = ? AND USER_NAME = ? AND DATA_KEY = ?";
-        public static final String CHECK_EXIST_USER_DATA_CASE_INSENSITIVE = "SELECT DATA_VALUE FROM " +
-                "IDN_IDENTITY_USER_DATA WHERE TENANT_ID = ? AND LOWER(USER_NAME) = LOWER(?) AND DATA_KEY = ?";
-
         public static final String STORE_USER_DATA = "INSERT INTO IDN_IDENTITY_USER_DATA (TENANT_ID, USER_NAME, " +
                 "DATA_KEY, DATA_VALUE) VALUES (?,?,?,?)";
 
