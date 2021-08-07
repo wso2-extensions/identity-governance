@@ -607,7 +607,8 @@ public class NotificationPasswordRecoveryManager {
         // If the scenario is initiated by the admin, set the account locked claim to TRUE.
         if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
-                equals(userRecoveryData.getRecoveryScenario())) {
+                equals(userRecoveryData.getRecoveryScenario()) ||
+                RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
@@ -869,3 +870,4 @@ public class NotificationPasswordRecoveryManager {
         return userList;
     }
 }
+
