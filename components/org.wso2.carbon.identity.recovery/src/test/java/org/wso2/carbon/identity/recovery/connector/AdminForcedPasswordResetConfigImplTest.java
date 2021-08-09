@@ -84,6 +84,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 "Enable password reset via OTP");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "Enable password reset offline");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
+                "Admin forced password reset code expiry time");
 
         Map<String, String> nameMapping = adminForcedPasswordResetConfigIml.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -99,6 +101,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 "User gets notified with a one time password to try with SSO login");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "An OTP generated and stored in users claims");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
+                "Validity time of the admin forced password reset code in minutes");
 
         Map<String, String> descriptionMapping = adminForcedPasswordResetConfigIml.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -111,6 +115,7 @@ public class AdminForcedPasswordResetConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME);
         String[] propertiesListExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = adminForcedPasswordResetConfigIml.getPropertyNames();
@@ -126,6 +131,7 @@ public class AdminForcedPasswordResetConfigImplTest {
         String testEnableAdminPasswordResetWithRecoveryLink = "false";
         String testEnableAdminPasswordResetWithOTP = "false";
         String testEnableAdminPasswordResetOffline = "false";
+        String testAdminPasswordResetExpiryTime = "1440";
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
@@ -134,6 +140,8 @@ public class AdminForcedPasswordResetConfigImplTest {
                 testEnableAdminPasswordResetWithOTP);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 testEnableAdminPasswordResetOffline);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
+                testAdminPasswordResetExpiryTime);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
