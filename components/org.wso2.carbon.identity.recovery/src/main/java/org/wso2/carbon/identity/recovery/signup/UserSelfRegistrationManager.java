@@ -79,8 +79,8 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -946,7 +946,7 @@ public class UserSelfRegistrationManager {
         String contextUsername = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String username;
         if (!UserStoreConfigConstants.PRIMARY.equals(user.getUserStoreDomain())) {
-            username = user.getUserStoreDomain() + "/" + user.getUserName();
+            username = user.getUserStoreDomain() + CarbonConstants.DOMAIN_SEPARATOR + user.getUserName();
         } else {
             username = user.getUserName();
         }
