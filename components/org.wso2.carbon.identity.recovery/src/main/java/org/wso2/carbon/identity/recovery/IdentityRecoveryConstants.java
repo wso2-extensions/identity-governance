@@ -16,6 +16,8 @@
 
 package org.wso2.carbon.identity.recovery;
 
+import org.wso2.carbon.identity.core.util.IdentityUtil;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -620,7 +622,7 @@ public class IdentityRecoveryConstants {
 
     public static class Questions {
 
-        public static final String LOCALE_CLAIM = "http://wso2.org/claims/locality";
+        public static final String LOCALE_CLAIM = IdentityUtil.getClaimUriLocale();
         public static final String BLACKLIST_REGEX = ".*[/\\\\].*";
 
         public static final String CHALLENGE_QUESTION_SET_ID = "questionSetId";
