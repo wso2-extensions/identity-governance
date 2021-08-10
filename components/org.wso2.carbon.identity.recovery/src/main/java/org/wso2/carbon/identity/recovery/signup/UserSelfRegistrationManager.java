@@ -80,6 +80,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -977,7 +978,12 @@ public class UserSelfRegistrationManager {
 
         validateContextTenantDomainWithUserTenantDomain(user);
         String contextUsername = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        String username = user.getUserName();
+        String username;
+        if (!UserStoreConfigConstants.PRIMARY.equals(user.getUserStoreDomain())) {
+            username = user.getUserStoreDomain() + CarbonConstants.DOMAIN_SEPARATOR + user.getUserName();
+        } else {
+            username = user.getUserName();
+        }
         if (!StringUtils.equalsIgnoreCase(contextUsername, username)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
                     contextUsername);
