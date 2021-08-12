@@ -1190,8 +1190,7 @@ public class Utils {
     public static boolean reIssueExistingConfirmationCode(UserRecoveryData recoveryDataDO, String notificationChannel) {
 
         int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
-        if (recoveryDataDO != null && codeToleranceInMinutes != 0 &&
-                NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel)) {
+        if (recoveryDataDO != null && codeToleranceInMinutes != 0) {
             if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
                     equals(recoveryDataDO.getRecoveryScenario().toString())) {
                 long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
