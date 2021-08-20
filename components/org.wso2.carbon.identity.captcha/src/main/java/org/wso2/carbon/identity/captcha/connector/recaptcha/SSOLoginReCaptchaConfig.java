@@ -311,7 +311,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
 
         if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
-            failedRedirectUrls = Arrays.asList(failedRedirectUrlStr.split(","));
+            failedRedirectUrls = new ArrayList<>(Arrays.asList(failedRedirectUrlStr.split(",")));
         }
 
         failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
