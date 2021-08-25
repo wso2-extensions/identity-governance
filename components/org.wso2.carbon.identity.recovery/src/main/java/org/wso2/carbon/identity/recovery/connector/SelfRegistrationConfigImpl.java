@@ -107,8 +107,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable Auto Login After Account Confirmation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
-                "Enable Auto Login After Account Confirmation");
         return nameMapping;
     }
 
@@ -141,8 +139,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Prompt reCaptcha verification for resend confirmation");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 "User will be logged in automatically after completing the Account Confirmation ");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
-                "User will be logged in automatically after completing the Account Confirmation ");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie. The public key has to be imported to the keystore. ");
         return descriptionMapping;
@@ -166,7 +162,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         return properties.toArray(new String[0]);
     }
 
