@@ -76,6 +76,8 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_LOCKED_REASON_CLAIM = "http://wso2.org/claims/identity/lockedReason";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
+    public static final String USER_SOURCE_ID_CLAIM_URI = "http://wso2.org/claims/identity/userSourceId";
+    public static final String LOCAL_CREDENTIAL_EXISTS_CLAIM_URI = "http://wso2.org/claims/identity/localCredentialExists";
     public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
@@ -181,6 +183,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s.'"),
         ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s.'"),
         ERROR_CODE_INVALID_USER("18003", "Invalid User '%s.'"),
+        ERROR_CODE_FEDERATED_USER("18004", "User %s doesn't have a password for Asgardeo account."),
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
