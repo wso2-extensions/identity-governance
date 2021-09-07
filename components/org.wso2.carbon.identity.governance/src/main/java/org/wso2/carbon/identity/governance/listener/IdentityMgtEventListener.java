@@ -607,6 +607,25 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         return true;
     }
 
+    @Override
+    public boolean doPostUpdateUserListOfInternalRole(String roleName, String deletedUsers[],
+                                              String[] newUsers, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post update user list of internal role is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_HYBRID_ROLE;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
+        handleEvent(null, userStoreManager, eventName, roleName, properties);
+        return true;
+    }
+
     public boolean doPreUpdateRoleListOfUser(String userName, String[] deletedRoles,
                                              String[] newRoles,
                                              UserStoreManager userStoreManager)
@@ -1544,6 +1563,26 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post update user list of role with id is called in IdentityMgtEventListener");
         }
         String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_ROLE_WITH_ID;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.ROLE_NAME, roleName);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
+
+        handleEvent(eventName, properties, userStoreManager);
+        return true;
+    }
+
+    @Override
+    public boolean doPostUpdateUserListOfInternalRoleWithID(String roleName, String[] deletedUsers, String[] newUsers,
+                                                    UserStoreManager userStoreManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post update user list of role with id is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_HYBRID_ROLE_WITH_ID;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.ROLE_NAME, roleName);
         properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
