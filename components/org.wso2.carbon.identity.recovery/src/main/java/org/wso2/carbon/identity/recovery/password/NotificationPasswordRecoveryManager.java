@@ -61,7 +61,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 
@@ -131,6 +131,11 @@ public class NotificationPasswordRecoveryManager {
                 }
                 return new NotificationResponseBean(user);
             }
+        }
+        // Check if the user has a local credential to recover. If not skip sending the recovery mail.
+        if (!isLocalCredentialAvailable(user)) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER,
+                    user.getUserName());
         }
         if (Utils.isAccountDisabled(user)) {
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
@@ -243,6 +248,35 @@ public class NotificationPasswordRecoveryManager {
         } catch (UserStoreException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         }
+    }
+
+    private boolean isLocalCredentialAvailable(User user) throws IdentityRecoveryServerException {
+
+        try {
+            String[] requiredClaims = new String[] {IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI,
+                    IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI};
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+            String domainQualifiedUsername = IdentityUtil
+                    .addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            Map<String, String> claimValues =
+                    userStoreManager.getUserClaimValues(domainQualifiedUsername, requiredClaims, null);
+            if (MapUtils.isNotEmpty(claimValues)) {
+                String userSourceId = claimValues.get(IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI);
+                String localCredentialExists = claimValues.get(
+                        IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI);
+                if (StringUtils.isNotEmpty(userSourceId)) {
+                    if (localCredentialExists != null && !Boolean.parseBoolean(localCredentialExists)) {
+                        return false;
+                    }
+                }
+            }
+        } catch (UserStoreException e) {
+            log.error("Error occurred while checking user's local credential availability. " +
+                    "Error message: " + e.getMessage());
+        }
+        return true;
     }
 
     /**
