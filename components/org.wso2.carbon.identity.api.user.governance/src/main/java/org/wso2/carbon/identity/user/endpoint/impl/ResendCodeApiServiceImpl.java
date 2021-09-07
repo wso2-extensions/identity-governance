@@ -19,7 +19,9 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -51,6 +53,12 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         String tenantFromContext = getTenantDomainFromContext();
         if (StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
+        }
+        ResolvedUserResult resolvedUserResult =
+                FrameworkUtils.processMultiAttributeLoginIdentification(resendCodeRequestDTO.getUser().getUsername(),
+                        resendCodeRequestDTO.getUser().getTenantDomain());
+        if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
+            resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getUsername());
         }
         NotificationResponseBean notificationResponseBean = null;
 
