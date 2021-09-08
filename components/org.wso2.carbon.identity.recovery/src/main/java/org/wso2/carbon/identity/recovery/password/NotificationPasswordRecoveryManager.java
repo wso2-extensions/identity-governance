@@ -614,6 +614,7 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityEventException {
 
         HashMap<String, String> userClaims = new HashMap<>();
+        Enum<RecoveryScenarios> recoveryScenario = userRecoveryData.getRecoveryScenario();
         // If notifications are internally managed we try to set the verified claims since this is an opportunity
         // to verify a user channel.
         if (isNotificationInternallyManaged) {
@@ -631,18 +632,21 @@ public class NotificationPasswordRecoveryManager {
                 }
                 userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             }
-            if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                        IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
-            }
         }
-        // If the scenario is initiated by the admin, set the account locked claim to TRUE.
-        if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(userRecoveryData.getRecoveryScenario())
-                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.
-                equals(userRecoveryData.getRecoveryScenario()) ||
-                RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario())) {
+        // We don not need to change any states during user initiated password recovery.
+        if (!(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario))
+                && Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                    IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+        }
+
+        // If the scenario is initiated by the admin, set the account locked claim to FALSE.
+        if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
