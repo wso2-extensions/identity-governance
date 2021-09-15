@@ -686,7 +686,7 @@ public class UserSelfRegistrationManager {
                                                            String verifiedChannelClaim, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-        return validateSelfRegistrationCode(code, verifiedChannelType, verifiedChannelClaim, properties, skipExpiredCodeValidation);
+        return introspectSelfRegistrationCode(code, skipExpiredCodeValidation);
     }
 
     private UserRecoveryData validateSelfRegistrationCode(String code, String verifiedChannelType,
@@ -765,6 +765,34 @@ public class UserSelfRegistrationManager {
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_EMAIL_CHANGE_VERIFICATION);
         }
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
+        return recoveryData;
+    }
+
+    /**
+     * Introspects self registration confirmation code details without invalidating it.
+     * Does not triggering notification events or update user claims.
+     *
+     * @param skipExpiredCodeValidation   Skip confirmation code validation against expiration.
+     * @param code                      Confirmation code.
+     * @return UserRecoveryData           Data associated with the provided code, including related user and scenarios.
+     * @throws IdentityRecoveryException  Error validating the confirmation code
+     */
+    private UserRecoveryData introspectSelfRegistrationCode(String code, boolean skipExpiredCodeValidation)
+            throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+
+        // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
+        UserRecoveryData recoveryData;
+        if (!skipExpiredCodeValidation) {
+            recoveryData = userRecoveryDataStore.load(code);
+        } else {
+            recoveryData = userRecoveryDataStore.load(code,skipExpiredCodeValidation);
+        }
+        User user = recoveryData.getUser();
+
+        // Validate context tenant domain name with user tenant domain.
+        validateContextTenantDomainWithUserTenantDomain(user);
         return recoveryData;
     }
 
@@ -927,10 +955,6 @@ public class UserSelfRegistrationManager {
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
-
-        // Set accountState claim UNLOCK.
-        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
 
         //Set account verified time claim.
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
