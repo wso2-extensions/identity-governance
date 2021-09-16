@@ -51,6 +51,9 @@ public class CaptchaConstants {
 
     public static final String BASIC_AUTH_MECHANISM = "basic";
 
+    /**
+     * Captcha Connector configuration constants from the identity.xml.
+     */
     public static class ConnectorConfig {
 
         public static final String SSO_LOGIN_RECAPTCHA_ENABLED = "SSOLogin.Recaptcha.Enabled";
