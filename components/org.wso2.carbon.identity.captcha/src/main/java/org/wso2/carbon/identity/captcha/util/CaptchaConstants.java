@@ -54,7 +54,7 @@ public class CaptchaConstants {
     /**
      * Captcha Connector configuration constants from the identity.xml.
      */
-    public static class ConnectorConfig {
+    public static final class ConnectorConfig {
 
         public static final String SSO_LOGIN_RECAPTCHA_ENABLED = "SSOLogin.Recaptcha.Enabled";
         public static final String SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS = "SSOLogin.Recaptcha.EnableAlways";
