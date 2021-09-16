@@ -54,9 +54,7 @@ public class CaptchaConstants {
     public static class ConnectorConfig {
 
         public static final String SSO_LOGIN_RECAPTCHA_ENABLED = "SSOLogin.Recaptcha.Enabled";
-
         public static final String SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS = "SSOLogin.Recaptcha.EnableAlways";
-
         public static final String SSO_LOGIN_RECAPTCHA_MAX_ATTEMPTS = "SSOLogin.Recaptcha.MaxAttempts";
     }
 
