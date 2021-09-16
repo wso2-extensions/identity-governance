@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -47,6 +48,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_ENABLED;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_MAX_ATTEMPTS;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
 /**
@@ -272,19 +276,39 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
+        String recaptchaEnableAlways = "false";
+        String recaptchaEnable = "false";
+        String recaptchaMaxAttempts = "3";
+
+        String recaptchaEnableAlwaysProperty = IdentityUtil.getProperty(SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS);
+        String recaptchaEnableProperty = IdentityUtil.getProperty(SSO_LOGIN_RECAPTCHA_ENABLED);
+        String recaptchaMaxAttemptsProperty = IdentityUtil.getProperty(SSO_LOGIN_RECAPTCHA_MAX_ATTEMPTS);
+
+        if (StringUtils.isNotEmpty(recaptchaEnableAlwaysProperty)) {
+            recaptchaEnableAlways = recaptchaEnableAlwaysProperty;
+        }
+        if (StringUtils.isNotEmpty(recaptchaEnableProperty)) {
+            recaptchaEnable = recaptchaEnableProperty;
+        }
+        if (StringUtils.isNotEmpty(recaptchaMaxAttemptsProperty)) {
+            recaptchaMaxAttempts = recaptchaMaxAttemptsProperty;
+        }
+
         Map<String, String> defaultProperties = CaptchaDataHolder.getInstance()
                 .getSSOLoginReCaptchaConnectorPropertyMap();
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "false");
+            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                    recaptchaEnableAlways);
         }
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.ENABLE))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "false");
+            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, recaptchaEnable);
         }
         if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS, "3");
+            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+                    recaptchaMaxAttempts);
         }
 
         Properties properties = new Properties();
