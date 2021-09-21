@@ -71,6 +71,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                         resolvedUserResult.setResolvedValue(loginAttribute);
                         User user = userList.get(0);
                         user.setUsername(user.getDomainQualifiedUsername());
+                        user.setTenantDomain(tenantDomain);
                         resolvedUserResult.setUser(user);
                         break;
                     } else if (userList.size() > 1) {
