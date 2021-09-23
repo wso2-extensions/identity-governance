@@ -24,9 +24,11 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
+import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.strategy.StrategyConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -82,23 +84,37 @@ public class CaptchaFilter implements Filter {
             }
 
             List<CaptchaConnector> captchaConnectors = CaptchaDataHolder.getInstance().getCaptchaConnectors();
+            List<StrategyConnector> strategyConnectors = CaptchaDataHolder.getInstance().getStrategyConnectors();
+            List<CaptchaConnector> captchaFlowConnectors = CaptchaDataHolder.getInstance().getCaptchaFlowConnectors();
 
-            CaptchaConnector selectedCaptchaConnector = null;
-            for (CaptchaConnector captchaConnector : captchaConnectors) {
-                if (captchaConnector.canHandle(servletRequest, servletResponse) && (selectedCaptchaConnector == null ||
-                        captchaConnector.getPriority() > selectedCaptchaConnector.getPriority())) {
-                    selectedCaptchaConnector = captchaConnector;
+            //select the relevant flow connector
+            CaptchaConnector selectedCaptchaFlowConnector = null;
+            for (CaptchaConnector captchaFlowConnector : captchaFlowConnectors) {
+                if (captchaFlowConnector.canHandle(servletRequest, servletResponse) && (selectedCaptchaFlowConnector == null ||
+                        captchaFlowConnector.getPriority() > selectedCaptchaFlowConnector.getPriority())) {
+                    selectedCaptchaFlowConnector = captchaFlowConnector;
                 }
             }
 
-            if (selectedCaptchaConnector == null) {
+            if (selectedCaptchaFlowConnector == null) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
 
+            //select the strategy
+            StrategyConnector selectedStrategyConnector = null;
+            for (StrategyConnector strategyConnector : strategyConnectors) {
+                if (selectedCaptchaFlowConnector != null && (selectedStrategyConnector == null ||
+                        strategyConnector.getPriority() > selectedStrategyConnector.getPriority())) {
+                    selectedStrategyConnector = strategyConnector;
+                }
+            }
+
+            CaptchaProvider selectedCaptchaProvider = selectedStrategyConnector.getCaptchaProvider(servletRequest, servletResponse);
+
             // Check whether captcha is required or will reach to the max failed attempts with the current attempt.
-            CaptchaPreValidationResponse captchaPreValidationResponse = selectedCaptchaConnector
-                    .preValidate(servletRequest, servletResponse);
+            CaptchaPreValidationResponse captchaPreValidationResponse = selectedCaptchaFlowConnector
+                    .preValidate(servletRequest, servletResponse, selectedCaptchaProvider);
 
             if (captchaPreValidationResponse == null) {
                 // Captcha connector failed to response. Default is success.
@@ -111,7 +127,7 @@ public class CaptchaFilter implements Filter {
 
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
-                    boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
+                    boolean validCaptcha = selectedCaptchaFlowConnector.verifyCaptcha(servletRequest, servletResponse, selectedCaptchaProvider);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
                         httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
@@ -150,8 +166,8 @@ public class CaptchaFilter implements Filter {
             CaptchaHttpServletResponseWrapper responseWrapper = new CaptchaHttpServletResponseWrapper(httpResponse);
             doFilter(captchaPreValidationResponse, servletRequest, responseWrapper, filterChain);
 
-            CaptchaPostValidationResponse postValidationResponse = selectedCaptchaConnector
-                    .postValidate(servletRequest, responseWrapper);
+            CaptchaPostValidationResponse postValidationResponse = selectedCaptchaFlowConnector
+                    .postValidate(servletRequest, responseWrapper, selectedCaptchaProvider);
 
             // Check whether this attempt is failed
             if (postValidationResponse == null || postValidationResponse.isSuccessfulAttempt()) {

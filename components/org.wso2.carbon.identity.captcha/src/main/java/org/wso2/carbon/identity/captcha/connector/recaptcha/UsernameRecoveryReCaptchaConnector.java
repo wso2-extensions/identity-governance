@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
+import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -101,6 +102,19 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         return preValidationResponse;
     }
 
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider)
+            throws CaptchaException {
+
+        CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
+
+        if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)) {
+            captchaProvider.preValidateForUsernameRecovery(servletRequest,servletResponse);
+            preValidationResponse.setCaptchaValidationRequired(true);
+        }
+        return preValidationResponse;
+    }
+
     @Override
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
@@ -110,6 +124,12 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
         return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
+    }
+
+    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider)
+            throws CaptchaException {
+
+        return captchaProvider.verifyCaptcha(servletRequest,servletResponse);
     }
 
     @Override

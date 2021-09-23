@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
+import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
@@ -119,6 +120,27 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         }
         httpServletResponse.setHeader("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
         httpServletResponse.setHeader("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+
+        return preValidationResponse;
+    }
+
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider) throws CaptchaException {
+        // reCaptcha is required for all requests.
+        CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
+
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
+
+        HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
+
+        if (CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL)) {
+            httpServletResponse.setHeader("reCaptcha", "true");
+        } else {
+            httpServletResponse.setHeader("reCaptcha", "conditional");
+            preValidationResponse.setCaptchaValidationRequired(true);
+            preValidationResponse.setMaxFailedLimitReached(true);
+        }
+
+        captchaProvider.preValidateForSelfSignUp(servletRequest, servletResponse);
 
         return preValidationResponse;
     }
