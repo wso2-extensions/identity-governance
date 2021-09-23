@@ -51,6 +51,17 @@ public class CaptchaConstants {
 
     public static final String BASIC_AUTH_MECHANISM = "basic";
 
+    public static final String MULTIPLE_CAPTCHA_ENABLED = "captcha.";
+
+    public enum Flow{
+
+        PASSWORD_RECOVERY_FLOW,
+        SSO_LOGIN_FLOW,
+        USERNAME_RECOVERY_FLOW,
+        SELF_SIGNUP_FLOW,
+        RESEND_CONFIRMATION_FLOW
+    }
+
     /**
      * Captcha Connector configuration constants from the identity.xml.
      */

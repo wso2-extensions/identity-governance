@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.application.authentication.framework.config.mode
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
@@ -107,6 +108,23 @@ public class CaptchaUtil {
                     RE_CAPTCHA_FAILED_REDIRECT_URLS);
             if (StringUtils.isNotBlank(reCaptchaFailedRedirectUrls)) {
                 CaptchaDataHolder.getInstance().setReCaptchaErrorRedirectUrls(reCaptchaFailedRedirectUrls);
+            }
+            for(int i = 1; properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".enabled") != null; i++) {
+                //do something
+                boolean multipleCaptchaEnabled = Boolean
+                        .valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".enabled"));
+                String name = String.
+                        valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".name"));
+                Map<String, Object> captchaProperties = new HashMap<>();
+                captchaProperties.put("api",String.
+                        valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".api")));
+                CaptchaConfigs captchaConfigs = new CaptchaConfigs(name, captchaProperties);
+                CaptchaDataHolder.getInstance().addCaptchaConfigs(captchaConfigs);
+            }
+
+            List<CaptchaProvider> captchaProviders = CaptchaDataHolder.getInstance().getCaptchaProviders();
+            for(CaptchaProvider captchaProvider: captchaProviders){
+                captchaProvider.init();
             }
 
             if (reCaptchaEnabled) {

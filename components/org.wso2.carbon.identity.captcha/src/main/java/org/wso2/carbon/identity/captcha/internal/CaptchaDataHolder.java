@@ -19,6 +19,8 @@
 package org.wso2.carbon.identity.captcha.internal;
 
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.util.CaptchaConfigs;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -56,6 +58,10 @@ public class CaptchaDataHolder {
     private AccountLockService accountLockService;
 
     private List<CaptchaConnector> captchaConnectors = new ArrayList<>();
+
+    private List<CaptchaProvider> captchaProviders = new ArrayList<>();
+
+    private List<CaptchaConfigs> captchaConfigs = new ArrayList<>();
 
     private Map<String, String> ssoLoginReCaptchaConnectorPropertyMap = new HashMap<>();
 
@@ -166,6 +172,24 @@ public class CaptchaDataHolder {
 
     public void addCaptchaConnector(CaptchaConnector captchaConnector) {
         this.captchaConnectors.add(captchaConnector);
+    }
+
+    public List<CaptchaProvider> getCaptchaProviders() {
+
+        return captchaProviders;
+    }
+
+    public void addCaptchaProvider(CaptchaProvider captchaProvider) {
+
+        this.captchaProviders.add(captchaProvider);
+    }
+
+    public List<CaptchaConfigs> getCaptchaConfigs() {
+        return captchaConfigs;
+    }
+
+    public void addCaptchaConfigs(CaptchaConfigs captchaConfigs) {
+        this.captchaConfigs.add(captchaConfigs);
     }
 
     public void setRealmService(RealmService realmService) {

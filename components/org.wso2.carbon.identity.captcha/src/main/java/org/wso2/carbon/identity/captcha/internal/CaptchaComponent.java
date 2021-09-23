@@ -22,6 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.connector.provider.HCaptchaProvider;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.ResendConfirmationReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
@@ -76,6 +78,11 @@ public class CaptchaComponent {
             captchaConnector = new ResendConfirmationReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+
+            //Register Captcha Providers
+            CaptchaProvider captchaProvider = new HCaptchaProvider();
+            CaptchaDataHolder.getInstance().addCaptchaProvider(captchaProvider);
+
             AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
             context.getBundleContext().registerService(AuthenticationDataPublisher.class,
                     failedLoginAttemptValidator, null);
