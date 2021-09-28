@@ -53,6 +53,19 @@ public class CaptchaConstants {
 
     public static final String MULTIPLE_CAPTCHA_ENABLED = "captcha.";
 
+    public static final class MultipleCaptchaConfig {
+
+        public static final String ENABLED = ".enable";
+        public static final String NAME = ".name";
+        public static final String API_URL = "api.url";
+        public static final String SITE_KEY = ".site.key";
+        public static final String VERIFY_URL = ".verify.url";
+        public static final String SECRET_KEY = ".secret.key";
+        public static final String OPTIONAL_PROPERTIES = ".properties.";
+
+
+    }
+
     public enum Flow{
 
         PASSWORD_RECOVERY_FLOW,

@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
-import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -107,9 +107,10 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
+        HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
 
         if (CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL)) {
-            captchaProvider.preValidateForUsernameRecovery(servletRequest,servletResponse);
+            httpServletResponse.setHeader("reCaptcha", "conditional");
             preValidationResponse.setCaptchaValidationRequired(true);
         }
         return preValidationResponse;

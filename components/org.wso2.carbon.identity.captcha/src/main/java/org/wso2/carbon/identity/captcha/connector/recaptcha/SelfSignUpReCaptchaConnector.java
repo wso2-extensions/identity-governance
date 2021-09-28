@@ -24,10 +24,11 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
-import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
@@ -140,7 +141,7 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
             preValidationResponse.setMaxFailedLimitReached(true);
         }
 
-        captchaProvider.preValidateForSelfSignUp(servletRequest, servletResponse);
+        captchaProvider.setCaptchaParamsForPreValidation(servletRequest,servletResponse, CaptchaConstants.Flow.SELF_SIGNUP_FLOW);
 
         return preValidationResponse;
     }
@@ -155,6 +156,13 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
+    }
+
+    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider)
+            throws CaptchaException {
+
+        return captchaProvider.verifyCaptcha(servletRequest, servletResponse);
+
     }
 
     @Override

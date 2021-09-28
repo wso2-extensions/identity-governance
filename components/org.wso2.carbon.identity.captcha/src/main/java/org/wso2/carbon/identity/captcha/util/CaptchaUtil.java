@@ -101,7 +101,7 @@ public class CaptchaUtil {
                         .CAPTCHA_CONFIG_FILE_NAME + "' configuration file", e);
             }
 
-            boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
+            boolean captchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
                     .RE_CAPTCHA_ENABLED));
 
             String reCaptchaFailedRedirectUrls = properties.getProperty(CaptchaConstants.
@@ -109,25 +109,21 @@ public class CaptchaUtil {
             if (StringUtils.isNotBlank(reCaptchaFailedRedirectUrls)) {
                 CaptchaDataHolder.getInstance().setReCaptchaErrorRedirectUrls(reCaptchaFailedRedirectUrls);
             }
-            for(int i = 1; properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".enabled") != null; i++) {
-                //do something
-                boolean multipleCaptchaEnabled = Boolean
-                        .valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".enabled"));
-                String name = String.
-                        valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".name"));
-                Map<String, Object> captchaProperties = new HashMap<>();
-                captchaProperties.put("api",String.
-                        valueOf(properties.getProperty(CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED + i +".api")));
-                CaptchaConfigs captchaConfigs = new CaptchaConfigs(name, captchaProperties);
-                CaptchaDataHolder.getInstance().addCaptchaConfigs(captchaConfigs);
+            Boolean multipleCaptchaEnabled = false;
+
+            for(int i = 1; properties.getProperty(String.format("%s%d%s", CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                    CaptchaConstants.MultipleCaptchaConfig.ENABLED)) != null; i++) {
+
+                multipleCaptchaEnabled = Boolean
+                        .valueOf(properties.getProperty(String.format("%s%d%s",
+                                CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                                CaptchaConstants.MultipleCaptchaConfig.ENABLED)));
+                if(multipleCaptchaEnabled){
+                    setMultipleCaptchaConfigs(properties, i);
+                }
             }
 
-            List<CaptchaProvider> captchaProviders = CaptchaDataHolder.getInstance().getCaptchaProviders();
-            for(CaptchaProvider captchaProvider: captchaProviders){
-                captchaProvider.init();
-            }
-
-            if (reCaptchaEnabled) {
+            if (captchaEnabled || multipleCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
                 resolveSecrets(properties);
                 setReCaptchaConfigs(properties);
@@ -428,6 +424,35 @@ public class CaptchaUtil {
         CaptchaDataHolder.getInstance().setSSOLoginReCaptchaConnectorPropertyMap(connectorPropertyMap);
     }
 
+    private static void setMultipleCaptchaConfigs(Properties properties, int i) {
+        String name = String.
+                valueOf(properties.getProperty(String.format("%s%d%s",
+                        CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                        CaptchaConstants.MultipleCaptchaConfig.NAME)));
+        Map<String, Object> captchaProperties = new HashMap<>();
+        captchaProperties.put("API",String.
+                valueOf(properties.getProperty(String.format("%s%d%s", CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                        CaptchaConstants.MultipleCaptchaConfig.API_URL))));
+        captchaProperties.put("SiteKey",String.
+                valueOf(properties.getProperty(String.format("%s%d%s", CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                        CaptchaConstants.MultipleCaptchaConfig.SITE_KEY))));
+        captchaProperties.put("SecretKey",String.
+                valueOf(properties.getProperty(String.format("%s%d%s", CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                        CaptchaConstants.MultipleCaptchaConfig.SECRET_KEY))));
+        captchaProperties.put("VerifyUrl",String.
+                valueOf(properties.getProperty(String.format("%s%d%s", CaptchaConstants.MULTIPLE_CAPTCHA_ENABLED,i,
+                        CaptchaConstants.MultipleCaptchaConfig.VERIFY_URL))));
+
+        for(int j = 1; properties.getProperty(String.format("%s%s%d",name,
+                CaptchaConstants.MultipleCaptchaConfig.OPTIONAL_PROPERTIES,j))!= null; i++) {
+            String[] optionalProperties = properties.getProperty(StringUtils.trim(String.format("%s%s%d",name,
+                    CaptchaConstants.MultipleCaptchaConfig.OPTIONAL_PROPERTIES,j))).split(",");
+            captchaProperties.put(optionalProperties[0],optionalProperties[1]);
+        }
+
+        CaptchaConfigs captchaConfigs = new CaptchaConfigs(name, captchaProperties);
+        CaptchaDataHolder.getInstance().addCaptchaConfigs(captchaConfigs);
+    }
     private static void setPathBasedConnectorConfigs(Properties properties) {
 
         Map<String, String> connectorPropertyMap = new HashMap<>();

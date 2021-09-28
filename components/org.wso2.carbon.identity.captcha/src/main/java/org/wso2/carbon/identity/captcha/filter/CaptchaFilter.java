@@ -24,11 +24,11 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
-import org.wso2.carbon.identity.captcha.connector.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
+import org.wso2.carbon.identity.captcha.connector.strategy.StrategyConnector;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.strategy.StrategyConnector;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletRequestWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaHttpServletResponseWrapper;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -83,7 +83,6 @@ public class CaptchaFilter implements Filter {
                 }
             }
 
-            List<CaptchaConnector> captchaConnectors = CaptchaDataHolder.getInstance().getCaptchaConnectors();
             List<StrategyConnector> strategyConnectors = CaptchaDataHolder.getInstance().getStrategyConnectors();
             List<CaptchaConnector> captchaFlowConnectors = CaptchaDataHolder.getInstance().getCaptchaFlowConnectors();
 
@@ -104,8 +103,8 @@ public class CaptchaFilter implements Filter {
             //select the strategy
             StrategyConnector selectedStrategyConnector = null;
             for (StrategyConnector strategyConnector : strategyConnectors) {
-                if (selectedCaptchaFlowConnector != null && (selectedStrategyConnector == null ||
-                        strategyConnector.getPriority() > selectedStrategyConnector.getPriority())) {
+                if (selectedStrategyConnector == null ||
+                        strategyConnector.getPriority() > selectedStrategyConnector.getPriority()) {
                     selectedStrategyConnector = strategyConnector;
                 }
             }

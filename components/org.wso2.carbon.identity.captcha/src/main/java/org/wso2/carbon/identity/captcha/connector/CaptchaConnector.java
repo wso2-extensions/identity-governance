@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.connector;
 
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 

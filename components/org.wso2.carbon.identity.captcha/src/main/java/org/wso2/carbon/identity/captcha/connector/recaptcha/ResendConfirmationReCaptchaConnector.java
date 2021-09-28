@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
+import org.wso2.carbon.identity.captcha.connector.provider.CaptchaProvider;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
@@ -107,6 +108,24 @@ public class ResendConfirmationReCaptchaConnector extends AbstractReCaptchaConne
         return preValidationResponse;
     }
 
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider)
+            throws CaptchaException {
+
+        CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
+        HttpServletResponse httpServletResponse = ((HttpServletResponse) servletResponse);
+
+        if (CaptchaUtil.isPathAvailable(path, RESEND_CONFIRMATION_URL)) {
+            httpServletResponse.setHeader("reCaptchaResend", "true");
+            preValidationResponse.setCaptchaValidationRequired(true);
+            Map<String, String> params = new HashMap<>();
+            params.put("errorMessage", "recaptcha.fail.message");
+            preValidationResponse.setCaptchaAttributes(params);
+            preValidationResponse.setCaptchaValidationRequired(true);
+        }
+        return preValidationResponse;
+    }
+
     @Override
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
@@ -118,6 +137,11 @@ public class ResendConfirmationReCaptchaConnector extends AbstractReCaptchaConne
         return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
     }
 
+    public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse, CaptchaProvider captchaProvider)
+            throws CaptchaException {
+
+        return captchaProvider.verifyCaptcha(servletRequest, servletResponse);
+    }
     @Override
     public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
