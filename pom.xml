@@ -622,8 +622,8 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.20.184</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.15.28, 6.0.0)
+        <carbon.identity.framework.version>5.20.211</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
