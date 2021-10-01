@@ -27,7 +27,7 @@ public class UpdateUsernameApi  {
    private final UpdateUsernameApiService delegate = UpdateUsernameApiServiceFactory.getUpdateUsernameApi();
 
     @PUT
-    
+    @Deprecated
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Update username\n", notes = "This API is used to update the username of a User.\n", response = void.class)
@@ -40,11 +40,13 @@ public class UpdateUsernameApi  {
         
         @io.swagger.annotations.ApiResponse(code = 404, message = "User not found"),
         
-        @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
+        @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error"),
+
+        @io.swagger.annotations.ApiResponse(code = 410, message = "Gone") })
 
     public Response updateUsernamePut(@ApiParam(value = "User to be updated." ,required=true ) UsernameUpdateRequestDTO user)
     {
-    return delegate.updateUsernamePut(user);
+    return Response.status(Response.Status.GONE).build();
     }
 }
 
