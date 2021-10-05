@@ -47,6 +47,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -489,5 +490,54 @@ public class CaptchaUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the ReCaptcha Site Key.
+     *
+     * @return ReCaptcha Site Key.
+     */
+    public static String recaptchaSiteKey() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
+    }
+
+    /**
+     * Get the ReCaptcha API URL.
+     *
+     * @return ReCaptcha API URL.
+     */
+    public static String recaptchaAPIURL() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
+    }
+
+    /**
+     * Check whether ReCaptcha is enabled for the given flow.
+     *
+     * @param configName    Name of the configuration.
+     * @param tenantDomain  Tenant Domain.
+     * @return True if ReCaptcha is enabled for the given flow.
+     */
+    public static Boolean isRecaptchaEnabled(String configName, String tenantDomain) {
+
+        Property[] connectorConfigs = null;
+        String configValue = null;
+        IdentityGovernanceService identityGovernanceService = CaptchaDataHolder.getInstance()
+                .getIdentityGovernanceService();
+        try {
+            connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while retrieving resident Idp configurations for tenant %s. " + tenantDomain
+                        , e);
+            }
+        }
+        for (Property connectorConfig : connectorConfigs) {
+            if (configName != null && configName.equals(connectorConfig.getName())) {
+                configValue = connectorConfig.getValue();
+            }
+        }
+        return Boolean.parseBoolean(configValue);
     }
 }
