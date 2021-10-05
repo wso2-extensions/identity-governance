@@ -529,8 +529,7 @@ public class CaptchaUtil {
             connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
         } catch (IdentityGovernanceException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Error while retrieving resident Idp configurations for tenant %s. " + tenantDomain
-                        , e);
+                log.debug("Error while retrieving resident Idp configurations for tenant %s. " + tenantDomain, e);
             }
         }
         for (Property connectorConfig : connectorConfigs) {
