@@ -1579,7 +1579,7 @@ public class UserSelfRegistrationManager {
                     claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                 }
                 userStoreManager
-                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), getRandomPassword(),
+                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), Utils.generateRandomPassword(12),
                                 userRoles, claimsMap, null);
             } catch (UserStoreException e) {
                 Throwable cause = e;
@@ -1602,13 +1602,6 @@ public class UserSelfRegistrationManager {
             PrivilegedCarbonContext.endTenantFlow();
         }
         return notificationResponseBean;
-    }
-
-    private char[] getRandomPassword() {
-        //ToDO get rid of this with password-less lite user creation
-        SecureRandom random = new SecureRandom();
-        byte seed[] = random.generateSeed(20);
-        return (Arrays.toString(seed) +"A$g0").toCharArray();
     }
 
     /**

@@ -274,7 +274,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
      */
     private void setRandomValueForCredentials(Object credentials) {
 
-        char[] temporaryPassword = generateRandomPassword(12);
+        char[] temporaryPassword = Utils.generateRandomPassword(12);
         ((StringBuffer) credentials).replace(0, temporaryPassword.length, new String(temporaryPassword));
     }
 
@@ -282,24 +282,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS));
-    }
-
-    /**
-     * Generate a random password in the given length.
-     * @param passwordLength Required length of the password.
-     * @return char array
-     */
-    private char[] generateRandomPassword(int passwordLength) {
-
-        String letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789+@";
-        StringBuilder pw = new StringBuilder();
-        for (int i = 0; i < passwordLength; i++) {
-            int index = (int) (RANDOM.nextDouble() * letters.length());
-            pw.append(letters.substring(index, index + 1));
-        }
-        char[] password = new char[pw.length()];
-        pw.getChars(0, pw.length(), password, 0);
-        return password;
     }
 
     private void initNotificationForEmailVerificationOnUpdate(String verificationPendingEmailAddress, User user)
