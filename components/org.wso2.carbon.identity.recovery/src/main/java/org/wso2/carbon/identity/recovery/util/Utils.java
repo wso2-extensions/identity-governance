@@ -1202,6 +1202,27 @@ public class Utils {
     }
 
     /**
+     * Generate a random password in the given length.
+     *
+     * @param passwordLength Required length of the password.
+     * @return password.
+     */
+    public static char[] generateRandomPassword(int passwordLength) {
+
+        String letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789+@";
+        StringBuilder pw = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < (passwordLength - 4); i++) {
+            int index = (int) (random.nextDouble() * letters.length());
+            pw.append(letters.substring(index, index + 1));
+        }
+        pw.append("A$g0");
+        char[] password = new char[pw.length()];
+        pw.getChars(0, pw.length(), password, 0);
+        return password;
+    }
+
+    /**
      * Retrieves the email confirmation code tolerance period in minutes.
      *
      * @return The email confirmation code tolerance in minutes.
