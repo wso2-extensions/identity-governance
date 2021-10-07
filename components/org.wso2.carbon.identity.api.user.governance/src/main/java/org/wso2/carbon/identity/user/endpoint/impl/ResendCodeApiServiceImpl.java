@@ -54,14 +54,15 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         if (StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
-        ResolvedUserResult resolvedUserResult =
-                FrameworkUtils.processMultiAttributeLoginIdentification(resendCodeRequestDTO.getUser().getUsername(),
-                        resendCodeRequestDTO.getUser().getTenantDomain());
+
+        // Resolve the username using the login attribute when multi attribute login is enabled.
+        ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
+                resendCodeRequestDTO.getUser().getUsername(), resendCodeRequestDTO.getUser().getTenantDomain());
         if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
             resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getUsername());
         }
-        NotificationResponseBean notificationResponseBean = null;
 
+        NotificationResponseBean notificationResponseBean = null;
         String recoveryScenario = getRecoveryScenarioFromProperties(resendCodeRequestDTO.getProperties());
         if (StringUtils.isBlank(recoveryScenario)) {
             notificationResponseBean = doResendConfirmationCodeForSelfSignUp(notificationResponseBean,
@@ -71,7 +72,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     resendCodeRequestDTO);
         }
 
-        if (notificationResponseBean == null ) {
+        if (notificationResponseBean == null) {
             return Response.status(Response.Status.NOT_IMPLEMENTED).build();
         }
 
@@ -198,8 +199,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     private NotificationResponseBean doResendConfirmationCodeForSelfSignUp(
             NotificationResponseBean notificationResponseBean, ResendCodeRequestDTO resendCodeRequestDTO) {
 
-        UserSelfRegistrationManager userSelfRegistrationManager = Utils
-                .getUserSelfRegistrationManager();
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
         try {
             notificationResponseBean = userSelfRegistrationManager.resendConfirmationCode(
                     Utils.getUser(resendCodeRequestDTO.getUser()),
@@ -212,8 +212,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         } catch (IdentityRecoveryException e) {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+            Utils.handleInternalServerError(Constants.SERVER_ERROR,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
 
         return notificationResponseBean;
