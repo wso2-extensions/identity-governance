@@ -1,6 +1,5 @@
 {
   "recaptcha.enabled": false,
   "recaptcha.api_url": "https://www.google.com/recaptcha/api.js",
-  "recaptcha.verify_url": "https://www.google.com/recaptcha/api/siteverify",
-  "recaptcha.parameter_in_url_enabled": false
+  "recaptcha.verify_url": "https://www.google.com/recaptcha/api/siteverify"
 }
