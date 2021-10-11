@@ -41,7 +41,7 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_SECRET_KEY = "recaptcha.secret.key";
 
-    public static final String RE_CAPTCHA_PARAMETERS_IN_URL_ENABLED = "recaptcha.ParametersInURL.enabled";
+    public static final String RE_CAPTCHA_PARAMETERS_IN_URL_ENABLED = "recaptcha.parametersInURL.enabled";
 
     public static final String FAIL_LOGIN_ATTEMPT_VALIDATOR_ENABLED = "failLoginAttemptValidator.enable";
 
