@@ -539,16 +539,17 @@ public class CaptchaUtil {
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
         } catch (IdentityGovernanceException e) {
-            log.error("Error while retrieving resident Idp configurations for tenant %s." + tenantDomain, e);
+            log.error("Error while retrieving resident Idp configurations for tenant: " + tenantDomain, e);
         }
         if (connectorConfigs != null) {
             for (Property connectorConfig : connectorConfigs) {
-                if (configName != null && configName.equals(connectorConfig.getName())) {
+                if (StringUtils.isNotEmpty(configName) && configName.equals(connectorConfig.getName())) {
                     configValue = connectorConfig.getValue();
                 }
             }
         } else {
-            log.warn("Connector configurations are null. Hence return true for %s configuration.");
+            log.warn(String.format("Connector configurations are null. Hence return true for %s configuration.",
+                    configName));
         }
 
         return !"false".equals(configValue);
