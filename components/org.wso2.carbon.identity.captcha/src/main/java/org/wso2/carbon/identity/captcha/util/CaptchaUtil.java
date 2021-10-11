@@ -522,7 +522,6 @@ public class CaptchaUtil {
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
     }
 
-
     /**
      * Check whether ReCaptcha is enabled for the given flow.
      *
