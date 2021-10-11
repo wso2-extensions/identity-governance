@@ -536,6 +536,9 @@ public class CaptchaUtil {
         String configValue = null;
         IdentityGovernanceService identityGovernanceService = CaptchaDataHolder.getInstance()
                 .getIdentityGovernanceService();
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
         } catch (IdentityGovernanceException e) {
