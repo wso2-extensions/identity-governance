@@ -497,7 +497,7 @@ public class CaptchaUtil {
      *
      * @return ReCaptcha Site Key.
      */
-    public static String recaptchaSiteKey() {
+    public static String reCaptchaSiteKey() {
 
         return CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
     }
@@ -507,10 +507,21 @@ public class CaptchaUtil {
      *
      * @return ReCaptcha API URL.
      */
-    public static String recaptchaAPIURL() {
+    public static String reCaptchaAPIURL() {
 
         return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
     }
+
+    /**
+     * Check whether ReCaptcha is enabled.
+     *
+     * @return True if ReCaptcha is enabled.
+     */
+    public static Boolean isReCaptchaEnabled() {
+
+        return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
+    }
+
 
     /**
      * Check whether ReCaptcha is enabled for the given flow.
@@ -519,7 +530,7 @@ public class CaptchaUtil {
      * @param tenantDomain  Tenant Domain.
      * @return True if ReCaptcha is enabled for the given flow.
      */
-    public static Boolean isRecaptchaEnabled(String configName, String tenantDomain) {
+    public static Boolean isReCaptchaEnabledForFlow(String configName, String tenantDomain) {
 
         Property[] connectorConfigs = null;
         String configValue = null;
