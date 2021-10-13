@@ -543,9 +543,9 @@ public class CaptchaUtil {
         } catch (IdentityGovernanceException e) {
             log.error("Error while retrieving resident Idp configurations for tenant: " + tenantDomain, e);
         }
-        if (connectorConfigs != null) {
+        if (connectorConfigs != null && StringUtils.isNotEmpty(configName)) {
             for (Property connectorConfig : connectorConfigs) {
-                if (StringUtils.isNotEmpty(configName) && configName.equals(connectorConfig.getName())) {
+                if (configName.equals(connectorConfig.getName())) {
                     configValue = connectorConfig.getValue();
                 }
             }
