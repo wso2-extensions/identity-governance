@@ -554,6 +554,6 @@ public class CaptchaUtil {
                     configName));
         }
 
-        return !"false".equalsIgnoreCase(configValue);
+        return !Boolean.FALSE.toString().equalsIgnoreCase(configValue);
     }
 }
