@@ -301,6 +301,10 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
+        if (!StringUtils.contains(claimUri, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            return true;
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("doPreGetUserList executed in the IdentityStoreEventListener for claim URI: " + claimUri +
                     " and claim value: " + claimValue);
