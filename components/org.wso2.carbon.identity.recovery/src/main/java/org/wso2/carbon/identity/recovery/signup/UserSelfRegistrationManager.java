@@ -895,11 +895,15 @@ public class UserSelfRegistrationManager {
 
         // Need to unlock user account
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
         //Set account verified time claim.
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
+        //Set the account state claim to UNLOCKED.
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
         return userClaims;
     }
 
