@@ -958,6 +958,10 @@ public class UserSelfRegistrationManager {
 
         //Set account verified time claim.
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
+
+        // Set the account state claim to UNLOCKED.
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
         return userClaims;
     }
 
