@@ -88,7 +88,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 if (useIdentityClaimForLastLoginTime) {
                     if (log.isDebugEnabled()) {
                         log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
-                                " is enabled in identity.xml file hence using last login time as default claim");
+                                " is enabled in identity.xml file. Hence treating last login time as identity claim.");
                     }
                     return NotificationReceiversRetrievalUtil.getNotificationReceiversFromIdentityClaim(lookupMin,
                             lookupMax, delayForSuspension, realmService, tenantDomain, userStoreDomain);
