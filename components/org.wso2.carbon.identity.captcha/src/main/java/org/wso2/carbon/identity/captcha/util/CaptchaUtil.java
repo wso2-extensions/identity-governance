@@ -47,7 +47,6 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -490,70 +489,5 @@ public class CaptchaUtil {
             }
         }
         return null;
-    }
-
-    /**
-     * Get the ReCaptcha Site Key.
-     *
-     * @return ReCaptcha Site Key.
-     */
-    public static String reCaptchaSiteKey() {
-
-        return CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
-    }
-
-    /**
-     * Get the ReCaptcha API URL.
-     *
-     * @return ReCaptcha API URL.
-     */
-    public static String reCaptchaAPIURL() {
-
-        return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
-    }
-
-    /**
-     * Check whether ReCaptcha is enabled.
-     *
-     * @return True if ReCaptcha is enabled.
-     */
-    public static Boolean isReCaptchaEnabled() {
-
-        return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
-    }
-
-    /**
-     * Check whether ReCaptcha is enabled for the given flow.
-     *
-     * @param configName    Name of the configuration.
-     * @param tenantDomain  Tenant Domain.
-     * @return True if ReCaptcha is enabled for the given flow.
-     */
-    public static Boolean isReCaptchaEnabledForFlow(String configName, String tenantDomain) {
-
-        Property[] connectorConfigs = null;
-        String configValue = null;
-        IdentityGovernanceService identityGovernanceService = CaptchaDataHolder.getInstance()
-                .getIdentityGovernanceService();
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        try {
-            connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
-        } catch (IdentityGovernanceException e) {
-            log.error("Error while retrieving resident Idp configurations for tenant: " + tenantDomain, e);
-        }
-        if (connectorConfigs != null && StringUtils.isNotEmpty(configName)) {
-            for (Property connectorConfig : connectorConfigs) {
-                if (configName.equals(connectorConfig.getName())) {
-                    configValue = connectorConfig.getValue();
-                }
-            }
-        } else {
-            log.warn(String.format("Connector configurations are null. Hence return true for %s configuration.",
-                    configName));
-        }
-
-        return !Boolean.FALSE.toString().equalsIgnoreCase(configValue);
     }
 }
