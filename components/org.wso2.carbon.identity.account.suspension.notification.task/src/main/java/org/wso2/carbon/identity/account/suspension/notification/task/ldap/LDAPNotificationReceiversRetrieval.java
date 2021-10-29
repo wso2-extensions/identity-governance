@@ -181,8 +181,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
     protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
 
         // The lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim.
-        String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute + "<="
-                + lookupMax + "))";
+        String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(|(!(" +
+                lastLoginTimeAttribute + ">=" + lookupMax + "))(" + lastLoginTimeAttribute + "="
+                + lookupMax + ")))";
 
         // If the user-store uses a different timestamp than WSO2 format.
         String timeStampFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);
