@@ -69,16 +69,18 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
-        boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
+        boolean isSelfSignupEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
-        if (!enable) {
+        boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
+
+        if (!isSelfSignupEnabled && !isEmailVerificationEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Self signup feature is disabled in the tenant: " + tenantDomain);
+                log.debug("Self signup feature and email verification are disabled in the tenant: " + tenantDomain);
             }
             return;
         }
-
 
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             if (log.isDebugEnabled()) {
