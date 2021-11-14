@@ -527,6 +527,12 @@ public class NotificationPasswordRecoveryManager {
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                 userRecoveryData.getUser().getUserStoreDomain());
 
+        if (Utils.isReadOnlyUser(userRecoveryData.getUser())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Password reset not allowed to read only user: " + domainQualifiedName);
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_READ_ONLY_USER, null);
+        }
         // Update the password.
         updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
                 notificationsInternallyManaged);
@@ -824,6 +830,13 @@ public class NotificationPasswordRecoveryManager {
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
+        // This will be removed once the recovery email for readonly users onboarded.
+        if (Utils.isReadOnlyUser(userRecoveryData.getUser())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Password reset not allowed to read only users. User: " + domainQualifiedName);
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_READ_ONLY_USER, null);
+        }
         return user;
     }
 
@@ -906,6 +919,25 @@ public class NotificationPasswordRecoveryManager {
             throw new IdentityRecoveryServerException(msg, e);
         }
         return userList;
+    }
+
+    /**
+     * Whether to notify password recovery error.
+     *
+     * @return True, if notify password recovery error is enabled in the identity.xml. Also, true will be returned if
+     * the property is not configured.
+     */
+    public boolean getNotifyPasswordRecoveryError() {
+
+        String recoveryFailureReasonStatus =
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_PASSWORD_RECOVERY_ERROR);
+        if (StringUtils.isBlank(recoveryFailureReasonStatus)) {
+            /*
+            This indicates config not in the identity.xml. In that case then we need to maintain backward compatibility.
+             */
+            return true;
+        }
+        return Boolean.parseBoolean(recoveryFailureReasonStatus);
     }
 }
 

@@ -1277,4 +1277,51 @@ public class Utils {
             return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
         }
     }
+
+    /**
+     * To get the user store manager from the domain name.
+     *
+     * @param userStoreManager    User store manager.
+     * @param userStoreDomainName User store domain name.
+     * @return User store manager of the domain name.
+     */
+    private static org.wso2.carbon.user.core.UserStoreManager getUserStoreManagerFromDomainName(
+            org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+            String userStoreDomainName) {
+
+        if (userStoreManager == null) {
+            return null;
+        }
+        String domainName = userStoreManager.getRealmConfiguration()
+                .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        if (domainName.equals(userStoreDomainName)) {
+            return userStoreManager;
+        }
+        return getUserStoreManagerFromDomainName(userStoreManager.getSecondaryUserStoreManager(), userStoreDomainName);
+    }
+
+    /**
+     * To get the whether user is read only or not.
+     *
+     * @param user User object.
+     * @return True if user is read only.
+     */
+    public static boolean isReadOnlyUser(User user) {
+
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            org.wso2.carbon.user.api.UserStoreManager userStoreManager =
+                    IdentityRecoveryServiceDataHolder.getInstance().getRealmService().getTenantUserRealm(tenantId)
+                            .getUserStoreManager();
+            userStoreManager =
+                    getUserStoreManagerFromDomainName((org.wso2.carbon.user.core.UserStoreManager) userStoreManager,
+                            user.getUserStoreDomain());
+            if (userStoreManager != null) {
+                return userStoreManager.isReadOnly();
+            }
+        } catch (UserStoreException e) {
+            log.error("Error occurred while checking whether user store is readonly. Error message: " + e.getMessage());
+        }
+        return false;
+    }
 }

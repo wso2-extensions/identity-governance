@@ -73,19 +73,32 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while sending recovery notification ", e);
             }
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            if (notificationPasswordRecoveryManager.getNotifyPasswordRecoveryError()) {
+                RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
+            }
         } catch (IdentityRecoveryException e) {
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            if (notificationPasswordRecoveryManager.getNotifyPasswordRecoveryError()) {
+                RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+            }
+            LOG.error(Constants.SERVER_ERROR, e);
         } catch (Throwable throwable) {
             if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
                     throwable.getMessage())) {
-                LOG.error(throwable.getMessage(), throwable);
-                RecoveryUtil.handleBadRequest(throwable.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(throwable.getMessage(), throwable);
+                }
+                if (notificationPasswordRecoveryManager.getNotifyPasswordRecoveryError()) {
+                    RecoveryUtil.handleBadRequest(throwable.getMessage(), Constants.ERROR_CODE_EMAIL_NOT_FOUND);
+                }
+            } else {
+                if (notificationPasswordRecoveryManager.getNotifyPasswordRecoveryError()) {
+                    RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
+                            .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+                }
+                LOG.error(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, throwable);
             }
-            RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        if (StringUtils.isBlank(notificationResponseBean.getKey())) {
+        if (notificationResponseBean == null || StringUtils.isBlank(notificationResponseBean.getKey())) {
             return Response.accepted().build();
         }
         return Response.accepted(notificationResponseBean.getKey()).build();

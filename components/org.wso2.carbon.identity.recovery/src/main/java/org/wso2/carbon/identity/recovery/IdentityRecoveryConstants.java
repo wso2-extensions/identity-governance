@@ -185,6 +185,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s.'"),
         ERROR_CODE_INVALID_USER("18003", "Invalid User '%s.'"),
         ERROR_CODE_FEDERATED_USER("18004", "User %s doesn't have a password for local account."),
+        ERROR_CODE_READ_ONLY_USER("18005",
+                "You are not allowed to change the password. Please contact your organization administrator."),
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
@@ -483,6 +485,7 @@ public class IdentityRecoveryConstants {
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFY_USER_ACCOUNT_STATUS = "Recovery.NotifyUserAccountStatus";
+        public static final String NOTIFY_PASSWORD_RECOVERY_ERROR = "Recovery.NotifyPasswordRecoveryError";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
