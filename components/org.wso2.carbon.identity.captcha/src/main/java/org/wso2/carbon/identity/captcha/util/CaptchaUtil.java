@@ -376,6 +376,13 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
         }
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
+
+        String reCaptchaParameterInURLEnabled =
+                properties.getProperty(CaptchaConstants.RE_CAPTCHA_PARAMETERS_IN_URL_ENABLED);
+        if (StringUtils.isBlank(reCaptchaParameterInURLEnabled)) {
+            reCaptchaParameterInURLEnabled = "false";
+        }
+        CaptchaDataHolder.getInstance().setReCaptchaParameterInURLEnabled(reCaptchaParameterInURLEnabled);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
@@ -520,40 +527,5 @@ public class CaptchaUtil {
     public static Boolean isReCaptchaEnabled() {
 
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
-    }
-
-    /**
-     * Check whether ReCaptcha is enabled for the given flow.
-     *
-     * @param configName    Name of the configuration.
-     * @param tenantDomain  Tenant Domain.
-     * @return True if ReCaptcha is enabled for the given flow.
-     */
-    public static Boolean isReCaptchaEnabledForFlow(String configName, String tenantDomain) {
-
-        Property[] connectorConfigs = null;
-        String configValue = null;
-        IdentityGovernanceService identityGovernanceService = CaptchaDataHolder.getInstance()
-                .getIdentityGovernanceService();
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        try {
-            connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
-        } catch (IdentityGovernanceException e) {
-            log.error("Error while retrieving resident Idp configurations for tenant: " + tenantDomain, e);
-        }
-        if (connectorConfigs != null && StringUtils.isNotEmpty(configName)) {
-            for (Property connectorConfig : connectorConfigs) {
-                if (configName.equals(connectorConfig.getName())) {
-                    configValue = connectorConfig.getValue();
-                }
-            }
-        } else {
-            log.warn(String.format("Connector configurations are null. Hence return true for %s configuration.",
-                    configName));
-        }
-
-        return !Boolean.FALSE.toString().equalsIgnoreCase(configValue);
     }
 }

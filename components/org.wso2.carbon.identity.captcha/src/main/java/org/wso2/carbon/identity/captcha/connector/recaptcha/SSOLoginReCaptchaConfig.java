@@ -153,8 +153,10 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
             Map<String, String> params = new HashMap<>();
             params.put("reCaptcha", "true");
-            params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-            params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+            if (Boolean.parseBoolean(CaptchaDataHolder.getInstance().getReCaptchaParameterInURLEnabled())) {
+                params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
+                params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+            }
             params.put("authFailure", "true");
             params.put("authFailureMsg", "recaptcha.fail.message");
             preValidationResponse.setCaptchaAttributes(params);
@@ -177,8 +179,10 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             validationResponse.setEnableCaptchaResponsePath(true);
             Map<String, String> params = new HashMap<>();
             params.put("reCaptcha", "true");
-            params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
-            params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+            if (Boolean.parseBoolean(CaptchaDataHolder.getInstance().getReCaptchaParameterInURLEnabled())) {
+                params.put("reCaptchaKey", CaptchaDataHolder.getInstance().getReCaptchaSiteKey());
+                params.put("reCaptchaAPI", CaptchaDataHolder.getInstance().getReCaptchaAPIUrl());
+            }
             validationResponse.setCaptchaAttributes(params);
             return validationResponse;
         }
