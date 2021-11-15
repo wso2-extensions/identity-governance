@@ -89,7 +89,7 @@ public class EmailUtil {
         Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
         try {
             NotificationTaskDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
+        } catch (Exception e) {
             log.error("Error occurred while sending email to: " + receiver.getUsername(), e);
         }
 
