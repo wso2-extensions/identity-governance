@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.wso2.carbon.identity.user.endpoint.PiInfoApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -49,14 +50,20 @@ public class PiInfoApiServiceImpl extends PiInfoApiService {
         try {
             tenantId = Utils.getRealmService().getTenantManager().getTenantId(tenantDomain);
         } catch (UserStoreException e) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage("Invalid tenant domain provided in username.");
             return Response
                     .status(Response.Status.BAD_REQUEST)
-                    .entity("Invalid tenant domain provided in username.")
+                    .entity(errorDTO)
                     .build();
         } catch (UserExportException e) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage(e.getMessage());
             return Response
                     .status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(e.getMessage())
+                    .entity(errorDTO)
                     .build();
         }
         Map userAttributes = null;
@@ -74,6 +81,7 @@ public class PiInfoApiServiceImpl extends PiInfoApiService {
 
         return Response
                 .status(Response.Status.NOT_IMPLEMENTED)
+                .entity(Utils.getCorrelation())
                 .build();
     }
 }

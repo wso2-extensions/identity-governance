@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
@@ -77,7 +78,10 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         }
 
         if (notificationResponseBean == null) {
-            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage("This service is not yet implemented.");
+            return Response.status(Response.Status.NOT_IMPLEMENTED).entity(errorDTO).build();
         }
 
         //when notifications internally managed key might not be set.
