@@ -518,14 +518,4 @@ public class CaptchaUtil {
 
         return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
     }
-
-    /**
-     * Check whether ReCaptcha is enabled.
-     *
-     * @return True if ReCaptcha is enabled.
-     */
-    public static Boolean isReCaptchaEnabled() {
-
-        return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
-    }
 }
