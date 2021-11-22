@@ -209,6 +209,7 @@ public class Utils {
             ref = MDC.get(Constants.CORRELATION_ID_MDC).toString();
         } else {
             ref = UUID.randomUUID().toString();
+            MDC.put(Constants.CORRELATION_ID_MDC, ref);
 
         }
         return ref;

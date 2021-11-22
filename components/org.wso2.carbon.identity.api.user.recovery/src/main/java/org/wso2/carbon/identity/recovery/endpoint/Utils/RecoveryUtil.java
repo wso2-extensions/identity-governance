@@ -172,7 +172,7 @@ public class RecoveryUtil {
             ref = MDC.get(IdentityRecoveryConstants.CORRELATION_ID_MDC).toString();
         } else {
             ref = UUID.randomUUID().toString();
-
+            MDC.put(IdentityRecoveryConstants.CORRELATION_ID_MDC, ref);
         }
         return ref;
     }
