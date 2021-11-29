@@ -204,13 +204,9 @@ public class Utils {
      * @return correlation-id
      */
     public static String getCorrelation() {
-        String ref;
+        String ref = null;
         if (isCorrelationIDPresent()) {
             ref = MDC.get(Constants.CORRELATION_ID_MDC).toString();
-        } else {
-            ref = UUID.randomUUID().toString();
-            MDC.put(Constants.CORRELATION_ID_MDC, ref);
-
         }
         return ref;
     }
