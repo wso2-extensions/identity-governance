@@ -380,7 +380,7 @@ public class CaptchaUtil {
         String reCaptchaParameterInURLEnabled =
                 properties.getProperty(CaptchaConstants.RE_CAPTCHA_PARAMETERS_IN_URL_ENABLED);
         if (StringUtils.isBlank(reCaptchaParameterInURLEnabled)) {
-            reCaptchaParameterInURLEnabled = "false";
+            reCaptchaParameterInURLEnabled = "true";
         }
         CaptchaDataHolder.getInstance().setReCaptchaParameterInURLEnabled(reCaptchaParameterInURLEnabled);
     }
