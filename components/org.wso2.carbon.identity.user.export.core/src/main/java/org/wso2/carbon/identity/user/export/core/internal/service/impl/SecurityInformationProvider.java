@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.user.export.core.dto.SecurityInformationDTO;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationProvider;
 import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -52,12 +53,17 @@ public class SecurityInformationProvider extends BasicUserInformationProvider {
     public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId)
             throws UserExportException {
 
-        String challengeQuestionClaimValue;
+        String challengeQuestionClaimValue = null;
         UserStoreManager userStoreManager;
         try {
             userStoreManager = getUserStoreManager(tenantId, userStoreDomain);
-            challengeQuestionClaimValue = userStoreManager.getUserClaimValue(username, CHALLENGE_QUESTION_URIS_CLAIM,
-                    null);
+            Claim[] userClaims = userStoreManager.getUserClaimValues(username, null);
+            for (Claim claim : userClaims) {
+                if (CHALLENGE_QUESTION_URIS_CLAIM.equals(claim.getClaimUri())) {
+                    challengeQuestionClaimValue = userStoreManager.getUserClaimValue(username, 
+                            CHALLENGE_QUESTION_URIS_CLAIM, null);
+                }
+            }
         } catch (UserStoreException e) {
             throw new UserExportException("Error while retrieving the user information.", e);
         }
