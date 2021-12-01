@@ -89,6 +89,10 @@ public class SecurityInformationProvider extends BasicUserInformationProvider {
             }
 
             return new UserInformationDTO(securityInformationDTO);
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Challenge question claim is not available in the tenant: " + tenantId);
+            }
         }
         return new UserInformationDTO();
     }
