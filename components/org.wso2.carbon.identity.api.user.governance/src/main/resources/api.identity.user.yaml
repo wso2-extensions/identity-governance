@@ -540,6 +540,8 @@ definitions:
         type: string
       description:
         type: string
+      traceId:
+        type: string
 
 
 #-----------------------------------------------------
