@@ -76,7 +76,10 @@ public class MeApiServiceImpl extends MeApiService {
             userAttributes = Utils.getUserInformationService().getRetainedUserInformation(username, userStoreDomain,
                     tenantId);
         } catch (UserExportException e) {
-            return Response.serverError().entity(e.getMessage()).build();
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage(e.getMessage());
+            return Response.serverError().entity(errorDTO).build();
         }
         return Response.ok().status(Response.Status.OK).entity(userAttributes).build();
     }

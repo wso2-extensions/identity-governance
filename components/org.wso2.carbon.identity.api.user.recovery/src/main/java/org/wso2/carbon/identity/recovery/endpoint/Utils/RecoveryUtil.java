@@ -9,6 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.log4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -61,6 +62,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 public class RecoveryUtil {
     private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
@@ -150,6 +152,28 @@ public class RecoveryUtil {
         ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_BAD_REQUEST_MESSAGE_DEFAULT, code, description);
         return new BadRequestException(errorDTO);
     }
+    /**
+     * Check whether correlation id present in the log MDC
+     *
+     * @return whether the correlation id is present
+     */
+    public static boolean isCorrelationIDPresent() {
+        return MDC.get(IdentityRecoveryConstants.CORRELATION_ID_MDC) != null;
+    }
+
+    /**
+     * Get correlation id of current thread
+     *
+     * @return correlation-id
+     */
+    public static String getCorrelation() {
+        String ref= null;
+        if (isCorrelationIDPresent()) {
+            ref = MDC.get(IdentityRecoveryConstants.CORRELATION_ID_MDC).toString();
+        }
+        return ref;
+    }
+
 
     /**
      * Returns a generic errorDTO
@@ -162,6 +186,7 @@ public class RecoveryUtil {
         errorDTO.setCode(code);
         errorDTO.setMessage(message);
         errorDTO.setDescription(description);
+        errorDTO.setRef(getCorrelation());
         return errorDTO;
     }
 

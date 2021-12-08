@@ -54,7 +54,10 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
     public Response validateUsernamePost(UsernameValidationRequestDTO user) {
 
         if (StringUtils.isEmpty(user.getUsername())) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Username cannot be empty.").build();
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage("Username cannot be empty.");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
         }
 
         try {
@@ -82,23 +85,27 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 logDebug(String.format("%s is an invalid tenant domain. Hence returning code %s: ", tenantDomain,
                         SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT));
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_INVALID_TENANT);
+                errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             } else if (!skipSelfSignUpEnabledCheck &&
                     !userSelfRegistrationManager.isSelfRegistrationEnabled(tenantDomain)) {
                 logDebug(String.format("Self registration is not enabled for tenant domain: %s. Hence returning code:" +
                         " %s", tenantDomain, SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED));
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED);
+                errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(user.getUsername(), tenantDomain)) {
                 logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
                         user.getUsername(), SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS);
+                errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             } else if (!userSelfRegistrationManager.isMatchUserNameRegex(tenantDomain, user.getUsername())) {
                 logDebug(String.format("%s is an invalid user name. Hence returning code %s: ",
                         user.getUsername(), SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
                 errorDTO.setCode(SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID);
                 errorDTO.setMessage(getRegexViolationErrorMsg(user, tenantDomain));
+                errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             } else {
                 logDebug(String.format("username : %s is available for self registration. Hence returning code %s: ",
@@ -107,11 +114,13 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 return Response.ok().entity(responseDTO).build();
             }
         } catch (IdentityRecoveryException | CarbonException | UserStoreException e) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage("Error while checking user existence");
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error while checking username validity for user " + user.getUsername(), e);
             }
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error while checking user " +
-                    "existence").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorDTO).build();
         }
     }
 

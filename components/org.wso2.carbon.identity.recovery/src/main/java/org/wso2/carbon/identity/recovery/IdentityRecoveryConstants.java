@@ -176,6 +176,8 @@ public class IdentityRecoveryConstants {
     public static final String ENTITY_TYPE_USER = "USER";
     public static final String ADD_USER_EVENT = "ADD_USER";
 
+    public static final String CORRELATION_ID_MDC = "Correlation-ID";
+
     private IdentityRecoveryConstants() {
 
     }

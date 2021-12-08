@@ -43,6 +43,8 @@ public final class Constants {
             + "an internal error. Please contact administrator.";
     public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
 
+    public static final String CORRELATION_ID_MDC = "Correlation-ID";
+
     // Response Configurations.
     public static final String ENABLE_DETAILED_API_RESPONSE =
             "SelfRegistration.API.EnableDetailedResponseBody";
