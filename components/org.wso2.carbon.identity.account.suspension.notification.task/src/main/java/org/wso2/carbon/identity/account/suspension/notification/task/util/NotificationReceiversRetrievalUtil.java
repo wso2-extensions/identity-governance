@@ -216,7 +216,7 @@ public class NotificationReceiversRetrievalUtil {
                                     (IdentityTenantUtil.getTenantId(tenantDomain)).getUserStoreManager();
 
                             if (userStoreDomain != null &&
-                                    userStoreDomain.equals(UserCoreUtil.extractDomainFromName(userName))) {
+                                    userStoreDomain.equalsIgnoreCase(UserCoreUtil.extractDomainFromName(userName))) {
 
                                 Map<String, String> map = userStoreManager.getUserClaimValues(userName, claims, null);
                                 NotificationReceiver receiver = new NotificationReceiver();
