@@ -722,6 +722,10 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (!isEnable()) {
             return true;
         }
+        // No need to separately handle if data identityDataStore is user store based
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
 
         // Allow deleting the non-identity claims stored in the identity store.
         if (!claimURI.startsWith(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI + "/") &&
@@ -730,6 +734,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             if (StringUtils.isNotBlank(claimURI)) {
                 nonIdentityClaimsInIdentityStore.put(claimURI, StringUtils.EMPTY);
             }
+            UserCoreUtil.setSkipClaimDeletionFromUserstoreThreadLocal();
             return storeInIdentityDataStore(userName, userStoreManager, PRE_DELETE_USER_CLAIM_VALUE,
                     nonIdentityClaimsInIdentityStore);
         }
