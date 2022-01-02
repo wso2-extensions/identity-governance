@@ -54,6 +54,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final Log log = LogFactory.getLog(IdentityStoreEventListener.class);
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
+    private static final String PRE_DELETE_USER_CLAIM_VALUE = "PreDeleteUserClaimValue";
+//    private static final String PRE_DELETE_USER_CLAIM_VALUE_WITH_ID = "PreDeleteUserClaimValueWithID";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
@@ -711,5 +713,26 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             throw new UserStoreException("Error occurred while retrieving user realm.", e);
         }
         return userRealm.getUserStoreManager();
+    }
+
+    @Override
+    public boolean doPreDeleteUserClaimValue(String userName, String claimURI, String profileName,
+                                             UserStoreManager userStoreManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        // Allow deleting the non-identity claims stored in the identity store.
+        if (!claimURI.startsWith(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI + "/") &&
+                claimURI.startsWith(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            Map<String, String> nonIdentityClaimsInIdentityStore = new HashMap<>();
+            if (StringUtils.isNotBlank(claimURI)) {
+                nonIdentityClaimsInIdentityStore.put(claimURI, StringUtils.EMPTY);
+            }
+            return storeInIdentityDataStore(userName, userStoreManager, PRE_DELETE_USER_CLAIM_VALUE,
+                    nonIdentityClaimsInIdentityStore);
+        }
+        return true;
     }
 }
