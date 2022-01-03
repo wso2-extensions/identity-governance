@@ -55,7 +55,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
     private static final String PRE_DELETE_USER_CLAIM_VALUE = "PreDeleteUserClaimValue";
-//    private static final String PRE_DELETE_USER_CLAIM_VALUE_WITH_ID = "PreDeleteUserClaimValueWithID";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
