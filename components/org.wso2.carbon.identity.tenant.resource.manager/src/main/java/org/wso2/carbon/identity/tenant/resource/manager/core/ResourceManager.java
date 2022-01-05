@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.tenant.resource.manager.core;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
 
@@ -34,4 +35,16 @@ public interface ResourceManager {
      */
     void addEventPublisherConfiguration(ResourceFile resourceFile) throws TenantResourceManagementException;
 
+    /**
+     * This API is used to remove an EventPublisher from a particular tenant.
+     *
+     * @param resourceTypeName Resource type name
+     * @param resourceName Resource name
+     * @throws TenantResourceManagementException
+     */
+    default void removeEventPublisherConfiguration(String resourceTypeName, String resourceName)
+            throws TenantResourceManagementException {
+
+        throw new NotImplementedException("Method is not implemented.");
+    }
 }
