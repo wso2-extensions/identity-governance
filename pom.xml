@@ -670,7 +670,7 @@
         <mokito.version>1.6.6</mokito.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
 
-        <h2database.version>1.4.196</h2database.version>
+        <h2database.version>2.0.206</h2database.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
 
         <!-- Pax Logging Version -->
