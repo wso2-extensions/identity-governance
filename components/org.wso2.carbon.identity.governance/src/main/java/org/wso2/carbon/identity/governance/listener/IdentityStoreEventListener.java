@@ -17,6 +17,7 @@
 package org.wso2.carbon.identity.governance.listener;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -33,10 +34,16 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.OperationalCondition;
 import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -334,6 +341,192 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         } catch (IdentityException e) {
             throw new UserStoreException("Error while listing the users for given claim: " + claimUri, e);
+        }
+    }
+
+    /**
+     * Filter users that match the identity claims specified in the filter condition.
+     *
+     * @param condition            Condition to be considered for filtering.
+     * @param filteredUserNameList Username list to be updated and returned.
+     * @param userStoreManager     UserStoreManager.
+     * @param domain               User store domain.
+     * @return
+     * @throws UserStoreException
+     */
+    @Override
+    public boolean doPreGetUserList(Condition condition, List<String> filteredUserNameList, UserStoreManager
+            userStoreManager, String domain) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        // No need to separately handle if identity data store is user store based.
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
+        MutableBoolean isFirstClaimFilter = new MutableBoolean(true);
+        filterUsers(condition, userStoreManager, domain, filteredUserNameList, isFirstClaimFilter);
+        return true;
+    }
+
+    /**
+     * Recursively search within the condition for expression conditions that contain identity claims and filter users
+     * matched with each such claims. After filtering users for each claim, the common set of users will be retained in
+     * the final user list to be returned.
+     *
+     * @param condition            Condition to be considered for filtering.
+     * @param userManager          UserStoreManager.
+     * @param domain               User store domain.
+     * @param filteredUserNameList Username list to be returned from the listener.
+     * @param isFirstClaimFilter   Whether this is the first claim being filtered. This is used to decide whether to
+     *                             add or retain username list to the final username list.
+     * @throws UserStoreException
+     */
+    private void filterUsers(Condition condition, UserStoreManager userManager, String domain,
+                             List<String> filteredUserNameList, MutableBoolean isFirstClaimFilter)
+            throws UserStoreException {
+
+        if (condition instanceof ExpressionCondition) {
+            ExpressionCondition expressionCondition = (ExpressionCondition) condition;
+            String claimUri = expressionCondition.getAttributeName();
+            if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+                String claimValue = expressionCondition.getAttributeValue();
+
+                try {
+                    List<String> usernames = identityDataStore.list(claimUri, getClaimValueForOperation
+                            (expressionCondition.getOperation(), claimValue), userManager);
+
+                    updateUserList(usernames, filteredUserNameList, domain, isFirstClaimFilter);
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Retrieved " + usernames.size() + " users for claim: " + claimUri);
+                    }
+                } catch (IdentityException e) {
+                    throw new UserStoreException("Error while listing the users for given claim: " + claimUri, e);
+                }
+
+                // Remove expression conditions with identity claims from the condition.
+                ((ExpressionCondition) condition).setAttributeName(null);
+                ((ExpressionCondition) condition).setAttributeValue(null);
+                ((ExpressionCondition) condition).setOperation(null);
+            }
+        } else if (condition instanceof OperationalCondition) {
+            Condition leftCondition = ((OperationalCondition) condition).getLeftCondition();
+            filterUsers(leftCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
+            Condition rightCondition = ((OperationalCondition) condition).getRightCondition();
+            filterUsers(rightCondition, userManager, domain, filteredUserNameList, isFirstClaimFilter);
+        }
+    }
+
+    /**
+     * Update the username list to be returned, with each identity claim filtering result.
+     *
+     * @param usernames            Usernames returned for an identity claim filter.
+     * @param filteredUserNameList Username list to be returned from the listener.
+     * @param userStoreDomain      User store domain.
+     * @param isFirstClaimFilter   Whether this is the first claim being filtered. This is used to decide whether to
+     *                             add or retain username list to the final username list.
+     */
+    private void updateUserList(List<String> usernames, List<String> filteredUserNameList, String userStoreDomain,
+                                MutableBoolean isFirstClaimFilter) {
+
+         /* If this is the primary domain, all the users will be retrieved since the primary domain is
+         not appended to the user name in the IDN table. So we have to filter users belongs to primary
+         in Java level. */
+        if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+            List<String> usersInPrimaryDomain = new ArrayList<>();
+            for (String username : usernames) {
+                if (!StringUtils.contains(username, UserCoreConstants.DOMAIN_SEPARATOR) ||
+                        StringUtils.startsWith(username, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME +
+                                UserCoreConstants.DOMAIN_SEPARATOR)) {
+                    usersInPrimaryDomain.add(username);
+                }
+            }
+            usernames = usersInPrimaryDomain;
+        }
+        usernames = Arrays.asList(usernames.toArray(new String[0]));
+
+        /* If this is the first claim that was filtered, all users are added to the final user list.
+         Otherwise, final user list is updated with common users for all claims filtered so far. */
+        if (isFirstClaimFilter.booleanValue()) {
+            filteredUserNameList.addAll(usernames);
+            isFirstClaimFilter.setValue(false);
+        } else {
+            filteredUserNameList.retainAll(usernames);
+        }
+    }
+
+    /**
+     * Add wildcards to the claim value to match the specified operation for filtering.
+     *
+     * @param operation  Filtering operation specified.
+     * @param claimValue Attribute value.
+     * @return attribute value with wildcards.
+     */
+    private String getClaimValueForOperation(String operation, String claimValue) {
+
+        if (ExpressionOperation.EW.toString().equals(operation)) {
+            claimValue = "%" + claimValue;
+        } else if (ExpressionOperation.CO.toString().equals(operation)) {
+            claimValue = "%" + claimValue + "%";
+        } else if (ExpressionOperation.SW.toString().equals(operation)) {
+            claimValue = claimValue + "%";
+        }
+        return claimValue;
+    }
+
+    public boolean doPreGetPaginatedUserList(Condition condition, List<String> identityClaimFilteredUserNames,
+                                             String domain, UserStoreManager userStoreManager, int limit, int offset)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        List<ExpressionCondition> identityClaimFilterConditions = new ArrayList<>();
+        try {
+            // Extract identity Claim filter-conditions from the given conditions.
+            extractIdentityClaimFilterConditions(condition, identityClaimFilterConditions);
+            if (!identityClaimFilterConditions.isEmpty()) {
+                identityDataStore.listPaginatedUsersNames(identityClaimFilterConditions, identityClaimFilteredUserNames,
+                        domain, userStoreManager, limit, offset);
+            }
+        } catch (IdentityException e) {
+            throw new UserStoreException("Error while listing the users for identity claim filters with pagination " +
+                    "parameters.", e);
+        }
+        return true;
+    }
+
+    private void extractIdentityClaimFilterConditions(Condition condition,
+                                                      List<ExpressionCondition> expressionConditions) {
+
+        if (condition instanceof ExpressionCondition) {
+            ExpressionCondition expressionCondition = (ExpressionCondition) condition;
+            String claimUri = expressionCondition.getAttributeName();
+
+            if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+                ExpressionCondition expressionConditionWithIdentityClaimFilter =
+                        new ExpressionCondition(expressionCondition.getOperation(),
+                                expressionCondition.getAttributeName(), expressionCondition.getAttributeValue());
+
+                // Adding a copy of expression condition.
+                expressionConditions.add(expressionConditionWithIdentityClaimFilter);
+
+                // Remove expression conditions with identity claims from the condition.
+                expressionCondition.setAttributeName(null);
+                expressionCondition.setAttributeValue(null);
+                expressionCondition.setOperation(null);
+            }
+
+        } else if (condition instanceof OperationalCondition) {
+            Condition leftCondition = ((OperationalCondition) condition).getLeftCondition();
+            extractIdentityClaimFilterConditions(leftCondition, expressionConditions);
+            Condition rightCondition = ((OperationalCondition) condition).getRightCondition();
+            extractIdentityClaimFilterConditions(rightCondition, expressionConditions);
         }
     }
 
