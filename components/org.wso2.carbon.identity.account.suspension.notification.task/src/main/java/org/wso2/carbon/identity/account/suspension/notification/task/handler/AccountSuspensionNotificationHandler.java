@@ -80,7 +80,7 @@ public class AccountSuspensionNotificationHandler extends AbstractEventHandler i
 
                     if (log.isDebugEnabled()) {
                         log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
-                                " is enabled in identity.xml file hence using last login time as default claim");
+                                " is disabled in identity.xml file. Hence using last login time as default claim.");
                     }
                     String currentTime = getLastLoginTimeValue(userStoreManager);
                     userClaims.put(NotificationConstants.LAST_LOGIN_TIME, currentTime);

@@ -2,6 +2,7 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -23,11 +24,12 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
     @Override
     public Response validateCodePost(CodeValidationRequestDTO codeValidationRequestDTO) {
 
+        User user = null;
         try {
             NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                     .getNotificationBasedPwdRecoveryManager();
-            notificationPasswordRecoveryManager.validateConfirmationCode(codeValidationRequestDTO.getCode()
-                    , codeValidationRequestDTO.getStep());
+            user = notificationPasswordRecoveryManager
+                    .getValidatedUser(codeValidationRequestDTO.getCode(), codeValidationRequestDTO.getStep());
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while validating the confirmation code ", e);
@@ -39,6 +41,6 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.accepted().build();
+        return Response.accepted(RecoveryUtil.getUserDTO(user)).build();
     }
 }

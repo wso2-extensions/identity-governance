@@ -263,6 +263,30 @@ public class IdentityStoreEventListenerTest {
                 "http://wso2.org/claims/identity/email", "admin@wso2.com", "foo", userStoreManager));
     }
 
+    @DataProvider(name = "userListData")
+    public Object[][] userListData() {
+
+        List<String> list1 = new ArrayList<>();
+        list1.add("user1");
+        list1.add("user2");
+
+        List<String> list2 = new ArrayList<>();
+        list2.add("user2");
+        list2.add("user3");
+
+        return new Object[][]{
+                {"http://wso2.org/claims/country", "Sri Lanka", list1},
+                {"http://wso2.org/claims/username", "john", list2}
+        };
+    }
+
+    @Test(dataProvider = "userListData")
+    public void testDoPreGetUserListWithNonIdentityClaims(String claimUri, String claimValue,
+            final List<String> userList) throws Exception {
+
+        assertTrue(identityStoreEventListener.doPreGetUserList(claimUri, claimValue, userList, userStoreManager));
+    }
+
     @DataProvider(name = "getuserlistHandler")
     public Object[][] getUserListData() {
         List<String> list1 = new ArrayList<>();
@@ -274,7 +298,7 @@ public class IdentityStoreEventListenerTest {
         list2.add("user3");
 
         return new Object[][]{
-                {"http://wso2.org/claims/email", "john@wso2.com", list1, "PRIMARY"},
+                {"http://wso2.org/claims/identity/accountLocked", "true", list1, "PRIMARY"},
                 {"http://wso2.org/claims/username", "john", list2, "SECONDARY"}
         };
     }
@@ -284,6 +308,7 @@ public class IdentityStoreEventListenerTest {
                                      String claimValue,
                                      final List<String> userList,
                                      String userStore) throws Exception {
+
         userStoreManager = mock(UserStoreManager.class);
         realmConfiguration = mock(RealmConfiguration.class);
         userIdentityDataStore = mock(UserIdentityDataStore.class);

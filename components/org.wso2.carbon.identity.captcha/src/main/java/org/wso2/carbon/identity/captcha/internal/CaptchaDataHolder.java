@@ -45,6 +45,8 @@ public class CaptchaDataHolder {
 
     private String reCaptchaSecretKey;
 
+    private String reCaptchaParameterInURLEnabled;
+
     private String reCaptchaErrorRedirectUrls;
 
     private IdentityGovernanceService identityGovernanceService;
@@ -107,6 +109,16 @@ public class CaptchaDataHolder {
 
     public void setReCaptchaSecretKey(String reCaptchaSecretKey) {
         this.reCaptchaSecretKey = reCaptchaSecretKey;
+    }
+
+    public String getReCaptchaParameterInURLEnabled() {
+
+        return reCaptchaParameterInURLEnabled;
+    }
+
+    public void setReCaptchaParameterInURLEnabled(String reCaptchaParameterInURLEnabled) {
+
+        this.reCaptchaParameterInURLEnabled = reCaptchaParameterInURLEnabled;
     }
 
     public String getReCaptchaErrorRedirectUrls() {

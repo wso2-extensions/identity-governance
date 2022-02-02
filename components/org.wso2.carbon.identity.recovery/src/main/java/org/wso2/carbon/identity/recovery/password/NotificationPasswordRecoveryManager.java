@@ -127,7 +127,21 @@ public class NotificationPasswordRecoveryManager {
                 return new NotificationResponseBean(user);
             }
         }
-        checkAccountLockedStatus(user);
+        if (Utils.isAccountDisabled(user)) {
+            // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
+            if (getNotifyUserAccountStatus()) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
+                        user.getUserName());
+            }
+            return new NotificationResponseBean(user);
+        } else if (Utils.isAccountLocked(user)) {
+            // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
+            if (getNotifyUserAccountStatus()) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
+                        user.getUserName());
+            }
+            return new NotificationResponseBean(user);
+        }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
@@ -154,20 +168,22 @@ public class NotificationPasswordRecoveryManager {
     }
 
     /**
-     * Check whether the account is locked or disabled.
+     * Whether to inform the user if the user's account is locked.
      *
-     * @param user User
-     * @throws IdentityRecoveryException If account is in locked or disabled status
+     * @return True, if notify user account status is enabled in the identity.xml. Also, true will be returned if the
+     * property is not configured.
      */
-    private void checkAccountLockedStatus(User user) throws IdentityRecoveryException {
+    private boolean getNotifyUserAccountStatus() {
 
-        if (Utils.isAccountDisabled(user)) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
-                    user.getUserName());
-        } else if (Utils.isAccountLocked(user)) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                    user.getUserName());
+        String notifyStatus =
+                IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_ACCOUNT_STATUS);
+        if (StringUtils.isBlank(notifyStatus)) {
+            /*
+            This indicates config not in the identity.xml. In that case the we need to maintain backward compatibility.
+             */
+            return true;
         }
+        return Boolean.parseBoolean(notifyStatus);
     }
 
     /**
@@ -408,6 +424,22 @@ public class NotificationPasswordRecoveryManager {
     public void updatePassword(String code, String password, Property[] properties)
             throws IdentityRecoveryException, IdentityEventException {
 
+        updateUserPassword(code, password, properties);
+    }
+
+    /**
+     * Update the password of the user.
+     *
+     * @param code       Password Reset code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @return User object.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
+     */
+    public User updateUserPassword(String code, String password, Property[] properties)
+            throws IdentityRecoveryException, IdentityEventException {
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
@@ -458,6 +490,8 @@ public class NotificationPasswordRecoveryManager {
         }
         auditPasswordReset(AuditConstants.ACTION_PASSWORD_RESET, userRecoveryData.getUser(), null,
                 FrameworkConstants.AUDIT_SUCCESS);
+
+        return userRecoveryData.getUser();
     }
 
     /**
@@ -532,6 +566,8 @@ public class NotificationPasswordRecoveryManager {
             if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
                 userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                         IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             }
         }
         // If the scenario is initiated by the admin, set the account locked claim to TRUE.
@@ -540,6 +576,7 @@ public class NotificationPasswordRecoveryManager {
                 equals(userRecoveryData.getRecoveryScenario())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
         }
         return userClaims;
     }
@@ -673,6 +710,18 @@ public class NotificationPasswordRecoveryManager {
      */
     public void validateConfirmationCode(String code, String recoveryStep) throws IdentityRecoveryException {
 
+        getValidatedUser(code, recoveryStep);
+    }
+
+    /**
+     * Method to validate confirmation code of password reset flow.
+     *
+     * @param code         confirmation code
+     * @param recoveryStep recovery step
+     * @throws IdentityRecoveryException
+     */
+    public User getValidatedUser(String code, String recoveryStep) throws IdentityRecoveryException {
+
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -688,7 +737,7 @@ public class NotificationPasswordRecoveryManager {
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
         }
-
+        return userRecoveryData.getUser();
     }
 
     private void auditPasswordRecovery(String action, String notificationChannel, User user, String errorMsg,

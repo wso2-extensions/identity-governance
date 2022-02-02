@@ -80,6 +80,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -579,6 +580,7 @@ public class UserSelfRegistrationManager {
             HashMap<String, String> userClaims = new HashMap<>();
             //Need to lock user account
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+            userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
             userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
             try {
                 userStoreManager.setUserClaimValues(IdentityUtil.addDomainToName(user.getUserName(),
@@ -605,15 +607,32 @@ public class UserSelfRegistrationManager {
      * @param properties           Properties sent with the validate code request
      * @throws IdentityRecoveryException Error validating the confirmation code
      */
+    @Deprecated
     public void confirmUserSelfRegistration(String code, String verifiedChannelType,
             String verifiedChannelClaim, Map<String, String> properties) throws IdentityRecoveryException {
+        getConfirmedSelfRegisteredUser(code, verifiedChannelType, verifiedChannelClaim, properties);
+    }
 
+    /**
+     * Confirms the user self registration by validating the confirmation code and sets externally verified claims.
+     *
+     * @param code                 Confirmation code.
+     * @param verifiedChannelType  Type of the verified channel. (SMS or EMAIL)
+     * @param verifiedChannelClaim Claim associated with verified channel.
+     * @param properties           Properties sent with the validate code request.
+     * @throws IdentityRecoveryException Error validating the confirmation code.
+     */
+    public User getConfirmedSelfRegisteredUser(String code, String verifiedChannelType,
+                                               String verifiedChannelClaim, Map<String, String> properties)
+            throws IdentityRecoveryException {
+
+        User user = null;
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
                 verifiedChannelClaim, properties);
-        User user = userRecoveryData.getUser();
+        user = userRecoveryData.getUser();
         // Invalidate code.
         userRecoveryDataStore.invalidate(code);
 
@@ -626,6 +645,7 @@ public class UserSelfRegistrationManager {
         }
         publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+        return user;
     }
 
     /**
@@ -875,11 +895,15 @@ public class UserSelfRegistrationManager {
 
         // Need to unlock user account
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
         //Set account verified time claim.
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_CONFIRMED_TIME_CLAIM, Instant.now().toString());
+        //Set the account state claim to UNLOCKED.
+        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
         return userClaims;
     }
 
@@ -924,7 +948,12 @@ public class UserSelfRegistrationManager {
 
         validateContextTenantDomainWithUserTenantDomain(user);
         String contextUsername = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        String username = user.getUserName();
+        String username;
+        if (!UserStoreConfigConstants.PRIMARY.equals(user.getUserStoreDomain())) {
+            username = user.getUserStoreDomain() + CarbonConstants.DOMAIN_SEPARATOR + user.getUserName();
+        } else {
+            username = user.getUserName();
+        }
         if (!StringUtils.equalsIgnoreCase(contextUsername, username)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
                     contextUsername);

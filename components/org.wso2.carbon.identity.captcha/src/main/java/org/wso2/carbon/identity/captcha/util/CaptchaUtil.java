@@ -47,6 +47,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -375,6 +376,13 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
         }
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
+
+        String reCaptchaParameterInURLEnabled =
+                properties.getProperty(CaptchaConstants.RE_CAPTCHA_PARAMETERS_IN_URL_ENABLED);
+        if (StringUtils.isBlank(reCaptchaParameterInURLEnabled)) {
+            reCaptchaParameterInURLEnabled = "true";
+        }
+        CaptchaDataHolder.getInstance().setReCaptchaParameterInURLEnabled(reCaptchaParameterInURLEnabled);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
@@ -489,5 +497,25 @@ public class CaptchaUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Get the ReCaptcha Site Key.
+     *
+     * @return ReCaptcha Site Key.
+     */
+    public static String reCaptchaSiteKey() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
+    }
+
+    /**
+     * Get the ReCaptcha API URL.
+     *
+     * @return ReCaptcha API URL.
+     */
+    public static String reCaptchaAPIURL() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
     }
 }

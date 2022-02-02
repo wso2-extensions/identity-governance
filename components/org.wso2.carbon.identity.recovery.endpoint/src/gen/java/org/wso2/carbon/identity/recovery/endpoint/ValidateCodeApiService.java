@@ -3,8 +3,9 @@ package org.wso2.carbon.identity.recovery.endpoint;
 import org.wso2.carbon.identity.recovery.endpoint.*;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 
-import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.CodeValidationRequestDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 
 import java.util.List;
 

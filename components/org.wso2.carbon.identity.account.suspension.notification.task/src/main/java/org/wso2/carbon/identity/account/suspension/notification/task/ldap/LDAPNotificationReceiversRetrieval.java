@@ -88,7 +88,7 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
                 if (useIdentityClaimForLastLoginTime) {
                     if (log.isDebugEnabled()) {
                         log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
-                                " is enabled in identity.xml file hence using last login time as default claim");
+                                " is enabled in identity.xml file. Hence treating last login time as identity claim.");
                     }
                     return NotificationReceiversRetrievalUtil.getNotificationReceiversFromIdentityClaim(lookupMin,
                             lookupMax, delayForSuspension, realmService, tenantDomain, userStoreDomain);
@@ -181,8 +181,9 @@ public class LDAPNotificationReceiversRetrieval implements NotificationReceivers
     protected String getSearchFilter(long lookupMin, long lookupMax, String lastLoginTimeAttribute) {
 
         // The lastLoginTimeAttribute is the mapped LDAP attribute for LastLoginTime claim.
-        String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(" + lastLoginTimeAttribute + "<="
-                + lookupMax + "))";
+        String searchFilter = "(&(" + lastLoginTimeAttribute + ">=" + lookupMin + ")(|(!(" +
+                lastLoginTimeAttribute + ">=" + lookupMax + "))(" + lastLoginTimeAttribute + "="
+                + lookupMax + ")))";
 
         // If the user-store uses a different timestamp than WSO2 format.
         String timeStampFormat = realmConfiguration.getUserStoreProperty(UserStoreConfigConstants.dateAndTimePattern);

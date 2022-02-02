@@ -128,7 +128,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 claims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
             }
             setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
-            lockAccountOnAdminPasswordReset(user, userStoreManager);
+            lockAccountOnAdminPasswordReset(user, claims);
 
             if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
                 try {
@@ -194,17 +194,17 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         }
     }
 
-    private void lockAccountOnAdminPasswordReset(User user, UserStoreManager userStoreManager)
+    private void lockAccountOnAdminPasswordReset(User user, Map<String, String> claims)
             throws IdentityEventException {
 
         if (log.isDebugEnabled()) {
             log.debug("Locking user account on admin forced password reset: " + user.getUserName());
         }
-        HashMap<String, String> userClaims = new HashMap<>();
-        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
-        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+        claims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+        claims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
+                IdentityMgtConstants.LockedReason.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET.toString());
+        claims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                 IdentityMgtConstants.AccountStates.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET);
-        setUserClaims(userClaims, user, userStoreManager);
     }
 
     protected void setUserClaims(Map<String, String> userClaims, User user, UserStoreManager userStoreManager)

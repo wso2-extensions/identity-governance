@@ -48,6 +48,10 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     @Override
     public Response resendCodePost(ResendCodeRequestDTO resendCodeRequestDTO) {
 
+        // Remove any empty properties if exists.
+        List<PropertyDTO> properties = resendCodeRequestDTO.getProperties();
+        properties.removeIf(property -> StringUtils.isEmpty(property.getKey()));
+
         String tenantFromContext = getTenantDomainFromContext();
         if (StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);

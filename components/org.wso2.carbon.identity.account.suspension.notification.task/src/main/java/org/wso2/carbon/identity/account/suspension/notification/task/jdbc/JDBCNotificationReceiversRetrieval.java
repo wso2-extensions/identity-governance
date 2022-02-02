@@ -82,18 +82,18 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     getProperty(NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME);
             boolean useIdentityClaimForLastLoginTime = StringUtils.isBlank(identityClaimForLastLoginTime) ||
                     Boolean.parseBoolean(identityClaimForLastLoginTime);
-            String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME_IDENTITY_CLAIM;
 
-            if (!useIdentityClaimForLastLoginTime) {
+            if (useIdentityClaimForLastLoginTime) {
                 if (log.isDebugEnabled()) {
                     log.debug("Property " + NotificationConstants.USE_IDENTITY_CLAIM_FOR_LAST_LOGIN_TIME +
-                            " is enabled in identity.xml file hence using last login time as default claim");
+                            " is enabled in identity.xml file. Hence treating last login time as identity claim.");
                 }
                 return NotificationReceiversRetrievalUtil.getNotificationReceiversFromIdentityClaim(lookupMin,
                         lookupMax, delayForSuspension, realmService, tenantDomain, userStoreDomain);
             }
-            String lastLoginTimeAttribute = claimManager
-                    .getAttributeName(userStoreDomain, lastLoginClaim);
+
+            String lastLoginClaim = NotificationConstants.LAST_LOGIN_TIME;
+            String lastLoginTimeAttribute = claimManager.getAttributeName(userStoreDomain, lastLoginClaim);
 
             try (Connection dbConnection = getDBConnection(realmConfiguration)) {
                 String sqlStmt = NotificationConstants.GET_USERS_FILTERED_BY_LAST_LOGIN_TIME;
@@ -102,8 +102,9 @@ public class JDBCNotificationReceiversRetrieval implements NotificationReceivers
                     prepStmt.setString(1, lastLoginTimeAttribute);
                     prepStmt.setString(2, String.valueOf(lookupMin));
                     prepStmt.setString(3, String.valueOf(lookupMax));
-                    prepStmt.setString(4, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
-                    prepStmt.setString(5, String.valueOf(IdentityTenantUtil.getTenantId(tenantDomain)));
+                    // As UM_TENANT_ID is integer, this has to be set as an int to work with postgres.
+                    prepStmt.setInt(4, IdentityTenantUtil.getTenantId(tenantDomain));
+                    prepStmt.setInt(5, IdentityTenantUtil.getTenantId(tenantDomain));
 
                     try (ResultSet resultSet = prepStmt.executeQuery()) {
 

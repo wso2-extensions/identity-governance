@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.identity.application.common.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,6 +116,14 @@ public class UtilsTest {
         return userDTO;
     }
 
+    private User buildUser() {
+
+        User user = new User();
+        user.setUserName("testUser");
+        user.setUserStoreDomain("testRealm");
+        return user;
+    }
+
     private UserDTO buildUserDTO() {
 
         UserDTO userDTO = new UserDTO();
@@ -154,6 +163,14 @@ public class UtilsTest {
         assertNotNull(Utils.getRoles(buildRoleList()));
     }
 
+    @Test
+    public void testGetUserDTO() {
+
+        assertNotNull(Utils.getUserDTO(buildUser()), "Failed building user object.");
+        assertEquals(Utils.getUserDTO(buildUser()).getUsername(), "testUser");
+        assertEquals(Utils.getUserDTO(buildUser()).getRealm(), "TESTREALM");
+    }
+
     private List<String> buildRoleList() {
 
         List<String> listRoles = new ArrayList<String>();
@@ -169,7 +186,6 @@ public class UtilsTest {
         assertEquals(Utils.getClaims(buildClaimDTO()).length, 1);
         assertEquals(Utils.getClaims(null).length, 0);
     }
-
 
     private List<ClaimDTO> buildClaimDTO() {
 

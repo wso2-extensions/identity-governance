@@ -18,6 +18,7 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -37,6 +38,8 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
 
     @Override
     public Response validateCodePost(CodeValidationRequestDTO codeValidationRequestDTO) {
+
+        User user = null;
         UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
         try {
             // Get the map of properties in the request.
@@ -53,8 +56,8 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
                 verifiedChannelType = verifiedChannelDTO.getType();
             }
             // Confirm self registration.
-            userSelfRegistrationManager
-                    .confirmUserSelfRegistration(codeValidationRequestDTO.getCode(), verifiedChannelType,
+            user = userSelfRegistrationManager
+                    .getConfirmedSelfRegisteredUser(codeValidationRequestDTO.getCode(), verifiedChannelType,
                             verifiedChannelClaim, propertyMap);
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
@@ -67,6 +70,6 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
             Utils.handleInternalServerError(Constants.SERVER_ERROR,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
-        return Response.accepted().build();
+        return Response.accepted(Utils.getUserDTO(user)).build();
     }
 }

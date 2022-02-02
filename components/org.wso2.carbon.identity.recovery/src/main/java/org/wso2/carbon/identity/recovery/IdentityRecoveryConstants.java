@@ -61,6 +61,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
+    public static final String ACCOUNT_LOCKED_REASON_CLAIM = "http://wso2.org/claims/identity/lockedReason";
     public static final String ACCOUNT_UNLOCK_TIME_CLAIM = "http://wso2.org/claims/identity/unlockTime";
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
@@ -246,6 +247,7 @@ public class IdentityRecoveryConstants {
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
                 "."),
+        ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
         ERROR_CODE_FAILED_TO_LOCK_FUNCTIONALITY_FOR_USER("55001", "Server error occurred while locking functionality."),
         ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER("55002", "Server error occurred while unlocking " +
                 "functionality."),
@@ -457,6 +459,7 @@ public class IdentityRecoveryConstants {
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
+        public static final String NOTIFY_USER_ACCOUNT_STATUS = "Recovery.NotifyUserAccountStatus";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
         public static final String NOTIFICATION_BASED_PW_RECOVERY = "Recovery.Notification.Password.Enable";
@@ -527,6 +530,8 @@ public class IdentityRecoveryConstants {
         public static final String CHALLENGE_QUESTION_ANSWER_REGEX = "Recovery.Question.Answer.Regex";
         public static final String ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS = "Recovery.Question.Answer.Uniqueness";
         public static final String ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET = "Recovery.AutoLogin.Enable";
+        public static final String SELF_REGISTRATION_AUTO_LOGIN = "SelfRegistration.AutoLogin.Enable";
+        public static final String SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME = "SelfRegistration.AutoLogin.AliasName";
     }
 
     public static class SQLQueries {

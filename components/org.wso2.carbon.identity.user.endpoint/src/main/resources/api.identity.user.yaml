@@ -191,6 +191,8 @@ paths:
       responses:
         202:
           description: Accepted
+          schema:
+            $ref: '#/definitions/User'
         400:
           description: Bad Request
           schema:
