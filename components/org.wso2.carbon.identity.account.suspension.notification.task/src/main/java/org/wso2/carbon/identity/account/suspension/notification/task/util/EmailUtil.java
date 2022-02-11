@@ -17,7 +17,8 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.internal.NotificationTaskDataHolder;
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 public class EmailUtil {
-    private static final Logger log = Logger.getLogger(EmailUtil.class);
+    private static final Logger log = LogManager.getLogger(EmailUtil.class);
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String REMAINING_DATES ="remaining-days";
 
