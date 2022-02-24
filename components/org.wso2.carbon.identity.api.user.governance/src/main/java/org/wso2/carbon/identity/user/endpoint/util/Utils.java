@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.user.endpoint.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -195,7 +195,7 @@ public class Utils {
      * @return whether the correlation id is present
      */
     public static boolean isCorrelationIDPresent() {
-        return MDC.get(Constants.CORRELATION_ID_MDC) != null;
+        return ThreadContext.get(Constants.CORRELATION_ID_MDC) != null;
     }
 
     /**
@@ -206,7 +206,7 @@ public class Utils {
     public static String getCorrelation() {
         String ref = null;
         if (isCorrelationIDPresent()) {
-            ref = MDC.get(Constants.CORRELATION_ID_MDC).toString();
+            ref = ThreadContext.get(Constants.CORRELATION_ID_MDC).toString();
         }
         return ref;
     }
