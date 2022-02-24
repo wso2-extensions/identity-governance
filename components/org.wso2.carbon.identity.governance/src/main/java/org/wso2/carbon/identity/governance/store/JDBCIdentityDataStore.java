@@ -26,7 +26,11 @@ import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.SqlBuilder;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.dbcreator.DatabaseCreator;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.sql.Connection;
@@ -47,6 +51,12 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
     private static final String QUERY_FILTER_STRING_ANY = "*";
     private static final String SQL_FILTER_STRING_ANY = "%";
+    private static final String QUERY_BINDING_SYMBOL = "?";
+    private static final String DB2 = "db2";
+    private static final String MSSQL = "mssql";
+    private static final String ORACLE = "oracle";
+    private static final String POSTGRE_SQL = "postgresql";
+    private static final String MYSQL = "mysql";
 
     @Override
     public void store(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
@@ -320,11 +330,206 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return userNames;
     }
 
+    @Override
+    public List<String> listPaginatedUsersNames(List<ExpressionCondition> identityClaimFilterExpressionConditions,
+                                                List<String> identityClaimFilteredUserNames, String domain,
+                                                org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                int limit, int offset) throws IdentityException {
+
+        try {
+            int tenantId = userStoreManager.getTenantId();
+
+            try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+
+                // Based on the DB Type might need to extend support.
+                String dBType = DatabaseCreator.getDatabaseType(connection);
+
+                // To handle the offset being one leads to null response
+                if (offset <= 0) {
+                    offset = 0;
+                } else {
+                    offset = offset - 1;
+                }
+
+                SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, offset, domain,
+                        tenantId, dBType);
+
+                String fullQuery = sqlBuilder.getQuery();
+                int startIndex = 0;
+                int endIndex = 0;
+                int occurrence = StringUtils.countMatches(fullQuery, QUERY_BINDING_SYMBOL);
+                endIndex = endIndex + occurrence;
+
+                try (PreparedStatement preparedStatement = connection.prepareStatement(fullQuery)) {
+
+                    populatePrepareStatement(sqlBuilder, preparedStatement, startIndex, endIndex);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        while (resultSet.next()) {
+                            identityClaimFilteredUserNames.add(resultSet.getString("USER_NAME"));
+                        }
+                        IdentityDatabaseUtil.commitTransaction(connection);
+                    } catch (SQLException e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Error occurred while retrieving users from Identity Store for " + domain +
+                                    "with limit " + limit + "and offset " + offset, e);
+                        }
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
+                    }
+                } catch (SQLException e) {
+                    throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+                }
+                return identityClaimFilteredUserNames;
+            } catch (Exception e) {
+                throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+            }
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityException("Error occurred while retrieving users.", e);
+        }
+    }
+
+    private void populatePrepareStatement(SqlBuilder sqlBuilder, PreparedStatement prepStmt, int startIndex,
+                                          int endIndex) throws SQLException {
+
+        Map<Integer, Integer> integerParameters = sqlBuilder.getIntegerParameters();
+        Map<Integer, String> stringParameters = sqlBuilder.getStringParameters();
+        Map<Integer, Long> longParameters = sqlBuilder.getLongParameters();
+
+        integerParameters.forEach((key, value) -> {
+            if (key > startIndex && key <= endIndex) {
+                try {
+                    prepStmt.setInt(key - startIndex, value);
+                } catch (SQLException e) {
+                    throw new RuntimeException("Error occurred while populating parameters for a prepared " +
+                            "statement.", e);
+                }
+            }
+        });
+
+        stringParameters.forEach((key, value) -> {
+            if (key > startIndex && key <= endIndex) {
+                try {
+                    prepStmt.setString(key - startIndex, value);
+                } catch (SQLException e) {
+                    throw new RuntimeException("Error occurred while populating parameters for a prepared " +
+                            "statement.", e);
+                }
+            }
+        });
+
+        longParameters.forEach((key, value) -> {
+            if (key > startIndex && key <= endIndex) {
+                try {
+                    prepStmt.setLong(key - startIndex, value);
+                } catch (SQLException e) {
+                    throw new RuntimeException("Error occurred while populating parameters for a prepared " +
+                            "statement.", e);
+                }
+            }
+        });
+    }
+
+    private SqlBuilder getQueryString(List<ExpressionCondition> identityClaimFilterExpressionConditions,
+                                      int limit, int offset, String userStoreDomain, int tenantID, String dbType) {
+
+        boolean hitClaimFilter = false;
+        String userNameWithDomain;
+        StringBuilder sqlStatement = new StringBuilder("SELECT DISTINCT USER_NAME FROM IDN_IDENTITY_USER_DATA ");
+        SqlBuilder sqlBuilder = new SqlBuilder(sqlStatement);
+        sqlBuilder.where("TENANT_ID = ? ", tenantID);
+
+        if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+            userNameWithDomain = SQL_FILTER_STRING_ANY + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+            sqlBuilder.where(" USER_NAME NOT LIKE ? ", userNameWithDomain);
+        } else {
+            userNameWithDomain =
+                    userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+            sqlBuilder.where(" USER_NAME LIKE ? ", userNameWithDomain);
+        }
+
+        SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
+        addingWheres(sqlBuilder, header);
+
+        for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
+            String claimValue = expressionCondition.getAttributeValue();
+            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+                // This is to support LDAP like queries. Value having only * is restricted except one *.
+                if (!claimValue.matches("(\\*)\\1+")) {
+                    // Convert all the * to % except \*.
+                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
+                }
+            }
+            // Adding filter claims.
+            multiClaimQueryBuilder(sqlBuilder, header, hitClaimFilter, expressionCondition);
+            hitClaimFilter = true;
+        }
+
+        if (DB2.equals(dbType)) {
+            sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ? , ? ", limit, offset);
+        } else if (MSSQL.equals(dbType)) {
+            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+        } else if (ORACLE.equals(dbType)) {
+            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+        } else if (POSTGRE_SQL.equals(dbType)) {
+            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+        } else {
+            sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ? OFFSET ?", limit, offset);
+        }
+
+        return sqlBuilder;
+    }
+
+    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
+                                           String attributeValue) {
+
+        sqlBuilder.where("DATA_KEY = ?", attributeName);
+        if (ExpressionOperation.EQ.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE = ?", attributeValue);
+        } else if (ExpressionOperation.EW.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE LIKE ?", "%" + attributeValue);
+        } else if (ExpressionOperation.CO.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE LIKE ?", "%" + attributeValue + "%");
+        } else if (ExpressionOperation.SW.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE LIKE ?", attributeValue + "%");
+        }
+    }
+
+    private void addingWheres(SqlBuilder baseSqlBuilder, SqlBuilder newSqlBuilder) {
+
+        for (int i = 0; i < baseSqlBuilder.getWheres().size(); i++) {
+
+            if (baseSqlBuilder.getIntegerParameters().containsKey(i + 1)) {
+                newSqlBuilder
+                        .where(baseSqlBuilder.getWheres().get(i), baseSqlBuilder.getIntegerParameters().get(i + 1));
+
+            } else if (baseSqlBuilder.getStringParameters().containsKey(i + 1)) {
+                newSqlBuilder.where(baseSqlBuilder.getWheres().get(i), baseSqlBuilder.getStringParameters().get(i + 1));
+
+            } else if (baseSqlBuilder.getIntegerParameters().containsKey(i + 1)) {
+                newSqlBuilder.where(baseSqlBuilder.getWheres().get(i), baseSqlBuilder.getLongParameters().get(i + 1));
+            }
+        }
+    }
+
+    private void multiClaimQueryBuilder(SqlBuilder sqlBuilder, SqlBuilder header, boolean hitFirstRound,
+                                        ExpressionCondition expressionCondition) {
+
+        // Taking intersection for multi-attribute filtering.
+        if (hitFirstRound) {
+            sqlBuilder.updateSql(" INTERSECT " + header.getSql());
+            addingWheres(header, sqlBuilder);
+            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
+        } else {
+            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+                    expressionCondition.getOperation(), expressionCondition.getAttributeValue());
+        }
+    }
+
     /**
      * This class contains the SQL queries.
-     * Schem:
-     * ||TENANT_ID || USERR_NAME || DATA_KEY || DATA_VALUE ||
-     * The primary key is tenantId, userName, DatKey combination
+     * Schema:
+     * ||TENANT_ID || USER_NAME || DATA_KEY || DATA_VALUE ||
+     * The primary key is tenantId, userName, DataKey combination
      */
     private static class SQLQuery {
         public static final String STORE_USER_DATA = "INSERT INTO IDN_IDENTITY_USER_DATA (TENANT_ID, USER_NAME, " +
