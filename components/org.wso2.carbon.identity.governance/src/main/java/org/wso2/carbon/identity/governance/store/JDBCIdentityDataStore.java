@@ -490,6 +490,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             sqlBuilder.where("DATA_VALUE LIKE ?", "%" + attributeValue + "%");
         } else if (ExpressionOperation.SW.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE LIKE ?", attributeValue + "%");
+        } else if (ExpressionOperation.GE.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE >= ?", attributeValue);
+        } else if (ExpressionOperation.LE.toString().equals(operation)) {
+            sqlBuilder.where("DATA_VALUE <= ?", attributeValue);
         }
     }
 
