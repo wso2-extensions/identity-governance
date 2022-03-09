@@ -187,28 +187,28 @@ public class IdentityRecoveryConstants {
      */
     public enum ErrorMessages {
 
-        ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s.'"),
-        ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s.'"),
-        ERROR_CODE_INVALID_USER("18003", "Invalid User '%s.'"),
+        ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s'."),
+        ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s'."),
+        ERROR_CODE_INVALID_USER("18003", "Invalid User '%s'."),
         ERROR_CODE_FEDERATED_USER("18004", "User %s doesn't have a password for local account."),
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
-        ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant'%s.'"),
+        ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
-        ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s.'"),
-        ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s.'"),
+        ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
+        ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
-        ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s.'"),
-        ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s.'"),
-        ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s.'"),
-        ERROR_CODE_QUESTION_OF_USER("20006", "Error setting challenge quesitons of user '%s.'"),
+        ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s'."),
+        ERROR_CODE_GETTING_CHALLENGE_QUESTIONS("20004", "Error while getting challenge questions '%s'."),
+        ERROR_CODE_GETTING_CHALLENGE_QUESTION("20005", "Error while getting challenge question '%s'."),
+        ERROR_CODE_QUESTION_OF_USER("20006", "Error setting challenge quesitons of user '%s'."),
         ERROR_CODE_NO_HASHING_ALGO("20007", "Error while hashing the security answer"),
         ERROR_CODE_INVALID_ANSWER_FOR_SECURITY_QUESTION("20008", "Invalid answer"),
         ERROR_CODE_STORING_RECOVERY_DATA("20009", "Invalid answer for security question"),
         ERROR_CODE_NEED_TO_ANSWER_MORE_SECURITY_QUESTION("20010", "Need to answer more security questions"),
-        ERROR_CODE_TRIGGER_NOTIFICATION("20011", "Error while trigger notification for user '%s.'"),
+        ERROR_CODE_TRIGGER_NOTIFICATION("20011", "Error while trigger notification for user '%s'."),
         ERROR_CODE_NEED_TO_ANSWER_TO_REQUESTED_QUESTIONS("20012", "Need to answer to all requested security questions"),
         ERROR_CODE_NO_VALID_USERNAME("20013", "No Valid username found for recovery"),
         ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY("20014", "No fileds found for username recovery"),
@@ -222,7 +222,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_LOCK_USER_ACCOUNT("20022", "Error while lock user account"),
         ERROR_CODE_UNLOCK_USER_USER("20023", "Error while unlock user"),
         ERROR_CODE_OLD_CODE_NOT_FOUND("20024", "Old confirmation code not found"),
-        ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE("20025", "Failed to retrieve user realm from tenant id : %s"),
+        ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE("20025", "Failed to retrieve user realm from tenant id: '%s'"),
         ERROR_CODE_FAILED_TO_LOAD_USER_STORE_MANAGER("20026", "Failed to retrieve user store manager."),
         ERROR_CODE_FAILED_TO_LOAD_USER_CLAIMS("20027", "Error occurred while retrieving user claims"),
         ERROR_CODE_FAILED_TO_LOAD_GOV_CONFIGS("20028", "Error occurred while retrieving account lock connector " +
@@ -258,7 +258,7 @@ public class IdentityRecoveryConstants {
                 "answer."),
         ERROR_CODE_DUPLICATE_ANSWERS("20053", "Validation Error. Cannot answer two questions from the same question " +
                 "set claim uri"),
-        ERROR_CODE_INVALID_LOCALE("20054", "Invalid Locale value provided : %s"),
+        ERROR_CODE_INVALID_LOCALE("20054", "Invalid Locale value provided: %s"),
         ERROR_CODE_INVALID_CHALLENGE("20055", "Attributes of Challenge question to be set" +
                 " cannot be empty."),
         ERROR_CODE_INVALID_CHALLENGE_PATH("20056", "%s contains non alpha-numeric characters."),
@@ -270,8 +270,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
 
-        ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain" +
-                "."),
+        ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
         ERROR_CODE_FAILED_TO_LOCK_FUNCTIONALITY_FOR_USER("55001", "Server error occurred while locking functionality."),
         ERROR_CODE_FAILED_TO_UNLOCK_FUNCTIONALITY_FOR_USER("55002", "Server error occurred while unlocking " +
@@ -324,23 +323,23 @@ public class IdentityRecoveryConstants {
                 + "recovery code : '%s'"),
         ERROR_CODE_NO_NOTIFICATION_CHANNELS_FOR_USER("UAR-10009", "Notification channels not "
                 + "found for user"),
-        ERROR_CODE_INVALID_RECOVERY_STEP("UAR-10010", "Invalid recovery step : '%s'"),
-        ERROR_CODE_INVALID_RECOVERY_SCENARIO("UAR-10011", "Invalid recovery scenario : '%s'"),
-        ERROR_CODE_INVALID_RESEND_CODE("UAR-10012", "Invalid resend code : '%s'"),
-        ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code : '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_STEP("UAR-10010", "Invalid recovery step: '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_SCENARIO("UAR-10011", "Invalid recovery scenario: '%s'"),
+        ERROR_CODE_INVALID_RESEND_CODE("UAR-10012", "Invalid resend code: '%s'"),
+        ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code: '%s'"),
         ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
-                "User account recovery validation failed for user account : '%s'"),
+                "User account recovery validation failed for user account: '%s'"),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
-        ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims : '%s' "
+        ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "
                 + "from the userstore"),
         ERROR_CODE_UNEXPECTED_ERROR("UAR-15004", "Unexpected error"),
         ERROR_CODE_UNSUPPORTED_NOTIFICATION_CHANNEL("UAR-15005",
-                "Unsupported notification channel : '%s'"),
+                "Unsupported notification channel: '%s'"),
         ERROR_CODE_ERROR_GENERATING_NEW_RESET_CODE("UAR-15006", "Error while generating new "
                 + "password reset code"),
-        ERROR_CODE_ERROR_RETRIEVING_RECOVERY_DATA("UAR-15007","Error while retrieving the user recovery data - '%s'"),
-        ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA("UAR-15008", "Error while updating recovery data : '%s'"),
+        ERROR_CODE_ERROR_RETRIEVING_RECOVERY_DATA("UAR-15007","Error while retrieving the user recovery data: '%s'"),
+        ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA("UAR-15008", "Error while updating recovery data: '%s'"),
 
         // PWR - Password Recovery.
         ERROR_CODE_INVALID_TENANT_DOMAIN_PASSWORD_RESET("PWR-10001", "User's tenant domain does "
@@ -357,7 +356,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PASSWORD_RECOVERY_EMPTY_TENANT_DOMAIN("PWR-10008", "Empty tenant domain in password "
                 + "recovery request"),
         ERROR_CODE_PASSWORD_RECOVERY_VALIDATION_FAILED("PWR-10009",
-                "Password recovery validation failed for user account : '%s'"),
+                "Password recovery validation failed for user account: '%s'"),
         ERROR_CODE_ERROR_HANDLING_THE_EVENT("PWR-10010",
                 "Error encountered while handling the event: '%s'"),
         ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET("PWR-15001", "Unexpected error during "
