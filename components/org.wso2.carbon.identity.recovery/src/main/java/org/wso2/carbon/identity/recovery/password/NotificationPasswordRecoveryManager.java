@@ -96,9 +96,11 @@ public class NotificationPasswordRecoveryManager {
                                                              Property[] properties)
             throws IdentityRecoveryException {
 
-        publishEvent(user, String.valueOf(notify), null, null, properties,
+        HashMap<String, String> recoveryProperties = new HashMap<>();
+        publishPreSendRecoveryNotificationEvent(user, String.valueOf(notify), null, null, properties,
                 IdentityEventConstants.Event.PRE_SEND_RECOVERY_NOTIFICATION, new UserRecoveryData(user, null,
-                        RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD));
+                        RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD),
+                recoveryProperties);
 
         validateUserStoreDomain(user);
         Utils.validateEmailUsername(user.getUserName());
@@ -132,6 +134,15 @@ public class NotificationPasswordRecoveryManager {
                 return new NotificationResponseBean(user);
             }
         }
+
+        /*
+         Check for SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO property in recovery properties map.
+         If the property is enabled, skip recovery flow and, notify with an empty NotificationResponseBean.
+        */
+        if (isSendEmptyRecoveryNotificationScenario(recoveryProperties)) {
+            return new NotificationResponseBean(user);
+        }
+
         // Check if the user has a local credential to recover. If not skip sending the recovery mail.
         if (!isLocalCredentialAvailable(user)) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER,
@@ -305,6 +316,44 @@ public class NotificationPasswordRecoveryManager {
             }
             return notify;
         }
+    }
+
+    /**
+     * Check whether the SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO set to TRUE or FALSE in the recovery properties.
+     * If the property is not set, return FALSE.
+     *
+     * @param recoveryProperties Recovery Properties map.
+     * @return TRUE if SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO set to TRUE.
+     */
+    private boolean isSendEmptyRecoveryNotificationScenario(HashMap<String, String> recoveryProperties) {
+
+        if (MapUtils.isEmpty(recoveryProperties)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Empty recovery property map received.");
+            }
+            return false;
+        }
+        String sendEmptyRecoveryNotification =
+                recoveryProperties.get(IdentityEventConstants.EventProperty.SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO);
+        if (StringUtils.isBlank(sendEmptyRecoveryNotification)) {
+            if (log.isDebugEnabled()) {
+                String message = String.format("Property: %s is not in the recovery properties. Hence returning FALSE.",
+                        IdentityEventConstants.EventProperty.SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO);
+                log.debug(message);
+            }
+            return false;
+        }
+        try {
+            return Boolean.parseBoolean(sendEmptyRecoveryNotification);
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                String message = String.format("Value : %s given for property : %s is not a boolean. Therefore, "
+                                + "returning false for the property.", sendEmptyRecoveryNotification,
+                        IdentityEventConstants.EventProperty.SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO);
+                log.debug(message);
+            }
+        }
+        return false;
     }
 
     /**
@@ -785,6 +834,61 @@ public class NotificationPasswordRecoveryManager {
                     eventName, e);
         }
 
+    }
+
+    private void publishPreSendRecoveryNotificationEvent(User user, String notify, String code, String password,
+                                                         Property[] metaProperties, String eventName,
+                                                         UserRecoveryData userRecoveryData,
+                                                         HashMap<String, String> recoveryProperties) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+        if (userRecoveryData != null) {
+            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
+                    userRecoveryData.getRecoveryScenario().name());
+        }
+        if (StringUtils.isNotBlank(code)) {
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+        }
+
+        if (StringUtils.isNotBlank(notify)) {
+            properties.put(IdentityRecoveryConstants.NOTIFY, notify);
+        }
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+
+            if (properties.containsKey(
+                    IdentityEventConstants.EventProperty.SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO)) {
+                boolean isSendEmptyRecoveryNotification = (boolean) properties.get(IdentityEventConstants.EventProperty.
+                        SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO);
+                if (isSendEmptyRecoveryNotification) {
+                    recoveryProperties.put(
+                            IdentityEventConstants.EventProperty.SEND_EMPTY_RECOVERY_NOTIFICATION_SCENARIO, "true");
+                }
+            }
+        } catch (IdentityEventClientException e) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_ERROR_HANDLING_THE_EVENT.getCode(), e.getMessage(), null);
+        } catch (IdentityEventException e) {
+            log.error("Error occurred while publishing event: " + eventName + " for user: " + user.getUserName());
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,
+                    eventName, e);
+        }
     }
 
     /**
