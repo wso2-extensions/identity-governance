@@ -273,8 +273,10 @@ public class NotificationPasswordRecoveryManager {
                 }
             }
         } catch (UserStoreException e) {
-            log.error("Error occurred while checking user's local credential availability. " +
-                    "Error message: " + e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while checking user's local credential availability. Error message: "
+                        + e.getMessage());
+            }
         }
         return true;
     }
