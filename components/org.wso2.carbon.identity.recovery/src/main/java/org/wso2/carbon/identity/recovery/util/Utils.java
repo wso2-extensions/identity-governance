@@ -1114,6 +1114,38 @@ public class Utils {
     }
 
     /**
+     * Return user account state.
+     *
+     * @param user  User.
+     * @return account state.
+     */
+    public static String getAccountState(User user) {
+
+        String accountState = StringUtils.EMPTY;
+        try {
+            org.wso2.carbon.user.core.UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.
+                    getInstance().getRealmService().getBootstrapRealm().getUserStoreManager();
+            while (!userStoreManager.isExistingUser(user.getUserName())) {
+                userStoreManager = userStoreManager.getSecondaryUserStoreManager();
+                if (userStoreManager == null) {
+                    return accountState;
+                }
+            }
+            Map<String, String> claimMap =
+                    ((AbstractUserStoreManager) userStoreManager).getUserClaimValues(user.getUserName(),
+                            new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default");
+            if (!claimMap.isEmpty()) {
+                if (claimMap.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)) {
+                    accountState = claimMap.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+                }
+            }
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            log.error("Error occurred while retrieving UserStoreManager");
+        }
+        return accountState;
+    }
+
+    /**
      * When updating email/mobile claim value, sending the verification notification can be controlled by sending
      * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
      * This option can be enabled form identity.xml by setting 'UseVerifyClaim' to true. When this option is enabled,
