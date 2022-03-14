@@ -174,11 +174,42 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT.getMessage(),
                     user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
+            // Check user in PENDING_SR or PENDING_AP status.
+            checkAccountPendingStatus(user);
             String errorCode = Utils.prependOperationScenarioToErrorCode(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getCode(),
                     IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
             throw Utils.handleClientException(errorCode,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getMessage(), user.getUserName());
+        }
+    }
+
+    /**
+     * Check whether the account is pending self signup or pending ask password.
+     *
+     * @param user User.
+     * @throws IdentityRecoveryException If account is in locked or disabled status.
+     */
+    private void checkAccountPendingStatus(User user) throws IdentityRecoveryException {
+
+        String accountState = Utils.getAccountState(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            if (IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT.getCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT.getMessage(),
+                        user.getUserName());
+            }
+            if (IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState)) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT.getCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT.getMessage(),
+                        user.getUserName());
+            }
         }
     }
 
