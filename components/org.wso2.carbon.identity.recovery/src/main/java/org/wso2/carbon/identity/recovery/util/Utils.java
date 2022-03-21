@@ -1155,7 +1155,7 @@ public class Utils {
                 }
             }
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            log.error("Error occurred while retrieving UserStoreManager");
+            log.error("Error occurred while retrieving UserStoreManager.", e);
         }
         return accountState;
     }
