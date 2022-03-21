@@ -145,6 +145,8 @@ public class NotificationPasswordRecoveryManager {
             }
             return new NotificationResponseBean(user);
         } else if (Utils.isAccountLocked(user)) {
+            // Check user in PENDING_SR or PENDING_AP status.
+            checkAccountPendingStatus(user);
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
@@ -196,6 +198,27 @@ public class NotificationPasswordRecoveryManager {
             return true;
         }
         return Boolean.parseBoolean(notifyStatus);
+    }
+
+    /**
+     * Check whether the account is pending self signup or pending ask password.
+     *
+     * @param user User.
+     * @throws IdentityRecoveryException If account is in locked or disabled status.
+     */
+    private void checkAccountPendingStatus(User user) throws IdentityRecoveryException {
+
+        String accountState = Utils.getAccountState(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            if (IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.
+                        ErrorMessages.ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT, user.getUserName());
+            }
+            if (IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.
+                        ErrorMessages.ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT, user.getUserName());
+            }
+        }
     }
 
     /**

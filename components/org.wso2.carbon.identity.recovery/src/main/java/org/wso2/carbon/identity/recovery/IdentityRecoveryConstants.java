@@ -198,6 +198,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
+        ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT("17005", "User account not yet verified - '%s.'"),
+        ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT("17006", "Password reset is not yet completed '%s.'"),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s'."),
