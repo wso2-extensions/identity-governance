@@ -50,12 +50,12 @@ public class RegexResolver implements MultiAttributeLoginResolver {
 
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         try {
-            UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
-            UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
-            ClaimManager claimManager = userRealm.getClaimManager();
             if (allowedAttributes == null) {
                 return resolvedUserResult;
             }
+            UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
+            UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
+            ClaimManager claimManager = userRealm.getClaimManager();
             for (String claimURI : allowedAttributes) {
                 Claim claim = claimManager.getClaim(claimURI);
                 if (claim == null) {
@@ -121,12 +121,12 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                 new AuthenticationResult(AuthenticationResult.AuthenticationStatus.FAIL);
         ClaimManager claimManager;
         try {
-            UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
-            UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
-            claimManager = userRealm.getClaimManager();
             if (allowedAttributes == null) {
                 return authenticationResult;
             }
+            UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
+            UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
+            claimManager = userRealm.getClaimManager();
             for (String claimURI : allowedAttributes) {
                 Claim claim = claimManager.getClaim(claimURI);
                 if (claim == null) {
