@@ -31,6 +31,7 @@ import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
 import org.wso2.carbon.user.core.common.User;
+import org.wso2.carbon.user.core.constants.UserCoreClaimConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.List;
@@ -52,6 +53,9 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
             UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
             ClaimManager claimManager = userRealm.getClaimManager();
+            if (allowedAttributes == null) {
+                return resolvedUserResult;
+            }
             for (String claimURI : allowedAttributes) {
                 Claim claim = claimManager.getClaim(claimURI);
                 if (claim == null) {
@@ -64,27 +68,41 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                 Pattern pattern = Pattern.compile(regex);
                 String domainSeparateAttribute = UserCoreUtil.removeDomainFromName(loginAttribute);
                 if (pattern.matcher(domainSeparateAttribute).matches()) {
-                    List<User> userList = userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
-                    if (userList.size() == 1) {
-                        resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.SUCCESS);
-                        resolvedUserResult.setResolvedClaim(claimURI);
-                        resolvedUserResult.setResolvedValue(loginAttribute);
-                        User user = userList.get(0);
-                        user.setUsername(user.getDomainQualifiedUsername());
-                        resolvedUserResult.setUser(user);
-                        break;
-                    } else if (userList.size() > 1) {
-                        resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.FAIL);
-                        resolvedUserResult.setErrorMessage("Found multiple users for " + claim.getDisplayTag() +
-                                " to value " + loginAttribute);
-                        break;
-                    }
+                    setResolvedUserResult(userStoreManager, claimURI, loginAttribute, resolvedUserResult, claim);
+                    break;
                 }
+            }
+            /*
+            resolve user if allowed attributes has only username claim,
+            but username claim has no configured regex pattern.
+             */
+            if (allowedAttributes.size() == 1 &&
+                    allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
+                setResolvedUserResult(userStoreManager, UserCoreClaimConstants.USERNAME_CLAIM_URI, loginAttribute,
+                        resolvedUserResult, claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI));
             }
         } catch (UserStoreException e) {
             log.error("Error occurred while resolving user name", e);
         }
         return resolvedUserResult;
+    }
+
+    private void setResolvedUserResult(UniqueIDUserStoreManager userStoreManager, String claimURI,
+                                           String loginAttribute, ResolvedUserResult resolvedUserResult, Claim claim)
+            throws org.wso2.carbon.user.core.UserStoreException {
+
+        List<User> userList = userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
+        if (userList.size() == 1) {
+            resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.SUCCESS);
+            resolvedUserResult.setResolvedClaim(claimURI);
+            resolvedUserResult.setResolvedValue(loginAttribute);
+            User user = userList.get(0);
+            user.setUsername(user.getDomainQualifiedUsername());
+            resolvedUserResult.setUser(user);
+        } else if (userList.size() > 1) {
+            resolvedUserResult.setErrorMessage("Found multiple users for " + claim.getDisplayTag() +
+                    " to value " + loginAttribute);
+        }
     }
 
     @Override
@@ -106,6 +124,9 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
             UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
             claimManager = userRealm.getClaimManager();
+            if (allowedAttributes == null) {
+                return authenticationResult;
+            }
             for (String claimURI : allowedAttributes) {
                 Claim claim = claimManager.getClaim(claimURI);
                 if (claim == null) {
@@ -124,6 +145,16 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                         break;
                     }
                 }
+            }
+            /*
+            If allowed attributes has only username claim, get authenticationResult even if
+            the username claim has no configured regex pattern.
+             */
+            if (allowedAttributes.size() == 1 && allowedAttributes.contains(
+                    UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
+                authenticationResult =
+                        userStoreManager.authenticateWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
+                                loginAttributeValue, credential, StringUtils.EMPTY);
             }
         } catch (UserStoreException e) {
             log.error("Error occurred while resolving authenticationResult", e);
