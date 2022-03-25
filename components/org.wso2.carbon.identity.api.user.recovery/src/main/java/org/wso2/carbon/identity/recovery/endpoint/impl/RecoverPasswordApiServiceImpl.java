@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -48,27 +49,44 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         }
 
         UserDTO user = recoveryInitiatingRequest.getUser();
-        int tenantIdFromContext = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        ResolvedUserResult resolvedUserResult =
-                FrameworkUtils.processMultiAttributeLoginIdentification(user.getUsername(), user.getTenantDomain());
-        if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
-                equals(resolvedUserResult.getResolvedStatus())) {
-            user.setUsername(resolvedUserResult.getUser().getUsername());
-            UserDTO userDTO = recoveryInitiatingRequest.getUser();
-            userDTO.setUsername(user.getUsername());
-            recoveryInitiatingRequest.setUser(userDTO);
-        }
-
         NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                 .getNotificationBasedPwdRecoveryManager();
         NotificationResponseBean notificationResponseBean = null;
 
         try {
-            notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(RecoveryUtil
-                    .getUser(recoveryInitiatingRequest.getUser()), type, notify, RecoveryUtil.getProperties
-                    (recoveryInitiatingRequest.getProperties()));
-
+            // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
+            if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
+                    .isEnabled(user.getTenantDomain())) {
+                ResolvedUserResult resolvedUserResult =
+                        IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
+                                .resolveUser(user.getUsername(), user.getTenantDomain());
+                if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
+                        equals(resolvedUserResult.getResolvedStatus())) {
+                    user.setUsername(resolvedUserResult.getUser().getUsername());
+                    UserDTO userDTO = recoveryInitiatingRequest.getUser();
+                    userDTO.setUsername(user.getUsername());
+                    recoveryInitiatingRequest.setUser(userDTO);
+                    notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(
+                            RecoveryUtil.getUser(recoveryInitiatingRequest.getUser()), type, notify,
+                            RecoveryUtil.getProperties(recoveryInitiatingRequest.getProperties()));
+                } else {
+                    /* If the user couldn't resolve, Check for NOTIFY_USER_EXISTENCE property. If the property is not
+                    enabled, notify with an empty NotificationResponseBean.*/
+                    boolean notifyUserExistence = Boolean.parseBoolean(
+                            IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE));
+                    if (notifyUserExistence) {
+                        throw Utils.handleClientException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
+                                user.getUsername());
+                    }
+                    notificationResponseBean =
+                            new NotificationResponseBean(RecoveryUtil.getUser(recoveryInitiatingRequest.getUser()));
+                }
+            } else {
+                notificationResponseBean = notificationPasswordRecoveryManager.sendRecoveryNotification(
+                        RecoveryUtil.getUser(recoveryInitiatingRequest.getUser()), type, notify,
+                        RecoveryUtil.getProperties(recoveryInitiatingRequest.getProperties()));
+            }
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while sending recovery notification ", e);
