@@ -414,7 +414,7 @@ public class IdentityRecoveryServiceComponent {
     }
 
     /**
-     * unset multi attribute login service.
+     * Unset multi attribute login service.
      *
      * @param multiAttributeLoginService Multi-attribute login service.
      */
