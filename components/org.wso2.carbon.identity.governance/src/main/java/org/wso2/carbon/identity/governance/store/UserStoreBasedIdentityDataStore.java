@@ -132,7 +132,7 @@ public class UserStoreBasedIdentityDataStore extends InMemoryIdentityDataStore {
             if (claims != null) {
                 for (Claim claim : claims) {
                     String claimUri = claim.getClaimUri();
-                    if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI) ||
+                    if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX) ||
                             claimUri.contains(UserCoreConstants.ClaimTypeURIs.CHALLENGE_QUESTION_URI)) {
                         if (log.isDebugEnabled()) {
                             log.debug("Adding UserIdentityClaim : " + claimUri + " with the value : " + claim.getValue());

@@ -117,7 +117,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         while (it.hasNext()) {
 
             Map.Entry<String, String> claim = it.next();
-            if (claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)
+            if (claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)
                     && !(identityDataStore instanceof UserStoreBasedIdentityDataStore)) {
                 // add the identity claim to temp map
                 userDataMap.put(claim.getKey(), claim.getValue());
@@ -241,7 +241,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         // check if there are identity claims
         boolean containsIdentityClaims = false;
         for (String claim : claims) {
-            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
                 containsIdentityClaims = true;
                 break;
             }
@@ -278,7 +278,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         //This operation is not supported for Identity Claims
-        if (StringUtils.isNotBlank(claim) && claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+        if (StringUtils.isNotBlank(claim) && claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
             throw new UserStoreException(INVALID_OPERATION + " This operation is not supported for Identity claims");
         }
         return true;
@@ -294,7 +294,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
         //This operation is not supported for Identity Claims
-        if (StringUtils.isNotBlank(claimURI) && claimURI.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+        if (StringUtils.isNotBlank(claimURI) && claimURI.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
             throw new UserStoreException(INVALID_OPERATION + " This operation is not supported for Identity claims");
         }
         return true;
@@ -308,7 +308,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        if (!StringUtils.contains(claimUri, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+        if (!StringUtils.contains(claimUri, UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
             return true;
         }
 
@@ -602,7 +602,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     Map.Entry<String, String> claim = it.next();
                     String key = claim.getKey();
                     String value = claim.getValue();
-                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
                         userIdentityClaim.setUserIdentityDataClaim(key, value);
                         it.remove();
                     }
@@ -644,7 +644,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         // Check if there are identity claims.
         boolean containsIdentityClaims = false;
         for (String claim : claims) {
-            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
+            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
                 containsIdentityClaims = true;
                 break;
             }
