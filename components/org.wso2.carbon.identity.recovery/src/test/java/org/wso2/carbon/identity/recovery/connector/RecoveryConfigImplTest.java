@@ -210,7 +210,7 @@ public class RecoveryConfigImplTest {
         String testForceChallengeQuestions = "false";
         String enablePasswordRecoveryReCaptcha = "false";
         String enableUsernameRecoveryReCaptcha = "false";
-        String testMinimumForcedChallengeQuestionsAnswered = StringUtils.EMPTY;
+        String testMinimumForcedChallengeQuestionsAnswered = "1";
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
         String enforceChallengeQuestionAnswerUniqueness = "false";

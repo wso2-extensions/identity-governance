@@ -190,7 +190,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableForceChallengeQuestions = "false";
         String enablePasswordRecoveryReCaptcha = "false";
         String enableUsernameRecoveryReCaptcha = "false";
-        String minimumForcedChallengeQuestionsAnswered = StringUtils.EMPTY;
+        String minimumForcedChallengeQuestionsAnswered = "1";
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableAdminPasswordResetAutoLoginProperty = "false";
 
