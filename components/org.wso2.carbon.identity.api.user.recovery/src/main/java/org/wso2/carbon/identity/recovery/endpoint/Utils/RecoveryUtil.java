@@ -9,7 +9,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.logging.log4j.ThreadContext;
+import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -158,7 +158,7 @@ public class RecoveryUtil {
      * @return whether the correlation id is present
      */
     public static boolean isCorrelationIDPresent() {
-        return ThreadContext.get(IdentityRecoveryConstants.CORRELATION_ID_MDC) != null;
+        return MDC.get(IdentityRecoveryConstants.CORRELATION_ID_MDC) != null;
     }
 
     /**
@@ -169,7 +169,7 @@ public class RecoveryUtil {
     public static String getCorrelation() {
         String ref= null;
         if (isCorrelationIDPresent()) {
-            ref = ThreadContext.get(IdentityRecoveryConstants.CORRELATION_ID_MDC).toString();
+            ref = MDC.get(IdentityRecoveryConstants.CORRELATION_ID_MDC);
         }
         return ref;
     }
