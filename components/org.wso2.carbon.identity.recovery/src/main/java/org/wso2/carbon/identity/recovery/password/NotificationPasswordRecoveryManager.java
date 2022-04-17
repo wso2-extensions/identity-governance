@@ -556,6 +556,7 @@ public class NotificationPasswordRecoveryManager {
             if (log.isDebugEnabled()) {
                 log.debug("Password reset not allowed to read only user: " + domainQualifiedName);
             }
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_READ_ONLY_USER, null);
         }
         // Update the password.
@@ -854,13 +855,6 @@ public class NotificationPasswordRecoveryManager {
                 .addDomainToName(user.getUserName(), userRecoveryData.getUser().getUserStoreDomain());
         if (log.isDebugEnabled()) {
             log.debug("Valid confirmation code for user: " + domainQualifiedName);
-        }
-        // This will be removed once the recovery email for readonly users onboarded.
-        if (Utils.isReadOnlyUser(userRecoveryData.getUser())) {
-            if (log.isDebugEnabled()) {
-                log.debug("Password reset not allowed to read only users. User: " + domainQualifiedName);
-            }
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_READ_ONLY_USER, null);
         }
         return user;
     }
