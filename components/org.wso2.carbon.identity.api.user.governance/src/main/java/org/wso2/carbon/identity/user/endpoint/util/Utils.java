@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.user.endpoint.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -52,6 +53,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class Utils {
 
@@ -188,6 +190,28 @@ public class Utils {
     }
 
     /**
+     * Check whether correlation id present in the log MDC
+     *
+     * @return whether the correlation id is present
+     */
+    public static boolean isCorrelationIDPresent() {
+        return MDC.get(Constants.CORRELATION_ID_MDC) != null;
+    }
+
+    /**
+     * Get correlation id of current thread
+     *
+     * @return correlation-id
+     */
+    public static String getCorrelation() {
+        String ref = null;
+        if (isCorrelationIDPresent()) {
+            ref = MDC.get(Constants.CORRELATION_ID_MDC);
+        }
+        return ref;
+    }
+
+    /**
      * Returns a generic errorDTO
      *
      * @param message specifies the error message
@@ -198,6 +222,7 @@ public class Utils {
         errorDTO.setCode(code);
         errorDTO.setMessage(message);
         errorDTO.setDescription(description);
+        errorDTO.setRef(getCorrelation());
         return errorDTO;
     }
 

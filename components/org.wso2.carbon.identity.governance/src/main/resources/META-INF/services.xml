@@ -24,10 +24,12 @@
             org.wso2.carbon.identity.governance.IdentityGovernanceAdminService
         </parameter>
         <operation name="getConnectorList">
-            <parameter name="AuthorizationAction" locked="true">/permission/admin/manage</parameter>
+            <parameter name="AuthorizationAction" locked="true">/permission/admin/manage/identity/governance/view
+            </parameter>
         </operation>
         <operation name="updateConfigurations">
-            <parameter name="AuthorizationAction" locked="true">/permission/admin/manage</parameter>
+            <parameter name="AuthorizationAction" locked="true">/permission/admin/manage/identity/governance/update
+            </parameter>
         </operation>
         <parameter name="adminService" locked="true">true</parameter>
         <parameter name="hiddenService" locked="true">true</parameter>

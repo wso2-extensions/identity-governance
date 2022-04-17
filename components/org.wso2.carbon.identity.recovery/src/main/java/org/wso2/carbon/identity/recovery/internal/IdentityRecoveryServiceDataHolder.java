@@ -24,6 +24,7 @@ import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtSer
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -44,6 +45,7 @@ public class IdentityRecoveryServiceDataHolder {
     private ConsentUtilityService consentUtilityService;
     private ClaimMetadataManagementService claimMetadataManagementService;
     private UserFunctionalityManager userFunctionalityManagerService;
+    private MultiAttributeLoginService multiAttributeLoginService;
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -221,5 +223,25 @@ public class IdentityRecoveryServiceDataHolder {
     public void setConfigurationManager(ConfigurationManager configurationManager) {
 
         this.configurationManager = configurationManager;
+    }
+
+    /**
+     * Set the multi attribute login service.
+     *
+     * @param multiAttributeLoginService Multi attribute login service.
+     */
+    public void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
+
+        this.multiAttributeLoginService = multiAttributeLoginService;
+    }
+
+    /**
+     * Get the multi attribute login service.
+     *
+     * @return Multi attribute login service
+     */
+    public MultiAttributeLoginService getMultiAttributeLoginService() {
+
+        return this.multiAttributeLoginService;
     }
 }

@@ -19,7 +19,9 @@ package org.wso2.carbon.identity.user.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -31,6 +33,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
+import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
@@ -48,12 +51,23 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     @Override
     public Response resendCodePost(ResendCodeRequestDTO resendCodeRequestDTO) {
 
+        // Remove any empty properties if exists.
+        List<PropertyDTO> properties = resendCodeRequestDTO.getProperties();
+        properties.removeIf(property -> StringUtils.isEmpty(property.getKey()));
+
         String tenantFromContext = getTenantDomainFromContext();
         if (StringUtils.isNotBlank(tenantFromContext)) {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
-        NotificationResponseBean notificationResponseBean = null;
 
+        // Resolve the username using the login attribute when multi attribute login is enabled.
+        ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
+                resendCodeRequestDTO.getUser().getUsername(), resendCodeRequestDTO.getUser().getTenantDomain());
+        if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
+            resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getUsername());
+        }
+
+        NotificationResponseBean notificationResponseBean = null;
         String recoveryScenario = getRecoveryScenarioFromProperties(resendCodeRequestDTO.getProperties());
         if (StringUtils.isBlank(recoveryScenario)) {
             notificationResponseBean = doResendConfirmationCodeForSelfSignUp(notificationResponseBean,
@@ -63,8 +77,11 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     resendCodeRequestDTO);
         }
 
-        if (notificationResponseBean == null ) {
-            return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+        if (notificationResponseBean == null) {
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(Utils.getCorrelation());
+            errorDTO.setMessage("This service is not yet implemented.");
+            return Response.status(Response.Status.NOT_IMPLEMENTED).entity(errorDTO).build();
         }
 
         //when notifications internally managed key might not be set.
@@ -190,8 +207,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     private NotificationResponseBean doResendConfirmationCodeForSelfSignUp(
             NotificationResponseBean notificationResponseBean, ResendCodeRequestDTO resendCodeRequestDTO) {
 
-        UserSelfRegistrationManager userSelfRegistrationManager = Utils
-                .getUserSelfRegistrationManager();
+        UserSelfRegistrationManager userSelfRegistrationManager = Utils.getUserSelfRegistrationManager();
         try {
             notificationResponseBean = userSelfRegistrationManager.resendConfirmationCode(
                     Utils.getUser(resendCodeRequestDTO.getUser()),
@@ -204,8 +220,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         } catch (IdentityRecoveryException e) {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
-            Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
-                    .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
+            Utils.handleInternalServerError(Constants.SERVER_ERROR,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
 
         return notificationResponseBean;

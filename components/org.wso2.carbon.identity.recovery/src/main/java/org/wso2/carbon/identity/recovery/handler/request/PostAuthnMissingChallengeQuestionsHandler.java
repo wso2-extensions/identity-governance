@@ -227,7 +227,9 @@ public class PostAuthnMissingChallengeQuestionsHandler extends AbstractPostAuthn
         int questionsAnswered = getUserAnsweredChallengeSetUris(user).size();
         int challengeQuestionSets = getChallengeSetUris(user).size();
         /* If "Minimum Number of Forced Challenge Questions to be Answered" property is not configured,
-        check whether the user has answered for at least one question.
+        check whether the user has answered for at least one question. As "Minimum Number of Forced Challenge
+        Questions to be Answered" property has a default value "1", the property not configured scenario
+        can be occurred only from mgt console.
         */
         if (StringUtils.isEmpty(minimumForcedChallengeQuestionsAnswered)) {
             return (questionsAnswered > 0);

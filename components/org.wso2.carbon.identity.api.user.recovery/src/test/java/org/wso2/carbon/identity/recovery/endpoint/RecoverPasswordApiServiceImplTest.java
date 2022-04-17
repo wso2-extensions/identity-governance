@@ -17,6 +17,7 @@
 
 package org.wso2.carbon.identity.recovery.endpoint;
 
+import org.apache.commons.lang.StringUtils;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -24,10 +25,11 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
@@ -35,6 +37,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.impl.RecoverPasswordApiServiceImpl;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
@@ -52,10 +56,16 @@ public class RecoverPasswordApiServiceImplTest {
 
     private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
     private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
-    private MockedStatic<FrameworkUtils> mockedFrameworkUtils;
+    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
 
     @Mock
     NotificationPasswordRecoveryManager notificationPasswordRecoveryManager;
+
+    @Mock
+    IdentityRecoveryServiceDataHolder mockIdentityRecoveryServiceDataHolder;
+
+    @Mock
+    MultiAttributeLoginService multiAttributeLoginService;
 
     @InjectMocks
     NotificationResponseBean notificationResponseBean;
@@ -69,7 +79,7 @@ public class RecoverPasswordApiServiceImplTest {
         MockitoAnnotations.openMocks(this);
         mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
         mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
-        mockedFrameworkUtils = Mockito.mockStatic(FrameworkUtils.class);
+        mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
     }
 
     @AfterMethod
@@ -77,21 +87,30 @@ public class RecoverPasswordApiServiceImplTest {
 
         mockedRecoveryUtil.close();
         mockedIdentityTenantUtil.close();
-        mockedFrameworkUtils.close();
+        mockedIdentityRecoveryServiceDataHolder.close();
     }
 
-    @Test
-    public void testRecoverPasswordPost() throws IdentityRecoveryException {
+    @DataProvider(name = "multiAttributeLoginEnableProperty")
+    private Object[][] multiAttributeLoginEnablePropertyData() {
+
+        return new Object[][]{
+                {true},
+                {false}
+        };
+    }
+
+    @Test (dataProvider = "multiAttributeLoginEnableProperty")
+    public void testRecoverPasswordPost(boolean isMultiAttributeLoginEnabled) throws IdentityRecoveryException {
 
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
         mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
                 notificationPasswordRecoveryManager);
-        ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
                 isNull())).thenReturn(notificationResponseBean);
-        mockedFrameworkUtils.when(
-                () -> FrameworkUtils.processMultiAttributeLoginIdentification(anyString(), anyString())).thenReturn(
-                resolvedUserResult);
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(mockIdentityRecoveryServiceDataHolder);
+        when(mockIdentityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(isMultiAttributeLoginEnabled);
         assertEquals(recoverPasswordApiService.recoverPasswordPost(buildRecoveryInitiatingRequestDTO(), "", true).
                 getStatus(), 202);
     }

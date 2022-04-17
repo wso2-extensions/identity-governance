@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
@@ -394,5 +395,31 @@ public class IdentityRecoveryServiceComponent {
             log.debug("Configuration Manager service is unset in the Template Manager component.");
         }
         dataHolder.getInstance().setConfigurationManager(null);
+    }
+
+    /**
+     * Set multi attribute login service.
+     *
+     * @param multiAttributeLoginService Multi-attribute login service.
+     */
+    @Reference(
+            name = "MultiAttributeLoginService",
+            service = MultiAttributeLoginService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetMultiAttributeLoginService")
+    protected void setMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
+
+        dataHolder.getInstance().setMultiAttributeLoginService(multiAttributeLoginService);
+    }
+
+    /**
+     * Unset multi attribute login service.
+     *
+     * @param multiAttributeLoginService Multi-attribute login service.
+     */
+    protected void unsetMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
+
+        dataHolder.getInstance().setMultiAttributeLoginService(null);
     }
 }
