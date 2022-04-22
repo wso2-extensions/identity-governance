@@ -62,6 +62,7 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -938,13 +939,24 @@ public class Utils {
     /**
      * Validate email username.
      *
-     * @param username Tenant aware username of the user.
-     * @throws IdentityRecoveryClientException If username is not an email when email username is enabled.
+     * @param user User .
+     * @throws IdentityRecoveryClientException If username is not an email for tenanted users when email username
+     * is enabled.
      */
-    public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
+    public static void validateEmailUsername(User user) throws IdentityRecoveryClientException {
 
-        if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
-            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
+        if (!IdentityUtil.isEmailUsernameEnabled()) {
+            // Doesn't need to check for the username if "email address as the username" option is disabled.
+            return;
+        } if (StringUtils.equals(user.getTenantDomain(),
+                MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+            // Super tenant user can be log in with both email username or non-email username.
+            return;
+        }
+        if (StringUtils.countMatches(user.getUserName(), "@") == 0) {
+            // For other tenants, user should have an email address as username.
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME,
+                    user.getUserName());
         }
     }
 
