@@ -948,8 +948,8 @@ public class Utils {
         if (!IdentityUtil.isEmailUsernameEnabled()) {
             // Doesn't need to check for the username if "email address as the username" option is disabled.
             return;
-        } else if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain()),
-                MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+        }
+        if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
             // Super tenant user should be able to log in with both email username or non-email username.
             return;
         }
