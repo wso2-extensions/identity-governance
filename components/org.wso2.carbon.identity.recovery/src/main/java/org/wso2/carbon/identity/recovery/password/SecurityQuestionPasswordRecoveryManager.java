@@ -102,7 +102,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     public ChallengeQuestionResponse initiateUserChallengeQuestion(User user) throws IdentityRecoveryException {
 
-        Utils.validateEmailUsername(user.getUserName());
+        Utils.validateEmailUsername(user);
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for user : " +

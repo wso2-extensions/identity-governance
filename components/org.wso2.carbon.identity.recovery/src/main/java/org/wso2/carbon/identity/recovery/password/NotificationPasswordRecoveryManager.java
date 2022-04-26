@@ -101,7 +101,7 @@ public class NotificationPasswordRecoveryManager {
                         RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD));
 
         validateUserStoreDomain(user);
-        Utils.validateEmailUsername(user.getUserName());
+        Utils.validateEmailUsername(user);
 
         // Resolve user attributes.
         resolveUserAttributes(user);
