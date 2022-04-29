@@ -46,6 +46,13 @@ public class RecoverUsernameApiServiceImpl extends RecoverUsernameApiService {
 
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
+            if (e.getCause() != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
+                    e.getCause().getMessage())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(e.getCause().getMessage());
+                }
+                return Response.ok().build();
+            }
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
             if (throwable != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
