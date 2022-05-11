@@ -329,14 +329,17 @@ public class CaptchaUtil {
         }
 
         UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw new CaptchaServerException("Failed to retrieve user store manager.", e);
-        }
 
         Map<String, String> claimValues;
         try {
+            userStoreManager = getUserStoreManagerForUser(usernameWithDomain, userRealm.getUserStoreManager());
+            if (userStoreManager == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("User store manager cannot be found for the user.");
+                }
+                // Invalid user. User cannot be found in any user store.
+                return false;
+            }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
                     .getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
@@ -354,6 +357,32 @@ public class CaptchaUtil {
         }
 
         return currentAttempts >= maxAttempts;
+    }
+
+    /**
+     * Resolve the user store manager for the user.
+     *
+     * @param userStoreManager primary user store manager of the user.
+     * @param userName        Username.
+     * @return Resolved user store manager of the user. Null will be returned if the user is not in any user store for the given tenant.
+     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's existence in the given user store.
+     */
+    private static UserStoreManager getUserStoreManagerForUser(String userName,
+           UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
+
+        // Checking that domain name is already prepended to the username.
+        // If so user claims can be retrieved.
+        if (userName.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+            return userStoreManager;
+        }
+        UserStoreManager userStore = userStoreManager;
+        while (userStore != null) {
+            if (userStore.isExistingUser(userName)) {
+                return userStore;
+            }
+            userStore = userStore.getSecondaryUserStoreManager();
+        }
+        return null;
     }
 
     private static void setReCaptchaConfigs(Properties properties) {
