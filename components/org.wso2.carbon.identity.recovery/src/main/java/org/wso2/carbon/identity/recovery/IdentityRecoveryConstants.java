@@ -381,8 +381,7 @@ public class IdentityRecoveryConstants {
                 "'%s' has been used more than once."),
 
         // UEV - User Email Verification.
-        ERROR_CODE_VERIFY_EMAIL_NOT_SET("UEV-10001", "verifyEmail claim is set, but the email addresses are not " +
-                "provided");
+        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification");
 
         private final String code;
         private final String message;

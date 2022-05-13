@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFY_EMAIL_NOT_SET;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
@@ -137,8 +137,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
             } else if (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM))) {
                 if (!claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
-                    throw new IdentityEventClientException(ERROR_CODE_VERIFY_EMAIL_NOT_SET.getCode(),
-                            ERROR_CODE_VERIFY_EMAIL_NOT_SET.getMessage());
+                    throw new IdentityEventClientException(ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getCode(),
+                            ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getMessage());
                 }
                 Claim claim = new Claim();
                 claim.setClaimUri(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
