@@ -378,7 +378,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_ANSWER_FORMAT("10016", "Invalid answer format in the given answer " +
                 "for the challenge question '%s'."),
         ERROR_CODE_NOT_UNIQUE_ANSWER("10017", "The given answer for the challenge question, " +
-                "'%s' has been used more than once.");
+                "'%s' has been used more than once."),
+
+        // UEV - User Email Verification.
+        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification");
 
         private final String code;
         private final String message;
