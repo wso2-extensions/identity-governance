@@ -50,6 +50,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String DEFAULT_ENABLE_VALUE_FOR_EMAIL_NOTIFICATION_ON_UPDATE = "false";
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "5";
     private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
+    private static final String DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS = "false";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
     private static final String ENABLE_ELEMENT = "Enable";
     private static final String CLAIM_ELEMENT = "Claim";
@@ -58,11 +59,13 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
     private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
+    private static final String ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER = "EnableVerificationByPrivilegedUser";
     private static String enableEmailVerificationOnUpdateProperty = null;
     private static String emailVerificationOnUpdateCodeExpiryProperty = null;
     private static String enableEmailNotificationOnUpdateProperty = null;
     private static String enableMobileNumVerificationOnUpdateProperty = null;
     private static String mobileNumVerificationOnUpdateCodeExpiryProperty = null;
+    private static String mobileNumVerificationByPrivilegedUsersProperty = null;
 
     @Override
     public String getName() {
@@ -106,6 +109,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Enable user email notification on update");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE,
                 "Enable user mobile number verification on update");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable mobile number verification by privileged users");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Mobile number verification on update SMS OTP expiry time");
         return nameMapping;
@@ -126,6 +131,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Trigger a verification SMS OTP when user's mobile number is updated.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Validity time of the mobile number confirmation OTP in minutes.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Allow privileged users to initiate mobile number verification on update.");
         return descriptionMapping;
     }
 
@@ -138,6 +145,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
         return properties.toArray(new String[0]);
     }
 
@@ -149,6 +157,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         String enableEmailNotificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_EMAIL_NOTIFICATION_ON_UPDATE;
         String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
         String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
+        String mobileNumVerificationByPrivilegedUsers = DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS;
 
         loadConfigurations();
 
@@ -167,6 +176,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotBlank(mobileNumVerificationOnUpdateCodeExpiryProperty)) {
             mobileNumVerificationOnUpdateCodeExpiry = mobileNumVerificationOnUpdateCodeExpiryProperty;
         }
+        if (StringUtils.isNotBlank(mobileNumVerificationByPrivilegedUsersProperty)) {
+            mobileNumVerificationByPrivilegedUsers = mobileNumVerificationByPrivilegedUsersProperty;
+        }
 
         Properties properties = new Properties();
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
@@ -179,6 +191,8 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 enableMobileNumVerificationOnUpdate);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 mobileNumVerificationOnUpdateCodeExpiry);
+        properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                mobileNumVerificationByPrivilegedUsers);
         return properties;
     }
 
@@ -243,6 +257,12 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     if (verificationOnUpdate != null) {
                         enableMobileNumVerificationOnUpdateProperty = verificationOnUpdate.getFirstChildWithName(new
                                 QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
+                        OMElement privilegeUserMobileVerification = verificationOnUpdate.getFirstChildWithName(
+                                new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                                        ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER));
+                        if (privilegeUserMobileVerification != null) {
+                            mobileNumVerificationByPrivilegedUsersProperty = privilegeUserMobileVerification.getText();
+                        }
                         OMElement verificationCode = verificationOnUpdate.getFirstChildWithName(new QName
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
                         if (verificationCode != null) {

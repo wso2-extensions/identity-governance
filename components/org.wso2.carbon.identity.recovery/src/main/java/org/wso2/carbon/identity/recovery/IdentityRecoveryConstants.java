@@ -200,6 +200,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
         ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT("17005", "User account not yet verified - '%s.'"),
         ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT("17006", "Password reset is not yet completed '%s.'"),
+        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLE_PRIVILEGED_USERS("17007", "Mobile number verification by privileged users is not enabled."),
+
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s'."),
@@ -271,6 +273,7 @@ public class IdentityRecoveryConstants {
                 " question %s of the set %s"),
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
+        ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -546,6 +549,8 @@ public class IdentityRecoveryConstants {
                 "EnableVerification";
         public static final String MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.MobileNumber." +
                 "VerificationCode.ExpiryTime";
+        public static final String ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER = "UserClaimUpdate.MobileNumber." +
+                "EnableVerificationByPrivilegedUser";
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
