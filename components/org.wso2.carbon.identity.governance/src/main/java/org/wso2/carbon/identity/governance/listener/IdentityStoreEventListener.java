@@ -486,6 +486,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
+        // No need to separately handle if identity data store is user store based.
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
         List<ExpressionCondition> identityClaimFilterConditions = new ArrayList<>();
         try {
             // Extract identity Claim filter-conditions from the given conditions.
