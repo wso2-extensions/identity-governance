@@ -28,11 +28,10 @@ import java.security.SecureRandom;
  */
 public class OTPGenerator implements OTPGeneratorService {
 
-    private static final Log log = LogFactory.getLog(OTPGenerator.class);
-
     public OTPGenerator() {
     }
 
+    @Override
     public String generateOTP() {
 
         char[] chars = IdentityMgtConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
@@ -52,9 +51,6 @@ public class OTPGenerator implements OTPGeneratorService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < otpLength; i++) {
             sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("otpLength: " + otpLength + ", generated otp: " + sb.toString());
         }
         return sb.toString();
     }
