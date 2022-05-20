@@ -16,8 +16,6 @@
 
 package org.wso2.carbon.identity.governance.internal.service.impl.otp;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.otp.OTPGeneratorService;
 
