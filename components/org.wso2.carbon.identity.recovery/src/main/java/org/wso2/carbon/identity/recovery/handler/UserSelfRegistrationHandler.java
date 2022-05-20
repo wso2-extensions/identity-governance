@@ -150,7 +150,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
-                    String secretKey = generateSecretKey(preferredChannel);
+                    String secretKey = Utils.generateSecretKey(preferredChannel, tenantDomain,
+                            RecoveryScenarios.SELF_SIGN_UP.name());
 
                     // Resolve event name.
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
@@ -471,44 +472,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
                     user.getUserName(), e);
-        }
-    }
-
-    /**
-     * Generate an OTP for password recovery via mobile Channel
-     *
-     * @return OTP
-     */
-    private String generateSMSOTP() {
-
-        char[] chars = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
-     * UUID for other channels.
-     *
-     * @param channel Recovery notification channel.
-     * @return Secret key
-     */
-    private String generateSecretKey(String channel) {
-
-        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            if (log.isDebugEnabled()) {
-                log.debug("OTP was generated for the user for channel : " + channel);
-            }
-            return generateSMSOTP();
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("UUID was generated for the user for channel : " + channel);
-            }
-            return UUIDGenerator.generateUUID();
         }
     }
 
