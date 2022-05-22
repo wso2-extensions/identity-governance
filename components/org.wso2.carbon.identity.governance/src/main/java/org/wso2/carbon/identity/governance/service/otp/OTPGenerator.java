@@ -16,20 +16,24 @@
 
 package org.wso2.carbon.identity.governance.service.otp;
 
-public interface OTPGeneratorService {
-
-    /**
-     * Generates OTP based on default charSet and length values.
-     *
-     */
-    String generateOTP();
+public interface OTPGenerator {
 
     /**
      * Generates the OTP based on the provided charSet and length.
      *
-     * @param charSet         Character set allowed for OTP
-     * @param otpLength Length of OTP
+     * @param charSet Character set allowed for OTP.
+     * @param otpLength Length of OTP.
      */
     String generateOTP(String charSet, int otpLength);
+
+    /**
+     * Generates the OTP based on the OTP properties.
+     *
+     * @param isNumeric Whether numeric values are present in regex.
+     * @param isUpperCase Whether upper case characters are present in regex.
+     * @param isLowerCase Whether lower case characters are present in regex.
+     * @param otpLength Length of OTP.
+     */
+    String generateOTP(boolean isNumeric, boolean isUpperCase, boolean isLowerCase, int otpLength);
 
 }
