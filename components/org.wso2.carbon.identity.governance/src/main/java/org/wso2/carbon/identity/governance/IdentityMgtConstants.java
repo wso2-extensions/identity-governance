@@ -23,7 +23,7 @@ public class IdentityMgtConstants {
 
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
     public static final String ERROR_CODE_DELIMITER = "-";
-    public static final int SMS_OTP_CODE_LENGTH = 6;
+    public static final int DEFAULT_SMS_OTP_CODE_LENGTH = 6;
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";

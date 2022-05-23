@@ -254,6 +254,7 @@ public class IdentityRecoveryServiceDataHolder {
      * @return OTPGenerator object.
      */
     public OTPGenerator getOtpGenerator() {
+
         return otpGenerator;
     }
 
@@ -263,6 +264,7 @@ public class IdentityRecoveryServiceDataHolder {
      * @param otpGenerator OTPGenerator object.
      */
     public void setOtpGenerator(OTPGenerator otpGenerator) {
+
         this.otpGenerator = otpGenerator;
     }
 }
