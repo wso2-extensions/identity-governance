@@ -125,6 +125,8 @@ public class UserClaimUpdateConfigImplTest {
                 "Enable user mobile number verification on update");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Mobile number verification on update SMS OTP expiry time");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Enable mobile number verification by privileged users");
         Map<String, String> nameMapping = userClaimUpdateConfig.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal.");
     }
@@ -145,6 +147,8 @@ public class UserClaimUpdateConfigImplTest {
                 "Trigger a verification SMS OTP when user's mobile number is updated.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Validity time of the mobile number confirmation OTP in minutes.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                "Allow privileged users to initiate mobile number verification on update.");
         Map<String, String> descriptionMapping = userClaimUpdateConfig.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal.");
     }

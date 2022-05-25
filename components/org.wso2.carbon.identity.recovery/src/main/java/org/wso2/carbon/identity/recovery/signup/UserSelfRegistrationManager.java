@@ -713,14 +713,9 @@ public class UserSelfRegistrationManager {
         // Validate context tenant domain name with user tenant domain.
         validateContextTenantDomainWithUserTenantDomain(user);
 
-        // Validate the recovery step to confirm self sign up or to verify email account.
-        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
-                !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
-                !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
-            auditRecoveryConfirm(recoveryData,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, null);
-        }
+        // Validate the recovery step to confirm self sign up, to verify email account or to verify mobile number.
+        validateRecoverySteps(recoveryData, user);
+
         // Get the userstore manager for the user.
         UserStoreManager userStoreManager = getUserStoreManager(user);
         Map<String, Object> eventProperties = new HashMap<>();
@@ -744,7 +739,7 @@ public class UserSelfRegistrationManager {
 
         // Get the claims that needs to be updated.
         // NOTE: Verification channel is stored in Remaining_Sets in user recovery data.
-        HashMap<String, String> userClaims = getClaimsListToUpdate(user, recoveryData.getRemainingSetIds(),
+        HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
@@ -756,6 +751,16 @@ public class UserSelfRegistrationManager {
                 // Todo passes when email address is properly set here.
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+            }
+        }
+        if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            String pendingMobileClaimValue = recoveryData.getRemainingSetIds();
+            if (StringUtils.isNotBlank(pendingMobileClaimValue)) {
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                // Todo passes when mobile number is properly set here.
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
         // Update the user claims.
@@ -771,6 +776,42 @@ public class UserSelfRegistrationManager {
         auditRecoveryConfirm(recoveryData, null, AUDIT_SUCCESS);
         return recoveryData;
     }
+
+    private void validateRecoverySteps(UserRecoveryData recoveryData, User user)
+            throws IdentityRecoveryServerException, IdentityRecoveryClientException {
+
+        if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+            auditRecoveryConfirm(recoveryData,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS, null);
+        }
+        if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
+                !isMobileVerificationEnabledForPrivilegedUsers(user.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLE_PRIVILEGED_USERS,
+                    null);
+        }
+    }
+
+    private boolean isMobileVerificationEnabledForPrivilegedUsers(String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getConnectorConfig(
+                            IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
+                            tenantDomain));
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
+                    tenantDomain, e);
+        }
+    }
+
 
     /**
      * Introspects self registration confirmation code details without invalidating it.
