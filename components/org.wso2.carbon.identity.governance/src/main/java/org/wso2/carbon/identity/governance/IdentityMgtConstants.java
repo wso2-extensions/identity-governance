@@ -95,7 +95,13 @@ public class IdentityMgtConstants {
         ERROR_CODE_ERROR_RETRIEVING_TEMPLATE_FROM_REGISTRY("NTM-65002", "Error when retrieving '%s:%s' "
                 + "template from %s tenant registry"),
         ERROR_CODE_ERROR_RETRIEVING_TEMPLATE_OBJECT_FROM_REGISTRY("NTM-65003", "Error retrieving a "
-                + "template object from the registry resource");
+                + "template object from the registry resource"),
+
+        // OTPG - OTP Generator
+        ERROR_CODE_INVALID_OTP_CHARACTER_SET("OTPG-65010","OTP character set cannot be blank or " +
+                "in the incorrect format."),
+        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-65011","OTP length is invalid."),
+        ERROR_CODE_ERROR_GENERATING_OTP("OTPG-65012","An error occurred while generating the OTP.");
 
         private final String code;
         private final String message;
@@ -131,6 +137,7 @@ public class IdentityMgtConstants {
 
         public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
         public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";
+        public static final String OTP_GENERATOR = "OTPG";
     }
 
     public static class PropertyConfig {

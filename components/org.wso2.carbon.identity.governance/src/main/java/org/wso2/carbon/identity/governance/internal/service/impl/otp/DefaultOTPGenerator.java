@@ -16,7 +16,10 @@
 
 package org.wso2.carbon.identity.governance.internal.service.impl.otp;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 
 import java.security.SecureRandom;
@@ -28,34 +31,78 @@ public class DefaultOTPGenerator implements OTPGenerator {
 
     public DefaultOTPGenerator() {}
 
+    /**
+     * Generates the OTP based on the provided charSet and length.
+     *
+     * @param charSet Character set allowed for OTP.
+     * @param otpLength Length of OTP.
+     * @return String Value of OTP string.
+     * @throws OTPGeneratorClientException OTP Generator Client Exception
+     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     */
     @Override
-    public String generateOTP(String charSet, int otpLength) {
+    public String generateOTP(String charSet, int otpLength) throws OTPGeneratorClientException,
+            OTPGeneratorServerException {
 
-        char[] chars = charSet.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < otpLength; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
+        if (StringUtils.isBlank(charSet)) {
+            throw new OTPGeneratorClientException(
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_CHARACTER_SET.getCode(),
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_CHARACTER_SET.getMessage()
+            );
         }
-        return sb.toString();
+        if (otpLength == -1) {
+            throw new OTPGeneratorClientException(
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_LENGTH.getCode(),
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_LENGTH.getMessage()
+            );
+        }
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            char[] otpCharacters = charSet.toCharArray();
+            for (int otpCharacterIndex = 0; otpCharacterIndex < otpLength; otpCharacterIndex++) {
+                stringBuilder.append(otpCharacters[secureRandom.nextInt(otpCharacters.length)]);
+            }
+        } catch (Exception e) {
+            throw new OTPGeneratorServerException(
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GENERATING_OTP.getCode(),
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GENERATING_OTP.getMessage()
+            );
+        }
+        return stringBuilder.toString();
     }
 
+    /**
+     * Generates the OTP based on the OTP properties.
+     *
+     * @param useNumeric Whether numeric values should be used.
+     * @param useUppercaseLetters Whether upper case letters should be used.
+     * @param useLowercaseLetters Whether lower case letters should be used.
+     * @param otpLength Length of OTP.
+     * @return String Value of OTP string.
+     * @throws OTPGeneratorClientException OTP Generator Client Exception
+     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     */
     @Override
-    public String generateOTP(boolean isNumeric, boolean isUpperCase, boolean isLowerCase, int otpLength) {
+    public String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters,
+                              int otpLength) throws OTPGeneratorClientException, OTPGeneratorServerException {
 
+        if (!useNumeric && !useUppercaseLetters && !useLowercaseLetters) {
+            throw new OTPGeneratorClientException(
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_CHARACTER_SET.getCode(),
+                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_CHARACTER_SET.getMessage());
+        }
         StringBuilder charSet = new StringBuilder();
-        if (isUpperCase) {
+        if (useUppercaseLetters) {
             charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
         }
-        if (isLowerCase) {
+        if (useLowercaseLetters) {
             charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
         }
-        if (isNumeric) {
+        if (useNumeric) {
             charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
         }
-        if (!isNumeric && !isUpperCase && !isLowerCase) {
-            charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_CHAR_SET);
-        }
+
         return generateOTP(charSet.toString(), otpLength);
     }
 }

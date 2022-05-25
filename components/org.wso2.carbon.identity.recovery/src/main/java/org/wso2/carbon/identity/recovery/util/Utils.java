@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
@@ -1094,9 +1096,9 @@ public class Utils {
             int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
             String otpRegex = null;
             Map<String, Boolean> charSetMap;
-            boolean isNumeric = false;
-            boolean isUpperCase = false;
-            boolean isLowerCase = false;
+            boolean useNumeric = true;
+            boolean useUppercaseLetters = true;
+            boolean useLowercaseLetters = true;
             if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
                 otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                         PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
@@ -1104,24 +1106,30 @@ public class Utils {
                 otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                         SELF_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
             }
-            if (otpRegex != null &&
-                    (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario) ||
-                            StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario))) {
-                if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
-                    throw new IdentityRecoveryServerException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+            if (otpRegex != null) {
+                if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario) ||
+                        StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario)) {
+                    if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
+                        throw new IdentityRecoveryServerException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+                    }
+                    String charsRegex = otpRegex.replaceAll("[{].*", "");
+                    otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
+                    // Generate a charset mapping based on regex.
+                    charSetMap = generateCharSetMap(charsRegex);
+                    useNumeric = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_USE_NUMERIC);
+                    useUppercaseLetters = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_USE_UPPER_CASE_LETTERS);
+                    useLowercaseLetters = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_USE_LOWER_CASE_LETTERS);
                 }
-                String charsRegex = otpRegex.replaceAll("[{].*", "");
-                otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
-                // Generate a charset mapping based on regex.
-                charSetMap = generateCharSetMap(charsRegex);
-                isNumeric = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_IS_NUMERIC);
-                isUpperCase = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_IS_UPPER_CASE);
-                isLowerCase = charSetMap.get(IdentityRecoveryConstants.SMS_OTP_IS_LOWER_CASE);
             }
-            OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
-            return otpGenerator.generateOTP(isNumeric, isUpperCase, isLowerCase, otpLength);
+            try {
+                OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
+                return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength);
+            } catch (OTPGeneratorClientException | OTPGeneratorServerException otpGeneratorException) {
+                throw new IdentityRecoveryServerException(otpGeneratorException.getErrorCode(),
+                        otpGeneratorException.getMessage());
+            }
         } else {
             return UUIDGenerator.generateUUID();
         }
@@ -1135,22 +1143,22 @@ public class Utils {
      */
     private static HashMap<String, Boolean> generateCharSetMap(String regex) {
 
-        boolean isNumeric = false;
-        boolean isUpperCase = false;
-        boolean isLowerCase = false;
+        boolean useNumeric = false;
+        boolean useUppercaseLetters = false;
+        boolean useLowercaseLetters = false;
         if (regex.contains("A-Z")) {
-            isUpperCase = true;
+            useUppercaseLetters = true;
         }
         if (regex.contains("a-z")) {
-            isLowerCase = true;
+            useLowercaseLetters = true;
         }
         if (regex.contains("0-9")) {
-            isNumeric = true;
+            useNumeric = true;
         }
         HashMap<String, Boolean> charsetMap = new HashMap<>();
-        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_IS_NUMERIC, isNumeric);
-        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_IS_UPPER_CASE, isUpperCase);
-        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_IS_LOWER_CASE, isLowerCase);
+        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_USE_NUMERIC, useNumeric);
+        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_USE_UPPER_CASE_LETTERS, useUppercaseLetters);
+        charsetMap.put(IdentityRecoveryConstants.SMS_OTP_USE_LOWER_CASE_LETTERS, useLowercaseLetters);
         return charsetMap;
     }
 

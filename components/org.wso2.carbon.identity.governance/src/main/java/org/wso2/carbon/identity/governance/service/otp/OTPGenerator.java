@@ -16,6 +16,9 @@
 
 package org.wso2.carbon.identity.governance.service.otp;
 
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
+
 public interface OTPGenerator {
 
     /**
@@ -23,17 +26,24 @@ public interface OTPGenerator {
      *
      * @param charSet Character set allowed for OTP.
      * @param otpLength Length of OTP.
+     * @return String Value of OTP string.
+     * @throws OTPGeneratorClientException OTP Generator Client Exception
+     * @throws OTPGeneratorServerException OTP Generator Server Exception
      */
-    String generateOTP(String charSet, int otpLength);
+    String generateOTP(String charSet, int otpLength) throws OTPGeneratorClientException, OTPGeneratorServerException;
 
     /**
      * Generates the OTP based on the OTP properties.
      *
-     * @param isNumeric Whether numeric values are present in regex.
-     * @param isUpperCase Whether upper case characters are present in regex.
-     * @param isLowerCase Whether lower case characters are present in regex.
+     * @param useNumeric Whether numeric values should be used.
+     * @param useUppercaseLetters Whether upper case letters should be used.
+     * @param useLowercaseLetters Whether lower case letters should be used.
      * @param otpLength Length of OTP.
+     * @return String Value of OTP string.
+     * @throws OTPGeneratorClientException OTP Generator Client Exception
+     * @throws OTPGeneratorServerException OTP Generator Server Exception
      */
-    String generateOTP(boolean isNumeric, boolean isUpperCase, boolean isLowerCase, int otpLength);
+    String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters, int otpLength)
+            throws OTPGeneratorClientException, OTPGeneratorServerException;
 
 }

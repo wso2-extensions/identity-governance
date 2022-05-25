@@ -146,9 +146,9 @@ public class IdentityRecoveryConstants {
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
-    public static final String SMS_OTP_IS_NUMERIC = "isNumeric";
-    public static final String SMS_OTP_IS_UPPER_CASE = "isUpperCase";
-    public static final String SMS_OTP_IS_LOWER_CASE = "isLowerCase";
+    public static final String SMS_OTP_USE_NUMERIC = "useNumeric";
+    public static final String SMS_OTP_USE_UPPER_CASE_LETTERS = "useUppercaseLetters";
+    public static final String SMS_OTP_USE_LOWER_CASE_LETTERS = "useLowercaseLetters";
     public static final String VALID_SMS_OTP_REGEX_PATTERN = "^\\[((a-z)|(A-Z)|(0-9)){1,3}\\]\\{[0-9]+\\}$";
     public static final String EXCEPTION_SCENARIO_SEPARATOR = "-";
 
@@ -522,7 +522,7 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
         public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
-        public static final String SELF_REGISTRATION_SMS_OTP_REGEX = "SelfRegistration.smsOtp.Regex";
+        public static final String SELF_REGISTRATION_SMS_OTP_REGEX = "SelfRegistration.SMSOTP.Regex";
         public static final String SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION = "SelfRegistration" +
                 ".NotifyAccountConfirmation";
         public static final String RESEND_CONFIRMATION_RECAPTCHA_ENABLE =

@@ -220,6 +220,14 @@ public class IdentityRecoveryServiceComponent {
         dataHolder.setRegistryService(null);
     }
 
+    protected void unsetOtpGenerator(OTPGenerator otpGenerator) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("UnSetting the OTP Generator");
+        }
+        dataHolder.setOtpGenerator(null);
+    }
+
     protected void unsetIdentityEventService(IdentityEventService identityEventService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(null);
