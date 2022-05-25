@@ -42,8 +42,8 @@ public class OTPGeneratorException extends IdentityException {
      * Constructs a new exception with the specified error code, detail message and cause.
      *
      * @param errorCode The error code.
-     * @param message The detail message.
-     * @param cause   The cause.
+     * @param message   The detail message.
+     * @param cause     The cause.
      */
     public OTPGeneratorException(String errorCode, String message, Throwable cause) {
 

@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.governance.internal.service.impl.otp;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 
@@ -35,15 +36,13 @@ public class DefaultOTPGenerator implements OTPGenerator {
     /**
      * Generates the OTP based on the provided charSet and length.
      *
-     * @param charSet Character set allowed for OTP.
-     * @param otpLength Length of OTP.
-     * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception.
-     * @throws OTPGeneratorServerException OTP Generator Server Exception.
+     * @param charSet                Character set allowed for OTP.
+     * @param otpLength              Length of OTP.
+     * @return String                Value of OTP string.
+     * @throws OTPGeneratorException OTP Generator Exception.
      */
     @Override
-    public String generateOTP(String charSet, int otpLength) throws OTPGeneratorClientException,
-            OTPGeneratorServerException {
+    public String generateOTP(String charSet, int otpLength) throws OTPGeneratorException {
 
         if (StringUtils.isBlank(charSet)) {
             throw new OTPGeneratorClientException(
@@ -76,17 +75,16 @@ public class DefaultOTPGenerator implements OTPGenerator {
     /**
      * Generates the OTP based on the OTP properties.
      *
-     * @param useNumeric Whether numeric values should be used.
-     * @param useUppercaseLetters Whether upper case letters should be used.
-     * @param useLowercaseLetters Whether lower case letters should be used.
-     * @param otpLength Length of OTP.
-     * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception.
-     * @throws OTPGeneratorServerException OTP Generator Server Exception.
+     * @param useNumeric             Whether numeric values should be used.
+     * @param useUppercaseLetters    Whether upper case letters should be used.
+     * @param useLowercaseLetters    Whether lower case letters should be used.
+     * @param otpLength              Length of OTP.
+     * @return String                Value of OTP string.
+     * @throws OTPGeneratorException OTP Generator Exception.
      */
     @Override
     public String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters,
-                              int otpLength) throws OTPGeneratorClientException, OTPGeneratorServerException {
+                              int otpLength) throws OTPGeneratorException {
 
         if (!useNumeric && !useUppercaseLetters && !useLowercaseLetters) {
             throw new OTPGeneratorClientException(
