@@ -474,5 +474,4 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     user.getUserName(), e);
         }
     }
-
 }
