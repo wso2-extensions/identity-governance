@@ -135,17 +135,6 @@ public class Utils {
     }
 
     /**
-     * Get an instance of the OTPGenerator.
-     *
-     * @return Instance of the OTPGenerator.
-     */
-    public static OTPGenerator getOtpGenerator() {
-
-        return (OTPGenerator) PrivilegedCarbonContext.getThreadLocalCarbonContext()
-                .getOSGiService(OTPGenerator.class, null);
-    }
-
-    /**
      * @return
      */
     public static org.wso2.carbon.identity.recovery.model.Property[] getArbitraryProperties() {

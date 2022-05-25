@@ -247,7 +247,6 @@ public class IdentityRecoveryServiceDataHolder {
         return this.multiAttributeLoginService;
     }
 
-
     /**
      * Get the OTPGenerator object held at the data holder.
      *

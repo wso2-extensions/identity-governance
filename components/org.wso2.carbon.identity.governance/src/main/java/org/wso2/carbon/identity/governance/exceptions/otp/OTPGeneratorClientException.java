@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.governance.exceptions.otp;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 
+/**
+ * Exception class that represents exceptions thrown upon generating OTP due to client request errors.
+ */
 public class OTPGeneratorClientException extends OTPGeneratorException {
 
     /**
