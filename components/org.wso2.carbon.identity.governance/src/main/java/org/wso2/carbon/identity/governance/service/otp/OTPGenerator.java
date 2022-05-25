@@ -28,8 +28,8 @@ public interface OTPGenerator {
      * @param charSet Character set allowed for OTP.
      * @param otpLength Length of OTP.
      * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception
-     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     * @throws OTPGeneratorClientException OTP Generator Client Exception.
+     * @throws OTPGeneratorServerException OTP Generator Server Exception.
      */
     String generateOTP(String charSet, int otpLength) throws OTPGeneratorClientException, OTPGeneratorServerException;
 
@@ -41,8 +41,8 @@ public interface OTPGenerator {
      * @param useLowercaseLetters Whether lower case letters should be used.
      * @param otpLength Length of OTP.
      * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception
-     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     * @throws OTPGeneratorClientException OTP Generator Client Exception.
+     * @throws OTPGeneratorServerException OTP Generator Server Exception.
      */
     String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters, int otpLength)
             throws OTPGeneratorClientException, OTPGeneratorServerException;

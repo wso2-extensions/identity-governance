@@ -27,21 +27,10 @@ import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 public class OTPGeneratorException extends IdentityException {
 
     /**
-     * Constructs a new exception with the specified detail message.
-     *
-     * @param message The detail message
-     */
-    public OTPGeneratorException(String message) {
-
-        super(message);
-        this.setErrorCode(getDefaultErrorCode());
-    }
-
-    /**
      * Constructs a new exception with the specified detail error code and message.
      *
-     * @param errorCode The error code
-     * @param message   The message
+     * @param errorCode The error code.
+     * @param message   The message.
      */
     public OTPGeneratorException(String errorCode, String message) {
 
@@ -50,23 +39,11 @@ public class OTPGeneratorException extends IdentityException {
     }
 
     /**
-     * Constructs a new exception with the specified detail message and cause.
-     *
-     * @param message The detail message
-     * @param cause   The cause
-     */
-    public OTPGeneratorException(String message, Throwable cause) {
-
-        super(message, cause);
-        this.setErrorCode(getDefaultErrorCode());
-    }
-
-    /**
      * Constructs a new exception with the specified error code, detail message and cause.
      *
-     * @param errorCode The error code
-     * @param message The detail message
-     * @param cause   The cause
+     * @param errorCode The error code.
+     * @param message The detail message.
+     * @param cause   The cause.
      */
     public OTPGeneratorException(String errorCode, String message, Throwable cause) {
 
@@ -77,7 +54,7 @@ public class OTPGeneratorException extends IdentityException {
     /**
      * Get the default error code of the exception.
      *
-     * @return Error description
+     * @return Error description.
      */
     private String getDefaultErrorCode() {
 

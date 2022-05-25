@@ -98,10 +98,10 @@ public class IdentityMgtConstants {
                 + "template object from the registry resource"),
 
         // OTPG - OTP Generator
-        ERROR_CODE_INVALID_OTP_CHARACTER_SET("OTPG-65010","OTP character set cannot be blank or " +
+        ERROR_CODE_INVALID_OTP_CHARACTER_SET("OTPG-60010","OTP character set cannot be blank or " +
                 "in the incorrect format."),
-        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-65011","OTP length is invalid."),
-        ERROR_CODE_ERROR_GENERATING_OTP("OTPG-65012","An error occurred while generating the OTP.");
+        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-60011","OTP length is invalid."),
+        ERROR_CODE_ERROR_GENERATING_OTP("OTPG-60012","An error occurred while generating the OTP.");
 
         private final String code;
         private final String message;

@@ -38,8 +38,8 @@ public class DefaultOTPGenerator implements OTPGenerator {
      * @param charSet Character set allowed for OTP.
      * @param otpLength Length of OTP.
      * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception
-     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     * @throws OTPGeneratorClientException OTP Generator Client Exception.
+     * @throws OTPGeneratorServerException OTP Generator Server Exception.
      */
     @Override
     public String generateOTP(String charSet, int otpLength) throws OTPGeneratorClientException,
@@ -81,8 +81,8 @@ public class DefaultOTPGenerator implements OTPGenerator {
      * @param useLowercaseLetters Whether lower case letters should be used.
      * @param otpLength Length of OTP.
      * @return String Value of OTP string.
-     * @throws OTPGeneratorClientException OTP Generator Client Exception
-     * @throws OTPGeneratorServerException OTP Generator Server Exception
+     * @throws OTPGeneratorClientException OTP Generator Client Exception.
+     * @throws OTPGeneratorServerException OTP Generator Server Exception.
      */
     @Override
     public String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters,
