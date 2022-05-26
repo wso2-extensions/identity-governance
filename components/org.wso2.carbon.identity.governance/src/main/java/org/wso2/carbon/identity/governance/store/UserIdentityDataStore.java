@@ -113,4 +113,26 @@ public abstract class UserIdentityDataStore {
         // Return an immutable empty list if sub classes do not have any overrides.
         return Collections.emptyList();
     }
+
+    /**
+     * List users according to the given claim URI and value and pagination parameters.
+     *
+     * @param expressionConditions           List of expression conditions.
+     * @param identityClaimFilteredUserNames List to hold filtered usernames.
+     * @param domain                         Userstore domain
+     * @param userStoreManager               UserStoreManager instance.
+     * @param limit                          Number of users to return
+     * @param cursor                         Cursor value for cursor-based pagination
+     * @param direction                      Direction of pagination
+     * @return List of usernames.
+     * @throws IdentityException Identity Exception.
+     */
+    public List<String> listPaginatedUsersNames(List<ExpressionCondition> expressionConditions,
+                        List<String> identityClaimFilteredUserNames, String domain,
+                        org.wso2.carbon.user.core.UserStoreManager userStoreManager, int limit, String cursor,
+                        String direction) throws IdentityException {
+
+        // Return an immutable empty list if sub classes do not have any overrides.
+        return Collections.emptyList();
+    }
 }

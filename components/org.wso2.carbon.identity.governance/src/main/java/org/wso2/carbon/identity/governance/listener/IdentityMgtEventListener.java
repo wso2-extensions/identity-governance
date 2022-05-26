@@ -834,6 +834,32 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     }
 
     @Override
+    public boolean doPreGetUserListWithID(Condition condition, String domain, String profileName, int limit,
+                   String cursor, String direction, String sortBy, String sortOrder, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("pre get user user list condition with id is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.PRE_GET_USER_LIST_CONDITION_WITH_ID;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.CONDITION, condition);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, domain);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.LIMIT, limit);
+        properties.put(IdentityEventConstants.EventProperty.CURSOR, cursor);
+        properties.put(IdentityEventConstants.EventProperty.DIRECTION, direction);
+        properties.put(IdentityEventConstants.EventProperty.SORT_BY, sortBy);
+        properties.put(IdentityEventConstants.EventProperty.SORT_ORDER, sortOrder);
+
+        handleEvent(eventName, properties, userStoreManager);
+        return true;
+    }
+
+    @Override
     public boolean doPreGetUserListWithID(String claimUri, String claimValue, int limit, int offset,
                                           final List<User> returnUsersList, UserStoreManager userStoreManager) throws UserStoreException {
 
@@ -915,6 +941,33 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
         properties.put(IdentityEventConstants.EventProperty.LIMIT, limit);
         properties.put(IdentityEventConstants.EventProperty.OFFSET, offset);
+        properties.put(IdentityEventConstants.EventProperty.SORT_BY, sortBy);
+        properties.put(IdentityEventConstants.EventProperty.SORT_ORDER, sortOrder);
+
+        handleEvent(eventName, properties, userStoreManager);
+        return true;
+    }
+
+    @Override
+    public boolean doPostGetUserListWithID(Condition condition, String domain, String profileName, int limit,
+                                           String cursor, String direction, String sortBy, String sortOrder,
+                                           List<User> users, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post get user user list condition with id is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_GET_USER_LIST_CONDITION_WITH_ID;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.CONDITION, condition);
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, domain);
+        properties.put(IdentityEventConstants.EventProperty.PROFILE_NAME, profileName);
+        properties.put(IdentityEventConstants.EventProperty.LIMIT, limit);
+        properties.put(IdentityEventConstants.EventProperty.CURSOR, cursor);
+        properties.put(IdentityEventConstants.EventProperty.DIRECTION, direction);
         properties.put(IdentityEventConstants.EventProperty.SORT_BY, sortBy);
         properties.put(IdentityEventConstants.EventProperty.SORT_ORDER, sortOrder);
 

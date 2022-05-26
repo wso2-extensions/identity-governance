@@ -351,8 +351,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                     offset = offset - 1;
                 }
 
-                SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, offset, domain,
-                        tenantId, dBType);
+                SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, offset,
+                        null, null, domain, tenantId, dBType);
 
                 String fullQuery = sqlBuilder.getQuery();
                 int startIndex = 0;
@@ -372,6 +372,56 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                         if (log.isDebugEnabled()) {
                             log.debug("Error occurred while retrieving users from Identity Store for " + domain +
                                     "with limit " + limit + "and offset " + offset, e);
+                        }
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
+                    }
+                } catch (SQLException e) {
+                    throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+                }
+                return identityClaimFilteredUserNames;
+            } catch (Exception e) {
+                throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+            }
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityException("Error occurred while retrieving users.", e);
+        }
+    }
+
+    @Override
+    public List<String> listPaginatedUsersNames(List<ExpressionCondition> identityClaimFilterExpressionConditions,
+                                                List<String> identityClaimFilteredUserNames, String domain,
+                                                org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                int limit, String cursor, String direction) throws IdentityException {
+
+        try {
+            int tenantId = userStoreManager.getTenantId();
+
+            try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+
+                // Based on the DB Type might need to extend support.
+                String dBType = DatabaseCreator.getDatabaseType(connection);
+
+                SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, null,
+                        cursor, direction, domain, tenantId, dBType);
+
+                String fullQuery = sqlBuilder.getQuery();
+                int startIndex = 0;
+                int endIndex = 0;
+                int occurrence = StringUtils.countMatches(fullQuery, QUERY_BINDING_SYMBOL);
+                endIndex = endIndex + occurrence;
+
+                try (PreparedStatement preparedStatement = connection.prepareStatement(fullQuery)) {
+
+                    populatePrepareStatement(sqlBuilder, preparedStatement, startIndex, endIndex);
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        while (resultSet.next()) {
+                            identityClaimFilteredUserNames.add(resultSet.getString("USER_NAME"));
+                        }
+                        IdentityDatabaseUtil.commitTransaction(connection);
+                    } catch (SQLException e) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Error occurred while retrieving users from Identity Store for " + domain +
+                                    "with limit " + limit + "and cursor " + cursor, e);
                         }
                         IdentityDatabaseUtil.rollbackTransaction(connection);
                     }
@@ -429,7 +479,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     private SqlBuilder getQueryString(List<ExpressionCondition> identityClaimFilterExpressionConditions,
-                                      int limit, int offset, String userStoreDomain, int tenantID, String dbType) {
+                                      int limit, Integer offset, String cursor, String direction,
+                                      String userStoreDomain, int tenantID, String dbType) {
 
         boolean hitClaimFilter = false;
         String userNameWithDomain;
@@ -445,7 +496,25 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                     userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
             sqlBuilder.where(" USER_NAME LIKE ? ", userNameWithDomain);
         }
-
+        if (cursor != null) {
+            if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                    sqlBuilder.where("USER_NAME < ?", cursor);
+                } else {
+                    //h2 databases store users in a secondary user store as DOMAIN/USER_NAME
+                    String userDomain = userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR;
+                    sqlBuilder.where("USER_NAME < ?", userDomain + cursor);
+                }
+            } else {
+                if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                    sqlBuilder.where("USER_NAME > ?", cursor);
+                } else {
+                    //h2 databases store users in a secondary user store as DOMAIN/USER_NAME
+                    String userDomain = userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR;
+                    sqlBuilder.where("USER_NAME > ?", userDomain + cursor);
+                }
+            }
+        }
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
         addingWheres(sqlBuilder, header);
 
@@ -463,16 +532,39 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             hitClaimFilter = true;
         }
 
-        if (DB2.equals(dbType)) {
-            sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ? , ? ", limit, offset);
-        } else if (MSSQL.equals(dbType)) {
-            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
-        } else if (ORACLE.equals(dbType)) {
-            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
-        } else if (POSTGRE_SQL.equals(dbType)) {
-            sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+        if (UserCoreConstants.PREVIOUS.equals(direction)) {
+            sqlBuilder.prependSql("SELECT * FROM ( ");
+        }
+
+        if (cursor != null) {
+            if (DB2.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ?", limit);
+            } else if (MSSQL.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
+            } else if (ORACLE.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
+            } else if (POSTGRE_SQL.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
+            } else {
+                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? ) AS results ORDER BY " +
+                            "results.USER_NAME ASC;", limit);
+                } else {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ?", limit);
+                }
+            }
         } else {
-            sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ? OFFSET ?", limit, offset);
+            if (DB2.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ? , ? ", limit, offset);
+            } else if (MSSQL.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+            } else if (ORACLE.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+            } else if (POSTGRE_SQL.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
+            } else {
+                sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ? OFFSET ?", limit, offset);
+            }
         }
 
         return sqlBuilder;
