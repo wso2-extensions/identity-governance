@@ -27,6 +27,7 @@ public class IdentityMgtConstants {
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
+    public static final int MINIMUM_SMS_OTP_LENGTH = 4;
     private IdentityMgtConstants() {
 
     }
@@ -100,7 +101,8 @@ public class IdentityMgtConstants {
         // OTPG - OTP Generator
         ERROR_CODE_INVALID_OTP_CHARACTER_SET("OTPG-60010","OTP character set cannot be blank or " +
                 "in the incorrect format."),
-        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-60011","OTP length is invalid."),
+        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-60011","OTP length is invalid. Minimum length is " +
+                MINIMUM_SMS_OTP_LENGTH),
         ERROR_CODE_ERROR_GENERATING_OTP("OTPG-60012","An error occurred while generating the OTP.");
 
         private final String code;

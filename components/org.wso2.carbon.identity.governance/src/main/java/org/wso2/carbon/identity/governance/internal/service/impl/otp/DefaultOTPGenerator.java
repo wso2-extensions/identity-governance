@@ -50,7 +50,7 @@ public class DefaultOTPGenerator implements OTPGenerator {
                     IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_CHARACTER_SET.getMessage()
             );
         }
-        if (otpLength == -1) {
+        if (otpLength < IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH) {
             throw new OTPGeneratorClientException(
                     IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_LENGTH.getCode(),
                     IdentityMgtConstants.ErrorMessages.ERROR_CODE_INVALID_OTP_LENGTH.getMessage()
