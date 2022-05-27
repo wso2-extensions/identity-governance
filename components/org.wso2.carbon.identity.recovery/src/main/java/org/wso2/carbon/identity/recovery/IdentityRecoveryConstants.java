@@ -146,9 +146,6 @@ public class IdentityRecoveryConstants {
     public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
-    public static final String SMS_OTP_USE_NUMERIC = "useNumeric";
-    public static final String SMS_OTP_USE_UPPER_CASE_LETTERS = "useUppercaseLetters";
-    public static final String SMS_OTP_USE_LOWER_CASE_LETTERS = "useLowercaseLetters";
     public static final String VALID_SMS_OTP_REGEX_PATTERN = "^\\[((a-z)|(A-Z)|(0-9)){1,3}\\]\\{[0-9]+\\}$";
     public static final String EXCEPTION_SCENARIO_SEPARATOR = "-";
 
