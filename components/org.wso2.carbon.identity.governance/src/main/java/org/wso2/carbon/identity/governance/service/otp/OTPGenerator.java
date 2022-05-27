@@ -17,9 +17,7 @@
 
 package org.wso2.carbon.identity.governance.service.otp;
 
-import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
-import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 
 public interface OTPGenerator {
 
