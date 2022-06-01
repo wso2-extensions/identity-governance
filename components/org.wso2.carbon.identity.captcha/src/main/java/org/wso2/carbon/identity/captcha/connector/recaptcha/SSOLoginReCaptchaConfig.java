@@ -82,42 +82,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
-        String username = servletRequest.getParameter("username");
-        if (StringUtils.isBlank(username)) {
-            return false;
-        }
-
-        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
-        if (sessionDataKey == null) {
-            return false;
-        }
-        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
-        if (context == null) {
-            return false;
-        }
-
-        String tenantDomain = getTenant(context, username);
-        if (StringUtils.isBlank(tenantDomain)) {
-            return false;
-        }
-
-        Property[] connectorConfigs;
-        try {
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE},
-                    tenantDomain);
-        } catch (IdentityGovernanceException e) {
-            // Can happen due to invalid user/ invalid tenant/ invalid configuration.
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to load connector configuration.", e);
-            }
-            return false;
-        }
-
-        if (ArrayUtils.isEmpty(connectorConfigs) || connectorConfigs.length != 2 ||
-                !(Boolean.parseBoolean(connectorConfigs[0].getValue()) ||
-                        Boolean.parseBoolean(connectorConfigs[1].getValue()))) {
+        if (!CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() &&
+                !isReCaptchaEnabledForSSOLogin(servletRequest)) {
             return false;
         }
 
@@ -132,7 +98,6 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
                 return false;
             }
         }
-
         return true;
     }
 
@@ -158,8 +123,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             log.error("Unable to load connector configuration.", e);
         }
 
-        if (connectorConfigs != null && connectorConfigs.length != 0 &&
-                (Boolean.parseBoolean(connectorConfigs[0].getValue()))) {
+        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() || (connectorConfigs != null &&
+                connectorConfigs.length != 0 && (Boolean.valueOf(connectorConfigs[0].getValue())))) {
 
             Map<String, String> params = new HashMap<>();
             params.put("authFailure", "true");
@@ -352,5 +317,55 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         } else {
             return MultitenantUtils.getTenantDomain(username);
         }
+    }
+
+    /**
+     * Check if reCaptcha is enabled for SSO login.
+     *
+     * @param servletRequest Servlet request.
+     * @return true if reCaptcha is enabled for SSO login, false otherwise.
+     */
+    private boolean isReCaptchaEnabledForSSOLogin(ServletRequest servletRequest) {
+
+        String username = servletRequest.getParameter("username");
+        if (StringUtils.isBlank(username)) {
+            return false;
+        }
+
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        if (sessionDataKey == null) {
+            return false;
+        }
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (context == null) {
+            return false;
+        }
+
+        String tenantDomain = getTenant(context, username);
+        if (StringUtils.isBlank(tenantDomain)) {
+            return false;
+        }
+
+        Property[] connectorConfigs;
+        try {
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
+                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE},
+                    tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            // Can happen due to invalid user/ invalid tenant/ invalid configuration.
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load connector configuration.", e);
+            }
+            return false;
+        }
+
+        if (ArrayUtils.isEmpty(connectorConfigs) || connectorConfigs.length != 2 ||
+                !(Boolean.parseBoolean(connectorConfigs[0].getValue()) ||
+                        Boolean.parseBoolean(connectorConfigs[1].getValue()))) {
+            return false;
+        }
+
+        return true;
     }
 }

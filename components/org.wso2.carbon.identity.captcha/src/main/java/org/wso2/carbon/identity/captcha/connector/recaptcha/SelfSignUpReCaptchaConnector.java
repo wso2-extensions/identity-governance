@@ -76,27 +76,12 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        Property[] connectorConfigs;
-        try {
-            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
-                    PROPERTY_ENABLE_RECAPTCHA);
-        } catch (Exception e) {
-            // Can happen due to invalid tenant/ invalid configuration
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to load connector configuration.", e);
-            }
-            return false;
+        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
+            return true;
         }
 
-        String enable = null;
-        for (Property connectorConfig : connectorConfigs) {
-            if ((PROPERTY_ENABLE_RECAPTCHA).equals(connectorConfig.getName())) {
-                enable = connectorConfig.getValue();
-            }
-        }
-
-        return Boolean.parseBoolean(enable);
-
+        return CaptchaUtil.isRecaptchaEnabledForConnector(identityGovernanceService, servletRequest,
+                PROPERTY_ENABLE_RECAPTCHA);
     }
 
     @Override
