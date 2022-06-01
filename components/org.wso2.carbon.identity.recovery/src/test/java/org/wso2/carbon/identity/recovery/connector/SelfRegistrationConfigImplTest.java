@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.recovery.connector;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
 import java.io.UnsupportedEncodingException;
@@ -143,7 +144,8 @@ public class SelfRegistrationConfigImplTest {
                 "Specify the expiry time in minutes for the SMS OTP.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
                 "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
-                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is 4.");
+                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
+                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMappingExpected.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");

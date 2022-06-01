@@ -1119,7 +1119,8 @@ public class Utils {
             }
             try {
                 OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
-                return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength);
+                return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength,
+                        recoveryScenario);
             } catch (OTPGeneratorException otpGeneratorException) {
                 throw new IdentityRecoveryServerException(otpGeneratorException.getErrorCode(),
                         otpGeneratorException.getMessage());

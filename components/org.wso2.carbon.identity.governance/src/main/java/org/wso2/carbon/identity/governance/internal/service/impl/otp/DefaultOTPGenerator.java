@@ -31,6 +31,9 @@ import java.security.SecureRandom;
  */
 public class DefaultOTPGenerator implements OTPGenerator {
 
+    private static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
+
     public DefaultOTPGenerator() {}
 
     /**
@@ -38,11 +41,12 @@ public class DefaultOTPGenerator implements OTPGenerator {
      *
      * @param charSet                Character set allowed for OTP.
      * @param otpLength              Length of OTP.
+     * @param recoveryScenario       Recovery Scenario.
      * @return String                Value of OTP string.
      * @throws OTPGeneratorException OTP Generator Exception.
      */
     @Override
-    public String generateOTP(String charSet, int otpLength) throws OTPGeneratorException {
+    public String generateOTP(String charSet, int otpLength, String recoveryScenario) throws OTPGeneratorException {
 
         if (StringUtils.isBlank(charSet)) {
             throw new OTPGeneratorClientException(
@@ -58,16 +62,9 @@ public class DefaultOTPGenerator implements OTPGenerator {
         }
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder stringBuilder = new StringBuilder();
-        try {
-            char[] otpCharacters = charSet.toCharArray();
-            for (int otpCharacterIndex = 0; otpCharacterIndex < otpLength; otpCharacterIndex++) {
-                stringBuilder.append(otpCharacters[secureRandom.nextInt(otpCharacters.length)]);
-            }
-        } catch (Exception e) {
-            throw new OTPGeneratorServerException(
-                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GENERATING_OTP.getCode(),
-                    IdentityMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GENERATING_OTP.getMessage()
-            );
+        char[] otpCharacters = charSet.toCharArray();
+        for (int otpCharacterIndex = 0; otpCharacterIndex < otpLength; otpCharacterIndex++) {
+            stringBuilder.append(otpCharacters[secureRandom.nextInt(otpCharacters.length)]);
         }
         return stringBuilder.toString();
     }
@@ -79,12 +76,13 @@ public class DefaultOTPGenerator implements OTPGenerator {
      * @param useUppercaseLetters    Whether upper case letters should be used.
      * @param useLowercaseLetters    Whether lower case letters should be used.
      * @param otpLength              Length of OTP.
+     * @param recoveryScenario       Recovery Scenario.
      * @return String                Value of OTP string.
      * @throws OTPGeneratorException OTP Generator Exception.
      */
     @Override
     public String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters,
-                              int otpLength) throws OTPGeneratorException {
+                              int otpLength, String recoveryScenario) throws OTPGeneratorException {
 
         if (!useNumeric && !useUppercaseLetters && !useLowercaseLetters) {
             throw new OTPGeneratorClientException(
@@ -93,15 +91,15 @@ public class DefaultOTPGenerator implements OTPGenerator {
         }
         StringBuilder charSet = new StringBuilder();
         if (useUppercaseLetters) {
-            charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
+            charSet.append(SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
         }
         if (useLowercaseLetters) {
-            charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
+            charSet.append(SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
         }
         if (useNumeric) {
-            charSet.append(IdentityMgtConstants.SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
+            charSet.append(SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
         }
 
-        return generateOTP(charSet.toString(), otpLength);
+        return generateOTP(charSet.toString(), otpLength, recoveryScenario);
     }
 }

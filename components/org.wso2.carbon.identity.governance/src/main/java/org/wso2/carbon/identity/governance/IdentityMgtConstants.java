@@ -23,10 +23,6 @@ public class IdentityMgtConstants {
 
     public static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
     public static final String ERROR_CODE_DELIMITER = "-";
-    public static final int DEFAULT_SMS_OTP_CODE_LENGTH = 6;
-    public static final String SMS_OTP_GENERATE_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    public static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    public static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
     public static final int MINIMUM_SMS_OTP_LENGTH = 4;
     private IdentityMgtConstants() {
 
@@ -98,12 +94,12 @@ public class IdentityMgtConstants {
         ERROR_CODE_ERROR_RETRIEVING_TEMPLATE_OBJECT_FROM_REGISTRY("NTM-65003", "Error retrieving a "
                 + "template object from the registry resource"),
 
-        // OTPG - OTP Generator
-        ERROR_CODE_INVALID_OTP_CHARACTER_SET("OTPG-60010","OTP character set cannot be blank or " +
+        // OPG - OTP Generator
+        ERROR_CODE_INVALID_OTP_CHARACTER_SET("OPG-60010","OTP character set cannot be blank or " +
                 "in the incorrect format."),
-        ERROR_CODE_INVALID_OTP_LENGTH("OTPG-60011","OTP length is invalid. Minimum length is " +
+        ERROR_CODE_INVALID_OTP_LENGTH("OPG-60011","OTP length is invalid. Minimum length is " +
                 MINIMUM_SMS_OTP_LENGTH),
-        ERROR_CODE_ERROR_GENERATING_OTP("OTPG-60012","An error occurred while generating the OTP.");
+        ERROR_CODE_ERROR_GENERATING_OTP("OPG-60012","An error occurred while generating the OTP.");
 
         private final String code;
         private final String message;
@@ -139,7 +135,7 @@ public class IdentityMgtConstants {
 
         public static final String NOTIFICATION_CHANNEL_MANAGER = "NCM";
         public static final String NOTIFICATION_TEMPLATE_MANAGER = "NTM";
-        public static final String OTP_GENERATOR = "OTPG";
+        public static final String OTP_GENERATOR = "OPG";
     }
 
     public static class PropertyConfig {

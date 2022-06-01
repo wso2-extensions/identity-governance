@@ -134,7 +134,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Specify the expiry time in minutes for the SMS OTP.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
                 "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
-                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is 4.");
+                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
+                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");

@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.governance.service.otp;
 
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
 
+/**
+ * Service interface for OTP Generator.
+ */
 public interface OTPGenerator {
 
     /**
@@ -26,10 +29,11 @@ public interface OTPGenerator {
      *
      * @param charSet                Character set allowed for OTP.
      * @param otpLength              Length of OTP.
+     * @param recoveryScenario       Recovery Scenario.
      * @return String                Value of OTP string.
      * @throws OTPGeneratorException OTP Generator Exception.
      */
-    String generateOTP(String charSet, int otpLength) throws OTPGeneratorException;
+    String generateOTP(String charSet, int otpLength, String recoveryScenario) throws OTPGeneratorException;
 
     /**
      * Generates the OTP based on the OTP properties.
@@ -38,10 +42,11 @@ public interface OTPGenerator {
      * @param useUppercaseLetters    Whether upper case letters should be used.
      * @param useLowercaseLetters    Whether lower case letters should be used.
      * @param otpLength              Length of OTP.
+     * @param recoveryScenario       Recovery Scenario.
      * @return String                Value of OTP string.
      * @throws OTPGeneratorException OTP Generator Exception.
      */
-    String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters, int otpLength)
-            throws OTPGeneratorException;
+    String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters, int otpLength,
+                       String recoveryScenario) throws OTPGeneratorException;
 
 }
