@@ -17,9 +17,6 @@
 
 package org.wso2.carbon.identity.governance.exceptions.otp;
 
-import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.governance.IdentityMgtConstants;
-
 /**
  * Exception class that represents exceptions thrown upon server errors while generating OTP for users.
  */
@@ -34,7 +31,6 @@ public class OTPGeneratorServerException extends OTPGeneratorException {
     public OTPGeneratorServerException(String errorCode, String message) {
 
         super(errorCode, message);
-        this.setErrorCode(errorCode);
     }
 
     /**
@@ -47,22 +43,5 @@ public class OTPGeneratorServerException extends OTPGeneratorException {
     public OTPGeneratorServerException(String errorCode, String message, Throwable cause) {
 
         super(errorCode, message, cause);
-        this.setErrorCode(errorCode);
-    }
-
-    /**
-     * Get the default error code of the exception.
-     *
-     * @return Error description.
-     */
-    private String getDefaultErrorCode() {
-
-        String errorCode = super.getErrorCode();
-        if (StringUtils.isEmpty(errorCode)) {
-            errorCode = IdentityMgtConstants.Error_Scenario.OTP_GENERATOR +
-                    IdentityMgtConstants.ERROR_CODE_DELIMITER
-                    + IdentityMgtConstants.ErrorMessages.ERROR_CODE_DEFAULT_SERVER_ERROR.getCode();
-        }
-        return errorCode;
     }
 }
