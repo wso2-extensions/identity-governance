@@ -254,6 +254,9 @@ public class IdentityRecoveryServiceDataHolder {
      */
     public OTPGenerator getOtpGenerator() {
 
+        if (otpGenerator == null) {
+            throw new RuntimeException("OTP Generator is not available. Component did not start correctly.");
+        }
         return otpGenerator;
     }
 
