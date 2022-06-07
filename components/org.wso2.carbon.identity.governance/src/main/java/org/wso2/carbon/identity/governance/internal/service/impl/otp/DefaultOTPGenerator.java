@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
-import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 
 import java.security.SecureRandom;
@@ -33,6 +32,7 @@ public class DefaultOTPGenerator implements OTPGenerator {
 
     private static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
+    private static final String DEFAULT_OTP_GENERATOR = "DefaultOTPGenerator";
 
     public DefaultOTPGenerator() {}
 
@@ -101,5 +101,13 @@ public class DefaultOTPGenerator implements OTPGenerator {
         }
 
         return generateOTP(charSet.toString(), otpLength, recoveryScenario);
+    }
+
+    /**
+     * Retrieve the OTP Generator name.
+     */
+    @Override
+    public String getOTPGeneratorName() {
+        return DEFAULT_OTP_GENERATOR;
     }
 }

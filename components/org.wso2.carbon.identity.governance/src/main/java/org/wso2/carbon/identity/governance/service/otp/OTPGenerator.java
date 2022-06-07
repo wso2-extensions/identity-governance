@@ -49,4 +49,9 @@ public interface OTPGenerator {
     String generateOTP(boolean useNumeric, boolean useUppercaseLetters, boolean useLowercaseLetters, int otpLength,
                        String recoveryScenario) throws OTPGeneratorException;
 
+    /**
+     * Retrieve the OTP Generator name.
+     */
+    String getOTPGeneratorName();
+
 }

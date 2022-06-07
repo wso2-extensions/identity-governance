@@ -329,6 +329,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
