@@ -1094,6 +1094,9 @@ public class Utils {
             } else if (StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario)) {
                 otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                         SELF_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
+            } else if (StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
+                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        LITE_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
             }
             // If the OTP regex is not specified we need to ensure that the default behavior will be executed.
             if (StringUtils.isNotBlank(otpRegex)) {
