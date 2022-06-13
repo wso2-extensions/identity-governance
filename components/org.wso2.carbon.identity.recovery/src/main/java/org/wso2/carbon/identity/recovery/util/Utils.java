@@ -71,7 +71,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -120,6 +119,8 @@ public class Utils {
             .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode()};
 
     private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
+
+    private static final String EMAIL_USERNAME_IDENTIFIER = "@";
 
     /**
      * Get an instance of the NotificationChannelManager.
@@ -939,6 +940,22 @@ public class Utils {
     /**
      * Validate email username.
      *
+     * @param username Tenant aware username of the user.
+     * @throws IdentityRecoveryClientException If username is not an email when email username is enabled.
+     * @deprecated This method is deprecated. Use {@link #validateEmailUsername(User user)} instead.
+     */
+    @Deprecated
+    public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
+
+        if (IdentityUtil.isEmailUsernameEnabled()
+                && StringUtils.countMatches(username, EMAIL_USERNAME_IDENTIFIER) == 0) {
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
+        }
+    }
+
+    /**
+     * Validate email username.
+     *
      * @param user User .
      * @throws IdentityRecoveryClientException If username is not an email for tenanted users when email username
      * is enabled.
@@ -953,7 +970,7 @@ public class Utils {
             // Super tenant user should be able to log in with both email username or non-email username.
             return;
         }
-        if (StringUtils.countMatches(user.getUserName(), "@") == 0) {
+        if (StringUtils.countMatches(user.getUserName(), EMAIL_USERNAME_IDENTIFIER) == 0) {
             // For other tenants, user should have an email address as username.
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME,
                     user.getUserName());
