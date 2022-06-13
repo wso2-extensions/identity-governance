@@ -71,7 +71,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -121,7 +120,7 @@ public class Utils {
 
     private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
 
-    private static final String AT_SYMBOL = "@";
+    private static final String EMAIL_USERNAME_IDENTIFIER = "@";
 
     /**
      * Get an instance of the NotificationChannelManager.
@@ -948,7 +947,8 @@ public class Utils {
     @Deprecated
     public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
 
-        if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, AT_SYMBOL) == 0) {
+        if (IdentityUtil.isEmailUsernameEnabled()
+                && StringUtils.countMatches(username, EMAIL_USERNAME_IDENTIFIER) == 0) {
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
         }
     }
@@ -970,7 +970,7 @@ public class Utils {
             // Super tenant user should be able to log in with both email username or non-email username.
             return;
         }
-        if (StringUtils.countMatches(user.getUserName(), AT_SYMBOL) == 0) {
+        if (StringUtils.countMatches(user.getUserName(), EMAIL_USERNAME_IDENTIFIER) == 0) {
             // For other tenants, user should have an email address as username.
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME,
                     user.getUserName());
