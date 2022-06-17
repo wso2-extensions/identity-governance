@@ -395,23 +395,17 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         try {
             int tenantId = userStoreManager.getTenantId();
-
             try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
-
                 // Based on the DB Type might need to extend support.
                 String dBType = DatabaseCreator.getDatabaseType(connection);
-
                 SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, null,
                         cursor, direction, domain, tenantId, dBType);
-
                 String fullQuery = sqlBuilder.getQuery();
                 int startIndex = 0;
                 int endIndex = 0;
                 int occurrence = StringUtils.countMatches(fullQuery, QUERY_BINDING_SYMBOL);
                 endIndex = endIndex + occurrence;
-
                 try (PreparedStatement preparedStatement = connection.prepareStatement(fullQuery)) {
-
                     populatePrepareStatement(sqlBuilder, preparedStatement, startIndex, endIndex);
                     try (ResultSet resultSet = preparedStatement.executeQuery()) {
                         while (resultSet.next()) {
@@ -501,18 +495,18 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
                     sqlBuilder.where("USER_NAME < ?", cursor);
                 } else {
-                    //h2 databases store users in a secondary user store as DOMAIN/USER_NAME
+                    //Identity datastores store users in a secondary user store as DOMAIN/USER_NAME
                     String userDomain = userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR;
                     sqlBuilder.where("USER_NAME < ?", userDomain + cursor);
                 }
             } else {
-                if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
-                    sqlBuilder.where("USER_NAME > ?", cursor);
-                } else {
-                    //h2 databases store users in a secondary user store as DOMAIN/USER_NAME
-                    String userDomain = userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR;
-                    sqlBuilder.where("USER_NAME > ?", userDomain + cursor);
-                }
+                    if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                        sqlBuilder.where("USER_NAME > ?", cursor);
+                    } else {
+                        //Identity datastores store users in a secondary user store as DOMAIN/USER_NAME
+                        String userDomain = userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR;
+                        sqlBuilder.where("USER_NAME > ?", userDomain + cursor);
+                    }
             }
         }
         SqlBuilder header = new SqlBuilder(new StringBuilder(sqlBuilder.getSql()));
@@ -532,41 +526,52 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             hitClaimFilter = true;
         }
 
+        // SQL to cover the whole query and reverse the result when querying for the previous page which will be in
+        // DESC order.
         if (UserCoreConstants.PREVIOUS.equals(direction)) {
             sqlBuilder.prependSql("SELECT * FROM ( ");
         }
 
         if (cursor != null) {
             if (DB2.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ?", limit);
+                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? " +
+                            ") AS results ORDER BY results.USER_NAME ASC", limit);
+                } else {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ?", limit);
+                }
+            } else if (ORACLE.equals(dbType) || POSTGRE_SQL.equals(dbType)) {
+                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC FETCH NEXT ? ROWS ONLY" +
+                            ") results ORDER BY results.USER_NAME ASC", limit);
+                } else {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME FETCH NEXT ? ROWS ONLY", limit);
+                }
             } else if (MSSQL.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
-            } else if (ORACLE.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
-            } else if (POSTGRE_SQL.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME ROWS FETCH NEXT ? ROWS ONLY ", limit);
+                // Even with cursor pagination we must use the OFFSET keyword as it is compulsory to LIMIT rows in MSSQL
+                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY" +
+                            ") AS results ORDER BY results.USER_NAME ASC", limit);
+                } else {
+                    sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY", limit);
+                }
             } else {
                 if (UserCoreConstants.PREVIOUS.equals(direction)) {
-                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? ) AS results ORDER BY " +
-                            "results.USER_NAME ASC;", limit);
+                    sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? " +
+                            ") AS results ORDER BY results.USER_NAME ASC;", limit);
                 } else {
                     sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ?", limit);
                 }
             }
         } else {
             if (DB2.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ? , ? ", limit, offset);
-            } else if (MSSQL.equals(dbType)) {
+                sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ? , ? ", offset, limit);
+            } else if (MSSQL.equals(dbType) || ORACLE.equals(dbType) || POSTGRE_SQL.equals(dbType)) {
                 sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
-            } else if (ORACLE.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
-            } else if (POSTGRE_SQL.equals(dbType)) {
-                sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ", offset, limit);
-            } else {
+            }  else {
                 sqlBuilder.setTail(" ORDER BY USER_NAME ASC LIMIT ? OFFSET ?", limit, offset);
             }
         }
-
         return sqlBuilder;
     }
 
