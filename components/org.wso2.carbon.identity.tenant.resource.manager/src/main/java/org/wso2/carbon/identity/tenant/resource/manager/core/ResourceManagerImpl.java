@@ -25,6 +25,7 @@ import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfigurationFile;
 import org.wso2.carbon.event.publisher.core.exception.EventPublisherConfigurationException;
+import org.wso2.carbon.event.publisher.core.exception.EventPublisherStreamValidationException;
 import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementClientException;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -138,8 +139,14 @@ public class ResourceManagerImpl implements ResourceManager {
         EventPublisherService carbonEventPublisherService = TenantResourceManagerDataHolder.getInstance()
                 .getCarbonEventPublisherService();
         EventPublisherConfiguration eventPublisherConfiguration;
-
-        eventPublisherConfiguration = carbonEventPublisherService.getEventPublisherConfiguration(publisherConfig);
+        try {
+            eventPublisherConfiguration = carbonEventPublisherService.getEventPublisherConfiguration(publisherConfig);
+        } catch (EventPublisherStreamValidationException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("The event publisher configuration not available or loaded yet.", e);
+            }
+            return;
+        }
 
         if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                 .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName()) != null) {
