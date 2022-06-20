@@ -202,6 +202,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT("17006", "Password reset is not yet completed '%s.'"),
         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLE_PRIVILEGED_USERS("17007", "Mobile number verification by privileged users is not enabled."),
         ERROR_CODE_USER_STORE_READONLY("17008", "User store is readonly - '%s'."),
+        ERROR_CODE_USER_STORE_INVALID("17009", "User store is invalid - '%s'."),
         ERROR_CODE_REGISTRY_EXCEPTION_GET_CHALLENGE_QUESTIONS("20001", "Registry exception while getting challenge question"),
         ERROR_CODE_REGISTRY_EXCEPTION_SET_CHALLENGE_QUESTIONS("20002", "Registry exception while setting challenge question"),
         ERROR_CODE_GETTING_CHALLENGE_URIS("20003", "Error while getting challenge question URIs '%s'."),
