@@ -18,19 +18,15 @@ package org.wso2.carbon.identity.governance.store;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.internal.cache.IdentityDataStoreCache;
+import org.wso2.carbon.identity.governance.internal.cache.IdentityDataStoreCacheKey;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.Caching;
 
 import java.util.Locale;
 import java.util.Map;
@@ -40,25 +36,14 @@ import java.util.Map;
  */
 public class InMemoryIdentityDataStore extends UserIdentityDataStore {
 
-    private static final String IDENTITY_GOVERNANCE_DATA_CACHE_MANAGER = "IDENTITY_GOVERNANCE_DATA_CACHE_MANAGER";
-    private static final String IDENTITY_GOVERNANCE_DATA_CACHE = "IDENTITY_GOVERNANCE_DATA_CACHE";
-
     private static final Log log = LogFactory.getLog(InMemoryIdentityDataStore.class);
-
-    protected Cache<String, UserIdentityClaim> getCache() {
-        CacheManager manager = Caching.getCacheManagerFactory().getCacheManager(InMemoryIdentityDataStore.IDENTITY_GOVERNANCE_DATA_CACHE_MANAGER);
-        Cache<String, UserIdentityClaim> cache = manager.getCache(InMemoryIdentityDataStore.IDENTITY_GOVERNANCE_DATA_CACHE);
-        return cache;
-    }
+    private final IdentityDataStoreCache identityDataStoreCache = IdentityDataStoreCache.getInstance();
 
     @Override
     public void store(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
             throws IdentityException {
 
         try {
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
             if (userIdentityDTO != null && userIdentityDTO.getUserName() != null) {
                 String userName = UserCoreUtil.removeDomainFromName(userIdentityDTO.getUserName());
                 if (userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
@@ -96,23 +81,18 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
                 org.wso2.carbon.user.core.UserStoreManager store = (org.wso2.carbon.user.core.UserStoreManager) userStoreManager;
                 String domainName = store.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
-                String key = domainName + userStoreManager.getTenantId() + userName;
-
-                Cache<String, UserIdentityClaim> cache = getCache();
-                if (cache != null) {
-                    UserIdentityClaim cachedUserIdentityDTO = cache.get(key);
-                    if (cachedUserIdentityDTO != null) {
-                        cachedUserIdentityDTO.getUserIdentityDataMap().putAll(userIdentityDTO.getUserIdentityDataMap());
-                        cache.put(key, cachedUserIdentityDTO);
-                    } else {
-                        cache.put(key, userIdentityDTO);
-                    }
+                IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
+                int tenantId = userStoreManager.getTenantId();
+                UserIdentityClaim cachedUserIdentityDTO = identityDataStoreCache.getValueFromCache(key, tenantId);
+                if (cachedUserIdentityDTO != null) {
+                    cachedUserIdentityDTO.getUserIdentityDataMap().putAll(userIdentityDTO.getUserIdentityDataMap());
+                    identityDataStoreCache.addToCache(key, cachedUserIdentityDTO, tenantId);
+                } else {
+                    identityDataStoreCache.addToCache(key, userIdentityDTO, tenantId);
                 }
             }
         } catch (UserStoreException e) {
             log.error("Error while obtaining tenant ID from user store manager", e);
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
@@ -120,11 +100,7 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
     public UserIdentityClaim load(String userName, UserStoreManager userStoreManager) {
 
         try {
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
-            Cache<String, UserIdentityClaim> cache = getCache();
-            if (userName != null && cache != null) {
+            if (userName != null) {
                 userName = UserCoreUtil.removeDomainFromName(userName);
                 if (userStoreManager instanceof org.wso2.carbon.user.core.UserStoreManager) {
                     if (!IdentityUtil.isUserStoreCaseSensitive((org.wso2.carbon.user.core.UserStoreManager)
@@ -148,8 +124,9 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
 
                 String domainName = store.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
-                UserIdentityClaim userIdentityDTO = cache.get(domainName + userStoreManager
-                        .getTenantId() + userName);
+                IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
+                int tenantId = userStoreManager.getTenantId();
+                UserIdentityClaim userIdentityDTO = identityDataStoreCache.getValueFromCache(key, tenantId);
 
                 if (userIdentityDTO != null && log.isDebugEnabled()) {
                     StringBuilder data = new StringBuilder("{");
@@ -170,8 +147,6 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
             }
         } catch (UserStoreException e) {
             log.error("Error while obtaining tenant ID from user store manager");
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
         }
         return null;
     }
@@ -180,11 +155,6 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
     public void remove(String userName, UserStoreManager userStoreManager) throws IdentityException {
 
         try {
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
-
-            Cache<String, UserIdentityClaim> cache = getCache();
             if (userName == null) {
                 return;
             }
@@ -211,11 +181,10 @@ public class InMemoryIdentityDataStore extends UserIdentityDataStore {
             String domainName = store.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig
                     .PROPERTY_DOMAIN_NAME);
 
-            cache.remove(domainName + userStoreManager.getTenantId() + userName);
+            IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
+            identityDataStoreCache.clearCacheEntry(key, userStoreManager.getTenantId());
         } catch (UserStoreException e) {
             log.error("Error while obtaining tenant ID from user store manager");
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
         }
     }
 

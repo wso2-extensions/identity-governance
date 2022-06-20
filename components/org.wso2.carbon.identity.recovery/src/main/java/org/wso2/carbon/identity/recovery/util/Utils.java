@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
@@ -47,6 +48,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
@@ -60,6 +62,7 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
@@ -68,6 +71,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -75,7 +79,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
 /**
  * Class which contains the Utils for user recovery.
@@ -112,6 +119,8 @@ public class Utils {
             .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL.getCode()};
 
     private static final String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
+
+    private static final String EMAIL_USERNAME_IDENTIFIER = "@";
 
     /**
      * Get an instance of the NotificationChannelManager.
@@ -397,7 +406,7 @@ public class Utils {
         try {
             String digsestFunction = "SHA-256";
             MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes());
+            byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
             return Base64.encode(byteValue);
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);
@@ -767,13 +776,22 @@ public class Utils {
         RealmConfiguration realmConfig = getRealmConfiguration(user);
         String passwordErrorMessage = realmConfig.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG);
         String exceptionMessage = exception.getMessage();
-        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) && StringUtils
-                .containsIgnoreCase(exceptionMessage, passwordErrorMessage)) || exceptionMessage
-                .contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
+        if (((StringUtils.indexOfAny(exceptionMessage, pwdPatternViolations) >= 0) &&
+                StringUtils.containsIgnoreCase(exceptionMessage, passwordErrorMessage)) ||
+                exceptionMessage.contains(UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode())) {
 
-            throw IdentityException.error(IdentityRecoveryClientException.class,
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), passwordErrorMessage,
-                    exception);
+            if (StringUtils.isNotEmpty(passwordErrorMessage)) {
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        passwordErrorMessage, exception);
+            } else {
+                String errorMessage = String.format(
+                        UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getMessage(),
+                        realmConfig.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX));
+                throw IdentityException.error(IdentityRecoveryClientException.class,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                        errorMessage, exception);
+            }
         }
     }
 
@@ -795,7 +813,6 @@ public class Utils {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
         }
-
         return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
                 .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
@@ -925,11 +942,38 @@ public class Utils {
      *
      * @param username Tenant aware username of the user.
      * @throws IdentityRecoveryClientException If username is not an email when email username is enabled.
+     * @deprecated This method is deprecated. Use {@link #validateEmailUsername(User user)} instead.
      */
+    @Deprecated
     public static void validateEmailUsername(String username) throws IdentityRecoveryClientException {
 
-        if (IdentityUtil.isEmailUsernameEnabled() && StringUtils.countMatches(username, "@") == 0) {
+        if (IdentityUtil.isEmailUsernameEnabled()
+                && StringUtils.countMatches(username, EMAIL_USERNAME_IDENTIFIER) == 0) {
             throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME, username);
+        }
+    }
+
+    /**
+     * Validate email username.
+     *
+     * @param user User .
+     * @throws IdentityRecoveryClientException If username is not an email for tenanted users when email username
+     * is enabled.
+     */
+    public static void validateEmailUsername(User user) throws IdentityRecoveryClientException {
+
+        if (!IdentityUtil.isEmailUsernameEnabled()) {
+            // Doesn't need to check for the username if "email address as the username" option is disabled.
+            return;
+        }
+        if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
+            // Super tenant user should be able to log in with both email username or non-email username.
+            return;
+        }
+        if (StringUtils.countMatches(user.getUserName(), EMAIL_USERNAME_IDENTIFIER) == 0) {
+            // For other tenants, user should have an email address as username.
+            throw handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USERNAME,
+                    user.getUserName());
         }
     }
 
@@ -1027,13 +1071,16 @@ public class Utils {
      */
     public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
 
-        String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        if (StringUtils.isBlank(loggedInUser)) {
-            loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+        if (!isLegacyAuditLogsDisabled()) {
+            String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+            if (StringUtils.isBlank(loggedInUser)) {
+                loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+            }
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
+            AUDIT_LOG.info(String
+                    .format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
         }
-        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
-        AUDIT_LOG.info(String.format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
     }
 
     /**
@@ -1111,6 +1158,38 @@ public class Utils {
     }
 
     /**
+     * Return user account state.
+     *
+     * @param user  User.
+     * @return account state.
+     */
+    public static String getAccountState(User user) {
+
+        String accountState = StringUtils.EMPTY;
+        try {
+            org.wso2.carbon.user.core.UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.
+                    getInstance().getRealmService().getBootstrapRealm().getUserStoreManager();
+            while (!userStoreManager.isExistingUser(user.getUserName())) {
+                userStoreManager = userStoreManager.getSecondaryUserStoreManager();
+                if (userStoreManager == null) {
+                    return accountState;
+                }
+            }
+            Map<String, String> claimMap =
+                    ((AbstractUserStoreManager) userStoreManager).getUserClaimValues(user.getUserName(),
+                            new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default");
+            if (!claimMap.isEmpty()) {
+                if (claimMap.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)) {
+                    accountState = claimMap.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+                }
+            }
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            log.error("Error occurred while retrieving UserStoreManager.", e);
+        }
+        return accountState;
+    }
+
+    /**
      * When updating email/mobile claim value, sending the verification notification can be controlled by sending
      * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
      * This option can be enabled form identity.xml by setting 'UseVerifyClaim' to true. When this option is enabled,
@@ -1123,5 +1202,140 @@ public class Utils {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty
                 (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE));
+    }
+
+    /**
+     * Trigger recovery event.
+     *
+     * @param map              The map containing the event properties.
+     * @param eventName        The event name.
+     * @param confirmationCode The confirmation code.
+     * @throws IdentityEventException If error occurred when handleEvent.
+     */
+    public static void publishRecoveryEvent(Map<String, Object> map, String eventName, String confirmationCode)
+            throws IdentityEventException {
+
+        Map<String, Object> eventProperties = cloneMap(map);
+        if (MapUtils.isNotEmpty(eventProperties) && StringUtils.isNotEmpty(confirmationCode)) {
+            eventProperties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, confirmationCode);
+        }
+
+        Event identityMgtEvent = new Event(eventName, eventProperties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
+    /**
+     * Clones the given map.
+     *
+     * @param map          Map.
+     * @return             Cloned Map.
+     */
+    private static Map<String, Object> cloneMap(Map<String, Object> map) {
+
+        if (MapUtils.isEmpty(map)) {
+            return null;
+        }
+        Map<String, Object> clonedMap = new HashMap<String, Object>();
+        clonedMap.putAll(map);
+        return clonedMap;
+    }
+
+    /**
+     * Checks whether the existing confirmation code can be reused based on the configured email confirmation code
+     * tolerance period.
+     *
+     * @param recoveryDataDO Recovery data of the corresponding user.
+     * @param notificationChannel Method which is used to send the recovery code. eg:- EMAIL, SMS.
+     * @return True if the existing confirmation code can be used. Otherwise false.
+     */
+    public static boolean reIssueExistingConfirmationCode(UserRecoveryData recoveryDataDO, String notificationChannel) {
+
+        int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
+        if (recoveryDataDO != null && codeToleranceInMinutes != 0) {
+            if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
+                    equals(recoveryDataDO.getRecoveryScenario().toString())) {
+                long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                        TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+                return System.currentTimeMillis() < codeToleranceTimeInMillis;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Generate a random password in the given length.
+     *
+     * @param passwordLength Required length of the password.
+     * @return password.
+     */
+    public static char[] generateRandomPassword(int passwordLength) {
+
+        String letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789+@";
+        StringBuilder pw = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < (passwordLength - 4); i++) {
+            int index = (int) (random.nextDouble() * letters.length());
+            pw.append(letters.substring(index, index + 1));
+        }
+        pw.append("A$g0");
+        char[] password = new char[pw.length()];
+        pw.getChars(0, pw.length(), password, 0);
+        return password;
+    }
+
+    /**
+     * Retrieves the email confirmation code tolerance period in minutes.
+     *
+     * @return The email confirmation code tolerance in minutes.
+     */
+    private static int getEmailCodeToleranceInMinutes() {
+
+        String emailCodeTolerance = IdentityUtil.
+                getProperty(IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+        if (StringUtils.isEmpty(emailCodeTolerance)) {
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+        try {
+            int codeTolerance = Integer.parseInt(emailCodeTolerance);
+            int recoveryCodeExpiryTime = getRecoveryCodeExpiryTime();
+            if (recoveryCodeExpiryTime < 0 || recoveryCodeExpiryTime < codeTolerance) {
+                String message = String.format("Recovery code expiry is less than zero or code tolerance is less " +
+                                "than recovery code expiry. Therefore setting the DEFAULT time : %s minutes",
+                        IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+                log.warn(message);
+                return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+            }
+            return codeTolerance;
+        } catch (NumberFormatException e) {
+            String message = String.format("Recovery confirmation code tolerance parsing is failed. Therefore" +
+                            "setting the DEFAULT time : %s minutes",
+                    IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE);
+            log.error(message);
+
+            return IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE;
+        }
+    }
+
+    /**
+     * Get the expiry time of the recovery code given at username recovery and password recovery init.
+     *
+     * @return Expiry time of the recovery code (In minutes)
+     */
+    private static int getRecoveryCodeExpiryTime() {
+
+        String expiryTime = IdentityUtil
+                .getProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME);
+        if (StringUtils.isEmpty(expiryTime)) {
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+        try {
+            return Integer.parseInt(expiryTime);
+        } catch (NumberFormatException e) {
+            String message = String
+                    .format("User recovery code expiry time parsing is failed. Therefore setting DEFAULT expiry time " +
+                            ": %s minutes", IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME);
+            log.error(message);
+            return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
     }
 }

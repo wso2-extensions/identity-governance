@@ -42,10 +42,13 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.ClaimManager;
+import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -251,7 +254,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
-        if (StringUtils.isNotBlank(mobileNumber)) {
+        if (StringUtils.isNotBlank(mobileNumber) &&
+                isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
             String existingMobileNumber;
             String username = user.getUserName();
             try {
@@ -286,40 +290,12 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
-            // The verification should not happen if the claim update is invoked by a user other than the claim owner.
-            if (!isInvokedByUser(user)) {
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                return;
-            }
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         } else {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }
-    }
-
-    /**
-     * Verify whether the mobile number update is invoked by the user himself, but not by another privileged user
-     * on behalf.
-     *
-     * @param user  User whose claims are being updated.
-     * @return True if the user in the context is the same as the user whose claims are being updated, false otherwise.
-     * @throws IdentityEventException If username is not set in the CarbonContext.
-     */
-    private boolean isInvokedByUser(User user) throws IdentityEventException {
-
-        String usernameFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        String tenantDomainFromContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        if (StringUtils.isNotBlank(usernameFromContext)) {
-            String userDomain = UserCoreUtil.extractDomainFromName(usernameFromContext);
-            User invokingUser = getUser(UserCoreUtil.removeDomainFromName(usernameFromContext), tenantDomainFromContext,
-                    userDomain);
-            return user.equals(invokingUser);
-        }
-        throw new IdentityEventException("Error while retrieving the username from CarbonContext during the " +
-                "mobile verification on update flow.");
     }
 
     /**
@@ -411,7 +387,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     private void invalidatePendingMobileVerification(User user, UserStoreManager userStoreManager,
                                                     Map<String, String> claims ) throws IdentityEventException {
 
-        if (StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
+        if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain()) &&
+                StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             try {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -434,5 +411,56 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         return (claims.containsKey(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM) &&
                 Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM)));
+    }
+
+    private boolean isVerificationPendingMobileClaimConfigAvailable(String tenantDomain) {
+
+        UserRealm userRealm = getUserRealm(tenantDomain);
+        ClaimManager claimManager = null;
+
+        if (userRealm != null) {
+            // Get claim manager for manipulating attributes.
+            claimManager = getClaimManager(userRealm);
+        }
+
+        try {
+            if (claimManager != null) {
+                Claim claim = claimManager.getClaim(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
+                if (claim != null) {
+                    return true;
+                }
+            }
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            log.error("Error while looking for the pendingMobileNumber claim from claim manager " +
+                    "in tenant: " + tenantDomain, e);
+            return false;
+        }
+        return false;
+    }
+
+    private UserRealm getUserRealm(String tenantDomain) {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        if (realmService != null) {
+            // Get tenant's user realm.
+            try {
+                int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+                return realmService.getTenantUserRealm(tenantId);
+            } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                log.error("Error while retrieving user realm in mobile verification handler for tenant domain: "
+                        + tenantDomain, e);
+            }
+        }
+        return null;
+    }
+
+    private ClaimManager getClaimManager(UserRealm userRealm) {
+
+        try {
+            return userRealm.getClaimManager();
+        } catch (org.wso2.carbon.user.api.UserStoreException e) {
+            log.error("Error while retrieving claim manager.", e);
+        }
+        return null;
     }
 }

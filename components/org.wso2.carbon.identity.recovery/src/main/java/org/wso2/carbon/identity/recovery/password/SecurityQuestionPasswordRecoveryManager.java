@@ -78,7 +78,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     private static final Log log = LogFactory.getLog(SecurityQuestionPasswordRecoveryManager.class);
 
-    private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE = "account.lock.handler.enable";
+    private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE = "account.lock.handler.lock.on.max.failed.attempts.enable";
 
     private static final String PROPERTY_ACCOUNT_LOCK_ON_FAILURE_MAX = "account.lock.handler.On.Failure.Max.Attempts";
 
@@ -102,7 +102,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
     public ChallengeQuestionResponse initiateUserChallengeQuestion(User user) throws IdentityRecoveryException {
 
-        Utils.validateEmailUsername(user.getUserName());
+        Utils.validateEmailUsername(user);
         if (StringUtils.isBlank(user.getTenantDomain())) {
             user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             log.info("initiateUserChallengeQuestion :Tenant domain is not in the request. set to default for user : " +

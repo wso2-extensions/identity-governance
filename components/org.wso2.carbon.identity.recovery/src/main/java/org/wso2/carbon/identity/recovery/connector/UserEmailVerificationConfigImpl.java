@@ -16,8 +16,10 @@
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
@@ -30,6 +32,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
+
+/**
+ * Class which contains user email verification configs.
+ */
 public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig {
 
     private static final String connectorName = "user-email-verification";
@@ -45,31 +52,37 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public String getName() {
+
         return connectorName;
     }
 
     @Override
     public String getFriendlyName() {
+
         return FRIENDLY_NAME;
     }
 
     @Override
     public String getCategory() {
+
         return CATEGORY;
     }
 
     @Override
     public String getSubCategory() {
+
         return "DEFAULT";
     }
 
     @Override
     public int getOrder() {
+
         return 0;
     }
 
     @Override
     public Map<String, String> getPropertyNameMapping() {
+
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "Enable user email verification");
@@ -89,6 +102,7 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
     @Override
     public Map<String, String> getPropertyDescriptionMapping() {
+
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "A verification notification will be triggered during user creation.");
@@ -196,6 +210,34 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
             throws IdentityGovernanceException {
 
         return null;
+    }
+
+    @Override
+    public Map<String, Property> getMetaData() {
+
+        Map<String, Property> meta = new HashMap<>();
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_TEMP_PASSWORD_GENERATOR,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
+
+        return meta;
     }
 
 }

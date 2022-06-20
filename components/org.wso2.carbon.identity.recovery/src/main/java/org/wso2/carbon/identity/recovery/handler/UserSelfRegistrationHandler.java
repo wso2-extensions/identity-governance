@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -52,7 +53,9 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +114,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         boolean isAccountLockOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
                 (IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION, user.getTenantDomain()));
 
+        boolean isEnableConfirmationOnCreation = Boolean.parseBoolean(Utils.getConnectorConfig
+                (IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION, user.getTenantDomain()));
+
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
 
@@ -129,8 +135,18 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 if (notificationChannelVerified) {
                     return;
                 }
+
+                boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
+                        (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION, user.getTenantDomain()));
+
+                // If notify confirmation is enabled and both iAccountLockOnCreation &&
+                // EnableConfirmationOnCreation are disabled then send account creation notification.
+                if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isNotificationInternallyManage
+                        && isSelfRegistrationConfirmationNotify) {
+                    triggerAccountCreationNotification(user);
+                }
                 // If notifications are externally managed, no send notifications.
-                if (isNotificationInternallyManage && isAccountLockOnCreation) {
+                if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage) {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
@@ -150,18 +166,27 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while sending self sign up notification ", e);
             }
-            if (isAccountLockOnCreation) {
+            if (isAccountLockOnCreation || isEnableConfirmationOnCreation) {
                 HashMap<String, String> userClaims = new HashMap<>();
-                //Need to lock user account
-                userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                if (isAccountLockOnCreation) {
+                    // Need to lock user account.
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
+                    userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
+                            IdentityMgtConstants.LockedReason.PENDING_SELF_REGISTRATION.toString());
+                }
                 if (Utils.isAccountStateClaimExisting(tenantDomain)) {
                     userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                             IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
                 }
                 try {
-                    userStoreManager.setUserClaimValues(user.getUserName() , userClaims, null);
+                    userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
                     if (log.isDebugEnabled()) {
-                        log.debug("Locked user account: " + user.getUserName());
+                        if (isAccountLockOnCreation) {
+                            log.debug("Locked user account: " + user.getUserName());
+                        }
+                        if (isEnableConfirmationOnCreation) {
+                            log.debug("Send verification notification for user account: " + user.getUserName());
+                        }
                     }
                 } catch (UserStoreException e) {
                     throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
@@ -418,6 +443,28 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
         properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
+        }
+    }
+
+    private void triggerAccountCreationNotification(User user) throws IdentityRecoveryServerException {
+        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_SELF_SIGNUP_NOTIFY);
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
+        String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
+        properties.put(IdentityEventConstants.EventProperty.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
+
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

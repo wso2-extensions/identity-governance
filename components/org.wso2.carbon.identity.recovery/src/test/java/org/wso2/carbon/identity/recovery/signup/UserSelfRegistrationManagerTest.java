@@ -20,15 +20,14 @@
 package org.wso2.carbon.identity.recovery.signup;
 
 import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.testng.PowerMockTestCase;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -40,7 +39,7 @@ import org.wso2.carbon.consent.mgt.core.model.ConsentManagerConfigurationHolder;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -58,20 +57,18 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
-@PrepareForTest({IdentityUtil.class, Utils.class, IdentityTenantUtil.class, IdentityProviderManager.class,
-        Utils.class, JDBCRecoveryDataStore.class})
-public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
+@WithCarbonHome
+public class UserSelfRegistrationManagerTest {
 
     private UserSelfRegistrationManager userSelfRegistrationManager = UserSelfRegistrationManager.getInstance();
     private ReceiptInput resultReceipt;
     private String TEST_TENANT_DOMAIN_NAME = "carbon.super";
     private String TEST_USERSTORE_DOMAIN = "PRIMARY";
-
-    @Mock
-    IdentityProviderManager identityProviderManager;
+    private IdentityProviderManager identityProviderManager;
 
     @Mock
     UserRecoveryDataStore userRecoveryDataStore;
@@ -79,9 +76,34 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
     @Mock
     IdentityEventService identityEventService;
 
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private MockedStatic<Utils> mockedUtils;
+    private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
+    private MockedStatic<IdentityProviderManager> mockedIdentityProviderManager;
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedUtils = Mockito.mockStatic(Utils.class);
+        mockedJDBCRecoveryDataStore = Mockito.mockStatic(JDBCRecoveryDataStore.class);
+        mockedIdentityProviderManager = Mockito.mockStatic(IdentityProviderManager.class);
+        identityProviderManager = Mockito.mock(IdentityProviderManager.class);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedIdentityUtil.close();
+        mockedUtils.close();
+        mockedJDBCRecoveryDataStore.close();
+        mockedIdentityProviderManager.close();
+    }
+
     @BeforeTest
     void setup() {
 
+        MockitoAnnotations.openMocks(this);
         this.resultReceipt = null;
     }
 
@@ -170,13 +192,12 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
      */
     private void mockConfigurations(String enableSelfSignUp, String enableInternalNotifications) throws Exception {
 
-        mockStatic(Utils.class);
-        when(Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
+        mockedUtils.when(() -> Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 TEST_TENANT_DOMAIN_NAME)).thenReturn(enableSelfSignUp);
-        when(Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+        mockedUtils.when(()->Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 TEST_TENANT_DOMAIN_NAME)).thenReturn(enableInternalNotifications);
-        mockStatic(IdentityUtil.class);
-        when(IdentityUtil.getPrimaryDomainName()).thenReturn(TEST_USERSTORE_DOMAIN);
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(TEST_USERSTORE_DOMAIN);
     }
 
     /**
@@ -187,12 +208,11 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
      */
     private void mockJDBCRecoveryDataStore(UserRecoveryData userRecoveryData) throws IdentityRecoveryException {
 
-        mockStatic(JDBCRecoveryDataStore.class);
-        when(JDBCRecoveryDataStore.getInstance()).thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(Matchers.anyObject(), Matchers.anyObject())).
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(ArgumentMatchers.anyObject(), ArgumentMatchers.anyObject())).
                 thenReturn(userRecoveryData);
-        doNothing().when(userRecoveryDataStore).invalidate(Matchers.anyString());
-        doNothing().when(userRecoveryDataStore).store(Matchers.any(UserRecoveryData.class));
+        doNothing().when(userRecoveryDataStore).invalidate(ArgumentMatchers.anyString());
+        doNothing().when(userRecoveryDataStore).store(ArgumentMatchers.any(UserRecoveryData.class));
     }
 
     /**
@@ -203,16 +223,15 @@ public class UserSelfRegistrationManagerTest extends PowerMockTestCase {
     private void mockEmailTrigger() throws IdentityEventException {
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
-        doNothing().when(identityEventService).handleEvent(Matchers.any(Event.class));
+        doNothing().when(identityEventService).handleEvent(ArgumentMatchers.any(Event.class));
     }
 
     @Test
     public void testAddConsent() throws Exception {
 
-        PowerMockito.mockStatic(IdentityProviderManager.class);
         IdentityProvider identityProvider = new IdentityProvider();
-        PowerMockito.when(identityProviderManager.getInstance()).thenReturn(identityProviderManager);
-        PowerMockito.when(identityProviderManager.getResidentIdP(Matchers.anyString())).thenReturn(identityProvider);
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
+        when(identityProviderManager.getResidentIdP(ArgumentMatchers.anyString())).thenReturn(identityProvider);
         ConsentManager consentManager = new MyConsentManager(new ConsentManagerConfigurationHolder());
         IdentityRecoveryServiceDataHolder.getInstance().setConsentManager(consentManager);
         userSelfRegistrationManager.addUserConsent(consentData, "wso2.com");

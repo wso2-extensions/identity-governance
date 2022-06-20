@@ -82,6 +82,7 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
     private static final String DISPLAY_DESCRIPTION_STREET_ADDRESS = "Street Address of the Controller";
     private static final String EMPTY = "";
     private final IdentityGovernanceService identityGovernanceService;
+    private final ConsentConfigParser consentConfigParser = new ConsentConfigParser();
 
     public ConsentMgtConfigImpl(IdentityGovernanceService identityGovernanceService) {
 
@@ -210,7 +211,6 @@ public class ConsentMgtConfigImpl implements IdentityConnectorConfig, PIIControl
 
     private String getConfiguration(String configElement) {
 
-        ConsentConfigParser consentConfigParser = new ConsentConfigParser();
         Map<String, Object> configuration = consentConfigParser.getConfiguration();
         if (configuration.get(configElement) != null) {
             return configuration.get(configElement).toString();

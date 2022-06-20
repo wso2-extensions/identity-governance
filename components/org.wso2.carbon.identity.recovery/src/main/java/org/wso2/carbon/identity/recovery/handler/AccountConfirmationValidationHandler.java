@@ -31,7 +31,11 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -69,16 +73,18 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
         user.setTenantDomain(tenantDomain);
         user.setUserStoreDomain(domainName);
 
-        boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(
+        boolean isSelfSignupEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
-        if (!enable) {
+        boolean isEmailVerificationEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
+
+        if (!isSelfSignupEnabled && !isEmailVerificationEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Self signup feature is disabled in the tenant: " + tenantDomain);
+                log.debug("Self signup feature and email verification are disabled in the tenant: " + tenantDomain);
             }
             return;
         }
-
 
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             if (log.isDebugEnabled()) {
@@ -98,25 +104,74 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             } catch (UserStoreException e) {
                 throw new IdentityEventException("Error while retrieving account lock claim value", e);
             }
-            if ((Boolean) event.getEventProperties().get(IdentityEventConstants.EventProperty.OPERATION_STATUS) &&
-                    isAccountLocked && !isUserAccountConfirmed(user)) {
+            if (!isAccountLocked) {
+                // User account is unlocked. No need to process further.
+                return;
+            }
+            boolean operationStatus =
+                    (Boolean) event.getEventProperties().get(IdentityEventConstants.EventProperty.OPERATION_STATUS);
+            if (operationStatus && !isUserAccountConfirmed(user)) {
                 IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
                         IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE,
                         "User : " + userName + " not confirmed yet.");
+            } else if (isInvalidCredentialsScenario(operationStatus, user)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
+                            "to log in with an invalid password", userName, domainName, tenantDomain));
+                }
+                IdentityErrorMsgContext customErrorMessageContext =
+                        new IdentityErrorMsgContext(IdentityCoreConstants.USER_INVALID_CREDENTIALS);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                throw new IdentityEventException(IdentityCoreConstants.USER_INVALID_CREDENTIALS,
+                        "Invalid login attempt by self registered user: " + userName);
             }
         }
     }
 
+    /**
+     * Check whether this is an user self registered to this userstore and verify whether this is a invalid password
+     * provided by the user scenario.
+     *
+     * @param authOperationStatus User authentication operation state.
+     * @param user                User.
+     * @return True if this is an invalid password by the self registered user.
+     * @throws IdentityEventException If an error occurred while checking for the user recovery data.
+     */
+    private boolean isInvalidCredentialsScenario(boolean authOperationStatus, User user) throws IdentityEventException {
+
+        if (authOperationStatus) {
+            // User has provided the correct username and the password.
+            return false;
+        }
+        UserRecoveryData userRecoveryData = getRecoveryData(user);
+        return userRecoveryData != null &&
+                RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario());
+    }
+
+    private UserRecoveryData getRecoveryData(User user) throws IdentityEventException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData recoveryData;
+        try {
+            recoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException("Error while loading recovery data for user ", e);
+        }
+        return recoveryData;
+    }
+
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
+
         super.init(configuration);
     }
 
     @Override
     public int getPriority(MessageContext messageContext) {
-        return 50 ;
+
+        return 50;
     }
 
 

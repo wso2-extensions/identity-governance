@@ -174,6 +174,7 @@
                 CARBON.showWarningDialog('Please enter a valid security question', null, null);
                 location.href = '#';
             } else {
+                question = question.trim();
                 location.href = 'challenges-mgt.jsp?updateRowId=' + encodeURIComponent(row) + '&setName=' +
                         encodeURIComponent(setName) + '&updatedQuestion=' + encodeURIComponent(question);
             }

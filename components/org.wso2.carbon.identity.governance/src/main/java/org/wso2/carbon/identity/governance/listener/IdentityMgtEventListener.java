@@ -24,6 +24,7 @@ import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -37,6 +38,7 @@ import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
@@ -600,6 +602,25 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
             log.debug("post update user list of role is called in IdentityMgtEventListener");
         }
         String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_ROLE;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
+        handleEvent(null, userStoreManager, eventName, roleName, properties);
+        return true;
+    }
+
+    @Override
+    public boolean doPostUpdateUserListOfInternalRole(String roleName, String deletedUsers[],
+                                              String[] newUsers, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post update user list of internal role is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_HYBRID_ROLE;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
         properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
@@ -1554,6 +1575,26 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     }
 
     @Override
+    public boolean doPostUpdateUserListOfInternalRoleWithID(String roleName, String[] deletedUsers, String[] newUsers,
+                                                    UserStoreManager userStoreManager) throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("post update user list of role with id is called in IdentityMgtEventListener");
+        }
+        String eventName = IdentityEventConstants.Event.POST_UPDATE_USER_LIST_OF_HYBRID_ROLE_WITH_ID;
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.ROLE_NAME, roleName);
+        properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
+        properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
+
+        handleEvent(eventName, properties, userStoreManager);
+        return true;
+    }
+
+    @Override
     public boolean doPreUpdateRoleListOfUserWithID(String userID, String[] deletedRoles, String[] newRoles,
                                                    UserStoreManager userStoreManager) throws UserStoreException {
 
@@ -1664,6 +1705,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                         || IdentityCoreConstants.USER_ACCOUNT_DISABLED_ERROR_CODE.equals(errorCode)
                         || IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE.equals(errorCode)) {
                     throw new UserStoreException(e.getMessage(), e);
+                }
+                if (e instanceof IdentityEventClientException) {
+                    throw new UserStoreClientException(e.getMessage(), errorCode, e);
                 }
             }
 

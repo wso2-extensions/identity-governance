@@ -35,6 +35,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
@@ -47,6 +48,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -55,6 +57,9 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,6 +112,7 @@ public class CaptchaUtil {
 
             if (reCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
+                resolveSecrets(properties);
                 setReCaptchaConfigs(properties);
                 //setSSOLoginConnectorConfigs(properties);
                 //setPathBasedConnectorConfigs(properties);
@@ -323,14 +329,17 @@ public class CaptchaUtil {
         }
 
         UserStoreManager userStoreManager;
-        try {
-            userStoreManager = userRealm.getUserStoreManager();
-        } catch (UserStoreException e) {
-            throw new CaptchaServerException("Failed to retrieve user store manager.", e);
-        }
 
         Map<String, String> claimValues;
         try {
+            userStoreManager = getUserStoreManagerForUser(usernameWithDomain, userRealm.getUserStoreManager());
+            if (userStoreManager == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("User store manager cannot be found for the user.");
+                }
+                // Invalid user. User cannot be found in any user store.
+                return false;
+            }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
                     .getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
@@ -348,6 +357,32 @@ public class CaptchaUtil {
         }
 
         return currentAttempts >= maxAttempts;
+    }
+
+    /**
+     * Resolve the user store manager for the user.
+     *
+     * @param userStoreManager primary user store manager of the user.
+     * @param userName        Username.
+     * @return Resolved user store manager of the user. Null will be returned if the user is not in any user store for the given tenant.
+     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's existence in the given user store.
+     */
+    private static UserStoreManager getUserStoreManagerForUser(String userName,
+           UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
+
+        // Checking that domain name is already prepended to the username.
+        // If so user claims can be retrieved.
+        if (userName.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+            return userStoreManager;
+        }
+        UserStoreManager userStore = userStoreManager;
+        while (userStore != null) {
+            if (userStore.isExistingUser(userName)) {
+                return userStore;
+            }
+            userStore = userStore.getSecondaryUserStoreManager();
+        }
+        return null;
     }
 
     private static void setReCaptchaConfigs(Properties properties) {
@@ -375,6 +410,12 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
         }
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
+
+        String reCaptchaRequestWrapUrls = properties.getProperty(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS);
+        if (reCaptchaRequestWrapUrls == null) {
+            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS));
+        }
+        CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
@@ -439,6 +480,9 @@ public class CaptchaUtil {
             tenantDomain = servletRequest.getParameter("tenant-domain");
         }
         if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        }
+        if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         }
 
@@ -489,5 +533,96 @@ public class CaptchaUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolves site-key, secret-key and any other property if they are configured using secure vault.
+     *
+     * @param properties    Loaded reCaptcha properties.
+     */
+    private static void resolveSecrets(Properties properties) {
+
+        SecretResolver secretResolver = SecretResolverFactory.create(properties);
+        // Iterate through whole config file and find encrypted properties and resolve them
+        if (secretResolver != null && secretResolver.isInitialized()) {
+            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                String key = entry.getKey().toString();
+                String value = entry.getValue().toString();
+                if (value != null) {
+                    value = MiscellaneousUtil.resolve(value, secretResolver);
+                }
+                properties.put(key, value);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Secret Resolver is not present. Will not resolve encryptions for captcha");
+            }
+        }
+
+    }
+
+    /**
+     * Get the ReCaptcha Site Key.
+     *
+     * @return ReCaptcha Site Key.
+     */
+    public static String reCaptchaSiteKey() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
+    }
+
+    /**
+     * Get the ReCaptcha API URL.
+     *
+     * @return ReCaptcha API URL.
+     */
+    public static String reCaptchaAPIURL() {
+
+        return CaptchaDataHolder.getInstance().getReCaptchaAPIUrl();
+    }
+
+    /**
+     * Check whether ReCaptcha is enabled.
+     *
+     * @return True if ReCaptcha is enabled.
+     */
+    public static Boolean isReCaptchaEnabled() {
+
+        return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
+    }
+
+    /**
+     * Check whether ReCaptcha is enabled for the given flow.
+     *
+     * @param configName    Name of the configuration.
+     * @param tenantDomain  Tenant Domain.
+     * @return True if ReCaptcha is enabled for the given flow.
+     */
+    public static Boolean isReCaptchaEnabledForFlow(String configName, String tenantDomain) {
+
+        Property[] connectorConfigs = null;
+        String configValue = null;
+        IdentityGovernanceService identityGovernanceService = CaptchaDataHolder.getInstance()
+                .getIdentityGovernanceService();
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+        try {
+            connectorConfigs = identityGovernanceService.getConfiguration(tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            log.error("Error while retrieving resident Idp configurations for tenant: " + tenantDomain, e);
+        }
+        if (connectorConfigs != null && StringUtils.isNotEmpty(configName)) {
+            for (Property connectorConfig : connectorConfigs) {
+                if (configName.equals(connectorConfig.getName())) {
+                    configValue = connectorConfig.getValue();
+                }
+            }
+        } else {
+            log.warn(String.format("Connector configurations are null. Hence return true for %s configuration.",
+                    configName));
+        }
+
+        return !Boolean.FALSE.toString().equalsIgnoreCase(configValue);
     }
 }

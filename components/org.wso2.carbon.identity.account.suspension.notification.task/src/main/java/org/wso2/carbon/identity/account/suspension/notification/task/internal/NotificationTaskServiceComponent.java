@@ -17,7 +17,8 @@
  */
 package org.wso2.carbon.identity.account.suspension.notification.task.internal;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
@@ -48,7 +49,7 @@ public class NotificationTaskServiceComponent {
     /*
 
      * */
-    private static final Logger log = Logger.getLogger(NotificationTaskServiceComponent.class);
+    private static final Log log = LogFactory.getLog(NotificationTaskServiceComponent.class);
 
     @Activate
     protected void activate(ComponentContext context) throws UserStoreException {

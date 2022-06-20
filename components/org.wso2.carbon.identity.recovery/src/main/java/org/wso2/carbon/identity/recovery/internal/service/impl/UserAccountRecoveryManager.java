@@ -130,10 +130,26 @@ public class UserAccountRecoveryManager {
             // Validate whether the user account is eligible for account recovery.
             checkUserValidityForAccountRecovery(user, recoveryScenario, notificationChannels, properties);
             // This flow will be initiated only if the user has any verified channels.
+            NotificationChannelDTO[] notificationChannelDTOS = getNotificationChannelsResponseDTOList(
+                    tenantDomain, notificationChannels);
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            // Get the existing RESEND_CONFIRMATION_CODE details if there is any.
+            UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                    user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
             String recoveryCode = UUIDGenerator.generateUUID();
-            return buildUserRecoveryInformationResponseDTO(username, recoveryCode,
-                    getNotificationChannelsResponseDTOList(username, recoveryCode, tenantDomain, notificationChannels,
-                            recoveryScenario));
+            String notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
+            /* Check whether the existing confirmation code can be used based on the email confirmation code tolerance
+               with the extracted RESEND_CONFIRMATION_CODE details. */
+            if (Utils.reIssueExistingConfirmationCode(recoveryDataDO,
+                    NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+                /* Update the existing RESEND_CONFIRMATION_CODE details with new code details without changing the
+                   time created of the RESEND_CONFIRMATION_CODE. */
+                userRecoveryDataStore.invalidateWithoutChangeTimeCreated(recoveryDataDO.getSecret(), recoveryCode,
+                        RecoverySteps.SEND_RECOVERY_INFORMATION, notificationChannelList);
+            } else {
+                addRecoveryDataObject(username, tenantDomain, recoveryCode, recoveryScenario, notificationChannelList);
+            }
+            return buildUserRecoveryInformationResponseDTO(username, recoveryCode, notificationChannelDTOS);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("No valid user found for the given claims");
@@ -158,11 +174,42 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT.getMessage(),
                     user.getUserName());
         } else if (Utils.isAccountLocked(user)) {
+            // Check user in PENDING_SR or PENDING_AP status.
+            checkAccountPendingStatus(user);
             String errorCode = Utils.prependOperationScenarioToErrorCode(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getCode(),
                     IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
             throw Utils.handleClientException(errorCode,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT.getMessage(), user.getUserName());
+        }
+    }
+
+    /**
+     * Check whether the account is pending self signup or pending ask password.
+     *
+     * @param user User.
+     * @throws IdentityRecoveryException If account is in locked or disabled status.
+     */
+    private void checkAccountPendingStatus(User user) throws IdentityRecoveryException {
+
+        String accountState = Utils.getAccountState(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            if (IdentityRecoveryConstants.PENDING_SELF_REGISTRATION.equals(accountState)) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT.getCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_SELF_REGISTERED_ACCOUNT.getMessage(),
+                        user.getUserName());
+            }
+            if (IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState)) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT.getCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PENDING_PASSWORD_RESET_ACCOUNT.getMessage(),
+                        user.getUserName());
+            }
         }
     }
 
@@ -351,35 +398,41 @@ public class UserAccountRecoveryManager {
      * Get the list of available channels with the channel attributes associated to each channel as a list of
      * NotificationChannelsResponseDTOs.
      *
-     * @param userName             UserName of the user
-     * @param recoveryID           RecoveryId
-     * @param tenantDomain         Tenant domain
-     * @param notificationChannels Notification channels list
-     * @param recoveryScenario     Recovery scenario
+     * @param tenantDomain         Tenant domain.
+     * @param notificationChannels Notification channels list.
      * @return NotificationChannelsResponseDTSs list.
      */
-    private NotificationChannelDTO[] getNotificationChannelsResponseDTOList(String userName, String recoveryID,
-                                           String tenantDomain, List<NotificationChannel> notificationChannels,
-                                                                            RecoveryScenarios recoveryScenario)
-            throws IdentityRecoveryException {
+    private NotificationChannelDTO[] getNotificationChannelsResponseDTOList(
+            String tenantDomain, List<NotificationChannel> notificationChannels) throws IdentityRecoveryException {
 
         ArrayList<NotificationChannelDTO> notificationChannelDTOs = new ArrayList<>();
         // Store available channels as NotificationChannelDTO objects in the array.
         int channelId = 1;
-        StringBuilder recoveryChannels = new StringBuilder();
         for (NotificationChannel channel : notificationChannels) {
             NotificationChannelDTO dto = buildNotificationChannelsResponseDTO(channelId, channel.getType(),
                     channel.getChannelValue(), channel.isPreferredStatus(), tenantDomain);
             notificationChannelDTOs.add(dto);
+            channelId++;
+        }
+        return notificationChannelDTOs.toArray(new NotificationChannelDTO[0]);
+    }
+
+    /**
+     * Appends the notification channel list details for to a string and return it.
+     *
+     * @param notificationChannels List of notification channels for the corresponding user.
+     * @return String that contains the notification channel details.
+     */
+    private String getNotificationChannelListForRecovery(List<NotificationChannel> notificationChannels) {
+
+        StringBuilder recoveryChannels = new StringBuilder();
+        for (NotificationChannel channel : notificationChannels) {
             // Creating the notification channel list for recovery.
             String channelEntry = channel.getType() + IdentityRecoveryConstants.CHANNEL_ATTRIBUTE_SEPARATOR + channel
                     .getChannelValue();
             recoveryChannels.append(channelEntry).append(IdentityRecoveryConstants.NOTIFY_CHANNEL_LIST_SEPARATOR);
-            channelId++;
         }
-        // Notification channel list is stored as the recovery data.
-        addRecoveryDataObject(userName, tenantDomain, recoveryID, recoveryScenario, recoveryChannels.toString());
-        return notificationChannelDTOs.toArray(new NotificationChannelDTO[0]);
+        return recoveryChannels.toString();
     }
 
     /**

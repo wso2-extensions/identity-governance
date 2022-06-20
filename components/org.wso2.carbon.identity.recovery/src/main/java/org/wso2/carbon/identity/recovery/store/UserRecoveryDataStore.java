@@ -59,6 +59,9 @@ public interface UserRecoveryDataStore {
     UserRecoveryData loadWithoutCodeExpiryValidation(User user, Enum recoveryScenario) throws
             IdentityRecoveryException;
 
+    UserRecoveryData loadWithoutCodeExpiryValidation(User user, Enum recoveryScenario, Enum recoveryStep)
+            throws IdentityRecoveryException;
+
     void invalidate(String code) throws
             IdentityRecoveryException;
 
@@ -76,4 +79,17 @@ public interface UserRecoveryDataStore {
     default void deleteRecoveryDataByTenantId(int tenantId) throws IdentityRecoveryException {
 
     }
+
+    /**
+     * Update the existing recovery entry of the existing code and replace with a new code, recovery step and channel list
+     * by not changing the existing code creation time.
+     *
+     * @param oldCode Existing code.
+     * @param code Newly created code which replaces the existing code.
+     * @param recoveryStep Recovery step that needs to be updated in the database.
+     * @param channelList String which contains the list of channels to be updated.
+     * @throws IdentityRecoveryException If an error occurred during the update operation.
+     */
+    void invalidateWithoutChangeTimeCreated(String oldCode, String code, Enum recoveryStep, String channelList)
+            throws IdentityRecoveryException;
 }
