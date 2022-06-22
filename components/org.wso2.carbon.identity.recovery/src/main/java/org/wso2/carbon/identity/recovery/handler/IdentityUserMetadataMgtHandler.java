@@ -62,7 +62,8 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             handlePostAuthenticate(eventProperties, userStoreManager);
         } else if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
-                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
+                IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName()) ||
+                IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             handleCredentialUpdate(eventProperties, userStoreManager);
         }
     }
