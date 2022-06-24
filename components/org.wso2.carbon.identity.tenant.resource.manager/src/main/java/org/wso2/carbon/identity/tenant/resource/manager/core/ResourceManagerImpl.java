@@ -25,12 +25,9 @@ import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfigurationFile;
 import org.wso2.carbon.event.publisher.core.exception.EventPublisherConfigurationException;
-import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
-import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementClientException;
+import org.wso2.carbon.event.publisher.core.exception.EventPublisherStreamValidationException;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
-import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
-import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementClientException;
 import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils;
@@ -40,7 +37,6 @@ import java.util.List;
 
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_FILE;
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_RESOURCE;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.PUBLISHER;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.handleServerException;
 
@@ -76,30 +72,13 @@ public class ResourceManagerImpl implements ResourceManager {
             throws TenantResourceManagementException {
 
         try {
-            Resource resource = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                    .getResource(resourceTypeName, resourceName);
-            ResourceFile resourceFile = resource.getFiles().get(0);
-            InputStream publisherConfig = TenantResourceManagerDataHolder.getInstance().getConfigurationManager()
-                    .getFileById(PUBLISHER, resourceFile.getName(), resourceFile.getId());
-
-            EventPublisherService carbonEventPublisherService = TenantResourceManagerDataHolder.getInstance()
-                    .getCarbonEventPublisherService();
-            EventPublisherConfiguration eventPublisherConfiguration = carbonEventPublisherService
-                    .getEventPublisherConfiguration(publisherConfig);
             if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
-                    .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName()) != null) {
-                destroyEventPublisherConfiguration(eventPublisherConfiguration);
+                    .getActiveEventPublisherConfiguration(resourceName) != null) {
+                destroyEventPublisherConfiguration(resourceName);
 
                 // Since the tenant event publisher was removed, we should load super tenant configs.
                 loadSuperTenantEventPublisherConfigs();
             }
-        } catch (ConfigurationManagementException e) {
-            if (e instanceof ConfigurationManagementClientException &&
-                    e.getErrorCode().equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode())) {
-                throw new TenantResourceManagementClientException(e.getMessage(), e.getErrorCode());
-            }
-            throw handleServerException(ERROR_CODE_ERROR_WHEN_FETCHING_EVENT_PUBLISHER_RESOURCE, e,
-                    resourceName, PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
         } catch (EventPublisherConfigurationException e) {
             throw handleServerException(ERROR_CODE_ERROR_WHEN_DEPLOYING_EVENT_PUBLISHER_CONFIGURATION, e,
                     resourceName);
@@ -138,12 +117,18 @@ public class ResourceManagerImpl implements ResourceManager {
         EventPublisherService carbonEventPublisherService = TenantResourceManagerDataHolder.getInstance()
                 .getCarbonEventPublisherService();
         EventPublisherConfiguration eventPublisherConfiguration;
-
-        eventPublisherConfiguration = carbonEventPublisherService.getEventPublisherConfiguration(publisherConfig);
+        try {
+            eventPublisherConfiguration = carbonEventPublisherService.getEventPublisherConfiguration(publisherConfig);
+        } catch (EventPublisherStreamValidationException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("The event publisher configuration not available.", e);
+            }
+            return;
+        }
 
         if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                 .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName()) != null) {
-            destroyEventPublisherConfiguration(eventPublisherConfiguration);
+            destroyEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName());
         }
         carbonEventPublisherService.addEventPublisherConfiguration(eventPublisherConfiguration);
     }
@@ -152,22 +137,22 @@ public class ResourceManagerImpl implements ResourceManager {
      * This is used to destroy an existing EventPublisher.
      * As per the implementation in analytics-common we need to add the publisher as a file before destroying it.
      *
-     * @param eventPublisherConfiguration Event Publisher Configuration.
-     * @throws ConfigurationManagementException Configuration Management Exception.
+     * @param eventPublisherName Event Publisher Name.
+     * @throws EventPublisherConfigurationException Configuration Management Exception.
      */
-    private void destroyEventPublisherConfiguration(EventPublisherConfiguration eventPublisherConfiguration)
+    private void destroyEventPublisherConfiguration(String eventPublisherName)
             throws EventPublisherConfigurationException {
 
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         EventPublisherConfigurationFile eventPublisherConfigurationFile = new EventPublisherConfigurationFile();
         eventPublisherConfigurationFile.setTenantId(tenantId);
-        eventPublisherConfigurationFile.setEventPublisherName(eventPublisherConfiguration.getEventPublisherName());
-        eventPublisherConfigurationFile.setFileName(eventPublisherConfiguration.getEventPublisherName());
+        eventPublisherConfigurationFile.setEventPublisherName(eventPublisherName);
+        eventPublisherConfigurationFile.setFileName(eventPublisherName);
         eventPublisherConfigurationFile.setStatus(EventPublisherConfigurationFile.Status.DEPLOYED);
 
         TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
                 .addEventPublisherConfigurationFile(eventPublisherConfigurationFile, tenantId);
         TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
-                .removeEventPublisherConfigurationFile(eventPublisherConfiguration.getEventPublisherName(), tenantId);
+                .removeEventPublisherConfigurationFile(eventPublisherName, tenantId);
     }
 }
