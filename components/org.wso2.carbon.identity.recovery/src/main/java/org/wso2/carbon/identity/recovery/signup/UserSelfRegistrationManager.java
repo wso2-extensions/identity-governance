@@ -1217,7 +1217,7 @@ public class UserSelfRegistrationManager {
     /**
      * Checks whether the given userstore domain of a username is valid / exists or not.
      *
-     * @param userStoreDomain Tenant domain.
+     * @param userStoreDomain Userstore domain of the user.
      * @return True if the userstore domain of the user is valid / available, else false.
      */
     public boolean isValidUserStoreDomain(String userStoreDomain, String tenantDomain) throws IdentityRecoveryException {
