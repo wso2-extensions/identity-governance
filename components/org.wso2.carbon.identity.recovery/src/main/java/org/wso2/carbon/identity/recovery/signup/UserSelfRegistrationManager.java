@@ -1215,6 +1215,30 @@ public class UserSelfRegistrationManager {
     }
 
     /**
+     * Checks whether the given userstore domain of a username is valid / exists or not.
+     *
+     * @param userStoreDomain Tenant domain.
+     * @return True if the userstore domain of the user is valid / available, else false.
+     */
+    public boolean isValidUserStoreDomain(String userStoreDomain, String tenantDomain) throws IdentityRecoveryException {
+
+        boolean isValidUserStore;
+        try {
+            UserStoreManager userStoreManager = getUserRealm(tenantDomain).getUserStoreManager().
+                    getSecondaryUserStoreManager(userStoreDomain);
+            isValidUserStore = userStoreManager != null;
+
+        } catch (CarbonException | UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting secondary userstore manager for domain " + userStoreDomain);
+            }
+            // In a case of a non existing tenant.
+            throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
+        }
+        return isValidUserStore;
+    }
+
+    /**
      * Returns whether a given username is already taken by a user or not.
      *
      * @param username Username.
