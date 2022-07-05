@@ -55,6 +55,9 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
 
         String username = user.getUsername();
         if (StringUtils.isEmpty(username)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Username validation failed as the username is empty.");
+            }
             ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setRef(Utils.getCorrelation());
             errorDTO.setMessage("Username cannot be empty.");
@@ -81,7 +84,12 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
 
             String userStoreDomain = IdentityUtil.extractDomainFromName(username);
             if (StringUtils.isNotEmpty(realm) && !userStoreDomain.equals(realm)) {
+                // When the userstore domain is not prepended to the username or if the prepended userstore domain is
+                // different from the realm property, the domain from the realm will be added to the username.
                 username = realm + IdentityManagementEndpointConstants.USER_STORE_DOMAIN_SEPARATOR + username;
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Username after adding the userstore domain: %s", username));
+                }
             }
 
             UserSelfRegistrationManager userSelfRegistrationManager = Utils
