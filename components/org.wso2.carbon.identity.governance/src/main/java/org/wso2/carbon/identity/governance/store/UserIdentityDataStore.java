@@ -130,7 +130,7 @@ public abstract class UserIdentityDataStore {
     public List<String> listPaginatedUsersNames(List<ExpressionCondition> expressionConditions,
                         List<String> identityClaimFilteredUserNames, String domain,
                         org.wso2.carbon.user.core.UserStoreManager userStoreManager, int limit, String cursor,
-                        String direction) throws IdentityException {
+                        UserCoreConstants.PaginationDirection direction) throws IdentityException {
 
         // Return an immutable empty list if sub classes do not have any overrides.
         return Collections.emptyList();

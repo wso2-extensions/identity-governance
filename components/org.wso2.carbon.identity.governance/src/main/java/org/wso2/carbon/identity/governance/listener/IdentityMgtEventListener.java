@@ -835,7 +835,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
     @Override
     public boolean doPreGetUserListWithID(Condition condition, String domain, String profileName, int limit,
-                   String cursor, String direction, String sortBy, String sortOrder, UserStoreManager userStoreManager)
+                   String cursor, UserCoreConstants.PaginationDirection direction, String sortBy, String sortOrder,
+                   UserStoreManager userStoreManager)
             throws UserStoreException {
 
         if (!isEnable()) {
@@ -950,8 +951,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
     @Override
     public boolean doPostGetUserListWithID(Condition condition, String domain, String profileName, int limit,
-                                           String cursor, String direction, String sortBy, String sortOrder,
-                                           List<User> users, UserStoreManager userStoreManager)
+                   String cursor, UserCoreConstants.PaginationDirection direction, String sortBy, String sortOrder,
+                   List<User> users, UserStoreManager userStoreManager)
             throws UserStoreException {
 
         if (!isEnable()) {

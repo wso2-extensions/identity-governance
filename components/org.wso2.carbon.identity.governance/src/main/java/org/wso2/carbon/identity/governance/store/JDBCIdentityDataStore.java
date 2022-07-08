@@ -389,9 +389,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
     @Override
     public List<String> listPaginatedUsersNames(List<ExpressionCondition> identityClaimFilterExpressionConditions,
-                                                List<String> identityClaimFilteredUserNames, String domain,
-                                                org.wso2.carbon.user.core.UserStoreManager userStoreManager,
-                                                int limit, String cursor, String direction) throws IdentityException {
+                     List<String> identityClaimFilteredUserNames, String domain,
+                     org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                     int limit, String cursor, UserCoreConstants.PaginationDirection direction)
+            throws IdentityException {
 
         try {
             int tenantId = userStoreManager.getTenantId();
@@ -473,8 +474,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     private SqlBuilder getQueryString(List<ExpressionCondition> identityClaimFilterExpressionConditions,
-                                      int limit, Integer offset, String cursor, String direction,
-                                      String userStoreDomain, int tenantID, String dbType) {
+                       int limit, Integer offset, String cursor, UserCoreConstants.PaginationDirection direction,
+                       String userStoreDomain, int tenantID, String dbType) {
 
         boolean hitClaimFilter = false;
         String userNameWithDomain;
@@ -491,7 +492,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             sqlBuilder.where(" USER_NAME LIKE ? ", userNameWithDomain);
         }
         if (cursor != null) {
-            if (UserCoreConstants.PREVIOUS.equals(direction)) {
+            if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
                 if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
                     sqlBuilder.where("USER_NAME < ?", cursor);
                 } else {
@@ -528,20 +529,20 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
         // SQL to cover the whole query and reverse the result when querying for the previous page which will be in
         // DESC order.
-        if (UserCoreConstants.PREVIOUS.equals(direction)) {
+        if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
             sqlBuilder.prependSql("SELECT * FROM ( ");
         }
 
         if (cursor != null) {
             if (DB2.equals(dbType)) {
-                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
                     sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? " +
                             ") AS results ORDER BY results.USER_NAME ASC", limit);
                 } else {
                     sqlBuilder.setTail(" ORDER BY USER_NAME LIMIT ?", limit);
                 }
             } else if (ORACLE.equals(dbType) || POSTGRE_SQL.equals(dbType)) {
-                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
                     sqlBuilder.setTail(" ORDER BY USER_NAME DESC FETCH NEXT ? ROWS ONLY" +
                             ") results ORDER BY results.USER_NAME ASC", limit);
                 } else {
@@ -549,14 +550,14 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 }
             } else if (MSSQL.equals(dbType)) {
                 // Even with cursor pagination we must use the OFFSET keyword as it is compulsory to LIMIT rows in MSSQL
-                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
                     sqlBuilder.setTail(" ORDER BY USER_NAME DESC OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY" +
                             ") AS results ORDER BY results.USER_NAME ASC", limit);
                 } else {
                     sqlBuilder.setTail(" ORDER BY USER_NAME OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY", limit);
                 }
             } else {
-                if (UserCoreConstants.PREVIOUS.equals(direction)) {
+                if (UserCoreConstants.PaginationDirection.PREVIOUS == direction) {
                     sqlBuilder.setTail(" ORDER BY USER_NAME DESC LIMIT ? " +
                             ") AS results ORDER BY results.USER_NAME ASC;", limit);
                 } else {

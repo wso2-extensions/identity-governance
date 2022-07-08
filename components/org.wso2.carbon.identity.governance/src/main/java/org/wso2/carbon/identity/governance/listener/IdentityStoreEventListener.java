@@ -508,7 +508,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
     public boolean doPreGetPaginatedUserList(Condition condition, List<String> identityClaimFilteredUserNames,
                                              String domain, UserStoreManager userStoreManager, int limit, String cursor,
-                                             String direction)
+                                             UserCoreConstants.PaginationDirection direction)
             throws UserStoreException {
 
         if (!isEnable()) {
