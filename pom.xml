@@ -667,6 +667,7 @@
         <!--Maintaining testutil version separately as it is removed from higher framework versions-->
         <carbon.identity.testutil.version>5.20.211</carbon.identity.testutil.version>
 
+
         <h2database.version>2.1.210</h2database.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
 
