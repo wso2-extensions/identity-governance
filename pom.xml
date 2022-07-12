@@ -422,7 +422,7 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.testutil</artifactId>
                 <scope>test</scope>
-                <version>${carbon.identity.testutil.version}</version>
+                <version>${carbon.identity.framework.version}</version>
             </dependency>
 
             <dependency>
@@ -523,6 +523,11 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven.war.plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -617,14 +622,14 @@
         <identity.data.publisher.authentication.version>5.3.0</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.7.0-beta</carbon.kernel.version>
+        <carbon.kernel.version>4.7.0-beta9</carbon.kernel.version>
         <carbon.kernel.feature.version>4.6.1</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.21.3</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.21.7</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -654,6 +659,7 @@
         <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.13.1</junit.version>
+        <maven.war.plugin.version>3.3.2</maven.war.plugin.version>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
@@ -664,8 +670,6 @@
         <mockito.version>3.10.0</mockito.version>
         <powermock.version>2.0.8</powermock.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
-        <!--Maintaining testutil version separately as it is removed from higher framework versions-->
-        <carbon.identity.testutil.version>5.20.211</carbon.identity.testutil.version>
         
         <h2database.version>2.1.210</h2database.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
