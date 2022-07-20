@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.org).
+ * Copyright (c) 2022, WSO2 LLC (http://www.wso2.org).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  *
@@ -33,8 +33,6 @@ public class DefaultOTPGenerator implements OTPGenerator {
     private static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String SMS_OTP_GENERATE_NUMERIC_CHAR_SET = "0123456789";
     private static final String DEFAULT_OTP_GENERATOR = "DefaultOTPGenerator";
-
-    public DefaultOTPGenerator() {}
 
     /**
      * Generates the OTP based on the provided charSet and length.
@@ -99,7 +97,6 @@ public class DefaultOTPGenerator implements OTPGenerator {
         if (useNumeric) {
             charSet.append(SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
         }
-
         return generateOTP(charSet.toString(), otpLength, recoveryScenario);
     }
 
@@ -108,6 +105,7 @@ public class DefaultOTPGenerator implements OTPGenerator {
      */
     @Override
     public String getOTPGeneratorName() {
+
         return DEFAULT_OTP_GENERATOR;
     }
 }
