@@ -49,6 +49,8 @@ public class CaptchaDataHolder {
 
     private String reCaptchaRequestWrapUrls;
 
+    private double reCaptchaScoreThreshold;
+
     private IdentityGovernanceService identityGovernanceService;
 
     private RealmService realmService;
@@ -119,6 +121,14 @@ public class CaptchaDataHolder {
         this.reCaptchaRequestWrapUrls = reCaptchaRequestWrapUrls;
     }
 
+    public double getReCaptchaScoreThreshold() {
+        return reCaptchaScoreThreshold;
+    }
+
+    public void setReCaptchaScoreThreshold(double reCaptchaScoreThreshold) {
+        this.reCaptchaScoreThreshold = reCaptchaScoreThreshold;
+    }
+
     public String getReCaptchaErrorRedirectUrls() {
         return reCaptchaErrorRedirectUrls;
     }
@@ -173,7 +183,7 @@ public class CaptchaDataHolder {
     }
 
     public RealmService getRealmService() {
-        if(realmService == null) {
+        if (realmService == null) {
             throw new RuntimeException("Realm Service is not available. Component did not start correctly.");
         }
         return realmService;

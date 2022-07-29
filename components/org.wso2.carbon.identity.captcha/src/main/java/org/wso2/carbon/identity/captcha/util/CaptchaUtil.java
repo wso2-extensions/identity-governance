@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -101,7 +102,7 @@ public class CaptchaUtil {
                         .CAPTCHA_CONFIG_FILE_NAME + "' configuration file", e);
             }
 
-            boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
+            boolean reCaptchaEnabled = Boolean.parseBoolean(properties.getProperty(CaptchaConstants
                     .RE_CAPTCHA_ENABLED));
 
             String reCaptchaFailedRedirectUrls = properties.getProperty(CaptchaConstants.
@@ -238,6 +239,7 @@ public class CaptchaUtil {
 
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
+        double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
 
         List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
                 .getInstance().getReCaptchaSecretKey()), new BasicNameValuePair("response", reCaptchaResponse));
@@ -259,7 +261,9 @@ public class CaptchaUtil {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
                 if (verificationResponse == null || verificationResponse.get("success") == null ||
-                        !verificationResponse.get("success").getAsBoolean()) {
+                        !verificationResponse.get("success").getAsBoolean() ||
+                        verificationResponse.get("score") == null ||
+                        verificationResponse.get("score").getAsFloat() < scoreThreshold) {
                     throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
                 }
             }
@@ -347,7 +351,7 @@ public class CaptchaUtil {
                 return false;
             }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                    .getTenantAwareUsername(usernameWithDomain),
+                            .getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
@@ -370,8 +374,10 @@ public class CaptchaUtil {
      *
      * @param userStoreManager primary user store manager of the user.
      * @param userName        Username.
-     * @return Resolved user store manager of the user. Null will be returned if the user is not in any user store for the given tenant.
-     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's existence in the given user store.
+     * @return Resolved user store manager of the user.
+     * Null will be returned if the user is not in any user store for the given tenant.
+     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's
+     * existence in the given user store.
      */
     private static UserStoreManager getUserStoreManagerForUser(String userName,
            UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
@@ -417,6 +423,17 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS));
         }
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
+
+        String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
+        if (reCaptchaScoreThreshold == null) {
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(0.5);
+        } else {
+            try {
+                CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
+            } catch (ParseException e) {
+                throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
+            }
+        }
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
@@ -463,7 +480,7 @@ public class CaptchaUtil {
     }
 
     /**
-     * Retrieving resident Idp configuration property for provided property
+     * Retrieving resident Idp configuration property for provided property.
      *
      * @param servletRequest
      * @param identityGovernanceService
@@ -500,7 +517,8 @@ public class CaptchaUtil {
      * @param currentAuthenticatorName  Name of the current authenticator.
      * @return  True if auth mechanism is 'basic', false otherwise.
      */
-    public static boolean isValidAuthenticator(AuthenticationContext authenticationContext, String currentAuthenticatorName) {
+    public static boolean isValidAuthenticator(AuthenticationContext authenticationContext,
+                                               String currentAuthenticatorName) {
 
         ApplicationAuthenticator currentApplicationAuthenticator =
                 getCurrentAuthenticator(authenticationContext, currentAuthenticatorName);

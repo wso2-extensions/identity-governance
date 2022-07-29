@@ -47,6 +47,8 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_FAILED_REDIRECT_URLS = "recaptcha.failed.redirect.urls";
 
+    public static final String RE_CAPTCHA_SCORE_THRESHOLD = "recaptcha.threshold";
+
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
 
     public static final String BASIC_AUTH_MECHANISM = "basic";
