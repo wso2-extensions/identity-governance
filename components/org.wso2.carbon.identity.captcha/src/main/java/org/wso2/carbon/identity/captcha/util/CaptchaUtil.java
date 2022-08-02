@@ -260,10 +260,14 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                if (log.isDebugEnabled()) {
+                    log.debug("reCAPTCHA success:" + verificationResponse.get("success") + "action:" +
+                            verificationResponse.get("action") + "score:" + verificationResponse.get("score"));
+                }
                 if (verificationResponse == null || verificationResponse.get("success") == null ||
                         !verificationResponse.get("success").getAsBoolean() ||
-                        verificationResponse.get("score") == null ||
-                        verificationResponse.get("score").getAsFloat() < scoreThreshold) {
+                        (verificationResponse.get("score") != null &&
+                        verificationResponse.get("score").getAsFloat() < scoreThreshold)) {
                     throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
                 }
             }
