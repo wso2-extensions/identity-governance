@@ -44,7 +44,7 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final String SELF_REGISTRATION_INITIATE_URL = "/api/identity/recovery/v0.9/claims";
 
-    private static final String SELF_REGISTRATION_URL = "/api/identity/user/v0.9/me";
+    private static final String SELF_REGISTRATION_URL = "/api/identity/user/v1.0/me";
 
     private final String PROPERTY_ENABLE_RECAPTCHA = "SelfRegistration.ReCaptcha";
 
