@@ -111,14 +111,15 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-        boolean forgotPasswordRecaptchaEnabled = checkReCaptchaEnabledForForgotPassoword(servletRequest,
-                FORGOT_PASSWORD_RECAPTCHA_ENABLE);
+        boolean forgotPasswordRecaptchaEnabled = CaptchaUtil.isRecaptchaEnabledForConnector(identityGovernanceService,
+                servletRequest, FORGOT_PASSWORD_RECAPTCHA_ENABLE);
         String pathUrl = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        if (forgotPasswordRecaptchaEnabled &&
+        if ((CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() ||
+                forgotPasswordRecaptchaEnabled) &&
                 (CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTION_URL) ||
-                        CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL) ||
-                        CaptchaUtil.isPathAvailable(pathUrl, RECOVER_PASSWORD_URL))) {
+                CaptchaUtil.isPathAvailable(pathUrl, ACCOUNT_SECURITY_QUESTIONS_URL) ||
+                CaptchaUtil.isPathAvailable(pathUrl, RECOVER_PASSWORD_URL))) {
             preValidationResponse.setCaptchaValidationRequired(true);
         }
 
@@ -202,7 +203,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
             }
         }
 
-        if (!Boolean.parseBoolean(connectorEnabled)) {
+        if (!CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() &&
+                !Boolean.parseBoolean(connectorEnabled)) {
             return preValidationResponse;
         }
 
@@ -293,35 +295,5 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
         enabledSecurityMechanism.setProperties(properties);
         ((HttpServletRequest) servletRequest).getSession().setAttribute("enabled-security-mechanism",
                 enabledSecurityMechanism);
-    }
-
-    /**
-     * Check ReCaptcha configuration in management console for password recovery.
-     *
-     * @param servletRequest
-     * @param propertyName
-     * @return
-     */
-    private boolean checkReCaptchaEnabledForForgotPassoword(ServletRequest servletRequest, String propertyName) {
-
-        Property[] connectorConfigs;
-        try {
-            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
-                    propertyName);
-        } catch (Exception e) {
-            // Can happen due to invalid tenant/ invalid configuration
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to load connector configuration.", e);
-            }
-            return false;
-        }
-
-        String enable = null;
-        for (Property connectorConfig : connectorConfigs) {
-            if ((propertyName).equals(connectorConfig.getName())) {
-                enable = connectorConfig.getValue();
-            }
-        }
-        return Boolean.parseBoolean(enable);
     }
 }

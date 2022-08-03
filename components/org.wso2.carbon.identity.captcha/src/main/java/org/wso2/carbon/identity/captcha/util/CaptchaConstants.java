@@ -33,6 +33,9 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_ENABLED = "recaptcha.enabled";
 
+    public static final String FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS = "recaptcha" +
+            ".forcefullyEnabledForAllTenants";
+
     public static final String RE_CAPTCHA_API_URL = "recaptcha.api.url";
 
     public static final String RE_CAPTCHA_VERIFY_URL = "recaptcha.verify.url";
