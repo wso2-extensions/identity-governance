@@ -261,8 +261,8 @@ public class CaptchaUtil {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
                 if (log.isDebugEnabled()) {
-                    log.debug("reCAPTCHA success:" + verificationResponse.get("success") + "action:" +
-                            verificationResponse.get("action") + "score:" + verificationResponse.get("score"));
+                    log.info("reCAPTCHA success:" + verificationResponse.get("success") + ", action:" +
+                            verificationResponse.get("action") + ", score:" + verificationResponse.get("score"));
                 }
                 if (verificationResponse == null || verificationResponse.get("success") == null ||
                         !verificationResponse.get("success").getAsBoolean() ||
