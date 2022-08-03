@@ -332,7 +332,13 @@ public class CaptchaUtil {
 
         Map<String, String> claimValues;
         try {
-            userStoreManager = getUserStoreManagerForUser(usernameWithDomain, userRealm.getUserStoreManager());
+            userStoreManager = userRealm.getUserStoreManager();
+            // Checking that domain name is already prepended to the username.
+            // If so user claims can be retrieved.
+            // Otherwise, user store manager should be resolved.
+            if (!usernameWithDomain.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+                userStoreManager = getUserStoreManagerForUser(usernameWithDomain, userStoreManager);
+            }
             if (userStoreManager == null) {
                 if (log.isDebugEnabled()) {
                     log.debug("User store manager cannot be found for the user.");
@@ -370,11 +376,6 @@ public class CaptchaUtil {
     private static UserStoreManager getUserStoreManagerForUser(String userName,
            UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
 
-        // Checking that domain name is already prepended to the username.
-        // If so user claims can be retrieved.
-        if (userName.contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
-            return userStoreManager;
-        }
         UserStoreManager userStore = userStoreManager;
         while (userStore != null) {
             if (userStore.isExistingUser(userName)) {

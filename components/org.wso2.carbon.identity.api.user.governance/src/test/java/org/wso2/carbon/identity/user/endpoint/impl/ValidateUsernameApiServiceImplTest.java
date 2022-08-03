@@ -27,6 +27,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
@@ -46,6 +47,7 @@ import javax.ws.rs.core.Response;
 public class ValidateUsernameApiServiceImplTest {
 
     private MockedStatic<Utils> mockedUtils;
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
 
     @InjectMocks
     private ValidateUsernameApiServiceImpl validateUsernameApiService;
@@ -96,6 +98,8 @@ public class ValidateUsernameApiServiceImplTest {
         MockitoAnnotations.openMocks(this);
         mockedUtils = Mockito.mockStatic(Utils.class);
         mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
         Mockito.doReturn(true).when(userSelfRegistrationManager)
                 .isValidTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         Mockito.doReturn(false).when(userSelfRegistrationManager)
@@ -108,5 +112,6 @@ public class ValidateUsernameApiServiceImplTest {
     public void tearDown() {
 
         mockedUtils.close();
+        mockedIdentityUtil.close();
     }
 }

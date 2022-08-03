@@ -136,7 +136,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 // Not required to handle in this handler.
                 return;
             } else if (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM))) {
-                if (!claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                if (!claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)
+                        || StringUtils.isBlank(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
                     throw new IdentityEventClientException(ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getCode(),
                             ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getMessage());
                 }
