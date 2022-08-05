@@ -259,6 +259,9 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                if (verificationResponse == null) {
+                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                }
                 boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS) != null
                         && verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
                 if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
@@ -437,16 +440,9 @@ public class CaptchaUtil {
         }
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
-        String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
-        if (StringUtils.isBlank(reCaptchaScoreThreshold)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
-                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
-            }
-            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
-        }
         try {
-            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
+            Double reCaptchaScoreThreshold = getReCaptchaThreshold(properties);
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(reCaptchaScoreThreshold);
         } catch (NumberFormatException e) {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
         }
@@ -455,6 +451,24 @@ public class CaptchaUtil {
                 properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS);
         CaptchaDataHolder.getInstance().setForcefullyEnabledRecaptchaForAllTenants(
                 Boolean.parseBoolean(forcefullyEnableRecaptchaForAllTenants));
+    }
+
+    /**
+     * Method to get the threshold value used by reCAPTCHA v3.
+     * @param properties properties
+     * @return threshold
+     */
+    private static double getReCaptchaThreshold(Properties properties) throws NumberFormatException {
+
+        String threshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
+        if (StringUtils.isBlank(threshold)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
+                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+            }
+           return CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD;
+        }
+        return Double.parseDouble(threshold);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
