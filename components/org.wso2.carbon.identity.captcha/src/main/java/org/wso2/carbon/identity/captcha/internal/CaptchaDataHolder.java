@@ -49,7 +49,8 @@ public class CaptchaDataHolder {
 
     private String reCaptchaRequestWrapUrls;
 
-    private double reCaptchaScoreThreshold;
+    // threshold for score in reCAPTCHA v3
+    private double reCaptchaScoreThreshold = 0.5;
 
     private IdentityGovernanceService identityGovernanceService;
 

@@ -260,19 +260,22 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                String score = verificationResponse.get("score").getAsString();
-                if (log.isDebugEnabled()) {
-                    if (StringUtils.isNotBlank(score)) {
-                        log.debug("reCAPTCH v3 success:" + verificationResponse.get("success") + ", action:" +
-                                verificationResponse.get("action") + ", score:" + verificationResponse.get("score"));
-                    } else {
-                        log.debug("reCAPTCHA v2 success:" + verificationResponse.get("success") + ", action:" +
-                                verificationResponse.get("action"));
+                double score = verificationResponse.get("score").isJsonNull() ? -1
+                        : verificationResponse.get("score").getAsDouble();
+                boolean success = !verificationResponse.get("success").isJsonNull() &&
+                        verificationResponse.get("success").getAsBoolean();
+                if (score >= 0) {
+                    // reCAPTCHA v3 response contains score
+                    if (log.isDebugEnabled()) {
+                        log.debug("reCAPTCH v3 success:" + success + ", action:" +
+                                verificationResponse.get("action") + ", score:" + score);
+                    }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("reCAPTCHA v2 success:" + success + ", action:" + verificationResponse.get("action"));
                     }
                 }
-                if (verificationResponse.get("success") == null ||
-                        !verificationResponse.get("success").getAsBoolean() ||
-                        (score != null && Double.parseDouble(score) < scoreThreshold)) {
+                if (!success ||  score < scoreThreshold) {
                     throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
                 }
             }
@@ -434,11 +437,15 @@ public class CaptchaUtil {
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
         String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
+        if (reCaptchaScoreThreshold == null) {
+            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
+        }
         try {
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
-        } catch (NumberFormatException | NullPointerException e) {
-            log.info("Error parsing recaptcha.threshold from config", e);
-            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(0.5);
+        } catch (NumberFormatException e) {
+            if (log.isDebugEnabled()) {
+                log.info("Error parsing recaptcha.threshold from config. Hence using the default value : 0.5", e);
+            }
         }
 
         String forcefullyEnableRecaptchaForAllTenants =
