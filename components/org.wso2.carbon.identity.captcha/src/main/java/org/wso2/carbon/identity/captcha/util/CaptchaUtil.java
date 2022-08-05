@@ -239,7 +239,7 @@ public class CaptchaUtil {
 
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
-        double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
+        final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
 
         List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
                 .getInstance().getReCaptchaSecretKey()), new BasicNameValuePair("response", reCaptchaResponse));
@@ -260,10 +260,10 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                final double score = verificationResponse.get("score").isJsonNull() ? -1
-                        : verificationResponse.get("score").getAsDouble();
-                final boolean success = !verificationResponse.get("success").isJsonNull() &&
-                        verificationResponse.get("success").getAsBoolean();
+                final double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).isJsonNull() ? -1
+                        : verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
+                final boolean success = !verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).isJsonNull() &&
+                        verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
                 if (score >= 0) {
                     // reCAPTCHA v3 response contains score
                     if (log.isDebugEnabled()) {
