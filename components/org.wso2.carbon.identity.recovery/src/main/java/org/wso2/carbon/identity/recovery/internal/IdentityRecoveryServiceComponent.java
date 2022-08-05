@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
@@ -193,6 +194,20 @@ public class IdentityRecoveryServiceComponent {
         dataHolder.setRegistryService(registryService);
     }
 
+    @Reference(
+            name = "otpgenerator.service",
+            service = org.wso2.carbon.identity.governance.service.otp.OTPGenerator.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetOtpGenerator")
+    protected void setOtpGenerator(OTPGenerator otpGenerator) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the OTP Generator");
+        }
+        dataHolder.setOtpGenerator(otpGenerator);
+    }
+
     protected void unsetRealmService(RealmService realmService) {
 
         log.debug("UnSetting the Realm Service");
@@ -203,6 +218,14 @@ public class IdentityRecoveryServiceComponent {
 
         log.debug("UnSetting the Registry Service");
         dataHolder.setRegistryService(null);
+    }
+
+    protected void unsetOtpGenerator(OTPGenerator otpGenerator) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("UnSetting the OTP Generator");
+        }
+        dataHolder.setOtpGenerator(null);
     }
 
     protected void unsetIdentityEventService(IdentityEventService identityEventService) {

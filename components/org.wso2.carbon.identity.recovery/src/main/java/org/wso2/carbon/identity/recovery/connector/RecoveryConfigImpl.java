@@ -137,7 +137,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "Expiration time of the SMS OTP code for password recovery");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, "Regex for "
-                + "SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, 0-9.");
+                + "SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, 0-9. " +
+                "Minimum OTP length is " + IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "User will be logged in automatically after completing the Password Reset wizard");
         return descriptionMapping;

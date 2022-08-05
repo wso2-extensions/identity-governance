@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 
 import java.util.ArrayList;
@@ -150,7 +151,7 @@ public class RecoveryConfigImplTest {
                 "Expiration time of the SMS OTP code for password recovery");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
                 "Regex for SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, " +
-                        "0-9.");
+                        "0-9. Minimum OTP length is " + IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "User will be logged in automatically after completing the Password Reset wizard");
         Map<String, String> descriptionMapping = recoveryConfigImpl.getPropertyDescriptionMapping();

@@ -95,6 +95,8 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping
                 .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         "Lite user registration SMS OTP expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
+                "Lite user registration SMS OTP regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "Lite user registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Lite-Sign-Up purposes");
@@ -119,6 +121,10 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "Specify the expiry time in minutes for the SMS OTP.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
+                "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
+                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
+                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Lite-Sign-Up purposes");
@@ -136,6 +142,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         properties
                 .add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         return properties.toArray(new String[0]);
@@ -150,6 +157,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableLiteRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
+        String verificationSMSOTPRegex = "[a-zA-Z0-9]{6}";
         String liteRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
 
         String liteSignUpProperty = IdentityUtil.getProperty(
@@ -164,6 +172,8 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
+        String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
 
@@ -185,6 +195,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(verificationSMSOTPExpiryTimeProperty)) {
             verificationSMSOTPExpiryTime = verificationSMSOTPExpiryTimeProperty;
         }
+        if (StringUtils.isNotEmpty(verificationSMSOTPRegexProperty)) {
+            verificationSMSOTPRegex = verificationSMSOTPRegexProperty;
+        }
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             liteRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
@@ -203,6 +216,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
+        defaultProperties
+                .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
+                        verificationSMSOTPRegex);
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));
@@ -246,6 +262,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
 
