@@ -261,8 +261,13 @@ public class CaptchaUtil {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
                 if (log.isDebugEnabled()) {
-                    log.info("reCAPTCHA success:" + verificationResponse.get("success") + ", action:" +
-                            verificationResponse.get("action") + ", score:" + verificationResponse.get("score"));
+                    if (verificationResponse.get("score") != null) {
+                        log.debug("reCAPTCH v3 success:" + verificationResponse.get("success") + ", action:" +
+                                verificationResponse.get("action") + ", score:" + verificationResponse.get("score"));
+                    } else {
+                        log.debug("reCAPTCHA v2 success:" + verificationResponse.get("success") + ", action:" +
+                                verificationResponse.get("action"));
+                    }
                 }
                 if (verificationResponse == null || verificationResponse.get("success") == null ||
                         !verificationResponse.get("success").getAsBoolean() ||
@@ -526,8 +531,7 @@ public class CaptchaUtil {
      * @param currentAuthenticatorName  Name of the current authenticator.
      * @return  True if auth mechanism is 'basic', false otherwise.
      */
-    public static boolean isValidAuthenticator(AuthenticationContext authenticationContext,
-                                               String currentAuthenticatorName) {
+    public static boolean isValidAuthenticator(AuthenticationContext authenticationContext, String currentAuthenticatorName) {
 
         ApplicationAuthenticator currentApplicationAuthenticator =
                 getCurrentAuthenticator(authenticationContext, currentAuthenticatorName);
