@@ -260,14 +260,15 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                final double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).isJsonNull() ? -1
-                        : verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
-                final boolean success = !verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).isJsonNull() &&
-                        verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
-                if (score >= 0) {
+                double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null
+                        ? verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble()
+                        : Double.POSITIVE_INFINITY;
+                boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS) != null
+                        && verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
+                if (score <= 1) {
                     // reCAPTCHA v3 response contains score
                     if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCH v3 success:" + success + ", action:" +
+                        log.debug("reCAPTCHA v3 success:" + success + ", action:" +
                                 verificationResponse.get("action") + ", score:" + score);
                     }
                 } else {
@@ -438,16 +439,16 @@ public class CaptchaUtil {
 
         String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
         if (StringUtils.isBlank(reCaptchaScoreThreshold)) {
-            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
+            if (log.isDebugEnabled()) {
+                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
+                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+            }
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
         }
         try {
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
         } catch (NumberFormatException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
-                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD, e);
-            }
-            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
         }
 
         String forcefullyEnableRecaptchaForAllTenants =
