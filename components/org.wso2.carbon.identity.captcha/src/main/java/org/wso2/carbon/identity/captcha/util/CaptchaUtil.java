@@ -434,7 +434,7 @@ public class CaptchaUtil {
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
         String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
-        if (reCaptchaScoreThreshold == null) {
+        if (StringUtils.isBlank(reCaptchaScoreThreshold)) {
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(0.5);
         } else {
             try {
