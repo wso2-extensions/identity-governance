@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
+import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
@@ -60,30 +61,17 @@ public class UsernameRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
     public boolean canHandle(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
-        Property[] connectorConfigs;
-        String enable = null;
 
         if (StringUtils.isBlank(path) || !(CaptchaUtil.isPathAvailable(path, RECOVER_USERNAME_URL))) {
             return false;
         }
 
-        try {
-            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
-                    PROPERTY_USERNAME_RECAPTCHA_ENABLE);
-        } catch (Exception e) {
-            // Can happen due to invalid tenant/ invalid configuration
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to load connector configuration.", e);
-            }
-            return false;
+        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
+            return true;
         }
 
-        for (Property connectorConfig : connectorConfigs) {
-            if ((PROPERTY_USERNAME_RECAPTCHA_ENABLE).equals(connectorConfig.getName())) {
-                enable = connectorConfig.getValue();
-            }
-        }
-        return Boolean.parseBoolean(enable);
+        return CaptchaUtil.isRecaptchaEnabledForConnector(identityGovernanceService, servletRequest,
+                PROPERTY_USERNAME_RECAPTCHA_ENABLE);
     }
 
     @Override

@@ -65,6 +65,8 @@ public class CaptchaDataHolder {
 
     private Map<String, String> passwordRecoveryReCaptchaConnectorPropertyMap = new HashMap<>();
 
+    private boolean forcefullyEnabledRecaptchaForAllTenants;
+
     private CaptchaDataHolder() {
 
     }
@@ -195,5 +197,15 @@ public class CaptchaDataHolder {
 
     public void setAccountLockService(AccountLockService accountLockService) {
         this.accountLockService = accountLockService;
+    }
+
+    public boolean isForcefullyEnabledRecaptchaForAllTenants() {
+
+        return forcefullyEnabledRecaptchaForAllTenants;
+    }
+
+    public void setForcefullyEnabledRecaptchaForAllTenants(boolean forcefullyEnabledRecaptchaForAllTenants) {
+
+        this.forcefullyEnabledRecaptchaForAllTenants = forcefullyEnabledRecaptchaForAllTenants;
     }
 }
