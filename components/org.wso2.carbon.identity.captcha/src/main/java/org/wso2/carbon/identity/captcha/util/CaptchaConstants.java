@@ -57,7 +57,7 @@ public class CaptchaConstants {
     public static final String BASIC_AUTH_MECHANISM = "basic";
 
     // default value for threshold for score in reCAPTCHA v3
-    public static final double CAPTCHA_V3_THRESHOLD = 0.5;
+    public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
 
     /**
      * Captcha Connector configuration constants from the identity.xml.

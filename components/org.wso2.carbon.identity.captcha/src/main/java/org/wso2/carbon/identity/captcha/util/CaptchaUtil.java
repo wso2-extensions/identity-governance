@@ -437,7 +437,7 @@ public class CaptchaUtil {
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
         String reCaptchaScoreThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
-        if (reCaptchaScoreThreshold == null) {
+        if (StringUtils.isBlank(reCaptchaScoreThreshold)) {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
         }
         try {
@@ -445,9 +445,9 @@ public class CaptchaUtil {
         } catch (NumberFormatException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
-                        CaptchaConstants.CAPTCHA_V3_THRESHOLD, e);
+                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD, e);
             }
-            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_THRESHOLD);
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
         }
 
         String forcefullyEnableRecaptchaForAllTenants =
