@@ -88,6 +88,9 @@ public class CaptchaUtil {
 
     private static final Log log = LogFactory.getLog(CaptchaUtil.class);
 
+    // default value for threshold for score in reCAPTCHA v3
+    private static final double CAPTCHA_V3_THRESHOLD = 0.5;
+
     public static void buildReCaptchaFilterProperties() {
 
         Path path = Paths.get(getCarbonHomeDirectory().toString(), "repository",
@@ -444,8 +447,10 @@ public class CaptchaUtil {
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
         } catch (NumberFormatException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : 0.5", e);
+                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
+                        CAPTCHA_V3_THRESHOLD, e);
             }
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CAPTCHA_V3_THRESHOLD);
         }
 
         String forcefullyEnableRecaptchaForAllTenants =
