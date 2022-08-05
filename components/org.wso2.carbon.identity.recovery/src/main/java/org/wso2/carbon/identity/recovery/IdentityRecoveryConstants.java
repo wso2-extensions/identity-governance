@@ -524,6 +524,7 @@ public class IdentityRecoveryConstants {
         public static final String SELF_REGISTRATION_CALLBACK_REGEX = "SelfRegistration.CallbackRegex";
         public static final String SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "SelfRegistration.VerificationCode.SMSOTP.ExpiryTime";
+        public static final String SELF_REGISTRATION_SMS_OTP_REGEX = "SelfRegistration.SMSOTP.Regex";
         public static final String SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION = "SelfRegistration" +
                 ".NotifyAccountConfirmation";
         public static final String RESEND_CONFIRMATION_RECAPTCHA_ENABLE =
@@ -536,6 +537,8 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_RE_CAPTCHA = "LiteRegistration.ReCaptcha";
         public static final String LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME = "LiteRegistration" +
                 ".VerificationCode.ExpiryTime";
+        public static final String LITE_REGISTRATION_SMS_OTP_REGEX = "LiteRegistration" +
+                ".SMSOTP.Regex";
         public static final String LITE_REGISTRATION_CALLBACK_REGEX = "LiteRegistration.CallbackRegex";
         public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";

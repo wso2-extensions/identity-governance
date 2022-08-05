@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
@@ -45,6 +46,7 @@ public class IdentityRecoveryServiceDataHolder {
     private ConsentUtilityService consentUtilityService;
     private ClaimMetadataManagementService claimMetadataManagementService;
     private UserFunctionalityManager userFunctionalityManagerService;
+    private OTPGenerator otpGenerator;
     private MultiAttributeLoginService multiAttributeLoginService;
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -243,5 +245,28 @@ public class IdentityRecoveryServiceDataHolder {
     public MultiAttributeLoginService getMultiAttributeLoginService() {
 
         return this.multiAttributeLoginService;
+    }
+
+    /**
+     * Get the OTPGenerator object held at the data holder.
+     *
+     * @return OTPGenerator object.
+     */
+    public OTPGenerator getOtpGenerator() {
+
+        if (otpGenerator == null) {
+            throw new RuntimeException("OTP Generator is not available. Component did not start correctly.");
+        }
+        return otpGenerator;
+    }
+
+    /**
+     * Set the OTPGenerator.
+     *
+     * @param otpGenerator OTPGenerator object.
+     */
+    public void setOtpGenerator(OTPGenerator otpGenerator) {
+
+        this.otpGenerator = otpGenerator;
     }
 }

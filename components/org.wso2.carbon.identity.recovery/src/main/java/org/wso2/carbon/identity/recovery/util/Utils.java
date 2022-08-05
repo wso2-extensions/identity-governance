@@ -37,8 +37,12 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
+import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -1091,70 +1095,61 @@ public class Utils {
      * @param tenantDomain     Tenant domain.
      * @param recoveryScenario Recovery scenario.
      * @return Secret key.
-     * @throws IdentityRecoveryServerException while getting password recovery sms otp regex.
+     * @throws IdentityRecoveryServerException while getting sms otp regex.
      */
     public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
             throws IdentityRecoveryServerException {
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            String charSet = IdentityRecoveryConstants.SMS_OTP_GENERATE_CHAR_SET;
             int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
+            String otpRegex = null;
+            boolean useNumeric = true;
+            boolean useUppercaseLetters = true;
+            boolean useLowercaseLetters = true;
             if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
-                String otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                         PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
-                if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
-                    throw new IdentityRecoveryServerException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
-                }
-                String charsRegex = otpRegex.replaceAll("[{].*", "");
-                otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
-                // Generate a charset based on regex.
-                charSet = generateCharSet(charsRegex);
+            } else if (StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario)) {
+                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        SELF_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
+            } else if (StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
+                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        LITE_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
             }
-            return generateSMSOTP(charSet, otpLength);
+            // If the OTP regex is not specified we need to ensure that the default behavior will be executed.
+            if (StringUtils.isNotBlank(otpRegex)) {
+                if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario) ||
+                        StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario) ||
+                        StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
+                    if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
+                        throw new IdentityRecoveryServerException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+                    }
+                    String charsRegex = otpRegex.replaceAll("[{].*", "");
+                    otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
+                    if (!charsRegex.contains("A-Z")) {
+                        useUppercaseLetters = false;
+                    }
+                    if (!charsRegex.contains("a-z")) {
+                        useLowercaseLetters = false;
+                    }
+                    if (!charsRegex.contains("0-9")) {
+                        useNumeric = false;
+                    }
+                }
+            }
+            try {
+                OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
+                return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength,
+                        recoveryScenario);
+            } catch (OTPGeneratorException otpGeneratorException) {
+                throw new IdentityRecoveryServerException(otpGeneratorException.getErrorCode(),
+                        otpGeneratorException.getMessage());
+            }
         } else {
             return UUIDGenerator.generateUUID();
         }
-    }
-
-    /**
-     * Generate the compatible character set for the given regex.
-     *
-     * @param regex The regular expression.
-     * @return Character set for the given regex.
-     */
-    private static String generateCharSet(String regex) {
-
-        StringBuilder charSet = new StringBuilder();
-        if (regex.contains("A-Z")) {
-            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET);
-        }
-        if (regex.contains("a-z")) {
-            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_ALPHABET_CHAR_SET.toLowerCase());
-        }
-        if (regex.contains("0-9")) {
-            charSet.append(IdentityRecoveryConstants.SMS_OTP_GENERATE_NUMERIC_CHAR_SET);
-        }
-        return charSet.toString();
-    }
-
-    /**
-     * Generate an OTP for password recovery via mobile Channel.
-     *
-     * @param charSet   Matching character set for the defined regex.
-     * @param otpLength Length of OTP.
-     * @return OTP.
-     */
-    private static String generateSMSOTP(String charSet, int otpLength) {
-
-        char[] chars = charSet.toCharArray();
-        SecureRandom rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < otpLength; i++) {
-            sb.append(chars[rnd.nextInt(chars.length)]);
-        }
-        return sb.toString();
     }
 
     /**
