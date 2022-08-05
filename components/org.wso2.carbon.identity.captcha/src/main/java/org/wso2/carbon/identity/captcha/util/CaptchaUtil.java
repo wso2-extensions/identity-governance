@@ -444,7 +444,7 @@ public class CaptchaUtil {
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(Double.parseDouble(reCaptchaScoreThreshold));
         } catch (NumberFormatException e) {
             if (log.isDebugEnabled()) {
-                log.info("Error parsing recaptcha.threshold from config. Hence using the default value : 0.5", e);
+                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : 0.5", e);
             }
         }
 
