@@ -260,9 +260,9 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                double score = verificationResponse.get("score").isJsonNull() ? -1
+                final double score = verificationResponse.get("score").isJsonNull() ? -1
                         : verificationResponse.get("score").getAsDouble();
-                boolean success = !verificationResponse.get("success").isJsonNull() &&
+                final boolean success = !verificationResponse.get("success").isJsonNull() &&
                         verificationResponse.get("success").getAsBoolean();
                 if (score >= 0) {
                     // reCAPTCHA v3 response contains score
