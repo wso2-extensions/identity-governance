@@ -124,10 +124,12 @@ public class CaptchaDataHolder {
     }
 
     public double getReCaptchaScoreThreshold() {
+
         return reCaptchaScoreThreshold;
     }
 
     public void setReCaptchaScoreThreshold(double reCaptchaScoreThreshold) {
+
         this.reCaptchaScoreThreshold = reCaptchaScoreThreshold;
     }
 
