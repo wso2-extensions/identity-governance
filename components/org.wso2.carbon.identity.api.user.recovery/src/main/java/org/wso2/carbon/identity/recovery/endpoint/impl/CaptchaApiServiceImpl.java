@@ -55,9 +55,12 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
         boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
+        boolean forcefullyEnabledRecaptchaForAllTenants =
+                Boolean.valueOf(properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS));
         ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = new ReCaptchaPropertiesDTO();
 
-        if (reCaptchaEnabled && RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(tenantDomain, recoveryType)) {
+        if (reCaptchaEnabled && (forcefullyEnabledRecaptchaForAllTenants ||
+                RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(tenantDomain, recoveryType))) {
             reCaptchaPropertiesDTO.setReCaptchaEnabled(true);
             reCaptchaPropertiesDTO.setReCaptchaKey(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY));
             reCaptchaPropertiesDTO.setReCaptchaAPI(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL));

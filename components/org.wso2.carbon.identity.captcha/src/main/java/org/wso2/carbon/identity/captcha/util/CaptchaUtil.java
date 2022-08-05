@@ -438,6 +438,11 @@ public class CaptchaUtil {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
             }
         }
+        
+        String forcefullyEnableRecaptchaForAllTenants =
+                properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS);
+        CaptchaDataHolder.getInstance().setForcefullyEnabledRecaptchaForAllTenants(
+                Boolean.parseBoolean(forcefullyEnableRecaptchaForAllTenants));
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
@@ -647,5 +652,37 @@ public class CaptchaUtil {
         }
 
         return !Boolean.FALSE.toString().equalsIgnoreCase(configValue);
+    }
+
+    /**
+     * Check resident IDP reCaptcha configuration for the given property.
+     *
+     * @param identityGovernanceService Identity governance service.
+     * @param servletRequest            Servlet request.
+     * @param propertyName              Property name.
+     * @return true if reCaptcha is enabled, false otherwise.
+     */
+    public static boolean isRecaptchaEnabledForConnector(IdentityGovernanceService identityGovernanceService,
+                                                         ServletRequest servletRequest, String propertyName) {
+
+        Property[] connectorConfigs;
+        try {
+            connectorConfigs = CaptchaUtil.getConnectorConfigs(servletRequest, identityGovernanceService,
+                    propertyName);
+        } catch (Exception e) {
+            // Can happen due to invalid tenant/ invalid configuration
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load connector configuration.", e);
+            }
+            return false;
+        }
+
+        String enable = null;
+        for (Property connectorConfig : connectorConfigs) {
+            if ((propertyName).equals(connectorConfig.getName())) {
+                enable = connectorConfig.getValue();
+            }
+        }
+        return Boolean.parseBoolean(enable);
     }
 }
