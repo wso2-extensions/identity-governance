@@ -18,7 +18,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.5.91-SNAPSHOT</version>
+    <version>1.6.0-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -622,7 +622,7 @@
         <identity.data.publisher.authentication.version>5.3.0</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.7.0-beta9</carbon.kernel.version>
+        <carbon.kernel.version>4.7.0</carbon.kernel.version>
         <carbon.kernel.feature.version>4.6.1</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
