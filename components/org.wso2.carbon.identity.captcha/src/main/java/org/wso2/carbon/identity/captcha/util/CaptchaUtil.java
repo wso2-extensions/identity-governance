@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -260,24 +259,25 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null
-                        ? verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble()
-                        : Double.POSITIVE_INFINITY;
                 boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS) != null
                         && verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
-                if (score <= 1) {
+                if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
+                    double score =  verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
                     // reCAPTCHA v3 response contains score
                     if (log.isDebugEnabled()) {
                         log.debug("reCAPTCHA v3 success:" + success + ", action:" +
                                 verificationResponse.get("action") + ", score:" + score);
                     }
+                    if (!success ||  score < scoreThreshold) {
+                        throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                    }
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("reCAPTCHA v2 success:" + success + ", action:" + verificationResponse.get("action"));
                     }
-                }
-                if (!success ||  score < scoreThreshold) {
-                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                    if (!success) {
+                        throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                    }
                 }
             }
         } catch (IOException e) {
