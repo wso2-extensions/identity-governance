@@ -370,7 +370,8 @@ public class CaptchaUtil {
                 // Invalid user. User cannot be found in any user store.
                 return false;
             }
-            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils.getTenantAwareUsername(usernameWithDomain),
+            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils.
+                            getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
