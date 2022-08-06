@@ -260,26 +260,30 @@ public class CaptchaUtil {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
                 if (verificationResponse == null) {
-                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                    throw new CaptchaClientException("Error receiving reCaptcha response from the server");
                 }
                 boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS) != null
                         && verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
+                // Whether this request was a valid reCAPTCHA token.
+                if (!success) {
+                    throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
+                            verificationResponse.get("error-codes"));
+                }
                 if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
-                    double score =  verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
+                    double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
                     // reCAPTCHA v3 response contains score
                     if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCHA v3 success:" + success + ", action:" +
-                                verificationResponse.get("action") + ", score:" + score);
+                        log.debug("reCAPTCHA v3 response { timestamp:" +
+                                verificationResponse.get("challenge_ts") + ", action: " +
+                                verificationResponse.get("action") + ", score: " + score + " }");
                     }
-                    if (!success ||  score < scoreThreshold) {
-                        throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                    if (score < scoreThreshold) {
+                        throw new CaptchaClientException("reCaptcha score is less than the threshold.");
                     }
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCHA v2 success:" + success + ", action:" + verificationResponse.get("action"));
-                    }
-                    if (!success) {
-                        throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                        log.debug("reCAPTCHA v2 response { timestamp:" +
+                                verificationResponse.get("challenge_ts") + " }");
                     }
                 }
             }
@@ -455,8 +459,10 @@ public class CaptchaUtil {
 
     /**
      * Method to get the threshold value used by reCAPTCHA v3.
-     * @param properties properties
-     * @return threshold
+     *
+     * @param properties Properties.
+     * @return Threshold value set by the user or the default threshold.
+     * @throws java.lang.NumberFormatException Error while parsing the threshold value into double.
      */
     private static double getReCaptchaThreshold(Properties properties) throws NumberFormatException {
 

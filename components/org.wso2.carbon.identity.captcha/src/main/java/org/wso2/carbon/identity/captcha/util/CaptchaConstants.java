@@ -60,7 +60,7 @@ public class CaptchaConstants {
 
     public static final String CAPTCHA_SUCCESS = "success";
 
-    // default value for threshold for score in reCAPTCHA v3
+    // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
 
     /**
