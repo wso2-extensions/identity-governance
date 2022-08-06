@@ -3,5 +3,6 @@
   "recaptcha.forcefully_enabled_for_all_tenants": false,
   "recaptcha.api_url": "https://www.google.com/recaptcha/api.js",
   "recaptcha.verify_url": "https://www.google.com/recaptcha/api/siteverify",
-  "recaptcha.request_wrap_urls": ""
+  "recaptcha.request_wrap_urls": "",
+  "recaptcha.threshold": "0.5"
 }

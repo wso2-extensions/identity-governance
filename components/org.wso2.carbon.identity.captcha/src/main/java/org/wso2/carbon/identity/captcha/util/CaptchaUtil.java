@@ -101,7 +101,7 @@ public class CaptchaUtil {
                         .CAPTCHA_CONFIG_FILE_NAME + "' configuration file", e);
             }
 
-            boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
+            boolean reCaptchaEnabled = Boolean.parseBoolean(properties.getProperty(CaptchaConstants
                     .RE_CAPTCHA_ENABLED));
 
             String reCaptchaFailedRedirectUrls = properties.getProperty(CaptchaConstants.
@@ -238,6 +238,7 @@ public class CaptchaUtil {
 
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
+        final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
 
         List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
                 .getInstance().getReCaptchaSecretKey()), new BasicNameValuePair("response", reCaptchaResponse));
@@ -258,9 +259,32 @@ public class CaptchaUtil {
         try {
             try (InputStream in = entity.getContent()) {
                 JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                if (verificationResponse == null || verificationResponse.get("success") == null ||
-                        !verificationResponse.get("success").getAsBoolean()) {
-                    throw new CaptchaClientException("reCaptcha verification failed. Please try again.");
+                if (verificationResponse == null) {
+                    throw new CaptchaClientException("Error receiving reCaptcha response from the server");
+                }
+                boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS) != null
+                        && verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
+                // Whether this request was a valid reCAPTCHA token.
+                if (!success) {
+                    throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
+                            verificationResponse.get("error-codes"));
+                }
+                if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
+                    double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
+                    // reCAPTCHA v3 response contains score
+                    if (log.isDebugEnabled()) {
+                        log.debug("reCAPTCHA v3 response { timestamp:" +
+                                verificationResponse.get("challenge_ts") + ", action: " +
+                                verificationResponse.get("action") + ", score: " + score + " }");
+                    }
+                    if (score < scoreThreshold) {
+                        throw new CaptchaClientException("reCaptcha score is less than the threshold.");
+                    }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("reCAPTCHA v2 response { timestamp:" +
+                                verificationResponse.get("challenge_ts") + " }");
+                    }
                 }
             }
         } catch (IOException e) {
@@ -418,10 +442,37 @@ public class CaptchaUtil {
         }
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
+        try {
+            Double reCaptchaScoreThreshold = getReCaptchaThreshold(properties);
+            CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(reCaptchaScoreThreshold);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
+        }
+
         String forcefullyEnableRecaptchaForAllTenants =
                 properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS);
         CaptchaDataHolder.getInstance().setForcefullyEnabledRecaptchaForAllTenants(
                 Boolean.parseBoolean(forcefullyEnableRecaptchaForAllTenants));
+    }
+
+    /**
+     * Method to get the threshold value used by reCAPTCHA v3.
+     *
+     * @param properties Properties.
+     * @return Threshold value set by the user or the default threshold.
+     * @throws java.lang.NumberFormatException Error while parsing the threshold value into double.
+     */
+    private static double getReCaptchaThreshold(Properties properties) throws NumberFormatException {
+
+        String threshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD);
+        if (StringUtils.isBlank(threshold)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
+                        CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+            }
+           return CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD;
+        }
+        return Double.parseDouble(threshold);
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {

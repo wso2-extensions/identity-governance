@@ -50,9 +50,18 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_FAILED_REDIRECT_URLS = "recaptcha.failed.redirect.urls";
 
+    public static final String RE_CAPTCHA_SCORE_THRESHOLD = "recaptcha.threshold";
+
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
 
     public static final String BASIC_AUTH_MECHANISM = "basic";
+
+    public static final String CAPTCHA_SCORE = "score";
+
+    public static final String CAPTCHA_SUCCESS = "success";
+
+    // Default value for threshold for score in reCAPTCHA v3.
+    public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
 
     /**
      * Captcha Connector configuration constants from the identity.xml.

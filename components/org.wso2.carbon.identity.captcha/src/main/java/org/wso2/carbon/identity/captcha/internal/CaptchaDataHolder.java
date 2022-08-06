@@ -49,6 +49,9 @@ public class CaptchaDataHolder {
 
     private String reCaptchaRequestWrapUrls;
 
+    // Threshold for score in reCAPTCHA v3.
+    private double reCaptchaScoreThreshold;
+
     private IdentityGovernanceService identityGovernanceService;
 
     private RealmService realmService;
@@ -119,6 +122,16 @@ public class CaptchaDataHolder {
 
     public void setReCaptchaRequestWrapUrls(String reCaptchaRequestWrapUrls) {
         this.reCaptchaRequestWrapUrls = reCaptchaRequestWrapUrls;
+    }
+
+    public double getReCaptchaScoreThreshold() {
+
+        return reCaptchaScoreThreshold;
+    }
+
+    public void setReCaptchaScoreThreshold(double reCaptchaScoreThreshold) {
+
+        this.reCaptchaScoreThreshold = reCaptchaScoreThreshold;
     }
 
     public String getReCaptchaErrorRedirectUrls() {
