@@ -371,7 +371,7 @@ public class CaptchaUtil {
                 return false;
             }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                            .getTenantAwareUsername(usernameWithDomain),
+                    .getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
