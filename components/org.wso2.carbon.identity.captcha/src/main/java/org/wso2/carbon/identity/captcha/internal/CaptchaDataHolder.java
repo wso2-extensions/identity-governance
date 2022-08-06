@@ -49,7 +49,7 @@ public class CaptchaDataHolder {
 
     private String reCaptchaRequestWrapUrls;
 
-    // threshold for score in reCAPTCHA v3
+    // Threshold for score in reCAPTCHA v3.
     private double reCaptchaScoreThreshold;
 
     private IdentityGovernanceService identityGovernanceService;
@@ -188,7 +188,7 @@ public class CaptchaDataHolder {
     }
 
     public RealmService getRealmService() {
-        if (realmService == null) {
+        if(realmService == null) {
             throw new RuntimeException("Realm Service is not available. Component did not start correctly.");
         }
         return realmService;
