@@ -370,8 +370,7 @@ public class CaptchaUtil {
                 // Invalid user. User cannot be found in any user store.
                 return false;
             }
-            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                            .getTenantAwareUsername(usernameWithDomain),
+            claimValues = userStoreManager.getUserClaimValues(MultitenantUtils.getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
@@ -394,10 +393,8 @@ public class CaptchaUtil {
      *
      * @param userStoreManager primary user store manager of the user.
      * @param userName        Username.
-     * @return Resolved user store manager of the user.
-     * Null will be returned if the user is not in any user store for the given tenant.
-     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's
-     * existence in the given user store.
+     * @return Resolved user store manager of the user. Null will be returned if the user is not in any user store for the given tenant.
+     * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's existence in the given user store.
      */
     private static UserStoreManager getUserStoreManagerForUser(String userName,
            UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
@@ -521,7 +518,7 @@ public class CaptchaUtil {
     }
 
     /**
-     * Retrieving resident Idp configuration property for provided property.
+     * Retrieving resident Idp configuration property for provided property
      *
      * @param servletRequest
      * @param identityGovernanceService
