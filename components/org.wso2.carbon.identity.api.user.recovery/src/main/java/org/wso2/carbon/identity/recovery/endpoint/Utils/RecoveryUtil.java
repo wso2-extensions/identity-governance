@@ -394,6 +394,8 @@ public class RecoveryUtil {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE;
         } else if (Constants.PASSWORD_RECOVERY.equals(recoveryType)) {
             recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE;
+        } else if (Constants.SELF_REGISTRATION.equals(recoveryType)) {
+            recoveryReCaptchaType = IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA;
         }
 
         try {
