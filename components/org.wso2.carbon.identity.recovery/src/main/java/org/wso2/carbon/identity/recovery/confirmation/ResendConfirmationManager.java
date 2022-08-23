@@ -587,13 +587,17 @@ public class ResendConfirmationManager {
                     (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                             user.getTenantDomain()));
         } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)) {
-            return Boolean.parseBoolean(Utils.getSignUpConfigs
-                    (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
-                            user.getTenantDomain()));
+            return isNotificationInternallyManage(user);
         } else if (RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             return Boolean.parseBoolean(Utils.getSignUpConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                             user.getTenantDomain()));
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            // We manage the notifications internally for EMAIL_VERIFICATION_ON_UPDATE.
+            return true;
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            // We manage the notifications internally for MOBILE_VERIFICATION_ON_UPDATE.
+            return true;
         } else {
             // To maintain the backward compatibility for the non-configurable flows.
             return isNotificationInternallyManage(user);
