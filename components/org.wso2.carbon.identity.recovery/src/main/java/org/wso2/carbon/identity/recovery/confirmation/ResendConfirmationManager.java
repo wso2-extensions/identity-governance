@@ -586,8 +586,6 @@ public class ResendConfirmationManager {
             return Boolean.parseBoolean(Utils.getSignUpConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                             user.getTenantDomain()));
-        } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)) {
-            return isNotificationInternallyManage(user);
         } else if (RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             return Boolean.parseBoolean(Utils.getSignUpConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
