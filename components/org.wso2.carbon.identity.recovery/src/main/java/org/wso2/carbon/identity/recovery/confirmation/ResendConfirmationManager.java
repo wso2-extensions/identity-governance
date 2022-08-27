@@ -419,7 +419,7 @@ public class ResendConfirmationManager {
         // Resolve the tenant domain and the userstore domain name of the user.
         resolveUserAttributes(user);
 
-        boolean notificationInternallyManage = isNotificationInternallyManage(user);
+        boolean notificationInternallyManage = isNotificationInternallyManage(user, recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -573,6 +573,33 @@ public class ResendConfirmationManager {
         return Boolean.parseBoolean(Utils.getSignUpConfigs
                 (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                         user.getTenantDomain()));
+    }
+
+    private boolean isNotificationInternallyManage(User user, String recoveryScenario)
+            throws IdentityRecoveryServerException {
+
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {
+            return Boolean.parseBoolean(Utils.getSignUpConfigs
+                    (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                            user.getTenantDomain()));
+        } else if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario)) {
+            return Boolean.parseBoolean(Utils.getSignUpConfigs
+                    (IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                            user.getTenantDomain()));
+        } else if (RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
+            return Boolean.parseBoolean(Utils.getSignUpConfigs
+                    (IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                            user.getTenantDomain()));
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            // We manage the notifications internally for EMAIL_VERIFICATION_ON_UPDATE.
+            return true;
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            // We manage the notifications internally for MOBILE_VERIFICATION_ON_UPDATE.
+            return true;
+        } else {
+            // To maintain the backward compatibility for the non-configurable flows.
+            return isNotificationInternallyManage(user);
+        }
     }
 
     /**
