@@ -57,7 +57,9 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
+    private static final String ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME = "EnableHybridDataStore";
     private UserIdentityDataStore identityDataStore;
+    private boolean isHybridDataStoreEnable = true;
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
@@ -67,6 +69,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
+        Object hybridDataStoreEnableObject =
+                IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this.getClass().getName())
+                        .getProperties().get(ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME);
+        if (hybridDataStoreEnableObject != null) {
+            isHybridDataStoreEnable = Boolean.parseBoolean(hybridDataStoreEnableObject.toString());
+        }
     }
 
     @Override
@@ -238,6 +246,17 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (claimMap == null) {
             claimMap = new HashMap<>();
         }
+
+        if (!isHybridDataStoreEnable) {
+            /*
+            If hybrid data store is disabled, we need to use the identity claim value only from the identity data store.
+            Hence, we need to remove the identity claim values from the claimMap to avoid use of values from user store
+            for identity claims.
+             */
+            claimMap.entrySet().removeIf(
+                    entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
+        }
+
         // check if there are identity claims
         boolean containsIdentityClaims = false;
         for (String claim : claims) {
