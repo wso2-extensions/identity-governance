@@ -59,7 +59,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
     private static final String ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME = "EnableHybridDataStore";
     private UserIdentityDataStore identityDataStore;
-    private boolean isHybridDataStoreEnable = true;
+    private boolean isHybridDataStoreEnable = false;
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
 
