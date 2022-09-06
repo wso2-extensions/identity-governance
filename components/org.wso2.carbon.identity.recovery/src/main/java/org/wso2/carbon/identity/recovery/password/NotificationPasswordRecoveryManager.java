@@ -259,8 +259,8 @@ public class NotificationPasswordRecoveryManager {
             recoveryFlowId = userRecoveryData.getRecoveryFlowId();
         }
         userRecoveryDataStore.invalidate(user);
-        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
-                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
+        String secretKey = Utils.generateSecretKey(notificationChannel, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(),
+                user.getTenantDomain(), "Recovery.Notification.Password");
         secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
         try {
             hashedSecretKey = Utils.hashCode(secretKey);
@@ -272,7 +272,6 @@ public class NotificationPasswordRecoveryManager {
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
         UserRecoveryData hashedRecoveryDataDO = new UserRecoveryData(user, recoveryFlowId, hashedSecretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
-
 
         // Store the notified channel in the recovery object for future reference.
         recoveryDataDO.setRemainingSetIds(notificationChannel);

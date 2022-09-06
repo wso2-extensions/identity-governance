@@ -166,6 +166,7 @@ public class IdentityRecoveryConstants {
     public static final String USER_ACCOUNT_RECOVERY = "UAR";
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
+    public static final int OTP_CODE_DEFAULT_LENGTH = 6;
     public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
     public static final int RECOVERY_FLOW_ID_DEFAULT_EXPIRY_TIME = 15;
     // Recovery code given at the username and password recovery initiation.
@@ -543,6 +544,14 @@ public class IdentityRecoveryConstants {
         public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
+        public static final String PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL = "Recovery.Notification.Password.OTP.SendOTPInEmail";
+        public static final String PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
+                "OTP.UseUppercaseCharactersInOTP";
+        public static final String PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
+                "OTP.UseLowercaseCharactersInOTP";
+        public static final String PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP = "Recovery.Notification.Password.OTP." +
+                "UseNumbersInOTP";
+        public static final String PASSWORD_RECOVERY_OTP_LENGTH = "Recovery.Notification.Password.OTP.OTPLength";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
         public static final String NOTIFY_RECOVERY_EMAIL_EXISTENCE = "Recovery.NotifyRecoveryEmailExistence";
@@ -564,6 +573,14 @@ public class IdentityRecoveryConstants {
         public static final String RECOVERY_CALLBACK_REGEX = "Recovery.CallbackRegex";
         public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
+        public static final String SELF_REGISTRATION_SEND_OTP_IN_EMAIL = "SelfRegistration.OTP.SendOTPInEmail";
+        public static final String SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +
+                "UseUppercaseCharactersInOTP";
+        public static final String SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +
+                "UseLowercaseCharactersInOTP";
+        public static final String SELF_REGISTRATION_USE_NUMBERS_IN_OTP = "SelfRegistration.OTP." +
+                "UseNumbersInOTP";
+        public static final String SELF_REGISTRATION_OTP_LENGTH = "SelfRegistration.OTP.OTPLength";
         public static final String SEND_CONFIRMATION_NOTIFICATION = "SelfRegistration.SendConfirmationOnCreation";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
                 ".InternallyManage";
@@ -581,6 +598,14 @@ public class IdentityRecoveryConstants {
 
         public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
         public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless
+        public static final String LITE_REGISTRATION_SEND_OTP_IN_EMAIL = "LiteRegistration.OTP.SendOTPInEmail";
+        public static final String LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "LiteRegistration.OTP." +
+                "UseUppercaseCharactersInOTP";
+        public static final String LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "LiteRegistration.OTP." +
+                "UseLowercaseCharactersInOTP";
+        public static final String LITE_REGISTRATION_USE_NUMBERS_IN_OTP = "LiteRegistration.OTP." +
+                "UseNumbersInOTP";
+        public static final String LITE_REGISTRATION_OTP_LENGTH = "LiteRegistration.OTP.OTPLength";
         public static final String LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "LiteRegistration.Notification" +
                 ".InternallyManage";
         public static final String LITE_REGISTRATION_RE_CAPTCHA = "LiteRegistration.ReCaptcha";
@@ -594,9 +619,25 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE =
                 "LiteRegistration.ResendVerificationOnUserExistence";
         public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
+        public static final String EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL = "EmailVerification.OTP.SendOTPInEmail";
+        public static final String EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "EmailVerification.OTP." +
+                "UseUppercaseCharactersInOTP";
+        public static final String EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "EmailVerification.OTP." +
+                "UseLowercaseCharactersInOTP";
+        public static final String EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP = "EmailVerification.OTP." +
+                "UseNumbersInOTP";
+        public static final String EMAIL_VERIFICATION_OTP_LENGTH = "EmailVerification.OTP.OTPLength";
         public static final String EMAIL_VERIFICATION_EXPIRY_TIME = "EmailVerification.ExpiryTime";
         public static final String ENABLE_EMAIL_VERIFICATION_ON_UPDATE = "UserClaimUpdate.Email." +
                 "EnableVerification";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_SEND_OTP_IN_EMAIL = "UserClaimUpdate.OTP.SendOTPInEmail";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_UPPERCASE_CHARACTERS_IN_OTP = "UserClaimUpdate." +
+                "OTP.UseUppercaseCharactersInOTP";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_LOWERCASE_CHARACTERS_IN_OTP = "UserClaimUpdate." +
+                "OTP.UseLowercaseCharactersInOTP";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_USE_NUMBERS_IN_OTP = "UserClaimUpdate." +
+                "OTP.UseNumbersInOTP";
+        public static final String EMAIL_VERIFICATION_ON_UPDATE_OTP_LENGTH = "UserClaimUpdate.OTP.OTPLength";
         public static final String EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME = "UserClaimUpdate.Email.VerificationCode" +
                 ".ExpiryTime";
         public static final String ENABLE_NOTIFICATION_ON_EMAIL_UPDATE = "UserClaimUpdate.Email.EnableNotification";

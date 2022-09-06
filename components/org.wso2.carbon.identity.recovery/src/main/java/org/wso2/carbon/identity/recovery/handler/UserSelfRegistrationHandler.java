@@ -149,8 +149,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
-                    String secretKey = Utils.generateSecretKey(preferredChannel, tenantDomain,
-                            RecoveryScenarios.SELF_SIGN_UP.name());
+                    String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.SELF_SIGN_UP.name(),
+                            tenantDomain, "SelfRegistration");
 
                     // Resolve event name.
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);

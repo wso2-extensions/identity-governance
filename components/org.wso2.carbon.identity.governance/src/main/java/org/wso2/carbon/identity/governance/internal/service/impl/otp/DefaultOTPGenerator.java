@@ -26,8 +26,11 @@ import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import java.security.SecureRandom;
 
 /**
- * Default class to generate OTP.
+ * @deprecated
+ * {@link org.wso2.carbon.identity.governance.internal.service.impl.otp.OTPGeneratorImpl
+ * This class is deprecated and OTPGeneratorImpl has been introduced as alternative.
  */
+@Deprecated
 public class DefaultOTPGenerator implements OTPGenerator {
 
     private static final String SMS_OTP_GENERATE_ALPHABET_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
