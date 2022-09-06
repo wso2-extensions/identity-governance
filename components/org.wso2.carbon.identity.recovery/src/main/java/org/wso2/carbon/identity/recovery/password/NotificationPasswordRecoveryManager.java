@@ -234,8 +234,8 @@ public class NotificationPasswordRecoveryManager {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
-        String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
-                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
+        String secretKey = Utils.generateSecretKey(notificationChannel, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(),
+                user.getTenantDomain(), "Recovery.Notification.Password");
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 

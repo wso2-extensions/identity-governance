@@ -32,8 +32,10 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -256,8 +258,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType)
             throws IdentityEventException {
 
-        String secretKey = UUIDGenerator.generateUUID();
-        initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
+        try {
+            String secretKey = Utils.generateSecretKey(NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                    recoveryScenario.name(), user.getTenantDomain(), "EmailVerification");
+            initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
+        } catch (IdentityRecoveryServerException e) {
+            throw new IdentityEventException("Error while fetching the OTP pattern ", e);
+        }
     }
 
     protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType,
@@ -295,8 +302,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private void initNotificationForEmailVerificationOnUpdate(String verificationPendingEmailAddress, User user)
             throws IdentityEventException {
 
-        String secretKey = UUIDGenerator.generateUUID();
-        initNotificationForEmailVerificationOnUpdate(user, secretKey, verificationPendingEmailAddress);
+        try {
+            String secretKey = Utils.generateSecretKey(NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                    RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.name(), user.getTenantDomain(),
+                    "UserClaimUpdate");
+            initNotificationForEmailVerificationOnUpdate(user, secretKey, verificationPendingEmailAddress);
+        } catch (IdentityRecoveryServerException e) {
+            throw new IdentityEventException("Error while fetching the OTP pattern ", e);
+        }
     }
 
     private void initNotificationForEmailVerificationOnUpdate(User user, String secretKey,

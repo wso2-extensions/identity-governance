@@ -163,7 +163,7 @@ public class ResendConfirmationManager {
             confirmationCode = confirmationCodeRecoveryData.getSecret();
         } else {
             userRecoveryDataStore.invalidate(user);
-            confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(), recoveryScenario);
+            confirmationCode = getSecretKey(notificationChannel, recoveryScenario, tenantDomain);
             // Store new confirmation code.
             addRecoveryDataObject(confirmationCode, notificationChannel, scenario, step, user);
         }
@@ -441,6 +441,9 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
+        if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+            preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        }
         if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
@@ -451,7 +454,7 @@ public class ResendConfirmationManager {
         } else {
             // Invalid previous confirmation code.
             userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
-            secretKey = Utils.generateSecretKey(preferredChannel, user.getTenantDomain(), recoveryScenario);
+            secretKey = getSecretKey(preferredChannel, recoveryScenario, user.getTenantDomain());
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                     .getRecoveryScenario(recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
             /* Notified channel is stored in remaining setIds for recovery purposes. Having a EMPTY preferred channel
@@ -655,5 +658,37 @@ public class ResendConfirmationManager {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PROVIDED_CONFIRMATION_CODE_NOT_VALID, code);
         }
+    }
+
+    private String getSecretKey(String preferredChannel, String recoveryScenario, String tenantDomain)
+            throws IdentityRecoveryException {
+
+        try {
+            switch (RecoveryScenarios.getRecoveryScenario(recoveryScenario)) {
+                case SELF_SIGN_UP:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            "SelfRegistration");
+                case NOTIFICATION_BASED_PW_RECOVERY:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            "Recovery.Notification.Password");
+                case EMAIL_VERIFICATION_ON_UPDATE:
+                case MOBILE_VERIFICATION_ON_UPDATE:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            "UserClaimUpdate");
+                case ASK_PASSWORD:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            "EmailVerification");
+                case LITE_SIGN_UP:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            "LiteRegistration");
+                default:
+                    return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
+                            null);
+            }
+        } catch (IdentityRecoveryClientException identityRecoveryClientException) {
+            throw new IdentityRecoveryException(identityRecoveryClientException.getErrorCode(),
+                    identityRecoveryClientException.getMessage());
+        }
+
     }
 }

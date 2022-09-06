@@ -86,6 +86,16 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "Enable user email verification");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
+                "Send OTP in e-mail");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Include uppercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Include lowercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP,
+                "Include numbers in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH,
+                "OTP length");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "Enable account lock on creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
@@ -106,6 +116,18 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 "A verification notification will be triggered during user creation.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
+                "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Enable to include uppercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Enable to include lowercase characters in SMS and e-mail OTPs..");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP,
+                "Enable to include numbers in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH,
+                "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
                 "The user account will be locked during user creation.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
@@ -128,6 +150,11 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
@@ -142,6 +169,11 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
         String enableEmailVerification = "false";
+        String enableSendOTPInEmail = "false";
+        String useUppercaseCharactersInOTP = "true";
+        String useLowercaseCharactersInOTP = "true";
+        String useNumbersInOTP = "true";
+        String otpLength = "6";
         String enableEmailAccountLockOnCreation = "true";
         String enableNotificationInternallyManage = "true";
         String emailVerificationCodeExpiry = "1440";
@@ -150,6 +182,16 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
         String emailVerificationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION);
+        String sendOTPInEmailProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL);
+        String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        String useLowercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        String useNumbersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP);
+        String otpLengthProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH);
         String emailVerificationCodeExpiryProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME);
         String askPasswordCodeExpiryProperty = IdentityUtil.getProperty(
@@ -163,6 +205,21 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
         if (StringUtils.isNotEmpty(emailVerificationProperty)) {
             enableEmailVerification = emailVerificationProperty;
+        }
+        if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
+            enableSendOTPInEmail = sendOTPInEmailProperty;
+        }
+        if (StringUtils.isNotEmpty(useUppercaseCharactersInOTPProperty)) {
+            useUppercaseCharactersInOTP = useUppercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useLowercaseCharactersInOTPProperty)) {
+            useLowercaseCharactersInOTP = useLowercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useNumbersInOTPProperty)) {
+            useNumbersInOTP = useNumbersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(otpLengthProperty)) {
+            otpLength = otpLengthProperty;
         }
         if (StringUtils.isNotEmpty(lockOnCreationProperty)) {
             enableEmailAccountLockOnCreation = lockOnCreationProperty;
@@ -183,6 +240,16 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 enableEmailVerification);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
+                enableSendOTPInEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                useUppercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                useLowercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP,
+                useNumbersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH,
+                otpLength);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 emailVerificationCodeExpiry);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
@@ -219,6 +286,21 @@ public class UserEmailVerificationConfigImpl implements IdentityConnectorConfig 
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));

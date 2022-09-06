@@ -132,8 +132,8 @@ public class LiteUserRegistrationHandler extends AbstractEventHandler {
                     userRecoveryDataStore.invalidate(user);
 
                     // Create a secret key based on the preferred notification channel.
-                    String secretKey = Utils.generateSecretKey(preferredChannel, tenantDomain,
-                            RecoveryScenarios.LITE_SIGN_UP.name());
+                    String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.LITE_SIGN_UP.name(),
+                            tenantDomain, "LiteRegistration");
 
                     // Resolve event name.
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);

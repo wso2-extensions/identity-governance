@@ -74,6 +74,16 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 "Notification based password recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                "Send OTP in e-mail");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Include uppercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Include lowercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP,
+                "Include numbers in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH,
+                "OTP length");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 "Manage notifications sending internally");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
@@ -92,8 +102,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery link expiry time in minutes");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "SMS OTP expiry time");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, "SMS OTP regex");
-
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 "Notify when recovery success");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
@@ -121,6 +129,18 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
                 "Disable if the client application handles notification sending");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Enable to include uppercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Enable to include lowercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP,
+                "Enable to include numbers in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH,
+                "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
                 "Security question answer regex");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
@@ -136,9 +156,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Recovery callback URL regex");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
                 "Expiration time of the SMS OTP code for password recovery");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, "Regex for "
-                + "SMS OTP in format [allowed characters]{length}. Supported character ranges are a-z, A-Z, 0-9. " +
-                "Minimum OTP length is " + IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "User will be logged in automatically after completing the Password Reset wizard");
         return descriptionMapping;
@@ -149,6 +166,11 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER);
@@ -163,7 +185,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
@@ -175,6 +196,11 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
         String enableNotificationBasedPasswordRecovery = "false";
+        String enableSendOTPInEmail = "false";
+        String useUppercaseCharactersInOTP = "true";
+        String useLowercaseCharactersInOTP = "true";
+        String useNumbersInOTP = "true";
+        String otpLength = "6";
         String enableQuestionBasedPasswordRecovery = "false";
         String minimumAnswers = "2";
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
@@ -185,7 +211,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableNotificationInternallyManage = "true";
         String expiryTime = "1440";
         String expiryTimeSMSOTP = "1";
-        String smsOtpRegex = "[a-zA-Z0-9]{6}";
         String notifySuccess = "false";
         String notifyStart = "false";
         String enableForceChallengeQuestions = "false";
@@ -197,6 +222,16 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
+        String sendOTPInEmailProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
+        String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        String useLowercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        String useNumbersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP);
+        String otpLengthProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH);
         String questionBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY);
         String miniMumAnswerProperty = IdentityUtil.getProperty(
@@ -216,8 +251,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
         String expiryTimeSMSOTPProperty = IdentityUtil
                 .getProperty(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME);
-        String smsOtpRegexProperty = IdentityUtil
-                .getProperty(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX);
         String notifySuccessProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
         String notifyStartProperty = IdentityUtil.getProperty(
@@ -238,11 +271,23 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
             expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
         }
-        if (StringUtils.isNotEmpty(smsOtpRegexProperty)) {
-            smsOtpRegex = smsOtpRegexProperty;
-        }
         if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
             enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
+        }
+        if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
+            enableSendOTPInEmail = sendOTPInEmailProperty;
+        }
+        if (StringUtils.isNotEmpty(useUppercaseCharactersInOTPProperty)) {
+            useUppercaseCharactersInOTP = useUppercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useLowercaseCharactersInOTPProperty)) {
+            useLowercaseCharactersInOTP = useLowercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useNumbersInOTPProperty)) {
+            useNumbersInOTP = useNumbersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(otpLengthProperty)) {
+            otpLength = otpLengthProperty;
         }
         if (StringUtils.isNotEmpty(questionBasedPasswordRecovery)) {
             enableQuestionBasedPasswordRecovery = questionBasedPasswordRecovery;
@@ -299,6 +344,16 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 enableNotificationBasedPasswordRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                enableSendOTPInEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                useUppercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                useLowercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP,
+                useNumbersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH,
+                otpLength);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
                 enablePasswordRecoveryReCaptcha);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
@@ -323,8 +378,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, expiryTime);
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, expiryTimeSMSOTP);
-        defaultProperties
-                .put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, smsOtpRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 notifySuccess);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
@@ -356,6 +409,21 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
