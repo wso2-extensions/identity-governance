@@ -171,6 +171,9 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY = "apConfirmationCodeThreadLocalProperty";
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE =
+            "apConfirmationCodeThreadLocalInitialValue";
 
     // Workflow constants.
     public static final String ENTITY_TYPE_USER = "USER";
