@@ -21,11 +21,13 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.LiteApiService;
@@ -37,7 +39,13 @@ import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM;
+import static org.wso2.carbon.identity.recovery.RecoveryScenarios.LITE_SIGN_UP;
+import static org.wso2.carbon.identity.recovery.RecoverySteps.CONFIRM_LITE_SIGN_UP;
 
 public class LiteApiServiceImpl extends LiteApiService {
 
@@ -90,7 +98,26 @@ public class LiteApiServiceImpl extends LiteApiService {
                 LOG.debug("Client Error while self registering lite user ", e);
             }
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
-                Utils.handleConflict(e.getMessage(), e.getErrorCode());
+                try {
+                    boolean isResendEnabledOnUserExistence =
+                            Boolean.parseBoolean(org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig(
+                                    LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE, user.getTenantDomain()));
+                    if (isResendEnabledOnUserExistence) {
+                        try {
+                            ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
+                            notificationResponseBean =
+                                    resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
+                                            CONFIRM_LITE_SIGN_UP.toString(),
+                                            NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, null);
+                        } catch (IdentityRecoveryException ex) {
+                            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
+                        }
+                    } else {
+                        Utils.handleConflict(e.getMessage(), e.getErrorCode());
+                    }
+                } catch (IdentityEventException ex) {
+                    Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
+                }
             } else {
                 Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
             }
