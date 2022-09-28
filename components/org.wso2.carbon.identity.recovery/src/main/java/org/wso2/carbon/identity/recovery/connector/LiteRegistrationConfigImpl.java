@@ -102,7 +102,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Lite-Sign-Up purposes");
         nameMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
-                "Resend confirmation email on lite user existence");
+                "Resend confirmation email if the lite user exists");
         return nameMapping;
     }
 
@@ -133,7 +133,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Lite-Sign-Up purposes");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
-                "Resend confirmation email on lite user registration if the lite user already existing");
+                "Resend confirmation email on lite user registration if the lite user already exists");
         return descriptionMapping;
     }
 

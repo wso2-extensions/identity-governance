@@ -99,10 +99,10 @@ public class LiteApiServiceImpl extends LiteApiService {
             }
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
                 try {
-                    boolean isResendEnabledOnUserExistence =
+                    boolean isResendVerificationEnabledOnUserExistence =
                             Boolean.parseBoolean(org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig(
                                     LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE, user.getTenantDomain()));
-                    if (isResendEnabledOnUserExistence) {
+                    if (isResendVerificationEnabledOnUserExistence) {
                         try {
                             ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
                             notificationResponseBean =
