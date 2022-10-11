@@ -47,12 +47,17 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -84,10 +89,16 @@ public class UserAccountRecoveryManagerTest {
     UserStoreManager userStoreManager;
 
     @Mock
+    AbstractUserStoreManager abstractUserStoreManager;
+
+    @Mock
     UserRecoveryDataStore userRecoveryDataStore;
 
     @Mock
     IdentityEventService identityEventService;
+
+    @Mock
+    ClaimManager claimManager;
 
     /**
      * User claims map.
@@ -272,6 +283,7 @@ public class UserAccountRecoveryManagerTest {
                             null))
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND.getCode(), ""));
+            when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -377,6 +389,9 @@ public class UserAccountRecoveryManagerTest {
     private void testNoMatchingUsers() throws Exception {
 
         mockGetUserList(new String[]{});
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                anyInt(),anyInt(),isNull(), isNull())).thenReturn(null);
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertTrue(username.isEmpty(), "No matching users for given set of claims : ");
@@ -425,7 +440,11 @@ public class UserAccountRecoveryManagerTest {
             mockedUtils.when(() -> Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(), ""));
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),
+                            ""));
+            when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+            when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                    anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUSers());
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "
@@ -464,6 +483,7 @@ public class UserAccountRecoveryManagerTest {
                 identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(realmService.getTenantUserRealm(ArgumentMatchers.anyInt())).thenReturn(userRealm);
+        when(userRealm.getClaimManager()).thenReturn(claimManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
     }
 
@@ -488,6 +508,17 @@ public class UserAccountRecoveryManagerTest {
                 identityRecoveryServiceDataHolder);
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
                 .thenReturn(claimMetadataManagementService);
+    }
+
+    private List<org.wso2.carbon.user.core.common.User> getFilteredUSers(){
+        List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();
+        org.wso2.carbon.user.core.common.User testUser1 = new org.wso2.carbon.user.core.common.User(UUID.randomUUID()
+                .toString(), "testUser1", "testUser1");
+        org.wso2.carbon.user.core.common.User testUser2 = new org.wso2.carbon.user.core.common.User(UUID.randomUUID()
+                .toString(), "testUser1", "testUser1");
+        users.add(testUser1);
+        users.add(testUser2);
+        return users;
     }
 
     /**
