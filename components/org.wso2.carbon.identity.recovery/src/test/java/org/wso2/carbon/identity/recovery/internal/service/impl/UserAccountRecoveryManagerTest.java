@@ -349,31 +349,6 @@ public class UserAccountRecoveryManagerTest {
         testNoMatchingUsers();
         // Test get matched user for given set of claims.
         testGetMatchedUser();
-        // Test no matching users for given set of claims.
-        testNoMatchedUsers();
-    }
-
-    /**
-     * Test get matched user for given claims.
-     *
-     * @throws Exception Error while getting the matched user
-     */
-    private void testNoMatchedUsers() throws Exception {
-
-        String testUsername1 = UserProfile.USERNAME.value;
-        String testUsername2 = "sominda2";
-        String testUsername3 = "sominda3";
-
-        mockUserstoreManager();
-        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
-                .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername3});
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
-        when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
-                anyInt(),anyInt(),isNull(), isNull())).thenReturn(
-                        new ArrayList<org.wso2.carbon.user.core.common.User>());
-        String username = userAccountRecoveryManager
-                .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-        assertTrue(username.isEmpty(), "Different Users matched for different claims : ");
     }
 
     /**
@@ -391,7 +366,7 @@ public class UserAccountRecoveryManagerTest {
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-        assertEquals(username, testUsername1, "Test get matched users fot given claims : ");
+        assertEquals(username, testUsername1, "Test get matched users for given claims : ");
     }
 
     /**
@@ -455,8 +430,7 @@ public class UserAccountRecoveryManagerTest {
             mockedUtils.when(() -> Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),
-                            ""));
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),""));
             when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
@@ -524,7 +498,11 @@ public class UserAccountRecoveryManagerTest {
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
                 .thenReturn(claimMetadataManagementService);
     }
-
+    /**
+     * Get multiple filtered users
+     *
+     * @return Users
+     */
     private List<org.wso2.carbon.user.core.common.User> getFilteredUsers(){
 
         List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();
@@ -539,6 +517,11 @@ public class UserAccountRecoveryManagerTest {
         return users;
     }
 
+    /**
+     * Get one filtered user
+     *
+     * @return Users
+     */
     private List<org.wso2.carbon.user.core.common.User> getOneFilteredUser(){
 
         List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();

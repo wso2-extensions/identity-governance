@@ -323,12 +323,12 @@ public class UserAccountRecoveryManager {
                             UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 }
             }
-            // Return matched user.
-            if (!resultedUserList.isEmpty() && resultedUserList.size() == 1) {
-                return resultedUserList.get(0).getDomainQualifiedUsername();
-            } else if (resultedUserList.isEmpty()) {
-                // Return empty when no users found
+            // Return empty when no users are found.
+            if (resultedUserList.isEmpty()) {
                 return StringUtils.EMPTY;
+            } else if (resultedUserList.size() == 1) {
+                // Return matched user.
+                return resultedUserList.get(0).getDomainQualifiedUsername();
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Multiple users matched for given claims set : " +
