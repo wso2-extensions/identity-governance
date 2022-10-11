@@ -326,9 +326,10 @@ public class UserAccountRecoveryManager {
             // Return matched user.
             if (!resultedUserList.isEmpty() && resultedUserList.size() == 1) {
                 return resultedUserList.get(0).getDomainQualifiedUsername();
-            } else if (resultedUserList.isEmpty()){
+            } else if (resultedUserList.isEmpty()) {
+                // Return empty when no users found
                 return StringUtils.EMPTY;
-            }else {
+            } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Multiple users matched for given claims set : " +
                             Arrays.toString(resultedUserList.toArray()));
