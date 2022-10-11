@@ -188,6 +188,7 @@ public class UserAccountRecoveryManagerTest {
         when(userStoreManager
                 .getUserClaimValues(anyString(), ArgumentMatchers.any(String[].class), anyString()))
                 .thenReturn(userClaims);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                         null);
@@ -254,6 +255,9 @@ public class UserAccountRecoveryManagerTest {
         mockJDBCRecoveryDataStore();
         mockIdentityEventService();
         mockBuildUser();
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUSer());
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                         null);
@@ -284,6 +288,8 @@ public class UserAccountRecoveryManagerTest {
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND.getCode(), ""));
             when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+            when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                    anyInt(),anyInt(),isNull(), isNull())).thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -355,6 +361,9 @@ public class UserAccountRecoveryManagerTest {
         mockUserstoreManager();
         when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
                 .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername3});
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                anyInt(),anyInt(),isNull(), isNull())).thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertTrue(username.isEmpty(), "Different Users matched for different claims : ");
@@ -372,10 +381,14 @@ public class UserAccountRecoveryManagerTest {
         String testUsername3 = "sominda3";
 
         mockUserstoreManager();
-        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
-                .thenReturn(new String[]{testUsername1, testUsername2, testUsername3})
-                .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername1})
-                .thenReturn(new String[]{testUsername1});
+//        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
+//                .thenReturn(new String[]{testUsername1, testUsername2, testUsername3})
+//                .thenReturn(new String[]{testUsername1, testUsername2}).thenReturn(new String[]{testUsername1})
+//                .thenReturn(new String[]{testUsername1});
+
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUSer());
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertEquals(username, testUsername1, "Test get matched users fot given claims : ");
@@ -391,7 +404,7 @@ public class UserAccountRecoveryManagerTest {
         mockGetUserList(new String[]{});
         when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
-                anyInt(),anyInt(),isNull(), isNull())).thenReturn(null);
+                anyInt(),anyInt(),isNull(), isNull())).thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
         String username = userAccountRecoveryManager
                 .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertTrue(username.isEmpty(), "No matching users for given set of claims : ");
@@ -518,6 +531,14 @@ public class UserAccountRecoveryManagerTest {
                 .toString(), "testUser1", "testUser1");
         users.add(testUser1);
         users.add(testUser2);
+        return users;
+    }
+
+    private List<org.wso2.carbon.user.core.common.User> getFilteredUSer(){
+        List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();
+        org.wso2.carbon.user.core.common.User testUser1 = new org.wso2.carbon.user.core.common.User(UUID.randomUUID()
+                .toString(), "sominda1", "sominda1");
+        users.add(testUser1);
         return users;
     }
 
