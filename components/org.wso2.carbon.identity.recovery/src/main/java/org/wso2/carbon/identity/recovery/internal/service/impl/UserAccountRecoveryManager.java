@@ -52,11 +52,20 @@ import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockSt
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.OperationalCondition;
+import org.wso2.carbon.user.core.model.OperationalOperation;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +86,8 @@ public class UserAccountRecoveryManager {
             NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
     private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
     private static final String FUNCTIONALITY_PREFIX = "FUNCTIONALITY_";
+
+    AbstractUserStoreManager carbonUM;
 
     /**
      * Constructor.
@@ -284,50 +295,53 @@ public class UserAccountRecoveryManager {
                     null);
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String[] resultedUserList = ArrayUtils.EMPTY_STRING_ARRAY;
-        for (String key : claims.keySet()) {
-            String value = claims.get(key);
-            if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(value)) {
-                if (log.isDebugEnabled()) {
-                    String message = String.format("Searching users by claim : %s for value : %s", key, value);
-                    log.debug(message);
+        try {
+            String[] userStoreDomainNames = getDomainNames(tenantId);
+            carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
+                    getTenantId(tenantDomain)).getClaimManager();
+            ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+
+            for (String domain : userStoreDomainNames) {
+                List<ExpressionCondition> expressionConditionList = new ArrayList<>();
+                for (String key : claims.keySet()) {
+                    if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key))) {
+                        expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
+                                claimManager.getAttributeName(domain, key), claims.get(key)));
+                    }
                 }
-                // Get the matching user list for the given claim.
-                String[] matchedUserList = getUserList(tenantId, key, value);
-                // Check for duplicates with the already retrieved users, if the matched users for the claim.
-                if (!ArrayUtils.isEmpty(matchedUserList)) {
-                    // In the first iteration resultedUserList will be empty.
-                    if (ArrayUtils.isNotEmpty(resultedUserList)) {
-                        // Remove the users from already matched list who are not in the recently matched list.
-                        resultedUserList = getCommonUserEntries(resultedUserList, matchedUserList, key, value);
-                        if (ArrayUtils.isEmpty(resultedUserList)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("No user matched for given claims");
-                            }
-                            return StringUtils.EMPTY;
+                if (!expressionConditionList.isEmpty()) {
+                    Condition operationalCondition = expressionConditionList.get(0);
+                    if (claims.size() > 1) {
+                        for (int i = 1; i < claims.size(); i++) {
+                            operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
+                                    operationalCondition, expressionConditionList.get(i));
                         }
-                    } else {
-                        resultedUserList = matchedUserList;
                     }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        String message = String.format("No users matched for claim : %s for value : %s", key, value);
-                        log.debug(message);
-                    }
-                    return StringUtils.EMPTY;
+                    resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
+                            UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 }
             }
-        }
-        // Return matched user.
-        if (ArrayUtils.isNotEmpty(resultedUserList) && resultedUserList.length == 1) {
-            return resultedUserList[0];
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Multiple users matched for given claims set : " + Arrays.toString(resultedUserList));
+            // Return matched user.
+            if (!resultedUserList.isEmpty() && resultedUserList.size() == 1) {
+                return resultedUserList.get(0).getDomainQualifiedUsername();
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Multiple users matched for given claims set : " +
+                            Arrays.toString(resultedUserList.toArray()));
+                }
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
             }
-            throw Utils
-                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS,
-                            null);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while getting users from user store for the given claim set: " +
+                        Arrays.toString(claims.keySet().toArray()));
+            }
+            throw new IdentityRecoveryException(e.getErrorCode(), e.getMessage());
+        } catch (UserStoreException e) {
+            throw new IdentityRecoveryException(e.getMessage());
         }
     }
 
@@ -551,6 +565,31 @@ public class UserAccountRecoveryManager {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
         }
+    }
+
+    /**
+     * Get all the domain names related to user stores.
+     *
+     * @return A list of all the available domain names for given tenant
+     */
+    private String[] getDomainNames(int tenantId) throws IdentityRecoveryServerException {
+
+        ArrayList<String> domainsOfUserStores = new ArrayList<>();
+        carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+        UserStoreManager secondaryUserStore = carbonUM.getSecondaryUserStoreManager();
+        while (secondaryUserStore != null) {
+            String domainName = secondaryUserStore.getRealmConfiguration().
+                    getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME).toUpperCase();
+            secondaryUserStore = secondaryUserStore.getSecondaryUserStoreManager();
+            domainsOfUserStores.add(domainName);
+        }
+        // Sorting the secondary user stores to maintain an order fo domains so that pagination is consistent.
+        Collections.sort(domainsOfUserStores);
+
+        /* Append the primary domain name to the front of the domain list since the first iteration of multiple
+           domain filtering should happen for the primary user store. */
+        domainsOfUserStores.add(0, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        return domainsOfUserStores.toArray(new String[0]);
     }
 
     /**
