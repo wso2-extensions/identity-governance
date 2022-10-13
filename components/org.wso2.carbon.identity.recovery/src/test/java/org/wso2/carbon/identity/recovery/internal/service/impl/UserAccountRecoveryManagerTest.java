@@ -481,7 +481,7 @@ public class UserAccountRecoveryManagerTest {
      *
      * @return Users
      */
-    private List<org.wso2.carbon.user.core.common.User> getFilteredUsers(){
+    private List<org.wso2.carbon.user.core.common.User> getFilteredUsers() {
 
         List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();
         org.wso2.carbon.user.core.common.User testUser1 = new org.wso2.carbon.user.core.common.User(UUID.randomUUID()
@@ -500,7 +500,7 @@ public class UserAccountRecoveryManagerTest {
      *
      * @return Users
      */
-    private List<org.wso2.carbon.user.core.common.User> getOneFilteredUser(){
+    private List<org.wso2.carbon.user.core.common.User> getOneFilteredUser() {
 
         List<org.wso2.carbon.user.core.common.User> users = new ArrayList<org.wso2.carbon.user.core.common.User>();
         org.wso2.carbon.user.core.common.User testUser1 = new org.wso2.carbon.user.core.common.User(UUID.randomUUID()
