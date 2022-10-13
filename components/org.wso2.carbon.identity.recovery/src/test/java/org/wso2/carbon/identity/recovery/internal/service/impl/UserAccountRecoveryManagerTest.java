@@ -46,7 +46,6 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserRealm;
-import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.model.Condition;
@@ -87,9 +86,6 @@ public class UserAccountRecoveryManagerTest {
 
     @Mock
     UserRealm userRealm;
-
-    @Mock
-    UserStoreManager userStoreManager;
 
     @Mock
     AbstractUserStoreManager abstractUserStoreManager;
@@ -164,9 +160,8 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testGetUserWithNotificationsInternallyManaged() throws Exception {
 
-        mockGetUserList(new String[]{UserProfile.USERNAME.getValue()});
-        mockRecoveryConfigs(true);
         mockUserstoreManager();
+        mockRecoveryConfigs(true);
         mockJDBCRecoveryDataStore();
         mockBuildUser();
         // Test when the user is self-registered.
@@ -188,10 +183,9 @@ public class UserAccountRecoveryManagerTest {
         userClaims.put(UserProfile.USER_ROLE.key, "INTERNAL");
         userClaims.remove(UserProfile.EMAIL_VERIFIED.key);
         userClaims.remove(UserProfile.PHONE_VERIFIED.key);
-        when(userStoreManager
+        when(abstractUserStoreManager
                 .getUserClaimValues(anyString(), ArgumentMatchers.any(String[].class), anyString()))
                 .thenReturn(userClaims);
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
@@ -215,7 +209,6 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testGetSelfSignUpUsers() throws Exception {
 
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
         when(abstractUserStoreManager
@@ -258,12 +251,11 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testGetUserWithNotificationsExternallyManaged() throws Exception {
 
-        mockGetUserList(new String[]{UserProfile.USERNAME.getValue()});
+        mockUserstoreManager();
         mockRecoveryConfigs(false);
         mockJDBCRecoveryDataStore();
         mockIdentityEventService();
         mockBuildUser();
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
@@ -288,14 +280,13 @@ public class UserAccountRecoveryManagerTest {
     private void testNoMatchingUsersForGivenClaims() throws Exception {
 
         try {
-            mockGetUserList(new String[]{});
+            mockUserstoreManager();
             mockClaimMetadataManagementService();
             mockedUtils.when(
                     () -> Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND,
                             null))
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND.getCode(), ""));
-            when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).
                     thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
@@ -362,9 +353,7 @@ public class UserAccountRecoveryManagerTest {
     private void testGetMatchedUser() throws Exception {
 
         String testUsername1 = UserProfile.USERNAME.value;
-
         mockUserstoreManager();
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
         String username = userAccountRecoveryManager
@@ -379,8 +368,7 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testNoMatchingUsers() throws Exception {
 
-        mockGetUserList(new String[]{});
-        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        mockUserstoreManager();
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(
                         new ArrayList<org.wso2.carbon.user.core.common.User>());
@@ -428,13 +416,12 @@ public class UserAccountRecoveryManagerTest {
      */
     private void testMultipleUsersMatchingForGivenClaims() throws Exception {
 
-        mockGetUserList(new String[]{"Sominda1", "Sominda2"});
+        mockUserstoreManager();
         try {
             mockedUtils.when(() -> Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
                     .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),""));
-            when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
             String username = userAccountRecoveryManager
@@ -448,18 +435,6 @@ public class UserAccountRecoveryManagerTest {
         }
     }
 
-    /**
-     * Build matched user list for a given set of claims.
-     *
-     * @param matchedUsersForGivenClaim Matched users list.
-     * @throws Exception Error while mocking the userstore manager.
-     */
-    private void mockGetUserList(String[] matchedUsersForGivenClaim) throws Exception {
-
-        mockUserstoreManager();
-        when(userStoreManager.getUserList(anyString(), anyString(), isNull()))
-                .thenReturn(matchedUsersForGivenClaim);
-    }
 
     /**
      * Get UserstoreManager by mocking IdentityRecoveryServiceDataHolder.
@@ -476,7 +451,7 @@ public class UserAccountRecoveryManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(realmService.getTenantUserRealm(ArgumentMatchers.anyInt())).thenReturn(userRealm);
         when(userRealm.getClaimManager()).thenReturn(claimManager);
-        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
     }
 
     private void mockBuildUser() {
