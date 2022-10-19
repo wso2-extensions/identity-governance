@@ -306,7 +306,8 @@ public class UserAccountRecoveryManager {
             for (String domain : userStoreDomainNames) {
                 List<ExpressionCondition> expressionConditionList = new ArrayList<>();
                 for (String key : claims.keySet()) {
-                    if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key))) {
+                    if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key)) &&
+                            StringUtils.isNotEmpty(claimManager.getAttributeName(domain, key))) {
                         expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
                                 claimManager.getAttributeName(domain, key), claims.get(key)));
                     }
@@ -314,7 +315,7 @@ public class UserAccountRecoveryManager {
                 if (!expressionConditionList.isEmpty()) {
                     Condition operationalCondition = expressionConditionList.get(0);
                     if (claims.size() > 1) {
-                        for (int i = 1; i < claims.size(); i++) {
+                        for (int i = 1; i < expressionConditionList.size(); i++) {
                             operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
                                     operationalCondition, expressionConditionList.get(i));
                         }
