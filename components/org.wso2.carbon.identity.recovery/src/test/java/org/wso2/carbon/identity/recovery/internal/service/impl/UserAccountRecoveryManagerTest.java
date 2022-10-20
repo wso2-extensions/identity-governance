@@ -258,6 +258,8 @@ public class UserAccountRecoveryManagerTest {
         mockBuildUser();
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                 anyInt(),anyInt(),isNull(), isNull())).thenReturn(getOneFilteredUser());
+        when(claimManager.getAttributeName(anyString(),anyString())).
+                thenReturn("http://wso2.org/claims/mockedClaim");
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                         null);
@@ -290,8 +292,6 @@ public class UserAccountRecoveryManagerTest {
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).
                     thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
-            when(claimManager.getAttributeName(anyString(),anyString())).
-                    thenReturn("http://wso2.org/claims/mockedClaim");
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
