@@ -304,39 +304,29 @@ public class UserAccountRecoveryManager {
             ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
 
             for (String domain : userStoreDomainNames) {
-                List<ExpressionCondition> expressionConditionList = new ArrayList<>();
-                for (String key : claims.keySet()) {
-                    if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key)) &&
-                            StringUtils.isNotEmpty(claimManager.getAttributeName(domain, key))) {
-                        expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
-                                claimManager.getAttributeName(domain, key), claims.get(key)));
-                    }
-                }
+                List<ExpressionCondition> expressionConditionList =
+                        getExpressionConditionList(claims, domain, claimManager);
+
                 if (!expressionConditionList.isEmpty()) {
-                    Condition operationalCondition = expressionConditionList.get(0);
-                    if (expressionConditionList.size() > 1) {
-                        for (int i = 1; i < expressionConditionList.size(); i++) {
-                            operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
-                                    operationalCondition, expressionConditionList.get(i));
-                        }
-                    }
+                    Condition operationalCondition = getOperationalCondition(expressionConditionList);
                     resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
                             UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 }
+                if (resultedUserList.size() > 1) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Multiple users matched for given claims set : " +
+                                Arrays.toString(resultedUserList.toArray()));
+                    }
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+                }
             }
-            // Return empty when no users are found.
-            if (resultedUserList.isEmpty()) {
-                return StringUtils.EMPTY;
-            } else if (resultedUserList.size() == 1) {
-                // Return matched user.
+            // Return matched user.
+            if (!resultedUserList.isEmpty() && resultedUserList.size() == 1) {
                 return resultedUserList.get(0).getDomainQualifiedUsername();
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Multiple users matched for given claims set : " +
-                            Arrays.toString(resultedUserList.toArray()));
-                }
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+                // Return empty when no users are found.
+                return StringUtils.EMPTY;
             }
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
@@ -347,6 +337,48 @@ public class UserAccountRecoveryManager {
         } catch (UserStoreException e) {
             throw new IdentityRecoveryException(e.getMessage());
         }
+    }
+
+    /**
+     * Get the expression conditions for the claim set.
+     *
+     * @param claims   List of UserClaims
+     * @param domain   User store domain
+     * @param claimManager   Claim manager
+     * @return expressionConditionList of the claims.
+     * @throws UserStoreException Error while get attribute name.
+     */
+    private List<ExpressionCondition> getExpressionConditionList (Map<String, String> claims, String domain,
+                                                                 ClaimManager claimManager)
+            throws UserStoreException {
+
+        List<ExpressionCondition> expressionConditionList = new ArrayList<>();
+        for (String key : claims.keySet()) {
+            if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key)) &&
+                    StringUtils.isNotEmpty(claimManager.getAttributeName(domain, key))) {
+                expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
+                        claimManager.getAttributeName(domain, key), claims.get(key)));
+            }
+        }
+        return expressionConditionList;
+    }
+
+    /**
+     * Get the operational condition for expression conditions.
+     *
+     * @param expressionConditionList   List of expression conditions
+     * @return operationalCondition of the expression condition list.
+     */
+    private Condition getOperationalCondition (List<ExpressionCondition> expressionConditionList) {
+
+        Condition operationalCondition = expressionConditionList.get(0);
+        if (expressionConditionList.size() > 1) {
+            for (int i = 1; i < expressionConditionList.size(); i++) {
+                operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
+                        operationalCondition, expressionConditionList.get(i));
+            }
+        }
+        return operationalCondition;
     }
 
     /**
