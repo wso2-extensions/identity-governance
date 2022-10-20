@@ -578,7 +578,7 @@ public class UserAccountRecoveryManager {
      */
     private String[] getDomainNames(int tenantId) throws IdentityRecoveryServerException {
 
-        ArrayList<String> domainsOfUserStores = new ArrayList<>();
+        List<String> domainsOfUserStores = new ArrayList<>();
         carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
         UserStoreManager secondaryUserStore = carbonUM.getSecondaryUserStoreManager();
         while (secondaryUserStore != null) {

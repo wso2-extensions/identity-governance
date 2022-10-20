@@ -290,6 +290,8 @@ public class UserAccountRecoveryManagerTest {
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).
                     thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
+            when(claimManager.getAttributeName(anyString(),anyString())).
+                    thenReturn("http://wso2.org/claims/mockedClaim");
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -424,6 +426,8 @@ public class UserAccountRecoveryManagerTest {
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),""));
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
+            when(claimManager.getAttributeName(anyString(),anyString())).
+                    thenReturn("http://wso2.org/claims/mockedClaim");
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "
@@ -476,6 +480,7 @@ public class UserAccountRecoveryManagerTest {
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
                 .thenReturn(claimMetadataManagementService);
     }
+
     /**
      * Get multiple filtered users
      *
