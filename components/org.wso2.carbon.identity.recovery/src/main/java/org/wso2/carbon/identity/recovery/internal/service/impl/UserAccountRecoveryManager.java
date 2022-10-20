@@ -314,7 +314,7 @@ public class UserAccountRecoveryManager {
                 }
                 if (!expressionConditionList.isEmpty()) {
                     Condition operationalCondition = expressionConditionList.get(0);
-                    if (claims.size() > 1) {
+                    if (expressionConditionList.size() > 1) {
                         for (int i = 1; i < expressionConditionList.size(); i++) {
                             operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
                                     operationalCondition, expressionConditionList.get(i));
