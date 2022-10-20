@@ -605,7 +605,7 @@ public class UserAccountRecoveryManager {
 
     /**
      * Get all the domain names related to user stores.
-     *
+     * @param tenantId   Tenant ID
      * @return A list of all the available domain names for given tenant
      */
     private String[] getDomainNames(int tenantId) throws IdentityRecoveryServerException {
