@@ -87,8 +87,6 @@ public class UserAccountRecoveryManager {
     private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
     private static final String FUNCTIONALITY_PREFIX = "FUNCTIONALITY_";
 
-    AbstractUserStoreManager carbonUM;
-
     /**
      * Constructor.
      */
@@ -297,7 +295,7 @@ public class UserAccountRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
             String[] userStoreDomainNames = getDomainNames(tenantId);
-            carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+            AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
                     getTenantId(tenantDomain)).getClaimManager();
@@ -613,7 +611,7 @@ public class UserAccountRecoveryManager {
     private String[] getDomainNames(int tenantId) throws IdentityRecoveryServerException {
 
         List<String> domainsOfUserStores = new ArrayList<>();
-        carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+        AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
         UserStoreManager secondaryUserStore = carbonUM.getSecondaryUserStoreManager();
         while (secondaryUserStore != null) {
             String domainName = secondaryUserStore.getRealmConfiguration().
