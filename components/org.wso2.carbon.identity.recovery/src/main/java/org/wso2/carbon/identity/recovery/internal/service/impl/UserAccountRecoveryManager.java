@@ -295,7 +295,7 @@ public class UserAccountRecoveryManager {
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
             List<String> userStoreDomainNames = getDomainNames(tenantId);
-            AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
             ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
@@ -309,7 +309,7 @@ public class UserAccountRecoveryManager {
                 Condition operationalCondition = getOperationalCondition(expressionConditionList);
                 /* Get the users list that matches with the condition
                    limit : 2, offset : 1, sortBy : null, sortOrder : null */
-                resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
+                resultedUserList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, domain,
                         UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 if (resultedUserList.size() > 1) {
                     if (log.isDebugEnabled()) {
@@ -610,8 +610,8 @@ public class UserAccountRecoveryManager {
     private List<String> getDomainNames(int tenantId) throws IdentityRecoveryServerException {
 
         List<String> domainsOfUserStores = new ArrayList<>();
-        AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
-        UserStoreManager secondaryUserStore = carbonUM.getSecondaryUserStoreManager();
+        AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+        UserStoreManager secondaryUserStore = abstractUserStoreManager.getSecondaryUserStoreManager();
         while (secondaryUserStore != null) {
             String domainName = secondaryUserStore.getRealmConfiguration().
                     getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME).toUpperCase();
