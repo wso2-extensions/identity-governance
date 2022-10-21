@@ -297,8 +297,7 @@ public class UserAccountRecoveryManager {
             String[] userStoreDomainNames = getDomainNames(tenantId);
             AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(IdentityTenantUtil.
-                    getTenantId(tenantDomain)).getClaimManager();
+            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
             ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
 
             for (String domain : userStoreDomainNames) {
@@ -619,8 +618,6 @@ public class UserAccountRecoveryManager {
             secondaryUserStore = secondaryUserStore.getSecondaryUserStoreManager();
             domainsOfUserStores.add(domainName);
         }
-        // Sorting the secondary user stores to maintain an order fo domains so that pagination is consistent.
-        Collections.sort(domainsOfUserStores);
 
         /* Append the primary domain name to the front of the domain list since the first iteration of multiple
            domain filtering should happen for the primary user store. */
