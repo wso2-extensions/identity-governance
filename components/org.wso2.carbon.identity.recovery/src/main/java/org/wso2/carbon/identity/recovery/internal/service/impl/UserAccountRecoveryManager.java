@@ -306,18 +306,14 @@ public class UserAccountRecoveryManager {
             for (String domain : userStoreDomainNames) {
                 List<ExpressionCondition> expressionConditionList =
                         getExpressionConditionList(claims, domain, claimManager);
-
-                if (!expressionConditionList.isEmpty()) {
-                    Condition operationalCondition = getOperationalCondition(expressionConditionList);
-                    /* Get the users list that matches with the condition
-                       limit : 2, offset : 1, sortBy : null, sortOrder : null */
-                    resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
-                            UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
-                }
-                else {
+                if (expressionConditionList.isEmpty()) {
                     continue;
                 }
-
+                Condition operationalCondition = getOperationalCondition(expressionConditionList);
+                /* Get the users list that matches with the condition
+                   limit : 2, offset : 1, sortBy : null, sortOrder : null */
+                resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
+                        UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 if (resultedUserList.size() > 1) {
                     if (log.isDebugEnabled()) {
                         log.debug("Multiple users matched for given claims set : " +
@@ -330,10 +326,9 @@ public class UserAccountRecoveryManager {
             // Return empty when no users are found.
             if (resultedUserList.isEmpty()) {
                 return StringUtils.EMPTY;
-            } else {
-                // Return matched user.
-                return resultedUserList.get(0).getDomainQualifiedUsername();
             }
+            // When the code reaches here there only be single user match.
+            return resultedUserList.get(0).getDomainQualifiedUsername();
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error while getting users from user store for the given claim set: " +
