@@ -385,7 +385,6 @@ public class UserAccountRecoveryManager {
                         operationalCondition, expressionConditionList.get(i));
             }
         }
-        operationalCondition.getOperation();
         return operationalCondition;
     }
 
