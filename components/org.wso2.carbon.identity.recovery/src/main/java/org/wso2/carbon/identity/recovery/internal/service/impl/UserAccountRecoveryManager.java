@@ -294,7 +294,7 @@ public class UserAccountRecoveryManager {
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
-            String[] userStoreDomainNames = getDomainNames(tenantId);
+            List<String> userStoreDomainNames = getDomainNames(tenantId);
             AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
@@ -607,7 +607,7 @@ public class UserAccountRecoveryManager {
      * @param tenantId   Tenant ID
      * @return A list of all the available domain names for given tenant
      */
-    private String[] getDomainNames(int tenantId) throws IdentityRecoveryServerException {
+    private List<String> getDomainNames(int tenantId) throws IdentityRecoveryServerException {
 
         List<String> domainsOfUserStores = new ArrayList<>();
         AbstractUserStoreManager carbonUM = (AbstractUserStoreManager) getUserStoreManager(tenantId);
@@ -622,7 +622,7 @@ public class UserAccountRecoveryManager {
         /* Append the primary domain name to the front of the domain list since the first iteration of multiple
            domain filtering should happen for the primary user store. */
         domainsOfUserStores.add(0, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
-        return domainsOfUserStores.toArray(new String[0]);
+        return domainsOfUserStores;
     }
 
     /**
