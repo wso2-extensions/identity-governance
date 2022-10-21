@@ -309,9 +309,15 @@ public class UserAccountRecoveryManager {
 
                 if (!expressionConditionList.isEmpty()) {
                     Condition operationalCondition = getOperationalCondition(expressionConditionList);
+                    /* Get the users list that matches with the condition
+                       limit : 2, offset : 1, sortBy : null, sortOrder : null */
                     resultedUserList.addAll(carbonUM.getUserListWithID(operationalCondition, domain,
                             UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 }
+                else {
+                    continue;
+                }
+
                 if (resultedUserList.size() > 1) {
                     if (log.isDebugEnabled()) {
                         log.debug("Multiple users matched for given claims set : " +
@@ -321,21 +327,21 @@ public class UserAccountRecoveryManager {
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
                 }
             }
-            // Return matched user.
-            if (!resultedUserList.isEmpty() && resultedUserList.size() == 1) {
-                return resultedUserList.get(0).getDomainQualifiedUsername();
-            } else {
-                // Return empty when no users are found.
+            // Return empty when no users are found.
+            if (resultedUserList.isEmpty()) {
                 return StringUtils.EMPTY;
+            } else {
+                // Return matched user.
+                return resultedUserList.get(0).getDomainQualifiedUsername();
             }
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error while getting users from user store for the given claim set: " +
                         Arrays.toString(claims.keySet().toArray()));
             }
-            throw new IdentityRecoveryException(e.getErrorCode(), e.getMessage());
+            throw new IdentityRecoveryException(e.getErrorCode(), e.getMessage(), e);
         } catch (UserStoreException e) {
-            throw new IdentityRecoveryException(e.getMessage());
+            throw new IdentityRecoveryException(e.getMessage(), e);
         }
     }
 
@@ -354,10 +360,11 @@ public class UserAccountRecoveryManager {
 
         List<ExpressionCondition> expressionConditionList = new ArrayList<>();
         for (String key : claims.keySet()) {
+            String attributeName = claimManager.getAttributeName(domain, key);
             if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key)) &&
-                    StringUtils.isNotEmpty(claimManager.getAttributeName(domain, key))) {
+                    StringUtils.isNotEmpty(attributeName)) {
                 expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
-                        claimManager.getAttributeName(domain, key), claims.get(key)));
+                        attributeName, claims.get(key)));
             }
         }
         return expressionConditionList;
@@ -378,6 +385,7 @@ public class UserAccountRecoveryManager {
                         operationalCondition, expressionConditionList.get(i));
             }
         }
+        operationalCondition.getOperation();
         return operationalCondition;
     }
 
