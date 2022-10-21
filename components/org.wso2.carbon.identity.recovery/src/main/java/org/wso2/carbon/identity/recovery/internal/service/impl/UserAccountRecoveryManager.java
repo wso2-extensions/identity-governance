@@ -610,6 +610,8 @@ public class UserAccountRecoveryManager {
     private List<String> getDomainNames(int tenantId) throws IdentityRecoveryServerException {
 
         List<String> domainsOfUserStores = new ArrayList<>();
+        // Append the primary domain name to the front of the domain list.
+        domainsOfUserStores.add(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
         AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
         UserStoreManager secondaryUserStore = abstractUserStoreManager.getSecondaryUserStoreManager();
         while (secondaryUserStore != null) {
@@ -618,10 +620,6 @@ public class UserAccountRecoveryManager {
             secondaryUserStore = secondaryUserStore.getSecondaryUserStoreManager();
             domainsOfUserStores.add(domainName);
         }
-
-        /* Append the primary domain name to the front of the domain list since the first iteration of multiple
-           domain filtering should happen for the primary user store. */
-        domainsOfUserStores.add(0, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
         return domainsOfUserStores;
     }
 
