@@ -328,10 +328,10 @@ public class UserAccountRecoveryManager {
             return resultedUserList.get(0).getDomainQualifiedUsername();
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Error while getting users from user store for the given claim set: " +
+                log.debug("Error while retrieving users from user store for the given claim set: " +
                         Arrays.toString(claims.keySet().toArray()));
             }
-            throw new IdentityRecoveryException(e.getErrorCode(), e.getMessage(), e);
+            throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
         } catch (UserStoreException e) {
             throw new IdentityRecoveryException(e.getMessage(), e);
         }
