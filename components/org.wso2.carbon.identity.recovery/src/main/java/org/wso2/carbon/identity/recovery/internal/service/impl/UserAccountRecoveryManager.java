@@ -351,12 +351,12 @@ public class UserAccountRecoveryManager {
             throws UserStoreException {
 
         List<ExpressionCondition> expressionConditionList = new ArrayList<>();
-        for (String key : claims.keySet()) {
-            String attributeName = claimManager.getAttributeName(domain, key);
-            if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(claims.get(key)) &&
+        for (Map.Entry<String,String> entry : claims.entrySet()) {
+            String attributeName = claimManager.getAttributeName(domain, entry.getKey());
+            if (StringUtils.isNotEmpty(entry.getKey()) && StringUtils.isNotEmpty(entry.getValue()) &&
                     StringUtils.isNotEmpty(attributeName)) {
-                expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(),
-                        attributeName, claims.get(key)));
+                expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(), attributeName,
+                        entry.getValue()));
             }
         }
         return expressionConditionList;
