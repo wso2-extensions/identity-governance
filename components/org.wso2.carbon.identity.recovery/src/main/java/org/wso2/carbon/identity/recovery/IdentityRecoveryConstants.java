@@ -172,10 +172,6 @@ public class IdentityRecoveryConstants {
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
 
-    // Workflow constants.
-    public static final String ENTITY_TYPE_USER = "USER";
-    public static final String ADD_USER_EVENT = "ADD_USER";
-
     public static final String CORRELATION_ID_MDC = "Correlation-ID";
 
     private IdentityRecoveryConstants() {
