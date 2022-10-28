@@ -367,6 +367,11 @@
                 <version>${spring-web.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax.validation-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-jaxrs</artifactId>
                 <version>${swagger-jaxrs.version}</version>
@@ -660,6 +665,7 @@
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.13.1</junit.version>
         <maven.war.plugin.version>3.3.2</maven.war.plugin.version>
+        <javax.validation-api>2.0.1.Final</javax.validation-api>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
