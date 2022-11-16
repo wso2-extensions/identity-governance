@@ -52,11 +52,20 @@ import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockSt
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.OperationalCondition;
+import org.wso2.carbon.user.core.model.OperationalOperation;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -284,51 +293,91 @@ public class UserAccountRecoveryManager {
                     null);
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String[] resultedUserList = ArrayUtils.EMPTY_STRING_ARRAY;
-        for (String key : claims.keySet()) {
-            String value = claims.get(key);
-            if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(value)) {
-                if (log.isDebugEnabled()) {
-                    String message = String.format("Searching users by claim : %s for value : %s", key, value);
-                    log.debug(message);
+        try {
+            List<String> userStoreDomainNames = getDomainNames(tenantId);
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
+            ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+
+            for (String domain : userStoreDomainNames) {
+                List<ExpressionCondition> expressionConditionList =
+                        getExpressionConditionList(claims, domain, claimManager);
+                if (expressionConditionList.isEmpty()) {
+                    continue;
                 }
-                // Get the matching user list for the given claim.
-                String[] matchedUserList = getUserList(tenantId, key, value);
-                // Check for duplicates with the already retrieved users, if the matched users for the claim.
-                if (!ArrayUtils.isEmpty(matchedUserList)) {
-                    // In the first iteration resultedUserList will be empty.
-                    if (ArrayUtils.isNotEmpty(resultedUserList)) {
-                        // Remove the users from already matched list who are not in the recently matched list.
-                        resultedUserList = getCommonUserEntries(resultedUserList, matchedUserList, key, value);
-                        if (ArrayUtils.isEmpty(resultedUserList)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("No user matched for given claims");
-                            }
-                            return StringUtils.EMPTY;
-                        }
-                    } else {
-                        resultedUserList = matchedUserList;
-                    }
-                } else {
+                Condition operationalCondition = getOperationalCondition(expressionConditionList);
+                /* Get the users list that matches with the condition
+                   limit : 2, offset : 1, sortBy : null, sortOrder : null */
+                resultedUserList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, domain,
+                        UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
+                if (resultedUserList.size() > 1) {
                     if (log.isDebugEnabled()) {
-                        String message = String.format("No users matched for claim : %s for value : %s", key, value);
-                        log.debug(message);
+                        log.debug("Multiple users matched for given claims set : " +
+                                Arrays.toString(resultedUserList.toArray()));
                     }
-                    return StringUtils.EMPTY;
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
                 }
             }
-        }
-        // Return matched user.
-        if (ArrayUtils.isNotEmpty(resultedUserList) && resultedUserList.length == 1) {
-            return resultedUserList[0];
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Multiple users matched for given claims set : " + Arrays.toString(resultedUserList));
+            // Return empty when no users are found.
+            if (resultedUserList.isEmpty()) {
+                return StringUtils.EMPTY;
             }
-            throw Utils
-                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS,
-                            null);
+            // When the code reaches here there only be single user match.
+            return resultedUserList.get(0).getDomainQualifiedUsername();
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while retrieving users from user store for the given claim set: " +
+                        Arrays.toString(claims.keySet().toArray()));
+            }
+            throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
+        } catch (UserStoreException e) {
+            throw new IdentityRecoveryException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Get the expression conditions for the claim set.
+     *
+     * @param claims   List of UserClaims
+     * @param domain   User store domain
+     * @param claimManager   Claim manager
+     * @return expressionConditionList of the claims.
+     * @throws UserStoreException Error while get attribute name.
+     */
+    private List<ExpressionCondition> getExpressionConditionList (Map<String, String> claims, String domain,
+                                                                 ClaimManager claimManager)
+            throws UserStoreException {
+
+        List<ExpressionCondition> expressionConditionList = new ArrayList<>();
+        for (Map.Entry<String,String> entry : claims.entrySet()) {
+            String attributeName = claimManager.getAttributeName(domain, entry.getKey());
+            if (StringUtils.isNotEmpty(entry.getKey()) && StringUtils.isNotEmpty(entry.getValue()) &&
+                    StringUtils.isNotEmpty(attributeName)) {
+                expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(), attributeName,
+                        entry.getValue()));
+            }
+        }
+        return expressionConditionList;
+    }
+
+    /**
+     * Get the operational condition for expression conditions.
+     *
+     * @param expressionConditionList   List of expression conditions
+     * @return operationalCondition of the expression condition list.
+     */
+    private Condition getOperationalCondition (List<ExpressionCondition> expressionConditionList) {
+
+        Condition operationalCondition = expressionConditionList.get(0);
+        if (expressionConditionList.size() > 1) {
+            for (int i = 1; i < expressionConditionList.size(); i++) {
+                operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
+                        operationalCondition, expressionConditionList.get(i));
+            }
+        }
+        return operationalCondition;
     }
 
     /**
@@ -551,6 +600,27 @@ public class UserAccountRecoveryManager {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
         }
+    }
+
+    /**
+     * Get all the domain names related to user stores.
+     * @param tenantId   Tenant ID
+     * @return A list of all the available domain names for given tenant
+     */
+    private List<String> getDomainNames(int tenantId) throws IdentityRecoveryServerException {
+
+        List<String> domainsOfUserStores = new ArrayList<>();
+        // Append the primary domain name to the front of the domain list.
+        domainsOfUserStores.add(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+        UserStoreManager secondaryUserStore = abstractUserStoreManager.getSecondaryUserStoreManager();
+        while (secondaryUserStore != null) {
+            String domainName = secondaryUserStore.getRealmConfiguration().
+                    getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME).toUpperCase();
+            secondaryUserStore = secondaryUserStore.getSecondaryUserStoreManager();
+            domainsOfUserStores.add(domainName);
+        }
+        return domainsOfUserStores;
     }
 
     /**

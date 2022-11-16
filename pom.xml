@@ -37,7 +37,7 @@
         <url>https://github.com/wso2-extensions/identity-governance.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-governance.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-governance.git</connection>
-        <tag>v1.6.3</tag>
+        <tag>v1.1.0-SNAPSHOT</tag>
     </scm>
 
 
@@ -367,6 +367,11 @@
                 <version>${spring-web.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax.validation-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-jaxrs</artifactId>
                 <version>${swagger-jaxrs.version}</version>
@@ -641,11 +646,11 @@
         <carbon.consent.mgt.version>2.2.4</carbon.consent.mgt.version>
         <carbon.consent.mgt.version.range>[2.2.4, 3.0.0)</carbon.consent.mgt.version.range>
 
-        <carbon.multitenancy.version>4.7.11</carbon.multitenancy.version>
+        <carbon.multitenancy.version>4.11.0</carbon.multitenancy.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.7.4, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
 
         <!--Carbon commons version-->
-        <carbon.commons.version>4.7.18</carbon.commons.version>
+        <carbon.commons.version>4.7.50</carbon.commons.version>
         <carbon.commons.imp.pkg.version>[4.7.2, 5.0.0)</carbon.commons.imp.pkg.version>
 
         <!--Maven Plugin Version-->
@@ -660,6 +665,7 @@
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
         <junit.version>4.13.1</junit.version>
         <maven.war.plugin.version>3.3.2</maven.war.plugin.version>
+        <javax.validation-api>2.0.1.Final</javax.validation-api>
 
         <!-- Unit test versions -->
         <testng.version>6.9.10</testng.version>
