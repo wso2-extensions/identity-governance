@@ -30,7 +30,6 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
-import org.wso2.carbon.identity.central.log.mgt.utils.LogConstants;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -86,7 +85,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
@@ -1079,8 +1077,8 @@ public class Utils {
     public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
 
         if (!isLegacyAuditLogsDisabled()) {
-            if (LogConstants.isLogMaskingEnable) {
-                target = LoggerUtils.maskContent(target);
+            if (LoggerUtils.isLogMaskingEnable) {
+                target = LoggerUtils.getMaskedContent(target);
             }
             AUDIT_LOG.info(String
                     .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, target, dataObject, result));
@@ -1100,12 +1098,13 @@ public class Utils {
             loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
         }
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        if (LogConstants.isLogMaskingEnable) {
+        if (LoggerUtils.isLogMaskingEnable) {
             if (StringUtils.isNotBlank(loggedInUser) && StringUtils.isNotBlank(tenantDomain)) {
                 initiator = IdentityUtil.getInitiatorId(loggedInUser, tenantDomain);
             }
             if (StringUtils.isBlank(initiator)) {
-                initiator = LoggerUtils.maskContent(UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain));
+                initiator = LoggerUtils.getMaskedContent(UserCoreUtil.addTenantDomainToEntry(loggedInUser,
+                        tenantDomain));
             }
         } else {
             initiator = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
