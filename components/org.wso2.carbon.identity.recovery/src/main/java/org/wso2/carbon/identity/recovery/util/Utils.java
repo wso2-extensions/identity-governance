@@ -1077,11 +1077,9 @@ public class Utils {
     public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
 
         if (!isLegacyAuditLogsDisabled()) {
-            if (LoggerUtils.isLogMaskingEnable) {
-                target = LoggerUtils.getMaskedContent(target);
-            }
             AUDIT_LOG.info(String
-                    .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, target, dataObject, result));
+                    .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, LoggerUtils.isLogMaskingEnable ?
+                            LoggerUtils.getMaskedContent(target) : target, dataObject, result));
         }
     }
 
