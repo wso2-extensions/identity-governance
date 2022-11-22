@@ -31,6 +31,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -54,6 +55,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -64,6 +66,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
+import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -556,13 +559,21 @@ public class NotificationPasswordRecoveryManager {
         updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
                 notificationsInternallyManaged);
         userRecoveryDataStore.invalidate(userRecoveryData.getUser());
-        if (notificationsInternallyManaged && isNotificationSendWhenSuccess
-                && !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+        if (notificationsInternallyManaged &&
+                !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String emailTemplate = null;
+            if (isAskPasswordFlow(userRecoveryData) &&
+                    isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
+                emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+            } else if (isNotificationSendWhenSuccess) {
+                emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
+            }
             try {
                 String eventName = Utils.resolveEventName(notificationChannel);
-                triggerNotification(userRecoveryData.getUser(), notificationChannel,
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS, StringUtils.EMPTY,
-                        eventName, properties, userRecoveryData);
+                if (StringUtils.isNotBlank(emailTemplate)) {
+                    triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
+                            StringUtils.EMPTY, eventName, properties, userRecoveryData);
+                }
             } catch (IdentityRecoveryException e) {
                 String errorMsg = String.format("Error while sending password reset success notification to user : %s",
                         userRecoveryData.getUser().getUserName());
@@ -931,6 +942,22 @@ public class NotificationPasswordRecoveryManager {
             throw new IdentityRecoveryServerException(msg, e);
         }
         return userList;
+    }
+
+    private boolean isAskPasswordFlow(UserRecoveryData userRecoveryData) {
+
+        return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario());
+    }
+
+    private boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
+
+        String path = IdentityRecoveryConstants.EMAIL_TEMPLATE_PATH + PATH_SEPARATOR +
+                IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS.toLowerCase();
+
+        RegistryResourceMgtService resourceMgtService =
+                IdentityRecoveryServiceDataHolder.getInstance().getResourceMgtService();
+        Resource templateType = resourceMgtService.getIdentityResource(path, tenantDomain);
+        return templateType != null;
     }
 }
 

@@ -61,6 +61,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
+    public static final String ACCOUNT_ACTIVATION_SUCCESS = "accountActivationSuccess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
     public static final String NOTIFICATION_TYPE_SELF_SIGNUP_SUCCESS = "selfSignUpSuccess";
@@ -171,6 +172,7 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
+    public static final String EMAIL_TEMPLATE_PATH = "/identity/email";
 
     // Workflow constants.
     public static final String ENTITY_TYPE_USER = "USER";
