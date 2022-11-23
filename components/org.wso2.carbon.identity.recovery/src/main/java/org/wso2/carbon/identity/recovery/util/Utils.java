@@ -30,6 +30,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -1076,15 +1077,37 @@ public class Utils {
     public static void createAuditMessage(String action, String target, JSONObject dataObject, String result) {
 
         if (!isLegacyAuditLogsDisabled()) {
-            String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-            if (StringUtils.isBlank(loggedInUser)) {
-                loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
-            }
-            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-            loggedInUser = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
             AUDIT_LOG.info(String
-                    .format(AuditConstants.AUDIT_MESSAGE, loggedInUser, action, target, dataObject, result));
+                    .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, LoggerUtils.isLogMaskingEnable ?
+                            LoggerUtils.getMaskedContent(target) : target, dataObject, result));
         }
+    }
+
+    /**
+     * Get the initiator for audit logs.
+     *
+     * @return initiator based on whether log masking is enabled or not.
+     */
+    private static String getInitiator() {
+
+        String initiator = null;
+        String loggedInUser = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        if (StringUtils.isBlank(loggedInUser)) {
+            loggedInUser = CarbonConstants.REGISTRY_SYSTEM_USERNAME;
+        }
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        if (LoggerUtils.isLogMaskingEnable) {
+            if (StringUtils.isNotBlank(loggedInUser) && StringUtils.isNotBlank(tenantDomain)) {
+                initiator = IdentityUtil.getInitiatorId(loggedInUser, tenantDomain);
+            }
+            if (StringUtils.isBlank(initiator)) {
+                initiator = LoggerUtils.getMaskedContent(UserCoreUtil.addTenantDomainToEntry(loggedInUser,
+                        tenantDomain));
+            }
+        } else {
+            initiator = UserCoreUtil.addTenantDomainToEntry(loggedInUser, tenantDomain);
+        }
+        return initiator;
     }
 
     /**
