@@ -838,6 +838,10 @@ public class UserSelfRegistrationManager {
 
         // Validate context tenant domain name with user tenant domain.
         validateContextTenantDomainWithUserTenantDomain(user);
+
+        // Validate the recovery step to confirm self sign up, to verify email account or to verify mobile number.
+        validateRecoverySteps(recoveryData, user);
+
         return recoveryData;
     }
 
