@@ -688,7 +688,7 @@
         <!-- Pax Logging Version -->
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
-        <carbon.analytics.common.version>5.2.15</carbon.analytics.common.version>
+        <carbon.analytics.common.version>5.2.50</carbon.analytics.common.version>
         <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
 
         <spotbugs-maven-plugin.version>4.2.2</spotbugs-maven-plugin.version>
