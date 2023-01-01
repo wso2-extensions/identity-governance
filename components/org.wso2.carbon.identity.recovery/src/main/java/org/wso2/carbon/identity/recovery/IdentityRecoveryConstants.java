@@ -179,6 +179,11 @@ public class IdentityRecoveryConstants {
     public static final String ADD_USER_EVENT = "ADD_USER";
 
     public static final String CORRELATION_ID_MDC = "Correlation-ID";
+    // Ask Password thread local property name.
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY = "apConfirmationCodeThreadLocalProperty";
+    // Ask Password thread local initial value.
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE =
+            "apConfirmationCodeThreadLocalInitialValue";
 
     private IdentityRecoveryConstants() {
 

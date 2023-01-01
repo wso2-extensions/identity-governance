@@ -201,13 +201,17 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
                 String confirmationCode = UUIDGenerator.generateUUID();
+                if (isAccountClaimExist) {
+                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
+                }
                 if (isNotificationInternallyManage) {
-                    if (isAccountClaimExist) {
-                        setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                                IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
-                    }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
                             IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
+                } else {
+                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
+                            confirmationCode);
+                    setAskPasswordConfirmationCodeToThreadLocal(confirmationCode);
                 }
 
                 // Need to lock user account.
@@ -694,6 +698,23 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
+        }
+    }
+
+    /**
+     * To set the confirmation code to ask password thread local.
+     *
+     * @param confirmationCode Ask password confirmation code.
+     */
+    private void setAskPasswordConfirmationCodeToThreadLocal(String confirmationCode) {
+
+        Object initialValue = IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY);
+        if (initialValue != null && initialValue.toString()
+                .equals(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE)) {
+            IdentityUtil.threadLocalProperties.get()
+                    .put(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY,
+                            confirmationCode);
         }
     }
 }
