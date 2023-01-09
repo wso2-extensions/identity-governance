@@ -54,6 +54,7 @@ public class IdentityStoreEventListenerTest {
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
+    private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
     private static final int TENANT_ID = 1234;
 
     @Mock
@@ -121,6 +122,8 @@ public class IdentityStoreEventListenerTest {
                                  Map<String, String> claims,
                                  String prof) throws Exception {
         userStoreManager = mock(UserStoreManager.class);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
         Mockito.when(userStoreManager.getTenantId()).thenReturn(1001);
         assertTrue(identityStoreEventListener.doPreAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
     }
@@ -132,6 +135,8 @@ public class IdentityStoreEventListenerTest {
                                   Map<String, String> claims,
                                   String prof) throws Exception {
         TestUtils.startTenantFlow("carbon.super");
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
         assertTrue(identityStoreEventListener.doPostAddUser(userName, pwd, roleList, claims, prof, userStoreManager));
     }
 
@@ -143,6 +148,8 @@ public class IdentityStoreEventListenerTest {
                                             String prof) throws Exception {
         userStoreManager = mock(UserStoreManager.class);
         realmConfiguration = mock(RealmConfiguration.class);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
         userIdentityDataStore = mock(UserIdentityDataStore.class);
         UserIdentityClaim userIdentityClaim = null;
 
@@ -197,6 +204,8 @@ public class IdentityStoreEventListenerTest {
                                              Map<String, String> claims,
                                              String prof) throws Exception {
         realmConfiguration = mock(RealmConfiguration.class);
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS)).thenReturn(String.valueOf(false));
         userIdentityDataStore = mock(UserIdentityDataStore.class);
 
         Field fieldIdentityStore = IdentityStoreEventListener.class
