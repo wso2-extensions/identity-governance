@@ -70,10 +70,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
-import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementServiceImpl;
-import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
-import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
@@ -1267,22 +1263,17 @@ public class UserSelfRegistrationManager {
     public boolean isUsernameAlreadyTaken(String username, String tenantDomain) throws IdentityRecoveryException {
 
         boolean isUsernameAlreadyTaken = true;
-        WorkflowManagementService workflowService = new WorkflowManagementServiceImpl();
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
         }
         try {
             String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            Entity userEntity = new Entity(tenantAwareUsername, IdentityRecoveryConstants.ENTITY_TYPE_USER,
-                    IdentityTenantUtil.getTenantId(tenantDomain));
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
-                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
-                        workflowService.entityHasPendingWorkflowsOfType(userEntity,
-                                IdentityRecoveryConstants.ADD_USER_EVENT);
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername);
             }
-        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException | WorkflowException e) {
+        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
         }
         return isUsernameAlreadyTaken;
