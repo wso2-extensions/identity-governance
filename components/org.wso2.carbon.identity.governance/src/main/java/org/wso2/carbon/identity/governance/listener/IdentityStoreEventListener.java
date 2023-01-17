@@ -128,7 +128,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             Map.Entry<String, String> claim = it.next();
             if (claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)
                     && !(identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                    isStoreIdentityClaimsInUserStore(userStoreManager))) {
+                    isStoreIdentityClaimsInUserStoreEnabled(userStoreManager))) {
                 // add the identity claim to temp map
                 userDataMap.put(claim.getKey(), claim.getValue());
                 // we remove the identity claims to prevent it from getting stored in user store
@@ -242,7 +242,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // No need to separately handle if identity `data store is user store based
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStore(storeManager)) {
+                isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
             return true;
         }
 
@@ -386,7 +386,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // No need to separately handle if identity data store is user store based.
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStore(userStoreManager)) {
+                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -511,7 +511,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // No need to separately handle if identity data store is user store based.
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStore(userStoreManager)) {
+                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -607,7 +607,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // No need to separately handle if data identityDataStore is user store based
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStore(userStoreManager)) {
+                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -671,7 +671,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // No need to separately handle if identity data store is user store based.
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStore(userStoreManager)) {
+                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -751,7 +751,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
      * @param userStoreManager User Store manager.
      * @return Weather identity claims are stored in user store or not.
      */
-    private boolean isStoreIdentityClaimsInUserStore (UserStoreManager userStoreManager) {
+    private boolean isStoreIdentityClaimsInUserStoreEnabled(UserStoreManager userStoreManager) {
 
         return Boolean.parseBoolean(userStoreManager.getRealmConfiguration().
                 getUserStoreProperty(STORE_IDENTITY_CLAIMS));
