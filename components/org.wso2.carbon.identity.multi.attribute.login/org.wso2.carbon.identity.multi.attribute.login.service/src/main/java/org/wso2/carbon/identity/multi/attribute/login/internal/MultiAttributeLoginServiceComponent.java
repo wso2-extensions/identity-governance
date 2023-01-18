@@ -50,6 +50,7 @@ public class MultiAttributeLoginServiceComponent {
     protected void activate(ComponentContext context) {
 
         BundleContext bundleContext = context.getBundleContext();
+        // TODO - The following section multiAttributeLoginHandler should be commented.
         try {
             IdentityConnectorConfig multiAttributeLoginHandler = new MultiAttributeLoginHandler();
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),

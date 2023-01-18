@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,30 +16,36 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils;
+package org.wso2.carbon.identity.login.resolver.regex.utils;
 
-import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
+import org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceDataHolder;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * This is a helper class for regex based user resolve service.
- *
- * @deprecated To generalize the resolver concept and make it extensible.
- * Use the {@link org.wso2.carbon.identity.login.resolver.regex.utils.UserResolverUtil} class instead.
+ * Utility class that is being used throughout the regex login resolver module.
  */
-@Deprecated
 public class UserResolverUtil {
 
+    /**
+     * Private constructor to restrict from creating multiple instances of the UserResolverUtil class.
+     */
     private UserResolverUtil() {
 
     }
 
+    /**
+     * Retrieves the user realm based on the provided tenant domain.
+     *
+     * @param tenantDomain The tenant domain of the user.
+     * @return The user realm.
+     * @throws UserStoreException If there is an error while retrieving the tenant id or the tenant user realm.
+     */
     public static UserRealm getUserRealm(String tenantDomain) throws UserStoreException {
 
-        RealmService realmService = RegexResolverServiceDataHolder.getInstance().getRealmService();
+        RealmService realmService = RegexLoginResolverServiceDataHolder.getInstance().getRealmService();
         UserRealm userRealm = null;
         if (realmService != null) {
             int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
@@ -48,6 +54,13 @@ public class UserResolverUtil {
         return userRealm;
     }
 
+    /**
+     * Retrieves the user store manager based on the provided tenant domain.
+     *
+     * @param tenantDomain The tenant domain of the user.
+     * @return The user store manager.
+     * @throws UserStoreException If there is an error while retrieving the user realm or the user store manager.
+     */
     public static UniqueIDUserStoreManager getUserStoreManager(String tenantDomain) throws UserStoreException {
 
         UserRealm userRealm = getUserRealm(tenantDomain);
