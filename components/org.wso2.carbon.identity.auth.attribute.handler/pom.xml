@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.8.13-SNAPSHOT</version>
+        <version>1.8.14-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -47,11 +47,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        <groupId>org.wso2.carbon.identity.framework</groupId>
-        <artifactId>org.wso2.carbon.identity.testutil</artifactId>
-        <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
@@ -65,16 +60,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -165,7 +150,7 @@
                                         <limit implementation="org.jacoco.report.check.Limit">
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-<!--                                            <minimum>0.05</minimum>-->
+                                            <minimum>0.35</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
@@ -173,6 +158,14 @@
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludes>
+                        <!-- Exclude model classes from code coverage -->
+                        <exclude>**/model/*</exclude>
+                        <!-- Exclude exception classes from code coverage -->
+                        <exclude>**/exception/*</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>

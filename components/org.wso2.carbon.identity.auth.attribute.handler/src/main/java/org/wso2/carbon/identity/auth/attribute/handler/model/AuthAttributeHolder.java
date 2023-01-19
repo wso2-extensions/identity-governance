@@ -33,7 +33,7 @@ public class AuthAttributeHolder {
 
     private String handlerName;
     private AuthAttributeHandlerBindingType handlerBinding;
-    private String handlerBindingIdentifier;
+    private String handlerBoundIdentifier;
     private List<AuthAttribute> authAttributes = new ArrayList<>();
     private Map<String, String> properties = new HashMap<>();
 
@@ -42,11 +42,11 @@ public class AuthAttributeHolder {
     }
 
     public AuthAttributeHolder(String handlerName, AuthAttributeHandlerBindingType handlerBinding,
-                               String handlerBindingIdentifier, List<AuthAttribute> authAttributes) {
+                               String handlerBoundIdentifier, List<AuthAttribute> authAttributes) {
 
         this.handlerName = handlerName;
         this.handlerBinding = handlerBinding;
-        this.handlerBindingIdentifier = handlerBindingIdentifier;
+        this.handlerBoundIdentifier = handlerBoundIdentifier;
         this.authAttributes = authAttributes;
     }
 
@@ -70,14 +70,14 @@ public class AuthAttributeHolder {
         this.handlerBinding = handlerBinding;
     }
 
-    public String getHandlerBindingIdentifier() {
+    public String getHandlerBoundIdentifier() {
 
-        return handlerBindingIdentifier;
+        return handlerBoundIdentifier;
     }
 
-    public void setHandlerBindingIdentifier(String handlerBindingIdentifier) {
+    public void setHandlerBoundIdentifier(String handlerBoundIdentifier) {
 
-        this.handlerBindingIdentifier = handlerBindingIdentifier;
+        this.handlerBoundIdentifier = handlerBoundIdentifier;
     }
 
     public List<AuthAttribute> getAuthAttributes() {
