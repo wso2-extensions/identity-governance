@@ -18,8 +18,8 @@
  -->
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
-<suite name="Identity-Governance-Multi-Attribute-Login-Regex-Resolver-Test-Suite">
-    <test name="Util-Tests" parallel="false">
+<suite name="Identity-Governance-Login-Resolver-Service-Test-Suite">
+    <test name="Login-Resolver-Service-Tests" parallel="false">
         <parameter name="log-level" value="info"/>
         <classes>
             <class name="org.wso2.carbon.identity.login.resolver.service.LoginResolverServiceHandlerTest"/>

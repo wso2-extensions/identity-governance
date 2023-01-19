@@ -20,6 +20,10 @@ package org.wso2.carbon.identity.multi.attribute.login.constants;
 
 /**
  * Multi attribute login related constants.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.constants.LoginResolverServiceConstants} class
+ * instead.
  */
 public class MultiAttributeLoginConstants {
 

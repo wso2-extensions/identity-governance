@@ -16,21 +16,19 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.login.resolver.service.service;
+package org.wso2.carbon.identity.login.resolver.service;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.login.resolver.mgt.LoginResolver;
 import org.wso2.carbon.identity.login.resolver.mgt.LoginResolverService;
 import org.wso2.carbon.identity.login.resolver.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.login.resolver.service.constants.LoginResolverServiceConstants;
-import org.wso2.carbon.identity.login.resolver.service.internal.LoginResolverServiceDataHolder;
 import org.wso2.carbon.identity.login.resolver.service.util.LoginResolverServiceUtil;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -77,9 +75,12 @@ public class LoginResolverServiceImpl implements LoginResolverService {
         AuthenticationResult authenticationResult =
                 new AuthenticationResult(AuthenticationResult.AuthenticationStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifier) && StringUtils.isNotBlank(tenantDomain)) {
-            List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
-            authenticationResult = LoginResolverServiceDataHolder.getInstance().getLoginResolver().
-                    authenticateWithIdentifier(loginIdentifier, allowedAttributes, credential, tenantDomain);
+            List<String> allowedAttributes = LoginResolverServiceUtil.getAllowedClaimsForTenant(tenantDomain);
+            LoginResolver loginResolver = LoginResolverServiceUtil.getSelectedLoginResolver(tenantDomain);
+            if (loginResolver != null) {
+                authenticationResult = loginResolver.authenticateWithIdentifier(loginIdentifier, allowedAttributes,
+                        credential, tenantDomain);
+            }
         }
         return authenticationResult;
     }
@@ -97,9 +98,11 @@ public class LoginResolverServiceImpl implements LoginResolverService {
 
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifier) && StringUtils.isNotBlank(tenantDomain)) {
-            List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
-            resolvedUserResult = LoginResolverServiceDataHolder.getInstance().getLoginResolver().
-                    resolveUser(loginIdentifier, allowedAttributes, tenantDomain);
+            List<String> allowedAttributes = LoginResolverServiceUtil.getAllowedClaimsForTenant(tenantDomain);
+            LoginResolver loginResolver = LoginResolverServiceUtil.getSelectedLoginResolver(tenantDomain);
+            if (loginResolver != null) {
+                resolvedUserResult = loginResolver.resolveUser(loginIdentifier, allowedAttributes, tenantDomain);
+            }
         }
         return resolvedUserResult;
     }
@@ -118,39 +121,12 @@ public class LoginResolverServiceImpl implements LoginResolverService {
 
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         if (StringUtils.isNotBlank(loginIdentifier) && StringUtils.isNotBlank(tenantDomain)) {
-            List<String> allowedClaimList = getAllowedClaimsForTenant(tenantDomain);
-            resolvedUserResult = LoginResolverServiceDataHolder.getInstance().getLoginResolver().
-                    resolveUser(loginIdentifier, allowedClaimList, tenantDomain, hint);
-        }
-        return resolvedUserResult;
-    }
-
-    /**
-     * Retrieves the list of claim URIs which are enabled for the login resolver on given tenant domain.
-     *
-     * @param tenantDomain The tenant domain of the user.
-     * @return The claim list for which the login resolver is enabled.
-     */
-    public List<String> getAllowedClaimsForTenant(String tenantDomain) {
-
-        List<String> allowedClaimsList = new ArrayList<>();
-        if (StringUtils.isNotBlank(tenantDomain)) {
-            try {
-                String claimList = LoginResolverServiceUtil.
-                        getConnectorConfig(LoginResolverServiceConstants.ALLOWED_LOGIN_ATTRIBUTES, tenantDomain);
-                if (StringUtils.isNotBlank(claimList)) {
-                    claimList = StringUtils.deleteWhitespace(claimList);
-                    allowedClaimsList = Arrays.asList(claimList.split(","));
-                }
-
-            } catch (IdentityEventException e) {
-                log.error(String.format("An error occurred while retrieving the allowed login claims for the tenant " +
-                        "domain: %s.", tenantDomain), e);
+            List<String> allowedClaimList = LoginResolverServiceUtil.getAllowedClaimsForTenant(tenantDomain);
+            LoginResolver loginResolver = LoginResolverServiceUtil.getSelectedLoginResolver(tenantDomain);
+            if (loginResolver != null) {
+                resolvedUserResult = loginResolver.resolveUser(loginIdentifier, allowedClaimList, tenantDomain, hint);
             }
         }
-        if (allowedClaimsList.isEmpty()) {
-            allowedClaimsList.add(LoginResolverServiceConstants.USERNAME_CLAIM_URI);
-        }
-        return allowedClaimsList;
+        return resolvedUserResult;
     }
 }

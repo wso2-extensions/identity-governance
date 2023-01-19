@@ -59,7 +59,7 @@
                             <goal>p2-feature-gen</goal>
                         </goals>
                         <configuration>
-                            <id>org.wso2.carbon.identity.multi.attribute.login.service.server</id>
+                            <id>org.wso2.carbon.identity.login.resolver.service.server</id>
                             <propertiesFile>../../etc/feature.properties</propertiesFile>
                             <adviceFile>
                                 <properties>
@@ -71,7 +71,7 @@
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.login.resolver.regex
                                 </bundleDef>
                                 <bundleDef>
-                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.login.resolver.regex.service
+                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.login.resolver.service
                                 </bundleDef>
                             </bundles>
                             <importFeatures>

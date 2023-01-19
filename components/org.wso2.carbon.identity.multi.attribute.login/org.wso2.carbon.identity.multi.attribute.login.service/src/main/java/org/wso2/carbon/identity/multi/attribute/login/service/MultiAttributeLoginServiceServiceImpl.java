@@ -22,9 +22,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.login.resolver.service.constants.LoginResolverServiceConstants;
 import org.wso2.carbon.identity.multi.attribute.login.constants.MultiAttributeLoginConstants;
 import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginDataHolder;
-import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginServiceComponent;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.utill.MultiAttributeLoginUtil;
@@ -36,6 +36,9 @@ import java.util.List;
 
 /**
  * This service provides the services needed to multi attribute login.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.LoginResolverServiceImpl} class instead.
  */
 public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLoginService {
 
@@ -52,8 +55,8 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
 
         if (StringUtils.isNotBlank(tenantDomain)) {
             try {
-                return Boolean.parseBoolean(MultiAttributeLoginUtil.getConnectorConfig(MultiAttributeLoginConstants
-                        .MULTI_ATTRIBUTE_LOGIN_PROPERTY, tenantDomain));
+                return Boolean.parseBoolean(MultiAttributeLoginUtil.getConnectorConfig(LoginResolverServiceConstants
+                        .LOGIN_RESOLVER_PROPERTY, tenantDomain));
             } catch (IdentityEventException e) {
                 log.error("Error occurred while retrieving multi attribute login property.", e);
             }
@@ -73,7 +76,7 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
         if (StringUtils.isNotBlank(tenantDomain)) {
             try {
                 String claimList = MultiAttributeLoginUtil.
-                        getConnectorConfig(MultiAttributeLoginConstants.ALLOWED_LOGIN_ATTRIBUTES, tenantDomain);
+                        getConnectorConfig(LoginResolverServiceConstants.ALLOWED_LOGIN_ATTRIBUTES, tenantDomain);
                 if (StringUtils.isNotBlank(claimList)) {
                     claimList = StringUtils.deleteWhitespace(claimList);
                     allowedClaimsList = Arrays.asList(claimList.split(","));

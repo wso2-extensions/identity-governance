@@ -18,12 +18,12 @@
  -->
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
-<suite name="Identity-Governance-Multi-Attribute-Login-Regex-Resolver-Test-Suite">
-    <test name="Util-Tests" preserve-order="true" parallel="false">
+<suite name="Identity-Governance-Regex-Login-Resolver-Test-Suite">
+    <test name="Regex-Login-Resolver-Tests" parallel="false">
         <parameter name="log-level" value="info"/>
         <classes>
-            <class name="org.wso2.carbon.identity.login.resolver.regex.RegexLoginResolverTest" />
-            <class name="org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceComponentTest" />
+            <class name="org.wso2.carbon.identity.login.resolver.regex.RegexLoginResolverTest"/>
+            <class name="org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceComponentTest"/>
         </classes>
     </test>
 </suite>

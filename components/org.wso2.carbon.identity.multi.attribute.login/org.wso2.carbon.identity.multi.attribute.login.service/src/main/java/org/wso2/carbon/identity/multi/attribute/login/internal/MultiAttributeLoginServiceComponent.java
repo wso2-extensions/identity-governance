@@ -28,8 +28,6 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.multi.attribute.login.handler.MultiAttributeLoginHandler;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginResolver;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.multi.attribute.login.service.MultiAttributeLoginServiceServiceImpl;
@@ -37,6 +35,9 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * This class is used to activate MultiAttributeLoginService.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.internal.LoginResolverServiceComponent} class instead.
  */
 @Component(
         name = "identity.core.multi.attribute.login.component",
@@ -50,7 +51,14 @@ public class MultiAttributeLoginServiceComponent {
     protected void activate(ComponentContext context) {
 
         BundleContext bundleContext = context.getBundleContext();
-        // TODO - The following section multiAttributeLoginHandler should be commented.
+        /*
+        The following section which registers the multiAttributeLoginHandler has been commented since an alternate
+        handler named org.wso2.carbon.identity.login.resolver.service.LoginResolverServiceHandler takes its place. If
+        for some reason this is registered it can show an additional UI field in the resident IdP section. However,
+        the alternate handler mentioned earlier should handle the same functionalities offered by this handler without
+        an issue.
+        */
+        /*
         try {
             IdentityConnectorConfig multiAttributeLoginHandler = new MultiAttributeLoginHandler();
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
@@ -61,6 +69,7 @@ public class MultiAttributeLoginServiceComponent {
         } catch (Throwable e) {
             log.error("Error while activating MultiAttributeLoginHandler.", e);
         }
+        */
         try {
             MultiAttributeLoginService multiAttributeLoginService = new MultiAttributeLoginServiceServiceImpl();
             bundleContext.registerService(MultiAttributeLoginService.class.getName(),

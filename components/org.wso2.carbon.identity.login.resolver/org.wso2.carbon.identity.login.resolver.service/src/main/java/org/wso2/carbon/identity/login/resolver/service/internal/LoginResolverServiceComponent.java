@@ -32,7 +32,7 @@ import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.login.resolver.mgt.LoginResolver;
 import org.wso2.carbon.identity.login.resolver.mgt.LoginResolverService;
 import org.wso2.carbon.identity.login.resolver.service.handler.LoginResolverServiceHandler;
-import org.wso2.carbon.identity.login.resolver.service.service.LoginResolverServiceImpl;
+import org.wso2.carbon.identity.login.resolver.service.LoginResolverServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -111,13 +111,13 @@ public class LoginResolverServiceComponent {
     @Reference(
             name = "LoginResolver",
             service = LoginResolver.class,
-            cardinality = ReferenceCardinality.MANDATORY,
+            cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetLoginResolver"
     )
     protected void setLoginResolver(LoginResolver loginResolver) {
 
-        LoginResolverServiceDataHolder.getInstance().setLoginResolver(loginResolver);
+        LoginResolverServiceDataHolder.getInstance().addLoginResolver(loginResolver);
     }
 
     /**
@@ -128,7 +128,7 @@ public class LoginResolverServiceComponent {
      */
     protected void unsetLoginResolver(LoginResolver loginResolver) {
 
-        LoginResolverServiceDataHolder.getInstance().setLoginResolver(null);
+        LoginResolverServiceDataHolder.getInstance().removeLoginResolver(loginResolver);
     }
 
     /**

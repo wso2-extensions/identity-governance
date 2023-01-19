@@ -22,6 +22,9 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.login.resolver.mgt.LoginResolver;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data holder for the LoginResolverServiceComponent.
  */
@@ -30,7 +33,7 @@ public class LoginResolverServiceDataHolder {
     private static final LoginResolverServiceDataHolder instance = new LoginResolverServiceDataHolder();
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;
-    private LoginResolver loginResolver;
+    private List<LoginResolver> loginResolverList = new ArrayList<>();
 
     /**
      * Private constructor to make sure that only a single instance will exist.
@@ -90,22 +93,42 @@ public class LoginResolverServiceDataHolder {
     }
 
     /**
-     * Retrieves the login resolver.
+     * Retrieves the list of login resolvers.
      *
-     * @return The login resolver.
+     * @return The list of login resolvers.
      */
-    public LoginResolver getLoginResolver() {
+    public List<LoginResolver> getLoginResolverList() {
 
-        return loginResolver;
+        return loginResolverList;
     }
 
     /**
-     * Sets the login resolver.
+     * Sets the list of login resolvers.
      *
-     * @param loginResolver The login resolver to be set.
+     * @param loginResolverList The list of login resolvers to be set.
      */
-    public void setLoginResolver(LoginResolver loginResolver) {
+    public void setLoginResolverList(List<LoginResolver> loginResolverList) {
 
-        this.loginResolver = loginResolver;
+        this.loginResolverList = loginResolverList;
+    }
+
+    /**
+     * Adds a login resolver to the existing list of login resolvers.
+     *
+     * @param loginResolver The login resolver to be added.
+     */
+    public void addLoginResolver(LoginResolver loginResolver) {
+
+        this.loginResolverList.add(loginResolver);
+    }
+
+    /**
+     * Removes a login resolver to the existing list of login resolvers.
+     *
+     * @param loginResolver The login resolver to be removed.
+     */
+    public void removeLoginResolver(LoginResolver loginResolver) {
+
+        this.loginResolverList.remove(loginResolver);
     }
 }

@@ -30,6 +30,9 @@ import java.util.Properties;
 
 /**
  * This handler is used to manage multi attribute login configurations in carbon console.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.handler.LoginResolverServiceHandler} class instead.
  */
 public class MultiAttributeLoginHandler implements IdentityConnectorConfig {
 

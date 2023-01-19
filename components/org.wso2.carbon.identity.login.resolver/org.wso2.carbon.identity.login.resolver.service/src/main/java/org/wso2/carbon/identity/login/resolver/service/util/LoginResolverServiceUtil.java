@@ -19,16 +19,26 @@
 package org.wso2.carbon.identity.login.resolver.service.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.login.resolver.mgt.LoginResolver;
+import org.wso2.carbon.identity.login.resolver.service.constants.LoginResolverServiceConstants;
 import org.wso2.carbon.identity.login.resolver.service.internal.LoginResolverServiceDataHolder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The utility class that is used within the login resolver service module.
  */
 public class LoginResolverServiceUtil {
+
+    private static final Log log = LogFactory.getLog(LoginResolverServiceUtil.class);
 
     /**
      * Private constructor to restrict from creating multiple instances of the LoginResolverServiceUtil class.
@@ -63,5 +73,76 @@ public class LoginResolverServiceUtil {
             throw new IdentityEventException(String.format("An error occurred while getting the connector " +
                     "configurations for the property : %s", key), e);
         }
+    }
+
+    /**
+     * Retrieves the list of claim URIs which are enabled for the login resolver on given tenant domain.
+     *
+     * @param tenantDomain The tenant domain of the user.
+     * @return The claim list for which the login resolver is enabled.
+     */
+    public static List<String> getAllowedClaimsForTenant(String tenantDomain) {
+
+        List<String> allowedClaimsList = new ArrayList<>();
+        if (StringUtils.isNotBlank(tenantDomain)) {
+            try {
+                String claimList = LoginResolverServiceUtil.
+                        getConnectorConfig(LoginResolverServiceConstants.ALLOWED_LOGIN_ATTRIBUTES, tenantDomain);
+                if (StringUtils.isNotBlank(claimList)) {
+                    claimList = StringUtils.deleteWhitespace(claimList);
+                    allowedClaimsList = Arrays.asList(claimList.split(","));
+                }
+
+            } catch (IdentityEventException e) {
+                log.error(String.format("An error occurred while retrieving the allowed login claims for the tenant " +
+                        "domain: %s.", tenantDomain), e);
+            }
+        }
+        if (allowedClaimsList.isEmpty()) {
+            allowedClaimsList.add(LoginResolverServiceConstants.USERNAME_CLAIM_URI);
+        }
+        return allowedClaimsList;
+    }
+
+    /**
+     * Extracts the correct login resolver based on the resident IdP configuration related to the login resolver class.
+     *
+     * @param tenantDomain The tenant domain.
+     * @return A login resolver if found, null if else.
+     */
+    public static LoginResolver getSelectedLoginResolver(String tenantDomain) {
+
+        String selectedLoginResolverClass = StringUtils.EMPTY;
+        try {
+            selectedLoginResolverClass = getConnectorConfig(LoginResolverServiceConstants.LOGIN_RESOLVER_PROPERTY,
+                    tenantDomain);
+        } catch (IdentityEventException e) {
+            log.error("An error occurred while retrieving login resolver class property.", e);
+        }
+
+        List<LoginResolver> loginResolverList = LoginResolverServiceDataHolder.getInstance().getLoginResolverList();
+        if (!loginResolverList.isEmpty()) {
+            if (StringUtils.isBlank(selectedLoginResolverClass)) {
+                selectedLoginResolverClass = LoginResolverServiceConstants.DEFAULT_LOGIN_RESOLVER_CLASS;
+            }
+            for (LoginResolver loginResolver : loginResolverList) {
+                String loginResolverName = loginResolver.getClass().getCanonicalName();
+                if (loginResolverName.equals(selectedLoginResolverClass)) {
+                    return loginResolver;
+                }
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("There are no login resolvers registered to be used. This is an un-expected situation " +
+                        "because even the default login resolver has not be registered.");
+            }
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("A login resolver with the provided login resolver class %s.",
+                    selectedLoginResolverClass));
+        }
+        return null;
     }
 }
