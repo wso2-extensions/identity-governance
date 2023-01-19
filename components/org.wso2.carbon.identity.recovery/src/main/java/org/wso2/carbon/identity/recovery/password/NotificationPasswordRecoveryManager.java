@@ -552,6 +552,9 @@ public class NotificationPasswordRecoveryManager {
         boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
                 userRecoveryData.getUser().getTenantDomain()));
+        boolean isNotificationSendOnAccountActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
+                userRecoveryData.getUser().getTenantDomain()));
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                 userRecoveryData.getUser().getUserStoreDomain());
 
@@ -564,7 +567,9 @@ public class NotificationPasswordRecoveryManager {
             String emailTemplate = null;
             if (isAskPasswordFlow(userRecoveryData) &&
                     isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
-                emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                if (isNotificationSendOnAccountActivation) {
+                    emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                }
             } else if (isNotificationSendWhenSuccess) {
                 emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
             }
