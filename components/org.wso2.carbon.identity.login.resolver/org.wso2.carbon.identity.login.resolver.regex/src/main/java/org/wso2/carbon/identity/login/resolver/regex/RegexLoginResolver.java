@@ -38,7 +38,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * This class is used to implement LoginResolver. In this class, users will get resolved using a regex pattern.
+ * This class defines the default implementation of the LoginResolver. With the help of this login resolver, users will
+ * get resolved using a claim regex pattern defined in the management console.
  */
 public class RegexLoginResolver implements LoginResolver {
 

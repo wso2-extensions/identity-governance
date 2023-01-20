@@ -71,7 +71,7 @@ public class LoginResolverServiceUtil {
             return StringUtils.EMPTY;
         } catch (IdentityGovernanceException e) {
             throw new IdentityEventException(String.format("An error occurred while getting the connector " +
-                    "configurations for the property : %s", key), e);
+                    "configurations for the property : %s", replaceCRLFWithUnderscore(key)), e);
         }
     }
 
@@ -95,7 +95,7 @@ public class LoginResolverServiceUtil {
 
             } catch (IdentityEventException e) {
                 log.error(String.format("An error occurred while retrieving the allowed login claims for the tenant " +
-                        "domain: %s.", tenantDomain), e);
+                        "domain: %s.", replaceCRLFWithUnderscore(tenantDomain)), e);
             }
         }
         if (allowedClaimsList.isEmpty()) {
@@ -141,8 +141,20 @@ public class LoginResolverServiceUtil {
 
         if (log.isDebugEnabled()) {
             log.debug(String.format("A login resolver with the provided login resolver class %s.",
-                    selectedLoginResolverClass));
+                    replaceCRLFWithUnderscore(selectedLoginResolverClass)));
         }
         return null;
+    }
+
+    /**
+     * Replace any carriage returns and line feeds with an underscore to prevent log injection attacks. Extracted from
+     * <a href="https://github.com/augustd/owasp-security-logging">owasp-security-logging</a>.
+     *
+     * @param value String value which needs to be converted.
+     * @return The converted string value.
+     */
+    public static String replaceCRLFWithUnderscore(String value) {
+
+        return value.replace('\n', '_').replace('\r', '_');
     }
 }

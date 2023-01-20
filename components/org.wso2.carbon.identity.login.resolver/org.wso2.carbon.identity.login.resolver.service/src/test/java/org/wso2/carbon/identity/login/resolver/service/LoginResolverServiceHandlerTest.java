@@ -117,7 +117,7 @@ public class LoginResolverServiceHandlerTest {
         expectedDescriptionMappingTrue.put(LoginResolverServiceConstants.LOGIN_RESOLVER_PROPERTY,
                 LoginResolverServiceConstants.LoginResolverServiceDescriptionMapping.
                         LOGIN_RESOLVER_PROPERTY_DESCRIPTION_MAPPING);
-        expectedDescriptionMappingTrue.put(LoginResolverServiceConstants.DEFAULT_LOGIN_RESOLVER_CLASS,
+        expectedDescriptionMappingTrue.put(LoginResolverServiceConstants.LOGIN_RESOLVER_CLASS,
                 LoginResolverServiceConstants.LoginResolverServiceDescriptionMapping.
                         LOGIN_RESOLVER_CLASS_DESCRIPTION_MAPPING);
         expectedDescriptionMappingTrue.put(LoginResolverServiceConstants.ALLOWED_LOGIN_ATTRIBUTES,

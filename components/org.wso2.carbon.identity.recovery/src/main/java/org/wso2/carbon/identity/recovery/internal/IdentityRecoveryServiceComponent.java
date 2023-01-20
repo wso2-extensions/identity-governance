@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.login.resolver.mgt.LoginResolverService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -421,10 +422,39 @@ public class IdentityRecoveryServiceComponent {
     }
 
     /**
+     * Set the login resolver service.
+     *
+     * @param loginResolverService The login resolver service.
+     */
+    @Reference(
+            name = "LoginResolverService",
+            service = LoginResolverService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetLoginResolverService")
+    protected void setLoginResolverService(LoginResolverService loginResolverService) {
+
+        dataHolder.getInstance().setLoginResolverService(loginResolverService);
+    }
+
+    /**
+     * Unset the login resolver service.
+     *
+     * @param loginResolverService The login resolver service.
+     */
+    protected void unsetLoginResolverService(LoginResolverService loginResolverService) {
+
+        dataHolder.getInstance().setLoginResolverService(null);
+    }
+
+    /**
      * Set multi attribute login service.
      *
      * @param multiAttributeLoginService Multi-attribute login service.
+     * @deprecated To generalize the resolver concept and make it extensible.
+     * Use the {@link #setLoginResolverService(LoginResolverService)} method instead.
      */
+    @Deprecated
     @Reference(
             name = "MultiAttributeLoginService",
             service = MultiAttributeLoginService.class,
@@ -440,7 +470,10 @@ public class IdentityRecoveryServiceComponent {
      * Unset multi attribute login service.
      *
      * @param multiAttributeLoginService Multi-attribute login service.
+     * @deprecated To generalize the resolver concept and make it extensible.
+     * Use the {@link #unsetLoginResolverService(LoginResolverService)} method instead.
      */
+    @Deprecated
     protected void unsetMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
 
         dataHolder.getInstance().setMultiAttributeLoginService(null);

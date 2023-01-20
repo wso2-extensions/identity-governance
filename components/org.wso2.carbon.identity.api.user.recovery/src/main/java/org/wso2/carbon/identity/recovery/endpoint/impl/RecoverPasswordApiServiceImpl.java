@@ -6,7 +6,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
+import org.wso2.carbon.identity.login.resolver.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -48,11 +48,11 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
         NotificationResponseBean notificationResponseBean = null;
 
         try {
-            // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
-            if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
-                    .isEnabled(user.getTenantDomain())) {
+            // If login resolver is enabled, resolve the user before sending recovery notification sending.
+            if (IdentityRecoveryServiceDataHolder.getInstance().getLoginResolverService().isEnabled(
+                    user.getTenantDomain())) {
                 ResolvedUserResult resolvedUserResult =
-                        IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
+                        IdentityRecoveryServiceDataHolder.getInstance().getLoginResolverService()
                                 .resolveUser(user.getUsername(), user.getTenantDomain());
                 if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                         equals(resolvedUserResult.getResolvedStatus())) {

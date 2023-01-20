@@ -25,9 +25,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceDataHolder;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
-import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
-import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils.UserResolverUtil;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
@@ -54,7 +53,7 @@ public class RegexResolverTest {
     private static final String TEST_CLAIM_REGEX = "^(\\+\\d{1,2}\\s?)?1?\\-?\\.?\\s?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$";
     private static final String TEST_LOGIN_IDENTIFIER = "+99777521771";
     private static final String TEST_TENANT_DOMAIN = "testTenantDomain";
-    private MockedStatic<RegexResolverServiceDataHolder> mockedRegexResolverServiceDataHolder;
+    private MockedStatic<RegexLoginResolverServiceDataHolder> mockedRegexLoginResolverServiceDataHolder;
     private MockedStatic<ResolvedUserResult> mockedResolvedUserResult;
 
     @Mock
@@ -76,19 +75,19 @@ public class RegexResolverTest {
     TenantManager mockTenantManager;
 
     @Mock
-    RegexResolverServiceDataHolder mockRegexResolverServiceDataHolder;
+    RegexLoginResolverServiceDataHolder mockRegexLoginResolverServiceDataHolder;
 
     @BeforeMethod
     public void setUp() {
 
-        mockedRegexResolverServiceDataHolder = Mockito.mockStatic(RegexResolverServiceDataHolder.class);
+        mockedRegexLoginResolverServiceDataHolder = Mockito.mockStatic(RegexLoginResolverServiceDataHolder.class);
         mockedResolvedUserResult = Mockito.mockStatic(ResolvedUserResult.class);
     }
 
     @AfterMethod
     public void tearDown() {
 
-        mockedRegexResolverServiceDataHolder.close();
+        mockedRegexLoginResolverServiceDataHolder.close();
         mockedResolvedUserResult.close();
     }
 
@@ -108,17 +107,19 @@ public class RegexResolverTest {
     @Test
     public void testResolveUser() throws Exception {
 
-        mockedRegexResolverServiceDataHolder.when(RegexResolverServiceDataHolder::getInstance)
-                .thenReturn(mockRegexResolverServiceDataHolder);
-        when(mockRegexResolverServiceDataHolder.getRealmService()).thenReturn(mockRealmService);
+        mockedRegexLoginResolverServiceDataHolder.when(RegexLoginResolverServiceDataHolder::getInstance)
+                .thenReturn(mockRegexLoginResolverServiceDataHolder);
+        when(mockRegexLoginResolverServiceDataHolder.getRealmService()).thenReturn(mockRealmService);
         when(mockRealmService.getTenantManager()).thenReturn(mockTenantManager);
         when(mockTenantManager.getTenantId(TEST_TENANT_DOMAIN)).thenReturn(-1234);
         when(mockUserRealm.getClaimManager()).thenReturn(mockClaimManager);
         when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
         when(mockClaimManager.getClaim(TEST_CLAIM_URI)).thenReturn(mockClaim);
         when(mockClaim.getRegEx()).thenReturn(TEST_CLAIM_REGEX);
-        when(UserResolverUtil.getUserRealm(TEST_TENANT_DOMAIN)).thenReturn(mockUserRealm);
-        when(UserResolverUtil.getUserStoreManager(TEST_TENANT_DOMAIN)).thenReturn(mockUserStoreManager);
+        when(org.wso2.carbon.identity.login.resolver.regex.utils.UserResolverUtil.getUserRealm(TEST_TENANT_DOMAIN)).
+                thenReturn(mockUserRealm);
+        when(org.wso2.carbon.identity.login.resolver.regex.utils.UserResolverUtil.getUserStoreManager(
+                TEST_TENANT_DOMAIN)).thenReturn(mockUserStoreManager);
         when(mockUserStoreManager.getUserListWithID(TEST_CLAIM_URI, TEST_LOGIN_IDENTIFIER, null)).
                 thenReturn(userList);
         regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER, allowedAttributes, TEST_TENANT_DOMAIN, "hint");
