@@ -21,8 +21,13 @@ package org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * RegexResolverService data holder class
+ * RegexResolverService data holder class.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceDataHolder} class
+ * instead.
  */
+@Deprecated
 public class RegexResolverServiceDataHolder {
 
     private static RegexResolverServiceDataHolder instance = new RegexResolverServiceDataHolder();

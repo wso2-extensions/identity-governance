@@ -26,7 +26,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.login.resolver.mgt.LoginResolverService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
@@ -60,7 +60,7 @@ public class ResendCodeApiServiceImplTest {
     private UserRecoveryData userRecoveryData;
 
     @Mock
-    private MultiAttributeLoginService mockedMultiAttributeLoginService;
+    private LoginResolverService mockedLoginResolverService;
 
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
@@ -73,7 +73,7 @@ public class ResendCodeApiServiceImplTest {
         mockedUtils = Mockito.mockStatic(Utils.class);
         mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
         mockedUtils.when(Utils::getUserSelfRegistrationManager).thenReturn(userSelfRegistrationManager);
-        FrameworkServiceDataHolder.getInstance().setMultiAttributeLoginService(mockedMultiAttributeLoginService);
+        FrameworkServiceDataHolder.getInstance().setLoginResolverService(mockedLoginResolverService);
     }
 
     @AfterMethod
@@ -104,7 +104,7 @@ public class ResendCodeApiServiceImplTest {
     }
 
     @Test
-    public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
+    public void testIdentityRecoveryExceptionInResendCodePost() throws IdentityRecoveryException {
 
         Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
@@ -113,7 +113,7 @@ public class ResendCodeApiServiceImplTest {
     }
 
     @Test
-    public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
+    public void testIdentityRecoveryClientExceptionInResendCodePost() throws IdentityRecoveryException {
 
         Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),

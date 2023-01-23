@@ -33,11 +33,16 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * This class is used to activate MultiAttributeLoginResolver.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceComponent} class
+ * instead.
  */
 @Component(
         name = "identity.multi.attribute.login.resolver.regex.component",
         immediate = true
 )
+@Deprecated
 public class RegexResolverServiceComponent {
 
     private static final Log log = LogFactory.getLog(RegexResolverServiceComponent.class);

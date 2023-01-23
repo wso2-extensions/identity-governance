@@ -23,7 +23,10 @@ import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginRes
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * Multi attribute login service data holder class
+ * Multi attribute login service data holder class.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.internal.LoginResolverServiceDataHolder} class instead.
  */
 public class MultiAttributeLoginDataHolder {
 

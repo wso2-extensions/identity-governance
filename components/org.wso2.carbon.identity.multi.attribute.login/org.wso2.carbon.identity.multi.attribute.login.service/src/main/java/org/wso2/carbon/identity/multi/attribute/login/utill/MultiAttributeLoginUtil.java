@@ -24,10 +24,12 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginDataHolder;
-import org.wso2.carbon.identity.multi.attribute.login.internal.MultiAttributeLoginServiceComponent;
 
 /**
  * This is utility class used for returning connector configurations.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.service.util.LoginResolverServiceUtil} class instead.
  */
 public class MultiAttributeLoginUtil {
 

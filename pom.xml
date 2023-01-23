@@ -59,6 +59,7 @@
         <module>components/org.wso2.carbon.identity.api.user.governance</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
+        <module>components/org.wso2.carbon.identity.login.resolver</module>
 
         <module>service-stubs/identity</module>
 
@@ -74,6 +75,7 @@
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
+        <module>features/org.wso2.carbon.identity.login.resolver.service.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -463,6 +465,21 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.login.resolver.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.login.resolver.regex</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.login.resolver.service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
@@ -639,7 +656,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.25.70</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.25.83-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 

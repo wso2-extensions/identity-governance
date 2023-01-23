@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils;
 
-import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceComponent;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
@@ -27,7 +26,11 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * This is a helper class for regex based user resolve service.
+ *
+ * @deprecated To generalize the resolver concept and make it extensible.
+ * Use the {@link org.wso2.carbon.identity.login.resolver.regex.utils.UserResolverUtil} class instead.
  */
+@Deprecated
 public class UserResolverUtil {
 
     private UserResolverUtil() {

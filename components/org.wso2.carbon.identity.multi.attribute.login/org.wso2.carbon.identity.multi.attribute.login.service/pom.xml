@@ -34,6 +34,10 @@
             <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.login.resolver.service</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.core</artifactId>
         </dependency>
@@ -81,6 +85,8 @@
                             org.wso2.carbon.identity.governance.common;
                             version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.login.resolver.service.constants;
+                            version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*; version="${carbon.kernel.package.import.version.range}",

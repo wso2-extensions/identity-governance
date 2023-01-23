@@ -31,6 +31,14 @@
     <dependencies>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.login.resolver.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.login.resolver.regex</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.multi.attribute.login.mgt</artifactId>
         </dependency>
         <dependency>
@@ -82,6 +90,10 @@
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance; version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.login.resolver.regex;
+                            version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.login.resolver.mgt;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.user.api; version="${carbon.user.api.imp.pkg.version.range}",
