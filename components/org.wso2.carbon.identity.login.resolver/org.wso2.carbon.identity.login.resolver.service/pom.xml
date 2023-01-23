@@ -94,7 +94,6 @@
                             org.wso2.carbon.identity.governance; version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance.common;
                             version="${identity.governance.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.governance;version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.login.resolver.mgt;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.common; version="${carbon.kernel.package.import.version.range}",
