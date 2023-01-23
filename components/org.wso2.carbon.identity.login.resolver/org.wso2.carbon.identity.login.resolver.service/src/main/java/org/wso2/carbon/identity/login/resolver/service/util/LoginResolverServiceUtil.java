@@ -114,7 +114,7 @@ public class LoginResolverServiceUtil {
 
         String selectedLoginResolverClass = StringUtils.EMPTY;
         try {
-            selectedLoginResolverClass = getConnectorConfig(LoginResolverServiceConstants.LOGIN_RESOLVER_PROPERTY,
+            selectedLoginResolverClass = getConnectorConfig(LoginResolverServiceConstants.LOGIN_RESOLVER_CLASS,
                     tenantDomain);
         } catch (IdentityEventException e) {
             log.error("An error occurred while retrieving login resolver class property.", e);
