@@ -21,7 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
+import org.wso2.carbon.identity.login.resolver.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -60,8 +60,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             resendCodeRequestDTO.getUser().setTenantDomain(tenantFromContext);
         }
 
-        // Resolve the username using the login attribute when multi attribute login is enabled.
-        ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
+        // Resolve the username using the login attribute when the login resolver is enabled.
+        ResolvedUserResult resolvedUserResult = FrameworkUtils.processLoginResolverIdentification(
                 resendCodeRequestDTO.getUser().getUsername(), resendCodeRequestDTO.getUser().getTenantDomain());
         if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
             resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getUsername());
