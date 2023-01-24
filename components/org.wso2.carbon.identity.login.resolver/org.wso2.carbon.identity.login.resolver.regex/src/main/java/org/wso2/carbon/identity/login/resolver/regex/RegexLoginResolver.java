@@ -30,6 +30,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
+import org.wso2.carbon.user.core.common.FailureReason;
 import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.constants.UserCoreClaimConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -44,6 +45,8 @@ import java.util.regex.Pattern;
 public class RegexLoginResolver implements LoginResolver {
 
     private static final Log log = LogFactory.getLog(RegexLoginResolver.class);
+    private static final String ALLOWED_ATTRIBUTES_NOT_SET = "There are no allowed attributes configured through the " +
+            "resident identity provider configurations.";
 
     /**
      * Resolves a user from the given login identifier and then returns the resolved claim URI and the user details if
@@ -60,20 +63,21 @@ public class RegexLoginResolver implements LoginResolver {
         ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
         try {
             if (allowedAttributes == null) {
+                resolvedUserResult.setErrorMessage(ALLOWED_ATTRIBUTES_NOT_SET);
+                return resolvedUserResult;
+            } else if (allowedAttributes.isEmpty()) {
+                resolvedUserResult.setErrorMessage(ALLOWED_ATTRIBUTES_NOT_SET);
                 return resolvedUserResult;
             }
             UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
             UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
             ClaimManager claimManager = userRealm.getClaimManager();
             for (String claimURI : allowedAttributes) {
-                Claim claim = claimManager.getClaim(claimURI);
-                if (claim == null) {
+                Claim claim = StringUtils.isBlank(claimURI) ? null : claimManager.getClaim(claimURI);
+                if (UserResolverUtil.isClaimNotValid(claim)) {
                     continue;
                 }
                 String regex = claim.getRegEx();
-                if (StringUtils.isBlank(regex)) {
-                    continue;
-                }
                 Pattern pattern = Pattern.compile(regex);
                 String domainSeparateAttribute = UserCoreUtil.removeDomainFromName(loginIdentifier);
                 if (pattern.matcher(domainSeparateAttribute).matches()) {
@@ -110,7 +114,9 @@ public class RegexLoginResolver implements LoginResolver {
     public ResolvedUserResult resolveUser(String loginIdentifier, List<String> allowedAttributes, String tenantDomain,
                                           String hint) {
 
-        log.warn("User resolver with hint is not yet implemented. Proceeding without the hint.");
+        log.warn("User resolver with hint is not yet implemented for the tenant domain " +
+                tenantDomain.replace('\n', '_').replace('\r', '_') +
+                ". Proceeding without the hint.");
         return resolveUser(loginIdentifier, allowedAttributes, tenantDomain);
     }
 
@@ -134,20 +140,21 @@ public class RegexLoginResolver implements LoginResolver {
         ClaimManager claimManager;
         try {
             if (allowedAttributes == null) {
+                authenticationResult.setFailureReason(new FailureReason(ALLOWED_ATTRIBUTES_NOT_SET));
+                return authenticationResult;
+            } else if (allowedAttributes.isEmpty()) {
+                authenticationResult.setFailureReason(new FailureReason(ALLOWED_ATTRIBUTES_NOT_SET));
                 return authenticationResult;
             }
             UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
             UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
             claimManager = userRealm.getClaimManager();
             for (String claimURI : allowedAttributes) {
-                Claim claim = claimManager.getClaim(claimURI);
-                if (claim == null) {
+                Claim claim = StringUtils.isBlank(claimURI) ? null : claimManager.getClaim(claimURI);
+                if (UserResolverUtil.isClaimNotValid(claim)) {
                     continue;
                 }
                 String regex = claim.getRegEx();
-                if (StringUtils.isBlank(regex)) {
-                    continue;
-                }
                 Pattern pattern = Pattern.compile(regex);
                 if (pattern.matcher(loginIdentifier).matches()) {
                     authenticationResult = userStoreManager.
@@ -167,6 +174,9 @@ public class RegexLoginResolver implements LoginResolver {
                 authenticationResult =
                         userStoreManager.authenticateWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI, loginIdentifier,
                                 credential, StringUtils.EMPTY);
+            } else if (allowedAttributes.size() > 1) {
+                authenticationResult.setFailureReason(new FailureReason("None of the allowed attributes contain a " +
+                        "regex or the login identifier provided does not match with the provided regex."));
             }
         } catch (UserStoreException e) {
             log.error("An error occurred while resolving authentication result.", e);
@@ -190,7 +200,9 @@ public class RegexLoginResolver implements LoginResolver {
             throws org.wso2.carbon.user.core.UserStoreException {
 
         List<User> userList = userStoreManager.getUserListWithID(claimURI, loginIdentifier, null);
-        if (userList.size() == 1) {
+        if (userList == null) {
+            resolvedUserResult.setErrorMessage("The user list was not in a proper format to resolve a user.");
+        } else if (userList.size() == 1) {
             resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.SUCCESS);
             resolvedUserResult.setResolvedClaim(claimURI);
             resolvedUserResult.setResolvedValue(loginIdentifier);
@@ -199,7 +211,10 @@ public class RegexLoginResolver implements LoginResolver {
             resolvedUserResult.setUser(user);
         } else if (userList.size() > 1) {
             resolvedUserResult.setErrorMessage("Found multiple users for " + claim.getDisplayTag() +
-                    " to value " + loginIdentifier);
+                    " to value " + loginIdentifier + ".");
+        } else {
+            resolvedUserResult.setErrorMessage("No users were found for the claim " + claim.getDisplayTag() + " that " +
+                    "corresponds to the login identifier value " + loginIdentifier + ".");
         }
     }
 }

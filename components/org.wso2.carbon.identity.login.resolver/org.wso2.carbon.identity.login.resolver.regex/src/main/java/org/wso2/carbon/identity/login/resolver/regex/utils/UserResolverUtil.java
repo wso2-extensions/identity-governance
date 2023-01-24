@@ -18,7 +18,9 @@
 
 package org.wso2.carbon.identity.login.resolver.regex.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.login.resolver.regex.internal.RegexLoginResolverServiceDataHolder;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
@@ -65,5 +67,20 @@ public class UserResolverUtil {
 
         UserRealm userRealm = getUserRealm(tenantDomain);
         return (UniqueIDUserStoreManager) userRealm.getUserStoreManager();
+    }
+
+    /**
+     * Checks whether the provided claim is not valid to be used.
+     *
+     * @param claim The claim which is to be checked for validity.
+     * @return Whether the claim is valid or not.
+     */
+    public static boolean isClaimNotValid(Claim claim) {
+
+        if (claim == null) {
+            return true;
+        } else {
+            return StringUtils.isBlank(claim.getRegEx());
+        }
     }
 }
