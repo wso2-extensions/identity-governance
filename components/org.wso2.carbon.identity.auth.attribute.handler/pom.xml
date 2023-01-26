@@ -24,12 +24,12 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.8.14-SNAPSHOT</version>
+        <version>1.8.16-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
-    <name>WSO2 Carbon - Identity Authentication Attribute Handler</name>
+    <name>WSO2 Carbon - Identity Auth Attribute Handler</name>
     <packaging>bundle</packaging>
 
     <dependencies>

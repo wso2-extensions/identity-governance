@@ -25,19 +25,9 @@ public class AuthAttributeHandlerClientException extends AuthAttributeHandlerExc
 
     private static final long serialVersionUID = -3053314671550333970L;
 
-    public AuthAttributeHandlerClientException(String message) {
-
-        super(message);
-    }
-
     public AuthAttributeHandlerClientException(String errorCode, String message) {
 
         super(errorCode, message);
-    }
-
-    public AuthAttributeHandlerClientException(String message, Throwable cause) {
-
-        super(message, cause);
     }
 
     public AuthAttributeHandlerClientException(String errorCode, String message, Throwable cause) {

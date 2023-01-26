@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.auth.attribute.handler;
 
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.AuthAttributeHolder;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 
 import java.util.Map;
 
@@ -53,8 +54,8 @@ public abstract class MockAbstractAuthAttributeHandler implements AuthAttributeH
     }
 
     @Override
-    public boolean isValidAttributes(Map<String, String> attributeMap) throws AuthAttributeHandlerException {
+    public ValidationResult validateAttributes(Map<String, String> attributeMap) throws AuthAttributeHandlerException {
 
-        return false;
+        return null;
     }
 }

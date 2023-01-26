@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.auth.attribute.handler;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.AuthenticationStep;
 import org.wso2.carbon.identity.application.common.model.LocalAndOutboundAuthenticationConfig;
@@ -32,10 +31,12 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.internal.AuthAttributeHandlerServiceDataHolder;
 import org.wso2.carbon.identity.auth.attribute.handler.model.AuthAttributeHolder;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND;
+import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR;
 
 /**
  * Service class responsible for handling Auth Attribute Handlers.
@@ -71,10 +72,9 @@ public class AuthAttributeHandlerManager {
      * @return A list of Auth Attribute Holders.
      * @throws AuthAttributeHandlerException authAttributeHandlerException.
      */
-    public List<AuthAttributeHolder> getAvailableAuthAttributeHolders(String appId) throws
+    public List<AuthAttributeHolder> getAvailableAuthAttributeHolders(String appId, String tenantDomain) throws
             AuthAttributeHandlerException {
 
-        String tenantDomain = resolveTenantDomain();
         List<String> authenticators = getAvailableAuthenticators(appId, tenantDomain);
         List<AuthAttributeHandler> authAttributeHandlers =
                 AuthAttributeHandlerServiceDataHolder.getInstance().getAuthAttributeHandlers();
@@ -101,18 +101,20 @@ public class AuthAttributeHandlerManager {
         ServiceProvider sp = null;
         try {
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("Attempting to retrieve configures authenticators for appId: %s in " +
+                LOG.debug(String.format("Attempting to retrieve configured authenticators for appId: %s in " +
                         "tenantDomain: %s", appId, tenantDomain));
             }
             sp = getApplicationManagementService().getApplicationByResourceId(appId, tenantDomain);
         } catch (IdentityApplicationManagementException e) {
-            throw new AuthAttributeHandlerException(String.format("Error while retrieving application for appId: %s " +
-                    "in tenantDomain: %s", appId, tenantDomain), e);
+            throw new AuthAttributeHandlerException(
+                    ERROR_CODE_UNEXPECTED_ERROR.getCode(),
+                    String.format("Error while retrieving application for appId: %s in tenantDomain: %s",
+                            appId, tenantDomain), e);
         }
 
         if (sp == null) {
-            throw new AuthAttributeHandlerClientException(String.format("Cannot resolve service provider from " +
-                    "provided appId: %s in tenantDomain: %s", appId, tenantDomain));
+            throw new AuthAttributeHandlerClientException(ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getCode(),
+                    String.format(ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getMessage(), tenantDomain, appId));
         }
 
         AuthenticationStep[] authenticationSteps = null;
@@ -143,19 +145,5 @@ public class AuthAttributeHandlerManager {
         }
 
         return authenticators;
-    }
-
-    private String resolveTenantDomain() {
-
-        String tenantDomain = IdentityTenantUtil.getTenantDomainFromContext();
-        if (StringUtils.isBlank(tenantDomain)) {
-            tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Resolved tenant domain: " + tenantDomain);
-        }
-
-        return tenantDomain;
     }
 }

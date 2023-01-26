@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.auth.attribute.handler;
 
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.AuthAttributeHolder;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 
 import java.util.Map;
 
@@ -27,7 +28,7 @@ import java.util.Map;
  * Interface for an Auth Attribute Handler.
  * This interface can be implemented by any
  * component that wants to describe authentication
- * attributes that should be provided be
+ * attributes that should be provided by
  * users when onboarding.
  */
 public interface AuthAttributeHandler {
@@ -77,8 +78,12 @@ public interface AuthAttributeHandler {
      * Used to perform validations on the received attributes.
      *
      * @param attributeMap A map containing the attributes and values.
-     * @return Returns true if validations are successful.
+     * @return Returns a ValidationResult object.
+     * If the validation is successful isValid will be true, along with an
+     * empty validationFailureReasons list. If the validation failed isValid
+     * will be false and will contain a list of validationFailureReasons
+     * pointing to the validation failing auth attributes.
      * @throws AuthAttributeHandlerException authAttributeHandlerException.
      */
-    boolean isValidAttributes(Map<String, String> attributeMap) throws AuthAttributeHandlerException; //validate data
+    ValidationResult validateAttributes(Map<String, String> attributeMap) throws AuthAttributeHandlerException;
 }

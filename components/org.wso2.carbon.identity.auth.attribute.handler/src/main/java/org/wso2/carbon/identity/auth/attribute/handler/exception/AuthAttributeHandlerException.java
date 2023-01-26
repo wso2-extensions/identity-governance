@@ -27,19 +27,9 @@ public class AuthAttributeHandlerException extends IdentityException {
 
     private static final long serialVersionUID = -5419168766998504972L;
 
-    public AuthAttributeHandlerException(String message) {
-
-        super(message);
-    }
-
     public AuthAttributeHandlerException(String errorCode, String message) {
 
         super(errorCode, message);
-    }
-
-    public AuthAttributeHandlerException(String message, Throwable cause) {
-
-        super(message, cause);
     }
 
     public AuthAttributeHandlerException(String errorCode, String message, Throwable cause) {
