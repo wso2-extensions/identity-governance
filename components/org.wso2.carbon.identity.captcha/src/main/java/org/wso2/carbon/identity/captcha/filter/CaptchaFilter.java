@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.captcha.filter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
@@ -109,19 +110,21 @@ public class CaptchaFilter implements Filter {
             HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
             HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
+            String redirectURL = FrameworkUtils.getContextData(httpRequest).getRedirectURL();
+
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
                     boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
-                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                                 captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
                                 captchaPreValidationResponse.getCaptchaAttributes()));
                         return;
                     }
                 } catch (CaptchaClientException e) {
                     log.warn("Captcha validation failed for the user. Cause : " + e.getMessage());
-                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                             captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
                             captchaPreValidationResponse.getCaptchaAttributes()));
                     return;
