@@ -59,6 +59,7 @@
         <module>components/org.wso2.carbon.identity.api.user.governance</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
+        <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
 
         <module>service-stubs/identity</module>
 
@@ -74,6 +75,7 @@
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
+        <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -288,6 +290,11 @@
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.application.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.carbon.commons</groupId>
                 <artifactId>org.wso2.carbon.tenant.common</artifactId>
                 <version>${carbon.commons.version}</version>
@@ -352,6 +359,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.user.rename.core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
