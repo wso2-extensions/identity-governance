@@ -67,7 +67,6 @@ public class CaptchaFilter implements Filter {
         try {
 
             String redirectURL;
-
             if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
