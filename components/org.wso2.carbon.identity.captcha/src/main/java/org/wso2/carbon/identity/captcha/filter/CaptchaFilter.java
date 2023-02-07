@@ -66,7 +66,6 @@ public class CaptchaFilter implements Filter {
 
         try {
 
-            String redirectURL;
             if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
                 filterChain.doFilter(servletRequest, servletResponse);
                 return;
@@ -112,27 +111,19 @@ public class CaptchaFilter implements Filter {
             HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
             HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
-            AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
-
-            if (authenticationContext != null) {
-                redirectURL = authenticationContext.getRedirectURL();
-            } else {
-                redirectURL = null;
-            }
-
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
                     boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
-                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
+                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(extractRedirectURL(httpRequest),
                                 captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
                                 captchaPreValidationResponse.getCaptchaAttributes()));
                         return;
                     }
                 } catch (CaptchaClientException e) {
                     log.warn("Captcha validation failed for the user. Cause : " + e.getMessage());
-                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
+                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(extractRedirectURL(httpRequest),
                             captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
                             captchaPreValidationResponse.getCaptchaAttributes()));
                     return;
@@ -196,5 +187,17 @@ public class CaptchaFilter implements Filter {
         } else {
             filterChain.doFilter(servletRequest, servletResponse);
         }
+    }
+
+    private String extractRedirectURL(HttpServletRequest httpRequest) {
+
+        String redirectURL;
+        AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
+        if (authenticationContext != null) {
+            redirectURL = authenticationContext.getRedirectURL();
+        } else {
+            redirectURL = httpRequest.getHeader("referer");
+        }
+        return redirectURL;
     }
 }
