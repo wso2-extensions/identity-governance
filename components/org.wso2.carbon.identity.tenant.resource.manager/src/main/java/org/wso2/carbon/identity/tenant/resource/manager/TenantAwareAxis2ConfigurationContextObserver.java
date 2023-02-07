@@ -100,14 +100,16 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
             List<Resource> resourcesByTypePublisher = TenantResourceManagerDataHolder.getInstance()
                     .getConfigurationManager().getResourcesByType(PUBLISHER).getResources();
             for (Resource resource : resourcesByTypePublisher) {
-                ResourceFile tenantSpecificPublisherFile = resource.getFiles().get(0);
-                if (tenantSpecificPublisherFile != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("File for publisher name: " + tenantSpecificPublisherFile.getName()
-                                + " is available in the configuration store.");
+                if (!resource.getFiles().isEmpty()) {
+                    ResourceFile tenantSpecificPublisherFile = resource.getFiles().get(0);
+                    if (tenantSpecificPublisherFile != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("File for publisher name: " + tenantSpecificPublisherFile.getName()
+                                    + " is available in the configuration store.");
+                        }
+                        TenantResourceManagerDataHolder.getInstance().getResourceManager()
+                                .addEventPublisherConfiguration(tenantSpecificPublisherFile);
                     }
-                    TenantResourceManagerDataHolder.getInstance().getResourceManager()
-                            .addEventPublisherConfiguration(tenantSpecificPublisherFile);
                 }
             }
         } catch (ConfigurationManagementException e) {
