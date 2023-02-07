@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.captcha.filter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
@@ -64,6 +65,8 @@ public class CaptchaFilter implements Filter {
             throws IOException, ServletException {
 
         try {
+
+            String redirectURL;
 
             if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
                 filterChain.doFilter(servletRequest, servletResponse);
@@ -110,7 +113,13 @@ public class CaptchaFilter implements Filter {
             HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
             HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
-            String redirectURL = FrameworkUtils.getContextData(httpRequest).getRedirectURL();
+            AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
+
+            if (authenticationContext != null) {
+                redirectURL = FrameworkUtils.getContextData(httpRequest).getRedirectURL();
+            } else {
+                redirectURL = null;
+            }
 
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
                 try {
