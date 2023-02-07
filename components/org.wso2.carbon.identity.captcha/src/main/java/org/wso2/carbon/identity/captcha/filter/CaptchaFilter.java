@@ -115,7 +115,7 @@ public class CaptchaFilter implements Filter {
             AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
 
             if (authenticationContext != null) {
-                redirectURL = FrameworkUtils.getContextData(httpRequest).getRedirectURL();
+                redirectURL = authenticationContext.getRedirectURL();
             } else {
                 redirectURL = null;
             }
