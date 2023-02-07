@@ -62,7 +62,8 @@ public class CaptchaFilter implements Filter {
     }
 
     @Override
-    @SuppressFBWarnings(value="UNVALIDATED_REDIRECT",justification="Building the redirect URL from the referer URL.")
+    @SuppressFBWarnings(value="UNVALIDATED_REDIRECT", justification="Using referer header to annex the recaptcha " +
+            "related header parameters results in the correct redirect URL to which the request needs to be redirected")
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
 
