@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.filter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,6 +62,7 @@ public class CaptchaFilter implements Filter {
     }
 
     @Override
+    @SuppressFBWarnings(value="UNVALIDATED_REDIRECT",justification="Building the redirect URL from the referer URL.")
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
 
