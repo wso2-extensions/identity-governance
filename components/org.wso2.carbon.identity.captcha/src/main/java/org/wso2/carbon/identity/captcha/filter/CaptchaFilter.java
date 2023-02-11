@@ -114,20 +114,33 @@ public class CaptchaFilter implements Filter {
             HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
+                String redirectURL;
+                boolean isAuthenticationFlow;
+
+                AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
+                // Fallback option to use referer url in case of password/username recovery and self registration
+                if (authenticationContext != null) {
+                    isAuthenticationFlow = true;
+                    redirectURL = authenticationContext.getRedirectURL();
+                } else {
+                    isAuthenticationFlow = false;
+                    redirectURL = httpRequest.getHeader("referer");
+                }
+
                 try {
                     boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
-                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(extractRedirectURL(httpRequest),
+                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                                 captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
-                                captchaPreValidationResponse.getCaptchaAttributes()));
+                                captchaPreValidationResponse.getCaptchaAttributes(), isAuthenticationFlow));
                         return;
                     }
                 } catch (CaptchaClientException e) {
                     log.warn("Captcha validation failed for the user. Cause : " + e.getMessage());
-                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(extractRedirectURL(httpRequest),
+                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                             captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
-                            captchaPreValidationResponse.getCaptchaAttributes()));
+                            captchaPreValidationResponse.getCaptchaAttributes(), isAuthenticationFlow));
                     return;
                 }
             }
@@ -188,16 +201,6 @@ public class CaptchaFilter implements Filter {
             filterChain.doFilter(preValidationResponse.getWrappedHttpServletRequest(), servletResponse);
         } else {
             filterChain.doFilter(servletRequest, servletResponse);
-        }
-    }
-
-    private String extractRedirectURL(HttpServletRequest httpRequest) {
-
-        AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
-        if (authenticationContext != null) {
-            return authenticationContext.getRedirectURL();
-        } else {
-            return httpRequest.getHeader("referer");
         }
     }
 }
