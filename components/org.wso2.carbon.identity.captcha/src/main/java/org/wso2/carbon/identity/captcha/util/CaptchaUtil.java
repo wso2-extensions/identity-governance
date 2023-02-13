@@ -216,7 +216,6 @@ public class CaptchaUtil {
         return getOnFailRedirectUrl(referrerUrl, onFailRedirectUrls, attributes, false);
     }
 
-
     public static String getErrorPage(String status, String statusMsg) {
 
         try {
