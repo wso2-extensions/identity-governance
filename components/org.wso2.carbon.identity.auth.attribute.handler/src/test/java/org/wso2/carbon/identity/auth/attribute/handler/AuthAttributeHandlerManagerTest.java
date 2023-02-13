@@ -36,9 +36,12 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.internal.AuthAttributeHandlerServiceDataHolder;
 import org.wso2.carbon.identity.auth.attribute.handler.model.AuthAttributeHolder;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -52,6 +55,7 @@ public class AuthAttributeHandlerManagerTest {
     private static final String APP_ID = "0181313d-5c84-4ec4-a931-b73085408eff";
     private static final String TENANT_DOMAIN = "abcd";
     private static final String AUTHENTICATOR_BASICAUTH = "BasicAuthenticator";
+    private static final String AUTH_ATTRIBUTE_HANDLER_MAGICLINK = "MagicLinkAuthAttributeHandler";
     private static final String AUTHENTICATOR_MAGICLINK = "MagicLinkAuthenticator";
     private static final String AUTHENTICATOR_FIDO = "FIDOAuthenticator";
     private static final String AUTHENTICATOR_TOTP = "TOTPAuthenticator";
@@ -113,6 +117,40 @@ public class AuthAttributeHandlerManagerTest {
             isClientExceptionThrown = true;
             Assert.assertEquals(e.getErrorCode(),
                     AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getCode(),
+                    "Expected error code not found.");
+        } catch (Exception e) {
+            Assert.fail("Test threw an unexpected exception.", e);
+        }
+
+        if (!isClientExceptionThrown) {
+            Assert.fail("Expected to throw a AuthAttributeHandlerClientException but no exception was thrown.");
+        }
+    }
+
+    @Test
+    public void testValidateAuthAttributes() {
+
+        try {
+            ValidationResult validationResult =
+                    authAttributeHandlerManager.validateAuthAttributes(AUTH_ATTRIBUTE_HANDLER_MAGICLINK,
+                            getAttributeMap());
+            Assert.assertNotNull(validationResult, "Expected ValidationResult to be not null.");
+        } catch (Exception e) {
+            Assert.fail("Test threw an unexpected exception.", e);
+        }
+    }
+
+    @Test
+    public void testValidateAuthAttributesWithInvalidHandlerName() {
+
+        boolean isClientExceptionThrown = false;
+        try {
+            ValidationResult validationResult =
+                    authAttributeHandlerManager.validateAuthAttributes(AUTHENTICATOR_SMSOTP, getAttributeMap());
+        } catch (AuthAttributeHandlerClientException e) {
+            isClientExceptionThrown = true;
+            Assert.assertEquals(e.getErrorCode(),
+                    AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getCode(),
                     "Expected error code not found.");
         } catch (Exception e) {
             Assert.fail("Test threw an unexpected exception.", e);
@@ -204,6 +242,15 @@ public class AuthAttributeHandlerManagerTest {
         return authAttributeHolder;
     }
 
+    private Map<String, String> getAttributeMap() {
+
+        Map<String, String> attributeMap = new HashMap<>();
+        attributeMap.put("email", "johndoe@abc.com");
+        attributeMap.put("username", "johndoe");
+
+        return attributeMap;
+    }
+
     class BasicAuthAttributeHandler extends MockAbstractAuthAttributeHandler {
 
         @Override
@@ -222,6 +269,12 @@ public class AuthAttributeHandlerManagerTest {
     class MagicLinkAttributeHandler extends MockAbstractAuthAttributeHandler {
 
         @Override
+        public String getName() throws AuthAttributeHandlerException {
+
+            return AUTH_ATTRIBUTE_HANDLER_MAGICLINK;
+        }
+
+        @Override
         public AuthAttributeHolder getAuthAttributeData() throws AuthAttributeHandlerException {
 
             return getAuthAttributeHolder(AUTHENTICATOR_MAGICLINK);
@@ -231,6 +284,13 @@ public class AuthAttributeHandlerManagerTest {
         public String getBoundIdentifier() throws AuthAttributeHandlerException {
 
             return AUTHENTICATOR_MAGICLINK;
+        }
+
+        @Override
+        public ValidationResult validateAttributes(Map<String, String> attributeMap)
+                throws AuthAttributeHandlerException {
+
+            return new ValidationResult(true);
         }
     }
 

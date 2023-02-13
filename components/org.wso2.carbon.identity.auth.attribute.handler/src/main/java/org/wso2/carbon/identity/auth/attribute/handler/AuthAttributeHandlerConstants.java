@@ -36,7 +36,9 @@ public class AuthAttributeHandlerConstants {
         ERROR_CODE_UNEXPECTED_ERROR("65001", "Server encountered an unexpected error."),
         ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND("60001", "Service provider not found in tenant: %s for identifier: %s"),
         ERROR_CODE_ATTRIBUTE_NOT_FOUND("60002", "Required attribute not found."),
-        ERROR_CODE_ATTRIBUTE_VALUE_EMPTY("60003", "Provided attribute value is empty.");
+        ERROR_CODE_ATTRIBUTE_VALUE_EMPTY("60003", "Provided attribute value is empty."),
+        ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND("60004",
+                "Unable to find an auth attribute handler for the provided identifier: %s");
 
         private final String code;
         private final String message;
