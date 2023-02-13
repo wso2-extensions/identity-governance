@@ -31,10 +31,13 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.internal.AuthAttributeHandlerServiceDataHolder;
 import org.wso2.carbon.identity.auth.attribute.handler.model.AuthAttributeHolder;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR;
 
@@ -87,6 +90,39 @@ public class AuthAttributeHandlerManager {
         }
 
         return selectedAuthAttributeHolders;
+    }
+
+    /**
+     * This method is used to engage the validations related to the
+     * selected auth attribute handler.
+     *
+     * @param authAttributeHandlerName Name of the auth attribute handler.
+     * @param attributeMap             Set of attributes to be validated.
+     * @return A ValidationResult object containing the validation status.
+     * If there are validation failures it will contain a validation
+     * failure reason for any of the validation failed attributes.
+     * @throws AuthAttributeHandlerException authAttributeHandlerException.
+     */
+    public ValidationResult validateAuthAttributes(String authAttributeHandlerName, Map<String, String> attributeMap)
+            throws AuthAttributeHandlerException {
+
+        List<AuthAttributeHandler> authAttributeHandlers =
+                AuthAttributeHandlerServiceDataHolder.getInstance().getAuthAttributeHandlers();
+
+        AuthAttributeHandler authAttributeHandler = null;
+        for (AuthAttributeHandler handler : authAttributeHandlers) {
+            if (StringUtils.equals(handler.getName(), authAttributeHandlerName)) {
+                authAttributeHandler = handler;
+                break;
+            }
+        }
+
+        if (authAttributeHandler == null) {
+            throw new AuthAttributeHandlerClientException(ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getCode(),
+                    String.format(ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getMessage(), authAttributeHandlerName));
+        }
+
+        return authAttributeHandler.validateAttributes(attributeMap);
     }
 
     private ApplicationManagementService getApplicationManagementService() {
