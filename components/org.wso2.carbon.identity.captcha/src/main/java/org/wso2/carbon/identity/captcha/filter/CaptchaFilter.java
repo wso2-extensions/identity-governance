@@ -18,9 +18,12 @@
 
 package org.wso2.carbon.identity.captcha.filter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
@@ -59,6 +62,7 @@ public class CaptchaFilter implements Filter {
     }
 
     @Override
+    @SuppressFBWarnings("UNVALIDATED_REDIRECT")
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
 
@@ -110,20 +114,33 @@ public class CaptchaFilter implements Filter {
             HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 
             if (captchaPreValidationResponse.isCaptchaValidationRequired()) {
+                String redirectURL;
+                boolean isAuthenticationFlow;
+
+                AuthenticationContext authenticationContext = FrameworkUtils.getContextData(httpRequest);
+                // Fallback option to use referer url in case of password/username recovery and self registration
+                if (authenticationContext != null) {
+                    isAuthenticationFlow = true;
+                    redirectURL = authenticationContext.getRedirectURL();
+                } else {
+                    isAuthenticationFlow = false;
+                    redirectURL = httpRequest.getHeader("referer");
+                }
+
                 try {
                     boolean validCaptcha = selectedCaptchaConnector.verifyCaptcha(servletRequest, servletResponse);
                     if (!validCaptcha) {
                         log.warn("Captcha validation failed for the user.");
-                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                        httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                                 captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
-                                captchaPreValidationResponse.getCaptchaAttributes()));
+                                captchaPreValidationResponse.getCaptchaAttributes(), isAuthenticationFlow));
                         return;
                     }
                 } catch (CaptchaClientException e) {
                     log.warn("Captcha validation failed for the user. Cause : " + e.getMessage());
-                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(httpRequest.getHeader("referer"),
+                    httpResponse.sendRedirect(CaptchaUtil.getOnFailRedirectUrl(redirectURL,
                             captchaPreValidationResponse.getOnCaptchaFailRedirectUrls(),
-                            captchaPreValidationResponse.getCaptchaAttributes()));
+                            captchaPreValidationResponse.getCaptchaAttributes(), isAuthenticationFlow));
                     return;
                 }
             }
