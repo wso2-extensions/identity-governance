@@ -131,6 +131,9 @@
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.account.suspension.notification.task.server.feature
                                 </includedFeatureDef>
                                 <includedFeatureDef>
+                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery.ui.feature
+                                </includedFeatureDef>
+                                <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.piicontroller.server.feature
                                 </includedFeatureDef>
                             </includedFeatures>
