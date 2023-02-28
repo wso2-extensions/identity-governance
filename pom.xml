@@ -59,6 +59,7 @@
         <module>components/org.wso2.carbon.identity.api.user.governance</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
+        <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
 
         <module>service-stubs/identity</module>
 
@@ -74,6 +75,7 @@
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
+        <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -149,6 +151,11 @@
                 <groupId>org.apache.httpcomponents.wso2</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${httpcore.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${findbugs.annotation.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -283,6 +290,11 @@
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.application.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.carbon.commons</groupId>
                 <artifactId>org.wso2.carbon.tenant.common</artifactId>
                 <version>${carbon.commons.version}</version>
@@ -347,6 +359,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.user.rename.core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.auth.attribute.handler</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -634,7 +651,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.25.90</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.25.98</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
@@ -687,6 +704,7 @@
         <carbon.analytics.common.version.range>[5.2.15,6.0.0)</carbon.analytics.common.version.range>
 
         <spotbugs-maven-plugin.version>4.2.2</spotbugs-maven-plugin.version>
+        <findbugs.annotation.version>3.0.1</findbugs.annotation.version>
         <findsecbugs-plugin.version>1.10.1</findsecbugs-plugin.version>
 
         <org.wso2.securevault.version>1.1.3</org.wso2.securevault.version>

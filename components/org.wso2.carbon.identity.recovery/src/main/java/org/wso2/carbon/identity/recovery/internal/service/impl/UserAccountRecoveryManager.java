@@ -504,9 +504,11 @@ public class UserAccountRecoveryManager {
         notificationChannelDTO.setType(channelType);
         // Encode the channel Values.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskEmailAddress(value, tenantDomain));
+            notificationChannelDTO.setValue(maskLocalClaim(value, IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                    tenantDomain));
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskMobileNumber(value));
+            notificationChannelDTO.setValue(maskLocalClaim(value, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                    tenantDomain));
         } else {
             notificationChannelDTO.setValue(value);
         }
@@ -515,48 +517,54 @@ public class UserAccountRecoveryManager {
     }
 
     /**
-     * Encode the mobile of the user.
+     * Encode the local claim of the user.
      *
-     * @param mobile Mobile number
-     * @return Encoded mobile number (Empty String if the user has no mobile number).
+     * @param claimValue    Claim Value
+     * @param claimURI      Claim URI
+     * @param tenantDomain  Tenant domain
+     * @return Encoded claim value (Empty String if a value is not assigned to the user claim)
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException
      */
-    private String maskMobileNumber(String mobile) {
+    private String maskLocalClaim(String claimValue, String claimURI, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
-        if (StringUtils.isNotEmpty(mobile)) {
-            mobile = mobile.replaceAll(IdentityRecoveryConstants.ChannelMasking.MOBILE_MASKING_REGEX,
+        String localClaimMaskingRegex = getLocalClaimMaskingRegex(claimURI,tenantDomain);
+        if (StringUtils.isNotEmpty(claimValue)) {
+            claimValue = claimValue.replaceAll(localClaimMaskingRegex,
                     IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
         }
-        return mobile;
+        return claimValue;
     }
 
     /**
-     * Encode the email address of the user.
+     * Retrieving masking regex pattern for local claim.
      *
-     * @param email        Email address
-     * @param tenantDomain Tenant domain
-     * @return Encoded email address (Empty String if user has no email)
+     * @param claimURI      Claim URI
+     * @param tenantDomain  Tenant domain
+     * @return Masking regex pattern for local claim
      * @throws IdentityRecoveryServerException Error while retrieving masking regex pattern for local claim in a given
-     *                                         tenant domain.
+     * tenant domain.
      */
-    private String maskEmailAddress(String email, String tenantDomain) throws IdentityRecoveryServerException {
+    private String getLocalClaimMaskingRegex(String claimURI, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
-        String emailMaskingRegex;
-        String claimURI = IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM;
+        String localClaimMaskingRegex;
         try {
-            emailMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+            localClaimMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                     .getMaskingRegexForLocalClaim(claimURI, tenantDomain);
         } catch (ClaimMetadataException e) {
             throw new IdentityRecoveryServerException(String.format("Error while retrieving masking regex pattern " +
                     "for claim URI: %s in tenant domain: %s", claimURI, tenantDomain), e);
         }
 
-        if (StringUtils.isBlank(emailMaskingRegex)) {
-            emailMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+        if (StringUtils.isBlank(localClaimMaskingRegex)) {
+            if (IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM.equals(claimURI)) {
+                localClaimMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+            } else if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claimURI)) {
+                localClaimMaskingRegex = IdentityRecoveryConstants.ChannelMasking.MOBILE_MASKING_REGEX;
+            }
         }
-        if (StringUtils.isNotEmpty(email)) {
-            email = email.replaceAll(emailMaskingRegex, IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
-        }
-        return email;
+        return localClaimMaskingRegex;
     }
 
     /**

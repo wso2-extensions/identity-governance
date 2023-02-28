@@ -37,6 +37,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.SequenceConfig;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
@@ -158,36 +159,67 @@ public class CaptchaUtil {
         }
     }
 
-    public static String getOnFailRedirectUrl(String referrerUrl, List<String> onFailRedirectUrls,
-                                              Map<String, String> attributes) {
+    /**
+     * Build redirect URL whenever the recaptcha is not valid.
+     *
+     * @param redirectURL           The previous redirect url from which the header parameters need to be extracted.
+     * @param onFailRedirectUrls    FailRedirectUrls for each CaptchaConnector if it is configured.
+     * @param attributes            Recaptcha related attributes which used to build the redirect URL as header params.
+     * @param isAuthenticationFlow  Boolean value which differentiate authentication related captcha flow.
+     * @return                      Redirect URL to which the user needs to be redirected.
+     */
+    public static String getOnFailRedirectUrl(String redirectURL, List<String> onFailRedirectUrls,
+                                              Map<String, String> attributes,  Boolean isAuthenticationFlow) {
 
-        if (StringUtils.isBlank(referrerUrl) || onFailRedirectUrls.isEmpty()) {
+        if (StringUtils.isBlank(redirectURL) || onFailRedirectUrls.isEmpty()) {
             return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
         }
 
         URIBuilder uriBuilder;
         try {
-            uriBuilder = new URIBuilder(referrerUrl);
+            uriBuilder = new URIBuilder(redirectURL);
         } catch (URISyntaxException e) {
             return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
         }
 
-        for (String url : onFailRedirectUrls) {
-            if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
-                for (NameValuePair pair : uriBuilder.getQueryParams()) {
-                    attributes.put(pair.getName(), pair.getValue());
+        // Check whether the flow is authentication related.
+        if (isAuthenticationFlow) {
+            for (String url : onFailRedirectUrls) {
+                if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
+                    return getUpdatedUrl(redirectURL, attributes);
                 }
-                return getUpdatedUrl(url, attributes);
+            }
+        } else {
+            for (String url : onFailRedirectUrls) {
+                if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
+                    for (NameValuePair pair : uriBuilder.getQueryParams()) {
+                        attributes.put(pair.getName(), pair.getValue());
+                    }
+                    return getUpdatedUrl(url, attributes);
+                }
             }
         }
-
         return getErrorPage("Human Verification Failed.", "Something went wrong. Please try again.");
+    }
+
+    /**
+     * Build redirect URL whenever this public method has been called.
+     *
+     * @param referrerUrl           The previous redirect url from which the header parameters need to be extracted.
+     * @param onFailRedirectUrls    FailRedirectUrls for each CaptchaConnector if it is configured.
+     * @param attributes            Recaptcha related attributes which used to build the redirect URL as header params.
+     * @return                      Redirect URL to which the user needs to be redirected.
+     */
+    public static String getOnFailRedirectUrl(String referrerUrl, List<String> onFailRedirectUrls,
+                                              Map<String, String> attributes) {
+
+        return getOnFailRedirectUrl(referrerUrl, onFailRedirectUrls, attributes, false);
     }
 
     public static String getErrorPage(String status, String statusMsg) {
 
         try {
-            URIBuilder uriBuilder = new URIBuilder(CaptchaConstants.ERROR_PAGE);
+            URIBuilder uriBuilder = new URIBuilder(ConfigurationFacade.getInstance().getAuthenticationEndpointRetryURL());
             uriBuilder.addParameter("status", status);
             uriBuilder.addParameter("statusMsg", statusMsg);
             return uriBuilder.build().toString();
@@ -195,7 +227,7 @@ public class CaptchaUtil {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred while building URL.", e);
             }
-            return CaptchaConstants.ERROR_PAGE;
+            return ConfigurationFacade.getInstance().getAuthenticationEndpointRetryURL();
         }
     }
 
