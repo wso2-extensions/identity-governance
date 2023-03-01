@@ -38,6 +38,9 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
@@ -64,6 +67,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -92,10 +96,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +108,7 @@ import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -171,6 +174,17 @@ public class UserSelfRegistrationManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
                     .getUserName());
         }
+
+        // Verify whether the required attributes of the selected registration option is satisfied.
+        verifyUserAttributes(user, password, claims, properties);
+
+        // Provide support for passwordless registration.
+        // If the password is mandatory and not provided, it will be failed at the attribute verification.
+        if (password == null) {
+            UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(true);
+            Utils.generateRandomPassword(12);
+        }
+
         NotificationResponseBean notificationResponseBean;
         try {
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
@@ -1919,5 +1933,59 @@ public class UserSelfRegistrationManager {
                     eventName, e);
         }
 
+    }
+
+    /**
+     * This method is used to verify the user attributes coming in the signup request against the requirement of the
+     * registration option specified in the request.
+     *
+     * @param user       User object.
+     * @param password   Password of the user.
+     * @param claims     User claims.
+     * @param properties Properties of the request.
+     * @return ValidationResult object for the provided attributes.
+     * @throws SelfRegistrationException Exception thrown when validating the user attributes.
+     */
+    public Boolean verifyUserAttributes(User user, String password, Claim[] claims, Property[] properties)
+            throws SelfRegistrationException {
+
+        Map<String, String> userAttributes = new HashMap<>();
+        userAttributes.put("username", user.getUserName());
+        userAttributes.put("password", password);
+
+        if (ArrayUtils.isNotEmpty(claims)) {
+            for (Claim claim : claims) {
+                userAttributes.put(claim.getClaimUri(), claim.getValue());
+            }
+        }
+
+        /*
+        To preserve the existing behavior, if the registration option is not specified in the request, the default is
+        considered as the Username and Password based registration.
+        This constant is defined at the BasicAuthAuthAttributeHandler class in identity-local-auth-basicauth.
+         */
+        String registrationOption = "BasicAuthAuthAttributeHandler";
+        if (ArrayUtils.isNotEmpty(properties)) {
+            for (Property property : properties) {
+                if (SIGNUP_PROPERTY_REGISTRATION_OPTION.equals(property.getKey())) {
+                    registrationOption = property.getValue();
+                    break;
+                }
+            }
+        }
+
+        AuthAttributeHandlerManager authAttributeHandlerManager =
+                IdentityRecoveryServiceDataHolder.getInstance().getAuthAttributeHandlerManager();
+
+        ValidationResult validationResult = null;
+        try {
+            validationResult = authAttributeHandlerManager.validateAuthAttributes(registrationOption, userAttributes);
+        } catch (AuthAttributeHandlerException e) {
+            Utils.handleAttributeValidationFailure(e);
+        }
+        if (validationResult == null || !validationResult.isValid()) {
+            Utils.handleAttributeValidationFailure(validationResult);
+        }
+        return validationResult.isValid();
     }
 }

@@ -17,6 +17,7 @@
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
@@ -48,6 +49,7 @@ public class IdentityRecoveryServiceDataHolder {
     private UserFunctionalityManager userFunctionalityManagerService;
     private OTPGenerator otpGenerator;
     private MultiAttributeLoginService multiAttributeLoginService;
+    private AuthAttributeHandlerManager authAttributeHandlerManager;
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -269,4 +271,25 @@ public class IdentityRecoveryServiceDataHolder {
 
         this.otpGenerator = otpGenerator;
     }
+
+    /**
+     * Get the AuthAttributeHandlerManager object held at the data holder.
+     *
+     * @return AuthAttributeHandlerManager object.
+     */
+    public AuthAttributeHandlerManager getAuthAttributeHandlerManager() {
+
+        return authAttributeHandlerManager;
+    }
+
+    /**
+     * Set the AuthAttributeHandlerManager.
+     *
+     * @param authAttributeHandlerManager AuthAttributeHandlerManager object.
+     */
+    public void setAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        this.authAttributeHandlerManager = authAttributeHandlerManager;
+    }
+
 }

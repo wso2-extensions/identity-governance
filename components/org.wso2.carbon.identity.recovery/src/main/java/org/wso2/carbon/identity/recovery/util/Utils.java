@@ -29,6 +29,10 @@ import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -38,9 +42,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorClientException;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
-import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorServerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
@@ -51,6 +53,8 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -87,6 +91,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
 /**
@@ -1355,5 +1363,77 @@ public class Utils {
             log.error(message);
             return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
         }
+    }
+
+    /**
+     * Handle the auth attribution validation failure.
+     *
+     * @param validationResult Validation result.
+     * @throws SelfRegistrationException Exception specific to the failing reason
+     */
+    public static void handleAttributeValidationFailure(ValidationResult validationResult)
+            throws SelfRegistrationException {
+
+        if (validationResult == null) {
+            throw new SelfRegistrationClientException(
+                    ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
+                    ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getCode(),
+                    "The attribute verification result is undefined.");
+        }
+        String errorDescription = "The mandatory attributes of the selected registration option are missing or empty " +
+                "in the request.";
+        if (validationResult.getValidationFailureReasons() != null) {
+            errorDescription = convertFailureReasonsToString(validationResult.getValidationFailureReasons());
+        }
+        throw new SelfRegistrationClientException(
+                ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION.getMessage(),
+                ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION.getCode(),
+                errorDescription);
+    }
+
+    /**
+     * Handle the exceptions thrown during attribute validation.
+     *
+     * @param e AuthAttributeHandlerException.
+     * @throws SelfRegistrationException Exception specific to the failing reason.
+     */
+    public static void handleAttributeValidationFailure(AuthAttributeHandlerException e)
+            throws SelfRegistrationException {
+
+        if (e instanceof AuthAttributeHandlerClientException
+                && ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getCode().equals(e.getErrorCode())) {
+            throw new SelfRegistrationClientException(
+                    ERROR_CODE_INVALID_REGISTRATION_OPTION.getMessage(),
+                    ERROR_CODE_INVALID_REGISTRATION_OPTION.getCode(),
+                    e.getMessage());
+        }
+        throw new SelfRegistrationException(
+                ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
+                ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getCode(),
+                e.getMessage(),
+                e);
+    }
+
+    /**
+     * Convert the validation failure reasons to a string.
+     *
+     * @param validationFailureReasons List of validation failure reasons.
+     * @return String of validation failure reasons.
+     */
+    private static String convertFailureReasonsToString(List<ValidationFailureReason> validationFailureReasons) {
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("The following validation failures occurred against each attribute. ");
+        for (ValidationFailureReason validationFailureReason : validationFailureReasons) {
+            stringBuilder
+                    .append(validationFailureReason.getAuthAttribute())
+                    .append(" : ")
+                    .append(validationFailureReason.getErrorCode())
+                    .append(" ")
+                    .append(validationFailureReason.getReason())
+                    .append(",");
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        return stringBuilder.toString();
     }
 }

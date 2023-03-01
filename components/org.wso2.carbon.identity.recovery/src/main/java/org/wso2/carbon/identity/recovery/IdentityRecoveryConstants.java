@@ -185,6 +185,9 @@ public class IdentityRecoveryConstants {
     public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE =
             "apConfirmationCodeThreadLocalInitialValue";
 
+    // Self sign up properties.
+    public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
+
     private IdentityRecoveryConstants() {
 
     }
@@ -300,7 +303,7 @@ public class IdentityRecoveryConstants {
                 " config store."),
         ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE("55008", "Error occurred while fetching " +
                 "resource from config store."),
-        // USR - User Self Registration.
+        // USR - User Self Registration - client exceptions.
         ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS("USR-10001",
                 "User specified communication channel is not supported by the server"),
         ERROR_CODE_PREFERRED_CHANNEL_VALUE_EMPTY("USR-10002",
@@ -310,6 +313,13 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004","Either email or mobile should be submitted."),
         ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST("USR-10005",
                 "Lite self registration is not supported."),
+        ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION("USR-10006", "User attributes do not satisfy the " +
+                "requirements of the selected registration option."),
+        ERROR_CODE_INVALID_REGISTRATION_OPTION("USR-10007", "Invalid registration option."),
+
+        // USR - User Self Registration - server exceptions.
+        ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES("USR-15001", "Unexpected error while validating user " +
+                "attributes."),
 
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",

@@ -27,6 +27,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
@@ -444,5 +445,23 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
 
         dataHolder.getInstance().setMultiAttributeLoginService(null);
+    }
+
+    @Reference(
+            name = "org.wso2.carbon.identity.auth.attribute.handler.internal.AuthAttributeHandlerServiceComponent",
+            service = AuthAttributeHandlerManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetAuthAttributeHandlerManager")
+    protected void setAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        log.debug("Auth Attribute Handler Manager service is set in recovery component.");
+        dataHolder.setAuthAttributeHandlerManager(authAttributeHandlerManager);
+    }
+
+    protected void unsetAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        log.debug("Auth Attribute Handler Manager service is unset in recovery component.");
+        dataHolder.setAuthAttributeHandlerManager(null);
     }
 }
