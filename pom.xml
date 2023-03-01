@@ -59,6 +59,7 @@
         <module>components/org.wso2.carbon.identity.api.user.governance</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
+        <module>components/org.wso2.carbon.identity.admin.session.advisory.banner.control</module>
         <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
 
         <module>service-stubs/identity</module>
@@ -75,6 +76,7 @@
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
+        <module>features/org.wso2.carbon.identity.admin.session.advisory.banner.control.server.feature</module>
         <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
     </modules>
 
@@ -497,6 +499,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.multi.attribute.login.resolver.regex</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.admin.session.advisory.banner.control.server.feature</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- Pax Logging -->
