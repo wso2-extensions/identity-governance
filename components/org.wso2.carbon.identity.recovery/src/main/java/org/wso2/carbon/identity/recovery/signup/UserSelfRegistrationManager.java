@@ -67,6 +67,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
@@ -108,6 +109,7 @@ import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
 
 /**
@@ -1959,21 +1961,7 @@ public class UserSelfRegistrationManager {
             }
         }
 
-        /*
-        To preserve the existing behavior, if the registration option is not specified in the request, the default is
-        considered as the Username and Password based registration.
-        This constant is defined at the BasicAuthAuthAttributeHandler class in identity-local-auth-basicauth.
-         */
-        String registrationOption = "BasicAuthAuthAttributeHandler";
-        if (ArrayUtils.isNotEmpty(properties)) {
-            for (Property property : properties) {
-                if (SIGNUP_PROPERTY_REGISTRATION_OPTION.equals(property.getKey())) {
-                    registrationOption = property.getValue();
-                    break;
-                }
-            }
-        }
-
+        String registrationOption = extractRegistrationOption(properties);
         AuthAttributeHandlerManager authAttributeHandlerManager =
                 IdentityRecoveryServiceDataHolder.getInstance().getAuthAttributeHandlerManager();
 
@@ -1987,5 +1975,32 @@ public class UserSelfRegistrationManager {
             Utils.handleAttributeValidationFailure(validationResult);
         }
         return validationResult.isValid();
+    }
+
+    private String extractRegistrationOption(Property[] properties) throws SelfRegistrationException {
+
+        /*
+        To preserve the existing behavior, if the registration option is not specified in the request, the default is
+        considered as the Username and Password based registration.
+        This constant is defined at the BasicAuthAuthAttributeHandler class in identity-local-auth-basicauth.
+         */
+        String registrationOption = "BasicAuthAuthAttributeHandler";
+        int optionCount = 0;
+        if (ArrayUtils.isNotEmpty(properties)) {
+            for (Property property : properties) {
+                if (SIGNUP_PROPERTY_REGISTRATION_OPTION.equals(property.getKey())) {
+                    registrationOption = property.getValue();
+                    optionCount++;
+                }
+            }
+        }
+        if (optionCount > 1) {
+            throw new SelfRegistrationClientException(
+                    ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS.getCode(),
+                    ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS.getMessage(),
+                    "Registration request contains " + optionCount + " registration options. Only one registration " +
+                            "option is allowed.");
+        }
+        return registrationOption;
     }
 }

@@ -310,12 +310,13 @@ public class IdentityRecoveryConstants {
                 "User specified communication channel does not have any value"),
         ERROR_CODE_BAD_SELF_REGISTER_REQUEST("USR-10003",
                 "Bad Request"),
-        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004","Either email or mobile should be submitted."),
+        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004", "Either email or mobile should be submitted."),
         ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST("USR-10005",
                 "Lite self registration is not supported."),
         ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION("USR-10006", "User attributes do not satisfy the " +
                 "requirements of the selected registration option."),
         ERROR_CODE_INVALID_REGISTRATION_OPTION("USR-10007", "Invalid registration option."),
+        ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS("USR-10008", "Multiple registration options are not supported."),
 
         // USR - User Self Registration - server exceptions.
         ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES("USR-15001", "Unexpected error while validating user " +
