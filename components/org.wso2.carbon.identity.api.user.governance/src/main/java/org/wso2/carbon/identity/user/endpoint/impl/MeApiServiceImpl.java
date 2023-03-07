@@ -123,10 +123,9 @@ public class MeApiServiceImpl extends MeApiService {
             } else {
                 Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
             }
+        } catch (SelfRegistrationException e) {
+                Utils.handleSelfRegistrationException(e , LOG);
         } catch (IdentityRecoveryException e) {
-            if (e instanceof SelfRegistrationException) {
-                Utils.handleSelfRegistrationException((SelfRegistrationException) e , LOG);
-            }
             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
         } catch (Throwable throwable) {
             Utils.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants

@@ -1376,8 +1376,8 @@ public class Utils {
 
         if (validationResult == null) {
             throw new SelfRegistrationClientException(
-                    ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
                     ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getCode(),
+                    ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
                     "The attribute verification result is undefined.");
         }
         String errorDescription = "The mandatory attributes of the selected registration option are missing or empty " +
@@ -1386,8 +1386,8 @@ public class Utils {
             errorDescription = convertFailureReasonsToString(validationResult.getValidationFailureReasons());
         }
         throw new SelfRegistrationClientException(
-                ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION.getMessage(),
                 ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION.getCode(),
+                ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION.getMessage(),
                 errorDescription);
     }
 
@@ -1403,13 +1403,13 @@ public class Utils {
         if (e instanceof AuthAttributeHandlerClientException
                 && ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getCode().equals(e.getErrorCode())) {
             throw new SelfRegistrationClientException(
-                    ERROR_CODE_INVALID_REGISTRATION_OPTION.getMessage(),
                     ERROR_CODE_INVALID_REGISTRATION_OPTION.getCode(),
+                    ERROR_CODE_INVALID_REGISTRATION_OPTION.getMessage(),
                     e.getMessage());
         }
         throw new SelfRegistrationException(
-                ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
                 ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getCode(),
+                ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
                 e.getMessage(),
                 e);
     }

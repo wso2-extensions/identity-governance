@@ -122,6 +122,8 @@ public class UserSelfRegistrationManager {
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
     private static final String PURPOSE_GROUP_SELF_REGISTER = "SELF-SIGNUP";
     private static final String PURPOSE_GROUP_TYPE_SYSTEM = "SYSTEM";
+    private static final String AUTH_ATTRIBUTE_USERNAME = "username";
+    private static final String AUTH_ATTRIBUTE_PASSWORD = "password";
 
     private UserSelfRegistrationManager() {
 
@@ -1952,8 +1954,8 @@ public class UserSelfRegistrationManager {
             throws SelfRegistrationException {
 
         Map<String, String> userAttributes = new HashMap<>();
-        userAttributes.put("username", user.getUserName());
-        userAttributes.put("password", password);
+        userAttributes.put(AUTH_ATTRIBUTE_USERNAME, user.getUserName());
+        userAttributes.put(AUTH_ATTRIBUTE_PASSWORD, password);
 
         if (ArrayUtils.isNotEmpty(claims)) {
             for (Claim claim : claims) {
