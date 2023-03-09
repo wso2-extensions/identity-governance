@@ -23,10 +23,13 @@ import org.apache.commons.logging.Log;
 import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
@@ -53,7 +56,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 public class Utils {
 
@@ -429,5 +431,38 @@ public class Utils {
             }
         }
         return propertiesMap;
+    }
+
+    /**
+     * Handle the exceptions thrown by the self registration service.
+     *
+     * @param exception SelfRegistrationException.
+     * @param log       Log instance of the class.
+     * @throws BadRequestException          Throws a bad request error.
+     * @throws InternalServerErrorException Throws an internal server error.
+     */
+    public static void handleSelfRegistrationException(SelfRegistrationException exception, Log log)
+            throws BadRequestException, InternalServerErrorException {
+
+        ErrorDTO error = getErrorDTO(exception.getMessage(), exception.getErrorCode(), exception.getDescription());
+
+        if (exception.getCause() != null) {
+            logException(error, exception, log);
+        }
+
+        if (exception instanceof SelfRegistrationClientException) {
+            throw new BadRequestException(error);
+        }
+        throw new InternalServerErrorException(error);
+    }
+
+    private static void logException(ErrorDTO error, Throwable cause, Log log) {
+
+        String errorMessageFormat = "errorCode: %s | message: %s";
+        String errorMsg = String.format(errorMessageFormat, error.getCode(), error.getMessage());
+        if (error.getRef() != null) {
+            errorMsg = String.format("correlationID: %s | " + errorMsg, error.getRef());
+        }
+        log.error(errorMsg, cause);
     }
 }
