@@ -23,9 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.AuthenticationStep;
-import org.wso2.carbon.identity.application.common.model.LocalAndOutboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.LocalAuthenticatorConfig;
-import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
@@ -38,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
-import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR;
 
 /**
@@ -75,10 +72,10 @@ public class AuthAttributeHandlerManager {
      * @return A list of Auth Attribute Holders.
      * @throws AuthAttributeHandlerException authAttributeHandlerException.
      */
-    public List<AuthAttributeHolder> getAvailableAuthAttributeHolders(String appId, String tenantDomain) throws
+    public List<AuthAttributeHolder> getAvailableAuthAttributeHolders(String appId) throws
             AuthAttributeHandlerException {
 
-        List<String> authenticators = getAvailableAuthenticators(appId, tenantDomain);
+        List<String> authenticators = getConfiguredAuthenticators(appId);
         List<AuthAttributeHandler> authAttributeHandlers =
                 AuthAttributeHandlerServiceDataHolder.getInstance().getAuthAttributeHandlers();
         List<AuthAttributeHolder> selectedAuthAttributeHolders = new ArrayList<>();
@@ -130,38 +127,21 @@ public class AuthAttributeHandlerManager {
         return AuthAttributeHandlerServiceDataHolder.getInstance().getApplicationManagementService();
     }
 
-    private List<String> getAvailableAuthenticators(String appId, String tenantDomain)
+    private List<String> getConfiguredAuthenticators(String appId)
             throws AuthAttributeHandlerException {
 
         List<String> authenticators = new ArrayList<>();
-        ServiceProvider sp = null;
+        AuthenticationStep[] authenticationSteps;
         try {
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("Attempting to retrieve configured authenticators for appId: %s in " +
-                        "tenantDomain: %s", appId, tenantDomain));
+                LOG.debug("Attempting to retrieve configured authenticators for appId: " + appId);
             }
-            sp = getApplicationManagementService().getApplicationByResourceId(appId, tenantDomain);
+
+            authenticationSteps = getApplicationManagementService().getConfiguredAuthenticators(appId);
         } catch (IdentityApplicationManagementException e) {
-            throw new AuthAttributeHandlerException(
-                    ERROR_CODE_UNEXPECTED_ERROR.getCode(),
-                    String.format("Error while retrieving application for appId: %s in tenantDomain: %s",
-                            appId, tenantDomain), e);
+            throw new AuthAttributeHandlerException(ERROR_CODE_UNEXPECTED_ERROR.getCode(),
+                    "Error while retrieving configured authenticators for appId: " + appId, e);
         }
-
-        if (sp == null) {
-            throw new AuthAttributeHandlerClientException(ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getCode(),
-                    String.format(ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getMessage(), tenantDomain, appId));
-        }
-
-        AuthenticationStep[] authenticationSteps = null;
-
-        LocalAndOutboundAuthenticationConfig localAndOutboundAuthenticationConfig =
-                sp.getLocalAndOutBoundAuthenticationConfig();
-        if (localAndOutboundAuthenticationConfig.getAuthenticationSteps() != null
-                && localAndOutboundAuthenticationConfig.getAuthenticationSteps().length > 0) {
-            authenticationSteps = localAndOutboundAuthenticationConfig.getAuthenticationSteps();
-        }
-
         if (authenticationSteps != null) {
             for (AuthenticationStep authenticationStep : authenticationSteps) {
                 LocalAuthenticatorConfig[] configs = authenticationStep.getLocalAuthenticatorConfigs();
@@ -176,8 +156,8 @@ public class AuthAttributeHandlerManager {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug(String.format("Configured authenticators for appId: %s in tenantDomain: %s : %s", appId,
-                    tenantDomain, StringUtils.join(authenticators, ",")));
+            LOG.debug(String.format("Configured authenticators for appId: %s : %s", appId,
+                    StringUtils.join(authenticators, ",")));
         }
 
         return authenticators;
