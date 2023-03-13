@@ -186,7 +186,7 @@ public class UserSelfRegistrationManager {
         // If the password is mandatory and not provided, it will be failed at the attribute verification.
         if (password == null) {
             UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(true);
-            Utils.generateRandomPassword(12);
+            password = String.valueOf(Utils.generateRandomPassword(12));
         }
 
         NotificationResponseBean notificationResponseBean;
