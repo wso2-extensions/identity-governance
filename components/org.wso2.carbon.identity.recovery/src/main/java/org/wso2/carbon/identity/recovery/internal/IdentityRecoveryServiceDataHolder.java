@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -49,6 +50,7 @@ public class IdentityRecoveryServiceDataHolder {
     private UserFunctionalityManager userFunctionalityManagerService;
     private OTPGenerator otpGenerator;
     private MultiAttributeLoginService multiAttributeLoginService;
+    private InputValidationManagementService inputValidationMgtService;
     private AuthAttributeHandlerManager authAttributeHandlerManager;
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -292,4 +294,23 @@ public class IdentityRecoveryServiceDataHolder {
         this.authAttributeHandlerManager = authAttributeHandlerManager;
     }
 
+    /**
+     * Get InputValidationMgtService OSGi service.
+     *
+     * @return Input Validation Management Service.
+     */
+    public InputValidationManagementService getInputValidationMgtService() {
+
+        return inputValidationMgtService;
+    }
+
+    /**
+     * Set InputValidationMgtService OSGi service.
+     *
+     * @param inputValidationMgtService Input Validation Management Service.
+     */
+    public void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        this.inputValidationMgtService = inputValidationMgtService;
+    }
 }

@@ -38,6 +38,8 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementServiceImpl;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -141,6 +143,8 @@ public class IdentityRecoveryServiceComponent {
                     postAuthnMissingChallengeQuestions, null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new ChallengeAnswerValidationHandler(), null);
+            bundleContext.registerService(InputValidationManagementService.class.getName(),
+                    new InputValidationManagementServiceImpl(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -463,5 +467,31 @@ public class IdentityRecoveryServiceComponent {
 
         log.debug("Auth Attribute Handler Manager service is unset in recovery component.");
         dataHolder.setAuthAttributeHandlerManager(null);
+    }
+
+    /**
+     * Sets Input Validation Mgt OSGI Service.
+     *
+     * @param inputValidationMgtService     Input Validation Mgt OSGI Service.
+     */
+    @Reference(
+            name = "identity.input.validation.mgt.component",
+            service = InputValidationManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetInputValidationMgtService")
+    protected void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(inputValidationMgtService);
+    }
+
+    /**
+     * Unsets Input Validation Mgt OSGI Service.
+     *
+     * @param inputValidationMgtService     Input Validation Mgt OSGI Service.
+     */
+    protected void unsetInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(null);
     }
 }
