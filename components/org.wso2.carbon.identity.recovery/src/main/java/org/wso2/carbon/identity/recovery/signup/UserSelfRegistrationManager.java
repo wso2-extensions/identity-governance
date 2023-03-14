@@ -184,8 +184,11 @@ public class UserSelfRegistrationManager {
 
         // Provide support for passwordless registration.
         // If the password is mandatory and not provided, it will be failed at the attribute verification.
+        boolean isPasswordPolicyValidationSkippedByDefault = UserCoreUtil.getSkipPasswordPatternValidationThreadLocal();
         if (password == null) {
-            UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(true);
+            if (!isPasswordPolicyValidationSkippedByDefault) {
+                UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(true);
+            }
             password = String.valueOf(Utils.generateRandomPassword(12));
         }
 
@@ -260,6 +263,9 @@ public class UserSelfRegistrationManager {
             notificationResponseBean = buildNotificationResponseBean(user, preferredChannel, claimsMap);
         } finally {
             Utils.clearArbitraryProperties();
+            if (!isPasswordPolicyValidationSkippedByDefault) {
+                UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(false);
+            }
             PrivilegedCarbonContext.endTenantFlow();
         }
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
