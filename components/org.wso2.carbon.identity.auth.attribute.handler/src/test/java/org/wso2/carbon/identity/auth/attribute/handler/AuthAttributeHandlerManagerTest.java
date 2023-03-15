@@ -28,9 +28,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.AuthenticationStep;
-import org.wso2.carbon.identity.application.common.model.LocalAndOutboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.LocalAuthenticatorConfig;
-import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
@@ -53,7 +51,6 @@ public class AuthAttributeHandlerManagerTest {
 
     private AuthAttributeHandlerManager authAttributeHandlerManager = AuthAttributeHandlerManager.getInstance();
     private static final String APP_ID = "0181313d-5c84-4ec4-a931-b73085408eff";
-    private static final String TENANT_DOMAIN = "abcd";
     private static final String AUTHENTICATOR_BASICAUTH = "BasicAuthenticator";
     private static final String AUTH_ATTRIBUTE_HANDLER_MAGICLINK = "MagicLinkAuthAttributeHandler";
     private static final String AUTHENTICATOR_MAGICLINK = "MagicLinkAuthenticator";
@@ -88,11 +85,11 @@ public class AuthAttributeHandlerManagerTest {
     public void testGetAvailableAuthAttributeHolders() {
 
         try {
-            when(applicationManagementService.getApplicationByResourceId(anyString(), anyString()))
-                    .thenReturn(getServiceProvider());
+            when(applicationManagementService.getConfiguredAuthenticators(anyString()))
+                    .thenReturn(getAuthenticators());
 
             List<AuthAttributeHolder> authAttributeHolders =
-                    authAttributeHandlerManager.getAvailableAuthAttributeHolders(APP_ID, TENANT_DOMAIN);
+                    authAttributeHandlerManager.getAvailableAuthAttributeHolders(APP_ID);
             Assert.assertEquals(authAttributeHolders.size(), EXPECTED_HANDLERS.length, "Expected 3 auth attribute " +
                     "holders but there is " + authAttributeHolders.size());
             String[] authAttributeHandlers = getAuthAttributeHandlers(authAttributeHolders);
@@ -103,27 +100,6 @@ public class AuthAttributeHandlerManagerTest {
 
         } catch (Exception e) {
             Assert.fail("Test threw an unexpected exception.", e);
-        }
-    }
-
-    @Test
-    public void testGetAvailableAuthAttributeHoldersWithNullSP() {
-
-        boolean isClientExceptionThrown = false;
-        try {
-            when(applicationManagementService.getApplicationByResourceId(anyString(), anyString())).thenReturn(null);
-            authAttributeHandlerManager.getAvailableAuthAttributeHolders(APP_ID, TENANT_DOMAIN);
-        } catch (AuthAttributeHandlerClientException e) {
-            isClientExceptionThrown = true;
-            Assert.assertEquals(e.getErrorCode(),
-                    AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_SERVICE_PROVIDER_NOT_FOUND.getCode(),
-                    "Expected error code not found.");
-        } catch (Exception e) {
-            Assert.fail("Test threw an unexpected exception.", e);
-        }
-
-        if (!isClientExceptionThrown) {
-            Assert.fail("Expected to throw a AuthAttributeHandlerClientException but no exception was thrown.");
         }
     }
 
@@ -183,21 +159,13 @@ public class AuthAttributeHandlerManagerTest {
                 .thenReturn(getAuthAttributeHandlers());
     }
 
-    private ServiceProvider getServiceProvider() {
+    private AuthenticationStep[] getAuthenticators() {
 
-        ServiceProvider sp = new ServiceProvider();
         List<AuthenticationStep> authenticationSteps = new ArrayList<>();
         authenticationSteps.add(getAuthenticationStep(new String[]{AUTHENTICATOR_BASICAUTH, AUTHENTICATOR_MAGICLINK}));
         authenticationSteps.add(getAuthenticationStep(new String[]{AUTHENTICATOR_FIDO, AUTHENTICATOR_SMSOTP}));
 
-        LocalAndOutboundAuthenticationConfig localAndOutboundAuthenticationConfig =
-                new LocalAndOutboundAuthenticationConfig();
-        localAndOutboundAuthenticationConfig.setAuthenticationSteps(
-                authenticationSteps.toArray(new AuthenticationStep[0]));
-
-        sp.setLocalAndOutBoundAuthenticationConfig(localAndOutboundAuthenticationConfig);
-
-        return sp;
+        return authenticationSteps.toArray(new AuthenticationStep[0]);
     }
 
     private LocalAuthenticatorConfig getLocalAuthenticatorConfig(String name) {
