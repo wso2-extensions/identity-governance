@@ -606,7 +606,7 @@
     <properties>
         <!--Carbon Identity Governance Version-->
         <identity.governance.exp.pkg.version>${project.version}</identity.governance.exp.pkg.version>
-        <identity.governance.imp.pkg.version.range>[1.3.0, 2.0.0)</identity.governance.imp.pkg.version.range>
+        <identity.governance.imp.pkg.version.range>[1.3.0, 3.0.0)</identity.governance.imp.pkg.version.range>
 
         <equinox.javax.servlet.version>3.0.0.v201112011016</equinox.javax.servlet.version>
 
