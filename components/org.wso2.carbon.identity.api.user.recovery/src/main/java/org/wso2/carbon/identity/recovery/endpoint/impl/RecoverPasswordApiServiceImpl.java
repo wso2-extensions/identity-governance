@@ -86,8 +86,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 LOG.debug("Client Error while sending recovery notification ", e);
             }
             if (StringUtils.equals(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER.getCode(),
-                    e.getErrorCode()) && StringUtils.equals(String.format(IdentityRecoveryConstants.ErrorMessages
-                    .ERROR_CODE_FEDERATED_USER.getMessage(), user.getUsername()), e.getMessage())) {
+                    e.getErrorCode())) {
                 return Response.accepted().build();
             }
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());

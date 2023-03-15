@@ -200,7 +200,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s'."),
         ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s'."),
         ERROR_CODE_INVALID_USER("18003", "Invalid User '%s'."),
-        ERROR_CODE_FEDERATED_USER("18004", "User %s doesn't have a password for local account."),
+        ERROR_CODE_FEDERATED_USER("18006", "User %s doesn't have a password for local account."),
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
