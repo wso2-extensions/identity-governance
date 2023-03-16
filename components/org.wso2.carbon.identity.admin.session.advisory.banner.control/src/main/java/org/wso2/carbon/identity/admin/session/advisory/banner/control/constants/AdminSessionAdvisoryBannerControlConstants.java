@@ -40,7 +40,7 @@ public class AdminSessionAdvisoryBannerControlConstants {
         public static final String ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY_NAME_MAPPING
                 = "Enable Banner";
         public static final String ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY_NAME_MAPPING
-                = "Banner Description";
+                = "Banner Content";
     }
 
     public static final class AdminSessionAdvisoryBannerControlDescriptionMapping {
@@ -50,6 +50,6 @@ public class AdminSessionAdvisoryBannerControlConstants {
         public static final String ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY_DESCRIPTION_MAPPING
                 = "Enable banner to be displayed in the login page";
         public static final String ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY_DESCRIPTION_MAPPING
-                = "Banner description to be displayed in the login page";
+                = "Banner content to be displayed in the login page";
     }
 }
