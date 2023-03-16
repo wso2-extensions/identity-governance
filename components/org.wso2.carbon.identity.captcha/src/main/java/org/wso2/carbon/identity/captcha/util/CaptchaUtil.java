@@ -321,6 +321,8 @@ public class CaptchaUtil {
             }
         } catch (IOException e) {
             throw new CaptchaServerException("Unable to read the verification response.", e);
+        } catch (ClassCastException e) {
+            throw new CaptchaServerException("Unable to cast the response value.", e);
         }
 
         return true;
