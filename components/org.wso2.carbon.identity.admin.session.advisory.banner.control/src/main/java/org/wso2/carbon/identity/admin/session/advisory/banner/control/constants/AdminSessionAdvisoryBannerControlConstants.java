@@ -35,6 +35,9 @@ public class AdminSessionAdvisoryBannerControlConstants {
     public static final String HANDLER_CATEGORY = "Login Attempts Security";
     public static final String HANDLER_SUB_CATEGORY = "DEFAULT";
 
+    /**
+     * Admin session advisory banner control name mapping.
+     */
     public static final class AdminSessionAdvisoryBannerControlNameMapping {
 
         private AdminSessionAdvisoryBannerControlNameMapping() {}
@@ -45,6 +48,9 @@ public class AdminSessionAdvisoryBannerControlConstants {
                 = "Banner Content";
     }
 
+    /**
+     * Admin session advisory banner control description mapping.
+     */
     public static final class AdminSessionAdvisoryBannerControlDescriptionMapping {
 
         private AdminSessionAdvisoryBannerControlDescriptionMapping() {}
