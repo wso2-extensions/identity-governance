@@ -51,9 +51,7 @@ public class AdminSessionAdvisoryBannerControlComponent {
                     = new AdminSessionAdvisoryBannerControlHandler();
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     adminSessionAdvisoryBannerControlHandler, null);
-            if (log.isDebugEnabled()) {
-                log.debug("AdminSessionAdvisoryBannerControlHandler is registered.");
-            }
+            log.debug("AdminSessionAdvisoryBannerControlHandler is registered.");
         } catch (RuntimeException e) {
             log.error("Error while activating AdminSessionAdvisoryBannerControlHandler.", e);
         }
@@ -62,9 +60,7 @@ public class AdminSessionAdvisoryBannerControlComponent {
     @Deactivate
     protected void deactivate(ComponentContext context) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Captcha Component is de-activated");
-        }
+        log.debug("Advisory banner Component is de-activated");
     }
 
     @Reference(
