@@ -105,7 +105,8 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE);
+                Boolean.toString(
+                        AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
         defaultProperties.put(AdminSessionAdvisoryBannerControlConstants
                         .ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
                 AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
@@ -119,7 +120,8 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE);
+                Boolean.toString(
+                        AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
         defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
                 AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
         return defaultProperties;

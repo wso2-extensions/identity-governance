@@ -27,7 +27,7 @@ public class AdminSessionAdvisoryBannerControlConstants {
     public static final String ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY = "admin.session.advisory.banner.enable";
     public static final String ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY = "admin.session.advisory.banner" +
             ".description";
-    public static final String ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE = "false";
+    public static final boolean ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE = false;
     public static final String ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE = "Warning - unauthorized use " +
             "of this tool is strictly prohibited. All activities performed using this tool are logged and monitored.";
     public static final String HANDLER_NAME = "admin.session.advisory.banner.handler";
