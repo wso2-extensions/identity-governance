@@ -15,9 +15,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.identity.admin.session.advisory.banner.control.handler;
+package org.wso2.carbon.identity.admin.ui.banner.control.handler;
 
-import org.wso2.carbon.identity.admin.session.advisory.banner.control.constants.AdminSessionAdvisoryBannerControlConstants;
+import org.wso2.carbon.identity.admin.ui.banner.control.constants.AdminUIBannerControlConstants;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 
 import java.util.ArrayList;
@@ -27,32 +27,32 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Admin session advisory banner control handler.
+ * Admin UI banner control handler.
  */
-public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnectorConfig {
+public class AdminUIBannerControlHandler implements IdentityConnectorConfig {
 
     @Override
     public String getName() {
 
-        return AdminSessionAdvisoryBannerControlConstants.HANDLER_NAME;
+        return AdminUIBannerControlConstants.HANDLER_NAME;
     }
 
     @Override
     public String getFriendlyName() {
 
-        return AdminSessionAdvisoryBannerControlConstants.HANDLER_FRIENDLY_NAME;
+        return AdminUIBannerControlConstants.HANDLER_FRIENDLY_NAME;
     }
 
     @Override
     public String getCategory() {
 
-        return AdminSessionAdvisoryBannerControlConstants.HANDLER_CATEGORY;
+        return AdminUIBannerControlConstants.HANDLER_CATEGORY;
     }
 
     @Override
     public String getSubCategory() {
 
-        return AdminSessionAdvisoryBannerControlConstants.HANDLER_SUB_CATEGORY;
+        return AdminUIBannerControlConstants.HANDLER_SUB_CATEGORY;
     }
 
     @Override
@@ -66,11 +66,11 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
 
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.AdminSessionAdvisoryBannerControlNameMapping
+        nameMapping.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
+                AdminUIBannerControlConstants.AdminSessionAdvisoryBannerControlNameMapping
                         .ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY_NAME_MAPPING);
-        nameMapping.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.AdminSessionAdvisoryBannerControlNameMapping
+        nameMapping.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
+                AdminUIBannerControlConstants.AdminSessionAdvisoryBannerControlNameMapping
                         .ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY_NAME_MAPPING);
 
         return nameMapping;
@@ -80,12 +80,12 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
     public Map<String, String> getPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMapping = new HashMap<>();
-        descriptionMapping.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.AdminSessionAdvisoryBannerControlDescriptionMapping
+        descriptionMapping.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
+                AdminUIBannerControlConstants.AdminSessionAdvisoryBannerControlDescriptionMapping
                         .ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY_DESCRIPTION_MAPPING);
-        descriptionMapping.put(AdminSessionAdvisoryBannerControlConstants
+        descriptionMapping.put(AdminUIBannerControlConstants
                         .ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.AdminSessionAdvisoryBannerControlDescriptionMapping
+                AdminUIBannerControlConstants.AdminSessionAdvisoryBannerControlDescriptionMapping
                         .ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY_DESCRIPTION_MAPPING);
 
         return descriptionMapping;
@@ -95,8 +95,8 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
-        properties.add(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY);
-        properties.add(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY);
+        properties.add(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY);
+        properties.add(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY);
         return properties.toArray(new String[0]);
     }
 
@@ -104,12 +104,12 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
     public Properties getDefaultPropertyValues(String tenantDomain) {
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
+        defaultProperties.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
                 Boolean.toString(
-                        AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
-        defaultProperties.put(AdminSessionAdvisoryBannerControlConstants
+                        AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
+        defaultProperties.put(AdminUIBannerControlConstants
                         .ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
+                AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
         return properties;
@@ -119,11 +119,11 @@ public class AdminSessionAdvisoryBannerControlHandler implements IdentityConnect
     public Map<String, String> getDefaultPropertyValues(String[] propertyNames, String tenantDomain) {
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
+        defaultProperties.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY,
                 Boolean.toString(
-                        AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
-        defaultProperties.put(AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
-                AdminSessionAdvisoryBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
+                        AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_ENABLE_DEFAULT_VALUE));
+        defaultProperties.put(AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY,
+                AdminUIBannerControlConstants.ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_DEFAULT_VALUE);
         return defaultProperties;
     }
 }

@@ -15,14 +15,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.identity.admin.session.advisory.banner.control.constants;
+package org.wso2.carbon.identity.admin.ui.banner.control.constants;
 
 /**
- * Admin session advisory banner related constants.
+ * Admin UI banner control related constants.
  */
-public class AdminSessionAdvisoryBannerControlConstants {
+public class AdminUIBannerControlConstants {
 
-    private AdminSessionAdvisoryBannerControlConstants() {}
+    private AdminUIBannerControlConstants() {}
 
     public static final String ADMIN_SESSION_ADVISORY_BANNER_ENABLE_PROPERTY = "admin.session.advisory.banner.enable";
     public static final String ADMIN_SESSION_ADVISORY_BANNER_DESCRIPTION_PROPERTY = "admin.session.advisory.banner" +

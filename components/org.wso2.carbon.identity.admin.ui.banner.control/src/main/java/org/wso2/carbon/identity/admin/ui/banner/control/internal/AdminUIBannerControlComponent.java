@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.identity.admin.session.advisory.banner.control.internal;
+package org.wso2.carbon.identity.admin.ui.banner.control.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,33 +27,33 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.identity.admin.session.advisory.banner.control.handler.AdminSessionAdvisoryBannerControlHandler;
+import org.wso2.carbon.identity.admin.ui.banner.control.handler.AdminUIBannerControlHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * OSGi declarative services component which handles Admin session advisory banner control component.
+ * OSGi declarative services component which handles Admin UI banner control component.
  */
 @Component(
-        name = "org.wso2.carbon.identity.admin.session.advisory.banner.control.internal" +
-                ".AdminSessionAdvisoryBannerControlComponent",
+        name = "org.wso2.carbon.identity.admin.ui.banner.control.internal" +
+                ".AdminUIBannerControlComponent",
         immediate = true)
-public class AdminSessionAdvisoryBannerControlComponent {
+public class AdminUIBannerControlComponent {
 
-    private static final Log log = LogFactory.getLog(AdminSessionAdvisoryBannerControlComponent.class);
+    private static final Log log = LogFactory.getLog(AdminUIBannerControlComponent.class);
 
     @Activate
     protected void activate(ComponentContext context) {
         BundleContext bundleContext = context.getBundleContext();
         try {
             IdentityConnectorConfig adminSessionAdvisoryBannerControlHandler
-                    = new AdminSessionAdvisoryBannerControlHandler();
+                    = new AdminUIBannerControlHandler();
             bundleContext.registerService(IdentityConnectorConfig.class.getName(),
                     adminSessionAdvisoryBannerControlHandler, null);
-            log.debug("AdminSessionAdvisoryBannerControlHandler is registered.");
+            log.debug("AdminUIBannerControlHandler is registered.");
         } catch (RuntimeException e) {
-            log.error("Error while activating AdminSessionAdvisoryBannerControlHandler.", e);
+            log.error("Error while activating AdminUIBannerControlHandler.", e);
         }
     }
 
@@ -71,12 +71,12 @@ public class AdminSessionAdvisoryBannerControlComponent {
             unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
 
-        AdminSessionAdvisoryBannerControlDataHolder.getInstance().setRealmService(realmService);
+        AdminUIBannerControlDataHolder.getInstance().setRealmService(realmService);
     }
 
     protected void unsetRealmService(RealmService realmService) {
 
-        AdminSessionAdvisoryBannerControlDataHolder.getInstance().setRealmService(null);
+        AdminUIBannerControlDataHolder.getInstance().setRealmService(null);
     }
 
     @Reference(
@@ -88,12 +88,12 @@ public class AdminSessionAdvisoryBannerControlComponent {
     )
     protected void setIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
 
-        AdminSessionAdvisoryBannerControlDataHolder.getInstance()
+        AdminUIBannerControlDataHolder.getInstance()
                 .setIdentityGovernanceService(identityGovernanceService);
     }
 
     protected void unsetIdentityGovernanceService(IdentityGovernanceService identityGovernanceService) {
 
-        AdminSessionAdvisoryBannerControlDataHolder.getInstance().setIdentityGovernanceService(null);
+        AdminUIBannerControlDataHolder.getInstance().setIdentityGovernanceService(null);
     }
 }

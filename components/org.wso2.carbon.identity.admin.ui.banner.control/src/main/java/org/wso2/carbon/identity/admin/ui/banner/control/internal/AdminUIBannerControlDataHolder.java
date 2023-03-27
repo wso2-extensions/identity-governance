@@ -15,27 +15,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.identity.admin.session.advisory.banner.control.internal;
+package org.wso2.carbon.identity.admin.ui.banner.control.internal;
 
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
- * Admin session advisory banner control data holder.
+ * Admin UI banner control data holder.
  */
-public class AdminSessionAdvisoryBannerControlDataHolder {
+public class AdminUIBannerControlDataHolder {
 
-    private static final AdminSessionAdvisoryBannerControlDataHolder instance = new
-            AdminSessionAdvisoryBannerControlDataHolder();
+    private static final AdminUIBannerControlDataHolder instance = new
+            AdminUIBannerControlDataHolder();
     private RealmService realmService;
     private IdentityGovernanceService identityGovernanceService;
     private BundleContext bundleContext;
 
-    private AdminSessionAdvisoryBannerControlDataHolder() {
+    private AdminUIBannerControlDataHolder() {
     }
 
-    public static AdminSessionAdvisoryBannerControlDataHolder getInstance() {
+    public static AdminUIBannerControlDataHolder getInstance() {
 
         return instance;
     }

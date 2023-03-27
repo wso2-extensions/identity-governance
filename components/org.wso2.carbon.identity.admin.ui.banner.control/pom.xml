@@ -28,7 +28,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>org.wso2.carbon.identity.admin.session.advisory.banner.control</artifactId>
+    <artifactId>org.wso2.carbon.identity.admin.ui.banner.control</artifactId>
     <packaging>bundle</packaging>
     <name>WSO2 Carbon - Admin Session Advisory Banner Control</name>
     <description>Admin Session Advisory Banner Control</description>
