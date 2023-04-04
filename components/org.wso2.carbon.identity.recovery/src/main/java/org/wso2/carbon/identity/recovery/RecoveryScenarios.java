@@ -33,7 +33,8 @@ public enum RecoveryScenarios {
     EMAIL_VERIFICATION_ON_UPDATE,
     MOBILE_VERIFICATION_ON_UPDATE,
     LITE_SIGN_UP,
-    TENANT_ADMIN_ASK_PASSWORD;
+    TENANT_ADMIN_ASK_PASSWORD,
+    PASSWORD_EXPIRY;
 
     /**
      * Get recovery scenario which matches the given scenario name.
@@ -47,7 +48,8 @@ public enum RecoveryScenarios {
         RecoveryScenarios[] scenarios = {
                 NOTIFICATION_BASED_PW_RECOVERY, QUESTION_BASED_PWD_RECOVERY, USERNAME_RECOVERY, SELF_SIGN_UP,
                 ASK_PASSWORD, ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
-                LITE_SIGN_UP, TENANT_ADMIN_ASK_PASSWORD, EMAIL_VERIFICATION_ON_UPDATE, MOBILE_VERIFICATION_ON_UPDATE
+                LITE_SIGN_UP, TENANT_ADMIN_ASK_PASSWORD, EMAIL_VERIFICATION_ON_UPDATE, MOBILE_VERIFICATION_ON_UPDATE,
+                PASSWORD_EXPIRY
         };
         if (StringUtils.isNotEmpty(scenarioName)) {
             for (RecoveryScenarios scenario : scenarios) {
