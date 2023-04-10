@@ -34,6 +34,8 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_ENABLED = "recaptcha.enabled";
 
+    public static final String RE_CAPTCHA_ENTERPRISE_ENABLED = "recaptcha.enterprise.enabled";
+
     public static final String FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS = "recaptcha" +
             ".forcefullyEnabledForAllTenants";
 
@@ -42,6 +44,10 @@ public class CaptchaConstants {
     public static final String RE_CAPTCHA_VERIFY_URL = "recaptcha.verify.url";
 
     public static final String RE_CAPTCHA_SITE_KEY = "recaptcha.site.key";
+
+    public static final String RE_CAPTCHA_API_KEY = "recaptcha.api.key";
+
+    public static final String RE_CAPTCHA_PROJECT_ID = "recaptcha.project.id";
 
     public static final String RE_CAPTCHA_SECRET_KEY = "recaptcha.secret.key";
 

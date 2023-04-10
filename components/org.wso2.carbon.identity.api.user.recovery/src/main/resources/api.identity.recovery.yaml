@@ -790,6 +790,8 @@ definitions:
     properties:
       reCaptchaEnabled:
         type: boolean
+      reCaptchaEnterpriseEnabled:
+        type: boolean
       reCaptchaKey:
         type: string
       reCaptchaAPI:
