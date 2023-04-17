@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.LiteRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.OrganizationConfigImp;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
@@ -123,6 +124,8 @@ public class IdentityRecoveryServiceComponent {
                     null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new RecoveryConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new SelfRegistrationConfigImpl(),
+                    null);
+            bundleContext.registerService(IdentityConnectorConfig.class.getName(), new OrganizationConfigImp(),
                     null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new LiteRegistrationConfigImpl(),
                     null);
