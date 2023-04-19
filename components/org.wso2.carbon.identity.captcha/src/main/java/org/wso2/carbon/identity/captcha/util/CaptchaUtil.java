@@ -293,6 +293,7 @@ public class CaptchaUtil {
             if (entity == null) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
             }
+
             try {
                 try (InputStream in = entity.getContent()) {
                     JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
@@ -326,6 +327,8 @@ public class CaptchaUtil {
                 }
             } catch (IOException e) {
                 throw new CaptchaServerException("Unable to read the verification response.", e);
+            } catch (ClassCastException e) {
+                throw new CaptchaServerException("Unable to cast the response value.", e);
             }
 
         } else {   // for recaptcha enterprise
@@ -393,6 +396,7 @@ public class CaptchaUtil {
                 throw new CaptchaServerException("Unable to read the verification response.", e);
             }
         }
+
         return true;
     }
 
@@ -473,7 +477,7 @@ public class CaptchaUtil {
                 return false;
             }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                            .getTenantAwareUsername(usernameWithDomain),
+                    .getTenantAwareUsername(usernameWithDomain),
                     new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
@@ -500,7 +504,7 @@ public class CaptchaUtil {
      * @throws org.wso2.carbon.user.core.UserStoreException Error while checking the user's existence in the given user store.
      */
     private static UserStoreManager getUserStoreManagerForUser(String userName,
-                                                               UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
+           UserStoreManager userStoreManager) throws org.wso2.carbon.user.core.UserStoreException {
 
         UserStoreManager userStore = userStoreManager;
         while (userStore != null) {
@@ -528,7 +532,7 @@ public class CaptchaUtil {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_PROJECT_ID));
             }
             CaptchaDataHolder.getInstance().setReCaptchaProjectID(reCaptchaProjectID);
-            
+
         } else {    // reCaptcha V2 and V3 require Secret key
             String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
             if (StringUtils.isBlank(reCaptchaSecretKey)) {
@@ -589,7 +593,7 @@ public class CaptchaUtil {
                 log.debug("Error parsing recaptcha.threshold from config. Hence using the default value : " +
                         CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
             }
-            return CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD;
+           return CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD;
         }
         return Double.parseDouble(threshold);
     }
@@ -693,7 +697,7 @@ public class CaptchaUtil {
      * @return Current authenticator object.
      */
     private static ApplicationAuthenticator getCurrentAuthenticator(AuthenticationContext authenticationContext,
-                                                                    String currentAuthenticatorName) {
+                                                             String currentAuthenticatorName) {
 
         int currentStep = authenticationContext.getCurrentStep();
         SequenceConfig sequenceConfig = authenticationContext.getSequenceConfig();
