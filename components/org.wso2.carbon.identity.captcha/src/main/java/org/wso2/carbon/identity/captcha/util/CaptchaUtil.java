@@ -394,6 +394,8 @@ public class CaptchaUtil {
                 }
             } catch (IOException e) {
                 throw new CaptchaServerException("Unable to read the verification response.", e);
+            } catch (ClassCastException e) {
+                throw new CaptchaServerException("Unable to cast the response value.", e);
             }
         }
 
@@ -518,9 +520,11 @@ public class CaptchaUtil {
 
     private static void setReCaptchaConfigs(Properties properties) {
 
-        boolean recaptchaEnterpriseEnabled = Boolean.parseBoolean(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
+        boolean recaptchaEnterpriseEnabled =
+                Boolean.parseBoolean(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
 
         if (recaptchaEnterpriseEnabled){    // reCaptcha Enterprise require API key and Project ID
+            CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(true);
             String reCaptchaAPIKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_KEY);
             if (StringUtils.isBlank((reCaptchaAPIKey))) {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_API_KEY));
@@ -534,6 +538,7 @@ public class CaptchaUtil {
             CaptchaDataHolder.getInstance().setReCaptchaProjectID(reCaptchaProjectID);
 
         } else {    // reCaptcha V2 and V3 require Secret key
+            CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(false);
             String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
             if (StringUtils.isBlank(reCaptchaSecretKey)) {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
