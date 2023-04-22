@@ -138,11 +138,11 @@ public class NotificationPasswordRecoveryManager {
                 return new NotificationResponseBean(user);
             } else if (isExistingUser(user) && StringUtils.isEmpty(getEmail(user))) {
 
-            /* If the email is not found for the user, Check for NOTIFY_EMAIL_NOT_FOUND property. If the property is not
-            enabled, notify with an empty NotificationResponseBean.*/
-                boolean notifyEmailNotFound = Boolean.parseBoolean(
-                        IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_EMAIL_NOT_FOUND));
-                if (notifyEmailNotFound) {
+            /* If the email is not found for the user, Check for NOTIFY_RECOVERY_EMAIL_EXISTENCE property.
+            If the property is not enabled, notify with an empty NotificationResponseBean.*/
+                boolean notifyRecoveryEmailExistence = Boolean.parseBoolean(
+                        IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_RECOVERY_EMAIL_EXISTENCE));
+                if (notifyRecoveryEmailExistence) {
                     throw Utils.handleClientException(
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_NOT_FOUND, user.getUserName());
                 }
