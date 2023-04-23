@@ -56,8 +56,10 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -67,6 +69,7 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
+import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -131,6 +134,17 @@ public class NotificationPasswordRecoveryManager {
                 if (notifyUserExistence) {
                     throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER,
                             user.getUserName());
+                }
+                return new NotificationResponseBean(user);
+            } else if (isExistingUser(user) && StringUtils.isEmpty(getEmail(user))) {
+
+            /* If the email is not found for the user, Check for NOTIFY_RECOVERY_EMAIL_EXISTENCE property.
+            If the property is not enabled, notify with an empty NotificationResponseBean.*/
+                boolean notifyRecoveryEmailExistence = Boolean.parseBoolean(
+                        IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_RECOVERY_EMAIL_EXISTENCE));
+                if (notifyRecoveryEmailExistence) {
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_NOT_FOUND, user.getUserName());
                 }
                 return new NotificationResponseBean(user);
             }
@@ -959,5 +973,36 @@ public class NotificationPasswordRecoveryManager {
         Resource templateType = resourceMgtService.getIdentityResource(path, tenantDomain);
         return templateType != null;
     }
-}
 
+    /**
+     * Retrieve email address of the user.
+     *
+     * @param user      User the email need to be retrieved.
+     * @return email address of the user.
+     * @throws IdentityRecoveryServerException
+     */
+    private String getEmail(User user) throws IdentityRecoveryServerException {
+
+        String userStoreDomain = user.getUserStoreDomain();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            UserRealm userRealm = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
+
+            if (userStoreManager == null) {
+                throw new IdentityRecoveryServerException(String.format("userStoreManager is null for user: " +
+                        "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain()));
+            }
+            if (StringUtils.isNotBlank(userStoreDomain) && !PRIMARY_DEFAULT_DOMAIN_NAME.equals(userStoreDomain)) {
+                userStoreManager = ((AbstractUserStoreManager) userStoreManager).getSecondaryUserStoreManager(userStoreDomain);
+            }
+
+            return userStoreManager.getUserClaimValue(user.getUserName(), IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
+
+        } catch (UserStoreException e) {
+            String error = String.format("Error occurred while retrieving existing email address for user: " +
+                    "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain());
+            throw new IdentityRecoveryServerException(error, e);
+        }
+    }
+}
