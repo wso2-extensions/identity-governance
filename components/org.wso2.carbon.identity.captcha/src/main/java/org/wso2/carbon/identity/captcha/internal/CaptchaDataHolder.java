@@ -47,8 +47,6 @@ public class CaptchaDataHolder {
 
     private String reCaptchaSecretKey;
 
-    private String reCaptchaAPIKey;
-
     private String reCaptchaProjectID;
 
     private String reCaptchaErrorRedirectUrls;
@@ -98,16 +96,6 @@ public class CaptchaDataHolder {
     public void setReCaptchaEnterpriseEnabled(boolean reCaptchaEnterpriseEnabled) {
 
         this.reCaptchaEnterpriseEnabled = reCaptchaEnterpriseEnabled;
-    }
-
-    public String getReCaptchaAPIKey() {
-
-        return reCaptchaAPIKey;
-    }
-
-    public void setReCaptchaAPIKey(String reCaptchaAPIKey) {
-
-        this.reCaptchaAPIKey = reCaptchaAPIKey;
     }
 
     public String getReCaptchaProjectID() {

@@ -45,8 +45,6 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_SITE_KEY = "recaptcha.site.key";
 
-    public static final String RE_CAPTCHA_API_KEY = "recaptcha.api.key";
-
     public static final String RE_CAPTCHA_PROJECT_ID = "recaptcha.project.id";
 
     public static final String RE_CAPTCHA_SECRET_KEY = "recaptcha.secret.key";
@@ -72,6 +70,8 @@ public class CaptchaConstants {
     public static final String AUTH_FAILURE_MSG = "authFailureMsg";
     public static final String RECAPTCHA_FAIL_MSG_KEY = "recaptcha.fail.message";
     public static final String TRUE = "true";
+
+    public static final String CAPTCHA_VALID = "valid";
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
