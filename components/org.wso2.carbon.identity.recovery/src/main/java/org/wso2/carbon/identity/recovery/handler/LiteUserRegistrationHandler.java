@@ -383,9 +383,13 @@ public class LiteUserRegistrationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
 
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
-
+        if (properties.containsKey(IdentityRecoveryConstants.CUSTOM_TEMPLATE_NAME)) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    properties.get(IdentityRecoveryConstants.CUSTOM_TEMPLATE_NAME));
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
+        }
 
         Event identityMgtEvent = new Event(eventName, properties);
         try {
