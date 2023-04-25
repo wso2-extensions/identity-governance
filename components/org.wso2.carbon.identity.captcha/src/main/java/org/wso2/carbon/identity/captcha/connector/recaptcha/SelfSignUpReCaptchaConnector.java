@@ -75,6 +75,11 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
         if (isUsernameRecovery != null) {
             return false;
         }
+        String requestMethod = ((HttpServletRequest) servletRequest).getMethod();
+        if (StringUtils.equalsIgnoreCase(path, SELF_REGISTRATION_URL) &&
+                StringUtils.equalsIgnoreCase(requestMethod, "GET")) {
+            return false;
+        }
 
         if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
             return true;
