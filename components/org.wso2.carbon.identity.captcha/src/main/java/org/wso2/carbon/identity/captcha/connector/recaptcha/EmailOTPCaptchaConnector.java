@@ -5,13 +5,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
-import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPreValidationResponse;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
 import javax.servlet.ServletRequest;
@@ -19,14 +17,16 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Recaptcha Connector for Email OTP
+ * Recaptcha Connector for Email OTP.
  */
 public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
+
     private static final Log log = LogFactory.getLog(EmailOTPCaptchaConnector.class);
     private static final String SECURED_DESTINATIONS = "/commonauth";
     private static final String EMAIL_OTP_RECAPTCHA_ENABLE = "EmailOTP.RecaptchaEnable";
     public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
     public static final String IS_REDIRECT_TO_EMAIL_OTP = "isRedirectToEmailOTP";
+    public static final String RESEND_CODE = "resendCode";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -50,67 +50,44 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
-            return true;
-        }
-
         String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
         AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
 
-        if (context == null || (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
-        && !Boolean.TRUE.equals(context.getProperty(IS_REDIRECT_TO_EMAIL_OTP)))) {
+        if (context == null
+                || !EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
+                || (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
+                && !Boolean.parseBoolean((String) context.getProperty(IS_REDIRECT_TO_EMAIL_OTP)))) {
             return false;
         }
 
-        if (Boolean.parseBoolean(servletRequest.getParameter("resendCode"))) {
+        if (Boolean.parseBoolean(servletRequest.getParameter(RESEND_CODE))) {
             return false;
         }
 
-        return CaptchaUtil.isRecaptchaEnabledForConnector(identityGovernanceService, servletRequest,
-                EMAIL_OTP_RECAPTCHA_ENABLE);
+        return isEmailRecaptchaEnabled(servletRequest);
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-
-        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()
-                || CaptchaUtil.isRecaptchaEnabledForConnector(
-                        identityGovernanceService, servletRequest, EMAIL_OTP_RECAPTCHA_ENABLE)) {
-
-            preValidationResponse.setCaptchaValidationRequired(true);
-        }
-
+        preValidationResponse.setCaptchaValidationRequired(true);
         return preValidationResponse;
     }
 
     @Override
-    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) throws CaptchaException {
+    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) {
+
         return null;
     }
 
-    public static boolean isEmailRecaptchaEnabled(String tenantDomain) {
+    public boolean isEmailRecaptchaEnabled(ServletRequest request) {
+
         if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
             return true;
         }
-        if (CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            try {
-                Property[] connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService().getConfiguration(
-                        new String[]{EMAIL_OTP_RECAPTCHA_ENABLE}, tenantDomain);
-                for (Property connectorConfig : connectorConfigs) {
-                    if (EMAIL_OTP_RECAPTCHA_ENABLE.equals(connectorConfig.getName())) {
-                        if (Boolean.parseBoolean(connectorConfig.getValue())) {
-                            return true;
-                        }
-                    }
-                }
-            } catch (IdentityGovernanceException e) {
-            log.error("Error occurred while retrieving the recaptcha configs. Proceeding the authentication request " +
-                    "without enabling recaptcha.", e);
-                return false;
-            }
-        }
-        return false;
+        return CaptchaDataHolder.getInstance().isReCaptchaEnabled()
+                && CaptchaUtil.isRecaptchaEnabledForConnector(this.identityGovernanceService, request,
+                EMAIL_OTP_RECAPTCHA_ENABLE);
     }
 }
