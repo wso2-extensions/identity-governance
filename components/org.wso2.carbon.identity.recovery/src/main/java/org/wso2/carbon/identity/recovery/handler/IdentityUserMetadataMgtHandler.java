@@ -27,8 +27,12 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.dao.IdentityUserMetadataMgtDAO;
+import org.wso2.carbon.identity.recovery.dao.impl.IdentityUserMetadataMgtDAOImpl;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -46,7 +50,7 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     private static final String ENABLE_IDENTITY_USER_METADATA_MGT_HANDLER = "identityUserMetadataMgtHandler.enable";
     private static final String USE_DAO_FOR_USER_METADATA_UPDATE = "identityUserMetadataMgtHandler.enableDAO";
 
-    private final IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO = new IdentityUserMetadataMgtDAO();
+    private final IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO = new IdentityUserMetadataMgtDAOImpl();
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
@@ -82,8 +86,15 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
         if ((Boolean) eventProperties.get(IdentityEventConstants.EventProperty.OPERATION_STATUS)) {
             String lastLoginTime = Long.toString(System.currentTimeMillis());
             if (enableDao) {
-                identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, eventProperties,
+                String username = Utils.buildUserNameWithDomain(userStoreManager, eventProperties);
+                if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
+                    return;
+                }
+                // update data in db
+                identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, username,
                         IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime, POST_AUTHENTICATION);
+                //update cache
+                updateUserIdentityCache(userStoreManager, username, IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime);
                 return;
             }
             setUserClaim(userStoreManager, eventProperties, IdentityMgtConstants.LAST_LOGIN_TIME,
@@ -99,8 +110,16 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
         }
         String lastPasswordUpdateTime = Long.toString(System.currentTimeMillis());
         if (enableDao) {
-            identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, eventProperties,
+            String username = Utils.buildUserNameWithDomain(userStoreManager, eventProperties);
+            if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
+                return;
+            }
+            // update data in db
+            identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, username,
                     IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME, lastPasswordUpdateTime, POST_CREDENTIAL_UPDATE);
+            //update cache
+            updateUserIdentityCache(userStoreManager, username, IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME,
+                    lastPasswordUpdateTime);
             return;
         }
         setUserClaim(userStoreManager, eventProperties, IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME,
@@ -122,6 +141,18 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
             throw new IdentityEventException(
                     String.format("Error occurred while updating user claims related to %s event.", eventName), e);
         }
+    }
+
+    private void updateUserIdentityCache(UserStoreManager userStoreManager, String username,
+                                         String claimURI, String claimValue) {
+
+        UserIdentityClaim identityClaimsFromCache =
+                identityUserMetadataMgtDAO.loadUserMetadataFromCache(userStoreManager, username);
+        if (identityClaimsFromCache == null) {
+            identityClaimsFromCache = new UserIdentityClaim(username);
+        }
+        identityClaimsFromCache.setUserIdentityDataClaim(claimURI, claimValue);
+        identityUserMetadataMgtDAO.storeUserMetadataToCache(userStoreManager, identityClaimsFromCache);
     }
 
     @Override
