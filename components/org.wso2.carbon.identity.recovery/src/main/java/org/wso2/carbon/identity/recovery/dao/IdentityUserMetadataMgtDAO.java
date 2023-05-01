@@ -27,10 +27,34 @@ import org.wso2.carbon.user.core.UserStoreManager;
  */
 public interface IdentityUserMetadataMgtDAO {
 
+    /**
+     * Update user metadata.
+     *
+     * @param userStoreManager          UserStore manager.
+     * @param username                  Username.
+     * @param claimURI                  Claim URI.
+     * @param value                     Value of the claim.
+     * @param eventName                 Event name.
+     * @throws IdentityEventException   Identity Event Exception.
+     */
     void updateUserMetadata(UserStoreManager userStoreManager, String username,
                             String claimURI, String value, String eventName) throws IdentityEventException;
 
+    /**
+     * Retrieve user metadata from cache memory.
+     *
+     * @param userStoreManager  User store manager.
+     * @param username          User name.
+     * @return                  User metadata from cache.
+     */
     UserIdentityClaim loadUserMetadataFromCache(UserStoreManager userStoreManager, String username);
 
+    /**
+     * Retrieve user metadata from cache memory.
+     *
+     * @param userStoreManager  User store manager.
+     * @param userIdentityDTO   User identity data object.
+     *
+     */
     void storeUserMetadataToCache(UserStoreManager userStoreManager, UserIdentityClaim userIdentityDTO);
 }

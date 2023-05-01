@@ -37,64 +37,7 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
 
     private final IdentityDataStoreCache identityDataStoreCache = IdentityDataStoreCache.getInstance();
 
-    /**
-     * Update user metadata.
-     *
-     * @param username                  Username.
-     * @param claimURI                  Claim URI.
-     * @param value                     Value of the claim.
-     * @param eventName                 Event name.
-     * @throws IdentityEventException   Identity Event Exception.
-     */
-    public void updateUserMetadata2(UserStoreManager userStoreManager, String username,
-                                   String claimURI, String value, String eventName) throws IdentityEventException {
-
-        if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
-            return;
-        }
-
-        try {
-            String tenantId = String.valueOf(userStoreManager.getTenantId());
-
-            String userStoreDomain = UserCoreUtil.extractDomainFromName(username);
-            if (StringUtils.isNotBlank(userStoreDomain) && IdentityRecoveryConstants.ASGARDEO_USER_DOMAIN_NAME
-                    .equalsIgnoreCase(userStoreDomain) && isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
-                // TODO: Store the last login time data to UM_USER_ATTRIBUTE table for Asgardeo users.
-                username = UserCoreUtil.removeDomainFromName(username);
-                storeMetadataToUserStore(userStoreManager, username, tenantId, claimURI, value, eventName);
-                return;
-            }
-
-            boolean executionResult;
-            Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-            if (isMetadataExists(connection, tenantId, username, claimURI)) {
-                executionResult = updateExistingMetadata(connection, value, tenantId, username, claimURI);
-            } else {
-                executionResult = insertNewMetadata(connection, value, tenantId, username, claimURI);
-            }
-
-            if (log.isDebugEnabled() && executionResult) {
-                log.debug(String.format("Successfully updated the user metadata related to %s event.", eventName));
-            }
-
-        } catch (SQLException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Error occurred while updating user metadata related to %s event.", eventName));
-            }
-            throw new IdentityEventException(
-                    String.format("Error occurred while updating user metadata related to %s event.", eventName), e);
-
-        } catch (UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Error occurred while retrieving the tenantId of the user related to %s event.",
-                        eventName));
-            }
-            throw new IdentityEventException(
-                    String.format("Error occurred while retrieving the tenantId of the user related to %s event.",
-                            eventName), e);
-        }
-    }
-
+    @Override
     public void updateUserMetadata(UserStoreManager userStoreManager, String username,
                                    String claimURI, String value, String eventName) throws IdentityEventException {
 
@@ -282,7 +225,7 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
             }
             connection.commit();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new IdentityEventException("Error while implementing database connection with user store.");
         }
 
         if (log.isDebugEnabled() && executionResult) {
