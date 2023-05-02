@@ -77,6 +77,7 @@
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
         <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
+        <module>features/org.wso2.carbon.identity.idle.account.identification.feature</module>
     </modules>
 
     <dependencyManagement>
