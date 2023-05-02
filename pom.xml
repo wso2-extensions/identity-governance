@@ -60,6 +60,7 @@
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
         <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
+        <module>components/org.wso2.carbon.identity.idle.account.identification</module>
 
         <module>service-stubs/identity</module>
 
