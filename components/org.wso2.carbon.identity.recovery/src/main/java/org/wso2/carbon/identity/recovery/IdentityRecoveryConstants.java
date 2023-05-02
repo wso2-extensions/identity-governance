@@ -404,7 +404,9 @@ public class IdentityRecoveryConstants {
                 "'%s' has been used more than once."),
 
         // UEV - User Email Verification.
-        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification");
+        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
 
         private final String code;
         private final String message;
