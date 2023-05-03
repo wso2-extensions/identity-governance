@@ -1436,4 +1436,13 @@ public class Utils {
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         return stringBuilder.toString();
     }
+
+    public static String buildUserNameWithDomain(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                 Map<String, Object> eventProperties) {
+
+        String username = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
+        String userStoreDomain = userStoreManager.getRealmConfiguration().
+                getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        return UserCoreUtil.addDomainToName(username, userStoreDomain);
+    }
 }

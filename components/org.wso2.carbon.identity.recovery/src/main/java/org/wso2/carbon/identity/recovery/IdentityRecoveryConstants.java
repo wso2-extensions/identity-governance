@@ -189,6 +189,11 @@ public class IdentityRecoveryConstants {
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
+    // IdentityUserMetadataMgtHandler constants.
+    public static final String TENANT_ASSOCIATION_MANAGER = "tenant-association-manager";
+    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    public static final String ASGARDEO_USER_DOMAIN_NAME = "ASGARDEO-USER";
+
     private IdentityRecoveryConstants() {
 
     }
@@ -664,6 +669,21 @@ public class IdentityRecoveryConstants {
         public static final String LOAD_RECOVERY_DATA_OF_USER_BY_STEP_CASE_INSENSITIVE = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND USER_DOMAIN = ? " +
                 "AND TENANT_ID = ? AND STEP = ?";
+
+        public static final String UPDATE_USER_METADATA = "UPDATE IDN_IDENTITY_USER_DATA SET DATA_VALUE = ? WHERE " +
+                "TENANT_ID = ? AND USER_NAME = ? AND DATA_KEY = ?";
+
+        public static final String INSERT_USER_METADATA = "INSERT INTO IDN_IDENTITY_USER_DATA (TENANT_ID, USER_NAME, " +
+                "DATA_KEY, DATA_VALUE) VALUES (?, ?, ?, ?)";
+
+        public static final String LOAD_USER_METADATA = "SELECT * FROM IDN_IDENTITY_USER_DATA WHERE TENANT_ID = ? AND " +
+                "USER_NAME = ? AND DATA_KEY = ?";
+
+        public static final String LOAD_USER_METADATA_FROM_USER_STORE_SQL_KEY = "GetUserPropertyForProfileSQL";
+
+        public static final String INSERT_USER_METADATA_TO_USER_STORE_SQL_KEY = "AddUserPropertySQL";
+
+        public static final String UPDATE_USER_METADATA_TO_USER_STORE_SQL_KEY = "UpdateUserPropertySQL";
     }
 
     public static class Questions {

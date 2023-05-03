@@ -27,7 +27,12 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.mgt.constants.IdentityMgtConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.dao.IdentityUserMetadataMgtDAO;
+import org.wso2.carbon.identity.recovery.dao.impl.IdentityUserMetadataMgtDAOImpl;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
@@ -43,6 +48,9 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     private static final String POST_AUTHENTICATION = "post_authentication";
     private static final String POST_CREDENTIAL_UPDATE = "post_credential_update";
     private static final String ENABLE_IDENTITY_USER_METADATA_MGT_HANDLER = "identityUserMetadataMgtHandler.enable";
+    private static final String USE_DAO_FOR_USER_METADATA_UPDATE = "identityUserMetadataMgtHandler.enableDAO";
+
+    private final IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO = new IdentityUserMetadataMgtDAOImpl();
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
@@ -53,6 +61,8 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
 
         boolean enable = Boolean.parseBoolean(configs.getModuleProperties().getProperty(
                 ENABLE_IDENTITY_USER_METADATA_MGT_HANDLER));
+        boolean enableDao = Boolean.parseBoolean(configs.getModuleProperties().getProperty(
+                USE_DAO_FOR_USER_METADATA_UPDATE));
         if (!enable) {
             if (log.isDebugEnabled()) {
                 log.debug("Identity User Metadata Management handler is not enabled.");
@@ -60,33 +70,58 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
             return;
         }
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
-            handlePostAuthenticate(eventProperties, userStoreManager);
+            handlePostAuthenticate(eventProperties, userStoreManager, enableDao);
         } else if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
                 IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
-            handleCredentialUpdate(eventProperties, userStoreManager);
+            handleCredentialUpdate(eventProperties, userStoreManager, enableDao);
         }
     }
 
-    private void handlePostAuthenticate(Map<String, Object> eventProperties, UserStoreManager userStoreManager)
-            throws IdentityEventException {
+    private void handlePostAuthenticate(Map<String, Object> eventProperties, UserStoreManager userStoreManager,
+                                        boolean enableDao) throws IdentityEventException {
 
         if (log.isDebugEnabled()) {
             log.debug("Start handling post authentication event.");
         }
         if ((Boolean) eventProperties.get(IdentityEventConstants.EventProperty.OPERATION_STATUS)) {
             String lastLoginTime = Long.toString(System.currentTimeMillis());
+            if (enableDao) {
+                String username = Utils.buildUserNameWithDomain(userStoreManager, eventProperties);
+                if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
+                    return;
+                }
+                // update data in db
+                identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, username,
+                        IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime, POST_AUTHENTICATION);
+                //update cache
+                updateUserIdentityCache(userStoreManager, username, IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime);
+                return;
+            }
             setUserClaim(userStoreManager, eventProperties, IdentityMgtConstants.LAST_LOGIN_TIME,
                     lastLoginTime, POST_AUTHENTICATION);
         }
     }
 
-    private void handleCredentialUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager)
-            throws IdentityEventException {
+    private void handleCredentialUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager,
+                                        boolean enableDao) throws IdentityEventException {
 
         if (log.isDebugEnabled()) {
             log.debug("Start handling post credential update event.");
         }
         String lastPasswordUpdateTime = Long.toString(System.currentTimeMillis());
+        if (enableDao) {
+            String username = Utils.buildUserNameWithDomain(userStoreManager, eventProperties);
+            if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
+                return;
+            }
+            // update data in db
+            identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, username,
+                    IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME, lastPasswordUpdateTime, POST_CREDENTIAL_UPDATE);
+            //update cache
+            updateUserIdentityCache(userStoreManager, username, IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME,
+                    lastPasswordUpdateTime);
+            return;
+        }
         setUserClaim(userStoreManager, eventProperties, IdentityMgtConstants.LAST_PASSWORD_UPDATE_TIME,
                 lastPasswordUpdateTime, POST_CREDENTIAL_UPDATE);
     }
@@ -106,6 +141,18 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
             throw new IdentityEventException(
                     String.format("Error occurred while updating user claims related to %s event.", eventName), e);
         }
+    }
+
+    private void updateUserIdentityCache(UserStoreManager userStoreManager, String username,
+                                         String claimURI, String claimValue) {
+
+        UserIdentityClaim identityClaimsFromCache =
+                identityUserMetadataMgtDAO.loadUserMetadataFromCache(userStoreManager, username);
+        if (identityClaimsFromCache == null) {
+            identityClaimsFromCache = new UserIdentityClaim(username);
+        }
+        identityClaimsFromCache.setUserIdentityDataClaim(claimURI, claimValue);
+        identityUserMetadataMgtDAO.storeUserMetadataToCache(userStoreManager, identityClaimsFromCache);
     }
 
     @Override
