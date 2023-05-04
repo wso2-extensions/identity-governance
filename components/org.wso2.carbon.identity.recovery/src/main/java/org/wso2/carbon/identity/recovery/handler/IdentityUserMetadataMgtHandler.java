@@ -90,10 +90,10 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
                 if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
                     return;
                 }
-                // update data in db
+                // Update data in db.
                 identityUserMetadataMgtDAO.updateUserMetadata(userStoreManager, username,
                         IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime, POST_AUTHENTICATION);
-                //update cache
+                // Update cache.
                 updateUserIdentityCache(userStoreManager, username, IdentityMgtConstants.LAST_LOGIN_TIME, lastLoginTime);
                 return;
             }

@@ -1438,9 +1438,12 @@ public class Utils {
     }
 
     public static String buildUserNameWithDomain(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
-                                                 Map<String, Object> eventProperties) {
+                                                 Map<String, Object> eventProperties) throws IdentityEventException {
 
         String username = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
+        if (StringUtils.isBlank(username)) {
+            throw new IdentityEventException("Username is not found in the event properties.");
+        }
         String userStoreDomain = userStoreManager.getRealmConfiguration().
                 getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
         return UserCoreUtil.addDomainToName(username, userStoreDomain);

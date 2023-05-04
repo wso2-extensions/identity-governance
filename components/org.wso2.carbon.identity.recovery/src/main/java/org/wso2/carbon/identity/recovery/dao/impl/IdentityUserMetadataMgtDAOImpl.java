@@ -87,46 +87,45 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
     public UserIdentityClaim loadUserMetadataFromCache(UserStoreManager userStoreManager, String userName) {
 
         try {
-            if (userName != null) {
-                userName = UserCoreUtil.removeDomainFromName(userName);
-                if (!IdentityUtil.isUserStoreCaseSensitive(userStoreManager)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Case insensitive user store found. Changing username from : " + userName +
-                                " to : " + userName.toLowerCase(Locale.ENGLISH));
-                    }
-                    userName = userName.toLowerCase(Locale.ENGLISH);
-                } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(userStoreManager)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Case insensitive username for cache key is used. Changing username from : "
-                                + userName + " to : " + userName.toLowerCase(Locale.ENGLISH));
-                    }
-                    userName = userName.toLowerCase(Locale.ENGLISH);
+            userName = UserCoreUtil.removeDomainFromName(userName);
+            String lowerCaseUserName = userName.toLowerCase(Locale.ENGLISH);
+            if (!IdentityUtil.isUserStoreCaseSensitive(userStoreManager)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Case insensitive user store found. Changing username from : " + userName +
+                            " to : " + lowerCaseUserName);
                 }
-
-                String domainName = userStoreManager.getRealmConfiguration().
-                        getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
-
-                IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
-                int tenantId = userStoreManager.getTenantId();
-                UserIdentityClaim userIdentityDTO = identityDataStoreCache.getValueFromCache(key, tenantId);
-
-                if (userIdentityDTO != null && log.isDebugEnabled()) {
-                    StringBuilder data = new StringBuilder("{");
-                    if (userIdentityDTO.getUserIdentityDataMap() != null) {
-                        for (Map.Entry<String, String> entry : userIdentityDTO.getUserIdentityDataMap().entrySet()) {
-                            data.append("[").append(entry.getKey()).append(" = ").append(entry.getValue())
-                                    .append("], ");
-                        }
-                    }
-                    if (data.indexOf(",") >= 0) {
-                        data.deleteCharAt(data.lastIndexOf(","));
-                    }
-                    data.append("}");
-                    log.debug("Loaded UserIdentityClaimsDO from cache for user :" + userName + " with claims: " + data);
-
+                userName = lowerCaseUserName;
+            } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(userStoreManager)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Case insensitive username for cache key is used. Changing username from : "
+                            + userName + " to : " + lowerCaseUserName);
                 }
-                return userIdentityDTO;
+                userName = lowerCaseUserName;
             }
+
+            String domainName = userStoreManager.getRealmConfiguration().
+                    getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+
+            IdentityDataStoreCacheKey key = new IdentityDataStoreCacheKey(domainName, userName);
+            int tenantId = userStoreManager.getTenantId();
+            UserIdentityClaim userIdentityDTO = identityDataStoreCache.getValueFromCache(key, tenantId);
+
+            if (userIdentityDTO != null && log.isDebugEnabled()) {
+                StringBuilder data = new StringBuilder("{");
+                if (userIdentityDTO.getUserIdentityDataMap() != null) {
+                    for (Map.Entry<String, String> entry : userIdentityDTO.getUserIdentityDataMap().entrySet()) {
+                        data.append("[").append(entry.getKey()).append(" = ").append(entry.getValue())
+                                .append("], ");
+                    }
+                }
+                if (data.indexOf(",") >= 0) {
+                    data.deleteCharAt(data.lastIndexOf(","));
+                }
+                data.append("}");
+                log.debug("Loaded UserIdentityClaimsDO from cache for user :" + userName + " with claims: " + data);
+
+            }
+            return userIdentityDTO;
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             log.error("Error while obtaining tenant ID from user store manager");
         }
@@ -139,18 +138,19 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
         try {
             if (userIdentityDTO != null && userIdentityDTO.getUserName() != null) {
                 String userName = UserCoreUtil.removeDomainFromName(userIdentityDTO.getUserName());
+                String lowerCaseUserName = userName.toLowerCase(Locale.ENGLISH);
                 if (!IdentityUtil.isUserStoreCaseSensitive(userStoreManager)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Case insensitive user store found. Changing username from : " + userName +
-                                " to : " + userName.toLowerCase(Locale.ENGLISH));
+                                " to : " + lowerCaseUserName);
                     }
-                    userName = userName.toLowerCase(Locale.ENGLISH);
+                    userName = lowerCaseUserName;
                 } else if (!IdentityUtil.isUseCaseSensitiveUsernameForCacheKeys(userStoreManager)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Case insensitive username for cache key is used. Changing username from : "
-                                + userName + " to : " + userName.toLowerCase(Locale.ENGLISH));
+                                + userName + " to : " + lowerCaseUserName);
                     }
-                    userName = userName.toLowerCase(Locale.ENGLISH);
+                    userName = lowerCaseUserName;
                 }
 
                 if (log.isDebugEnabled()) {
@@ -206,11 +206,11 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
         try (Connection connection = getDBConnection(userStoreManager.getRealmConfiguration())) {
             try {
                 if (isMetadataExistsInUserStore(connection, userStoreManager, tenantId, username, claimAttributeName)) {
-                    // update claim in user store
+                    // Update claim in user store.
                     executionResult = updateExistingMetadataInUserStore(connection, userStoreManager, tenantId,
                             username, claimAttributeName, value);
                 } else {
-                    // add claim to user store
+                    // Add claim to user store.
                     executionResult = insertMetadataInUserStore(connection, userStoreManager, tenantId, username,
                             claimAttributeName, value);
                 }
@@ -232,12 +232,12 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
     /**
      * Store user metadata in the identity store.
      *
-     * @param username                  Username
-     * @param tenantId                  Tenant ID
-     * @param claimURI                  Claim URI
-     * @param value                     Claim attribute value
-     * @param eventName                 Event name
-     * @throws IdentityEventException   Identity event exception
+     * @param username                  Username.
+     * @param tenantId                  Tenant ID.
+     * @param claimURI                  Claim URI.
+     * @param value                     Claim attribute value.
+     * @param eventName                 Event name.
+     * @throws IdentityEventException   Identity event exception.
      */
     private void storeMetadataToIdentityStore(String username, String tenantId, String claimURI, String value,
                                               String eventName) throws IdentityEventException {
@@ -359,9 +359,8 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
         String sqlStmt = userStoreManager.getRealmConfiguration().getUserStoreProperty(sqlStatementKey);
         if (StringUtils.isNotBlank(sqlStmt)) {
             return sqlStmt;
-        } else {
-            throw new IdentityEventException("SQL statement is not configured in the user store configuration.");
         }
+        throw new IdentityEventException("SQL statement is not configured in the user store configuration.");
     }
 
     /**
@@ -465,7 +464,7 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
                 dbConnection = DatabaseUtil.getDBConnection(dataSource);
             }
 
-            //if primary user store, DB connection can be same as realm data source.
+            // If primary user store, DB connection can be same as realm data source.
             if (dbConnection == null && realmConfiguration.isPrimary()) {
                 dbConnection = IdentityDatabaseUtil.getUserDBConnection(false);
             } else if (dbConnection == null) {
