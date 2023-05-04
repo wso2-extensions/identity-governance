@@ -55,5 +55,4 @@ public class IdleAccountIdentificationDataHolder {
 
         this.realmService = realmService;
     }
-
 }

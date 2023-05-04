@@ -53,9 +53,8 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
 
         if (StringUtils.isEmpty(excludeBefore)) {
             return getInactiveUsersFromSpecificDate(inactiveAfter, tenantDomain);
-        } else {
-            return getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, tenantDomain);
         }
+        return getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, tenantDomain);
     }
 
     /**

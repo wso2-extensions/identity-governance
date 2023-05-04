@@ -51,7 +51,7 @@ public class IdleAccIdentificationConstants {
      */
     public enum ErrorMessages {
 
-        // client errors 600xx
+        // Client errors 600xx.
         ERROR_REQUIRED_PARAMETER_MISSING("60001",
                 "Required parameter is not provided.",
                 "%s parameter is required and cannot be empty."),
@@ -65,7 +65,7 @@ public class IdleAccIdentificationConstants {
                 "The date provided for %s parameter is invalid"),
 
 
-        // server errors 650xx
+        // Server errors 650xx.
         ERROR_DATE_CONVERSION_TO_EPOCH("65001",
                 "Error while converting date to epoch.",
                 "Error while converting date to epoch for %s parameter."),
@@ -78,11 +78,9 @@ public class IdleAccIdentificationConstants {
                 "Error while retrieving user store manager.",
                 "Error while retrieving user store manager of user in organization: %s."),
 
-
         ERROR_RETRIEVE_USER_ATTRIBUTES("65004",
                 "Error while retrieving values of user attributes.",
                 "Error while retrieving values of user attributes from organization: %s.");
-
 
         private final String code;
         private final String message;
