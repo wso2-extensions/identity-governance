@@ -827,8 +827,7 @@ public class NotificationPasswordRecoveryManager {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventClientException e) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
-                    ERROR_CODE_ERROR_HANDLING_THE_EVENT.getCode(), e.getMessage(), null);
+            throw Utils.handleClientException(e.getErrorCode(), e.getMessage(), null);
         } catch (IdentityEventException e) {
             log.error("Error occurred while publishing event " + eventName + " for user " + user);
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PUBLISH_EVENT,

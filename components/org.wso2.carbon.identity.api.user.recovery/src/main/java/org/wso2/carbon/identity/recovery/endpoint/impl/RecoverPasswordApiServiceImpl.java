@@ -88,6 +88,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER.getCode().equals(e.getErrorCode())) {
                 return Response.accepted().build();
             }
+            if (IdentityRecoveryConstants.ErrorMessages.INVALID_PASSWORD_RECOVERY_REQUEST.getCode().
+                    equals(e.getErrorCode())) {
+                return Response.accepted().build();
+            }
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
         } catch (IdentityRecoveryException e) {
             if (e.getCause() != null && StringUtils.equals(Constants.ERROR_MESSAGE_EMAIL_NOT_FOUND,
