@@ -115,7 +115,7 @@ public class IdentityRecoveryConstants {
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
             "http://wso2.org/claims/identity/tenantAdminAskPassword";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
-    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
+    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/roles";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
