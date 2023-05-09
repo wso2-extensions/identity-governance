@@ -28,6 +28,8 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.identity.idle.account.identification.dao.IdleAccIdentificationDAO;
+import org.wso2.carbon.identity.idle.account.identification.dao.impl.IdleAccIdentificationDAOImpl;
 import org.wso2.carbon.identity.idle.account.identification.services.IdleAccountIdentificationService;
 import org.wso2.carbon.identity.idle.account.identification.services.IdleAccountIdentificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -54,8 +56,9 @@ public class IdleAccountIdentificationComponent {
     protected void activate(ComponentContext componentContext) {
 
         BundleContext bundleContext = componentContext.getBundleContext();
+        IdleAccIdentificationDAO idleAccIdentificationDAO = new IdleAccIdentificationDAOImpl();
         bundleContext.registerService(IdleAccountIdentificationService.class.getName(),
-                new IdleAccountIdentificationServiceImpl(), null);
+                new IdleAccountIdentificationServiceImpl(idleAccIdentificationDAO), null);
     }
 
     @Deactivate

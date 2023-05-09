@@ -22,7 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.idle.account.identification.constants.IdleAccIdentificationConstants;
 import org.wso2.carbon.identity.idle.account.identification.constants.IdleAccIdentificationConstants.ErrorMessages;
 import org.wso2.carbon.identity.idle.account.identification.dao.IdleAccIdentificationDAO;
-import org.wso2.carbon.identity.idle.account.identification.dao.impl.IdleAccIdentificationDAOImpl;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationClientException;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationException;
 import org.wso2.carbon.identity.idle.account.identification.models.InactiveUserModel;
@@ -38,7 +37,17 @@ import java.util.List;
  */
 public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentificationService {
 
-    IdleAccIdentificationDAO idleAccIdentificationDAO = new IdleAccIdentificationDAOImpl();
+    IdleAccIdentificationDAO idleAccIdentificationDAO;
+
+    /**
+     * Constructor of the service implementation.
+     *
+     * @param idleAccIdentificationDAO DAO for idle account identification
+     */
+    public IdleAccountIdentificationServiceImpl(IdleAccIdentificationDAO idleAccIdentificationDAO) {
+
+        this.idleAccIdentificationDAO = idleAccIdentificationDAO;
+    }
 
     @Override
     public List<InactiveUserModel> getInactiveUsers(String inactiveAfter, String excludeBefore, String tenantDomain)
