@@ -50,6 +50,7 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
 
     private static final String TENANT_DOMAIN = "DEFAULT";
     private static final int TENANT_ID = 3;
+    private static final String SAMPLE_EMAIL = "sampleMail";;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -59,15 +60,12 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
         System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
         System.setProperty(CarbonBaseConstants.CARBON_CONFIG_DIR_PATH, Paths.get(carbonHome, "conf").toString());
 
-        DataSource dataSource = mock(DataSource.class);
         mockStatic(IdentityDatabaseUtil.class);
-        when(IdentityDatabaseUtil.getDataSource()).thenAnswer((Answer<DataSource>) invocation -> dataSource);
+        connection = TestUtils.getConnection();
+        when(IdentityDatabaseUtil.getDBConnection(anyBoolean())).thenAnswer((Answer<Connection>) invocation -> connection);
 
         mockStatic(IdentityTenantUtil.class);
         when(IdentityTenantUtil.getTenantId(anyString())).thenAnswer((Answer<Integer>) invocation -> TENANT_ID);
-
-        connection = TestUtils.getConnection();
-        when(IdentityDatabaseUtil.getDBConnection(anyBoolean())).thenAnswer((Answer<Connection>) invocation -> connection);
 
         idleAccountIdentificationService = new IdleAccountIdentificationServiceImpl(new IdleAccIdentificationDAOImpl());
     }
@@ -88,11 +86,12 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
                 {"2023-01-31", "2023/01/15"},
                 {"2023-13-32", null},
                 {"2023-01-31", "2023/100/150"},
+                {"31-01-2023", "15-01-2023"}
         };
     }
 
     @Test(dataProvider = "getInvalidDates")
-    public void testGetInactiveUsersWithInvalidDates(String inactiveAfter, String excludeBefore) throws Exception {
+    public void testGetInactiveUsersWithInvalidDates(String inactiveAfter, String excludeBefore) {
 
         assertThrows(IdleAccIdentificationClientException.class, () ->
                 idleAccountIdentificationService.getInactiveUsers(inactiveAfter, excludeBefore, TENANT_DOMAIN));
@@ -112,7 +111,7 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
     public void testGetInactiveUsers(String inactiveAfter, String excludeBefore, int expected) throws Exception {
 
         IdleAccIdentificationDAOImpl idleAccIdentificationDAO = spy(new IdleAccIdentificationDAOImpl());
-        doReturn("sampleMail").when(idleAccIdentificationDAO).fetchUserEmail(anyString());
+        doReturn(SAMPLE_EMAIL).when(idleAccIdentificationDAO).fetchUserEmail(anyString());
 
         IdleAccountIdentificationService idleAccountIdentificationService =
                 new IdleAccountIdentificationServiceImpl(idleAccIdentificationDAO);
