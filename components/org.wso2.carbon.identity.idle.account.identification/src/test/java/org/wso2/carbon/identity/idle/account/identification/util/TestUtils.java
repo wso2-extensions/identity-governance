@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.idle.accunt.identification.util;
+package org.wso2.carbon.identity.idle.account.identification.util;
 
 import java.nio.file.Paths;
 import java.sql.Connection;

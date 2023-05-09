@@ -149,7 +149,7 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
         InactiveUserModel user = new InactiveUserModel();
         user.setUsername(username);
         user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
-        user.setEmail(fetchUserEmail(username));
+        // user.setEmail(fetchUserEmail(username));
         return user;
     }
 
@@ -159,7 +159,7 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
      * @param username      username of the user.
      * @return              Email address of the user.
      */
-    private String fetchUserEmail(String username) throws IdleAccIdentificationServerException {
+    public String fetchUserEmail(String username) throws IdleAccIdentificationServerException {
 
         String[] claims = new String[1];
         claims[0] = IdleAccIdentificationConstants.EMAIL_CLAIM;
