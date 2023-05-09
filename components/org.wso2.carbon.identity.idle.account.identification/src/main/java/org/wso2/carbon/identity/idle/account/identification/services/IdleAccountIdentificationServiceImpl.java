@@ -80,12 +80,11 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
                         ErrorMessages.ERROR_INVALID_DATE.getCode(), ErrorMessages.ERROR_INVALID_DATE.getMessage(),
                         String.format(ErrorMessages.ERROR_INVALID_DATE.getDescription(),
                                 IdleAccIdentificationConstants.DATE_INACTIVE_AFTER));
-            } else {
-                throw new IdleAccIdentificationClientException(
-                        ErrorMessages.ERROR_INVALID_DATE.getCode(), ErrorMessages.ERROR_INVALID_DATE.getMessage(),
-                        String.format(ErrorMessages.ERROR_INVALID_DATE.getDescription(),
-                                IdleAccIdentificationConstants.DATE_EXCLUDE_BEFORE));
             }
+            throw new IdleAccIdentificationClientException(
+                    ErrorMessages.ERROR_INVALID_DATE.getCode(), ErrorMessages.ERROR_INVALID_DATE.getMessage(),
+                    String.format(ErrorMessages.ERROR_INVALID_DATE.getDescription(),
+                            IdleAccIdentificationConstants.DATE_EXCLUDE_BEFORE));
         }
     }
 }
