@@ -40,6 +40,11 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
 
     IdleAccIdentificationDAO idleAccIdentificationDAO = new IdleAccIdentificationDAOImpl();
 
+    public IdleAccountIdentificationServiceImpl(IdleAccIdentificationDAO idleAccIdentificationDAO) {
+
+        this.idleAccIdentificationDAO = idleAccIdentificationDAO;
+    }
+
     @Override
     public List<InactiveUserModel> getInactiveUsers(String inactiveAfter, String excludeBefore, String tenantDomain)
             throws IdleAccIdentificationException {

@@ -149,7 +149,7 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
         InactiveUserModel user = new InactiveUserModel();
         user.setUsername(username);
         user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
-        // user.setEmail(fetchUserEmail(username));
+        user.setEmail(fetchUserEmail(username));
         return user;
     }
 
