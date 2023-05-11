@@ -69,7 +69,8 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
             }
             return;
         }
-        if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
+        if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName()) ||
+                IdentityEventConstants.Event.POST_AUTH_STORE_LAST_LOGIN.equals(event.getEventName())) {
             handlePostAuthenticate(eventProperties, userStoreManager, enableDao);
         } else if (IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL.equals(event.getEventName()) ||
                 IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN.equals(event.getEventName())) {
