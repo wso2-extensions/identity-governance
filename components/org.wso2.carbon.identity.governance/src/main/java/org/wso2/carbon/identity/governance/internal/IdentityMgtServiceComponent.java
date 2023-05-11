@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.core.ConnectorConfig;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -33,6 +34,7 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManager;
 import org.wso2.carbon.identity.governance.internal.service.impl.otp.DefaultOTPGenerator;
+import org.wso2.carbon.identity.governance.listener.ClaimValueEncryptionListener;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
@@ -67,7 +69,9 @@ public class IdentityMgtServiceComponent {
             DefaultOTPGenerator defaultOtpGenerator = new DefaultOTPGenerator();
             context.getBundleContext()
                     .registerService(OTPGenerator.class.getName(), defaultOtpGenerator, null);
-
+            ClaimValueEncryptionListener claimValueEncryptionListener = new ClaimValueEncryptionListener();
+            context.getBundleContext().registerService(UserOperationEventListener.class, claimValueEncryptionListener,
+                    null);
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
             }
@@ -160,5 +164,35 @@ public class IdentityMgtServiceComponent {
 
         log.debug("UnSetting the Realm Service");
         IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+    }
+
+    /**
+     * Set claim metadata management service implementation.
+     *
+     * @param claimManagementService ClaimManagementService
+     */
+    @Reference(
+            name = "claimManagementService",
+            service = org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimMetadataManagementService")
+    protected void setClaimMetadataManagementService(ClaimMetadataManagementService claimManagementService) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("claimManagementService set in IdentityMgtServiceComponent bundle");
+        }
+        IdentityMgtServiceDataHolder.setClaimManagementService(claimManagementService);
+    }
+
+    /**
+     * Unset claim metadata management service implementation.
+     */
+    protected void unsetClaimMetadataManagementService(ClaimMetadataManagementService claimManagementService) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("claimManagementService unset in IdentityMgtServiceComponent bundle");
+        }
+        IdentityMgtServiceDataHolder.setClaimManagementService(null);
     }
 }
