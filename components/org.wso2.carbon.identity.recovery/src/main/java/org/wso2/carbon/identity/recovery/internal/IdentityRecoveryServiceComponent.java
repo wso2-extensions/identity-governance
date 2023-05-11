@@ -53,6 +53,8 @@ import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
+import org.wso2.carbon.identity.recovery.dao.IdentityUserMetadataMgtDAO;
+import org.wso2.carbon.identity.recovery.dao.impl.IdentityUserMetadataMgtDAOImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandler;
@@ -119,8 +121,9 @@ public class IdentityRecoveryServiceComponent {
                     , null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new TenantRegistrationVerificationHandler(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(), new IdentityUserMetadataMgtHandler(),
-                    null);
+            IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO = new IdentityUserMetadataMgtDAOImpl();
+            bundleContext.registerService(AbstractEventHandler.class.getName(),
+                    new IdentityUserMetadataMgtHandler(identityUserMetadataMgtDAO), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new RecoveryConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new SelfRegistrationConfigImpl(),
                     null);

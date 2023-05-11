@@ -50,7 +50,17 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     private static final String ENABLE_IDENTITY_USER_METADATA_MGT_HANDLER = "identityUserMetadataMgtHandler.enable";
     private static final String USE_DAO_FOR_USER_METADATA_UPDATE = "identityUserMetadataMgtHandler.enableDAO";
 
-    private final IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO = new IdentityUserMetadataMgtDAOImpl();
+    private IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO;
+
+    /**
+     * Constructor of the handler.
+     *
+     * @param identityUserMetadataMgtDAO DAO for identity user metadata management.
+     */
+    public IdentityUserMetadataMgtHandler(IdentityUserMetadataMgtDAO identityUserMetadataMgtDAO) {
+
+        this.identityUserMetadataMgtDAO = identityUserMetadataMgtDAO;
+    }
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
