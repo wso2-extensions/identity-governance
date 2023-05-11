@@ -59,10 +59,6 @@ public class IdentityUserMetadataMgtDAOImpl implements IdentityUserMetadataMgtDA
     public void updateUserMetadata(UserStoreManager userStoreManager, String username,
                                    String claimURI, String value, String eventName) throws IdentityEventException {
 
-        if (username.contains(IdentityRecoveryConstants.TENANT_ASSOCIATION_MANAGER)) {
-            return;
-        }
-
         String tenantId;
         try {
             tenantId = String.valueOf(userStoreManager.getTenantId());
