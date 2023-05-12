@@ -14,8 +14,10 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,8 +25,8 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
 
     private static final Log LOG = LogFactory.getLog(ClaimValueEncryptionListener.class);
 
-    private static final String ENCRYPTED_CLAIM_VALUE = "encrypted-claim-value";
-    private static final String CLAIM_URI = "claim-uri";
+    private static final String CLAIM_VALUE = "ClaimValue";
+    private static final String CLAIM_URI = "claimURI";
 
     @Override
     public int getExecutionOrderId() {
@@ -33,7 +35,7 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
         }
-        return 200;
+        return 94;
     }
 
     @Override
@@ -44,17 +46,18 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
             if (!isEnable() || userStoreManager == null) {
                 return true;
             }
+
             for (Map.Entry<String, String> entry : claims.entrySet()) {
                 String claimURI = entry.getKey();
-                String claimValue = entry.getValue();
                 if (checkEnableEncryption(claimURI, userStoreManager)) {
+                    String claimValue = entry.getValue();
                     try {
                         claimValue = encryptClaimValue(claimValue);
                     } catch (CryptoException e) {
                         LOG.error("Error occurred while encrypting claim value", e);
                     }
+                    claims.put(claimURI, claimValue);
                 }
-                claims.put(claimURI, claimValue);
             }
             return true;
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
@@ -72,19 +75,19 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (LOG.isDebugEnabled()) {
             LOG.debug("Pre set claims is called in ClaimValueEncryptionListener");
         }
+
         for (Map.Entry<String, String> entry : claims.entrySet()) {
             String claimURI = entry.getKey();
-            String claimValue = entry.getValue();
             if (checkEnableEncryption(claimURI, userStoreManager)) {
+                String claimValue = entry.getValue();
                 try {
                     claimValue = encryptClaimValue(claimValue);
                 } catch (CryptoException e) {
                     LOG.error("Error occurred while encrypting claim value", e);
                 }
+                claims.put(claimURI, claimValue);
             }
-            claims.put(claimURI, claimValue);
         }
-
         return true;
     }
 
@@ -92,37 +95,38 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     public boolean doPreSetUserClaimValue(String userName, String claimURI, String claimValue, String profileName,
                                           UserStoreManager userStoreManager) throws UserStoreException {
 
+        if (!isEnable() || userStoreManager == null) {
+            return true;
+        }
         if (checkEnableEncryption(claimURI, userStoreManager)) {
-            try {
-                String encryptedClaimValue = encryptClaimValue(claimValue);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_VALUE);
 
-                IdentityUtil.threadLocalProperties.get().remove(ENCRYPTED_CLAIM_VALUE);
-                IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
-
-                IdentityUtil.threadLocalProperties.get().put(ENCRYPTED_CLAIM_VALUE,encryptedClaimValue);
-                IdentityUtil.threadLocalProperties.get().put(CLAIM_URI,claimURI);
-            } catch (CryptoException e) {
-                LOG.error("Error occurred while encrypting claim value", e);
-            }
+            IdentityUtil.threadLocalProperties.get().put(CLAIM_URI, claimURI);
+            IdentityUtil.threadLocalProperties.get().put(CLAIM_VALUE, claimValue);
         }
         return true;
     }
 
     @Override
-    public boolean doPostSetUserClaimValue(String userName, UserStoreManager userStoreManager)
-            throws UserStoreException {
+    public boolean doPostSetUserClaimValue(String userName, UserStoreManager userStoreManager) throws UserStoreException {
 
-        String encryptedClaimValue = (String) IdentityUtil.threadLocalProperties.get().get(ENCRYPTED_CLAIM_VALUE);
-
-        if (encryptedClaimValue != null) {
-            String claimURI = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_URI);
-
-        // TODO:
+        if (!isEnable() || userStoreManager == null) {
+            return true;
         }
-
-        IdentityUtil.threadLocalProperties.get().remove(ENCRYPTED_CLAIM_VALUE);
-        IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
-        return true;
+        try {
+            String claimURI = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_URI);
+            String claimValue = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_VALUE);
+            if (StringUtils.isNotBlank(claimURI) && StringUtils.isNotBlank(claimValue)) {
+                Map<String, String> claims = new HashMap<>();
+                claims.put(claimURI, claimValue);
+                userStoreManager.setUserClaimValues(userName, claims, null);
+            }
+            return true;
+        } finally {
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_VALUE);
+        }
     }
 
     @Override
@@ -132,17 +136,18 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (!isEnable() || userStoreManager == null) {
             return true;
         }
+
         for (Map.Entry<String, String> entry : claims.entrySet()) {
             String claimURI = entry.getKey();
-            String claimValue = entry.getValue();
             if (checkEnableEncryption(claimURI, userStoreManager)) {
+                String claimValue = entry.getValue();
                 try {
                     claimValue = encryptClaimValue(claimValue);
                 } catch (CryptoException e) {
                     LOG.error("Error occurred while encrypting claim value", e);
                 }
+                claims.put(claimURI, claimValue);
             }
-            claims.put(claimURI, claimValue);
         }
         return true;
     }
@@ -151,19 +156,15 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     public boolean doPreSetUserClaimValueWithID(String userID, String claimURI, String claimValue, String profileName,
                                                 UserStoreManager userStoreManager) throws UserStoreException {
 
+        if (!isEnable() || userStoreManager == null) {
+            return true;
+        }
         if (checkEnableEncryption(claimURI, userStoreManager)) {
-            try {
-                String encryptedClaimValue = encryptClaimValue(claimValue);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_VALUE);
 
-                IdentityUtil.threadLocalProperties.get().remove(ENCRYPTED_CLAIM_VALUE);
-                IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
-
-                IdentityUtil.threadLocalProperties.get().put(ENCRYPTED_CLAIM_VALUE, encryptedClaimValue);
-                IdentityUtil.threadLocalProperties.get().put(CLAIM_URI, claimURI);
-
-            } catch (CryptoException e) {
-                LOG.error("Error occurred while encrypting claim value", e);
-            }
+            IdentityUtil.threadLocalProperties.get().put(CLAIM_URI, claimURI);
+            IdentityUtil.threadLocalProperties.get().put(CLAIM_VALUE, claimValue);
         }
         return true;
     }
@@ -172,16 +173,22 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     public boolean doPostSetUserClaimValueWithID(String userID, UserStoreManager userStoreManager)
             throws UserStoreException {
 
-        String encryptedClaimValue = (String) IdentityUtil.threadLocalProperties.get().get(ENCRYPTED_CLAIM_VALUE);
-
-        if (encryptedClaimValue != null) {
-            String claimURI = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_URI);
-        // TODO:
+        if (!isEnable() || userStoreManager == null) {
+            return true;
         }
-
-        IdentityUtil.threadLocalProperties.get().remove(ENCRYPTED_CLAIM_VALUE);
-        IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
-        return true;
+        try {
+            String claimURI = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_URI);
+            String claimValue = (String) IdentityUtil.threadLocalProperties.get().get(CLAIM_VALUE);
+            if (StringUtils.isNotBlank(claimURI) && StringUtils.isNotBlank(claimValue)) {
+                Map<String, String> claims = new HashMap<>();
+                claims.put(claimURI, claimValue);
+                ((AbstractUserStoreManager) userStoreManager).setUserClaimValuesWithID(userID, claims, null);
+            }
+            return true;
+        } finally {
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_URI);
+            IdentityUtil.threadLocalProperties.get().remove(CLAIM_VALUE);
+        }
     }
 
     private String encryptClaimValue(String plainText) throws CryptoException {
