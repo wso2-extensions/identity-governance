@@ -183,17 +183,6 @@ public class UserSelfRegistrationManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
                     .getUserName());
         }
-
-        // Verify whether the required attributes of the selected registration option is satisfied.
-        verifyUserAttributes(user, password, claims, properties);
-
-        // Provide support for passwordless registration.
-        // If the password is mandatory and not provided, it will be failed at the attribute verification.
-        if (password == null) {
-            UserCoreUtil.setSkipPasswordPatternValidationThreadLocal(true);
-            Utils.generateRandomPassword(12);
-        }
-
         NotificationResponseBean notificationResponseBean;
         try {
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
