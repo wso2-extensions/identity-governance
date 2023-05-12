@@ -52,7 +52,7 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     private static final String POST_AUTHENTICATION = "post_authentication";
     private static final String POST_CREDENTIAL_UPDATE = "post_credential_update";
     private static final String ENABLE_IDENTITY_USER_METADATA_MGT_HANDLER = "identityUserMetadataMgtHandler.enable";
-    private static final String USE_DAO_FOR_USER_METADATA_UPDATE = "identityUserMetadataMgtHandler.enableDAO";
+    private static final String USE_DAO_FOR_USER_METADATA_UPDATE = "identityUserMetadataMgtHandler.storeWithDAO";
 
     @Override
     public void handleEvent(Event event) throws IdentityEventException {
