@@ -76,6 +76,7 @@ import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryMa
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
+import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -496,5 +497,22 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(null);
+    }
+
+    @Reference(name = "user.operation.event.listener.service", cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC, unbind = "unsetUserOperationEventListenerService")
+    protected synchronized void setUserOperationEventListenerService(
+            UserOperationEventListener userOperationEventListenerService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().addUserOperationEventListener(userOperationEventListenerService);
+    }
+
+    protected synchronized void unsetUserOperationEventListenerService(
+            UserOperationEventListener userOperationEventListenerService) {
+
+        if (userOperationEventListenerService != null) {
+            IdentityRecoveryServiceDataHolder.getInstance().getUserOperationEventListeners().remove(
+                    userOperationEventListenerService.getExecutionOrderId());
+        }
     }
 }

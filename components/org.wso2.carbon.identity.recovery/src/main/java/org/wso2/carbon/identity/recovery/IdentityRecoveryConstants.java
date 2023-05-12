@@ -189,6 +189,11 @@ public class IdentityRecoveryConstants {
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
+    // IdentityUserMetadataMgtHandler constants.
+    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    public static final String ASGARDEO_USER_DOMAIN_NAME = "ASGARDEO-USER";
+    public static final String TENANT_ASSOCIATION_MANAGER = "tenant-association-manager";
+
     private IdentityRecoveryConstants() {
 
     }

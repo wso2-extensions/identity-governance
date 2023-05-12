@@ -33,7 +33,11 @@ import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginSer
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 public class IdentityRecoveryServiceDataHolder {
 
@@ -54,6 +58,8 @@ public class IdentityRecoveryServiceDataHolder {
     private MultiAttributeLoginService multiAttributeLoginService;
     private InputValidationManagementService inputValidationMgtService;
     private AuthAttributeHandlerManager authAttributeHandlerManager;
+    private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
+
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -314,5 +320,23 @@ public class IdentityRecoveryServiceDataHolder {
     public void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
 
         this.inputValidationMgtService = inputValidationMgtService;
+    }
+
+    public Map<Integer, UserOperationEventListener> getUserOperationEventListeners() {
+
+        return userOperationEventListeners;
+    }
+
+    public void setUserOperationEventListeners(
+            Map<Integer, UserOperationEventListener> userOperationEventListeners) {
+
+        IdentityRecoveryServiceDataHolder.userOperationEventListeners = userOperationEventListeners;
+    }
+
+    public void addUserOperationEventListener(
+            UserOperationEventListener userOperationEventListener) {
+
+        userOperationEventListeners.put(userOperationEventListener.getExecutionOrderId(),
+                userOperationEventListener);
     }
 }
