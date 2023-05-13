@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.idle.account.identification.dao;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationException;
 import org.wso2.carbon.identity.idle.account.identification.models.InactiveUserModel;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -29,14 +30,25 @@ import java.util.List;
 public interface IdleAccIdentificationDAO {
 
     /**
-     * Get the list of inactive users.
+     * Get inactive users from a specific date.
      *
-     * @param inactiveAfter                     Latest active date of login.
-     * @param excludeBefore                     Date to exclude the oldest inactive users.
-     * @param tenantDomain                      Tenant domain.
-     * @return                                  List of inactive users.
-     * @throws IdleAccIdentificationException   Exception thrown when getting inactive users.
+     * @param inactiveAfter date after which the user should be inactive.
+     * @param tenantDomain  tenant domain.
+     * @return              list of inactive users.
+     * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
      */
-    List<InactiveUserModel> getInactiveUsers(String inactiveAfter, String excludeBefore, String tenantDomain)
+    List<InactiveUserModel> getInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter, String tenantDomain)
             throws IdleAccIdentificationException;
+
+    /**
+     * Get inactive users from a specific date excluding the oldest inactive users.
+     *
+     * @param inactiveAfter date after which the user should be inactive.
+     * @param excludeBefore date before which the user should be excluded.
+     * @param tenantDomain  tenant domain.
+     * @return              list of inactive users.
+     * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
+     */
+    List<InactiveUserModel> getLimitedInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter,
+                            LocalDateTime excludeBefore, String tenantDomain) throws IdleAccIdentificationException;
 }

@@ -27,7 +27,6 @@ import org.wso2.carbon.identity.idle.account.identification.dao.IdleAccIdentific
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationException;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationServerException;
 import org.wso2.carbon.identity.idle.account.identification.models.InactiveUserModel;
-import org.wso2.carbon.identity.idle.account.identification.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
@@ -38,6 +37,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,29 +49,12 @@ import java.util.Map;
 public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
 
     @Override
-    public List<InactiveUserModel> getInactiveUsers(String inactiveAfter, String excludeBefore, String tenantDomain)
-            throws IdleAccIdentificationException {
-
-        if (StringUtils.isEmpty(excludeBefore)) {
-            return getInactiveUsersFromSpecificDate(inactiveAfter, tenantDomain);
-        }
-        return getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, tenantDomain);
-    }
-
-    /**
-     * Get inactive users from a specific date.
-     *
-     * @param inactiveAfter date after which the user should be inactive.
-     * @param tenantDomain  tenant domain.
-     * @return              list of inactive users.
-     * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
-     */
-    private List<InactiveUserModel> getInactiveUsersFromSpecificDate(String inactiveAfter, String tenantDomain)
+    public List<InactiveUserModel> getInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter, String tenantDomain)
             throws IdleAccIdentificationException {
 
         String sqlStmt = IdleAccIdentificationConstants.SQLConstants.GET_INACTIVE_USERS_FROM_SPECIFIC_DATE;
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String epoch = Utils.convertDateIntoEpoch(inactiveAfter);
+        String epoch = Long.toString(inactiveAfter.toEpochSecond(ZoneOffset.UTC));
         List<InactiveUserModel> inactiveUsers = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true);) {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
@@ -90,28 +74,20 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
             }
 
         } catch (SQLException e) {
-            throw new IdleAccIdentificationServerException(
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB.getCode(),
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB.getMessage());
+            IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB;
+            throw new IdleAccIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
         }
     }
 
-    /**
-     * Get inactive users from a specific date excluding the oldest inactive users.
-     *
-     * @param inactiveAfter date after which the user should be inactive.
-     * @param excludeBefore date before which the user should be excluded.
-     * @param tenantDomain  tenant domain.
-     * @return              list of inactive users.
-     * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
-     */
-    private List<InactiveUserModel> getLimitedInactiveUsersFromSpecificDate(String inactiveAfter,
-                                String excludeBefore, String tenantDomain) throws IdleAccIdentificationException {
+    @Override
+    public List<InactiveUserModel> getLimitedInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter,
+                           LocalDateTime excludeBefore, String tenantDomain) throws IdleAccIdentificationException {
 
         String sqlStmt = IdleAccIdentificationConstants.SQLConstants.GET_LIMITED_INACTIVE_USERS_FROM_SPECIFIC_DATE;
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String inactiveDateEpoch = Utils.convertDateIntoEpoch(inactiveAfter);
-        String excludeDateEpoch = Utils.convertDateIntoEpoch(excludeBefore);
+        String inactiveDateEpoch = Long.toString(inactiveAfter.toEpochSecond(ZoneOffset.UTC));
+        String excludeDateEpoch = Long.toString(excludeBefore.toEpochSecond(ZoneOffset.UTC));
         List<InactiveUserModel> inactiveUsers = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true);) {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
@@ -132,9 +108,9 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
             }
 
         } catch (SQLException e) {
-            throw new IdleAccIdentificationServerException(
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB.getCode(),
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB.getMessage());
+            IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB;
+            throw new IdleAccIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
         }
     }
 
@@ -178,9 +154,9 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
             }
 
         } catch (UserStoreException e) {
-            throw new IdleAccIdentificationServerException(
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_ATTRIBUTES.getCode(),
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_ATTRIBUTES.getMessage());
+            IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_ATTRIBUTES;
+            throw new IdleAccIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
         }
         return null;
     }
@@ -202,15 +178,15 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
             } else if (realm != null) {
                 return realm.getUserStoreManager();
             } else {
-                throw new IdleAccIdentificationServerException(
-                        IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getCode(),
-                        IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getMessage());
+                IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                        IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER;
+                throw new IdleAccIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
             }
 
         } catch (UserStoreException e) {
-            throw new IdleAccIdentificationServerException(
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getCode(),
-                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getMessage());
+            IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER;
+            throw new IdleAccIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
         }
     }
 }
