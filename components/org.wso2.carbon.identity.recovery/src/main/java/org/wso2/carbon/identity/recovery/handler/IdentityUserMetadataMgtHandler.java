@@ -151,7 +151,7 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
             // Storing attribute values of Asgardeo users into user store database.
             if (isAsgardeoUser(userStoreManager) && isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
                 if (userStoreManager instanceof UniqueIDJDBCUserStoreManager) {
-                    String userId = ((JDBCUserStoreManager) userStoreManager).getUserIDFromUserName(username);
+                    String userId = ((UniqueIDJDBCUserStoreManager) userStoreManager).getUserIDFromUserName(username);
                     if (StringUtils.isEmpty(userId)) {
                         throw new IdentityEventException(
                                 String.format("Error occurred while retrieving user's ID related to %s event. "
@@ -177,7 +177,7 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     }
 
     /**
-     * Check weather the given user is Asgardeo user.
+     * Check whether the given user is Asgardeo user.
      *
      * @param userStoreManager  User Store manager.
      * @return                  Whether the user store is Asgardeo user store or not.
@@ -190,7 +190,7 @@ public class IdentityUserMetadataMgtHandler extends AbstractEventHandler {
     }
 
     /**
-     * Check weather the given user store has enabled the property "StoreIdentityClaims" to store identity claims
+     * Check whether the given user store has enabled the property "StoreIdentityClaims" to store identity claims
      * in the user store.
      *
      * @param userStoreManager  User Store manager.
