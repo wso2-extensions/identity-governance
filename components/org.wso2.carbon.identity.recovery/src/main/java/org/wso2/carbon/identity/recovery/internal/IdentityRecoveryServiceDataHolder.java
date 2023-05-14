@@ -327,12 +327,6 @@ public class IdentityRecoveryServiceDataHolder {
         return userOperationEventListeners;
     }
 
-    public void setUserOperationEventListeners(
-            Map<Integer, UserOperationEventListener> userOperationEventListeners) {
-
-        IdentityRecoveryServiceDataHolder.userOperationEventListeners = userOperationEventListeners;
-    }
-
     public void addUserOperationEventListener(
             UserOperationEventListener userOperationEventListener) {
 
