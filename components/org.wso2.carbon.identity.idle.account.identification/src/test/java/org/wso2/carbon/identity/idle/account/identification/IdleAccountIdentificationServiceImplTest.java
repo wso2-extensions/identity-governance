@@ -2,6 +2,8 @@ package org.wso2.carbon.identity.idle.account.identification;
 
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -78,37 +80,16 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
     }
 
     @DataProvider
-    public Object[][] getInvalidDates() {
+    public Object[][] getDates1() {
 
         return new Object[][]{
-                {null, null},
-                {"2023/01/31", null},
-                {"2023-01-31", "2023/01/15"},
-                {"2023-13-32", null},
-                {"2023-01-31", "2023/100/150"},
-                {"31-01-2023", "15-01-2023"}
+                {LocalDate.parse("2023-01-31").atStartOfDay(), 5},
+                {LocalDate.parse("2023-01-01").atStartOfDay(), 0}
         };
     }
 
-    @Test(dataProvider = "getInvalidDates")
-    public void testGetInactiveUsersWithInvalidDates(String inactiveAfter, String excludeBefore) {
-
-        assertThrows(IdleAccIdentificationClientException.class, () ->
-                idleAccountIdentificationService.getInactiveUsers(inactiveAfter, excludeBefore, TENANT_DOMAIN));
-    }
-
-    @DataProvider
-    public Object[][] getDates() {
-
-        return new Object[][]{
-                {"2023-01-31", null, 5},
-                {"2023-01-31", "2023-01-15", 3},
-                {"2023-01-01", null, 0}
-        };
-    }
-
-    @Test(dataProvider = "getDates")
-    public void testGetInactiveUsers(String inactiveAfter, String excludeBefore, int expected) throws Exception {
+    @Test(dataProvider = "getDates1")
+    public void getInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter, int expected) throws Exception {
 
         IdleAccIdentificationDAOImpl idleAccIdentificationDAO = spy(new IdleAccIdentificationDAOImpl());
         doReturn(SAMPLE_EMAIL).when(idleAccIdentificationDAO).fetchUserEmail(anyString());
@@ -117,7 +98,32 @@ public class IdleAccountIdentificationServiceImplTest extends PowerMockTestCase 
                 new IdleAccountIdentificationServiceImpl(idleAccIdentificationDAO);
 
         List<InactiveUserModel> inactiveUsers = idleAccountIdentificationService.
-                getInactiveUsers(inactiveAfter, excludeBefore, TENANT_DOMAIN);
+                getInactiveUsersFromSpecificDate(inactiveAfter, TENANT_DOMAIN);
+
+        assertEquals(inactiveUsers.size(), expected);
+    }
+
+    @DataProvider
+    public Object[][] getDates2() {
+
+        return new Object[][]{
+                {LocalDate.parse("2023-01-31").atStartOfDay(), LocalDate.parse("2023-01-15").atStartOfDay(), 3},
+                {LocalDate.parse("2023-01-31").atStartOfDay(), LocalDate.parse("2023-01-30").atStartOfDay(), 0}
+        };
+    }
+
+    @Test(dataProvider = "getDates2")
+    public void getLimitedInactiveUsersFromSpecificDate(LocalDateTime inactiveAfter, LocalDateTime excludeBefore,
+                                                        int expected) throws Exception {
+
+        IdleAccIdentificationDAOImpl idleAccIdentificationDAO = spy(new IdleAccIdentificationDAOImpl());
+        doReturn(SAMPLE_EMAIL).when(idleAccIdentificationDAO).fetchUserEmail(anyString());
+
+        IdleAccountIdentificationService idleAccountIdentificationService =
+                new IdleAccountIdentificationServiceImpl(idleAccIdentificationDAO);
+
+        List<InactiveUserModel> inactiveUsers = idleAccountIdentificationService.
+                getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, TENANT_DOMAIN);
 
         assertEquals(inactiveUsers.size(), expected);
     }
