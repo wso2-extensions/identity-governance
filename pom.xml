@@ -444,13 +444,13 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-testng</artifactId>
-                <version>2.0.2</version>
+                <version>${powermock.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-mockito2</artifactId>
-                <version>2.0.2</version>
+                <version>${powermock.version}</version>
             </dependency>
 
             <dependency>
@@ -715,7 +715,7 @@
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
         <mockito.version>3.10.0</mockito.version>
-        <powermock.version>2.0.8</powermock.version>
+        <powermock.version>2.0.2</powermock.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         
         <h2database.version>2.1.210</h2database.version>
