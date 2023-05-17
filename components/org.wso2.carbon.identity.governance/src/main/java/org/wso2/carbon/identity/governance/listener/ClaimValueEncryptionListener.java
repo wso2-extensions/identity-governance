@@ -1,3 +1,21 @@
+/**
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wso2.carbon.identity.governance.listener;
 
 import org.apache.commons.lang.StringUtils;
@@ -35,7 +53,7 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
         }
-        return 94;
+        return 96;
     }
 
     @Override
@@ -46,19 +64,7 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
             if (!isEnable() || userStoreManager == null) {
                 return true;
             }
-
-            for (Map.Entry<String, String> entry : claims.entrySet()) {
-                String claimURI = entry.getKey();
-                if (checkEnableEncryption(claimURI, userStoreManager)) {
-                    String claimValue = entry.getValue();
-                    try {
-                        claimValue = encryptClaimValue(claimValue);
-                    } catch (CryptoException e) {
-                        LOG.error("Error occurred while encrypting claim value", e);
-                    }
-                    claims.put(claimURI, claimValue);
-                }
-            }
+            updateClaimValues(claims, userStoreManager);
             return true;
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
             throw new UserStoreException("Error while retrieving tenant ID", e);
@@ -75,19 +81,7 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (LOG.isDebugEnabled()) {
             LOG.debug("Pre set claims is called in ClaimValueEncryptionListener");
         }
-
-        for (Map.Entry<String, String> entry : claims.entrySet()) {
-            String claimURI = entry.getKey();
-            if (checkEnableEncryption(claimURI, userStoreManager)) {
-                String claimValue = entry.getValue();
-                try {
-                    claimValue = encryptClaimValue(claimValue);
-                } catch (CryptoException e) {
-                    LOG.error("Error occurred while encrypting claim value", e);
-                }
-                claims.put(claimURI, claimValue);
-            }
-        }
+        updateClaimValues(claims, userStoreManager);
         return true;
     }
 
@@ -136,19 +130,7 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (!isEnable() || userStoreManager == null) {
             return true;
         }
-
-        for (Map.Entry<String, String> entry : claims.entrySet()) {
-            String claimURI = entry.getKey();
-            if (checkEnableEncryption(claimURI, userStoreManager)) {
-                String claimValue = entry.getValue();
-                try {
-                    claimValue = encryptClaimValue(claimValue);
-                } catch (CryptoException e) {
-                    LOG.error("Error occurred while encrypting claim value", e);
-                }
-                claims.put(claimURI, claimValue);
-            }
-        }
+        updateClaimValues(claims, userStoreManager);
         return true;
     }
 
@@ -191,21 +173,60 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         }
     }
 
+    /**
+     * Update claim values based on enable encryption property.
+     *
+     * @param claims            Map consisting claim URIs and respective values.
+     * @param userStoreManager  Userstore manager.
+     * @throws UserStoreException
+     */
+    private void updateClaimValues(Map<String, String> claims, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        for (Map.Entry<String, String> entry : claims.entrySet()) {
+            String claimURI = entry.getKey();
+            if (checkEnableEncryption(claimURI, userStoreManager)) {
+                String claimValue = entry.getValue();
+                try {
+                    claimValue = encryptClaimValue(claimValue);
+                } catch (CryptoException e) {
+                    LOG.error("Error occurred while encrypting claim value", e);
+                }
+                claims.put(claimURI, claimValue);
+            }
+        }
+    }
+
+    /**
+     * Encrypt the claim value.
+     *
+     * @param plainText Plain text claim value.
+     * @return encrypted claim value.
+     * @throws CryptoException
+     */
     private String encryptClaimValue(String plainText) throws CryptoException {
 
         return CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(plainText.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Check whether the claim value encryption is enabled.
+     *
+     * @param claimURI          Claim URI.
+     * @param userStoreManager  Userstore Manager.
+     * @return whether the claim value encryption is enabled for the given claim URI.
+     * @throws UserStoreException
+     */
     private boolean checkEnableEncryption(String claimURI, UserStoreManager userStoreManager)
             throws UserStoreException {
 
         String tenantDomain = IdentityTenantUtil.getTenantDomain(userStoreManager.getTenantId());
         Map<String, String> claimProperties = getClaimProperties(tenantDomain, claimURI);
-        String enableEncryption = "false";
-        if (!claimProperties.isEmpty()) {
-            enableEncryption = claimProperties.get("enableEncryption");
+        boolean enableEncryption = false;
+        if (claimProperties != null && !claimProperties.isEmpty()) {
+            enableEncryption = Boolean.parseBoolean(claimProperties.get("enableEncryption"));
         }
-        return Boolean.parseBoolean(enableEncryption);
+        return enableEncryption;
     }
 
     /**
@@ -234,6 +255,6 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         } catch (ClaimMetadataException e) {
             LOG.error("Error while retrieving local claim meta data.", e);
         }
-        return null;
+        return new HashMap<>();
     }
 }
