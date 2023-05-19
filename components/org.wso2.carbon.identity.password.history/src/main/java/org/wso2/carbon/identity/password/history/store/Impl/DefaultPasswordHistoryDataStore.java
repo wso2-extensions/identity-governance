@@ -45,7 +45,7 @@ import java.util.Locale;
  * This interface provides to plug module for preferred persistence store.
  */
 public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore {
-    private static final String SHA_1_PRNG = "SHA1PRNG";
+    private static final String RANDOM_ALG_DRBG = "DRBG";
     private static final Log log = LogFactory.getLog(DefaultPasswordHistoryDataStore.class);
     private String digestFunction;
     private int maxHistoryCount;
@@ -228,13 +228,13 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
     private String generateSaltValue() {
         String saltValue;
         try {
-            SecureRandom secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+            SecureRandom secureRandom = SecureRandom.getInstance(RANDOM_ALG_DRBG);
             byte[] bytes = new byte[16];
             //secureRandom is automatically seeded by calling nextBytes
             secureRandom.nextBytes(bytes);
             saltValue = Base64.encode(bytes);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA1PRNG algorithm could not be found.");
+            throw new RuntimeException("DRBG algorithm could not be found.");
         }
         return saltValue;
     }
