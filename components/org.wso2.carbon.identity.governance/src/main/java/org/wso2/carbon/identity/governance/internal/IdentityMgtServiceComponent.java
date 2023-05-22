@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManager;
 import org.wso2.carbon.identity.governance.internal.service.impl.otp.DefaultOTPGenerator;
+import org.wso2.carbon.identity.governance.listener.ClaimValueDecryptionListener;
 import org.wso2.carbon.identity.governance.listener.ClaimValueEncryptionListener;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
@@ -71,6 +72,9 @@ public class IdentityMgtServiceComponent {
                     .registerService(OTPGenerator.class.getName(), defaultOtpGenerator, null);
             ClaimValueEncryptionListener claimValueEncryptionListener = new ClaimValueEncryptionListener();
             context.getBundleContext().registerService(UserOperationEventListener.class, claimValueEncryptionListener,
+                    null);
+            ClaimValueDecryptionListener claimValueDecryptionListener = new ClaimValueDecryptionListener();
+            context.getBundleContext().registerService(UserOperationEventListener.class, claimValueDecryptionListener,
                     null);
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");

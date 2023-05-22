@@ -81,7 +81,6 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
         if (LOG.isDebugEnabled()) {
             LOG.debug("Pre set claims is called in ClaimValueEncryptionListener");
         }
-        updateClaimValues(claims, userStoreManager);
         return true;
     }
 
@@ -174,10 +173,10 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     }
 
     /**
-     * Update claim values based on enable encryption property.
+     * Encrypt mapped claim values.
      *
-     * @param claims            Map consisting claim URIs and respective values.
-     * @param userStoreManager  Userstore manager.
+     * @param claims            Claim values to be encrypted.
+     * @param userStoreManager  User store manager.
      * @throws UserStoreException
      */
     private void updateClaimValues(Map<String, String> claims, UserStoreManager userStoreManager)
@@ -198,11 +197,10 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     }
 
     /**
-     * Encrypt the claim value.
+     * Encrypt claim value.
      *
-     * @param plainText Plain text claim value.
+     * @param plainText text to be encrypted.
      * @return encrypted claim value.
-     * @throws CryptoException
      */
     private String encryptClaimValue(String plainText) throws CryptoException {
 
@@ -210,20 +208,20 @@ public class ClaimValueEncryptionListener extends AbstractIdentityUserOperationE
     }
 
     /**
-     * Check whether the claim value encryption is enabled.
+     * Check whether encryption is enabled for a given claim.
      *
      * @param claimURI          Claim URI.
-     * @param userStoreManager  Userstore Manager.
-     * @return whether the claim value encryption is enabled for the given claim URI.
+     * @param userStoreManager  User store manager.
+     * @return true if encryption is enabled for the claim.
      * @throws UserStoreException
-     */
+     * */
     private boolean checkEnableEncryption(String claimURI, UserStoreManager userStoreManager)
             throws UserStoreException {
 
         String tenantDomain = IdentityTenantUtil.getTenantDomain(userStoreManager.getTenantId());
         Map<String, String> claimProperties = getClaimProperties(tenantDomain, claimURI);
-        boolean enableEncryption = false;
-        if (claimProperties != null && !claimProperties.isEmpty()) {
+        Boolean enableEncryption = false;
+        if (!claimProperties.isEmpty()) {
             enableEncryption = Boolean.parseBoolean(claimProperties.get("enableEncryption"));
         }
         return enableEncryption;
