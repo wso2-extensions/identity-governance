@@ -69,6 +69,7 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
+    public static final String EMAIL_TEMPLATE_NAME = "templateName";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
@@ -115,7 +116,7 @@ public class IdentityRecoveryConstants {
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
             "http://wso2.org/claims/identity/tenantAdminAskPassword";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
-    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
+    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/roles";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
@@ -205,6 +206,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
+        ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -404,7 +406,9 @@ public class IdentityRecoveryConstants {
                 "'%s' has been used more than once."),
 
         // UEV - User Email Verification.
-        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification");
+        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
 
         private final String code;
         private final String message;
@@ -515,6 +519,7 @@ public class IdentityRecoveryConstants {
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
+        public static final String NOTIFY_RECOVERY_EMAIL_EXISTENCE = "Recovery.NotifyRecoveryEmailExistence";
         public static final String NOTIFY_USER_ACCOUNT_STATUS = "Recovery.NotifyUserAccountStatus";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
