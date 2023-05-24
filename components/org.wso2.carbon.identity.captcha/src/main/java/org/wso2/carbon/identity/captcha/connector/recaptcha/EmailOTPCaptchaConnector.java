@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 LLC. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wso2.carbon.identity.captcha.connector.recaptcha;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -56,8 +74,11 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
-        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (sessionDataKey == null) {
+            return false;
+        }
 
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
         if (context == null
                 || !EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
                 || (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
@@ -69,7 +90,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        return isEmailRecaptchaEnabled(servletRequest);
+        return isEmailRecaptchaEnabled(context.getTenantDomain());
     }
 
     @Override
@@ -86,24 +107,10 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         return null;
     }
 
-    public boolean isEmailRecaptchaEnabled(ServletRequest request) {
+    public boolean isEmailRecaptchaEnabled(String tenantDomain) {
 
         if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
             return true;
-        }
-
-        String sessionDataKey = request.getParameter(FrameworkUtils.SESSION_DATA_KEY);
-        if (sessionDataKey == null) {
-            return false;
-        }
-        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
-        if (context == null) {
-            return false;
-        }
-
-        String tenantDomain = context.getTenantDomain();
-        if (StringUtils.isBlank(tenantDomain)) {
-            return false;
         }
 
         Property[] connectorConfigs;
@@ -126,10 +133,6 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        if (!CaptchaDataHolder.getInstance().isReCaptchaEnabled()) {
-            return false;
-        }
-
-        return true;
+        return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
     }
 }
