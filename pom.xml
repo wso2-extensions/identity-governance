@@ -510,6 +510,16 @@
                 <artifactId>pax-logging-api</artifactId>
                 <version>${pax.logging.api.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.xds.client.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.xds.common</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -661,7 +671,7 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.25.98</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.25.150</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 

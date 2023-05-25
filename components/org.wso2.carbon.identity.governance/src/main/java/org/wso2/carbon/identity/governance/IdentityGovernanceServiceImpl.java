@@ -16,17 +16,24 @@
 
 package org.wso2.carbon.identity.governance;
 
+import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.xds.client.mgt.util.XDSCUtils;
+import org.wso2.carbon.identity.xds.common.constant.OperationType;
+import org.wso2.carbon.identity.xds.common.constant.XDSConstants;
+import org.wso2.carbon.identity.xds.common.constant.XDSWrapper;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
@@ -82,6 +89,14 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             }
             residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
                     FederatedAuthenticatorConfig[configsToSave.size()]));
+            if (isControlPlane()) {
+                IdentityGovernanceXDSWrapper governanceXDSWrapper = new IdentityGovernanceXDSWrapper.IdentityGovernanceXDSWrapperBuilder()
+                        .setConfigurationProperties(newProperties)
+                        .build();
+                publishData(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(),
+                        governanceXDSWrapper, XDSConstants.EventType.IDENTITY_GOVERNANCE,
+                        XDSConstants.GovernanceOperationType.UPDATE_CONFIGURATION);
+            }
             identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
@@ -239,4 +254,22 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         return null;
     }
 
+    private String buildJson(IdentityGovernanceXDSWrapper identityGovernanceXDSWrapper) {
+
+        Gson gson = new Gson();
+        return gson.toJson(identityGovernanceXDSWrapper);
+    }
+
+    private boolean isControlPlane() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty("Server.ControlPlane"));
+    }
+
+    private void publishData(String tenantDomain, XDSWrapper xdsWrapper, XDSConstants.EventType eventType,
+                             OperationType operationType) {
+
+        String json = buildJson((IdentityGovernanceXDSWrapper) xdsWrapper);
+        String username = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        XDSCUtils.publishData(tenantDomain, username, json, eventType, operationType);
+    }
 }
