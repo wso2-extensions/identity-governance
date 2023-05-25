@@ -71,6 +71,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +80,8 @@ import java.util.Properties;
 import javax.servlet.ServletRequest;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_MECHANISM;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ENABLE_GENERIC_CAPTCHA_VALIDATION;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ON_FAILED_LOGIN_REDIRECT_URL;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
 /**
@@ -745,5 +748,44 @@ public class CaptchaUtil {
             }
         }
         return Boolean.parseBoolean(enable);
+    }
+
+    /**
+     * Check whether generic ReCaptcha validation is enabled for the given authenticator.
+     * This method is used by the jsp pages to check whether the ReCaptcha validation is enabled for the current
+     * authenticator.
+     *
+     * @param authenticatorName Name of the authenticator.
+     * @return True if generic ReCaptcha validation is enabled.
+     */
+    public static boolean isGenericRecaptchaEnabledAuthenticator(String authenticatorName) {
+
+        if (StringUtils.isBlank(authenticatorName)) {
+            return false;
+        }
+        AuthenticatorConfig authenticatorConfig =
+                ConfigurationFacade.getInstance().getAuthenticatorConfig(authenticatorName);
+
+        Map<String, String> params = authenticatorConfig.getParameterMap();
+
+        return params != null && params.get(ENABLE_GENERIC_CAPTCHA_VALIDATION) != null &&
+                Boolean.parseBoolean(params.get(ENABLE_GENERIC_CAPTCHA_VALIDATION));
+    }
+
+    /**
+     * Get the URLs  which need to send back in case of captcha failure in login.
+     *
+     * @return list of failed urls
+     */
+    public static List<String> getOnFailedLoginUrls() {
+
+        List<String> failedRedirectUrls = new ArrayList<>();
+        String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
+        if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
+            failedRedirectUrls = new ArrayList<>(Arrays.asList(failedRedirectUrlStr.split(",")));
+        }
+        failedRedirectUrls.add(ON_FAILED_LOGIN_REDIRECT_URL);
+
+        return failedRedirectUrls;
     }
 }
