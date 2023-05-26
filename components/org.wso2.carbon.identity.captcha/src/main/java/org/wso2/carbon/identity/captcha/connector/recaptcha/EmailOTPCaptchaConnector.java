@@ -33,10 +33,20 @@ import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
 
@@ -50,6 +60,11 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
     public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
     public static final String IS_REDIRECT_TO_EMAIL_OTP = "isRedirectToEmailOTP";
     public static final String RESEND_CODE = "resendCode";
+    private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
+    private static final String EMAIL_OTP_LOGIN_ATTEMPT_FAIL_CLAIM = "http://wso2.org/claims/identity/failedEmailOtpAttempts";
+
+
+
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -90,34 +105,122 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        return isEmailRecaptchaEnabled(context.getTenantDomain());
+        return isEmailRecaptchaEnabled(servletRequest);
     }
 
     @Override
-    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse) {
+    public CaptchaPreValidationResponse preValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
 
         CaptchaPreValidationResponse preValidationResponse = new CaptchaPreValidationResponse();
-        preValidationResponse.setCaptchaValidationRequired(true);
+
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        String username = context.getLastAuthenticatedUser().getUserName();
+        String tenantDomain = getTenant(context, username);
+
+        Property[] connectorConfigs = null;
+        try {
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS},
+                tenantDomain);
+        } catch (IdentityGovernanceException e) {
+            // Can happen due to invalid user/ invalid tenant/ invalid configuration.
+            log.error("Unable to load connector configuration.", e);
+        }
+
+        if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants() || (connectorConfigs != null &&
+                connectorConfigs.length != 0 && (Boolean.parseBoolean(connectorConfigs[0].getValue())))) {
+
+            Map<String, String> params = new HashMap<>();
+            params.put("authFailure", "true");
+            params.put("authFailureMsg", "recaptcha.fail.message");
+            preValidationResponse.setCaptchaAttributes(params);
+            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
+            preValidationResponse.setCaptchaValidationRequired(true);
+
+        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
+                tenantDomain, EMAIL_OTP_LOGIN_ATTEMPT_FAIL_CLAIM)) {
+            preValidationResponse.setCaptchaValidationRequired(true);
+            preValidationResponse.setMaxFailedLimitReached(true);
+
+            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
+            Map<String, String> params = new HashMap<>();
+            params.put("reCaptcha", "true");
+            params.put("authFailure", "true");
+            params.put("authFailureMsg", "recaptcha.fail.message");
+            preValidationResponse.setCaptchaAttributes(params);
+        }
+        // Post validate all requests
+        preValidationResponse.setMaxFailedLimitReached(true);
+        preValidationResponse.setPostValidationRequired(true);
+
         return preValidationResponse;
     }
 
-    @Override
-    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse) {
+    /**
+     * Get the URLs  which need to send back in case of failure.
+     *
+     * @return list of failed urls
+     */
+    private List<String> getFailedUrlList() {
 
+        List<String> failedRedirectUrls = new ArrayList<>();
+
+        String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
+
+        if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
+            failedRedirectUrls = new ArrayList<>(Arrays.asList(failedRedirectUrlStr.split(",")));
+        }
+
+        failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
+        return failedRedirectUrls;
+    }
+
+    @Override
+    public CaptchaPostValidationResponse postValidate(ServletRequest servletRequest, ServletResponse servletResponse)
+            throws CaptchaException {
+
+        if (!StringUtils.isBlank(CaptchaConstants.getEnableSecurityMechanism())) {
+            CaptchaConstants.removeEnabledSecurityMechanism();
+            CaptchaPostValidationResponse validationResponse = new CaptchaPostValidationResponse();
+            validationResponse.setSuccessfulAttempt(false);
+            validationResponse.setEnableCaptchaResponsePath(true);
+            Map<String, String> params = new HashMap<>();
+            params.put("reCaptcha", "true");
+            validationResponse.setCaptchaAttributes(params);
+            return validationResponse;
+        }
         return null;
     }
 
-    public boolean isEmailRecaptchaEnabled(String tenantDomain) {
+    public boolean isEmailRecaptchaEnabled(ServletRequest servletRequest) throws CaptchaException {
 
         if (CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants()) {
             return true;
         }
 
+        String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
+        if (sessionDataKey == null) {
+            return false;
+        }
+
+        AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
+        if (context == null
+                || context.getLastAuthenticatedUser() == null
+                || StringUtils.isBlank(context.getLastAuthenticatedUser().getUserName())) {
+            return false;
+        }
+
+        String username = context.getLastAuthenticatedUser().getUserName();
+        String tenantDomain = getTenant(context, username);
+
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
                 SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
-                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE},
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.ENABLE,
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + CaptchaConstants.ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS},
                 tenantDomain);
         } catch (IdentityGovernanceException e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration.
@@ -127,12 +230,35 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             return false;
         }
 
-        if (ArrayUtils.isEmpty(connectorConfigs) || connectorConfigs.length != 2 ||
+        if (ArrayUtils.isEmpty(connectorConfigs) || connectorConfigs.length != 3 ||
                 !(Boolean.parseBoolean(connectorConfigs[0].getValue()) ||
                         Boolean.parseBoolean(connectorConfigs[1].getValue()))) {
             return false;
         }
 
+        if (!Boolean.parseBoolean(connectorConfigs[0].getValue())
+                && Boolean.parseBoolean(connectorConfigs[1].getValue())
+                && !CaptchaUtil.isMaximumFailedLoginAttemptsReached(username, tenantDomain,
+                EMAIL_OTP_LOGIN_ATTEMPT_FAIL_CLAIM)) {
+            return false;
+        }
+
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
+    }
+
+    /**
+     * Get tenant from authentication context or username.
+     *
+     * @param context   Authentication context.
+     * @param username  Username.
+     * @return          Derived tenant domain.
+     */
+    private String getTenant(AuthenticationContext context, String username) {
+
+        if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
+            return context.getUserTenantDomain();
+        } else {
+            return MultitenantUtils.getTenantDomain(username);
+        }
     }
 }
