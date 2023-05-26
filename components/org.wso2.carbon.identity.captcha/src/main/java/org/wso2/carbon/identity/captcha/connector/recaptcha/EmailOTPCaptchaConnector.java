@@ -31,17 +31,15 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
-import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -62,10 +60,10 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
     public static final String RESEND_CODE = "resendCode";
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
     private static final String EMAIL_OTP_LOGIN_ATTEMPT_FAIL_CLAIM = "http://wso2.org/claims/identity/failedEmailOtpAttempts";
-
-
-
-
+    private static final String RECAPTCHA_PARAM = "reCaptcha";
+    private static final String AUTH_FAILURE = "authFailure";
+    private static final String AUTH_FAILURE_MSG = "authFailureMsg";
+    private static final String RECAPTCHA_FAIL_MSG = "recaptcha.fail.message";
     private IdentityGovernanceService identityGovernanceService;
 
     @Override
@@ -133,8 +131,8 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
                 connectorConfigs.length != 0 && (Boolean.parseBoolean(connectorConfigs[0].getValue())))) {
 
             Map<String, String> params = new HashMap<>();
-            params.put("authFailure", "true");
-            params.put("authFailureMsg", "recaptcha.fail.message");
+            params.put(AUTH_FAILURE, Boolean.TRUE.toString());
+            params.put(AUTH_FAILURE_MSG, RECAPTCHA_FAIL_MSG);
             preValidationResponse.setCaptchaAttributes(params);
             preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
             preValidationResponse.setCaptchaValidationRequired(true);
@@ -146,9 +144,9 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
 
             preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
             Map<String, String> params = new HashMap<>();
-            params.put("reCaptcha", "true");
-            params.put("authFailure", "true");
-            params.put("authFailureMsg", "recaptcha.fail.message");
+            params.put(RECAPTCHA_PARAM, Boolean.TRUE.toString());
+            params.put(AUTH_FAILURE, Boolean.TRUE.toString());
+            params.put(AUTH_FAILURE_MSG, RECAPTCHA_FAIL_MSG);
             preValidationResponse.setCaptchaAttributes(params);
         }
         // Post validate all requests
@@ -187,7 +185,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
             validationResponse.setSuccessfulAttempt(false);
             validationResponse.setEnableCaptchaResponsePath(true);
             Map<String, String> params = new HashMap<>();
-            params.put("reCaptcha", "true");
+            params.put(RECAPTCHA_PARAM, Boolean.TRUE.toString());
             validationResponse.setCaptchaAttributes(params);
             return validationResponse;
         }
