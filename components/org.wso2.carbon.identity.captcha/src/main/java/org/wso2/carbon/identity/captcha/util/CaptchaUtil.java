@@ -329,8 +329,15 @@ public class CaptchaUtil {
     public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain) throws
             CaptchaException {
 
-        String CONNECTOR_NAME = "sso.login.recaptcha";
         String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
+        return isMaximumFailedLoginAttemptsReached(usernameWithDomain, tenantDomain, RECAPTCHA_VERIFICATION_CLAIM);
+    }
+
+    public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain,
+                                                              String failedAttemptsClaim) throws CaptchaException {
+
+        String CONNECTOR_NAME = "sso.login.recaptcha";
+
         Property[] connectorConfigs;
         try {
             connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService()
@@ -403,8 +410,8 @@ public class CaptchaUtil {
                 return false;
             }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                    .getTenantAwareUsername(usernameWithDomain),
-                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                            .getTenantAwareUsername(usernameWithDomain),
+                    new String[]{failedAttemptsClaim}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred while retrieving user claims.", e);
@@ -414,8 +421,8 @@ public class CaptchaUtil {
         }
 
         int currentAttempts = 0;
-        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
-            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
+        if (NumberUtils.isNumber(claimValues.get(failedAttemptsClaim))) {
+            currentAttempts = Integer.parseInt(claimValues.get(failedAttemptsClaim));
         }
 
         return currentAttempts >= maxAttempts;
