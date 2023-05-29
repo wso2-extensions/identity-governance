@@ -52,6 +52,7 @@ import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorCo
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_MAX_ATTEMPTS;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
 
 /**
  * reCaptcha login identity governance connector.
@@ -60,7 +61,6 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
     private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConfig.class);
 
-    private static final String CONNECTOR_NAME = "sso.login.recaptcha";
     private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
     private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
     private static final String SECURED_DESTINATIONS = "/commonauth,/samlsso,/oauth2";
@@ -117,7 +117,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         Property[] connectorConfigs = null;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                    CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS}, tenantDomain);
+                    SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS},
+                    tenantDomain);
         } catch (IdentityGovernanceException e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration.
             log.error("Unable to load connector configuration.", e);
@@ -172,7 +173,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     @Override
     public String getName() {
 
-        return CONNECTOR_NAME;
+        return SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
     }
 
     @Override
@@ -203,10 +204,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Always prompt reCaptcha");
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+        nameMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                "Always prompt reCaptcha");
+        nameMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
                 "Prompt reCaptcha after max failed attempts");
-        nameMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+        nameMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                 "Max failed attempts for reCaptcha");
         return nameMapping;
     }
@@ -215,11 +217,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     public Map<String, String> getPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMapping = new HashMap<>();
-        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS, "Always prompt " +
-                "reCaptcha verification during SSO login flow.");
-        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, "Prompt reCaptcha " +
-                "verification during SSO login flow only after the max failed attempts exceeded.");
-        descriptionMapping.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+        descriptionMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                "Always prompt reCaptcha verification during SSO login flow.");
+        descriptionMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                "Prompt reCaptcha verification during SSO login flow only after the max failed attempts exceeded.");
+        descriptionMapping.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                 "Number of failed attempts allowed without prompting reCaptcha verification.");
         return descriptionMapping;
     }
@@ -228,9 +230,9 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     public String[] getPropertyNames() {
 
         return new String[]{
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
-                CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS
         };
     }
 
@@ -257,18 +259,19 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
         Map<String, String> defaultProperties = CaptchaDataHolder.getInstance()
                 .getSSOLoginReCaptchaConnectorPropertyMap();
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
+        if (StringUtils.isBlank(defaultProperties.get(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+            defaultProperties.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
                     recaptchaEnableAlways);
         }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
+        if (StringUtils.isBlank(defaultProperties.get(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.ENABLE))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE, recaptchaEnable);
+            defaultProperties.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                    recaptchaEnable);
         }
-        if (StringUtils.isBlank(defaultProperties.get(CONNECTOR_NAME +
+        if (StringUtils.isBlank(defaultProperties.get(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME +
                 ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS))) {
-            defaultProperties.put(CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
+            defaultProperties.put(SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS,
                     recaptchaMaxAttempts);
         }
 
@@ -349,8 +352,8 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         Property[] connectorConfigs;
         try {
             connectorConfigs = identityGovernanceService.getConfiguration(new String[]{
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE},
+                            SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE_ALWAYS,
+                            SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE},
                     tenantDomain);
         } catch (IdentityGovernanceException e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration.
