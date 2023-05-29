@@ -70,6 +70,8 @@ public class CaptchaConstants {
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
 
+    public static final String SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME = "sso.login.recaptcha";
+
     /**
      * Captcha Connector configuration constants from the identity.xml.
      */
