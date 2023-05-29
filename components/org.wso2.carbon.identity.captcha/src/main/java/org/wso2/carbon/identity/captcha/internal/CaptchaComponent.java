@@ -89,7 +89,6 @@ public class CaptchaComponent {
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             // Initialize and register EmailOTPRecaptchaConnector.
             captchaConnector = new EmailOTPCaptchaConnector();
-            // Initialize and register AccountRecoveryReCaptchaConnector.
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
