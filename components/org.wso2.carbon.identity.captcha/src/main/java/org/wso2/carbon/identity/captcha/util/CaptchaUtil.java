@@ -115,21 +115,18 @@ public class CaptchaUtil {
                 CaptchaDataHolder.getInstance().setReCaptchaErrorRedirectUrls(reCaptchaFailedRedirectUrls);
             }
 
-            if (reCaptchaEnabled && reCaptchaEnterpriseEnabled) {
-                throw new CaptchaServerException("Both reCaptcha and reCaptchaEnterprise " +
-                        "cannot be enabled at the same time.");
+            if (!reCaptchaEnabled && reCaptchaEnterpriseEnabled) {
+                throw new CaptchaServerException("reCaptcha is not enabled. Please enable reCaptcha to use " +
+                        "reCaptcha Enterprise.");
             }
 
             if (reCaptchaEnabled) {
                 CaptchaDataHolder.getInstance().setReCaptchaEnabled(true);
-                CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(false);
-                resolveSecrets(properties);
-                setReCaptchaConfigs(properties);
-                //setSSOLoginConnectorConfigs(properties);
-                //setPathBasedConnectorConfigs(properties);
-            } else if (reCaptchaEnterpriseEnabled) {
-                CaptchaDataHolder.getInstance().setReCaptchaEnabled(false);
-                CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(true);
+                if (reCaptchaEnterpriseEnabled) {
+                    CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(true);
+                } else {
+                    CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(false);
+                }
                 resolveSecrets(properties);
                 setReCaptchaConfigs(properties);
                 //setSSOLoginConnectorConfigs(properties);
@@ -535,10 +532,7 @@ public class CaptchaUtil {
 
     private static void setReCaptchaConfigs(Properties properties) {
 
-        boolean recaptchaEnterpriseEnabled =
-                Boolean.parseBoolean(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
-
-        CaptchaDataHolder.getInstance().setReCaptchaEnterpriseEnabled(recaptchaEnterpriseEnabled);
+        boolean recaptchaEnterpriseEnabled = CaptchaDataHolder.getInstance().isReCaptchaEnterpriseEnabled();
 
         if (recaptchaEnterpriseEnabled){
             // ReCaptcha Enterprise require Project ID.

@@ -457,7 +457,7 @@ public class RecoveryUtil {
         boolean reCaptchaEnterpriseEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants
                 .RE_CAPTCHA_ENTERPRISE_ENABLED));
 
-        if (reCaptchaEnabled || reCaptchaEnterpriseEnabled) {
+        if (reCaptchaEnabled) {
             if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY))) {
                 RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
@@ -495,6 +495,7 @@ public class RecoveryUtil {
 
         HttpResponse response = null;
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
+        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
         boolean reCaptchaEnterpriseEnabled =
                 Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
@@ -503,9 +504,9 @@ public class RecoveryUtil {
         if (reCaptchaEnterpriseEnabled) {
             // For ReCaptcha Enterprise.
             String projectID = properties.getProperty(CaptchaConstants.RE_CAPTCHA_PROJECT_ID);
-            String secretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
             String siteKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY);
-            String verifyUrl = reCaptchaVerifyUrl + "/v1/projects/" + projectID + "/assessments?key=" + secretKey;
+            String verifyUrl = reCaptchaVerifyUrl + "/v1/projects/" + projectID +
+                    "/assessments?key=" + reCaptchaSecretKey;
             httpPost = new HttpPost(verifyUrl);
             httpPost.setHeader(Constants.HEADER_CONTENT_TYPE, Constants.APPLICATION_JSON);
             String json = String.format("{ \"event\": { \"token\": \"%s\", \"siteKey\": \"%s\" } }", reCaptchaResponse,
@@ -521,8 +522,6 @@ public class RecoveryUtil {
             }
         } else {
             // For ReCaptcha v2 and v3.
-            String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
-
             httpPost = new HttpPost(reCaptchaVerifyUrl);
             List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", reCaptchaSecretKey),
                     new BasicNameValuePair("response", reCaptchaResponse.getToken()));
