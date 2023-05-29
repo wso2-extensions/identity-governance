@@ -62,7 +62,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
                 Boolean.valueOf(properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS));
         ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = new ReCaptchaPropertiesDTO();
 
-        if ((reCaptchaEnabled || reCaptchaEnterpriseEnabled) && (forcefullyEnabledRecaptchaForAllTenants ||
+        if (reCaptchaEnabled && (forcefullyEnabledRecaptchaForAllTenants ||
                 RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(tenantDomain, recoveryType))) {
             reCaptchaPropertiesDTO.setReCaptchaEnabled(reCaptchaEnabled);
             reCaptchaPropertiesDTO.setReCaptchaKey(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY));
@@ -88,7 +88,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         boolean reCaptchaEnterpriseEnabled =
                 Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
 
-        if (!reCaptchaEnabled && !reCaptchaEnterpriseEnabled) {
+        if (!reCaptchaEnabled) {
             RecoveryUtil.handleBadRequest("ReCaptcha is disabled", Constants.INVALID);
         }
 
