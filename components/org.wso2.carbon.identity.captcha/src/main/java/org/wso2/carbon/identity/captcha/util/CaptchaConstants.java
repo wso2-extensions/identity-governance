@@ -28,6 +28,7 @@ public class CaptchaConstants {
     public static final String CARBON_HOME = "carbon.home";
 
     public static final String ERROR_PAGE = "/authenticationendpoint/retry.do";
+    public static final String ON_FAILED_LOGIN_REDIRECT_URL = "/authenticationendpoint/login.do";
 
     public static final String CAPTCHA_CONFIG_FILE_NAME = "captcha-config.properties";
 
@@ -59,6 +60,12 @@ public class CaptchaConstants {
     public static final String CAPTCHA_SCORE = "score";
 
     public static final String CAPTCHA_SUCCESS = "success";
+    public static final String ENABLE_GENERIC_CAPTCHA_VALIDATION = "enable_captcha_validation";
+    public static final String RE_CAPTCHA = "reCaptcha";
+    public static final String AUTH_FAILURE = "authFailure";
+    public static final String AUTH_FAILURE_MSG = "authFailureMsg";
+    public static final String RECAPTCHA_FAIL_MSG_KEY = "recaptcha.fail.message";
+    public static final String TRUE = "true";
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;

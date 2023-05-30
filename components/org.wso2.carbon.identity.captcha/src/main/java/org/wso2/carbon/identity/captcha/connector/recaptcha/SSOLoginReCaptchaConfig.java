@@ -38,16 +38,14 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.AUTH_FAILURE;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_ENABLED;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_ENABLE_ALWAYS;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ConnectorConfig.SSO_LOGIN_RECAPTCHA_MAX_ATTEMPTS;
@@ -64,7 +62,6 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
     private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
     private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
     private static final String SECURED_DESTINATIONS = "/commonauth,/samlsso,/oauth2";
-    private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -128,10 +125,10 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
                 connectorConfigs.length != 0 && (Boolean.valueOf(connectorConfigs[0].getValue())))) {
 
             Map<String, String> params = new HashMap<>();
-            params.put("authFailure", "true");
-            params.put("authFailureMsg", "recaptcha.fail.message");
+            params.put(AUTH_FAILURE, CaptchaConstants.TRUE);
+            params.put(CaptchaConstants.AUTH_FAILURE_MSG, CaptchaConstants.RECAPTCHA_FAIL_MSG_KEY);
             preValidationResponse.setCaptchaAttributes(params);
-            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
+            preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
             preValidationResponse.setCaptchaValidationRequired(true);
 
         } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
@@ -139,11 +136,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setCaptchaValidationRequired(true);
             preValidationResponse.setMaxFailedLimitReached(true);
 
-            preValidationResponse.setOnCaptchaFailRedirectUrls(getFailedUrlList());
+            preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
             Map<String, String> params = new HashMap<>();
-            params.put("reCaptcha", "true");
-            params.put("authFailure", "true");
-            params.put("authFailureMsg", "recaptcha.fail.message");
+            params.put(CaptchaConstants.RE_CAPTCHA, CaptchaConstants.TRUE);
+            params.put(CaptchaConstants.AUTH_FAILURE, CaptchaConstants.TRUE);
+            params.put(CaptchaConstants.AUTH_FAILURE_MSG, CaptchaConstants.RECAPTCHA_FAIL_MSG_KEY);
             preValidationResponse.setCaptchaAttributes(params);
         }
         // Post validate all requests
@@ -163,7 +160,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             validationResponse.setSuccessfulAttempt(false);
             validationResponse.setEnableCaptchaResponsePath(true);
             Map<String, String> params = new HashMap<>();
-            params.put("reCaptcha", "true");
+            params.put(CaptchaConstants.RE_CAPTCHA, CaptchaConstants.TRUE);
             validationResponse.setCaptchaAttributes(params);
             return validationResponse;
         }
@@ -285,25 +282,6 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             throws IdentityGovernanceException {
 
         return null;
-    }
-
-    /**
-     * Get the URLs  which need to send back in case of failure.
-     *
-     * @return list of failed urls
-     */
-    private List<String> getFailedUrlList() {
-
-        List<String> failedRedirectUrls = new ArrayList<>();
-
-        String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
-
-        if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
-            failedRedirectUrls = new ArrayList<>(Arrays.asList(failedRedirectUrlStr.split(",")));
-        }
-
-        failedRedirectUrls.add(ON_FAIL_REDIRECT_URL);
-        return failedRedirectUrls;
     }
 
     /**
