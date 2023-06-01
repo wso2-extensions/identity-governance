@@ -191,7 +191,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 claims.putAll(userIdentityDataMap);
             }
 
-            return storeInIdentityDataStore(userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
+            // return storeInIdentityDataStore(userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES,
+            // userIdentityDataMap);
+
+            return IdentityMgtServiceDataHolder.getInstance().getIdentityDataStoreService().storeInIdentityDataStore(
+                    userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
         } finally {
             // clear the thread local used to store identity claims
             IdentityUtil.threadLocalProperties.get().remove(USER_IDENTITY_CLAIMS);
@@ -216,14 +220,17 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " + userName);
         }
 
-        boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
-        if (accountLocked) {
-            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
-                    .ErrorCode.USER_IS_LOCKED);
-            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-        }
+//        boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
+//        if (accountLocked) {
+//            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
+//                    .ErrorCode.USER_IS_LOCKED);
+//            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+//        }
 
-        return storeInIdentityDataStore(userName, userStoreManager, PRE_SET_USER_CLAIM_VALUES, claims);
+        // return storeInIdentityDataStore(userName, userStoreManager, PRE_SET_USER_CLAIM_VALUES, claims);
+
+        return IdentityMgtServiceDataHolder.getInstance().getIdentityDataStoreService()
+                .storeInIdentityDataStore(userName, userStoreManager, PRE_SET_USER_CLAIM_VALUES, claims);
     }
 
     @Override

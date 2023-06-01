@@ -33,6 +33,8 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManager;
 import org.wso2.carbon.identity.governance.internal.service.impl.otp.DefaultOTPGenerator;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreServiceImpl;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
@@ -67,6 +69,10 @@ public class IdentityMgtServiceComponent {
             DefaultOTPGenerator defaultOtpGenerator = new DefaultOTPGenerator();
             context.getBundleContext()
                     .registerService(OTPGenerator.class.getName(), defaultOtpGenerator, null);
+            IdentityDataStoreService identityDataStoreService = new IdentityDataStoreServiceImpl();
+            context.getBundleContext()
+                    .registerService(IdentityDataStoreService.class.getName(), identityDataStoreService, null);
+            IdentityMgtServiceDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
 
             if (log.isDebugEnabled()) {
                 log.debug("Identity Management Listener is enabled");
