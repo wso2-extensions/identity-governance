@@ -26,13 +26,15 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
     private static final String USER_OPERATION_EVENT_LISTENER_TYPE = "org.wso2.carbon.user.core.listener" +
             ".UserOperationEventListener";
+    private static final String IDENTITY_STORE_EVENT_LISTENER_CLASS_NAME = "org.wso2.carbon.identity.governance." +
+            "listener.IdentityStoreEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
 
     public IdentityDataStoreServiceImpl() throws ClassNotFoundException, InstantiationException,
             IllegalAccessException {
 
         String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
-                this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
+                IDENTITY_STORE_EVENT_LISTENER_CLASS_NAME).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
         Class clazz = Class.forName(storeClassName.trim());
         identityDataStore = (UserIdentityDataStore) clazz.newInstance();
     }
