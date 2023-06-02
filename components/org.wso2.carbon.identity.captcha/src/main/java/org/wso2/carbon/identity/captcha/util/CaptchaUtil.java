@@ -73,6 +73,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +82,8 @@ import java.util.Properties;
 import javax.servlet.ServletRequest;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_MECHANISM;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ENABLE_GENERIC_CAPTCHA_VALIDATION;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ON_FAILED_LOGIN_REDIRECT_URL;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 
 /**
@@ -417,8 +420,15 @@ public class CaptchaUtil {
     public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain) throws
             CaptchaException {
 
-        String CONNECTOR_NAME = "sso.login.recaptcha";
         String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
+        return isMaximumFailedLoginAttemptsReached(usernameWithDomain, tenantDomain, RECAPTCHA_VERIFICATION_CLAIM);
+    }
+
+    public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain,
+                                                              String failedAttemptsClaim) throws CaptchaException {
+
+        String CONNECTOR_NAME = "sso.login.recaptcha";
+
         Property[] connectorConfigs;
         try {
             connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService()
@@ -491,8 +501,8 @@ public class CaptchaUtil {
                 return false;
             }
             claimValues = userStoreManager.getUserClaimValues(MultitenantUtils
-                    .getTenantAwareUsername(usernameWithDomain),
-                    new String[]{RECAPTCHA_VERIFICATION_CLAIM}, UserCoreConstants.DEFAULT_PROFILE);
+                            .getTenantAwareUsername(usernameWithDomain),
+                    new String[]{failedAttemptsClaim}, UserCoreConstants.DEFAULT_PROFILE);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred while retrieving user claims.", e);
@@ -502,8 +512,8 @@ public class CaptchaUtil {
         }
 
         int currentAttempts = 0;
-        if (NumberUtils.isNumber(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM))) {
-            currentAttempts = Integer.parseInt(claimValues.get(RECAPTCHA_VERIFICATION_CLAIM));
+        if (NumberUtils.isNumber(claimValues.get(failedAttemptsClaim))) {
+            currentAttempts = Integer.parseInt(claimValues.get(failedAttemptsClaim));
         }
 
         return currentAttempts >= maxAttempts;
@@ -844,5 +854,44 @@ public class CaptchaUtil {
             }
         }
         return Boolean.parseBoolean(enable);
+    }
+
+    /**
+     * Check whether generic ReCaptcha validation is enabled for the given authenticator.
+     * This method is used by the jsp pages to check whether the ReCaptcha validation is enabled for the current
+     * authenticator.
+     *
+     * @param authenticatorName Name of the authenticator.
+     * @return True if generic ReCaptcha validation is enabled.
+     */
+    public static boolean isGenericRecaptchaEnabledAuthenticator(String authenticatorName) {
+
+        if (StringUtils.isBlank(authenticatorName)) {
+            return false;
+        }
+        AuthenticatorConfig authenticatorConfig =
+                ConfigurationFacade.getInstance().getAuthenticatorConfig(authenticatorName);
+
+        Map<String, String> params = authenticatorConfig.getParameterMap();
+
+        return params != null && params.get(ENABLE_GENERIC_CAPTCHA_VALIDATION) != null &&
+                Boolean.parseBoolean(params.get(ENABLE_GENERIC_CAPTCHA_VALIDATION));
+    }
+
+    /**
+     * Get the URLs  which need to send back in case of captcha failure in login.
+     *
+     * @return list of failed urls
+     */
+    public static List<String> getOnFailedLoginUrls() {
+
+        List<String> failedRedirectUrls = new ArrayList<>();
+        String failedRedirectUrlStr = CaptchaDataHolder.getInstance().getReCaptchaErrorRedirectUrls();
+        if (StringUtils.isNotBlank(failedRedirectUrlStr)) {
+            failedRedirectUrls = new ArrayList<>(Arrays.asList(failedRedirectUrlStr.split(",")));
+        }
+        failedRedirectUrls.add(ON_FAILED_LOGIN_REDIRECT_URL);
+
+        return failedRedirectUrls;
     }
 }
