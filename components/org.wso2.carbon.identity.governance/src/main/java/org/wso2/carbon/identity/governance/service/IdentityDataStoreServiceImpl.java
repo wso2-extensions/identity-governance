@@ -23,7 +23,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
-    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
     private static final String IDENTITY_DATA_STORE_TYPE = "IdentityDataStore.DataStoreType";
 
     public IdentityDataStoreServiceImpl() throws ClassNotFoundException, InstantiationException,
@@ -38,6 +38,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     public boolean storeInIdentityDataStore(String userName, UserStoreManager userStoreManager, String operationType,
                                             Map<String, String> claims) throws UserStoreException {
 
+        // Check if the user is locked.
         if (PRE_SET_USER_CLAIM_VALUES.equals(operationType)) {
             boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
             if (accountLocked) {
@@ -47,20 +48,20 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
-        // No need to separately handle if data identityDataStore is user store based
+        // No need to separately handle if data identityDataStore is user store based.
         if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
                 isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
-        // Top level try and finally blocks are used to unset thread local variables
+        // Top level try and finally blocks are used to unset thread local variables.
         try {
             if (!IdentityUtil.threadLocalProperties.get().containsKey(operationType)) {
                 IdentityUtil.threadLocalProperties.get().put(operationType, true);
 
                 UserIdentityClaim userIdentityClaim = null;
                 if (!StringUtils.equalsIgnoreCase(operationType, PRE_USER_ADD_CLAIM_VALUES)) {
-                    // we avoid loading claims for pre user add operations
+                    // We avoid loading claims for pre user add operations.
                     userIdentityClaim = identityDataStore.load(userName, userStoreManager);
                 }
 
@@ -80,7 +81,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     }
                 }
 
-                // storing the identity claims and challenge questions
+                // Storing the identity claims and challenge questions.
                 try {
                     identityDataStore.store(userIdentityClaim, userStoreManager);
                 } catch (IdentityException e) {
@@ -90,7 +91,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
             return true;
         } finally {
-            // Remove thread local variable
+            // Remove thread local variable.
             IdentityUtil.threadLocalProperties.get().remove(operationType);
         }
     }
