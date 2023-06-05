@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -42,8 +43,6 @@ import javax.ws.rs.core.Response;
  */
 public class CaptchaApiServiceImpl extends CaptchaApiService {
 
-    private static final String SUCCESS = "success";
-    private static final String VALID = "valid";
     private static final Log log = LogFactory.getLog(CaptchaApiServiceImpl.class);
     private final String RECAPTCHA = "ReCaptcha";
 
@@ -56,22 +55,22 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
         boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
-        boolean reCaptchaEnterpriseEnabled =
-                Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
+        String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
         boolean forcefullyEnabledRecaptchaForAllTenants =
                 Boolean.valueOf(properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS));
         ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = new ReCaptchaPropertiesDTO();
 
         if (reCaptchaEnabled && (forcefullyEnabledRecaptchaForAllTenants ||
                 RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(tenantDomain, recoveryType))) {
-            reCaptchaPropertiesDTO.setReCaptchaEnabled(reCaptchaEnabled);
+            reCaptchaPropertiesDTO.setReCaptchaEnabled(true);
             reCaptchaPropertiesDTO.setReCaptchaKey(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY));
             reCaptchaPropertiesDTO.setReCaptchaAPI(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL));
-            reCaptchaPropertiesDTO.setReCaptchaEnterpriseEnabled(reCaptchaEnterpriseEnabled);
+            if (!StringUtils.isBlank(reCaptchaType)) {
+                reCaptchaPropertiesDTO.setReCaptchaType(reCaptchaType);
+            }
             return Response.ok(reCaptchaPropertiesDTO).build();
         } else {
             reCaptchaPropertiesDTO.setReCaptchaEnabled(false);
-            reCaptchaPropertiesDTO.setReCaptchaEnterpriseEnabled(false);
             return Response.ok(reCaptchaPropertiesDTO).build();
         }
     }
@@ -85,8 +84,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
         boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
-        boolean reCaptchaEnterpriseEnabled =
-                Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENTERPRISE_ENABLED));
+        String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
 
         if (!reCaptchaEnabled) {
             RecoveryUtil.handleBadRequest("ReCaptcha is disabled", Constants.INVALID);
@@ -96,25 +94,8 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         HttpEntity entity = response.getEntity();
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
 
-        if (reCaptchaEnterpriseEnabled) {
-            // For ReCaptcha Enterprise.
-            if (entity == null) {
-                RecoveryUtil.handleBadRequest("ReCaptcha Enterprise verification response is not received.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-            }
-            try {
-                try (InputStream in = entity.getContent()) {
-                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                    JsonObject tokenProperties = verificationResponse.get("tokenProperties").getAsJsonObject();
-                    boolean success = tokenProperties.get(VALID).getAsBoolean();
-                    reCaptchaVerificationResponseDTO.setSuccess(success);
-                }
-            } catch (IOException e) {
-                log.error("Unable to read the verification response.", e);
-                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-            }
-        } else {
+        if (StringUtils.isBlank(reCaptchaType) || reCaptchaType.equals(CaptchaConstants.
+                RE_CAPTCHA_TYPE_DEFAULT)){
             // For ReCaptcha v2 and v3.
             try {
                 if (entity == null) {
@@ -123,7 +104,27 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
                 }
                 try (InputStream in = entity.getContent()) {
                     JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(SUCCESS).getAsBoolean());
+                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
+                            CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
+                }
+            } catch (IOException e) {
+                log.error("Unable to read the verification response.", e);
+                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
+                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+            }
+        } else if (reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE)) {
+            // For ReCaptcha Enterprise.
+            if (entity == null) {
+                RecoveryUtil.handleBadRequest("ReCaptcha Enterprise verification response is not received.",
+                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+            }
+            try {
+                try (InputStream in = entity.getContent()) {
+                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                    JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES)
+                            .getAsJsonObject();
+                    boolean success = tokenProperties.get(CaptchaConstants.CAPTCHA_VALID).getAsBoolean();
+                    reCaptchaVerificationResponseDTO.setSuccess(success);
                 }
             } catch (IOException e) {
                 log.error("Unable to read the verification response.", e);
