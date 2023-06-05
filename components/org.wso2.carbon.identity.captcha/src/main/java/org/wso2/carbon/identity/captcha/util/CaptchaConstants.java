@@ -34,7 +34,7 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_ENABLED = "recaptcha.enabled";
 
-    public static final String RE_CAPTCHA_ENTERPRISE_ENABLED = "recaptcha.enterprise.enabled";
+    public static final String RE_CAPTCHA_TYPE = "recaptcha.type";
 
     public static final String FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS = "recaptcha" +
             ".forcefullyEnabledForAllTenants";
@@ -70,8 +70,12 @@ public class CaptchaConstants {
     public static final String AUTH_FAILURE_MSG = "authFailureMsg";
     public static final String RECAPTCHA_FAIL_MSG_KEY = "recaptcha.fail.message";
     public static final String TRUE = "true";
-
     public static final String CAPTCHA_VALID = "valid";
+    public static final String CAPTCHA_TOKEN_PROPERTIES = "tokenProperties";
+    public static final String CAPTCHA_RISK_ANALYSIS = "riskAnalysis";
+    // Captcha Types.
+    public static final String RE_CAPTCHA_TYPE_DEFAULT = "default";
+    public static final String RE_CAPTCHA_TYPE_ENTERPRISE = "enterprise";
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;

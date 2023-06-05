@@ -37,7 +37,7 @@ public class CaptchaDataHolder {
 
     private boolean reCaptchaEnabled;
 
-    private boolean reCaptchaEnterpriseEnabled;
+    private String reCaptchaType;
 
     private String reCaptchaAPIUrl;
 
@@ -88,14 +88,14 @@ public class CaptchaDataHolder {
         this.reCaptchaEnabled = reCaptchaEnabled;
     }
 
-    public boolean isReCaptchaEnterpriseEnabled() {
+    public String getReCaptchaType() {
 
-        return reCaptchaEnterpriseEnabled;
+        return reCaptchaType;
     }
 
-    public void setReCaptchaEnterpriseEnabled(boolean reCaptchaEnterpriseEnabled) {
+    public void setReCaptchaType(String reCaptchaType) {
 
-        this.reCaptchaEnterpriseEnabled = reCaptchaEnterpriseEnabled;
+        this.reCaptchaType = reCaptchaType;
     }
 
     public String getReCaptchaProjectID() {

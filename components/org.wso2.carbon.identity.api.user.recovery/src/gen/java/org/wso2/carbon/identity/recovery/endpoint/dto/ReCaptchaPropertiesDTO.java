@@ -10,21 +10,21 @@ import javax.validation.constraints.NotNull;
 
 @ApiModel(description = "")
 public class ReCaptchaPropertiesDTO  {
-  
-  
-  
+
+
+
   private Boolean reCaptchaEnabled = null;
 
 
-  private Boolean reCaptchaEnterpriseEnabled = null;
+  private String reCaptchaType = null;
 
 
   private String reCaptchaKey = null;
-  
-  
+
+
   private String reCaptchaAPI = null;
 
-  
+
   /**
    **/
   @ApiModelProperty(value = "")
@@ -40,12 +40,12 @@ public class ReCaptchaPropertiesDTO  {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("reCaptchaEnterpriseEnabled")
-  public Boolean getReCaptchaEnterpriseEnabled() {
-    return reCaptchaEnterpriseEnabled;
+  @JsonProperty("reCaptchaType")
+  public String getReCaptchaType() {
+    return reCaptchaType;
   }
-  public void setReCaptchaEnterpriseEnabled(Boolean reCaptchaEnterpriseEnabled) {
-    this.reCaptchaEnterpriseEnabled = reCaptchaEnterpriseEnabled;
+  public void setReCaptchaType(String reCaptchaType) {
+    this.reCaptchaType = reCaptchaType;
   }
 
 
@@ -80,7 +80,7 @@ public class ReCaptchaPropertiesDTO  {
     sb.append("class ReCaptchaPropertiesDTO {\n");
 
     sb.append("  reCaptchaEnabled: ").append(reCaptchaEnabled).append("\n");
-    sb.append("  reCaptchaEnterpriseEnabled: ").append(reCaptchaEnterpriseEnabled).append("\n");
+    sb.append("  reCaptchaEnterpriseEnabled: ").append(reCaptchaType).append("\n");
     sb.append("  reCaptchaKey: ").append(reCaptchaKey).append("\n");
     sb.append("  reCaptchaAPI: ").append(reCaptchaAPI).append("\n");
     sb.append("}\n");
