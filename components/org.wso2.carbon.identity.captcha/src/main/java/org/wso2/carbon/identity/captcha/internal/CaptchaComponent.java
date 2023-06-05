@@ -20,9 +20,16 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.EmailOTPCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.GenericAuthenticatorReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.LiteUserSelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.ResendConfirmationReCaptchaConnector;
@@ -37,12 +44,6 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(
         name = "org.wso2.carbon.identity.captcha.internal.CaptchaComponent",
@@ -80,6 +81,10 @@ public class CaptchaComponent {
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             // Initialize and register LiteUserSelfSignUpRecaptchaConnector.
             captchaConnector = new LiteUserSelfSignUpReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            // Initialize and register GenericReCaptchaConnector.
+            captchaConnector = new GenericAuthenticatorReCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             // Initialize and register EmailOTPRecaptchaConnector.
