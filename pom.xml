@@ -657,7 +657,8 @@
 
         <!--Carbon Identity Framework Version-->
         <carbon.identity.framework.version>5.25.98</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 7.0.0)</carbon.identity.framework.imp.pkg.version.range>
+        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 7.0.0)
+        </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
         <carbon.identity.account.lock.handler.version>1.1.12</carbon.identity.account.lock.handler.version>
