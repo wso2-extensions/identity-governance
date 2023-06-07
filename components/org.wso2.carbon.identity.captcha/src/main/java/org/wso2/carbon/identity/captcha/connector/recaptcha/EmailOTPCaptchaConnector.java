@@ -22,7 +22,10 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticationFlowHandler;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
@@ -64,6 +67,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
     private static final String AUTH_FAILURE = "authFailure";
     private static final String AUTH_FAILURE_MSG = "authFailureMsg";
     private static final String RECAPTCHA_FAIL_MSG = "recaptcha.fail.message";
+    private static final String OTP_CODE_PARAM = "OTPCode";
     private IdentityGovernanceService identityGovernanceService;
 
     @Override
@@ -96,6 +100,14 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
                 || !EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
                 || (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())
                 && !Boolean.parseBoolean((String) context.getProperty(IS_REDIRECT_TO_EMAIL_OTP)))) {
+            return false;
+        }
+
+        if (servletRequest.getParameter(OTP_CODE_PARAM) == null) {
+            return false;
+        }
+
+        if (context.getCurrentStep() != 1 || isPreviousIdPAuthenticationFlowHandler(context)) {
             return false;
         }
 
@@ -258,5 +270,42 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         } else {
             return MultitenantUtils.getTenantDomain(username);
         }
+    }
+
+    /**
+     * This method checks if all the authentication steps up to now have been performed by authenticators that
+     * implements AuthenticationFlowHandler interface. If so, it returns true.
+     * AuthenticationFlowHandlers may not perform actual authentication though the authenticated user is set in the
+     * context. Hence, this method can be used to determine if the user has been authenticated by a previous step.
+     *
+     * @param context   AuthenticationContext
+     * @return true if all the authentication steps up to now have been performed by AuthenticationFlowHandlers.
+     */
+    private boolean isPreviousIdPAuthenticationFlowHandler(AuthenticationContext context) {
+
+        boolean hasPreviousAuthenticators = false;
+        Map<String, AuthenticatedIdPData> currentAuthenticatedIdPs = context.getCurrentAuthenticatedIdPs();
+        if (currentAuthenticatedIdPs != null && !currentAuthenticatedIdPs.isEmpty()) {
+            for (Map.Entry<String, AuthenticatedIdPData> entry : currentAuthenticatedIdPs.entrySet()) {
+                AuthenticatedIdPData authenticatedIdPData = entry.getValue();
+                if (authenticatedIdPData != null) {
+                    List<AuthenticatorConfig> authenticators = authenticatedIdPData.getAuthenticators();
+                    if (authenticators != null) {
+                        for (AuthenticatorConfig authenticator : authenticators) {
+                            hasPreviousAuthenticators = true;
+                            if (!(authenticator.getApplicationAuthenticator() instanceof AuthenticationFlowHandler)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (hasPreviousAuthenticators) {
+            return true;
+        }
+
+        return false;
     }
 }
