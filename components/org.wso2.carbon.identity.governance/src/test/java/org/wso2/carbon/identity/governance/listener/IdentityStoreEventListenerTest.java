@@ -17,11 +17,13 @@
 package org.wso2.carbon.identity.governance.listener;
 
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -30,7 +32,10 @@ import org.wso2.carbon.identity.core.model.IdentityEventListenerConfigKey;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreServiceImpl;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -43,7 +48,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.testng.Assert.assertEquals;
@@ -55,6 +62,8 @@ public class IdentityStoreEventListenerTest {
             ".UserOperationEventListener";
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
     private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    private static final String IDENTITY_DATA_STORE_TYPE = "org.wso2.carbon.identity." +
+            "governance.store.JDBCIdentityDataStore";
     private static final int TENANT_ID = 1234;
 
     @Mock
@@ -74,6 +83,9 @@ public class IdentityStoreEventListenerTest {
 
     IdentityStoreEventListener identityStoreEventListener;
 
+    IdentityDataStoreService identityDataStoreService;
+
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
 
     @BeforeTest
     public void setUp() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
@@ -84,6 +96,19 @@ public class IdentityStoreEventListenerTest {
 
         IdentityUtil.populateProperties();
         identityStoreEventListener = spy(new IdentityStoreEventListener());
+
+        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class, Mockito.CALLS_REAL_METHODS);
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(anyString())).thenReturn
+                (IDENTITY_DATA_STORE_TYPE);
+        identityDataStoreService = spy(new IdentityDataStoreServiceImpl());
+        IdentityMgtServiceDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
+    }
+
+    @AfterClass
+    public void tearDown() {
+        if (mockedIdentityUtil != null) {
+            mockedIdentityUtil.close();
+        }
     }
 
     @Test
@@ -91,7 +116,7 @@ public class IdentityStoreEventListenerTest {
         int orderId = identityStoreEventListener.getExecutionOrderId();
         assertEquals(orderId, 97, "OrderId is not equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
 
-        Mockito.when(identityStoreEventListener.getOrderId()).thenReturn(0);
+        doReturn(0).when(identityStoreEventListener).getOrderId();
         orderId = identityStoreEventListener.getExecutionOrderId();
         assertEquals(orderId, 0, "OrderId is equal to " + IdentityCoreConstants.EVENT_LISTENER_ORDER_ID);
     }
@@ -157,6 +182,11 @@ public class IdentityStoreEventListenerTest {
                 .getDeclaredField("identityDataStore");
         fieldIdentityStore.setAccessible(true);
         fieldIdentityStore.set(identityStoreEventListener, userIdentityDataStore);
+
+        Field fieldIdentityDataStoreService = IdentityDataStoreServiceImpl.class
+                .getDeclaredField("identityDataStore");
+        fieldIdentityDataStoreService.setAccessible(true);
+        fieldIdentityDataStoreService.set(identityDataStoreService, userIdentityDataStore);
 
         doAnswer(new Answer() {
             @Override
