@@ -45,6 +45,8 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "accountConfirmationEmailOTP";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
@@ -110,7 +112,8 @@ public class IdentityRecoveryConstants {
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/mobileNumber.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
-
+    public static final String LINK_VERIFICATION = "Link";
+    public static final String OTP_VERIFICATION = "OTP";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
@@ -163,6 +166,7 @@ public class IdentityRecoveryConstants {
     public static final String USER_ACCOUNT_RECOVERY = "UAR";
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
+    public static final int EMAIL_OTP_CODE_LENGTH = 6;
     public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
     // Recovery code given at the username and password recovery initiation.
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
@@ -537,6 +541,7 @@ public class IdentityRecoveryConstants {
                 ".Password.ReCaptcha.MaxFailedAttempts";
         public static final String RECOVERY_CALLBACK_REGEX = "Recovery.CallbackRegex";
         public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
+        public static final String ENABLE_EMAIL_OTP_VERIFICATION = "SelfRegistration.EmailOTPVerification.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SEND_CONFIRMATION_NOTIFICATION = "SelfRegistration.SendConfirmationOnCreation";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
