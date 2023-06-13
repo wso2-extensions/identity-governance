@@ -128,12 +128,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
                         domainName);
 
-                boolean emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
-
-                String verificationMethod = resolveVerificationMethod(eventProperties, userName, tenantDomain,
-                        domainName, emailOTPenabled);
-
+//                boolean emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+//                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
 
                 // If the preferred channel is already verified, no need to send the notifications or lock
                 // the account.
@@ -158,7 +154,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
                     // Create a secret key based on the preferred notification channel.
                     String secretKey = Utils.generateSecretKey(preferredChannel, tenantDomain,
-                            RecoveryScenarios.SELF_SIGN_UP.name(), verificationMethod);
+                            RecoveryScenarios.SELF_SIGN_UP.name());
 
                     // Resolve event name.
                     String eventName = resolveEventName(preferredChannel, userName, domainName, tenantDomain);
@@ -169,7 +165,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, preferredChannel, secretKey, Utils.getArbitraryProperties(), eventName, verificationMethod);
+                    triggerNotification(user, preferredChannel, secretKey, Utils.getArbitraryProperties(), eventName);
                 }
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while sending self sign up notification ", e);
@@ -270,39 +266,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             log.debug(message);
         }
         return preferredChannel;
-    }
-
-    /**
-     * Resolve the preferred verification method for the user.
-     *
-     * @param eventProperties Event properties
-     * @param userName        Username
-     * @param tenantDomain    Tenant domain of the user
-     * @param domainName      Userstore domain name of the user
-     * @return verification method
-     * @throws IdentityEventException Error while resolving the notification channel
-     */
-    private String resolveVerificationMethod(Map<String, Object> eventProperties, String userName, String tenantDomain,
-                                             String domainName, boolean emailOTPenabled) throws IdentityEventException {
-
-        // Get the user preferred notification channel.
-        String verificationMethod;
-        // Resolve preferred notification channel.
-        if (StringUtils.isEmpty(String.valueOf(emailOTPenabled))) {
-            verificationMethod = IdentityRecoveryConstants.LINK_VERIFICATION;
-        } else if (!emailOTPenabled){
-            verificationMethod = IdentityRecoveryConstants.LINK_VERIFICATION;
-        } else {
-            verificationMethod = IdentityRecoveryConstants.OTP_VERIFICATION;
-        }
-        if (log.isDebugEnabled()) {
-            String message = String
-                    .format("Verification method: %1$s for the user : %2$s in domain : %3$s.",
-                            verificationMethod, domainName + CarbonConstants.DOMAIN_SEPARATOR + userName,
-                            tenantDomain);
-            log.debug(message);
-        }
-        return verificationMethod;
     }
 
     /**
@@ -465,36 +428,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
-        }
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-
-        if (props != null && props.length > 0) {
-            for (Property prop : props) {
-                properties.put(prop.getKey(), prop.getValue());
-            }
-        }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
-        Event identityMgtEvent = new Event(eventName, properties);
+        boolean emailOTPenabled = false;
         try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
         } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
+            throw new RuntimeException(e);
         }
-    }
-
-    private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
-                                     String eventName, String verificationMethod) throws IdentityRecoveryException {
 
         if (log.isDebugEnabled()) {
             log.debug("Sending self user registration notification user: " + user.getUserName());
@@ -509,22 +449,20 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             for (Property prop : props) {
                 properties.put(prop.getKey(), prop.getValue());
             }
-        }
-        if (StringUtils.isNotBlank(code)) {
-            if (IdentityRecoveryConstants.OTP_VERIFICATION.equalsIgnoreCase(verificationMethod)) {
+        }if (StringUtils.isNotBlank(code)) {
+            if (emailOTPenabled) {
                 properties.put("OTPCode", code);
             } else {
                 properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }
         }
-        if (IdentityRecoveryConstants.OTP_VERIFICATION.equalsIgnoreCase(verificationMethod)) {
+        if (emailOTPenabled) {
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP);
         } else {
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
         }
-
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

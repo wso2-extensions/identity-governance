@@ -112,8 +112,6 @@ public class IdentityRecoveryConstants {
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/mobileNumber.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
-    public static final String LINK_VERIFICATION = "Link";
-    public static final String OTP_VERIFICATION = "OTP";
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
