@@ -122,6 +122,10 @@ public class RecoveryConfigImplTest {
                 "Recovery callback URL regex");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "Enable Auto Login After Password Reset");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                "Notification based password recovery via an email");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                "Notification based password recovery using SMS OTP");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -216,6 +220,8 @@ public class RecoveryConfigImplTest {
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
         String enforceChallengeQuestionAnswerUniqueness = "false";
         String enableAutoLoginAfterPasswordReset = "false";
+        String enableEmailNotificationBasedPasswordRecovery = "false";
+        String enableSMSNotificationBasedPasswordRecovery = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -258,6 +264,10 @@ public class RecoveryConfigImplTest {
                 ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, enforceChallengeQuestionAnswerUniqueness);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, enableAutoLoginAfterPasswordReset);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, enableEmailNotificationBasedPasswordRecovery);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                PASSWORD_RECOVERY_SMS_OTP_ENABLE, enableSMSNotificationBasedPasswordRecovery);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
