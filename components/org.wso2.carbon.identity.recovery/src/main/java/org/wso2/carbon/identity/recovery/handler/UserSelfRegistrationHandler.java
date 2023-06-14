@@ -128,9 +128,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 String preferredChannel = resolveNotificationChannel(eventProperties, userName, tenantDomain,
                         domainName);
 
-//              boolean emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-//                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
-
                 // If the preferred channel is already verified, no need to send the notifications or lock
                 // the account.
                 boolean notificationChannelVerified = isNotificationChannelVerified(userName, tenantDomain,
@@ -437,7 +434,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
+            log.debug("Sending account confirmation notification to user: " + user.getUserName());
         }
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
