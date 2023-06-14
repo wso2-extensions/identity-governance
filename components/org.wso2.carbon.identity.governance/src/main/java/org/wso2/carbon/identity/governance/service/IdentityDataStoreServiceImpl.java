@@ -4,14 +4,17 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,13 +28,23 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
     private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
     private static final String IDENTITY_DATA_STORE_TYPE = "IdentityDataStore.DataStoreType";
+    private static final String DEFAULT_JDBC_IDENTITY_DATA_STORE = "org.wso2.carbon.identity.governance.store" +
+            ".JDBCIdentityDataStore";
+    private static final String DEFAULT_USER_STORE_BASED_IDENTITY_DATA_STORE = "org.wso2.carbon.identity.governance" +
+            ".store.UserStoreBasedIdentityDataStore";
 
     public IdentityDataStoreServiceImpl() throws ClassNotFoundException, InstantiationException,
             IllegalAccessException {
 
         String storeClassName = IdentityUtil.getProperty(IDENTITY_DATA_STORE_TYPE);
-        Class clazz = Class.forName(storeClassName.trim());
-        identityDataStore = (UserIdentityDataStore) clazz.newInstance();
+        if (DEFAULT_JDBC_IDENTITY_DATA_STORE.equals(storeClassName)) {
+            identityDataStore = IdentityMgtServiceDataHolder.getInstance().getJDBCIdentityDataStore();
+        } else if (DEFAULT_USER_STORE_BASED_IDENTITY_DATA_STORE.equals(storeClassName)) {
+            identityDataStore = IdentityMgtServiceDataHolder.getInstance().getUserStoreBasedIdentityDataStore();
+        } else {
+            Class clazz = Class.forName(storeClassName.trim());
+            identityDataStore = (UserIdentityDataStore) clazz.newInstance();
+        }
     }
 
     @Override
@@ -49,8 +62,7 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
         }
 
         // No need to separately handle if data identityDataStore is user store based.
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -94,6 +106,41 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             // Remove thread local variable.
             IdentityUtil.threadLocalProperties.get().remove(operationType);
         }
+    }
+
+    @Override
+    public UserIdentityClaim getIdentityClaimData(String username, UserStoreManager userStoreManager) {
+
+        return identityDataStore.load(username, userStoreManager);
+    }
+
+    @Override
+    public List<String> listUsersByClaimURIAndValue(String claimURI, String claimValue,
+                                                    UserStoreManager userStoreManager) throws IdentityException {
+
+        return identityDataStore.list(claimURI, claimValue, userStoreManager);
+    }
+
+    @Override
+    public List<String> listPaginatedUsersByClaimURIAndValue(List<ExpressionCondition> expressionConditions,
+                                                             List<String> identityClaimFilteredUserNames, String domain,
+                                                             UserStoreManager userStoreManager, int limit,
+                                                             int offset) throws IdentityException {
+
+        return identityDataStore.listPaginatedUsersNames(expressionConditions, identityClaimFilteredUserNames, domain,
+                userStoreManager, limit, offset);
+    }
+
+    @Override
+    public void removeIdentityClaims(String username, UserStoreManager userStoreManager) throws IdentityException {
+
+        identityDataStore.remove(username, userStoreManager);
+    }
+
+    @Override
+    public boolean isUserStoreBasedIdentityDataStore() {
+
+        return identityDataStore instanceof UserStoreBasedIdentityDataStore;
     }
 
     /**
