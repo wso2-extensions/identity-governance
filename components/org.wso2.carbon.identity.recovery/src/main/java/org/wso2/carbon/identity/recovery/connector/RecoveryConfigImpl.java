@@ -112,6 +112,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Recovery callback URL regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "Enable Auto Login After Password Reset");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                "Notification based password recovery via an email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                "Notification based password recovery using SMS OTP");
         return nameMapping;
     }
 
@@ -168,6 +172,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE);
         return properties.toArray(new String[0]);
     }
 
@@ -194,6 +200,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String minimumForcedChallengeQuestionsAnswered = "1";
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableAdminPasswordResetAutoLoginProperty = "false";
+        String enableEmailNotificationBasedPasswordRecovery = "false";
+        String enableSMSNotificationBasedPasswordRecovery = "false";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -234,6 +242,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         String adminPasswordResetAutoLoginProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
+        String emailNotificationBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE);
+        String smsNotificationBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE);
 
         if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
             expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
@@ -295,6 +307,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(adminPasswordResetAutoLoginProperty)) {
             enableAdminPasswordResetAutoLoginProperty = adminPasswordResetAutoLoginProperty;
         }
+        if (StringUtils.isNotEmpty(emailNotificationBasedPasswordRecovery)) {
+            enableEmailNotificationBasedPasswordRecovery = emailNotificationBasedPasswordRecovery;
+        }
+        if (StringUtils.isNotEmpty(smsNotificationBasedPasswordRecovery)) {
+            enableSMSNotificationBasedPasswordRecovery = smsNotificationBasedPasswordRecovery;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -336,6 +354,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX, recoveryCallbackRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 enableAdminPasswordResetAutoLoginProperty);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                enableEmailNotificationBasedPasswordRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                enableSMSNotificationBasedPasswordRecovery);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -409,6 +431,15 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         return meta;
