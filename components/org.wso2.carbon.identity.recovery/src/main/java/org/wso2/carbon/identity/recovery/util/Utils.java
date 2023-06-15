@@ -1133,8 +1133,10 @@ public class Utils {
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
             return generateSMSSecretKey(tenantDomain,recoveryScenario);
-        } else {
+        } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)){
             return generateEmailSecretKey(tenantDomain, recoveryScenario);
+        } else {
+            return UUIDGenerator.generateUUID();
         }
     }
 
