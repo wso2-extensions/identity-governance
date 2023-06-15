@@ -39,9 +39,6 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.governance.listener.IdentityMgtEventListener;
 import org.wso2.carbon.identity.governance.listener.IdentityStoreEventListener;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
-import org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore;
-import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
-import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -59,11 +56,6 @@ public class IdentityMgtServiceComponent {
         try {
             IdentityMgtEventListener listener = new IdentityMgtEventListener();
             context.getBundleContext().registerService(UserOperationEventListener.class, listener, null);
-            UserIdentityDataStore jdbcIdentityDataStore = new JDBCIdentityDataStore();
-            IdentityMgtServiceDataHolder.getInstance().setJDBCIdentityDataStore(jdbcIdentityDataStore);
-            UserIdentityDataStore userStoreBasedIdentityDataStore = new UserStoreBasedIdentityDataStore();
-            IdentityMgtServiceDataHolder.getInstance().setUserStoreBasedIdentityDataStore(
-                    userStoreBasedIdentityDataStore);
             IdentityDataStoreService identityDataStoreService = new IdentityDataStoreServiceImpl();
             context.getBundleContext()
                     .registerService(IdentityDataStoreService.class.getName(), identityDataStoreService, null);

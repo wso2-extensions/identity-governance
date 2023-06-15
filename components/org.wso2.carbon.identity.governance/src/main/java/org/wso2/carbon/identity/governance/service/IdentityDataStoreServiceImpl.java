@@ -4,8 +4,8 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
+import org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -38,9 +38,9 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
         String storeClassName = IdentityUtil.getProperty(IDENTITY_DATA_STORE_TYPE);
         if (DEFAULT_JDBC_IDENTITY_DATA_STORE.equals(storeClassName)) {
-            identityDataStore = IdentityMgtServiceDataHolder.getInstance().getJDBCIdentityDataStore();
+            identityDataStore =  new JDBCIdentityDataStore();
         } else if (DEFAULT_USER_STORE_BASED_IDENTITY_DATA_STORE.equals(storeClassName)) {
-            identityDataStore = IdentityMgtServiceDataHolder.getInstance().getUserStoreBasedIdentityDataStore();
+            identityDataStore = new UserStoreBasedIdentityDataStore();
         } else {
             Class clazz = Class.forName(storeClassName.trim());
             identityDataStore = (UserIdentityDataStore) clazz.newInstance();

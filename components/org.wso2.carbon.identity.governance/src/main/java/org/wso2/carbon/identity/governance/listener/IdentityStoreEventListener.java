@@ -66,10 +66,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
     public IdentityStoreEventListener() {
 
-//        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
-//                this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
-//        Class clazz = Class.forName(storeClassName.trim());
-//        identityDataStore = (UserIdentityDataStore) clazz.newInstance();
         identityDataStoreService = IdentityMgtServiceDataHolder.getInstance().getIdentityDataStoreService();
         Object hybridDataStoreEnableObject =
                 IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this.getClass().getName())
@@ -192,9 +188,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 claims.putAll(userIdentityDataMap);
             }
 
-            // return storeInIdentityDataStore(userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES,
-            // userIdentityDataMap);
-
             return identityDataStoreService.storeInIdentityDataStore(userName, userStoreManager,
                     PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
         } finally {
@@ -220,15 +213,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (log.isDebugEnabled()) {
             log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " + userName);
         }
-
-//        boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
-//        if (accountLocked) {
-//            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
-//                    .ErrorCode.USER_IS_LOCKED);
-//            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-//        }
-
-        // return storeInIdentityDataStore(userName, userStoreManager, PRE_SET_USER_CLAIM_VALUES, claims);
 
         return identityDataStoreService.storeInIdentityDataStore(userName, userStoreManager,
                 PRE_SET_USER_CLAIM_VALUES, claims);
