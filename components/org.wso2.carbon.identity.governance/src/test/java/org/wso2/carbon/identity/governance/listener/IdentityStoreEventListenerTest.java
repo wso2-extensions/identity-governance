@@ -94,14 +94,14 @@ public class IdentityStoreEventListenerTest {
         System.setProperty("carbon.home", carbonHome);
         Map<IdentityEventListenerConfigKey, IdentityEventListenerConfig> eventListenerConfiguration;
 
-        IdentityUtil.populateProperties();
-        identityStoreEventListener = spy(new IdentityStoreEventListener());
-
         mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class, Mockito.CALLS_REAL_METHODS);
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(anyString())).thenReturn
                 (IDENTITY_DATA_STORE_TYPE);
         identityDataStoreService = spy(new IdentityDataStoreServiceImpl());
         IdentityMgtServiceDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
+
+        IdentityUtil.populateProperties();
+        identityStoreEventListener = spy(new IdentityStoreEventListener());
     }
 
     @AfterClass
@@ -243,6 +243,11 @@ public class IdentityStoreEventListenerTest {
         fieldIdentityStore.setAccessible(true);
         fieldIdentityStore.set(identityStoreEventListener, userIdentityDataStore);
 
+        Field fieldIdentityDataStoreService = IdentityDataStoreServiceImpl.class
+                .getDeclaredField("identityDataStore");
+        fieldIdentityDataStoreService.setAccessible(true);
+        fieldIdentityDataStoreService.set(identityDataStoreService, userIdentityDataStore);
+
         Assert.assertTrue(identityStoreEventListener.doPostGetUserClaimValues(userName, claimList,
                 prof, claims, userStoreManager));
     }
@@ -356,6 +361,11 @@ public class IdentityStoreEventListenerTest {
                 .getDeclaredField("identityDataStore");
         fieldIdentityStore.setAccessible(true);
         fieldIdentityStore.set(identityStoreEventListener, userIdentityDataStore);
+
+        Field fieldIdentityDataStoreService = IdentityDataStoreServiceImpl.class
+                .getDeclaredField("identityDataStore");
+        fieldIdentityDataStoreService.setAccessible(true);
+        fieldIdentityDataStoreService.set(identityDataStoreService, userIdentityDataStore);
 
         doAnswer(new Answer() {
             @Override

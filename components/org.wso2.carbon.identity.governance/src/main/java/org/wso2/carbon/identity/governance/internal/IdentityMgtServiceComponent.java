@@ -56,6 +56,7 @@ public class IdentityMgtServiceComponent {
         try {
             IdentityMgtEventListener listener = new IdentityMgtEventListener();
             context.getBundleContext().registerService(UserOperationEventListener.class, listener, null);
+            // IdentityDataStoreService should be registered before the IdentityStoreEventListener.
             IdentityDataStoreService identityDataStoreService = new IdentityDataStoreServiceImpl();
             context.getBundleContext()
                     .registerService(IdentityDataStoreService.class.getName(), identityDataStoreService, null);
