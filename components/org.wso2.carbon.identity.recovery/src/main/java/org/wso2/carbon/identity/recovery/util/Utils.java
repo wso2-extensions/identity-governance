@@ -1129,47 +1129,87 @@ public class Utils {
      * @throws IdentityRecoveryServerException while getting sms otp regex.
      */
     public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
-            throws IdentityRecoveryServerException {
+            throws IdentityRecoveryServerException{
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
-            String otpRegex = null;
-            boolean useNumeric = true;
-            boolean useUppercaseLetters = true;
-            boolean useLowercaseLetters = true;
-            if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
-                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                        PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
-            } else if (StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario)) {
-                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                        SELF_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
-            } else if (StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
-                otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                        LITE_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
-            }
-            // If the OTP regex is not specified we need to ensure that the default behavior will be executed.
-            if (StringUtils.isNotBlank(otpRegex)) {
-                if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario) ||
-                        StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario) ||
-                        StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
-                    if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
-                        throw new IdentityRecoveryServerException(
-                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
-                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
-                    }
-                    String charsRegex = otpRegex.replaceAll("[{].*", "");
-                    otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
-                    if (!charsRegex.contains("A-Z")) {
-                        useUppercaseLetters = false;
-                    }
-                    if (!charsRegex.contains("a-z")) {
-                        useLowercaseLetters = false;
-                    }
-                    if (!charsRegex.contains("0-9")) {
-                        useNumeric = false;
-                    }
+            return generateSMSSecretKey(tenantDomain,recoveryScenario);
+        } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)){
+            return generateEmailSecretKey(tenantDomain, recoveryScenario);
+        } else {
+            return UUIDGenerator.generateUUID();
+        }
+    }
+
+    public static String generateSMSSecretKey(String tenantDomain, String recoveryScenario)
+            throws IdentityRecoveryServerException{
+
+        int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
+        String otpRegex = null;
+        boolean useNumeric = true;
+        boolean useUppercaseLetters = true;
+        boolean useLowercaseLetters = true;
+        if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario)) {
+            otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                    PASSWORD_RECOVERY_SMS_OTP_REGEX, tenantDomain);
+        } else if (StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario)) {
+            otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                    SELF_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
+        } else if (StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
+            otpRegex = Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                    LITE_REGISTRATION_SMS_OTP_REGEX, tenantDomain);
+        }
+        // If the OTP regex is not specified we need to ensure that the default behavior will be executed.
+        if (StringUtils.isNotBlank(otpRegex)) {
+            if (StringUtils.equals(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), recoveryScenario) ||
+                    StringUtils.equals(RecoveryScenarios.SELF_SIGN_UP.name(), recoveryScenario) ||
+                    StringUtils.equals(RecoveryScenarios.LITE_SIGN_UP.name(), recoveryScenario)) {
+                if (!Pattern.matches(IdentityRecoveryConstants.VALID_SMS_OTP_REGEX_PATTERN, otpRegex)) {
+                    throw new IdentityRecoveryServerException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_SMS_OTP_REGEX.getMessage());
+                }
+                String charsRegex = otpRegex.replaceAll("[{].*", "");
+                otpLength = Integer.parseInt(otpRegex.replaceAll(".*[{]", "").replaceAll("}", ""));
+                if (!charsRegex.contains("A-Z")) {
+                    useUppercaseLetters = false;
+                }
+                if (!charsRegex.contains("a-z")) {
+                    useLowercaseLetters = false;
+                }
+                if (!charsRegex.contains("0-9")) {
+                    useNumeric = false;
                 }
             }
+        }
+        try {
+            OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
+            return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength,
+                    recoveryScenario);
+        } catch (OTPGeneratorException otpGeneratorException) {
+            throw new IdentityRecoveryServerException(otpGeneratorException.getErrorCode(),
+                    otpGeneratorException.getMessage());
+        }
+    }
+
+    public static String generateEmailSecretKey(String tenantDomain, String recoveryScenario)
+            throws IdentityRecoveryServerException {
+
+        boolean emailOTPenabled = false;
+
+        try {
+            emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, tenantDomain));
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
+                    tenantDomain, e);
+        }
+
+        if (emailOTPenabled) {
+            int otpLength = IdentityRecoveryConstants.EMAIL_OTP_CODE_LENGTH;
+            boolean useNumeric = true;
+            boolean useUppercaseLetters = false;
+            boolean useLowercaseLetters = false;
             try {
                 OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
                 return otpGenerator.generateOTP(useNumeric, useUppercaseLetters, useLowercaseLetters, otpLength,

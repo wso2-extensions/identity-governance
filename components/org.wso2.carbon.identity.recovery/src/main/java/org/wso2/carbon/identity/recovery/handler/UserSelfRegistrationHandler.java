@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.CarbonConstants;
+import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
@@ -29,8 +30,7 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
-import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
-import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.*;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
@@ -425,8 +425,16 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
+        boolean emailOTPenabled = false;
+        try {
+            emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
+        } catch (IdentityEventException e) {
+            throw new RuntimeException(e);
+        }
+
         if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
+            log.debug("Sending account confirmation notification to user: " + user.getUserName());
         }
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
@@ -438,12 +446,20 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             for (Property prop : props) {
                 properties.put(prop.getKey(), prop.getValue());
             }
+        }if (StringUtils.isNotBlank(code)) {
+            if (emailOTPenabled) {
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
-        if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+        if (emailOTPenabled) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP);
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
