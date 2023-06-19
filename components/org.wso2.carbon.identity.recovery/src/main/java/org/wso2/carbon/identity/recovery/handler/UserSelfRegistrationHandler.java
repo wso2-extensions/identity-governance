@@ -448,7 +448,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             }
         }if (StringUtils.isNotBlank(code)) {
             if (emailOTPenabled) {
-                properties.put("OTPCode", code);
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             } else {
                 properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }
