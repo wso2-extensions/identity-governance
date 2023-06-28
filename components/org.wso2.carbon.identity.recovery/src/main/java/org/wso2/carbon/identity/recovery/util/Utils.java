@@ -1194,7 +1194,7 @@ public class Utils {
     public static String generateEmailSecretKey(String tenantDomain, String recoveryScenario)
             throws IdentityRecoveryServerException {
 
-        boolean emailOTPenabled = false;
+        boolean emailOTPenabled;
 
         try {
             emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(

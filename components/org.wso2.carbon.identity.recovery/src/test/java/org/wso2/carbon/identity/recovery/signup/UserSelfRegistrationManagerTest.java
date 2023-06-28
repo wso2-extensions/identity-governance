@@ -59,11 +59,13 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
+import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
 
@@ -75,9 +77,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.*;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
@@ -181,7 +181,7 @@ public class UserSelfRegistrationManagerTest {
         // Storing preferred notification channel in remaining set ids.
         userRecoveryData.setRemainingSetIds(preferredChannel);
 
-        mockConfigurations("true", enableInternalNotificationManagement);
+        mockConfigurations("true", "true", enableInternalNotificationManagement);
         mockJDBCRecoveryDataStore(userRecoveryData);
         mockEmailTrigger();
 
@@ -225,12 +225,17 @@ public class UserSelfRegistrationManagerTest {
      * @param enableInternalNotifications Enable notifications internal management.
      * @throws Exception If an error occurred while mocking configurations.
      */
-    private void mockConfigurations(String enableSelfSignUp, String enableInternalNotifications) throws Exception {
+    private void mockConfigurations(String enableSelfSignUp, String enableEmailOTP, String enableInternalNotifications) throws Exception {
 
         org.wso2.carbon.identity.application.common.model.Property signupConfig =
                 new org.wso2.carbon.identity.application.common.model.Property();
         signupConfig.setName(ENABLE_SELF_SIGNUP);
         signupConfig.setValue(enableSelfSignUp);
+
+        org.wso2.carbon.identity.application.common.model.Property emailOTPConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        emailOTPConfig.setName(ENABLE_EMAIL_OTP_VERIFICATION);
+        emailOTPConfig.setValue(enableEmailOTP);
 
         org.wso2.carbon.identity.application.common.model.Property notificationConfig =
                 new org.wso2.carbon.identity.application.common.model.Property();
@@ -244,6 +249,9 @@ public class UserSelfRegistrationManagerTest {
 
         when(identityGovernanceService
                 .getConfiguration(new String[]{ENABLE_SELF_SIGNUP}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{signupConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{ENABLE_EMAIL_OTP_VERIFICATION}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{signupConfig});
         when(identityGovernanceService
                 .getConfiguration(new String[]{SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE}, TEST_TENANT_DOMAIN_NAME))
@@ -402,5 +410,64 @@ public class UserSelfRegistrationManagerTest {
             resultReceipt = receiptInput;
             return null;
         }
+    }
+
+    @Test(dataProvider = "userDetailsForTestEmailOTPVerification")
+    public void testEmailOTPVerification(String username, String userstore, String tenantDomain,
+                                         String preferredChannel, String errorMsg,
+                                         String enableInternalNotificationManagement, String enableEmailOTP, String expectedChannel)
+            throws Exception {
+
+        // Build recovery user.
+        User user = new User();
+        user.setUserName(username);
+        user.setUserStoreDomain(userstore);
+        user.setTenantDomain(tenantDomain);
+
+        mockConfigurations("true", enableEmailOTP, enableInternalNotificationManagement);
+
+        String secretKey = Utils.generateSecretKey(preferredChannel,tenantDomain, String.valueOf(RecoveryScenarios.SELF_SIGN_UP));
+
+        UserSelfRegistrationHandler handler = new UserSelfRegistrationHandler();
+
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
+                .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        // Storing preferred notification channel in remaining set ids.
+        userRecoveryData.setRemainingSetIds(preferredChannel);
+
+        mockJDBCRecoveryDataStore(userRecoveryData);
+        handler.triggerNotification(user,preferredChannel,secretKey,Utils.getArbitraryProperties(),"POST_ADD_USER");
+        mockEmailTrigger();
+    }
+
+    @DataProvider(name = "userDetailsForTestEmailOTPVerification")
+    private Object[][] userDetailsForTestEmailOTPVerification() {
+
+        String username = "test-user";
+        // Notification channel types.
+        String EMAIL = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String SMS = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String EXTERNAL = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
+
+        /* ArrayOrder: Username, Userstore, Tenant domain, Preferred channel, Error message, Manage notifications
+        internally, excepted channel */
+        return new Object[][]{
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel and EmailOTP is enabled: ", "TRUE", "TRUE", EMAIL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel and EmailOTP is disabled: ", "TRUE", "FALSE", EMAIL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel but notifications are externally managed and EmailOTP is enabled: ", "FALSE", "TRUE", EXTERNAL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, EMAIL, "User with EMAIL as Preferred " +
+                        "Notification Channel but notifications are externally managed and EmailOTP is disabled: ", "FALSE", "FALSE", EXTERNAL},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, SMS, "User with SMS as Preferred " +
+                        "Notification Channel and EmailOTP is enabled: ", "TRUE", "TRUE", SMS},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, SMS, "User with SMS as Preferred " +
+                        "Notification Channel and EmailOTP is disabled: ", "TRUE", "FALSE", SMS},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, StringUtils.EMPTY,
+                        "User no preferred channel specified and EmailOTP is enabled: ", "TRUE", "TRUE", null},
+                {username, TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME, StringUtils.EMPTY,
+                        "User no preferred channel specified and EmailOTP is disabled: ", "TRUE", "FALSE", null}
+        };
     }
 }

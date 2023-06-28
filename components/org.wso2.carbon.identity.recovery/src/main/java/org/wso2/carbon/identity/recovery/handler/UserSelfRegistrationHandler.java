@@ -422,7 +422,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
      * @param eventName           Name of the event
      * @throws IdentityRecoveryException Error triggering notifications
      */
-    private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
+    public void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
         boolean emailOTPenabled = false;
@@ -430,7 +430,9 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                     IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
         } catch (IdentityEventException e) {
-            throw new RuntimeException(e);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
+                    user.getTenantDomain(), e);
         }
 
         if (log.isDebugEnabled()) {

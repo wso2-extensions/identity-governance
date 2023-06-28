@@ -228,6 +228,16 @@ public class ResendConfirmationManager {
     private void triggerNotification(User user, String notificationChannel, String templateName, String code,
                                      String eventName, Property[] metaProperties) throws IdentityRecoveryException {
 
+        boolean emailOTPenabled = false;
+        try {
+            emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
+                    user.getTenantDomain(), e);
+        }
+
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
@@ -237,7 +247,11 @@ public class ResendConfirmationManager {
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            if (emailOTPenabled) {
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
         if (metaProperties != null) {
             for (Property metaProperty : metaProperties) {
