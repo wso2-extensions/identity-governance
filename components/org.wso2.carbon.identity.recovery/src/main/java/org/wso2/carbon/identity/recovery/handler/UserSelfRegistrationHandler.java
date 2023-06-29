@@ -30,7 +30,8 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
-import org.wso2.carbon.identity.governance.*;
+import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
+import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
@@ -448,9 +449,10 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             for (Property prop : props) {
                 properties.put(prop.getKey(), prop.getValue());
             }
-        }if (StringUtils.isNotBlank(code)) {
+        }
+        if (StringUtils.isNotBlank(code)) {
             if (emailOTPenabled) {
-                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+                properties.put(IdentityRecoveryConstants.EMAIL_OTP_CODE, code);
             } else {
                 properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }

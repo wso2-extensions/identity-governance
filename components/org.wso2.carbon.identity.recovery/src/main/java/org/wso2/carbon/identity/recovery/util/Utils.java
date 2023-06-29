@@ -1129,18 +1129,17 @@ public class Utils {
      * @throws IdentityRecoveryServerException while getting sms otp regex.
      */
     public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
-            throws IdentityRecoveryServerException{
+            throws IdentityRecoveryServerException {
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
             return generateSMSSecretKey(tenantDomain,recoveryScenario);
         } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)){
             return generateEmailSecretKey(tenantDomain, recoveryScenario);
-        } else {
-            return UUIDGenerator.generateUUID();
         }
+        return UUIDGenerator.generateUUID();
     }
 
-    public static String generateSMSSecretKey(String tenantDomain, String recoveryScenario)
+    private static String generateSMSSecretKey(String tenantDomain, String recoveryScenario)
             throws IdentityRecoveryServerException{
 
         int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
@@ -1191,7 +1190,7 @@ public class Utils {
         }
     }
 
-    public static String generateEmailSecretKey(String tenantDomain, String recoveryScenario)
+    private static String generateEmailSecretKey(String tenantDomain, String recoveryScenario)
             throws IdentityRecoveryServerException {
 
         boolean emailOTPenabled;

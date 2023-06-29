@@ -45,7 +45,6 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
-
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "accountConfirmationEmailOTP";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
@@ -73,8 +72,7 @@ public class IdentityRecoveryConstants {
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String EMAIL_TEMPLATE_NAME = "templateName";
     public static final String CONFIRMATION_CODE = "confirmation-code";
-    public static final String OTP_CODE = "OTPCode";
-
+    public static final String EMAIL_OTP_CODE = "OTPCode";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
@@ -114,6 +112,7 @@ public class IdentityRecoveryConstants {
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/mobileNumber.pendingValue";
     public static final String PREFERRED_CHANNEL_CLAIM = "http://wso2.org/claims/identity/preferredChannel";
+
     public static final String ASK_PASSWORD_CLAIM = "http://wso2.org/claims/identity/askPassword";
     public static final String ADMIN_FORCED_PASSWORD_RESET_CLAIM = "http://wso2.org/claims/identity/adminForcedPasswordReset";
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
@@ -411,8 +410,8 @@ public class IdentityRecoveryConstants {
 
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
-        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
 
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
 
         private final String code;
         private final String message;
