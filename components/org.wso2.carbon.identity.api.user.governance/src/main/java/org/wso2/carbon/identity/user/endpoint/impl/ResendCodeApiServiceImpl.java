@@ -127,9 +127,6 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             return notificationResponseBean;
         }
 
-        User user = userRecoveryData.getUser();
-        String tenantDomain = user.getTenantDomain();
-
         ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
         if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario()) &&
@@ -147,22 +144,9 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
-            boolean emailOTPenabled;
-            try {
-                emailOTPenabled = Boolean.parseBoolean(org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig(
-                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, tenantDomain));
-            } catch (IdentityEventException e) {
-                return notificationResponseBean;
-            }
-            if (emailOTPenabled){
-                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
-                        RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP, resendCodeRequestDTO);
-            } else {
-                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
-                        RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, resendCodeRequestDTO);
-            }
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, resendCodeRequestDTO);
         } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.
                 equals(userRecoveryData.getRecoveryScenario()) &&
