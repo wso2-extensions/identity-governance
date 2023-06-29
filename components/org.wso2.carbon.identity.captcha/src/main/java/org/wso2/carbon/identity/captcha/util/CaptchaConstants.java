@@ -74,7 +74,6 @@ public class CaptchaConstants {
     public static final String CAPTCHA_TOKEN_PROPERTIES = "tokenProperties";
     public static final String CAPTCHA_RISK_ANALYSIS = "riskAnalysis";
     // Captcha Types.
-    public static final String RE_CAPTCHA_TYPE_DEFAULT = "default";
     public static final String RE_CAPTCHA_TYPE_ENTERPRISE = "enterprise";
 
     // Default value for threshold for score in reCAPTCHA v3.

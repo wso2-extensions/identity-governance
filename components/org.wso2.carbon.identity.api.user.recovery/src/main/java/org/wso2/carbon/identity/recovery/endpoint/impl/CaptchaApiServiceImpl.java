@@ -55,7 +55,6 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
 
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
         boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
-        String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
         boolean forcefullyEnabledRecaptchaForAllTenants =
                 Boolean.valueOf(properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS));
         ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = new ReCaptchaPropertiesDTO();
@@ -65,14 +64,11 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
             reCaptchaPropertiesDTO.setReCaptchaEnabled(true);
             reCaptchaPropertiesDTO.setReCaptchaKey(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY));
             reCaptchaPropertiesDTO.setReCaptchaAPI(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL));
-            if (!StringUtils.isBlank(reCaptchaType)) {
-                reCaptchaPropertiesDTO.setReCaptchaType(reCaptchaType);
-            }
-            return Response.ok(reCaptchaPropertiesDTO).build();
+            reCaptchaPropertiesDTO.setReCaptchaType(properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE));
         } else {
             reCaptchaPropertiesDTO.setReCaptchaEnabled(false);
-            return Response.ok(reCaptchaPropertiesDTO).build();
         }
+        return Response.ok(reCaptchaPropertiesDTO).build();
     }
 
     @Override
@@ -94,25 +90,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         HttpEntity entity = response.getEntity();
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
 
-        if (StringUtils.isBlank(reCaptchaType) || reCaptchaType.equals(CaptchaConstants.
-                RE_CAPTCHA_TYPE_DEFAULT)){
-            // For ReCaptcha v2 and v3.
-            try {
-                if (entity == null) {
-                    RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
-                            Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-                }
-                try (InputStream in = entity.getContent()) {
-                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
-                            CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
-                }
-            } catch (IOException e) {
-                log.error("Unable to read the verification response.", e);
-                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-            }
-        } else if (reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE)) {
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
             // For ReCaptcha Enterprise.
             if (entity == null) {
                 RecoveryUtil.handleBadRequest("ReCaptcha Enterprise verification response is not received.",
@@ -131,7 +109,25 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
                 RecoveryUtil.handleBadRequest("Unable to read the verification response.",
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             }
+        } else {
+            // For ReCaptcha v2 and v3.
+            try {
+                if (entity == null) {
+                    RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
+                            Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+                }
+                try (InputStream in = entity.getContent()) {
+                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
+                            CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
+                }
+            } catch (IOException e) {
+                log.error("Unable to read the verification response.", e);
+                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
+                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+            }
         }
+
         return Response.ok(reCaptchaVerificationResponseDTO).build();
     }
 }
