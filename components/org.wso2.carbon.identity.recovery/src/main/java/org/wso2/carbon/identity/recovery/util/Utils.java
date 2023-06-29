@@ -1140,7 +1140,7 @@ public class Utils {
     }
 
     private static String generateSMSSecretKey(String tenantDomain, String recoveryScenario)
-            throws IdentityRecoveryServerException{
+            throws IdentityRecoveryServerException {
 
         int otpLength = IdentityRecoveryConstants.SMS_OTP_CODE_LENGTH;
         String otpRegex = null;
@@ -1194,7 +1194,6 @@ public class Utils {
             throws IdentityRecoveryServerException {
 
         boolean emailOTPenabled;
-
         try {
             emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                     IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, tenantDomain));
@@ -1203,7 +1202,6 @@ public class Utils {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
                     tenantDomain, e);
         }
-
         if (emailOTPenabled) {
             int otpLength = IdentityRecoveryConstants.EMAIL_OTP_CODE_LENGTH;
             boolean useNumeric = true;

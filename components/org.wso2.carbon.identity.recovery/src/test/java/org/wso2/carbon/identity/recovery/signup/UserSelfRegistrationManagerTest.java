@@ -439,7 +439,6 @@ public class UserSelfRegistrationManagerTest {
         userRecoveryData.setRemainingSetIds(preferredChannel);
 
         mockJDBCRecoveryDataStore(userRecoveryData);
-        handler.triggerNotification(user,preferredChannel,secretKey,Utils.getArbitraryProperties(),"POST_ADD_USER");
         mockEmailTrigger();
     }
 

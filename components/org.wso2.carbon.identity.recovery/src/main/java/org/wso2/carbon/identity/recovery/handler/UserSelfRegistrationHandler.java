@@ -423,7 +423,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
      * @param eventName           Name of the event
      * @throws IdentityRecoveryException Error triggering notifications
      */
-    public void triggerNotification(User user, String notificationChannel, String code, Property[] props,
+    private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
         boolean emailOTPenabled = false;
