@@ -17,16 +17,18 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
+import org.apache.commons.lang.StringUtils;
 import org.mockito.InjectMocks;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
-
+import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaPropertiesDTO;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -35,8 +37,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
-
+import javax.ws.rs.core.Response;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Unit tests for CaptchaApiServiceImpl.java
@@ -61,9 +64,51 @@ public class CaptchaApiServiceImplTest{
         mockedRecoveryUtil.close();
     }
 
-    @Test(description = "This method test, getReCaptcha method for username recovery")
-    public void testGetCaptcha() throws IOException {
+    @DataProvider(name = "captchaTestDataProvider")
+    public static Object[][] getCaptchaTestDataProvider() {
 
+        String reCaptchaEnterprise = CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE;
+
+        return new Object[][]{
+                {false, "", ""},
+                {true, "", "https://www.google.com/recaptcha/api.js"},
+                {true, reCaptchaEnterprise, "https://www.google.com/recaptcha/enterprise.js"}
+        };
+    }
+
+    @Test(description = "This method test, getReCaptcha method for username recovery",
+            dataProvider = "captchaTestDataProvider")
+    public void testGetCaptcha(boolean reCaptchaEnabled, String reCaptchaType,
+                               String reCaptchaAPI) throws IOException {
+
+        Properties sampleProperties = getSampleConfigFile();
+
+        sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_ENABLED, String.valueOf(reCaptchaEnabled));
+        sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_TYPE, reCaptchaType);
+        sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_API_URL, reCaptchaAPI);
+
+        mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(Mockito.anyString(),
+                Mockito.anyString())).thenReturn(true);
+        Response response = captchaApiService.getCaptcha("ReCaptcha", "username-recovery",
+                "test.org");
+
+        ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = response.readEntity(ReCaptchaPropertiesDTO.class);
+
+        assertEquals(reCaptchaPropertiesDTO.getReCaptchaEnabled().booleanValue(), reCaptchaEnabled);
+        if (StringUtils.isBlank(reCaptchaType)) {
+            assertNull(reCaptchaPropertiesDTO.getReCaptchaType());
+        } else {
+            assertEquals(reCaptchaPropertiesDTO.getReCaptchaType(), reCaptchaType);
+        }
+        if (StringUtils.isBlank(reCaptchaAPI)) {
+            assertNull(reCaptchaPropertiesDTO.getReCaptchaAPI());
+        } else {
+            assertEquals(reCaptchaPropertiesDTO.getReCaptchaAPI(), reCaptchaAPI);
+        }
+    }
+
+    public Properties getSampleConfigFile() throws IOException {
         Path path = Paths.get("src/test/resources", "repository", "conf", "identity",
                 CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
         Properties sampleProperties = new Properties();
@@ -74,11 +119,6 @@ public class CaptchaApiServiceImplTest{
                 throw new IOException("Unable to read the captcha configuration file.", e);
             }
         }
-
-        mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
-        mockedRecoveryUtil.when(() -> RecoveryUtil.checkCaptchaEnabledResidentIdpConfiguration(Mockito.anyString(),
-                Mockito.anyString())).thenReturn(true);
-        assertEquals(captchaApiService.getCaptcha("ReCaptcha", "username-recovery",
-                null).getStatus(), 200);
+        return sampleProperties;
     }
 }
