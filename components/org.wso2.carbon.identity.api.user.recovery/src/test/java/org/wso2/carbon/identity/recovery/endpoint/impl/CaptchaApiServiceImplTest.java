@@ -96,7 +96,7 @@ public class CaptchaApiServiceImplTest{
         ReCaptchaPropertiesDTO reCaptchaPropertiesDTO = response.readEntity(ReCaptchaPropertiesDTO.class);
 
         assertEquals(reCaptchaPropertiesDTO.getReCaptchaEnabled().booleanValue(), reCaptchaEnabled);
-        if (StringUtils.isBlank(reCaptchaType)) {
+        if (reCaptchaPropertiesDTO.getReCaptchaType() == null) {
             assertNull(reCaptchaPropertiesDTO.getReCaptchaType());
         } else {
             assertEquals(reCaptchaPropertiesDTO.getReCaptchaType(), reCaptchaType);
