@@ -399,15 +399,16 @@ public class CaptchaUtil {
         CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
-        HttpPost httpPost = null;
+        HttpPost httpPost;
 
-        if (StringUtils.isBlank(reCaptchaType) || reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_DEFAULT)) {
-            // For ReCaptcha v2 and v3.
-            httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
-        } else if (reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE)) {
+        // If the reCaptcha type is defined and, it is enterprise, the enterprise process will be done. Otherwise,
+        // the reCaptcha v2/v3 process will be done.
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
             // For ReCaptcha Enterprise.
             httpPost = createReCaptchaEnterpriseVerificationHttpPost(reCaptchaResponse);
-
+        } else {
+            // For ReCaptcha v2 and v3.
+            httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
         }
 
         HttpResponse response;
@@ -423,13 +424,14 @@ public class CaptchaUtil {
             throw new CaptchaServerException("reCaptcha verification response is not received.");
         }
 
-        if (StringUtils.isBlank(reCaptchaType) || reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_DEFAULT)) {
-            // For Recaptcha v2 and v3.
-            verifyReCaptchaResponse(responseEntity);
-        } else if (reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE)) {
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
             // For ReCaptcha Enterprise.
             verifyReCaptchaEnterpriseResponse(responseEntity);
+        } else {
+            // For Recaptcha v2 and v3.
+            verifyReCaptchaResponse(responseEntity);
         }
+
         return true;
     }
 
@@ -563,7 +565,7 @@ public class CaptchaUtil {
             CaptchaDataHolder.getInstance().setReCaptchaType(reCaptchaType);
         }
 
-        if (reCaptchaType.equals(CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE)) {
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
             // ReCaptcha Enterprise require Project ID.
             String reCaptchaProjectID = properties.getProperty(CaptchaConstants.RE_CAPTCHA_PROJECT_ID);
             if (StringUtils.isBlank(reCaptchaProjectID)) {
