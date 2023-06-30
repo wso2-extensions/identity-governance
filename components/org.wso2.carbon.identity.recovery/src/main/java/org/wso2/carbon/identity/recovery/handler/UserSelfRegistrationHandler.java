@@ -442,7 +442,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Sending account confirmation notification to user: " + user.getUserName().replaceAll(".", "*"));
+            log.debug("Sending account confirmation notification to user: " + user.getUserName());
         }
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
