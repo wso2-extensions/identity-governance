@@ -428,12 +428,12 @@ public class Utils {
     }
 
     /**
-     * Set claim to user store manager
+     * Set claim to user store manager.
      *
      * @param user  user
      * @param claim claim uri
      * @param value claim value
-     * @throws IdentityException if fails
+     * @throws UserStoreException if fails
      */
     public static void setClaimInUserStoreManager(User user, String claim, String value) throws UserStoreException {
 
@@ -570,7 +570,7 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key, }, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw Utils.handleServerException(
@@ -584,7 +584,7 @@ public class Utils {
             Property[] connectorConfigs;
             IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
                     .getIdentityGovernanceService();
-            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key, }, tenantDomain);
             return connectorConfigs[0].getValue();
         } catch (IdentityGovernanceException e) {
             throw new IdentityEventException("Error while getting connector configurations", e);
@@ -733,7 +733,7 @@ public class Utils {
     }
 
     /**
-     * Get whether this is tenant flow
+     * Get whether this is tenant flow.
      *
      * @param properties
      * @return
@@ -775,7 +775,7 @@ public class Utils {
     }
 
     /**
-     * Check if the exception contains a password pattern violation message and act accordingly
+     * Check if the exception contains a password pattern violation message and act accordingly.
      *
      * @param exception An UserStoreException
      * @throws IdentityRecoveryClientException If exception's message contains a password pattern violation message
@@ -809,7 +809,7 @@ public class Utils {
     }
 
     /**
-     * Get RealmConfiguration by tenantId
+     * Get RealmConfiguration by tenantId.
      *
      * @param user User
      * @return realmConfiguration RealmConfiguration of the given tenant
@@ -1132,8 +1132,8 @@ public class Utils {
             throws IdentityRecoveryServerException {
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel)) {
-            return generateSMSSecretKey(tenantDomain,recoveryScenario);
-        } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)){
+            return generateSMSSecretKey(tenantDomain, recoveryScenario);
+        } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channel)) {
             return generateEmailSecretKey(tenantDomain, recoveryScenario);
         }
         return UUIDGenerator.generateUUID();
