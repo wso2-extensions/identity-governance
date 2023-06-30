@@ -49,7 +49,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -69,6 +68,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY;
@@ -145,7 +145,7 @@ public class UserAccountRecoveryManager {
             // Get the existing RESEND_CONFIRMATION_CODE details if there is any.
             UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
                     user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
-            String recoveryCode = UUIDGenerator.generateUUID();
+            String recoveryCode = UUID.randomUUID().toString();
             String notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
             /* Check whether the existing confirmation code can be used based on the email confirmation code tolerance
                with the extracted RESEND_CONFIRMATION_CODE details. */

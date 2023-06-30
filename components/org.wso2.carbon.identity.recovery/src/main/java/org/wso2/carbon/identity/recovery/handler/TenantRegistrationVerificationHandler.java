@@ -29,10 +29,10 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This handler is used to send password reset link for tenant admin during tenant registration.
@@ -105,7 +105,7 @@ public class TenantRegistrationVerificationHandler extends UserEmailVerification
         // Remove claim to prevent persisting this temporary claim.
         claims.remove(IdentityRecoveryConstants.TENANT_ADMIN_ASK_PASSWORD_CLAIM);
 
-        String uuid = UUIDGenerator.generateUUID();
+        String uuid = UUID.randomUUID().toString();
         String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION;
 
         if (claims.containsKey(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM)) {

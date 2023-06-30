@@ -42,7 +42,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -54,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
@@ -180,7 +180,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
                 // Not required to handle in this handler.
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
-                String confirmationCode = UUIDGenerator.generateUUID();
+                String confirmationCode = UUID.randomUUID().toString();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
@@ -200,7 +200,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
                         confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
-                String confirmationCode = UUIDGenerator.generateUUID();
+                String confirmationCode = UUID.randomUUID().toString();
                 if (isAccountClaimExist) {
                     setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                             IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
@@ -260,7 +260,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     protected void initNotification(User user, Enum recoveryScenario, Enum recoveryStep, String notificationType)
             throws IdentityEventException {
 
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = UUID.randomUUID().toString();
         initNotification(user, recoveryScenario, recoveryStep, notificationType, secretKey);
     }
 
@@ -299,7 +299,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private void initNotificationForEmailVerificationOnUpdate(String verificationPendingEmailAddress, User user)
             throws IdentityEventException {
 
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = UUID.randomUUID().toString();
         initNotificationForEmailVerificationOnUpdate(user, secretKey, verificationPendingEmailAddress);
     }
 

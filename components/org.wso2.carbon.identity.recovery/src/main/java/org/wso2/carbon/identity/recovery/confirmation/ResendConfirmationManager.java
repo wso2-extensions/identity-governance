@@ -46,11 +46,11 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Generic Manager class which can be used to resend confirmation code for any recovery scenario and self registration
@@ -268,7 +268,7 @@ public class ResendConfirmationManager {
     private String generateResendCode(String notificationChannel, RecoveryScenarios scenario,
                                       UserRecoveryData userRecoveryData) throws IdentityRecoveryServerException {
 
-        String resendCode = UUIDGenerator.generateUUID();
+        String resendCode = UUID.randomUUID().toString();
         /* Checking whether the existing confirmation code issued time is in the tolerance period. If so this code
            updates the existing RESEND_CONFIRMATION_CODE with the new one by not changing the TIME_CREATED. */
         if (Utils.reIssueExistingConfirmationCode(getResendConfirmationCodeData(userRecoveryData.getUser()),

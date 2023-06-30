@@ -54,10 +54,10 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Class that implements the PasswordRecoveryManager.
@@ -573,7 +573,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     private String generateResendCode(String notificationChannel, UserRecoveryData userRecoveryData)
             throws IdentityRecoveryServerException {
 
-        String resendCode = UUIDGenerator.generateUUID();
+        String resendCode = UUID.randomUUID().toString();
         /* Checking whether the existing confirmation code can be used based on the email confirmation code tolerance
            and the existing recovery details. If so this code updates the existing SEND_RECOVERY_INFORMATION code
            with the new RESEND_CONFIRMATION_CODE by not changing the TIME_CREATED. */
