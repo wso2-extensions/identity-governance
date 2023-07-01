@@ -18,14 +18,8 @@
 
 package org.wso2.carbon.identity.user.export.core.internal.service.impl;
 
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.CarbonException;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -40,7 +34,6 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -55,19 +48,6 @@ public class BasicUserInformationProviderTest {
     public static final String USERNAME_CLAIM_VALUE = "username1";
     public static final String GIVEN_NAME_CLAIM_VALUE = "givenName1";
     public static final String LAST_NAME_CLAIM_VALUE = "lastName1";
-    private MockedStatic<AnonymousSessionUtil> mockedAnonymousSessionUtil;
-
-    @BeforeMethod
-    public void setUp() {
-
-        mockedAnonymousSessionUtil = Mockito.mockStatic(AnonymousSessionUtil.class);
-    }
-
-    @AfterMethod
-    public void tearDown() {
-
-        mockedAnonymousSessionUtil.close();
-    }
 
     @Test
     public void testGetUserAttributes() throws Exception {
@@ -85,9 +65,7 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         Claim[] claims = getClaims();
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
@@ -123,9 +101,7 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(null);
 
@@ -155,9 +131,8 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenThrow(new CarbonException("Mock Exception"));
+        when(realmService.getTenantUserRealm(anyInt()))
+                .thenThrow(new org.wso2.carbon.user.api.UserStoreException("Mock Exception"));
 
         Claim[] claims = getClaims();
 
@@ -186,9 +161,7 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenThrow(new UserStoreException());
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         Claim[] claims = getClaims();
 
@@ -217,9 +190,7 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         when(secUserStoreManager.getUserClaimValues(anyString(), isNull())).thenThrow(new UserStoreException());
 

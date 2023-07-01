@@ -25,8 +25,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.CarbonException;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
@@ -133,8 +131,9 @@ public class BasicUserInformationProvider extends AbstractUserInformationProvide
 
         UserRealm realm;
         try {
-            realm = AnonymousSessionUtil.getRealmByTenantDomain(registryService, realmService, tenantDomain);
-        } catch (CarbonException e) {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            realm = (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
             throw new UserExportException(
                     "Error occurred while retrieving the Realm for " + tenantDomain + " to handle claims", e);
         }

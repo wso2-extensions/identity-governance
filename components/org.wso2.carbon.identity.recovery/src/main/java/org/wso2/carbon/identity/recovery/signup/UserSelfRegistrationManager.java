@@ -34,7 +34,6 @@ import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
@@ -1422,9 +1421,13 @@ public class UserSelfRegistrationManager {
 
     private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
 
-        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
-                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
-                tenantDomain);
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            return (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CarbonException(e);
+        }
     }
 
     /**
