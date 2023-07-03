@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
-import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -53,7 +52,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributes() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -72,7 +70,6 @@ public class BasicUserInformationProviderTest {
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
         basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj != null && userAttributesObj.getData() instanceof Map) {
@@ -89,7 +86,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesEmpty() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -107,7 +103,6 @@ public class BasicUserInformationProviderTest {
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
         basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj.isInformationAvailable()) {
@@ -119,7 +114,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetRealmByTenantDomain() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -140,7 +134,6 @@ public class BasicUserInformationProviderTest {
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
         basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -149,7 +142,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetUserStoreManager() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -169,7 +161,6 @@ public class BasicUserInformationProviderTest {
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
         basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -178,7 +169,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetUserClaimValues() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -196,7 +186,6 @@ public class BasicUserInformationProviderTest {
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
         basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
