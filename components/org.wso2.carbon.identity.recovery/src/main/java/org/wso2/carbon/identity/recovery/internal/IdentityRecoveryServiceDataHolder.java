@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -32,14 +32,12 @@ import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationMan
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
     private RealmService realmService;
-    private RegistryService registryService;
     private IdentityEventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private IdpManager idpManager;
@@ -110,16 +108,6 @@ public class IdentityRecoveryServiceDataHolder {
     public void setRealmService(RealmService realmService) {
 
         this.realmService = realmService;
-    }
-
-    public RegistryService getRegistryService() {
-
-        return registryService;
-    }
-
-    public void setRegistryService(RegistryService registryService) {
-
-        this.registryService = registryService;
     }
 
     public AccountLockService getAccountLockService() {

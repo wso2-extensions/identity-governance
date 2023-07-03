@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationProvider;
-import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -57,7 +56,6 @@ public class BasicUserInformationProvider extends AbstractUserInformationProvide
     protected static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.Question.Password.Separator";
     protected static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     protected RealmService realmService;
-    protected RegistryService registryService;
 
     @Override
     public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId)
@@ -170,28 +168,5 @@ public class BasicUserInformationProvider extends AbstractUserInformationProvide
             log.debug("Unsetting the Realm Service");
         }
         this.realmService = null;
-    }
-
-    @Reference(
-            name = "registry.service",
-            service = RegistryService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRegistryService"
-    )
-    public void setRegistryService(RegistryService registryService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("RegistryService is set in the org.wso2.carbon.user.export.basic component");
-        }
-        this.registryService = registryService;
-    }
-
-    public void unsetRegistryService(RegistryService registryService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("RegistryService is unset in the org.wso2.carbon.user.export.basic component");
-        }
-        this.registryService = null;
     }
 }
