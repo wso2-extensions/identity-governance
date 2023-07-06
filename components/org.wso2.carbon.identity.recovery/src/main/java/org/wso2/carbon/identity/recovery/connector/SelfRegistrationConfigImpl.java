@@ -122,7 +122,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Allow user's to self register to the system.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION,
-                "Enable if email verification is done by sending an OTP to user's email.");
+                "Enable email OTP-based verification during user registration.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock self registered user account until e-mail verification.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
