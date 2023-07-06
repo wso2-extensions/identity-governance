@@ -28,10 +28,10 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
     private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
     private static final String IDENTITY_DATA_STORE_TYPE = "IdentityDataStore.DataStoreType";
-    private static final String DEFAULT_JDBC_IDENTITY_DATA_STORE = "org.wso2.carbon.identity.governance.store" +
-            ".JDBCIdentityDataStore";
-    private static final String DEFAULT_USER_STORE_BASED_IDENTITY_DATA_STORE = "org.wso2.carbon.identity.governance" +
-            ".store.UserStoreBasedIdentityDataStore";
+    private static final String DEFAULT_JDBC_IDENTITY_DATA_STORE =
+            "org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore";
+    private static final String DEFAULT_USER_STORE_BASED_IDENTITY_DATA_STORE =
+            "org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore";
 
     public IdentityDataStoreServiceImpl() throws ClassNotFoundException, InstantiationException,
             IllegalAccessException {
@@ -81,15 +81,15 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
-                Iterator<Map.Entry<String, String>> it = claims.entrySet().iterator();
+                Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
 
-                while (it.hasNext()) {
-                    Map.Entry<String, String> claim = it.next();
+                while (claimsIterator.hasNext()) {
+                    Map.Entry<String, String> claim = claimsIterator.next();
                     String key = claim.getKey();
                     String value = claim.getValue();
                     if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
                         userIdentityClaim.setUserIdentityDataClaim(key, value);
-                        it.remove();
+                        claimsIterator.remove();
                     }
                 }
 
