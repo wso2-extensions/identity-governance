@@ -670,8 +670,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         UserStoreManager userStoreManager = getUserStoreManager();
 
         // No need to separately handle if identity data store is user store based.
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore ||
-                isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
             return true;
         }
 
@@ -698,6 +697,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     log.debug("Username found to be null while method doPostGetUsersClaimValues getting executed in " +
                             "the IdentityStoreEventListener.");
                 }
+                continue;
+            }
+
+            // No need to separately handle if identity data store is user store based for the users' userstore domain.
+            if (isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
+                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
                 continue;
             }
 
