@@ -59,7 +59,6 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -88,6 +87,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -1179,7 +1179,7 @@ public class Utils {
                         otpGeneratorException.getMessage());
             }
         } else {
-            return UUIDGenerator.generateUUID();
+            return UUID.randomUUID().toString();
         }
     }
 
