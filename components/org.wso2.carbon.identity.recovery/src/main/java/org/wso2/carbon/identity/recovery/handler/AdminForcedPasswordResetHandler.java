@@ -33,13 +33,13 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandler {
 
@@ -141,7 +141,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             }
 
             if (adminPasswordResetRecoveryLink) {
-                OTP = UUIDGenerator.generateUUID();
+                OTP = UUID.randomUUID().toString();
                 recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK;
                 notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET;
             }

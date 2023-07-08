@@ -19,8 +19,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.CarbonException;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.mgt.endpoint.util.IdentityManagementEndpointConstants;
@@ -36,8 +34,9 @@ import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidateInfoResponseDT
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
-import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -138,7 +137,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 responseDTO.setStatusCode(Integer.parseInt(SelfRegistrationStatusCodes.CODE_USER_NAME_AVAILABLE));
                 return Response.ok().entity(responseDTO).build();
             }
-        } catch (IdentityRecoveryException | CarbonException | UserStoreException e) {
+        } catch (IdentityRecoveryException | UserStoreException e) {
             ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setRef(Utils.getCorrelation());
             errorDTO.setMessage("Error while checking user existence");
@@ -150,7 +149,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
     }
 
     private String getRegexViolationErrorMsg(UsernameValidationRequestDTO user, String tenantDomain)
-            throws CarbonException, UserStoreException {
+            throws UserStoreException {
 
         String userDomain = IdentityUtil.extractDomainFromName(user.getUsername());
         UserRealm userRealm = getUserRealm(tenantDomain);
@@ -165,11 +164,11 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         }
     }
 
-    private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
+    private UserRealm getUserRealm(String tenantDomain) throws UserStoreException {
 
-        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
-                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
-                tenantDomain);
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+        return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 
     private void logDebug(String message) {
