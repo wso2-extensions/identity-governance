@@ -93,6 +93,30 @@ public interface IdentityDataStoreService {
     void removeIdentityClaims(String username, UserStoreManager userStoreManager) throws IdentityException;
 
     /**
+     * Get the list of usernames who have the claim value less than the provided claim value for a given claim URI.
+     *
+     * @param claimURI              Claim URI.
+     * @param claimValue            Claim value.
+     * @param tenantId              Tenant ID.
+     * @return                      List of usernames.
+     * @throws IdentityException    Identity exception.
+     */
+    List<String> getUserNamesLessThanProvidedClaimValue(String claimURI, String claimValue,
+                                                        int tenantId) throws IdentityException;
+
+    /**
+     * Get the list of usernames who have the claim value between the provided claim values for a given claim URI.
+     * @param claimURI              Claim URI.
+     * @param startValue            Start value.
+     * @param endValue              End value.
+     * @param tenantId              Tenant ID.
+     * @return                      List of usernames.
+     * @throws IdentityException    Identity exception.
+     */
+    List<String> getUserNamesBetweenProvidedClaimValues(String claimURI, String startValue, String endValue,
+                                                        int tenantId) throws IdentityException;
+
+    /**
      * Check whether the identity data store is user store based.
      *
      * @return  True if the identity data store is user store based.
