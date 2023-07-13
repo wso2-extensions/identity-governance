@@ -422,8 +422,8 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
                 prepStmt.setString(1, claimURI);
                 prepStmt.setInt(2, tenantId);
-                prepStmt.setString(3, startValue);
-                prepStmt.setString(4, endValue);
+                prepStmt.setString(3, endValue);
+                prepStmt.setString(4, startValue);
                 try (ResultSet resultSet = prepStmt.executeQuery()) {
                     while (resultSet.next()) {
                         String username = resultSet.getString(1);
