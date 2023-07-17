@@ -775,7 +775,9 @@ public class CaptchaUtil {
         AuthenticatorConfig authenticatorConfig =
                 ConfigurationFacade.getInstance().getAuthenticatorConfig(authenticatorName);
         if (authenticatorConfig == null) {
-            log.debug("Authenticator config not found for authenticator: " + authenticatorName);
+            if (log.isDebugEnabled()) {
+                log.debug("Authenticator config not found for authenticator: " + authenticatorName);
+            }
             return false;
         }
         Map<String, String> params = authenticatorConfig.getParameterMap();
