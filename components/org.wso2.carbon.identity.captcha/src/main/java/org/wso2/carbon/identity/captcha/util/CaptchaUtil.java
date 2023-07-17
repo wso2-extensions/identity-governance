@@ -774,7 +774,12 @@ public class CaptchaUtil {
         }
         AuthenticatorConfig authenticatorConfig =
                 ConfigurationFacade.getInstance().getAuthenticatorConfig(authenticatorName);
-
+        if (authenticatorConfig == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Authenticator config not found for authenticator: " + authenticatorName);
+            }
+            return false;
+        }
         Map<String, String> params = authenticatorConfig.getParameterMap();
 
         return params != null && params.get(ENABLE_GENERIC_CAPTCHA_VALIDATION) != null &&
