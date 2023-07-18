@@ -1279,7 +1279,11 @@ public class Utils {
         int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
         if (recoveryDataDO != null && codeToleranceInMinutes != 0) {
             if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
-                    equals(recoveryDataDO.getRecoveryScenario().toString())) {
+                    equals(recoveryDataDO.getRecoveryScenario().toString()) ||
+                    RecoveryScenarios.SELF_SIGN_UP.toString().
+                            equals(recoveryDataDO.getRecoveryScenario().toString()) ||
+                    RecoveryScenarios.ASK_PASSWORD.toString().
+                            equals(recoveryDataDO.getRecoveryScenario().toString())) {
                 long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
                         TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
                 return System.currentTimeMillis() < codeToleranceTimeInMillis;
