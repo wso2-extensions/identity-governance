@@ -60,6 +60,7 @@
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
         <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
+        <module>components/org.wso2.carbon.identity.password.expiry</module>
 
         <module>service-stubs/identity</module>
 
@@ -476,6 +477,11 @@
             <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.user.core</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.user.api</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
