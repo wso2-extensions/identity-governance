@@ -77,6 +77,12 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.password.expiry.server.feature</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.account.suspension.notification.task.server.feature</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
@@ -132,6 +138,9 @@
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.password.policy.server.feature
+                                </includedFeatureDef>
+                                <includedFeatureDef>
+                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.password.expiry.server.feature
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.account.suspension.notification.task.server.feature
