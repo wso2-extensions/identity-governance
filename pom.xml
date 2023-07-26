@@ -60,6 +60,7 @@
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
         <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
+        <module>components/org.wso2.carbon.identity.idle.account.identification</module>
 
         <module>service-stubs/identity</module>
 
@@ -73,6 +74,7 @@
         <module>features/org.wso2.carbon.identity.governance.feature</module>
         <module>features/org.wso2.carbon.identity.password.policy.server.feature</module>
         <module>features/org.wso2.carbon.identity.account.suspension.notification.task.server.feature</module>
+        <module>features/org.wso2.carbon.identity.idle.account.identification.server.feature</module>
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
         <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
@@ -334,6 +336,11 @@
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.account.suspension.notification.task</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.idle.account.identification</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -701,6 +708,7 @@
         <slf4j.api.version>1.6.1</slf4j.api.version>
         <org.slf4j.imp.pkg.version.range>[1.5.5,2.0.0)</org.slf4j.imp.pkg.version.range>
         <mockito.version>3.10.0</mockito.version>
+        <mockito-core.version>4.6.1</mockito-core.version>
         <powermock.version>2.0.8</powermock.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         
