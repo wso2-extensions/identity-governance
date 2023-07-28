@@ -186,6 +186,15 @@ public class IdentityRecoveryConstants {
     public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE =
             "apConfirmationCodeThreadLocalInitialValue";
 
+    // UserMetadataMgtHandler constants.
+    public static final String USER_METADATA_MGT_HANDLER_NAME = "userMetadataMgtHandler";
+    public static final String USER_METADATA_MGT_HANDLER_FRIENDLY_NAME = "User Metadata Management Handler";
+    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    public static final String ASGARDEO_USER_DOMAIN_NAME = "ASGARDEO-USER";
+    public static final String TENANT_ASSOCIATION_MANAGER = "tenant-association-manager";
+    public static final String LAST_LOGIN_TIME = "http://wso2.org/claims/identity/lastLogonTime";
+    public static final String ENABLE_USER_METADATA_HANDLER = "userMetadataMgtHandler.enable";
+
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
@@ -207,6 +216,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
+        ERROR_USER_ID_NOT_FOUND("UMM-65003", "Error while retrieving the user id" +
+                "Error retrieving the user id for the user: %s in the tenant %s."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -367,6 +378,7 @@ public class IdentityRecoveryConstants {
                 + "password reset code"),
         ERROR_CODE_ERROR_RETRIEVING_RECOVERY_DATA("UAR-15007","Error while retrieving the user recovery data: '%s'"),
         ERROR_CODE_ERROR_UPDATING_RECOVERY_DATA("UAR-15008", "Error while updating recovery data: '%s'"),
+        ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005", "Error retrieving the associated user for the user: %s in the tenant %s."),
 
         // PWR - Password Recovery.
         ERROR_CODE_INVALID_TENANT_DOMAIN_PASSWORD_RESET("PWR-10001", "User's tenant domain does "
