@@ -142,15 +142,15 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
             preValidationResponse.setCaptchaValidationRequired(true);
         } else {
-            String failedLoginAttemptsClaim = FAILED_LOGIN_ATTEMPTS_CLAIM_URI;
+            String failedLoginAttemptsClaimUri = FAILED_LOGIN_ATTEMPTS_CLAIM_URI;
             if (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())) {
-                failedLoginAttemptsClaim = FAILED_EMAIL_OTP_ATTEMPTS_CLAIM_URI;
+                failedLoginAttemptsClaimUri = FAILED_EMAIL_OTP_ATTEMPTS_CLAIM_URI;
             }
             if (SMS_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())) {
-                failedLoginAttemptsClaim = FAILED_SMS_OTP_ATTEMPTS_CLAIM_URI;
+                failedLoginAttemptsClaimUri = FAILED_SMS_OTP_ATTEMPTS_CLAIM_URI;
             }
             if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
-                    tenantDomain, failedLoginAttemptsClaim)) {
+                    tenantDomain, failedLoginAttemptsClaimUri)) {
                 preValidationResponse.setCaptchaValidationRequired(true);
                 preValidationResponse.setMaxFailedLimitReached(true);
 
