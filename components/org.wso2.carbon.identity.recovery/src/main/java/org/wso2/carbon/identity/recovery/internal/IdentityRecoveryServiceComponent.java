@@ -118,8 +118,6 @@ public class IdentityRecoveryServiceComponent {
                     , null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new TenantRegistrationVerificationHandler(), null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(), new IdentityUserMetadataMgtHandler(),
-                    null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new RecoveryConfigImpl(), null);
             bundleContext.registerService(IdentityConnectorConfig.class.getName(), new SelfRegistrationConfigImpl(),
                     null);
