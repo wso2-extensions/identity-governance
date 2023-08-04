@@ -43,10 +43,16 @@ public class IdentityPasswordPolicyServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("Password Policy Service component is enabled");
             }
-            BundleContext bundleContext = context.getBundleContext();
-            IdentityPasswordPolicyServiceDataHolder.getInstance().setBundleContext(bundleContext);
-            PasswordPolicyValidationHandler handler = new PasswordPolicyValidationHandler();
-            context.getBundleContext().registerService(AbstractEventHandler.class.getName(), handler, null);
+            if (IdentityPasswordPolicyServiceDataHolder.getInstance().isPasswordPolicyHandlerEnabled()) {
+                BundleContext bundleContext = context.getBundleContext();
+                IdentityPasswordPolicyServiceDataHolder.getInstance().setBundleContext(bundleContext);
+                PasswordPolicyValidationHandler handler = new PasswordPolicyValidationHandler();
+                context.getBundleContext().registerService(AbstractEventHandler.class.getName(), handler, null);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Password Policy Validation Handler is disabled.");
+                }
+            }
         } catch (Exception e) {
             log.error("Error while activating password policy component.", e);
         }
