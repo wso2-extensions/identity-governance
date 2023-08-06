@@ -51,7 +51,6 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -59,6 +58,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This handler class is used to self register a user.
+ */
 public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
     private static final Log log = LogFactory.getLog(UserSelfRegistrationHandler.class);
@@ -76,10 +78,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(
+                IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
 
-        String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        String tenantDomain = (String) eventProperties.get(
+                IdentityEventConstants.EventProperty.TENANT_DOMAIN);
+        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(
+                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         String[] roleList = (String[]) eventProperties.get(IdentityEventConstants.EventProperty.ROLE_LIST);
 
@@ -117,7 +122,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 (IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION, user.getTenantDomain()));
 
         boolean isNotificationInternallyManage = Boolean.parseBoolean(Utils.getConnectorConfig
-                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE, user.getTenantDomain()));
+                (IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
+                        user.getTenantDomain()));
 
         if (IdentityEventConstants.Event.POST_ADD_USER.equals(event.getEventName())) {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -136,7 +142,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 }
 
                 boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
-                        (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION, user.getTenantDomain()));
+                        (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                                user.getTenantDomain()));
 
                 // If notify confirmation is enabled and both iAccountLockOnCreation &&
                 // EnableConfirmationOnCreation are disabled then send account creation notification.
@@ -406,8 +413,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
-                    .getUserName(), e);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
         }
     }
 
@@ -424,8 +431,18 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
             String eventName) throws IdentityRecoveryException {
 
+        boolean emailOTPenabled = false;
+        try {
+            emailOTPenabled = Boolean.parseBoolean(Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, user.getTenantDomain()));
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG,
+                    user.getTenantDomain(), e);
+        }
+
         if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
+            log.debug("Sending account confirmation notification to user: " + user.getUserName());
         }
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
@@ -439,10 +456,19 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             }
         }
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            if (emailOTPenabled) {
+                properties.put(IdentityRecoveryConstants.EMAIL_OTP_CODE, code);
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+        if (emailOTPenabled) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP);
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

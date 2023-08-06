@@ -93,6 +93,7 @@ public class SelfRegistrationConfigImplTest {
 
         Map<String, String> nameMappingExpected = new HashMap<String, String>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "User self registration");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, "Email OTP based verification");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account on creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
@@ -128,6 +129,8 @@ public class SelfRegistrationConfigImplTest {
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP,
                 "Allow user's to self register to the system.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION,
+                "Enable if email verification is done by sending an OTP to user's email.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock self registered user account until e-mail verification.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
@@ -168,6 +171,7 @@ public class SelfRegistrationConfigImplTest {
 
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
@@ -196,6 +200,7 @@ public class SelfRegistrationConfigImplTest {
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
 
         String testEnableSelfSignUp = "false";
+        String testEnableEmailOTPverification = "false";
         String testEnableAccountLockOnCreation = "true";
         String testEnableSendNotificationOnCreation = "false";
         String testEnableNotificationInternallyManage = "true";
@@ -211,6 +216,7 @@ public class SelfRegistrationConfigImplTest {
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_OTP_VERIFICATION, testEnableEmailOTPverification);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 testEnableAccountLockOnCreation);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
