@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -105,10 +106,26 @@ public class LiteApiServiceImpl extends LiteApiService {
                     if (isResendVerificationEnabledOnUserExistence) {
                         try {
                             ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
-                            notificationResponseBean =
-                                    resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
-                                            CONFIRM_LITE_SIGN_UP.toString(),
-                                            NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, null);
+                            if(properties.size() > 1) {
+                                Property templateDTO = new Property();
+                                Property initiatedPlatformDTO = new Property();
+                                templateDTO.setKey("resendTemplateName");
+                                initiatedPlatformDTO.setKey("initiated-platform");
+                                Property[] propertiesList = new Property[2];
+                                templateDTO.setValue(properties.get(3).getValue());
+                                initiatedPlatformDTO.setValue(properties.get(1).getValue());
+                                propertiesList[0] = templateDTO;
+                                propertiesList[1] = initiatedPlatformDTO;
+                                notificationResponseBean =
+                                        resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
+                                                CONFIRM_LITE_SIGN_UP.toString(),
+                                                NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, propertiesList);
+                            } else {
+                                notificationResponseBean =
+                                        resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
+                                                CONFIRM_LITE_SIGN_UP.toString(),
+                                                NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, null);
+                            }
                         } catch (IdentityRecoveryException ex) {
                             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
                         }
