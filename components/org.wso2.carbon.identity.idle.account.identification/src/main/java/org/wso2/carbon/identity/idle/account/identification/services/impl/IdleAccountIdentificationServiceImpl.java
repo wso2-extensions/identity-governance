@@ -34,7 +34,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.jdbc.UniqueIDJDBCUserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.time.LocalDateTime;
@@ -125,8 +125,8 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
 
         UserStoreManager userStoreManager = getUserStoreManager(UserCoreUtil.extractDomainFromName(username));
         try {
-            if (userStoreManager instanceof UniqueIDJDBCUserStoreManager) {
-                return ((UniqueIDJDBCUserStoreManager) userStoreManager).getUserIDFromUserName(username);
+            if (userStoreManager instanceof AbstractUserStoreManager) {
+                return ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
             }
         } catch (UserStoreException e) {
             IdleAccIdentificationConstants.ErrorMessages errorEnum =
@@ -142,7 +142,7 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
      * @return UserStoreManager.
      * @throws IdleAccountIdentificationServerException Exception when getting user store manager.
      */
-    private UserStoreManager getUserStoreManager(String userStore) throws IdleAccountIdentificationServerException {
+    private UserStoreManager getUserStoreManager(String userStoreDomainName) throws IdleAccountIdentificationServerException {
 
         try {
             UserRealm realm = (UserRealm) CarbonContext.getThreadLocalCarbonContext().getUserRealm();
@@ -156,11 +156,11 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
                         IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER;
                 throw new IdleAccountIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
             }
-            if ( IdentityUtil.getPrimaryDomainName().equals(userStore)) {
+            if (IdentityUtil.getPrimaryDomainName().equals(userStoreDomainName)) {
                 return realm.getUserStoreManager();
             }
-            if (realm.getUserStoreManager().getSecondaryUserStoreManager(userStore) != null) {
-                return realm.getUserStoreManager().getSecondaryUserStoreManager(userStore);
+            if (realm.getUserStoreManager().getSecondaryUserStoreManager(userStoreDomainName) != null) {
+                return realm.getUserStoreManager().getSecondaryUserStoreManager(userStoreDomainName);
             }
             IdleAccIdentificationConstants.ErrorMessages errorEnum =
                     IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER;

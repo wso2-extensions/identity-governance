@@ -44,7 +44,7 @@ import org.wso2.carbon.user.core.service.RealmService;
         immediate = true)
 public class IdleAccountIdentificationComponent {
 
-    private static final Log log = LogFactory.getLog(IdleAccountIdentificationComponent.class);
+    private static final Log LOG = LogFactory.getLog(IdleAccountIdentificationComponent.class);
 
     private IdleAccountIdentificationDataHolder dataHolder = IdleAccountIdentificationDataHolder.getInstance();
 
@@ -64,7 +64,7 @@ public class IdleAccountIdentificationComponent {
     @Deactivate
     protected void deactivate(ComponentContext componentContext) {
 
-        log.debug("Idle Account Identification service is deactivated");
+        LOG.debug("Idle Account Identification service is deactivated");
     }
 
     @Reference(
@@ -75,15 +75,15 @@ public class IdleAccountIdentificationComponent {
             unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Realm Service");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting the Realm Service");
         }
         dataHolder.setRealmService(realmService);
     }
 
     protected void unsetRealmService(RealmService realmService) {
 
-        log.debug("UnSetting the Realm Service");
+        LOG.debug("UnSetting the Realm Service");
         dataHolder.setRealmService(null);
     }
 
