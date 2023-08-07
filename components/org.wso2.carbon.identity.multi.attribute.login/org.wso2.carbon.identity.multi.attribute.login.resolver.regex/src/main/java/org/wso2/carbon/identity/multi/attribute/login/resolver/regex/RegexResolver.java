@@ -138,6 +138,13 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             }
         }
 
+        // Check the users from username by default if there are users found from claims and regex patterns.
+        if (distinctUsers.size() == 0) {
+            List<User> usersList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
+                    loginAttribute, null);
+            distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, usersList);
+        }
+
         /*
         At this point distinctUsers map will contain only one entry if the login identifier is resolved to a single
         user from multiple claims. If the map is empty, that means the login identifier is not resolved to any user.
