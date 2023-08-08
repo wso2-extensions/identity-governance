@@ -112,8 +112,20 @@ public class LiteApiServiceImpl extends LiteApiService {
                                 templateDTO.setKey("resendTemplateName");
                                 initiatedPlatformDTO.setKey("initiated-platform");
                                 Property[] propertiesList = new Property[2];
-                                templateDTO.setValue(properties.get(3).getValue());
-                                initiatedPlatformDTO.setValue(properties.get(1).getValue());
+                                String resendTemplateNameValue = null;
+                                String initiatedPlatformName = null;
+                                for (PropertyDTO property : properties) {
+                                    String key = property.getKey();
+                                    String value = property.getValue();
+                                    if ("resendTemplateName".equals(key)) {
+                                        resendTemplateNameValue = value;
+                                    }
+                                    if ("initiated-platform".equals(key)) {
+                                        initiatedPlatformName = value;
+                                    }
+                                }
+                                templateDTO.setValue(resendTemplateNameValue);
+                                initiatedPlatformDTO.setValue(initiatedPlatformName);
                                 propertiesList[0] = templateDTO;
                                 propertiesList[1] = initiatedPlatformDTO;
                                 notificationResponseBean =
