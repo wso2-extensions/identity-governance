@@ -65,17 +65,6 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             resolveDistinctUsersForClaims(loginAttribute, allowedAttributes, claimManager, userStoreManager,
                     resolvedUserResult);
 
-            /*
-            resolve user if allowed attributes has only username claim,
-            but username claim has no configured regex pattern.
-             */
-            if (allowedAttributes.size() == 1 &&
-                    allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
-                List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
-                        loginAttribute, null);
-                setResolvedUserResult(userList, UserCoreClaimConstants.USERNAME_CLAIM_URI, loginAttribute,
-                        resolvedUserResult, claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI));
-            }
         } catch (UserStoreException e) {
             log.error("Error occurred while resolving user name", e);
         }
@@ -140,9 +129,11 @@ public class RegexResolver implements MultiAttributeLoginResolver {
 
         // Check the users from username by default if there are users found from claims and regex patterns.
         if (distinctUsers.size() == 0) {
-            List<User> usersList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
-                    loginAttribute, null);
-            distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, usersList);
+            if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
+                List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
+                        loginAttribute, null);
+                distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, userList);
+            }
         }
 
         /*
