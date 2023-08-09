@@ -109,8 +109,8 @@ public class LiteApiServiceImpl extends LiteApiService {
                             if(properties.size() > 1) {
                                 Property templateDTO = new Property();
                                 Property initiatedPlatformDTO = new Property();
-                                templateDTO.setKey("resendTemplateName");
-                                initiatedPlatformDTO.setKey("initiated-platform");
+                                templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
+                                initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
                                 Property[] propertiesList = new Property[2];
                                 String resendTemplateNameValue = null;
                                 String initiatedPlatformName = null;
