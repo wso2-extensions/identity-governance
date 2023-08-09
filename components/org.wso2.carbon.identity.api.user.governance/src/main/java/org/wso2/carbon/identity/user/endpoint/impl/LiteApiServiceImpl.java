@@ -117,10 +117,10 @@ public class LiteApiServiceImpl extends LiteApiService {
                                 for (PropertyDTO property : properties) {
                                     String key = property.getKey();
                                     String value = property.getValue();
-                                    if ("resendTemplateName".equals(key)) {
+                                    if (IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME.equals(key)) {
                                         resendTemplateNameValue = value;
                                     }
-                                    if ("initiated-platform".equals(key)) {
+                                    if (IdentityRecoveryConstants.INITIATED_PLATFORM.equals(key)) {
                                         initiatedPlatformName = value;
                                     }
                                 }
