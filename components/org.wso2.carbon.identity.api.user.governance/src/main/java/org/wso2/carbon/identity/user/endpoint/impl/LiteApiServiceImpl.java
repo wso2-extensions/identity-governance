@@ -46,6 +46,7 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.Connec
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.LITE_SIGN_UP;
 import static org.wso2.carbon.identity.recovery.RecoverySteps.CONFIRM_LITE_SIGN_UP;
+import static org.wso2.carbon.identity.recovery.util.Utils.getAccountStateForUserNameWithoutUserDomain;
 
 public class LiteApiServiceImpl extends LiteApiService {
 
@@ -99,10 +100,21 @@ public class LiteApiServiceImpl extends LiteApiService {
             }
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
                 try {
+
+                    boolean userNotConfirmed = true;
+                    String accountState =  getAccountStateForUserNameWithoutUserDomain(user);
+                    if (StringUtils.isNotEmpty(accountState)) {
+                        /*
+                        If the user account is already exist and verified not need to trigger email notification. In
+                        case where account state cannot be retrieved return true to maintain the backward compatibility.
+                         */
+                        userNotConfirmed = IdentityRecoveryConstants.PENDING_LITE_REGISTRATION
+                                .equalsIgnoreCase(accountState);
+                    }
                     boolean isResendVerificationEnabledOnUserExistence =
                             Boolean.parseBoolean(org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig(
                                     LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE, user.getTenantDomain()));
-                    if (isResendVerificationEnabledOnUserExistence) {
+                    if (userNotConfirmed && isResendVerificationEnabledOnUserExistence) {
                         try {
                             ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
                             notificationResponseBean =
@@ -110,13 +122,13 @@ public class LiteApiServiceImpl extends LiteApiService {
                                             CONFIRM_LITE_SIGN_UP.toString(),
                                             NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, null);
                         } catch (IdentityRecoveryException ex) {
-                            Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
+                            Utils.handleInternalServerError(Constants.SERVER_ERROR, ex.getErrorCode(), LOG, ex);
                         }
                     } else {
                         Utils.handleConflict(e.getMessage(), e.getErrorCode());
                     }
                 } catch (IdentityEventException ex) {
-                    Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
+                    Utils.handleInternalServerError(Constants.SERVER_ERROR, ex.getErrorCode(), LOG, ex);
                 }
             } else {
                 Utils.handleBadRequest(e.getMessage(), e.getErrorCode());

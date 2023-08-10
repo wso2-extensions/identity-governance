@@ -1215,6 +1215,33 @@ public class Utils {
         return accountState;
     }
 
+
+    /**
+     * Return user account state for user with username which is not domain qualified.
+     *
+     * @param user  User without domain qualified username.
+     * @return account state.
+     */
+    public static String getAccountStateForUserNameWithoutUserDomain(User user) {
+
+        String accountState = StringUtils.EMPTY;
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            String username = UserCoreUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+            Map<String, String> claimMap =
+                    ((AbstractUserStoreManager) userStoreManager).getUserClaimValues(username,
+                            new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default");
+            if (!claimMap.isEmpty() && claimMap.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)) {
+                    accountState = claimMap.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+            }
+        } catch (UserStoreException e) {
+            log.error("Error occurred while retrieving UserStoreManager.", e);
+        }
+        return accountState;
+    }
+
     /**
      * When updating email/mobile claim value, sending the verification notification can be controlled by sending
      * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
