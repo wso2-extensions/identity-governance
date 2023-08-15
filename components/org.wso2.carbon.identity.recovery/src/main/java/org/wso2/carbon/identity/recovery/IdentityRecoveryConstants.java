@@ -70,6 +70,8 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String EMAIL_TEMPLATE_NAME = "templateName";
+    public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
+    public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
