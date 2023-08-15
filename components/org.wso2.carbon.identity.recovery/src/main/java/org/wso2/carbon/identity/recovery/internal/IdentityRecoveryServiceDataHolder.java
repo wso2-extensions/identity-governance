@@ -26,13 +26,19 @@ import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 public class IdentityRecoveryServiceDataHolder {
 
@@ -52,6 +58,9 @@ public class IdentityRecoveryServiceDataHolder {
     private MultiAttributeLoginService multiAttributeLoginService;
     private InputValidationManagementService inputValidationMgtService;
     private AuthAttributeHandlerManager authAttributeHandlerManager;
+    private FederatedAssociationManager federatedAssociationManager;
+    private IdentityDataStoreService identityDataStoreService;
+    private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -302,5 +311,25 @@ public class IdentityRecoveryServiceDataHolder {
     public void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
 
         this.inputValidationMgtService = inputValidationMgtService;
+    }
+
+    public FederatedAssociationManager getFederatedAssociationManager() {
+
+        return federatedAssociationManager;
+    }
+
+    public void setFederatedAssociationManager(FederatedAssociationManager federatedAssociationManager) {
+
+        this.federatedAssociationManager = federatedAssociationManager;
+    }
+
+    public IdentityDataStoreService getIdentityDataStoreService() {
+
+        return identityDataStoreService;
+    }
+
+    public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        this.identityDataStoreService = identityDataStoreService;
     }
 }
