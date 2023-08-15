@@ -106,38 +106,30 @@ public class LiteApiServiceImpl extends LiteApiService {
                     if (isResendVerificationEnabledOnUserExistence) {
                         try {
                             ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
-                            if(properties.size() > 1) {
-                                Property templateDTO = new Property();
-                                Property initiatedPlatformDTO = new Property();
-                                templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
-                                initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
-                                Property[] propertiesList = new Property[2];
-                                String resendTemplateNameValue = null;
-                                String initiatedPlatformName = null;
+                            Property[] propertiesList = null;
+                            if (properties.size() > 1) {
+                                propertiesList = new Property[2];
                                 for (PropertyDTO property : properties) {
                                     String key = property.getKey();
                                     String value = property.getValue();
                                     if (IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME.equals(key)) {
-                                        resendTemplateNameValue = value;
+                                        Property templateDTO = new Property();
+                                        templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
+                                        templateDTO.setValue(value);
+                                        propertiesList[0] = templateDTO;
                                     }
                                     if (IdentityRecoveryConstants.INITIATED_PLATFORM.equals(key)) {
-                                        initiatedPlatformName = value;
+                                        Property initiatedPlatformDTO = new Property();
+                                        initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
+                                        initiatedPlatformDTO.setValue(value);
+                                        propertiesList[1] = initiatedPlatformDTO;
                                     }
                                 }
-                                templateDTO.setValue(resendTemplateNameValue);
-                                initiatedPlatformDTO.setValue(initiatedPlatformName);
-                                propertiesList[0] = templateDTO;
-                                propertiesList[1] = initiatedPlatformDTO;
-                                notificationResponseBean =
-                                        resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
-                                                CONFIRM_LITE_SIGN_UP.toString(),
-                                                NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, propertiesList);
-                            } else {
-                                notificationResponseBean =
-                                        resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
-                                                CONFIRM_LITE_SIGN_UP.toString(),
-                                                NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, null);
                             }
+                            notificationResponseBean =
+                                    resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
+                                            CONFIRM_LITE_SIGN_UP.toString(),
+                                            NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, propertiesList);
                         } catch (IdentityRecoveryException ex) {
                             Utils.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, ex);
                         }
