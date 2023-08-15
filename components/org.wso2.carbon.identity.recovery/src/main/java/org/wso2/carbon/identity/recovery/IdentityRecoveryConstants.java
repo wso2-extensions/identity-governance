@@ -410,7 +410,11 @@ public class IdentityRecoveryConstants {
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
 
-        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
+        ,
+        // Idle User Account Identification related Error messages.
+        ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005",
+                "Error retrieving the associated user for the user: %s in the tenant %s.");
 
         private final String code;
         private final String message;

@@ -312,10 +312,7 @@ public class UserAccountRecoveryManager {
                 resultedUserList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, domain,
                         UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
                 if (resultedUserList.size() > 1) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Multiple users matched for given claims set : " +
-                                Arrays.toString(resultedUserList.toArray()));
-                    }
+                    log.warn("Multiple users matched for given claims set: " + claims.keySet());
                     throw Utils.handleClientException(
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
                 }

@@ -1744,9 +1744,8 @@ public class UserSelfRegistrationManager {
                         .isNotEmpty(preferredChannel)) {
                     claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                 }
-                userStoreManager
-                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), Utils.generateRandomPassword(12),
-                                userRoles, claimsMap, null);
+                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                        new String(Utils.generateRandomPassword(12)), userRoles, claimsMap, null);
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {

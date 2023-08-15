@@ -18,7 +18,7 @@
 
     <groupId>org.wso2.carbon.identity.governance</groupId>
     <artifactId>identity-governance</artifactId>
-    <version>1.8.48</version>
+    <version>1.8.56-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Governance Module</name>
@@ -37,7 +37,7 @@
         <url>https://github.com/wso2-extensions/identity-governance.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-governance.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-governance.git</connection>
-        <tag>v1.8.48</tag>
+        <tag>v1.1.0-SNAPSHOT</tag>
     </scm>
 
 
@@ -60,6 +60,7 @@
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
         <module>components/org.wso2.carbon.identity.auth.attribute.handler</module>
+        <module>components/org.wso2.carbon.identity.password.expiry</module>
 
         <module>service-stubs/identity</module>
 
@@ -76,6 +77,7 @@
         <module>features/org.wso2.carbon.identity.tenant.resource.manager.feature</module>
         <module>features/org.wso2.carbon.identity.multi.attribute.login.service.server.feature</module>
         <module>features/org.wso2.carbon.identity.auth.attribute.handler.server.feature</module>
+        <module>features/org.wso2.carbon.identity.password.expiry.server.feature</module>
     </modules>
 
     <dependencyManagement>
@@ -333,6 +335,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
+                <artifactId>org.wso2.carbon.identity.password.expiry</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.account.suspension.notification.task</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -476,6 +483,11 @@
             <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.user.core</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.user.api</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
