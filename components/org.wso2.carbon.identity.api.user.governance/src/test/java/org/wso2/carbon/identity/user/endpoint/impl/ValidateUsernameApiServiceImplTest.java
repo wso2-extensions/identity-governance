@@ -105,7 +105,7 @@ public class ValidateUsernameApiServiceImplTest {
         Mockito.doReturn(false).when(userSelfRegistrationManager)
                 .isSelfRegistrationEnabled(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         Mockito.doReturn(true).when(userSelfRegistrationManager)
-                .isUsernameAlreadyTaken("test", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                .isUsernameAlreadyTaken("test", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, true);
     }
 
     @AfterMethod

@@ -1278,8 +1278,25 @@ public class UserSelfRegistrationManager {
      * @param tenantDomain Tenant domain in the request.
      * @return True if username is already taken, else false.
      * @throws IdentityRecoveryException Error occurred while retrieving user realm.
+     * @deprecated Use {@link #isUsernameAlreadyTaken(String, String, boolean)} instead.
      */
+    @Deprecated
     public boolean isUsernameAlreadyTaken(String username, String tenantDomain) throws IdentityRecoveryException {
+
+        return isUsernameAlreadyTaken(username, tenantDomain, true);
+    }
+
+    /**
+     * Returns whether a given username is already taken.
+     *
+     * @param username Username
+     * @param tenantDomain Tenant domain in the request.
+     * @param isSaaSEnabled Whether SaaS is enabled for the app or not.
+     * @return True if username is already taken, else false.
+     * @throws IdentityRecoveryException Error occurred while retrieving user realm.
+     */
+    public boolean isUsernameAlreadyTaken(String username, String tenantDomain, boolean isSaaSEnabled)
+            throws IdentityRecoveryException {
 
         boolean isUsernameAlreadyTaken = true;
         WorkflowManagementService workflowService = new WorkflowManagementServiceImpl();
@@ -1293,9 +1310,16 @@ public class UserSelfRegistrationManager {
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
-                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
-                        workflowService.entityHasPendingWorkflowsOfType(userEntity,
-                                IdentityRecoveryConstants.ADD_USER_EVENT);
+                if (!IdentityUtil.isTenantValidationForNonSaaSUsernameEnabled() || isSaaSEnabled) {
+                    isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
+                            workflowService.entityHasPendingWorkflowsOfType(userEntity,
+                                    IdentityRecoveryConstants.ADD_USER_EVENT);
+                } else {
+                    userEntity.setEntityId(username);
+                    isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(username) ||
+                            workflowService.entityHasPendingWorkflowsOfType(userEntity,
+                                    IdentityRecoveryConstants.ADD_USER_EVENT);
+                }
             }
         } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException | WorkflowException e) {
             throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
@@ -1435,8 +1459,24 @@ public class UserSelfRegistrationManager {
      *
      * @param tenantDomain Tenant domain.
      * @return True if the tenant domain of the user is valid / available, else false.
+     * @deprecated Use {@link #isMatchUserNameRegex(String, String, boolean)} instead.
      */
+    @Deprecated
     public boolean isMatchUserNameRegex(String tenantDomain, String username) throws IdentityRecoveryException {
+
+        return isMatchUserNameRegex(tenantDomain, username, true);
+    }
+
+    /**
+     * Checks whether the given tenant domain of a username is valid / exists or not.
+     *
+     * @param tenantDomain Tenant domain.
+     * @param username     Username.
+     * @param isSaaSEnabled Whether SaaS is enabled for the app or not.
+     * @return True if the tenant domain of the user is valid / available, else false.
+     */
+    public boolean isMatchUserNameRegex(String tenantDomain, String username, boolean isSaaSEnabled)
+            throws IdentityRecoveryException {
 
         boolean isValidUsername;
         String userDomain = IdentityUtil.extractDomainFromName(username);
@@ -1445,7 +1485,12 @@ public class UserSelfRegistrationManager {
             RealmConfiguration realmConfiguration = userRealm.getUserStoreManager().getSecondaryUserStoreManager
                     (userDomain).getRealmConfiguration();
             String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            String userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(tenantAwareUsername);
+            String userStoreDomainAwareUsername;
+            if (!IdentityUtil.isTenantValidationForNonSaaSUsernameEnabled() || isSaaSEnabled) {
+                userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(tenantAwareUsername);
+            } else {
+                userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(username);
+            }
             isValidUsername = checkUserNameValid(userStoreDomainAwareUsername, realmConfiguration);
 
         } catch (CarbonException e) {

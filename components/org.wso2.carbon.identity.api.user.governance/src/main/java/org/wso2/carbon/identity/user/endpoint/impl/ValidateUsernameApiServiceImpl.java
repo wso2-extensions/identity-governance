@@ -47,6 +47,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
 
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
     private static final String SKIP_SIGN_UP_ENABLE_CHECK_KEY = "skipSignUpEnableCheck";
+    private static final String IS_SAAS_ENABLED = "isSaaSEnabled";
     private static final String USERNAME_JAVA_REG_EX_VIOLATION_ERROR_MSG = "UsernameJavaRegExViolationErrorMsg";
 
     @Override
@@ -68,11 +69,14 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
             String realm = null;
             List<PropertyDTO> propertyDTOList = user.getProperties();
             boolean skipSelfSignUpEnabledCheck = false;
+            boolean isSaaSEnabled = true;
 
             if (CollectionUtils.isNotEmpty(propertyDTOList)) {
                 for (PropertyDTO propertyDTO : propertyDTOList) {
                     if (SKIP_SIGN_UP_ENABLE_CHECK_KEY.equalsIgnoreCase(propertyDTO.getKey())) {
                         skipSelfSignUpEnabledCheck = Boolean.parseBoolean(propertyDTO.getValue());
+                    } else if (IS_SAAS_ENABLED.equalsIgnoreCase(propertyDTO.getKey())) {
+                        isSaaSEnabled = Boolean.parseBoolean(propertyDTO.getValue());
                     } else if (IdentityManagementEndpointConstants.TENANT_DOMAIN.equals(propertyDTO.getKey())) {
                         tenantDomain = propertyDTO.getValue();
                     } else if (IdentityManagementEndpointConstants.REALM.equals(propertyDTO.getKey())) {
@@ -111,13 +115,13 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED);
                 errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
-            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(username, tenantDomain)) {
+            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(username, tenantDomain, isSaaSEnabled)) {
                 logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
                         username, SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS);
                 errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
-            } else if (!userSelfRegistrationManager.isMatchUserNameRegex(tenantDomain, username)) {
+            } else if (!userSelfRegistrationManager.isMatchUserNameRegex(tenantDomain, username, isSaaSEnabled)) {
                 logDebug(String.format("%s is an invalid user name. Hence returning code %s: ",
                         username, SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
                 errorDTO.setCode(SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID);
