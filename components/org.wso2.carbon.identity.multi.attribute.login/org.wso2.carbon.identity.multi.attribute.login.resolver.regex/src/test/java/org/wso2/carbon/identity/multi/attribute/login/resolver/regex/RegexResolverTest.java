@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.internal.RegexResolverServiceDataHolder;
@@ -43,16 +44,17 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertTrue;
 
 public class RegexResolverTest {
 
     private RegexResolver regexResolver;
-    private List<User> userList;
-    private List<String> allowedAttributes;
-    private User user;
-    private static final String TEST_CLAIM_URI = "http://wso2.org/claims/telephone";
-    private static final String TEST_CLAIM_REGEX = "^(\\+\\d{1,2}\\s?)?1?\\-?\\.?\\s?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$";
-    private static final String TEST_LOGIN_IDENTIFIER = "+99777521771";
+    private static final String TELEPHONE_CLAIM_URI = "http://wso2.org/claims/telephone";
+    private static final String TELEPHONE_CLAIM_REGEX = "^(\\+\\d{1,2}\\s?)?1?\\-?\\.?\\s?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}$";
+    private static final String USERNAME_CLAIM_URI = "http://wso2.org/claims/username";
+    private static final String USERNAME_CLAIM_REGEX = "^[a-zA-Z0–9._-]{3,}$";
+    private static final String TEST_LOGIN_IDENTIFIER1 = "+99777521771";
+    private static final String TEST_LOGIN_IDENTIFIER2 = "chathuranga";
     private static final String TEST_TENANT_DOMAIN = "testTenantDomain";
     private MockedStatic<RegexResolverServiceDataHolder> mockedRegexResolverServiceDataHolder;
     private MockedStatic<ResolvedUserResult> mockedResolvedUserResult;
@@ -97,16 +99,11 @@ public class RegexResolverTest {
 
         openMocks(this);
         regexResolver = new RegexResolver();
-        allowedAttributes = new ArrayList<>();
-        allowedAttributes.add(TEST_CLAIM_URI);
-        user = new User();
-        user.setUsername("chathuranga");
-        userList = new ArrayList<>();
-        userList.add(user);
     }
 
-    @Test
-    public void testResolveUser() throws Exception {
+    @Test(dataProvider = "resolveUserData")
+    public void testResolveUser(String claimURI, String claimRegex, List<String> allowedAttributes,
+                                String loginIdentifier, List<User> usersList) throws Exception {
 
         mockedRegexResolverServiceDataHolder.when(RegexResolverServiceDataHolder::getInstance)
                 .thenReturn(mockRegexResolverServiceDataHolder);
@@ -115,16 +112,50 @@ public class RegexResolverTest {
         when(mockTenantManager.getTenantId(TEST_TENANT_DOMAIN)).thenReturn(-1234);
         when(mockUserRealm.getClaimManager()).thenReturn(mockClaimManager);
         when(mockUserRealm.getUserStoreManager()).thenReturn(mockUserStoreManager);
-        when(mockClaimManager.getClaim(TEST_CLAIM_URI)).thenReturn(mockClaim);
-        when(mockClaim.getRegEx()).thenReturn(TEST_CLAIM_REGEX);
+        when(mockClaimManager.getClaim(claimURI)).thenReturn(mockClaim);
+        when(mockClaim.getRegEx()).thenReturn(claimRegex);
         when(UserResolverUtil.getUserRealm(TEST_TENANT_DOMAIN)).thenReturn(mockUserRealm);
         when(UserResolverUtil.getUserStoreManager(TEST_TENANT_DOMAIN)).thenReturn(mockUserStoreManager);
-        when(mockUserStoreManager.getUserListWithID(TEST_CLAIM_URI, TEST_LOGIN_IDENTIFIER, null)).
-                thenReturn(userList);
-        regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER, allowedAttributes, TEST_TENANT_DOMAIN, "hint");
-        assertEquals(regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER, allowedAttributes,
-                TEST_TENANT_DOMAIN).getUser().getUsername(), "chathuranga");
-        assertNotEquals(regexResolver.resolveUser(TEST_LOGIN_IDENTIFIER,
-                allowedAttributes, TEST_TENANT_DOMAIN).getUser().getUsername(), "+99777521771");
+        when(mockUserStoreManager.getUserListWithID(claimURI, loginIdentifier, null)).
+                thenReturn(usersList);
+        ResolvedUserResult result = regexResolver.resolveUser(loginIdentifier, allowedAttributes, TEST_TENANT_DOMAIN,
+                "hint");
+
+        if (usersList.size() == 1) {
+            assertEquals(result.getUser().getUsername(), "chathuranga");
+            assertNotEquals(result.getUser().getUsername(), "+99777521771");
+        } else {
+            assertTrue(result.getErrorMessage().contains("Found multiple users for"));
+        }
+    }
+
+    @DataProvider(name = "resolveUserData")
+    private Object[][] resolveUserData() {
+
+        User user1 = new User();
+        user1.setUserID("1234");
+        user1.setUsername("chathuranga");
+        List<User> userList1 = new ArrayList<>();
+        userList1.add(user1);
+
+        User user2 = new User();
+        user2.setUserID("5678");
+        user2.setUsername("John");
+        List<User> userList2 = new ArrayList<>();
+        userList2.add(user1);
+        userList2.add(user2);
+
+        List<String> allowedAttributes1 = new ArrayList<>();
+        allowedAttributes1.add(TELEPHONE_CLAIM_URI);
+        List<String> allowedAttributes2 = new ArrayList<>();
+        allowedAttributes2.add(USERNAME_CLAIM_URI);
+
+        return new Object[][]{
+                {TELEPHONE_CLAIM_URI, TELEPHONE_CLAIM_REGEX, allowedAttributes1, TEST_LOGIN_IDENTIFIER1, userList1},
+                {TELEPHONE_CLAIM_URI, TELEPHONE_CLAIM_REGEX, allowedAttributes1, TEST_LOGIN_IDENTIFIER1, userList2},
+                {USERNAME_CLAIM_URI, USERNAME_CLAIM_REGEX, allowedAttributes2, TEST_LOGIN_IDENTIFIER2, userList1},
+                {USERNAME_CLAIM_URI, "", allowedAttributes2, TEST_LOGIN_IDENTIFIER2, userList1},
+                {USERNAME_CLAIM_URI, "", allowedAttributes2, TEST_LOGIN_IDENTIFIER2, userList2}
+        };
     }
 }

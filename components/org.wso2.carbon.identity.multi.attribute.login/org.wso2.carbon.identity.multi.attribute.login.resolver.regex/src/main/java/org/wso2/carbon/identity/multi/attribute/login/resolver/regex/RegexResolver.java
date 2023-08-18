@@ -144,6 +144,9 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             Map.Entry<String, List<User>> entry = distinctUsers.entrySet().iterator().next();
             setResolvedUserResult(entry.getValue(), entry.getKey(), loginAttribute, resolvedUserResult,
                     claimManager.getClaim(entry.getKey()));
+        } else {
+            resolvedUserResult.setErrorMessage("Found multiple users for " + allowedAttributes +
+                    " to value " + loginAttribute);
         }
     }
 
