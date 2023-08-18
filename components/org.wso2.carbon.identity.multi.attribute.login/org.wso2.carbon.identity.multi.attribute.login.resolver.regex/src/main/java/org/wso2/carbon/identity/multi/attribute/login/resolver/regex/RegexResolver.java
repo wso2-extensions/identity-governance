@@ -127,7 +127,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             }
         }
 
-        // Check the users from username by default if there are users found from claims and regex patterns.
+        // Check the users from username by default if there are no users found from claims and regex patterns.
         if (distinctUsers.size() == 0) {
             if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
                 List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
