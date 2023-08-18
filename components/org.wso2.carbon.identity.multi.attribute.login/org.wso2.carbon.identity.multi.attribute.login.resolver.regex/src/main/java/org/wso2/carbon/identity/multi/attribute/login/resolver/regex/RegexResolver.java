@@ -80,6 +80,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
         Set<String> uniqueUserIds = new HashSet<>();
         Map<String, List<User>> distinctUsers = new HashMap<>();
 
+        // Resolve the user from the regex matching.
         for (String claimURI : allowedAttributes) {
             Claim claim = claimManager.getClaim(claimURI);
             if (claim == null || StringUtils.isBlank(claim.getRegEx())) {
@@ -127,12 +128,19 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             }
         }
 
-        // Check the users from username by default if there are no users found from claims and regex patterns.
-        if (distinctUsers.size() == 0) {
-            if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
-                List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
-                        loginAttribute, null);
-                distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, userList);
+        // Check the users from username by default if there is no regex for username claim.
+        Claim usernameClaim = claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI);
+        if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)
+                && usernameClaim.getRegEx().isEmpty()) {
+            List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
+                    loginAttribute, null);
+            if (!userList.isEmpty()) {
+                List<User> allowedDistinctUsersForClaim = userList.stream()
+                        .filter(user -> uniqueUserIds.add(user.getUserID()))
+                        .collect(Collectors.toList());
+                if (allowedDistinctUsersForClaim.size() == 1) {
+                    distinctUsers.put(UserCoreClaimConstants.USERNAME_CLAIM_URI, allowedDistinctUsersForClaim);
+                }
             }
         }
 
