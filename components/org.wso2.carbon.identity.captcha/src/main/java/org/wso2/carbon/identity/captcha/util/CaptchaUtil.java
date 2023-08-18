@@ -693,6 +693,16 @@ public class CaptchaUtil {
     }
 
     /**
+     * Check whether ReCaptcha is forcefully enabled for all tenants.
+     *
+     * @return True if ReCaptcha is forcefully enabled for all tenants.
+     */
+    public static Boolean isReCaptchaForcefullyEnabledForAllTenants() {
+
+        return CaptchaDataHolder.getInstance().isForcefullyEnabledRecaptchaForAllTenants();
+    }
+
+    /**
      * Check whether ReCaptcha is enabled for the given flow.
      *
      * @param configName    Name of the configuration.
