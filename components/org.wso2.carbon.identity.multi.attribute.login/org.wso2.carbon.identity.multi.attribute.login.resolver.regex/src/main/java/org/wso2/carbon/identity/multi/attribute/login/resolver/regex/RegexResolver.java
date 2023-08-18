@@ -131,7 +131,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
         // Check the users from username by default if there is no regex for username claim.
         Claim usernameClaim = claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI);
         if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)
-                && usernameClaim.getRegEx().isEmpty()) {
+                && StringUtils.isBlank(usernameClaim.getRegEx())) {
             List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
                     loginAttribute, null);
             if (!userList.isEmpty()) {
