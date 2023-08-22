@@ -70,10 +70,6 @@ public class EnforcePasswordResetComponent {
         }
     }
 
-    public static RealmService getRealmService() {
-        return EnforcePasswordResetComponentDataHolder.getInstance().getRealmService();
-    }
-
     @Reference(
             name = "user.realmservice.default",
             service = RealmService.class,

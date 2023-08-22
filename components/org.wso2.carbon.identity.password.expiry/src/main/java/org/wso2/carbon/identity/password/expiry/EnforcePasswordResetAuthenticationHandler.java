@@ -73,9 +73,6 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
                 AUTHENTICATOR_TYPE)) {
             return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
         }
-        if (PasswordPolicyUtils.isAdminUser(authenticatedUser.getTenantDomain(), authenticatedUser.getUserName())) {
-            return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
-        }
         if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
             return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
         }
