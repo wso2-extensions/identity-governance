@@ -64,7 +64,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         }
 
         try {
-            String tenantDomain = MultitenantUtils.getTenantDomain(username);
+            String tenantDomain = getTenantDomainFromContext();
             String realm = null;
             List<PropertyDTO> propertyDTOList = user.getProperties();
             boolean skipSelfSignUpEnabledCheck = false;
@@ -218,6 +218,21 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
             throw new IdentityRecoveryClientException(String.format("Tenant domain in the request: %s does not match "
                     + "with the domain specified in the URL: %s", tenantDomainInValidationRequest, tenantDomain));
         }
+        return tenantDomain;
+    }
+
+    private String getTenantDomainFromContext() {
+
+        String tenantDomain = null;
+        if (IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT) != null) {
+            tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants
+                    .TENANT_NAME_FROM_CONTEXT);
+        }
+
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+
         return tenantDomain;
     }
 }
