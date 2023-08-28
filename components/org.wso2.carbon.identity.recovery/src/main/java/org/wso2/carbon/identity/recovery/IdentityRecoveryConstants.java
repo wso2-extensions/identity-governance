@@ -354,6 +354,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code: '%s'"),
         ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
                 "User account recovery validation failed for user account: '%s'"),
+        ERROR_CODE_API_DISABLED("UAR-10017", "Recovery API is disabled"),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "
