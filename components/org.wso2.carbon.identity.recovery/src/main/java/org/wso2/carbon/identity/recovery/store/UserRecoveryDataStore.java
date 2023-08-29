@@ -31,9 +31,9 @@ public interface UserRecoveryDataStore {
 
     void storeConfirmationCode(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
 
-    void updateOTPAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException;
+    void updateAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException;
 
-    void updateOTPResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException;
+    void updateCodeResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException;
 
     /*
      * returns UserRecoveryData if the code is validated. Otherwise returns an exception.

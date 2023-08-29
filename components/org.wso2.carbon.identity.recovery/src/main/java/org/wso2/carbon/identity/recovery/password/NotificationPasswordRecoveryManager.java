@@ -667,7 +667,7 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
                         confirmationCode);
             }
-            userRecoveryDataStore.updateOTPAttempt(confirmationCode, attempt + 1);
+            userRecoveryDataStore.updateAttempt(confirmationCode, attempt + 1);
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);

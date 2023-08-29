@@ -128,7 +128,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt1.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt1.setString(9, recoveryDataDO.getRecoveryFlowId());
 
-            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_OTP_DATA);
+            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_FLOW_DATA);
             prepStmt2.setString(1, recoveryDataDO.getRecoveryFlowId());
             prepStmt2.setString(2, null);
             prepStmt2.setInt(3, 0);
@@ -143,7 +143,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_OTP_DATA, null, e);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_FLOW_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt1);
             IdentityDatabaseUtil.closeStatement(prepStmt2);
@@ -170,7 +170,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt1.setString(8, recoveryDataDO.getRemainingSetIds());
             prepStmt1.setString(9, recoveryDataDO.getRecoveryFlowId());
 
-            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_RECOVERY_OTP_DATA);
+            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_RECOVERY_FLOW_DATA);
             prepStmt2.setString(1, recoveryDataDO.getSecret());
             prepStmt2.setString(2, recoveryDataDO.getRecoveryFlowId());
 
@@ -189,12 +189,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public void updateOTPAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
+    public void updateAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_OTP_ATTEMPT);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_ATTEMPT);
             prepStmt.setInt(1, attempt);
             prepStmt.setString(2, recoveryFlowId);
             prepStmt.execute();
@@ -202,7 +202,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_OTP_DATA, null, e);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -210,12 +210,12 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public void updateOTPResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
+    public void updateCodeResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_OTP_RESEND_COUNT);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_CODE_RESEND_COUNT);
             prepStmt.setInt(1, resendCount);
             prepStmt.setString(2, recoveryFlowId);
             prepStmt.execute();
@@ -223,7 +223,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_OTP_DATA, null, e);
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -393,7 +393,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Boolean isOperationSuccess = false;
         Enum description = ERROR_CODE_INVALID_FLOW_ID;
         try {
-            String sql1 = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID;
+            String sql1 = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID;
             prepStmt1 = connection.prepareStatement(sql1);
             prepStmt1.setString(1, recoveryFlowId);
 
@@ -470,7 +470,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection(false);
 
         try {
-            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID;
+            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID;
             prepStmt = connection.prepareStatement(sql);
             prepStmt.setString(1, recoveryDataDO.getRecoveryFlowId());
 
@@ -838,7 +838,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt1.setString(1, recoveryFlowId);
             prepStmt1.execute();
 
-            String sql2 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_OTP_DATA_BY_RECOVERY_FLOW_ID;
+            String sql2 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_FLOW_DATA_BY_RECOVERY_FLOW_ID;
 
             prepStmt2 = connection.prepareStatement(sql2);
             prepStmt2.setString(1, recoveryFlowId);

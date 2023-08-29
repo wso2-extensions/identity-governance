@@ -1010,7 +1010,7 @@ public class UserAccountRecoveryManager {
     public void updateRecoveryDataAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.updateOTPAttempt(recoveryFlowId, attempt);
+        userRecoveryDataStore.updateAttempt(recoveryFlowId, attempt);
     }
 
     /**
@@ -1022,7 +1022,7 @@ public class UserAccountRecoveryManager {
     public void updateRecoveryDataResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.updateOTPResendCount(recoveryFlowId, resendCount);
+        userRecoveryDataStore.updateCodeResendCount(recoveryFlowId, resendCount);
     }
 
     /**

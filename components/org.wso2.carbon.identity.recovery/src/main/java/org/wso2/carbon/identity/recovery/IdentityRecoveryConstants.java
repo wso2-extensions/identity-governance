@@ -291,8 +291,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
         ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
-        ERROR_CODE_STORING_RECOVERY_OTP_DATA("20063", "Error while storing recovery data"),
-        ERROR_CODE_UPDATING_RECOVERY_OTP_DATA("20064", "Error while updating recovery data"),
+        ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data"),
+        ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data"),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -686,22 +686,22 @@ public class IdentityRecoveryConstants {
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND USER_DOMAIN = ? " +
                 "AND TENANT_ID = ? AND STEP = ?";
 
-        public static final String STORE_RECOVERY_OTP_DATA = "INSERT INTO IDN_RECOVERY_OTP_DATA "
-                + "(RECOVERY_FLOW_ID, OTP, ATTEMPT, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
+        public static final String STORE_RECOVERY_FLOW_DATA = "INSERT INTO IDN_RECOVERY_FLOW_DATA "
+                + "(RECOVERY_FLOW_ID, CODE, ATTEMPT, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
 
-        public static final String UPDATE_RECOVERY_OTP_DATA = "UPDATE IDN_RECOVERY_OTP_DATA SET OTP = ? "
+        public static final String UPDATE_RECOVERY_FLOW_DATA = "UPDATE IDN_RECOVERY_FLOW_DATA SET CODE = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String UPDATE_OTP_ATTEMPT = "UPDATE IDN_RECOVERY_OTP_DATA SET ATTEMPT = ? "
+        public static final String UPDATE_ATTEMPT = "UPDATE IDN_RECOVERY_FLOW_DATA SET ATTEMPT = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String UPDATE_OTP_RESEND_COUNT = "UPDATE IDN_RECOVERY_OTP_DATA SET RESEND_COUNT = ? "
+        public static final String UPDATE_CODE_RESEND_COUNT = "UPDATE IDN_RECOVERY_FLOW_DATA SET RESEND_COUNT = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_OTP_DATA "
+        public static final String LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_FLOW_DATA "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String INVALIDATE_OTP_DATA_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_OTP_DATA WHERE " +
+        public static final String INVALIDATE_FLOW_DATA_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_FLOW_DATA WHERE " +
                 "RECOVERY_FLOW_ID = ?";
     }
 
