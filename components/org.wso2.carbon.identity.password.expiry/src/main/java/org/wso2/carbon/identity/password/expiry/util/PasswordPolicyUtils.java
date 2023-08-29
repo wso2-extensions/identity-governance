@@ -18,11 +18,10 @@
 
 package org.wso2.carbon.identity.password.expiry.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.exception.PostAuthenticationFailedException;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
@@ -34,7 +33,6 @@ import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -50,8 +48,6 @@ import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyC
  */
 public class PasswordPolicyUtils {
 
-    private static final Log log = LogFactory.getLog(PasswordPolicyUtils.class);
-
     /**
      * Get the property names required by the password expiry policy.
      *
@@ -62,7 +58,7 @@ public class PasswordPolicyUtils {
         List<String> properties = new ArrayList<>();
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
-        return properties.toArray(new String[properties.size()]);
+        return properties.toArray(new String[0]);
     }
 
     /**
@@ -202,6 +198,7 @@ public class PasswordPolicyUtils {
      * @return The last password updated time.
      * @throws PostAuthenticationFailedException
      */
+    @SuppressFBWarnings("FORMAT_STRING_MANIPULATION")
     private static String getLastPasswordUpdatedTime(String tenantAwareUsername, UserStoreManager userStoreManager,
                                                      UserRealm userRealm) throws PostAuthenticationFailedException {
 
@@ -222,7 +219,8 @@ public class PasswordPolicyUtils {
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_CLAIM_MAPPINGS.getCode(),
-                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_CLAIM_MAPPINGS.getMessage() + claimURI);
+                    String.format(PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_CLAIM_MAPPINGS.getMessage(),
+                            claimURI));
         }
 
         return lastPasswordUpdatedTime;
@@ -281,13 +279,14 @@ public class PasswordPolicyUtils {
         String serverUrl;
         try {
             if (IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
-                basePath = ServiceURLBuilder.create().addPath(new String[]{PASSWORD_RESET_PAGE}).setTenant(tenantDomain)
+                basePath = ServiceURLBuilder.create().addPath(PASSWORD_RESET_PAGE).setTenant(tenantDomain)
                         .build().getAbsolutePublicURL();
             } else {
                 serverUrl = ServiceURLBuilder.create().build().getAbsolutePublicURL();
                 if (StringUtils.isNotBlank(tenantDomain) && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME
                         .equalsIgnoreCase(tenantDomain)) {
-                    basePath = serverUrl + "/t/" + tenantDomain + PASSWORD_RESET_PAGE;
+                    // accountrecoveryendpoint application is expecting a query param, if tenanted paths are disabled.
+                    basePath = serverUrl + "/t/" + tenantDomain + PASSWORD_RESET_PAGE + "?tenantDomain=" + tenantDomain;
                 } else {
                     basePath = serverUrl + PASSWORD_RESET_PAGE;
                 }
@@ -298,31 +297,5 @@ public class PasswordPolicyUtils {
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getMessage());
         }
-    }
-
-    /**
-     * This method checks if the user is and admin.
-     *
-     * @param tenantDomain The tenant domain of the user.
-     * @param username     The username of the user.
-     * @return true if password expiry is enabled, false otherwise.
-     * @throws PostAuthenticationFailedException If there is an error while reading system configurations.
-     */
-    public static boolean isAdminUser(String tenantDomain, String username) throws PostAuthenticationFailedException {
-
-        UserRealm userRealm = getUserRealm(tenantDomain);
-        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-        try {
-            if (((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(UserCoreUtil
-                    .removeDomainFromName(username)) != null) {
-                return true;
-            }
-        } catch (UserStoreException e) {
-            throw new PostAuthenticationFailedException(
-                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USERID_FOR_USERNAME.getCode(),
-                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USERID_FOR_USERNAME.getMessage() +
-                            username, e);
-        }
-        return false;
     }
 }

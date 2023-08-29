@@ -56,8 +56,7 @@ public class PasswordChangeHandler extends AbstractEventHandler {
                 .get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
 
         try {
-            if (PasswordPolicyUtils.isAdminUser(tenantDomain, username) ||
-                    !PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
+            if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
                 return;
             }
         } catch (PostAuthenticationFailedException e) {
