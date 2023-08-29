@@ -28,7 +28,10 @@ import java.sql.Timestamp;
  */
 public class UserRecoveryData {
     private User user;
+    private String recoveryFlowId;
     private String secret;
+    private int attempt;
+    private int resendCount;
     private String remainingSetIds;
     private boolean codeExpired;
 
@@ -41,6 +44,15 @@ public class UserRecoveryData {
     public UserRecoveryData(User user, String secret, Enum recoveryScenario, Enum recoveryStep) {
 
         this.user = user;
+        this.secret = secret;
+        this.recoveryScenario = recoveryScenario;
+        this.recoveryStep = recoveryStep;
+    }
+
+    public UserRecoveryData(User user, String recoveryFlowId, String secret, Enum recoveryScenario, Enum recoveryStep) {
+
+        this.user = user;
+        this.recoveryFlowId= recoveryFlowId;
         this.secret = secret;
         this.recoveryScenario = recoveryScenario;
         this.recoveryStep = recoveryStep;
@@ -71,6 +83,31 @@ public class UserRecoveryData {
         this.timeCreated = timeCreated;
     }
 
+    public UserRecoveryData(User user, String recoveryFlowId, String secret, Enum recoveryScenario, Enum recoveryStep,
+                            Timestamp timeCreated) {
+
+        this.user = user;
+        this.recoveryFlowId=recoveryFlowId;
+        this.secret = secret;
+        this.recoveryScenario = recoveryScenario;
+        this.recoveryStep = recoveryStep;
+        this.timeCreated = timeCreated;
+    }
+
+    public UserRecoveryData(User user, String recoveryFlowId, String secret, int attempt, int resendCount,
+                            Enum recoveryScenario, Enum recoveryStep, String remainingSetIds, Timestamp timeCreated) {
+
+        this.user = user;
+        this.recoveryFlowId=recoveryFlowId;
+        this.secret = secret;
+        this.attempt = attempt;
+        this.resendCount = resendCount;
+        this.recoveryScenario = recoveryScenario;
+        this.recoveryStep = recoveryStep;
+        this.remainingSetIds = remainingSetIds;
+        this.timeCreated = timeCreated;
+    }
+
     public Timestamp getTimeCreated() {
 
         return timeCreated;
@@ -79,6 +116,16 @@ public class UserRecoveryData {
     public void setTimeCreated(Timestamp timeCreated) {
 
         this.timeCreated = timeCreated;
+    }
+
+    public String getRecoveryFlowId() {
+
+        return recoveryFlowId;
+    }
+
+    public void setRecoveryFlowId(String recoveryFlowId) {
+
+        this.recoveryFlowId = recoveryFlowId;
     }
 
     public String getRemainingSetIds() {
@@ -96,6 +143,24 @@ public class UserRecoveryData {
     public User getUser() {
 
         return user;
+    }
+
+    public int getAttempt() {
+        return attempt;
+    }
+
+    public void setAttempt(int attempt) {
+
+        this.attempt = attempt;
+    }
+
+    public int getResendCount() {
+        return resendCount;
+    }
+
+    public void setResendCount(int resendCount) {
+
+        this.resendCount = resendCount;
     }
 
     public Enum getRecoveryScenario() {

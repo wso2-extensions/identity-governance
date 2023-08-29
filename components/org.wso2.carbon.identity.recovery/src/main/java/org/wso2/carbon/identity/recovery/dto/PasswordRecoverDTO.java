@@ -33,6 +33,11 @@ public class PasswordRecoverDTO {
     private String message;
 
     /**
+     * Recovery flow id.
+     */
+    private String recoveryFlowId;
+
+    /**
      * User notified channel.
      */
     private String notificationChannel;
@@ -106,6 +111,26 @@ public class PasswordRecoverDTO {
     public void setMessage(String message) {
 
         this.message = message;
+    }
+
+    /**
+     * Get the recovery flow id.
+     *
+     * @return Recovery flow id
+     */
+    public String getRecoveryFlowId() {
+
+        return recoveryFlowId;
+    }
+
+    /**
+     * Set the recovery flow id.
+     *
+     * @param recoveryFlowId Recovery flow id
+     */
+    public void setRecoveryFlowId(String recoveryFlowId) {
+
+        this.recoveryFlowId = recoveryFlowId;
     }
 
     /**

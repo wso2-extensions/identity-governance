@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.sql.Connection;
@@ -58,6 +59,8 @@ import static org.wso2.carbon.identity.event.IdentityEventConstants.EventPropert
 import static org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty.OPERATION_DESCRIPTION;
 import static org.wso2.carbon.identity.event.IdentityEventConstants.EventProperty.OPERATION_STATUS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED;
@@ -93,12 +96,134 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt.setTimestamp(7, new Timestamp(new Date().getTime()),
                     Calendar.getInstance(TimeZone.getTimeZone(UTC)));
             prepStmt.setString(8, recoveryDataDO.getRemainingSetIds());
+            prepStmt.setString(9, recoveryDataDO.getRecoveryFlowId());
             prepStmt.execute();
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void storeInit(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        PreparedStatement prepStmt1 = null;
+        PreparedStatement prepStmt2 = null;
+        try {
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+            prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
+            prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
+            prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
+            prepStmt1.setString(4, recoveryDataDO.getSecret());
+            prepStmt1.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
+            prepStmt1.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
+            prepStmt1.setTimestamp(7, new Timestamp(new Date().getTime()),
+                    Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+            prepStmt1.setString(8, recoveryDataDO.getRemainingSetIds());
+            prepStmt1.setString(9, recoveryDataDO.getRecoveryFlowId());
+
+            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_OTP_DATA);
+            prepStmt2.setString(1, recoveryDataDO.getRecoveryFlowId());
+            prepStmt2.setString(2, null);
+            prepStmt2.setInt(3, 0);
+            prepStmt2.setInt(4, 0);
+            prepStmt2.setTimestamp(5, new Timestamp(new Date().getTime()),
+                    Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+
+            prepStmt1.execute();
+            prepStmt2.execute();
+
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_OTP_DATA, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt1);
+            IdentityDatabaseUtil.closeStatement(prepStmt2);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void storeConfirmationCode(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException {
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        PreparedStatement prepStmt1 = null;
+        PreparedStatement prepStmt2 = null;
+        try {
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+            prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
+            prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
+            prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
+            prepStmt1.setString(4, recoveryDataDO.getSecret());
+            prepStmt1.setString(5, String.valueOf(recoveryDataDO.getRecoveryScenario()));
+            prepStmt1.setString(6, String.valueOf(recoveryDataDO.getRecoveryStep()));
+            prepStmt1.setTimestamp(7, new Timestamp(new Date().getTime()),
+                    Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+            prepStmt1.setString(8, recoveryDataDO.getRemainingSetIds());
+            prepStmt1.setString(9, recoveryDataDO.getRecoveryFlowId());
+
+            prepStmt2 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_RECOVERY_OTP_DATA);
+            prepStmt2.setString(1, recoveryDataDO.getSecret());
+            prepStmt2.setString(2, recoveryDataDO.getRecoveryFlowId());
+
+            prepStmt1.execute();
+            prepStmt2.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_STORING_RECOVERY_DATA, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt1);
+            IdentityDatabaseUtil.closeStatement(prepStmt2);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void updateOTPAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        PreparedStatement prepStmt = null;
+        try {
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_OTP_ATTEMPT);
+            prepStmt.setInt(1, attempt);
+            prepStmt.setString(2, recoveryFlowId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_OTP_DATA, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
+    public void updateOTPResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
+
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        PreparedStatement prepStmt = null;
+        try {
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_OTP_RESEND_COUNT);
+            prepStmt.setInt(1, resendCount);
+            prepStmt.setString(2, recoveryFlowId);
+            prepStmt.execute();
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UPDATING_RECOVERY_OTP_DATA, null, e);
         } finally {
             IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
@@ -209,8 +334,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 Enum recoveryStep = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+                String recoveryFlowId = resultSet.getString("RECOVERY_FLOW_ID");
 
-                userRecoveryData = new UserRecoveryData(user, code, recoveryScenario, recoveryStep,
+                userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, recoveryScenario, recoveryStep,
                         timeCreated);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
@@ -242,6 +368,137 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
         }
         throw Utils.handleClientException(ERROR_CODE_INVALID_CODE, code);
+    }
+
+    @Override
+    public UserRecoveryData loadFromRecoveryFlowId(String recoveryFlowId, Enum recoveryStep)
+            throws IdentityRecoveryException {
+
+        handleRecoveryDataEventPublishing(PRE_GET_USER_RECOVERY_DATA,
+                GET_USER_RECOVERY_DATA_SCENARIO_WITH_CODE_EXPIRY_VALIDATION, null, null, null, null,
+                new UserRecoveryData(null, recoveryFlowId, null, null, recoveryStep));
+
+        PreparedStatement prepStmt1 = null;
+        PreparedStatement prepStmt2 = null;
+        ResultSet resultSet1 = null;
+        ResultSet resultSet2 = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        User user = null;
+        String code = null;
+        int attempt = 0;
+        int resendCount =0;
+        long createdTimeStamp = 0;
+        UserRecoveryData userRecoveryData = null;
+        Boolean isOperationSuccess = false;
+        Enum description = ERROR_CODE_INVALID_FLOW_ID;
+        try {
+            String sql1 = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID;
+            prepStmt1 = connection.prepareStatement(sql1);
+            prepStmt1.setString(1, recoveryFlowId);
+
+            resultSet1 = prepStmt1.executeQuery();
+
+            if (resultSet1.next()) {
+                attempt = resultSet1.getInt("ATTEMPT");
+                resendCount = resultSet1.getInt("RESEND_COUNT");
+                Timestamp timeCreated = resultSet1.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+                createdTimeStamp = timeCreated.getTime();
+            }
+
+            String sql2 = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_DATA_FROM_RECOVERY_FLOW_ID;
+            prepStmt2 = connection.prepareStatement(sql2);
+            prepStmt2.setString(1, recoveryFlowId);
+            prepStmt2.setString(2, String.valueOf(recoveryStep));
+
+            resultSet2 = prepStmt2.executeQuery();
+
+            if (resultSet2.next()) {
+                user = new User();
+                user.setUserName(resultSet2.getString("USER_NAME"));
+                user.setTenantDomain(IdentityTenantUtil.getTenantDomain(resultSet2.getInt("TENANT_ID")));
+                user.setUserStoreDomain(resultSet2.getString("USER_DOMAIN"));
+
+                code = resultSet2.getString("CODE");
+                Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet2.getString("SCENARIO"));
+                String remainingSets = resultSet2.getString("REMAINING_SETS");
+                Timestamp secretCreatedTime = resultSet2.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+
+                userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, attempt, resendCount,
+                        recoveryScenario, recoveryStep, remainingSets, secretCreatedTime);
+                long secretCreatedTimeStamp = secretCreatedTime.getTime();
+                boolean isCodeExpired = isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
+                        userRecoveryData.getRecoveryStep(), secretCreatedTimeStamp, userRecoveryData.getRemainingSetIds());
+                if (isCodeExpired) {
+                    isOperationSuccess = false;
+                    description = ERROR_CODE_EXPIRED_CODE;
+                    throw Utils.handleClientException(ERROR_CODE_EXPIRED_CODE, code);
+                }
+                boolean isRecoveryFlowIdExpired = isRecoveryFlowIdExpired(user.getTenantDomain(), createdTimeStamp,
+                        userRecoveryData.getRemainingSetIds());
+                if (isRecoveryFlowIdExpired) {
+                    isOperationSuccess = false;
+                    description = ERROR_CODE_EXPIRED_FLOW_ID;
+                    throw Utils.handleClientException(ERROR_CODE_EXPIRED_FLOW_ID, recoveryFlowId);
+                }
+                isOperationSuccess = true;
+                description = null;
+                return userRecoveryData;
+            }
+        } catch (SQLException e) {
+            isOperationSuccess = false;
+            description = ERROR_CODE_UNEXPECTED;
+            throw Utils.handleServerException(ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            handleRecoveryDataEventPublishing(POST_GET_USER_RECOVERY_DATA,
+                    GET_USER_RECOVERY_DATA_SCENARIO_WITH_CODE_EXPIRY_VALIDATION, isOperationSuccess, description, code, user,
+                    userRecoveryData);
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet1, prepStmt1);
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet2, prepStmt2);
+        }
+        throw Utils.handleClientException(ERROR_CODE_INVALID_FLOW_ID, recoveryFlowId);
+    }
+
+    @Override
+    public UserRecoveryFlowData loadRecoveryFlowData(UserRecoveryData recoveryDataDO)
+            throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt = null;
+        ResultSet resultSet = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+
+        try {
+            String sql = IdentityRecoveryConstants.SQLQueries.LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID;
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, recoveryDataDO.getRecoveryFlowId());
+
+            resultSet = prepStmt.executeQuery();
+
+            if (resultSet.next()) {
+                int attempt = resultSet.getInt("ATTEMPT");
+                int resendCount = resultSet.getInt("RESEND_COUNT");
+                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                        Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+                long createdTimeStamp = timeCreated.getTime();
+
+                UserRecoveryFlowData userRecoveryFlowData = new UserRecoveryFlowData(recoveryDataDO.getRecoveryFlowId(),
+                        timeCreated, attempt, resendCount);
+
+                boolean isRecoveryFlowIdExpired = isRecoveryFlowIdExpired(recoveryDataDO.getUser().getTenantDomain(),
+                        createdTimeStamp, recoveryDataDO.getRemainingSetIds());
+                if (isRecoveryFlowIdExpired) {
+                    throw Utils.handleClientException(ERROR_CODE_EXPIRED_FLOW_ID, recoveryDataDO.getRecoveryFlowId());
+                }
+                return userRecoveryFlowData;
+            }
+        } catch (SQLException e) {
+            throw Utils.handleServerException(ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeAllConnections(connection, resultSet, prepStmt);
+        }
+        throw Utils.handleClientException(ERROR_CODE_INVALID_FLOW_ID, recoveryDataDO.getRecoveryFlowId());
     }
 
     @Override
@@ -370,9 +627,10 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 code = resultSet.getString("CODE");
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
+                String recoveryFlowId = resultSet.getString("RECOVERY_FLOW_ID");
 
                 userRecoveryData =
-                        new UserRecoveryData(user, code, scenario, step, timeCreated);
+                        new UserRecoveryData(user, recoveryFlowId, code, scenario, step, timeCreated);
                 if (StringUtils.isNotBlank(resultSet.getString("REMAINING_SETS"))) {
                     userRecoveryData.setRemainingSetIds(resultSet.getString("REMAINING_SETS"));
                 }
@@ -568,6 +826,36 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
+    public void invalidateWithRecoveryFlowId(String recoveryFlowId) throws IdentityRecoveryException {
+
+        PreparedStatement prepStmt1 = null;
+        PreparedStatement prepStmt2 = null;
+        Connection connection = IdentityDatabaseUtil.getDBConnection(true);
+        try {
+            String sql1 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_BY_RECOVERY_FLOW_ID;
+
+            prepStmt1 = connection.prepareStatement(sql1);
+            prepStmt1.setString(1, recoveryFlowId);
+            prepStmt1.execute();
+
+            String sql2 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_OTP_DATA_BY_RECOVERY_FLOW_ID;
+
+            prepStmt2 = connection.prepareStatement(sql2);
+            prepStmt2.setString(1, recoveryFlowId);
+            prepStmt2.execute();
+
+            IdentityDatabaseUtil.commitTransaction(connection);
+        } catch (SQLException e) {
+            IdentityDatabaseUtil.rollbackTransaction(connection);
+            throw Utils.handleServerException(ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityDatabaseUtil.closeStatement(prepStmt1);
+            IdentityDatabaseUtil.closeStatement(prepStmt2);
+            IdentityDatabaseUtil.closeConnection(connection);
+        }
+    }
+
+    @Override
     public void invalidateWithoutChangeTimeCreated(String oldCode, String code, Enum recoveryStep, String channelList)
             throws IdentityRecoveryException {
 
@@ -756,6 +1044,39 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             notificationExpiryTimeInMinutes = Integer.MAX_VALUE;
         }
         long expiryTime = createdTimestamp + TimeUnit.MINUTES.toMillis(notificationExpiryTimeInMinutes);
+        return System.currentTimeMillis() > expiryTime;
+    }
+
+    /**
+     * Checks whether the recovery flow id has expired or not.
+     *
+     * @param tenantDomain     Tenant domain
+     * @param createdTimestamp Time stamp
+     * @param recoveryData     Additional data for validate the code
+     * @return Whether the recovery flow id has expired or not
+     * @throws IdentityRecoveryServerException Error while reading the configs
+     */
+    private boolean isRecoveryFlowIdExpired(String tenantDomain, long createdTimestamp, String recoveryData)
+            throws IdentityRecoveryServerException {
+
+        int codeExpiryTime;
+        int allowedResendAttempts;
+        int recoveryFlowIdExpiryTime;
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(recoveryData)) {
+            codeExpiryTime = Integer.parseInt(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, tenantDomain));
+            allowedResendAttempts = Integer.parseInt(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS, tenantDomain));
+            recoveryFlowIdExpiryTime = codeExpiryTime * allowedResendAttempts;
+        } else {
+            recoveryFlowIdExpiryTime = Integer.parseInt(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, tenantDomain));
+        }
+        if (recoveryFlowIdExpiryTime < 1) {
+            recoveryFlowIdExpiryTime = IdentityRecoveryConstants.RECOVERY_FLOW_ID_DEFAULT_EXPIRY_TIME;
+        }
+
+        long expiryTime = createdTimestamp + TimeUnit.MINUTES.toMillis(recoveryFlowIdExpiryTime);
         return System.currentTimeMillis() > expiryTime;
     }
 

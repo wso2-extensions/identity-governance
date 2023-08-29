@@ -22,9 +22,18 @@ import org.apache.commons.lang.NotImplementedException;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 
 public interface UserRecoveryDataStore {
     void store(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
+
+    void storeInit(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
+
+    void storeConfirmationCode(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
+
+    void updateOTPAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException;
+
+    void updateOTPResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException;
 
     /*
      * returns UserRecoveryData if the code is validated. Otherwise returns an exception.
@@ -53,6 +62,10 @@ public interface UserRecoveryDataStore {
         throw new NotImplementedException("This functionality is not implemented");
     }
 
+    UserRecoveryData loadFromRecoveryFlowId(String recoveryFlowId, Enum recoveryStep) throws IdentityRecoveryException;
+
+    UserRecoveryFlowData loadRecoveryFlowData(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
+
     UserRecoveryData loadWithoutCodeExpiryValidation(User user) throws
             IdentityRecoveryException;
 
@@ -69,6 +82,9 @@ public interface UserRecoveryDataStore {
             IdentityRecoveryException;
 
     void invalidate(User user, Enum recoveryScenario, Enum recoveryStep) throws
+            IdentityRecoveryException;
+
+    void invalidateWithRecoveryFlowId(String recoveryFlowId) throws
             IdentityRecoveryException;
 
     /**

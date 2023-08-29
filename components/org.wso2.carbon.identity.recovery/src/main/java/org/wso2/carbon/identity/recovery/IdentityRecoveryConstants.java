@@ -164,6 +164,7 @@ public class IdentityRecoveryConstants {
 
     public static final int SMS_OTP_CODE_LENGTH = 6;
     public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
+    public static final int RECOVERY_FLOW_ID_DEFAULT_EXPIRY_TIME = 15;
     // Recovery code given at the username and password recovery initiation.
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
@@ -207,6 +208,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
         ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
+        ERROR_CODE_INVALID_FLOW_ID("18019", "Invalid flow confirmation code '%s'."),
+        ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -288,6 +291,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
         ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
+        ERROR_CODE_STORING_RECOVERY_OTP_DATA("20063", "Error while storing recovery data"),
+        ERROR_CODE_UPDATING_RECOVERY_OTP_DATA("20064", "Error while updating recovery data"),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -356,6 +361,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code: '%s'"),
         ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
                 "User account recovery validation failed for user account: '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'"),
+        ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'"),
+        ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
+                + "recovery flow id : '%s'"),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "
@@ -604,13 +613,17 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET = "Recovery.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN = "SelfRegistration.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME = "SelfRegistration.AutoLogin.AliasName";
+        public static final String RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS = "Recovery.Otp" +
+                ".Password.MaxFailedAttempts";
+        public static final String RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.Otp" +
+                ".Password.MaxResendAttempts";
     }
 
     public static class SQLQueries {
 
         public static final String STORE_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
-                + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS)"
-                + "VALUES (?,?,?,?,?,?,?,?)";
+                + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS, " +
+                "RECOVERY_FLOW_ID) VALUES (?,?,?,?,?,?,?,?,?)";
         public static final String LOAD_RECOVERY_DATA = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
                 "SCENARIO = ? AND STEP = ?";
@@ -620,6 +633,9 @@ public class IdentityRecoveryConstants {
                 "STEP = ?";
 
         public static final String LOAD_RECOVERY_DATA_FROM_CODE = "SELECT * FROM IDN_RECOVERY_DATA WHERE CODE = ?";
+
+        public static final String LOAD_RECOVERY_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_DATA WHERE" +
+                " RECOVERY_FLOW_ID = ? AND STEP = ?";
 
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
@@ -633,6 +649,9 @@ public class IdentityRecoveryConstants {
 
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
+
+        public static final String INVALIDATE_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
+                "RECOVERY_FLOW_ID = ?";
 
         public static final String UPDATE_CODE = "UPDATE IDN_RECOVERY_DATA SET CODE = ?, STEP = ?, REMAINING_SETS = ? " +
                 "WHERE CODE = ?";
@@ -666,6 +685,24 @@ public class IdentityRecoveryConstants {
         public static final String LOAD_RECOVERY_DATA_OF_USER_BY_STEP_CASE_INSENSITIVE = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND USER_DOMAIN = ? " +
                 "AND TENANT_ID = ? AND STEP = ?";
+
+        public static final String STORE_RECOVERY_OTP_DATA = "INSERT INTO IDN_RECOVERY_OTP_DATA "
+                + "(RECOVERY_FLOW_ID, OTP, ATTEMPT, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
+
+        public static final String UPDATE_RECOVERY_OTP_DATA = "UPDATE IDN_RECOVERY_OTP_DATA SET OTP = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String UPDATE_OTP_ATTEMPT = "UPDATE IDN_RECOVERY_OTP_DATA SET ATTEMPT = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String UPDATE_OTP_RESEND_COUNT = "UPDATE IDN_RECOVERY_OTP_DATA SET RESEND_COUNT = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String LOAD_RECOVERY_OTP_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_OTP_DATA "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String INVALIDATE_OTP_DATA_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_OTP_DATA WHERE " +
+                "RECOVERY_FLOW_ID = ?";
     }
 
     public static class Questions {

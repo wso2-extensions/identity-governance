@@ -42,6 +42,7 @@ import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.NotificationChannel;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -146,6 +147,7 @@ public class UserAccountRecoveryManager {
             UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
                     user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
             String recoveryCode = UUID.randomUUID().toString();
+            String recoveryFlowId = UUID.randomUUID().toString();
             String notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
             /* Check whether the existing confirmation code can be used based on the email confirmation code tolerance
                with the extracted RESEND_CONFIRMATION_CODE details. */
@@ -156,9 +158,11 @@ public class UserAccountRecoveryManager {
                 userRecoveryDataStore.invalidateWithoutChangeTimeCreated(recoveryDataDO.getSecret(), recoveryCode,
                         RecoverySteps.SEND_RECOVERY_INFORMATION, notificationChannelList);
             } else {
-                addRecoveryDataObject(username, tenantDomain, recoveryCode, recoveryScenario, notificationChannelList);
+                addRecoveryDataObject(username, tenantDomain, recoveryFlowId, recoveryCode, recoveryScenario,
+                        notificationChannelList);
             }
-            return buildUserRecoveryInformationResponseDTO(username, recoveryCode, notificationChannelDTOS);
+            return buildUserRecoveryInformationResponseDTO(username, recoveryFlowId, recoveryCode,
+                    notificationChannelDTOS);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("No valid user found for the given claims");
@@ -430,11 +434,12 @@ public class UserAccountRecoveryManager {
      * @param notificationChannelDTOs List of NotificationChannelsResponseDTOs available for the user.
      * @return RecoveryChannelInfoDTO object.
      */
-    private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryCode,
-                                                                    NotificationChannelDTO[] notificationChannelDTOs) {
+    private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryFlowId,
+                String recoveryCode, NotificationChannelDTO[] notificationChannelDTOs) {
 
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
         recoveryChannelInfoDTO.setUsername(username);
+        recoveryChannelInfoDTO.setRecoveryFlowId(recoveryFlowId);
         recoveryChannelInfoDTO.setRecoveryCode(recoveryCode);
         recoveryChannelInfoDTO.setNotificationChannelDTOs(notificationChannelDTOs);
         return recoveryChannelInfoDTO;
@@ -926,6 +931,112 @@ public class UserAccountRecoveryManager {
     }
 
     /**
+     * Get user recovery data using the recovery flow id.
+     *
+     * @param recoveryFlowId Recovery flow id of the user.
+     * @param step Recovery step
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
+     */
+    public UserRecoveryData getUserRecoveryDataFromFlowId(String recoveryFlowId, RecoverySteps step)
+            throws IdentityRecoveryException {
+
+        UserRecoveryData recoveryData;
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            // Retrieve recovery data bound to the recoveryFlowId.
+            recoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(recoveryFlowId, step);
+        } catch (IdentityRecoveryException e) {
+            // Map code expired error to new error codes for user account recovery.
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE.getCode()
+                    .equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_CODE.getCode());
+            } else {
+                e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY));
+            }
+            throw e;
+        }
+        if (recoveryData == null) {
+            throw Utils
+                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_ACCOUNT_RECOVERY_DATA,
+                            recoveryFlowId);
+        }
+        return recoveryData;
+    }
+
+    /**
+     * Get user recovery flow data using the recovery flow id.
+     *
+     * @param recoveryDataDO User Recovery Data object.
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
+     */
+    public UserRecoveryFlowData loadUserRecoveryFlowData(UserRecoveryData recoveryDataDO)
+            throws IdentityRecoveryException {
+
+        UserRecoveryFlowData userRecoveryFlowData;
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            userRecoveryFlowData = userRecoveryDataStore.loadRecoveryFlowData(recoveryDataDO);
+        } catch (IdentityRecoveryException e) {
+            // Map code expired error to new error codes for user account recovery.
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID.getCode());
+            } else {
+                e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY));
+            }
+            throw e;
+        }
+        if (userRecoveryFlowData == null) {
+            throw Utils
+                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_RECOVERY_FLOW_DATA,
+                            recoveryDataDO.getRecoveryFlowId());
+        }
+        return userRecoveryFlowData;
+    }
+
+    /**
+     * Update recovery OTP attempt.
+     *
+     * @param recoveryFlowId Recovery Flow Id
+     * @param attempt        Current Attempt
+     */
+    public void updateRecoveryDataAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.updateOTPAttempt(recoveryFlowId, attempt);
+    }
+
+    /**
+     * Update recovery OTP resend count.
+     *
+     * @param recoveryFlowId Recovery Flow Id
+     * @param resendCount    Current Resend Count
+     */
+    public void updateRecoveryDataResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.updateOTPResendCount(recoveryFlowId, resendCount);
+    }
+
+    /**
+     * Invalidate the recovery Data.
+     *
+     * @param recoveryFlowId Recovery Flow Id
+     */
+    public void invalidateRecoveryData(String recoveryFlowId) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
+    }
+
+    /**
      * Add the notification channel recovery data to the store.
      *
      * @param username     Username
@@ -935,20 +1046,25 @@ public class UserAccountRecoveryManager {
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
      * @throws IdentityRecoveryServerException If an error occurred while storing recovery data.
      */
-    private void addRecoveryDataObject(String username, String tenantDomain, String secretKey,
+    private void addRecoveryDataObject(String username, String tenantDomain, String recoveryFlowId, String secretKey,
                                        RecoveryScenarios scenario, String recoveryData)
             throws IdentityRecoveryServerException {
 
         // Create a user object.
         User user = Utils.buildUser(username, tenantDomain);
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, scenario,
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey, scenario,
                 RecoverySteps.SEND_RECOVERY_INFORMATION);
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
         try {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            userRecoveryDataStore.invalidate(user);
-            userRecoveryDataStore.store(recoveryDataDO);
+            UserRecoveryData userRecoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+            if (userRecoveryDataDO != null && userRecoveryDataDO.getRecoveryFlowId() != null) {
+                userRecoveryDataStore.invalidateWithRecoveryFlowId(userRecoveryDataDO.getRecoveryFlowId());
+            } else {
+                userRecoveryDataStore.invalidate(user);
+            }
+            userRecoveryDataStore.storeInit(recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,

@@ -28,6 +28,11 @@ public class ResendConfirmationDTO {
     private String successMessage;
 
     /**
+     * Recovery flow id.
+     */
+    private String recoveryFlowId;
+
+    /**
      * Recovery Info sent channel.
      */
     private String notificationChannel;
@@ -46,6 +51,26 @@ public class ResendConfirmationDTO {
      * Code to confirm password recovery when the notifications are managed externally.
      */
     private String externalConfirmationCode;
+
+    /**
+     * Get recovery flow id.
+     *
+     * @return Recovery flow id
+     */
+    public String getRecoveryFlowId() {
+
+        return recoveryFlowId;
+    }
+
+    /**
+     * Set recovery flow id.
+     *
+     * @param recoveryFlowId Recovery Flow Id
+     */
+    public void setRecoveryFlowId(String recoveryFlowId) {
+
+        this.recoveryFlowId = recoveryFlowId;
+    }
 
     /**
      * Get external confirmation code.
