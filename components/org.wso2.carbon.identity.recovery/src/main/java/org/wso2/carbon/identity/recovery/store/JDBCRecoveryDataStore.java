@@ -86,7 +86,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
@@ -116,7 +116,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt1 = null;
         PreparedStatement prepStmt2 = null;
         try {
-            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
             prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
@@ -158,7 +158,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt1 = null;
         PreparedStatement prepStmt2 = null;
         try {
-            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA);
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
             prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));

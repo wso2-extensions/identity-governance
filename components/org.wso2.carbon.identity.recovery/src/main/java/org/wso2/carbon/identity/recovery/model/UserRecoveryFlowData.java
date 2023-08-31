@@ -24,71 +24,100 @@ import java.sql.Timestamp;
  * This object represents an entry of the identity metadata database.
  */
 public class UserRecoveryFlowData {
-    private String recoveryId;
+
+    private String recoveryFlowId;
 
     private Timestamp timeCreated;
 
-    private int attempts;
+    private int attempt;
 
     private int resendCount;
 
-    public UserRecoveryFlowData(String recoveryId) {
+    public UserRecoveryFlowData(String recoveryFlowId) {
 
-        this.recoveryId = recoveryId;
+        this.recoveryFlowId = recoveryFlowId;
     }
-    public UserRecoveryFlowData(String recoveryId, Timestamp timeCreated) {
+    public UserRecoveryFlowData(String recoveryFlowId, Timestamp timeCreated) {
 
-        this.recoveryId = recoveryId;
+        this.recoveryFlowId = recoveryFlowId;
         this.timeCreated = timeCreated;
     }
 
-    public UserRecoveryFlowData(String recoveryId, Timestamp timeCreated, int attempts, int resendCount) {
+    public UserRecoveryFlowData(String recoveryFlowId, Timestamp timeCreated, int attempt, int resendCount) {
 
-        this.recoveryId = recoveryId;
+        this.recoveryFlowId = recoveryFlowId;
         this.timeCreated = timeCreated;
-        this.attempts = attempts;
+        this.attempt = attempt;
         this.resendCount = resendCount;
     }
 
+    /**
+     * Get the time created.
+     *
+     * @return Created time.
+     */
     public Timestamp getTimeCreated() {
 
         return timeCreated;
     }
 
+    /**
+     * Set the time created.
+     *
+     * @param timeCreated Created time.
+     */
     public void setTimeCreated(Timestamp timeCreated) {
 
         this.timeCreated = timeCreated;
     }
 
-    public String getRecoveryId() {
-        return recoveryId;
+    /**
+     * Get the recovery flow id.
+     *
+     * @return Recovery Flow Id.
+     */
+    public String getRecoveryFlowId() {
+
+        return recoveryFlowId;
     }
 
     /**
-     * Set the recovery id.
+     * Set the recovery flow id.
      *
-     * @param recoveryId Recovery Id.
+     * @param recoveryFlowId Recovery Flow Id.
      */
-    public void setRecoveryId(String recoveryId) {
+    public void setRecoveryFlowId(String recoveryFlowId) {
 
-        this.recoveryId = recoveryId;
-    }
-
-    public int getAttempts() {
-        return attempts;
+        this.recoveryFlowId = recoveryFlowId;
     }
 
     /**
-     * Set the attempts.
+     * Get the attempt.
      *
-     * @param attempts OTP attempts.
+     * @return attempt.
      */
-    public void setAttempts(int attempts) {
+    public int getAttempt() {
 
-        this.attempts = attempts;
+        return attempt;
     }
 
+    /**
+     * Set the attempt.
+     *
+     * @param attempt OTP attempt.
+     */
+    public void setAttempt(int attempt) {
+
+        this.attempt = attempt;
+    }
+
+    /**
+     * Get the resendCount.
+     *
+     * @return resendCount.
+     */
     public int getResendCount() {
+
         return resendCount;
     }
 

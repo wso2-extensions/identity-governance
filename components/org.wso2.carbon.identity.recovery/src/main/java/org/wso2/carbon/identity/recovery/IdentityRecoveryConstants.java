@@ -291,8 +291,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
         ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
-        ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data"),
-        ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data"),
+        ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data."),
+        ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data."),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -613,17 +613,22 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET = "Recovery.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN = "SelfRegistration.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME = "SelfRegistration.AutoLogin.AliasName";
-        public static final String RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS = "Recovery.Otp" +
+        public static final String RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS = "Recovery.OTP" +
                 ".Password.MaxFailedAttempts";
-        public static final String RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.Otp" +
+        public static final String RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.OTP" +
                 ".Password.MaxResendAttempts";
     }
 
     public static class SQLQueries {
 
         public static final String STORE_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
+                + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS)"
+                + "VALUES (?,?,?,?,?,?,?,?)";
+
+        public static final String STORE_ACCOUNT_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS, " +
                 "RECOVERY_FLOW_ID) VALUES (?,?,?,?,?,?,?,?,?)";
+
         public static final String LOAD_RECOVERY_DATA = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
                 "SCENARIO = ? AND STEP = ?";
