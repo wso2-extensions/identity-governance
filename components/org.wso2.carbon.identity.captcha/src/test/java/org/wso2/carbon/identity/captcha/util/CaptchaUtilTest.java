@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 public class CaptchaUtilTest {
 
     private final String RECAPTCHA_API_URL = "https://www.google.com/recaptcha/api/siteverify";
+    private final String RECAPTCHA_ENTERPRISE_API_URL = "https://recaptchaenterprise.googleapis.com";
 
     @BeforeMethod
     public void setUp() {
@@ -103,8 +104,8 @@ public class CaptchaUtilTest {
     public void testCreateReCaptchaEnterpriseVerificationHttpPost() throws NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
 
-        CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_API_URL);
-        CaptchaDataHolder.getInstance().setReCaptchaSecretKey("dummyKey");
+        CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_ENTERPRISE_API_URL);
+        CaptchaDataHolder.getInstance().setReCaptchaAPIKey("dummyKey");
         CaptchaDataHolder.getInstance().setReCaptchaSiteKey("dummySiteKey");
         CaptchaDataHolder.getInstance().setReCaptchaProjectID("dummyProjectId");
 
@@ -112,7 +113,7 @@ public class CaptchaUtilTest {
 
         Method method = getCreateReCaptchaEnterpriseVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
-        String expectedURI = RECAPTCHA_API_URL+ "/v1/projects/dummyProjectId/assessments?key=dummyKey";
+        String expectedURI = RECAPTCHA_ENTERPRISE_API_URL+ "/v1/projects/dummyProjectId/assessments?key=dummyKey";
         Assert.assertEquals(httpPost.getURI().toString(), expectedURI);
 
     }

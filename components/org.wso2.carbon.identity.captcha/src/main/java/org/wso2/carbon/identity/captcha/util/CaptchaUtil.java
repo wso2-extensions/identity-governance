@@ -278,9 +278,9 @@ public class CaptchaUtil {
         String recaptchaUrl = CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl();
         String projectID = CaptchaDataHolder.getInstance().getReCaptchaProjectID();
         String siteKey = CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
-        String secretKey = CaptchaDataHolder.getInstance().getReCaptchaSecretKey();
+        String apiKey = CaptchaDataHolder.getInstance().getReCaptchaAPIKey();
 
-        String verifyUrl = recaptchaUrl + "/v1/projects/" + projectID + "/assessments?key=" + secretKey;
+        String verifyUrl = recaptchaUrl + "/v1/projects/" + projectID + "/assessments?key=" + apiKey;
         httpPost = new HttpPost(verifyUrl);
 
         httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -571,6 +571,19 @@ public class CaptchaUtil {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_PROJECT_ID));
             }
             CaptchaDataHolder.getInstance().setReCaptchaProjectID(reCaptchaProjectID);
+
+            String reCaptchaAPIKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_KEY);
+            if (StringUtils.isBlank(reCaptchaAPIKey)) {
+                throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_API_KEY));
+            }
+            CaptchaDataHolder.getInstance().setReCaptchaAPIKey(reCaptchaAPIKey);
+        } else {
+            // Secret Key is only required if recaptcha enterprise is not enabled
+            String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
+            if (StringUtils.isBlank(reCaptchaSecretKey)) {
+                throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
+            }
+            CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
         }
 
         String reCaptchaAPIUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL);
@@ -590,12 +603,6 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SITE_KEY));
         }
         CaptchaDataHolder.getInstance().setReCaptchaSiteKey(reCaptchaSiteKey);
-
-        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
-        if (StringUtils.isBlank(reCaptchaSecretKey)) {
-            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
-        }
-        CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
 
         String reCaptchaRequestWrapUrls = properties.getProperty(CaptchaConstants.RE_CAPTCHA_REQUEST_WRAP_URLS);
         if (reCaptchaRequestWrapUrls == null) {
