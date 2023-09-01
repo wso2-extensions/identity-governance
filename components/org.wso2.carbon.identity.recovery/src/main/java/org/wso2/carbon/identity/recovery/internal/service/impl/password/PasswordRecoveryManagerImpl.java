@@ -220,17 +220,20 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     public PasswordResetCodeDTO confirm(String otp, String confirmationCode, String tenantDomain,
                                         Map<String, String> properties) throws IdentityRecoveryException {
 
-                validateTenantDomain(tenantDomain);
+        validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        // In the recovery scenarios which are not OTP based, the confirmation code is a combination of the
+        // recovery flow id and another UUID generated. Hence, we need to get the recovery flow id from the
+        // confirmation code. In the OTP based recovery scenario, the confirmation code is the recovery flow id.
         String[] ids = confirmationCode.split("\\.");
         String recoveryFlowId;
         String code;
-        if (ids.length != 2) {
-            recoveryFlowId = confirmationCode;
-            code = otp;
-        } else {
+        if (ids.length == 2) {
             recoveryFlowId = ids[0];
             code = confirmationCode;
+        } else {
+            recoveryFlowId = confirmationCode;
+            code = otp;
         }
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
