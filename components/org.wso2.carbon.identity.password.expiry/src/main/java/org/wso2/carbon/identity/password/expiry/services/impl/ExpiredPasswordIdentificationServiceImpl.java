@@ -131,7 +131,7 @@ public class ExpiredPasswordIdentificationServiceImpl implements ExpiredPassword
      * @param username          username of the user.
      * @return                  UUID of the user
      */
-    public String fetchUserId(String username, String tenantDomain)
+    private String fetchUserId(String username, String tenantDomain)
             throws ExpiredPasswordIdentificationServerException {
         
         UserStoreManager userStoreManager = getUserStoreManager(
