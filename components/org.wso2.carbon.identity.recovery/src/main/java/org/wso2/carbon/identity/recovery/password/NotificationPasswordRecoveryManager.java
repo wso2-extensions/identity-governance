@@ -576,6 +576,8 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
         validateTenantDomain(userRecoveryData.getUser());
+        String recoveryFlowId = userRecoveryDataStore.loadWithoutCodeExpiryValidation(userRecoveryData.getUser())
+                .getRecoveryFlowId();
 
         // Validate recovery step.
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
@@ -596,7 +598,11 @@ public class NotificationPasswordRecoveryManager {
         // Update the password.
         updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
                 notificationsInternallyManaged);
-        userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        if (recoveryFlowId != null) {
+            userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
+        } else {
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        }
         if (notificationsInternallyManaged &&
                 !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             String emailTemplate = null;
