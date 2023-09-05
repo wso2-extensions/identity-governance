@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.password.expiry.internal;
 
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -30,6 +31,7 @@ public class EnforcePasswordResetComponentDataHolder {
             = new EnforcePasswordResetComponentDataHolder();
     private RealmService realmService = null;
     private IdentityGovernanceService identityGovernanceService;
+    private IdentityDataStoreService identityDataStoreService;
 
     private EnforcePasswordResetComponentDataHolder() {
 
@@ -58,5 +60,14 @@ public class EnforcePasswordResetComponentDataHolder {
     public IdentityGovernanceService getIdentityGovernanceService() {
 
         return this.identityGovernanceService;
+    }
+    public IdentityDataStoreService getIdentityDataStoreService() {
+
+        return identityDataStoreService;
+    }
+
+    public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        this.identityDataStoreService = identityDataStoreService;
     }
 }

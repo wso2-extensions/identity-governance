@@ -105,6 +105,18 @@ public interface IdentityDataStoreService {
                                                         int tenantId) throws IdentityException;
 
     /**
+     * Get the list of usernames who have the claim value more than the provided claim value for a given claim URI.
+     *
+     * @param claimURI              Claim URI.
+     * @param claimValue            Claim value.
+     * @param tenantId              Tenant ID.
+     * @return                      List of usernames.
+     * @throws IdentityException    Identity exception.
+     */
+    List<String> getUserNamesMoreThanProvidedClaimValue(String claimURI, String claimValue,
+                                                        int tenantId) throws IdentityException;
+
+    /**
      * Get the list of usernames who have the claim value between the provided claim values for a given claim URI.
      * @param claimURI              Claim URI.
      * @param startValue            Start value.
