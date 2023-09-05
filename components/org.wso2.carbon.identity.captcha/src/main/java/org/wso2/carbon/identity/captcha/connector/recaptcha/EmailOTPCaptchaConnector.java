@@ -127,7 +127,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
         AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
         String username = context.getLastAuthenticatedUser().getUserName();
-        String tenantDomain = getTenant(context, username);
+        String tenantDomain = context.getLastAuthenticatedUser().getTenantDomain();
 
         Property[] connectorConfigs = null;
         try {
@@ -223,7 +223,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         String username = context.getLastAuthenticatedUser().getUserName();
-        String tenantDomain = getTenant(context, username);
+        String tenantDomain = context.getLastAuthenticatedUser().getTenantDomain();
 
         Property[] connectorConfigs;
         try {
@@ -254,22 +254,6 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
-    }
-
-    /**
-     * Get tenant from authentication context or username.
-     *
-     * @param context   Authentication context.
-     * @param username  Username.
-     * @return          Derived tenant domain.
-     */
-    private String getTenant(AuthenticationContext context, String username) {
-
-        if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
-            return context.getUserTenantDomain();
-        } else {
-            return MultitenantUtils.getTenantDomain(username);
-        }
     }
 
     /**
