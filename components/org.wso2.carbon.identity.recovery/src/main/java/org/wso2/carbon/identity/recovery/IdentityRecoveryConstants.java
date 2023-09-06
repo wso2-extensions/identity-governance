@@ -36,6 +36,9 @@ public class IdentityRecoveryConstants {
             IDENTITY_MANAGEMENT_I18N_PATH + "/questionCollection";
     public static final String LINE_SEPARATOR = "!";
     public static final String DEFAULT_REGEX = ".*";
+    public static final String URL_PARAMETER_SEPARATOR = "&";
+    public static final String EQUAL_OPERATOR = "=";
+    public static final String TENANT_DOMAIN = "tenantDomain=";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
     public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET = "resendPasswordReset";

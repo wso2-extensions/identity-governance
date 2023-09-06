@@ -688,6 +688,48 @@ public class Utils {
         return false;
     }
 
+    /**
+     * Retrieves the tenant domain from a callback URL contained in the array of properties.
+     *
+     * @param properties callback properties
+     * @return The tenant domain extracted from the callback URL, or null if not found.
+     * @throws UnsupportedEncodingException If there is an issue decoding the URL.
+     */
+    public static String getApplicationDomainFromCallback(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException {
+
+        String tenantDomain = null;
+        String callbackURL = null;
+
+        if (properties == null) {
+            return null;
+        }
+
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.CALLBACK.equals(property.getKey())) {
+                callbackURL = URLDecoder.decode(property.getValue(), IdentityRecoveryConstants.UTF_8);
+                break;
+            }
+        }
+
+        if (StringUtils.isNotBlank(callbackURL)) {
+            String[] parameters = callbackURL.split(IdentityRecoveryConstants.URL_PARAMETER_SEPARATOR);
+
+            // Iterate through parameters to find the 'tenantDomain' parameter
+            for (String parameter : parameters) {
+                if (parameter.startsWith(IdentityRecoveryConstants.TENANT_DOMAIN)) {
+                    String[] keyValue = parameter.split(IdentityRecoveryConstants.EQUAL_OPERATOR);
+                    if (ArrayUtils.isNotEmpty(keyValue) && keyValue.length == 2) {
+                        tenantDomain = keyValue[1];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return tenantDomain;
+    }
+
     public static String getCallbackURLFromRegistration(org.wso2.carbon.identity.recovery.model.Property[] properties)
             throws UnsupportedEncodingException, MalformedURLException {
 

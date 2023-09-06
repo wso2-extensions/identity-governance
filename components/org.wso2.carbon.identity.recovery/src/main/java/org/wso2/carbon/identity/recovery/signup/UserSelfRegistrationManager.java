@@ -145,6 +145,22 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
 
+        try {
+            if (StringUtils.isBlank(Utils.getApplicationDomainFromCallback(properties))) {
+                throw new IdentityRecoveryClientException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_INVALID_CALLBACK_URL.getCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CALLBACK_URL.getMessage());
+            }
+            if (!Utils.getApplicationDomainFromCallback(properties).equals(user.getTenantDomain())) {
+                throw new IdentityRecoveryClientException(IdentityRecoveryConstants
+                        .ErrorMessages.ERROR_CODE_INVALID_TENANT
+                        .getCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getMessage());
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                    null, e);
+        }
+
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
