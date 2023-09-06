@@ -22,11 +22,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
+import org.wso2.carbon.identity.user.export.core.internal.UserProfileExportDataHolder;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.Claim;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -57,7 +59,7 @@ public class BasicUserInformationProviderTest {
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
@@ -69,7 +71,7 @@ public class BasicUserInformationProviderTest {
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj != null && userAttributesObj.getData() instanceof Map) {
@@ -91,7 +93,7 @@ public class BasicUserInformationProviderTest {
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
@@ -102,7 +104,7 @@ public class BasicUserInformationProviderTest {
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(null);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj.isInformationAvailable()) {
@@ -133,7 +135,7 @@ public class BasicUserInformationProviderTest {
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -160,7 +162,7 @@ public class BasicUserInformationProviderTest {
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -174,7 +176,7 @@ public class BasicUserInformationProviderTest {
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
@@ -185,7 +187,7 @@ public class BasicUserInformationProviderTest {
         when(secUserStoreManager.getUserClaimValues(anyString(), isNull())).thenThrow(new UserStoreException());
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
