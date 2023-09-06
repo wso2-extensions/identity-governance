@@ -19,19 +19,23 @@
 package org.wso2.carbon.identity.user.endpoint.Util;
 
 import com.beust.jcommander.internal.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertEquals;
 
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.exceptions.BadRequestException;
 import org.wso2.carbon.identity.user.endpoint.exceptions.ConflictException;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.LiteUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.user.api.Claim;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,9 +187,28 @@ public class UtilsTest {
 
         assertNotNull(Utils.getClaims(buildClaimDTO()), "Failed returning claims.");
         assertEquals(Utils.getClaims(buildClaimDTO()).length, 1);
-        assertEquals(Utils.getClaims(null).length, 0);
+        assertEquals(Utils.getClaims((List<ClaimDTO>) null).length, 0);
     }
 
+    @Test
+    public void testGetClaimsFromLiteUserRegistrationDTO() {
+
+        LiteUserRegistrationRequestDTO liteUserRegistrationRequestDTO = buildLiteUserRegistrationDTO();
+        Claim[] claims = Utils.getClaims(liteUserRegistrationRequestDTO);
+        for (Claim claim : claims) {
+            if (StringUtils.equals(Constants.PREFERRED_CHANNEL_CLAIM_URI, claim.getClaimUri())) {
+                assertEquals(claim.getValue(), "EMAIL");
+                continue;
+            }
+            if (StringUtils.equals(Constants.EMAIL_CLAIM_URI, claim.getClaimUri())) {
+                assertEquals(claim.getValue(), "test@test.com");
+                continue;
+            }
+            if (StringUtils.equals(Constants.MOBILE_CLAIM_URI, claim.getClaimUri())) {
+                assertEquals(claim.getValue(), "000000000");
+            }
+        }
+    }
 
     private List<ClaimDTO> buildClaimDTO() {
 
@@ -194,5 +217,14 @@ public class UtilsTest {
         claimDTO.setUri("testUri");
         List<ClaimDTO> claimDTOs = Lists.newArrayList(claimDTO);
         return claimDTOs;
+    }
+
+    private LiteUserRegistrationRequestDTO buildLiteUserRegistrationDTO() {
+
+        LiteUserRegistrationRequestDTO liteUserRegistrationRequestDTO = new LiteUserRegistrationRequestDTO();
+        liteUserRegistrationRequestDTO.setEmail("test@test.com");
+        liteUserRegistrationRequestDTO.setMobile("000000000");
+        liteUserRegistrationRequestDTO.setPreferredChannel(LiteUserRegistrationRequestDTO.PreferredChannelEnum.Email);
+        return liteUserRegistrationRequestDTO;
     }
 }

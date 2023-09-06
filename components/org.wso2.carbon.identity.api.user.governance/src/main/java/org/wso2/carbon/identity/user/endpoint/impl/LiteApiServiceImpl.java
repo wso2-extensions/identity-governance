@@ -93,7 +93,7 @@ public class LiteApiServiceImpl extends LiteApiService {
         try {
             notificationResponseBean = userSelfRegistrationManager
                     .registerLiteUser(user,
-                            Utils.getClaims(liteUserRegistrationRequestDTO.getClaims()),
+                            Utils.getClaims(liteUserRegistrationRequestDTO),
                             Utils.getProperties(properties));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
