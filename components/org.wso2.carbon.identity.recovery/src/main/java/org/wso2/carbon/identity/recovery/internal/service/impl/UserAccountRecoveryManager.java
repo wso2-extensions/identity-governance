@@ -1005,9 +1005,9 @@ public class UserAccountRecoveryManager {
      * Update recovery OTP attempt.
      *
      * @param recoveryFlowId Recovery Flow Id
-     * @param attempt        Current Attempt
+     * @param failedAttempts Failed Attempts
      */
-    public void updateRecoveryDataAttempt(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
+    public void updateRecoveryDataFailedAttempts(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.updateFailedAttempts(recoveryFlowId, failedAttempts);

@@ -260,7 +260,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
                         recoveryFlowId);
             }
-            userAccountRecoveryManager.updateRecoveryDataAttempt(recoveryFlowId, failedAttempts + 1);
+            userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts + 1);
             if (log.isDebugEnabled()) {
                 log.debug("Invalid confirmation code for user: " + domainQualifiedName);
             }
