@@ -45,6 +45,10 @@ public final class Constants {
 
     public static final String CORRELATION_ID_MDC = "Correlation-ID";
 
+    public static final String PREFERRED_CHANNEL_CLAIM_URI = "http://wso2.org/claims/identity/preferredChannel";
+    public static final String MOBILE_CLAIM_URI = "http://wso2.org/claims/mobile";
+    public static final String EMAIL_CLAIM_URI = "http://wso2.org/claims/emailaddress";
+
     // Response Configurations.
     public static final String ENABLE_DETAILED_API_RESPONSE =
             "SelfRegistration.API.EnableDetailedResponseBody";

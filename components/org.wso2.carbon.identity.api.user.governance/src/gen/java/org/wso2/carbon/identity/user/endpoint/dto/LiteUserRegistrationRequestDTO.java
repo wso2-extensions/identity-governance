@@ -28,7 +28,7 @@ public class LiteUserRegistrationRequestDTO  {
   private String realm = null;
   
   public enum PreferredChannelEnum {
-     Mobile,  Email, 
+     Mobile,  Email, SMS
   };
   
   private PreferredChannelEnum preferredChannel = null;
