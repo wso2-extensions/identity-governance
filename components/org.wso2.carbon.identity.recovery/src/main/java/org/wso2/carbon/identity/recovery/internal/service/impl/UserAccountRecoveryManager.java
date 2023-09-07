@@ -1007,10 +1007,10 @@ public class UserAccountRecoveryManager {
      * @param recoveryFlowId Recovery Flow Id
      * @param attempt        Current Attempt
      */
-    public void updateRecoveryDataAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
+    public void updateRecoveryDataAttempt(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        userRecoveryDataStore.updateAttempt(recoveryFlowId, attempt);
+        userRecoveryDataStore.updateFailedAttempts(recoveryFlowId, failedAttempts);
     }
 
     /**

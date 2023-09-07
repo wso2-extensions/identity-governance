@@ -31,7 +31,7 @@ public interface UserRecoveryDataStore {
 
     void storeConfirmationCode(UserRecoveryData recoveryDataDO) throws IdentityRecoveryException;
 
-    void updateAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException;
+    void updateFailedAttempts(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException;
 
     void updateCodeResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException;
 

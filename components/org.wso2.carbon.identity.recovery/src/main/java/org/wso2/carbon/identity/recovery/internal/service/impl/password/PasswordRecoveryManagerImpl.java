@@ -238,7 +238,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryDataFromFlowId(recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
-        int attempt = userRecoveryData.getAttempt();
+        int failedAttempts = userRecoveryData.getFailedAttempts();
         if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
@@ -252,7 +252,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             }
             return buildPasswordResetCodeDTO(code);
         } else {
-            if ((attempt + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+            if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                     RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
                 userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
                 throw Utils.handleClientException(
@@ -260,7 +260,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
                         recoveryFlowId);
             }
-            userAccountRecoveryManager.updateRecoveryDataAttempt(recoveryFlowId, attempt + 1);
+            userAccountRecoveryManager.updateRecoveryDataAttempt(recoveryFlowId, failedAttempts + 1);
             if (log.isDebugEnabled()) {
                 log.debug("Invalid confirmation code for user: " + domainQualifiedName);
             }

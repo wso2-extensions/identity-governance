@@ -29,7 +29,7 @@ public class UserRecoveryFlowData {
 
     private Timestamp timeCreated;
 
-    private int attempt;
+    private int failedAttempts;
 
     private int resendCount;
 
@@ -43,11 +43,11 @@ public class UserRecoveryFlowData {
         this.timeCreated = timeCreated;
     }
 
-    public UserRecoveryFlowData(String recoveryFlowId, Timestamp timeCreated, int attempt, int resendCount) {
+    public UserRecoveryFlowData(String recoveryFlowId, Timestamp timeCreated, int failedAttempts, int resendCount) {
 
         this.recoveryFlowId = recoveryFlowId;
         this.timeCreated = timeCreated;
-        this.attempt = attempt;
+        this.failedAttempts = failedAttempts;
         this.resendCount = resendCount;
     }
 
@@ -92,23 +92,23 @@ public class UserRecoveryFlowData {
     }
 
     /**
-     * Get the attempt.
+     * Get the failed attempts.
      *
-     * @return attempt.
+     * @return failed attempts.
      */
-    public int getAttempt() {
+    public int getFailedAttempts() {
 
-        return attempt;
+        return failedAttempts;
     }
 
     /**
-     * Set the attempt.
+     * Set the failed attempts.
      *
-     * @param attempt OTP attempt.
+     * @param failedAttempts OTP failed attempts.
      */
-    public void setAttempt(int attempt) {
+    public void setFailedAttempts(int failedAttempts) {
 
-        this.attempt = attempt;
+        this.failedAttempts = failedAttempts;
     }
 
     /**

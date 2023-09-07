@@ -692,12 +692,12 @@ public class IdentityRecoveryConstants {
                 "AND TENANT_ID = ? AND STEP = ?";
 
         public static final String STORE_RECOVERY_FLOW_DATA = "INSERT INTO IDN_RECOVERY_FLOW_DATA "
-                + "(RECOVERY_FLOW_ID, CODE, ATTEMPT, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
+                + "(RECOVERY_FLOW_ID, CODE, FAILED_ATTEMPTS, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
 
         public static final String UPDATE_RECOVERY_FLOW_DATA = "UPDATE IDN_RECOVERY_FLOW_DATA SET CODE = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String UPDATE_ATTEMPT = "UPDATE IDN_RECOVERY_FLOW_DATA SET ATTEMPT = ? "
+        public static final String UPDATE_FAILED_ATTEMPTS = "UPDATE IDN_RECOVERY_FLOW_DATA SET FAILED_ATTEMPTS = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
         public static final String UPDATE_CODE_RESEND_COUNT = "UPDATE IDN_RECOVERY_FLOW_DATA SET RESEND_COUNT = ? "

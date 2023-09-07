@@ -189,13 +189,13 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     }
 
     @Override
-    public void updateAttempt(String recoveryFlowId, int attempt) throws IdentityRecoveryException {
+    public void updateFailedAttempts(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
 
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_ATTEMPT);
-            prepStmt.setInt(1, attempt);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.UPDATE_FAILED_ATTEMPTS);
+            prepStmt.setInt(1, failedAttempts);
             prepStmt.setString(2, recoveryFlowId);
             prepStmt.execute();
             IdentityDatabaseUtil.commitTransaction(connection);
@@ -386,7 +386,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
         User user = null;
         String code = null;
-        int attempt = 0;
+        int failedAttempts = 0;
         int resendCount =0;
         long createdTimeStamp = 0;
         UserRecoveryData userRecoveryData = null;
@@ -400,7 +400,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet1 = prepStmt1.executeQuery();
 
             if (resultSet1.next()) {
-                attempt = resultSet1.getInt("ATTEMPT");
+                failedAttempts = resultSet1.getInt("FAILED_ATTEMPTS");
                 resendCount = resultSet1.getInt("RESEND_COUNT");
                 Timestamp timeCreated = resultSet1.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
@@ -426,7 +426,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 Timestamp secretCreatedTime = resultSet2.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
-                userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, attempt, resendCount,
+                userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, failedAttempts, resendCount,
                         recoveryScenario, recoveryStep, remainingSets, secretCreatedTime);
                 long secretCreatedTimeStamp = secretCreatedTime.getTime();
                 boolean isCodeExpired = isCodeExpired(user.getTenantDomain(), userRecoveryData.getRecoveryScenario(),
@@ -477,14 +477,14 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet = prepStmt.executeQuery();
 
             if (resultSet.next()) {
-                int attempt = resultSet.getInt("ATTEMPT");
+                int failedAttempts = resultSet.getInt("FAILED_ATTEMPTS");
                 int resendCount = resultSet.getInt("RESEND_COUNT");
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
                 long createdTimeStamp = timeCreated.getTime();
 
                 UserRecoveryFlowData userRecoveryFlowData = new UserRecoveryFlowData(recoveryDataDO.getRecoveryFlowId(),
-                        timeCreated, attempt, resendCount);
+                        timeCreated, failedAttempts, resendCount);
 
                 boolean isRecoveryFlowIdExpired = isRecoveryFlowIdExpired(recoveryDataDO.getUser().getTenantDomain(),
                         createdTimeStamp, recoveryDataDO.getRemainingSetIds());

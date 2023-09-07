@@ -30,7 +30,7 @@ public class UserRecoveryData {
     private User user;
     private String recoveryFlowId;
     private String secret;
-    private int attempt;
+    private int failedAttempts;
     private int resendCount;
     private String remainingSetIds;
     private boolean codeExpired;
@@ -94,13 +94,13 @@ public class UserRecoveryData {
         this.timeCreated = timeCreated;
     }
 
-    public UserRecoveryData(User user, String recoveryFlowId, String secret, int attempt, int resendCount,
+    public UserRecoveryData(User user, String recoveryFlowId, String secret, int failedAttempts, int resendCount,
                             Enum recoveryScenario, Enum recoveryStep, String remainingSetIds, Timestamp timeCreated) {
 
         this.user = user;
         this.recoveryFlowId=recoveryFlowId;
         this.secret = secret;
-        this.attempt = attempt;
+        this.failedAttempts = failedAttempts;
         this.resendCount = resendCount;
         this.recoveryScenario = recoveryScenario;
         this.recoveryStep = recoveryStep;
@@ -145,13 +145,13 @@ public class UserRecoveryData {
         return user;
     }
 
-    public int getAttempt() {
-        return attempt;
+    public int getFailedAttempts() {
+        return failedAttempts;
     }
 
-    public void setAttempt(int attempt) {
+    public void setFailedAttempts(int failedAttempts) {
 
-        this.attempt = attempt;
+        this.failedAttempts = failedAttempts;
     }
 
     public int getResendCount() {
