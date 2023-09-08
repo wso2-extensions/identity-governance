@@ -433,7 +433,7 @@ public class UserAccountRecoveryManager {
      * @param recoveryFlowId          Recovery flow ID.
      * @param recoveryCode            Recovery code given to the user
      * @param notificationChannelDTOs List of NotificationChannelsResponseDTOs available for the user.
-     * @return RecoveryChannelInfoD TO object.
+     * @return RecoveryChannelInfoDTO object.
      */
     private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryFlowId,
                 String recoveryCode, NotificationChannelDTO[] notificationChannelDTOs) {
