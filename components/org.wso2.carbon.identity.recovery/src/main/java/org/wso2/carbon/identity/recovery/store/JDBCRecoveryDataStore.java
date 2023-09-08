@@ -136,8 +136,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             prepStmt2.setTimestamp(5, new Timestamp(new Date().getTime()),
                     Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
-            prepStmt1.execute();
             prepStmt2.execute();
+            prepStmt1.execute();
 
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
@@ -828,29 +828,22 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     @Override
     public void invalidateWithRecoveryFlowId(String recoveryFlowId) throws IdentityRecoveryException {
 
-        PreparedStatement prepStmt1 = null;
-        PreparedStatement prepStmt2 = null;
+        PreparedStatement prepStmt = null;
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         try {
-            String sql1 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_BY_RECOVERY_FLOW_ID;
 
-            prepStmt1 = connection.prepareStatement(sql1);
-            prepStmt1.setString(1, recoveryFlowId);
-            prepStmt1.execute();
+            String sql = IdentityRecoveryConstants.SQLQueries.INVALIDATE_BY_RECOVERY_FLOW_ID;
 
-            String sql2 = IdentityRecoveryConstants.SQLQueries.INVALIDATE_FLOW_DATA_BY_RECOVERY_FLOW_ID;
-
-            prepStmt2 = connection.prepareStatement(sql2);
-            prepStmt2.setString(1, recoveryFlowId);
-            prepStmt2.execute();
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, recoveryFlowId);
+            prepStmt.execute();
 
             IdentityDatabaseUtil.commitTransaction(connection);
         } catch (SQLException e) {
             IdentityDatabaseUtil.rollbackTransaction(connection);
             throw Utils.handleServerException(ERROR_CODE_UNEXPECTED, null, e);
         } finally {
-            IdentityDatabaseUtil.closeStatement(prepStmt1);
-            IdentityDatabaseUtil.closeStatement(prepStmt2);
+            IdentityDatabaseUtil.closeStatement(prepStmt);
             IdentityDatabaseUtil.closeConnection(connection);
         }
     }

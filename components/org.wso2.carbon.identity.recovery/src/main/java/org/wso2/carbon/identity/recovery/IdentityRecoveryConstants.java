@@ -656,9 +656,6 @@ public class IdentityRecoveryConstants {
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
 
-        public static final String INVALIDATE_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
-                "RECOVERY_FLOW_ID = ?";
-
         public static final String UPDATE_CODE = "UPDATE IDN_RECOVERY_DATA SET CODE = ?, STEP = ?, REMAINING_SETS = ? " +
                 "WHERE CODE = ?";
 
@@ -707,7 +704,7 @@ public class IdentityRecoveryConstants {
         public static final String LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * " +
                 "FROM IDN_RECOVERY_FLOW_DATA WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String INVALIDATE_FLOW_DATA_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_FLOW_DATA WHERE " +
+        public static final String INVALIDATE_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_FLOW_DATA WHERE " +
                 "RECOVERY_FLOW_ID = ?";
     }
 
