@@ -86,7 +86,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA_WITH_FLOW_ID);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.
+                    STORE_RECOVERY_DATA_WITH_FLOW_ID);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
