@@ -155,6 +155,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_CHANNEL_PROPERTY_KEY = "notificationChannel";
     public static final String VERIFIED_USER_PROPERTY_KEY = "verifiedUser";
     public static final String MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY = "manageNotificationsInternally";
+    public static final String CONFIRMATION_CODE_SEPARATOR = ".";
 
     // Recovery Scenarios.
     public static final String USER_NAME_RECOVERY = "UNR";

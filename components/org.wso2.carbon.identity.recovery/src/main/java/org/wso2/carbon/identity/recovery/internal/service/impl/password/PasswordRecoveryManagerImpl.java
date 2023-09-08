@@ -58,6 +58,7 @@ import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockSt
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Class that implements the PasswordRecoveryManager.
@@ -225,7 +226,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         // In the recovery scenarios which are not OTP based, the confirmation code is a combination of the
         // recovery flow id and another UUID generated. Hence, we need to get the recovery flow id from the
         // confirmation code. In the OTP based recovery scenario, the confirmation code is the recovery flow id.
-        String[] ids = confirmationCode.split("\\.");
+        String[] ids = confirmationCode.split(Pattern.quote(IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR));
         String recoveryFlowId;
         String code;
         if (ids.length == 2) {
