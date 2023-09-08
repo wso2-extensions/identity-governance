@@ -430,9 +430,10 @@ public class UserAccountRecoveryManager {
      * Prepare the response to be sent to the recovery APIs.
      *
      * @param username                Username of the user
+     * @param recoveryFlowId          Recovery flow ID.
      * @param recoveryCode            Recovery code given to the user
      * @param notificationChannelDTOs List of NotificationChannelsResponseDTOs available for the user.
-     * @return RecoveryChannelInfoDTO object.
+     * @return RecoveryChannelInfoD TO object.
      */
     private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryFlowId,
                 String recoveryCode, NotificationChannelDTO[] notificationChannelDTOs) {
@@ -934,7 +935,7 @@ public class UserAccountRecoveryManager {
      * Get user recovery data using the recovery flow id.
      *
      * @param recoveryFlowId Recovery flow id of the user.
-     * @param step Recovery step
+     * @param step Recovery step.
      * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
      */
     public UserRecoveryData getUserRecoveryDataFromFlowId(String recoveryFlowId, RecoverySteps step)
@@ -994,9 +995,8 @@ public class UserAccountRecoveryManager {
             throw e;
         }
         if (userRecoveryFlowData == null) {
-            throw Utils
-                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_RECOVERY_FLOW_DATA,
-                            recoveryDataDO.getRecoveryFlowId());
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_RECOVERY_FLOW_DATA,
+                    recoveryDataDO.getRecoveryFlowId());
         }
         return userRecoveryFlowData;
     }
@@ -1004,8 +1004,8 @@ public class UserAccountRecoveryManager {
     /**
      * Update recovery OTP attempt.
      *
-     * @param recoveryFlowId Recovery Flow Id
-     * @param failedAttempts Failed Attempts
+     * @param recoveryFlowId Recovery Flow Id.
+     * @param failedAttempts Failed Attempts.
      */
     public void updateRecoveryDataFailedAttempts(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
 
@@ -1016,8 +1016,8 @@ public class UserAccountRecoveryManager {
     /**
      * Update recovery OTP resend count.
      *
-     * @param recoveryFlowId Recovery Flow Id
-     * @param resendCount    Current Resend Count
+     * @param recoveryFlowId Recovery Flow Id.
+     * @param resendCount    Current Resend Count.
      */
     public void updateRecoveryDataResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
 
@@ -1028,7 +1028,7 @@ public class UserAccountRecoveryManager {
     /**
      * Invalidate the recovery Data.
      *
-     * @param recoveryFlowId Recovery Flow Id
+     * @param recoveryFlowId Recovery Flow Id.
      */
     public void invalidateRecoveryData(String recoveryFlowId) throws IdentityRecoveryException {
 
@@ -1041,6 +1041,7 @@ public class UserAccountRecoveryManager {
      *
      * @param username     Username
      * @param tenantDomain Tenant domain
+     * @param recoveryFlowId Recovery flow ID.
      * @param secretKey    RecoveryId
      * @param scenario     RecoveryScenario
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object

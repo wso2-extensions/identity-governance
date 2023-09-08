@@ -140,7 +140,7 @@ public class RecoveryInformationDTO {
     /**
      * Get recovery flow id.
      *
-     * @return recoveryFlowId
+     * @return recoveryFlowId.
      */
     public String getRecoveryFlowId() {
 
@@ -150,7 +150,7 @@ public class RecoveryInformationDTO {
     /**
      * Set recovery flow id.
      *
-     * @param recoveryFlowId RecoveryFlowId
+     * @param recoveryFlowId RecoveryFlowId.
      */
     public void setRecoveryFlowId(String recoveryFlowId) {
 

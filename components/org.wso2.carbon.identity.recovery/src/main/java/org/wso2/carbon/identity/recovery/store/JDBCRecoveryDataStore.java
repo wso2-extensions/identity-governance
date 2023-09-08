@@ -86,7 +86,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         Connection connection = IdentityDatabaseUtil.getDBConnection(true);
         PreparedStatement prepStmt = null;
         try {
-            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
+            prepStmt = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA_WITH_FLOW_ID);
             prepStmt.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
@@ -116,7 +116,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt1 = null;
         PreparedStatement prepStmt2 = null;
         try {
-            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA_WITH_FLOW_ID);
             prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
@@ -158,7 +158,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         PreparedStatement prepStmt1 = null;
         PreparedStatement prepStmt2 = null;
         try {
-            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_ACCOUNT_RECOVERY_DATA);
+            prepStmt1 = connection.prepareStatement(IdentityRecoveryConstants.SQLQueries.STORE_RECOVERY_DATA_WITH_FLOW_ID);
             prepStmt1.setString(1, recoveryDataDO.getUser().getUserName());
             prepStmt1.setString(2, recoveryDataDO.getUser().getUserStoreDomain().toUpperCase());
             prepStmt1.setInt(3, IdentityTenantUtil.getTenantId(recoveryDataDO.getUser().getTenantDomain()));
@@ -387,7 +387,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
         User user = null;
         String code = null;
         int failedAttempts = 0;
-        int resendCount =0;
+        int resendCount = 0;
         long createdTimeStamp = 0;
         UserRecoveryData userRecoveryData = null;
         Boolean isOperationSuccess = false;
@@ -1050,11 +1050,11 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
     /**
      * Checks whether the recovery flow id has expired or not.
      *
-     * @param tenantDomain     Tenant domain
-     * @param createdTimestamp Time stamp
-     * @param recoveryData     Additional data for validate the code
-     * @return Whether the recovery flow id has expired or not
-     * @throws IdentityRecoveryServerException Error while reading the configs
+     * @param tenantDomain     Tenant domain.
+     * @param createdTimestamp Time stamp.
+     * @param recoveryData     Additional data for validate the code.
+     * @return Whether the recovery flow id has expired or not.
+     * @throws IdentityRecoveryServerException Error while reading the configs.
      */
     private boolean isRecoveryFlowIdExpired(String tenantDomain, long createdTimestamp, String recoveryData)
             throws IdentityRecoveryServerException {

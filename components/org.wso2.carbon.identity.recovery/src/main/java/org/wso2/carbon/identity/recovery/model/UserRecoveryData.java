@@ -146,6 +146,7 @@ public class UserRecoveryData {
     }
 
     public int getFailedAttempts() {
+
         return failedAttempts;
     }
 
@@ -155,6 +156,7 @@ public class UserRecoveryData {
     }
 
     public int getResendCount() {
+
         return resendCount;
     }
 

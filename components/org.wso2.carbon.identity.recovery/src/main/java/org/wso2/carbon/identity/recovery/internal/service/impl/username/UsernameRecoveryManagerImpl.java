@@ -293,7 +293,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
     /**
      * Invalidate the recovery flow id.
      *
-     * @param recoveryFlowId Recovery flow id
+     * @param recoveryFlowId Recovery flow id.
      */
     private void invalidateRecoveryFlowId(String recoveryFlowId) throws IdentityRecoveryException {
 

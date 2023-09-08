@@ -116,7 +116,7 @@ public class PasswordRecoverDTO {
     /**
      * Get the recovery flow id.
      *
-     * @return Recovery flow id
+     * @return Recovery flow id.
      */
     public String getRecoveryFlowId() {
 
@@ -126,7 +126,7 @@ public class PasswordRecoverDTO {
     /**
      * Set the recovery flow id.
      *
-     * @param recoveryFlowId Recovery flow id
+     * @param recoveryFlowId Recovery flow id.
      */
     public void setRecoveryFlowId(String recoveryFlowId) {
 

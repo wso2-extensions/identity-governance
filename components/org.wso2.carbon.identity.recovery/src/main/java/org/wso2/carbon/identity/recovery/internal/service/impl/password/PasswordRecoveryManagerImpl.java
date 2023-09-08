@@ -209,12 +209,12 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     /**
      * Validate the code given for password recovery and return the password reset code.
      *
-     * @param otp              One Time Password
-     * @param confirmationCode Confirmation code
-     * @param tenantDomain     Tenant domain
-     * @param properties       Meta properties in the confirmation request
-     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code
-     * @throws IdentityRecoveryException Error while confirming password recovery
+     * @param otp              One Time Password.
+     * @param confirmationCode Confirmation code.
+     * @param tenantDomain     Tenant domain.
+     * @param properties       Meta properties in the confirmation request.
+     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code.
+     * @throws IdentityRecoveryException Error while confirming password recovery.
      */
     @Override
     public PasswordResetCodeDTO confirm(String otp, String confirmationCode, String tenantDomain,
@@ -251,23 +251,22 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 log.debug("Valid confirmation code for user: " + domainQualifiedName);
             }
             return buildPasswordResetCodeDTO(code);
-        } else {
-            if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                    RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
-                userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
-                        recoveryFlowId);
-            }
-            userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts + 1);
-            if (log.isDebugEnabled()) {
-                log.debug("Invalid confirmation code for user: " + domainQualifiedName);
-            }
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
         }
+        if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
+            userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
+                    recoveryFlowId);
+        }
+        userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts + 1);
+        if (log.isDebugEnabled()) {
+            log.debug("Invalid confirmation code for user: " + domainQualifiedName);
+        }
+        throw Utils.handleClientException(
+                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
+                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
     }
 
     /**
@@ -317,12 +316,12 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     /**
      * Reset the password for password recovery, if the password reset code is valid.
      *
-     * @param resetCode  Password reset code
-     * @param password   New password
-     * @param properties Properties
+     * @param resetCode  Password reset code.
+     * @param password   New password.
+     * @param properties Properties.
      * @return SuccessfulPasswordResetDTO {@link SuccessfulPasswordResetDTO} object which contain the information
-     * for a successful password update
-     * @throws IdentityRecoveryException Error while resetting the password
+     * for a successful password update.
+     * @throws IdentityRecoveryException Error while resetting the password.
      */
     @Override
     public SuccessfulPasswordResetDTO reset(String resetCode, String confirmationCode, char[] password, Map<String, String> properties)
@@ -570,6 +569,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      * @param notificationChannel Notified channel
      * @param confirmationCode    Confirmation code for confirm recovery
      * @param resendCode          Code to resend recovery confirmation code
+     * @param recoveryFlowId      Recovery flow ID.
      * @return PasswordRecoverDTO object
      */
     private PasswordRecoverDTO buildPasswordRecoveryResponseDTO(String notificationChannel, String confirmationCode,
@@ -749,6 +749,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      * Add the notification channel recovery data to the store.
      *
      * @param secretKey    RecoveryId
+     * @param recoveryFlowId Recovery flow ID.
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
      * @throws IdentityRecoveryServerException Error storing recovery data
      */

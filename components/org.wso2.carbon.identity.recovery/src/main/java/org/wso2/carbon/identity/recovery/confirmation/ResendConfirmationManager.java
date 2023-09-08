@@ -351,6 +351,7 @@ public class ResendConfirmationManager {
      * Add the notification channel recovery data to the store.
      *
      * @param secretKey        RecoveryId
+     * @param recoveryFlowId   Recovery flow ID
      * @param recoveryData     Data to be stored as mata which are needed to evaluate the recovery data object
      * @param recoveryScenario Recovery scenario
      * @param recoveryStep     Recovery step

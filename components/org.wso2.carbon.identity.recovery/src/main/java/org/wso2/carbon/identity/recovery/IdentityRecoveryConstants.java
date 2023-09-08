@@ -361,10 +361,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code: '%s'"),
         ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
                 "User account recovery validation failed for user account: '%s'"),
-        ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'"),
-        ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'."),
+        ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'."),
         ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
-                + "recovery flow id : '%s'"),
+                + "recovery flow id : '%s'."),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "
@@ -625,7 +625,7 @@ public class IdentityRecoveryConstants {
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS)"
                 + "VALUES (?,?,?,?,?,?,?,?)";
 
-        public static final String STORE_ACCOUNT_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
+        public static final String STORE_RECOVERY_DATA_WITH_FLOW_ID = "INSERT INTO IDN_RECOVERY_DATA "
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS, " +
                 "RECOVERY_FLOW_ID) VALUES (?,?,?,?,?,?,?,?,?)";
 

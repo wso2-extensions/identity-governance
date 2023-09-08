@@ -65,7 +65,7 @@ public class RecoveryChannelInfoDTO {
     /**
      * Get the recovery Flow id of the recovery flow.
      *
-     * @return Recovery Flow id of the recovery flow
+     * @return Recovery Flow id of the recovery flow.
      */
     public String getRecoveryFlowId() {
 
@@ -75,7 +75,7 @@ public class RecoveryChannelInfoDTO {
     /**
      * Set the recovery Flow id of the recovery flow.
      *
-     * @param recoveryFlowId Recovery Flow Id
+     * @param recoveryFlowId Recovery Flow Id.
      */
     public void setRecoveryFlowId(String recoveryFlowId) {
 

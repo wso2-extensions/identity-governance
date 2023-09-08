@@ -55,7 +55,7 @@ public class ResendConfirmationDTO {
     /**
      * Get recovery flow id.
      *
-     * @return Recovery flow id
+     * @return Recovery flow id.
      */
     public String getRecoveryFlowId() {
 
@@ -65,7 +65,7 @@ public class ResendConfirmationDTO {
     /**
      * Set recovery flow id.
      *
-     * @param recoveryFlowId Recovery Flow Id
+     * @param recoveryFlowId Recovery Flow Id.
      */
     public void setRecoveryFlowId(String recoveryFlowId) {
 

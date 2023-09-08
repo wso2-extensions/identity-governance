@@ -554,6 +554,7 @@ public class NotificationPasswordRecoveryManager {
      */
     public void updatePassword(String code, String confirmationCode, String password, Property[] properties)
             throws IdentityRecoveryException, IdentityEventException {
+
         updateUserPassword(code, confirmationCode, password, properties);
     }
 
