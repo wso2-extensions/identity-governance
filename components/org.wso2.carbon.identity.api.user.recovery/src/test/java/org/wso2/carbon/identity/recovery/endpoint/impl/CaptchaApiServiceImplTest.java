@@ -109,6 +109,7 @@ public class CaptchaApiServiceImplTest{
     }
 
     public Properties getSampleConfigFile() throws IOException {
+
         Path path = Paths.get("src/test/resources", "repository", "conf", "identity",
                 CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME);
         Properties sampleProperties = new Properties();

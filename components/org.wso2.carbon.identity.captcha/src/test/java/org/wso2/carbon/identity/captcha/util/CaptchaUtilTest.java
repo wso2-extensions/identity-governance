@@ -22,7 +22,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
@@ -32,7 +31,8 @@ import java.io.IOException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import static org.testng.Assert.*;
+
+import static org.testng.Assert.assertThrows;
 
 /**
  * Unit tests for CaptchaUtil.java
@@ -109,8 +109,6 @@ public class CaptchaUtilTest {
         CaptchaDataHolder.getInstance().setReCaptchaSiteKey("dummySiteKey");
         CaptchaDataHolder.getInstance().setReCaptchaProjectID("dummyProjectId");
 
-
-
         Method method = getCreateReCaptchaEnterpriseVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
         String expectedURI = RECAPTCHA_ENTERPRISE_API_URL+ "/v1/projects/dummyProjectId/assessments?key=dummyKey";
@@ -145,7 +143,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(
                 verificationResponse.toString().getBytes()));
-        // verify no exception is thrown for high score
+        // Verify no exception is thrown for high score.
         method.invoke(null, httpEntity);
     }
 
@@ -160,7 +158,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
                 getBytes()));
-        // verify an exception is thrown for low score
+        // Verify an exception is thrown for low score.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
     }
 
@@ -175,7 +173,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.
                 toString().getBytes()));
-        // verify an exception is thrown for invalid response
+        // Verify an exception is thrown for invalid response.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
     }
 
@@ -191,7 +189,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
                 getBytes()));
-        // verify no exception is thrown for high score
+        // Verify no exception is thrown for high score.
         method.invoke(null, httpEntity);
     }
 
@@ -206,7 +204,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
                 getBytes()));
-        // verify no exception is thrown for low score
+        // Verify no exception is thrown for low score.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
     }
 
@@ -221,7 +219,7 @@ public class CaptchaUtilTest {
         HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
         Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
                 getBytes()));
-        // verify no exception is thrown for invalid response
+        // Verify no exception is thrown for invalid response.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
     }
 }

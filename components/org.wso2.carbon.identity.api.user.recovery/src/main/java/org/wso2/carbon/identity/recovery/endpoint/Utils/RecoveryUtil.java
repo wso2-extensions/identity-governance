@@ -470,7 +470,7 @@ public class RecoveryUtil {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-        // Check if project id is available for reCaptcha Enterprise
+        // Check if project id is available for reCaptcha Enterprise.
         if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType) &&
                 StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_PROJECT_ID))) {
             RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants

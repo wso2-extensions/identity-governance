@@ -22,7 +22,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
@@ -272,6 +271,46 @@ public class CaptchaUtil {
         return claimValues;
     }
 
+    public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
+
+        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
+        String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
+
+        HttpPost httpPost;
+
+        // If the reCaptcha type is defined and, it is enterprise, the enterprise process will be done. Otherwise,
+        // the reCaptcha v2/v3 process will be done.
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
+            // For ReCaptcha Enterprise.
+            httpPost = createReCaptchaEnterpriseVerificationHttpPost(reCaptchaResponse);
+        } else {
+            // For ReCaptcha v2 and v3.
+            httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
+        }
+
+        HttpResponse response;
+        try {
+            response = httpclient.execute(httpPost);
+        } catch (IOException e) {
+            throw new CaptchaServerException("Unable to get the verification response.", e);
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            throw new CaptchaServerException("reCaptcha verification response is not received.");
+        }
+
+        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
+            // For ReCaptcha Enterprise.
+            verifyReCaptchaEnterpriseResponse(entity);
+        } else {
+            // For Recaptcha v2 and v3.
+            verifyReCaptchaResponse(entity);
+        }
+
+        return true;
+    }
+
     private static HttpPost createReCaptchaEnterpriseVerificationHttpPost(String reCaptchaResponse) {
 
         HttpPost httpPost;
@@ -392,46 +431,6 @@ public class CaptchaUtil {
         } catch (ClassCastException e) {
             throw new CaptchaServerException("Unable to cast the response value.", e);
         }
-    }
-
-    public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
-
-        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
-        String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
-
-        HttpPost httpPost;
-
-        // If the reCaptcha type is defined and, it is enterprise, the enterprise process will be done. Otherwise,
-        // the reCaptcha v2/v3 process will be done.
-        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
-            // For ReCaptcha Enterprise.
-            httpPost = createReCaptchaEnterpriseVerificationHttpPost(reCaptchaResponse);
-        } else {
-            // For ReCaptcha v2 and v3.
-            httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
-        }
-
-        HttpResponse response;
-        try {
-            response = httpclient.execute(httpPost);
-        } catch (IOException e) {
-            throw new CaptchaServerException("Unable to get the verification response.", e);
-        }
-
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            throw new CaptchaServerException("reCaptcha verification response is not received.");
-        }
-
-        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
-            // For ReCaptcha Enterprise.
-            verifyReCaptchaEnterpriseResponse(entity);
-        } else {
-            // For Recaptcha v2 and v3.
-            verifyReCaptchaResponse(entity);
-        }
-
-        return true;
     }
 
     public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain) throws
@@ -578,7 +577,7 @@ public class CaptchaUtil {
             }
             CaptchaDataHolder.getInstance().setReCaptchaAPIKey(reCaptchaAPIKey);
         } else {
-            // Secret Key is only required if recaptcha enterprise is not enabled
+            // Secret Key is only required if recaptcha enterprise is not enabled.
             String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
             if (StringUtils.isBlank(reCaptchaSecretKey)) {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
@@ -820,7 +819,7 @@ public class CaptchaUtil {
      * Get the ReCaptcha Type.
      * @return ReCaptcha Type as a String.
      */
-    public static String reCaptchaType() {
+    public static String getReCaptchaType() {
 
         return CaptchaDataHolder.getInstance().getReCaptchaType();
     }

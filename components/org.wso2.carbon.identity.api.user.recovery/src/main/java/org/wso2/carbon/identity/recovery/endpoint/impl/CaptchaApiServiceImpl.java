@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -90,42 +89,28 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         HttpEntity entity = response.getEntity();
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
 
-        if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
-            // For ReCaptcha Enterprise.
-            if (entity == null) {
-                RecoveryUtil.handleBadRequest("ReCaptcha Enterprise verification response is not received.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        if (entity == null) {
+            RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        try (InputStream in = entity.getContent()) {
+            JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
+
+            if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
+                // For Recaptcha Enterprise.
+                JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES)
+                        .getAsJsonObject();
+                boolean success = tokenProperties.get(CaptchaConstants.CAPTCHA_VALID).getAsBoolean();
+                reCaptchaVerificationResponseDTO.setSuccess(success);
+            } else {
+                // For ReCaptcha v2 and v3.
+                reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
+                        CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
             }
-            try {
-                try (InputStream in = entity.getContent()) {
-                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                    JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES)
-                            .getAsJsonObject();
-                    boolean success = tokenProperties.get(CaptchaConstants.CAPTCHA_VALID).getAsBoolean();
-                    reCaptchaVerificationResponseDTO.setSuccess(success);
-                }
-            } catch (IOException e) {
-                log.error("Unable to read the verification response.", e);
-                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-            }
-        } else {
-            // For ReCaptcha v2 and v3.
-            try {
-                if (entity == null) {
-                    RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
-                            Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-                }
-                try (InputStream in = entity.getContent()) {
-                    JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-                    reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
-                            CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
-                }
-            } catch (IOException e) {
-                log.error("Unable to read the verification response.", e);
-                RecoveryUtil.handleBadRequest("Unable to read the verification response.",
-                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-            }
+        } catch (IOException e) {
+            log.error("Unable to read the verification response.", e);
+            RecoveryUtil.handleBadRequest("Unable to read the verification response.",
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
 
         return Response.ok(reCaptchaVerificationResponseDTO).build();
