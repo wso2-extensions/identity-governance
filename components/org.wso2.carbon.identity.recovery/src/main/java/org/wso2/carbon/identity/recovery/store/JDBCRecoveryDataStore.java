@@ -334,7 +334,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 Enum recoveryStep = RecoverySteps.valueOf(resultSet.getString("STEP"));
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
-                String recoveryFlowId = resultSet.getString("RECOVERY_FLOW_ID");
+                String recoveryFlowId = resultSet.getString(IdentityRecoveryConstants.DBConstants.RECOVERY_FLOW_ID);
 
                 userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, recoveryScenario, recoveryStep,
                         timeCreated);
@@ -400,9 +400,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet1 = prepStmt1.executeQuery();
 
             if (resultSet1.next()) {
-                failedAttempts = resultSet1.getInt("FAILED_ATTEMPTS");
-                resendCount = resultSet1.getInt("RESEND_COUNT");
-                Timestamp timeCreated = resultSet1.getTimestamp("TIME_CREATED",
+                failedAttempts = resultSet1.getInt(IdentityRecoveryConstants.DBConstants.FAILED_ATTEMPTS);
+                resendCount = resultSet1.getInt(IdentityRecoveryConstants.DBConstants.RESEND_COUNT);
+                Timestamp timeCreated = resultSet1.getTimestamp(IdentityRecoveryConstants.DBConstants.TIME_CREATED,
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
                 createdTimeStamp = timeCreated.getTime();
             }
@@ -416,14 +416,16 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
 
             if (resultSet2.next()) {
                 user = new User();
-                user.setUserName(resultSet2.getString("USER_NAME"));
-                user.setTenantDomain(IdentityTenantUtil.getTenantDomain(resultSet2.getInt("TENANT_ID")));
-                user.setUserStoreDomain(resultSet2.getString("USER_DOMAIN"));
+                user.setUserName(resultSet2.getString(IdentityRecoveryConstants.DBConstants.USER_NAME));
+                user.setTenantDomain(IdentityTenantUtil.getTenantDomain(resultSet2.getInt(
+                        IdentityRecoveryConstants.DBConstants.TENANT_ID)));
+                user.setUserStoreDomain(resultSet2.getString(IdentityRecoveryConstants.DBConstants.USER_DOMAIN));
 
-                code = resultSet2.getString("CODE");
-                Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet2.getString("SCENARIO"));
-                String remainingSets = resultSet2.getString("REMAINING_SETS");
-                Timestamp secretCreatedTime = resultSet2.getTimestamp("TIME_CREATED",
+                code = resultSet2.getString(IdentityRecoveryConstants.DBConstants.CODE);
+                Enum recoveryScenario = RecoveryScenarios.valueOf(resultSet2.getString(IdentityRecoveryConstants.
+                        DBConstants.SCENARIO));
+                String remainingSets = resultSet2.getString(IdentityRecoveryConstants.DBConstants.REMAINING_SETS);
+                Timestamp secretCreatedTime = resultSet2.getTimestamp(IdentityRecoveryConstants.DBConstants.TIME_CREATED,
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
 
                 userRecoveryData = new UserRecoveryData(user, recoveryFlowId, code, failedAttempts, resendCount,
@@ -477,9 +479,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             resultSet = prepStmt.executeQuery();
 
             if (resultSet.next()) {
-                int failedAttempts = resultSet.getInt("FAILED_ATTEMPTS");
-                int resendCount = resultSet.getInt("RESEND_COUNT");
-                Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
+                int failedAttempts = resultSet.getInt(IdentityRecoveryConstants.DBConstants.FAILED_ATTEMPTS);
+                int resendCount = resultSet.getInt(IdentityRecoveryConstants.DBConstants.RESEND_COUNT);
+                Timestamp timeCreated = resultSet.getTimestamp(IdentityRecoveryConstants.DBConstants.TIME_CREATED,
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
                 long createdTimeStamp = timeCreated.getTime();
 
@@ -627,7 +629,7 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                 code = resultSet.getString("CODE");
                 Timestamp timeCreated = resultSet.getTimestamp("TIME_CREATED",
                         Calendar.getInstance(TimeZone.getTimeZone(UTC)));
-                String recoveryFlowId = resultSet.getString("RECOVERY_FLOW_ID");
+                String recoveryFlowId = resultSet.getString(IdentityRecoveryConstants.DBConstants.RECOVERY_FLOW_ID);
 
                 userRecoveryData =
                         new UserRecoveryData(user, recoveryFlowId, code, scenario, step, timeCreated);

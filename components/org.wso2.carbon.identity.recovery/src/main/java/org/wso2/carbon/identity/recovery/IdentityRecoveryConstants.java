@@ -364,6 +364,7 @@ public class IdentityRecoveryConstants {
                 "User account recovery validation failed for user account: '%s'"),
         ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'."),
         ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'."),
+        ERROR_CODE_API_DISABLED("UAR-10017", "Recovery API is disabled"),
         ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
                 + "recovery flow id : '%s'."),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
@@ -618,6 +619,20 @@ public class IdentityRecoveryConstants {
                 ".Password.MaxFailedAttempts";
         public static final String RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.OTP" +
                 ".Password.MaxResendAttempts";
+    }
+
+    public static class DBConstants {
+
+        public static final String USER_NAME = "USER_NAME";
+        public static final String TENANT_ID = "TENANT_ID";
+        public static final String USER_DOMAIN = "USER_DOMAIN";
+        public static final String CODE = "CODE";
+        public static final String SCENARIO = "SCENARIO";
+        public static final String REMAINING_SETS = "REMAINING_SETS";
+        public static final String RECOVERY_FLOW_ID = "RECOVERY_FLOW_ID";
+        public static final String FAILED_ATTEMPTS = "FAILED_ATTEMPTS";
+        public static final String RESEND_COUNT = "RESEND_COUNT";
+        public static final String TIME_CREATED = "TIME_CREATED";
     }
 
     public static class SQLQueries {
