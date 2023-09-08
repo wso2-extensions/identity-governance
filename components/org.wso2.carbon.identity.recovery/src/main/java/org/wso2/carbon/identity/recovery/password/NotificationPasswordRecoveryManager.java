@@ -260,7 +260,7 @@ public class NotificationPasswordRecoveryManager {
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
         if (recoveryFlowId != null && !StringUtils.equals(notificationChannel,
                 NotificationChannels.SMS_CHANNEL.getChannelType())) {
-            secretKey = recoveryFlowId + "." + secretKey;
+            secretKey = recoveryFlowId + IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR + secretKey;
         }
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);

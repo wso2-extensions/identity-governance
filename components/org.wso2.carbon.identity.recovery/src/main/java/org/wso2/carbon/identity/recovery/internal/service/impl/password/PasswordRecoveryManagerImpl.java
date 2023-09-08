@@ -253,7 +253,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             }
             return buildPasswordResetCodeDTO(code);
         }
-        if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+        failedAttempts = failedAttempts + 1;
+        if (failedAttempts >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
                 RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
             userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
             throw Utils.handleClientException(
@@ -261,7 +262,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
                     recoveryFlowId);
         }
-        userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts + 1);
+        userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts);
         if (log.isDebugEnabled()) {
             log.debug("Invalid confirmation code for user: " + domainQualifiedName);
         }

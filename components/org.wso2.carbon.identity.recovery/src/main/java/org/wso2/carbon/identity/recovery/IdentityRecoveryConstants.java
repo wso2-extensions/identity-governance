@@ -704,8 +704,8 @@ public class IdentityRecoveryConstants {
         public static final String UPDATE_CODE_RESEND_COUNT = "UPDATE IDN_RECOVERY_FLOW_DATA SET RESEND_COUNT = ? "
                 + "WHERE RECOVERY_FLOW_ID = ?";
 
-        public static final String LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_FLOW_DATA "
-                + "WHERE RECOVERY_FLOW_ID = ?";
+        public static final String LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * " +
+                "FROM IDN_RECOVERY_FLOW_DATA WHERE RECOVERY_FLOW_ID = ?";
 
         public static final String INVALIDATE_FLOW_DATA_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_FLOW_DATA WHERE " +
                 "RECOVERY_FLOW_ID = ?";
