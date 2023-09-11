@@ -58,7 +58,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final Log log = LogFactory.getLog(EmailOTPCaptchaConnector.class);
     private static final String SECURED_DESTINATIONS = "/commonauth";
-    public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
+    public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "EmailOTP";
     public static final String IS_REDIRECT_TO_EMAIL_OTP = "isRedirectToEmailOTP";
     public static final String RESEND_CODE = "resendCode";
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
