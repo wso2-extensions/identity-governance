@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.captcha.connector.recaptcha.GenericAuthenticator
 import org.wso2.carbon.identity.captcha.connector.recaptcha.LiteUserSelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.ResendConfirmationReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.SMSOTPCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.UsernameRecoveryReCaptchaConnector;
@@ -89,6 +90,10 @@ public class CaptchaComponent {
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             // Initialize and register EmailOTPRecaptchaConnector.
             captchaConnector = new EmailOTPCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            // Initialize and register SMSOTPRecaptchaConnector.
+            captchaConnector = new SMSOTPCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
