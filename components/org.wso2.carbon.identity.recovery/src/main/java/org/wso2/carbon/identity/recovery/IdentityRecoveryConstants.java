@@ -601,6 +601,8 @@ public class IdentityRecoveryConstants {
                 ".DisableRandomValueForCredentials";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION = "EmailVerification.AskPassword" +
+                ".AccountActivation";
 
         public static final String TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME = "TenantRegistrationVerification." +
                 "AskPassword.ExpiryTime";
