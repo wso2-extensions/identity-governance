@@ -366,6 +366,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'."),
         ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
                 + "recovery flow id : '%s'."),
+        ERROR_CODE_NO_OTP_IN_REQUEST("UAR-10019", "No OTP found."),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "

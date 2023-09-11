@@ -178,11 +178,8 @@ public class ResendConfirmationManager {
         } else {
             userRecoveryDataStore.invalidate(user);
             confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(), recoveryScenario);
-            if (recoveryFlowId != null && !StringUtils.equals(notificationChannel,
-                    NotificationChannels.SMS_CHANNEL.getChannelType())) {
-                confirmationCode = recoveryFlowId + IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR +
-                        confirmationCode;
-            }
+            confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
+                    confirmationCode);
             // Store new confirmation code.
             addRecoveryDataObject(confirmationCode, recoveryFlowId, notificationChannel, scenario, step, user);
         }

@@ -1184,6 +1184,23 @@ public class Utils {
     }
 
     /**
+     * Concatenate recovery flow id with the generated secret key if the notification channel is email.
+     *
+     * @param recoveryFlowId      Recovery flow id.
+     * @param notificationChannel Recovery notification channel.
+     * @param secretKey           Secret Key.
+     * @return Secret key.
+     */
+    public static String concatRecoveryFlowIdWithSecretKey(String recoveryFlowId, String notificationChannel,
+                                                           String secretKey) {
+        if (recoveryFlowId != null && StringUtils.equals(notificationChannel,
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            secretKey = recoveryFlowId + IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR + secretKey;
+        }
+        return secretKey;
+    }
+
+    /**
      * Return user account state.
      *
      * @param user  User.

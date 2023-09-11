@@ -258,10 +258,7 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
-        if (recoveryFlowId != null && !StringUtils.equals(notificationChannel,
-                NotificationChannels.SMS_CHANNEL.getChannelType())) {
-            secretKey = recoveryFlowId + IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR + secretKey;
-        }
+        secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 

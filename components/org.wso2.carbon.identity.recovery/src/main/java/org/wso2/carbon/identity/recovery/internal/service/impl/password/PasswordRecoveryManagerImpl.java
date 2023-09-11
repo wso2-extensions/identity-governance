@@ -235,6 +235,11 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         } else {
             recoveryFlowId = confirmationCode;
             code = otp;
+            if (code == null) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_OTP_IN_REQUEST.getCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_OTP_IN_REQUEST.getMessage(), null);
+            }
         }
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
