@@ -21,6 +21,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.password.policy.handler.PasswordPolicyValidationHandler;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -43,11 +44,13 @@ public class IdentityPasswordPolicyServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("Password Policy Service component is enabled");
             }
+            BundleContext bundleContext = context.getBundleContext();
+            IdentityPasswordPolicyServiceDataHolder.getInstance().setBundleContext(bundleContext);
             if (IdentityPasswordPolicyServiceDataHolder.getInstance().isPasswordPolicyHandlerEnabled()) {
-                BundleContext bundleContext = context.getBundleContext();
-                IdentityPasswordPolicyServiceDataHolder.getInstance().setBundleContext(bundleContext);
+
                 PasswordPolicyValidationHandler handler = new PasswordPolicyValidationHandler();
                 context.getBundleContext().registerService(AbstractEventHandler.class.getName(), handler, null);
+                context.getBundleContext().registerService(IdentityConnectorConfig.class.getName(), handler, null);
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Password Policy Validation Handler is disabled.");
