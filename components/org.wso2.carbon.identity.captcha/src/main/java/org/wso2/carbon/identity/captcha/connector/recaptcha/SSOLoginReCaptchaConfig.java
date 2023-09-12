@@ -22,7 +22,9 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.AuthenticationFlowHandler;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.captcha.connector.CaptchaPostValidationResponse;
@@ -39,7 +41,9 @@ import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -59,9 +63,17 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
 
     private static final Log log = LogFactory.getLog(SSOLoginReCaptchaConfig.class);
 
-    private static final String CONNECTOR_IDENTIFIER_ATTRIBUTE = "username,password";
-    private static final String RECAPTCHA_VERIFICATION_CLAIM = "http://wso2.org/claims/identity/failedLoginAttempts";
     private static final String SECURED_DESTINATIONS = "/commonauth,/samlsso,/oauth2";
+    private static final String USERNAME = "username";
+    private static final String PASSWORD = "password";
+    private static final String OTPCODE = "OTPCode";
+    private static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
+    private static final String SMS_OTP_AUTHENTICATOR_NAME = "sms-otp-authenticator";
+    private static final String FAILED_LOGIN_ATTEMPTS_CLAIM_URI = "http://wso2.org/claims/identity/failedLoginAttempts";
+    private static final String FAILED_EMAIL_OTP_ATTEMPTS_CLAIM_URI
+            = "http://wso2.org/claims/identity/failedEmailOtpAttempts";
+    private static final String FAILED_SMS_OTP_ATTEMPTS_CLAIM_URI
+            = "http://wso2.org/claims/identity/failedSmsOtpAttempts";
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -89,12 +101,11 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             return false;
         }
 
-        String[] connectorIdentifierAttributes = CONNECTOR_IDENTIFIER_ATTRIBUTE.split(",");
-        for (String attribute : connectorIdentifierAttributes) {
-            if (servletRequest.getParameter(attribute) == null) {
-                return false;
-            }
+        if (!containsBasicAuthenticatorAttributes(servletRequest) &&
+                !containsOTPAuthenticatorAttributes(servletRequest)) {
+            return false;
         }
+
         return true;
     }
 
@@ -130,18 +141,26 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             preValidationResponse.setCaptchaAttributes(params);
             preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
             preValidationResponse.setCaptchaValidationRequired(true);
+        } else {
+            String failedLoginAttemptsClaimUri = FAILED_LOGIN_ATTEMPTS_CLAIM_URI;
+            if (EMAIL_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())) {
+                failedLoginAttemptsClaimUri = FAILED_EMAIL_OTP_ATTEMPTS_CLAIM_URI;
+            }
+            if (SMS_OTP_AUTHENTICATOR_NAME.equals(context.getCurrentAuthenticator())) {
+                failedLoginAttemptsClaimUri = FAILED_SMS_OTP_ATTEMPTS_CLAIM_URI;
+            }
+            if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
+                    tenantDomain, failedLoginAttemptsClaimUri)) {
+                preValidationResponse.setCaptchaValidationRequired(true);
+                preValidationResponse.setMaxFailedLimitReached(true);
 
-        } else if (CaptchaUtil.isMaximumFailedLoginAttemptsReached(MultitenantUtils.getTenantAwareUsername(username),
-                tenantDomain)) {
-            preValidationResponse.setCaptchaValidationRequired(true);
-            preValidationResponse.setMaxFailedLimitReached(true);
-
-            preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
-            Map<String, String> params = new HashMap<>();
-            params.put(CaptchaConstants.RE_CAPTCHA, CaptchaConstants.TRUE);
-            params.put(CaptchaConstants.AUTH_FAILURE, CaptchaConstants.TRUE);
-            params.put(CaptchaConstants.AUTH_FAILURE_MSG, CaptchaConstants.RECAPTCHA_FAIL_MSG_KEY);
-            preValidationResponse.setCaptchaAttributes(params);
+                preValidationResponse.setOnCaptchaFailRedirectUrls(CaptchaUtil.getOnFailedLoginUrls());
+                Map<String, String> params = new HashMap<>();
+                params.put(CaptchaConstants.RE_CAPTCHA, CaptchaConstants.TRUE);
+                params.put(CaptchaConstants.AUTH_FAILURE, CaptchaConstants.TRUE);
+                params.put(CaptchaConstants.AUTH_FAILURE_MSG, CaptchaConstants.RECAPTCHA_FAIL_MSG_KEY);
+                preValidationResponse.setCaptchaAttributes(params);
+            }
         }
         // Post validate all requests
         preValidationResponse.setMaxFailedLimitReached(true);
@@ -308,7 +327,7 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
      */
     private boolean isReCaptchaEnabledForSSOLogin(ServletRequest servletRequest) {
 
-        String username = servletRequest.getParameter("username");
+        String username = servletRequest.getParameter(USERNAME);
         if (StringUtils.isBlank(username)) {
             return false;
         }
@@ -347,6 +366,45 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
             return false;
         }
 
+        if (containsOTPAuthenticatorAttributes(servletRequest) && !isOTPAsFirstFactor(context)) {
+            return false;
+        }
+
         return true;
+    }
+
+    private boolean containsBasicAuthenticatorAttributes(ServletRequest servletRequest) {
+
+        return servletRequest.getParameter(USERNAME) != null && servletRequest.getParameter(PASSWORD) != null;
+    }
+
+    private boolean containsOTPAuthenticatorAttributes(ServletRequest servletRequest) {
+
+        return servletRequest.getParameter(USERNAME) != null && servletRequest.getParameter(OTPCODE) != null;
+    }
+
+    private boolean isOTPAsFirstFactor(AuthenticationContext context) {
+
+        return (context.getCurrentStep() == 1 || isPreviousIdPAuthenticationFlowHandler(context));
+    }
+
+    /**
+     * This method checks if all the authentication steps up to now have been performed by authenticators that
+     * implements AuthenticationFlowHandler interface. If so, it returns true.
+     * AuthenticationFlowHandlers may not perform actual authentication though the authenticated user is set in the
+     * context. Hence, this method can be used to determine if the user has been authenticated by a previous step.
+     *
+     * @param context   AuthenticationContext.
+     * @return True if all the authentication steps up to now have been performed by AuthenticationFlowHandlers.
+     */
+    private boolean isPreviousIdPAuthenticationFlowHandler(AuthenticationContext context) {
+
+        Map<String, AuthenticatedIdPData> currentAuthenticatedIdPs = context.getCurrentAuthenticatedIdPs();
+        return currentAuthenticatedIdPs != null && !currentAuthenticatedIdPs.isEmpty() &&
+                currentAuthenticatedIdPs.values().stream().filter(Objects::nonNull)
+                        .map(AuthenticatedIdPData::getAuthenticators).filter(Objects::nonNull)
+                        .flatMap(List::stream)
+                        .allMatch(authenticator ->
+                                authenticator.getApplicationAuthenticator() instanceof AuthenticationFlowHandler);
     }
 }

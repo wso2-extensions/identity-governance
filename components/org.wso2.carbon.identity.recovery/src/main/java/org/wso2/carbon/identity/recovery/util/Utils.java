@@ -1232,6 +1232,33 @@ public class Utils {
         return accountState;
     }
 
+
+    /**
+     * Return user account state for user with username which is not domain qualified.
+     *
+     * @param user  User without domain qualified username.
+     * @return account state.
+     */
+    public static String getAccountStateForUserNameWithoutUserDomain(User user) {
+
+        String accountState = StringUtils.EMPTY;
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            String username = UserCoreUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+                    getTenantUserRealm(tenantId).getUserStoreManager();
+            Map<String, String> claimMap =
+                    ((AbstractUserStoreManager) userStoreManager).getUserClaimValues(username,
+                            new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default");
+            if (!claimMap.isEmpty() && claimMap.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)) {
+                    accountState = claimMap.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
+            }
+        } catch (UserStoreException e) {
+            log.error("Error occurred while retrieving UserStoreManager.", e);
+        }
+        return accountState;
+    }
+
     /**
      * When updating email/mobile claim value, sending the verification notification can be controlled by sending
      * an additional temporary claim ('verifyEmail'/'verifyMobile') along with the update request.
@@ -1287,21 +1314,46 @@ public class Utils {
      * Checks whether the existing confirmation code can be reused based on the configured email confirmation code
      * tolerance period.
      *
-     * @param recoveryDataDO Recovery data of the corresponding user.
+     * @param recoveryDataDO      Recovery data of the corresponding user.
      * @param notificationChannel Method which is used to send the recovery code. eg:- EMAIL, SMS.
      * @return True if the existing confirmation code can be used. Otherwise false.
      */
     public static boolean reIssueExistingConfirmationCode(UserRecoveryData recoveryDataDO, String notificationChannel) {
 
-        int codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
-        if (recoveryDataDO != null && codeToleranceInMinutes != 0) {
-            if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().
-                    equals(recoveryDataDO.getRecoveryScenario().toString())) {
-                long codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
-                        TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
-                return System.currentTimeMillis() < codeToleranceTimeInMillis;
-            }
+        if (recoveryDataDO == null) {
+            return false;
         }
+
+        int codeToleranceInMinutes = 0;
+        long codeToleranceTimeInMillis = 0;
+        String recoveryScenario = recoveryDataDO.getRecoveryScenario().toString();
+        if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario)) {
+            codeToleranceInMinutes = getEmailCodeToleranceInMinutes();
+            codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                    TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+            return System.currentTimeMillis() < codeToleranceTimeInMillis;
+        }
+
+        User user = recoveryDataDO.getUser();
+        if (user == null) {
+            return false;
+        }
+        String tenantDomain = user.getTenantDomain();
+        if (StringUtils.isEmpty(tenantDomain)) {
+            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+        if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)) {
+            codeToleranceInMinutes = getSelfRegistrationCodeToleranceInMinutes(tenantDomain, notificationChannel);
+            codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                    TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+            return System.currentTimeMillis() < codeToleranceTimeInMillis;
+        } else if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryDataDO.getRecoveryScenario().toString())) {
+            codeToleranceInMinutes = getAskPasswordCodeExpiryTime(tenantDomain);
+            codeToleranceTimeInMillis = recoveryDataDO.getTimeCreated().getTime() +
+                    TimeUnit.MINUTES.toMillis(codeToleranceInMinutes);
+            return System.currentTimeMillis() < codeToleranceTimeInMillis;
+        }
+
         return false;
     }
 
@@ -1379,6 +1431,118 @@ public class Utils {
                             ": %s minutes", IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME);
             log.error(message);
             return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
+        }
+    }
+
+    /**
+     * Retrieves the self registration confirmation code tolerance period in minutes.
+     *
+     * @param tenantDomain        Tenant domain of the user.
+     * @param notificationChannel Method which is used to send the recovery code. eg:- EMAIL, SMS, EXTERNAL.
+     * @return The self registration confirmation code tolerance in minutes.
+     */
+    private static int getSelfRegistrationCodeToleranceInMinutes(String tenantDomain, String notificationChannel) {
+
+        String selfRegistrationCodeTolerance = null;
+        String selfRegistrationCodeExpiryTime = null;
+        try {
+            // Getting the self registration confirmation code expiry time and tolerance period for the given channel.
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(notificationChannel)) {
+                selfRegistrationCodeTolerance = IdentityUtil.
+                        getProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+                selfRegistrationCodeExpiryTime = getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain);
+            } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equalsIgnoreCase(notificationChannel)) {
+                selfRegistrationCodeTolerance = IdentityUtil.
+                        getProperty(IdentityRecoveryConstants.SELF_SIGN_UP_SMS_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+                selfRegistrationCodeExpiryTime = getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig
+                                .SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, tenantDomain);
+            } else {
+                selfRegistrationCodeTolerance = IdentityUtil.
+                        getProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+                selfRegistrationCodeExpiryTime = getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
+                        tenantDomain);
+            }
+        } catch (IdentityRecoveryServerException e) {
+            log.error("Error while retrieving self registration code recovery time.", e);
+            return IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE;
+        }
+
+        if (StringUtils.isEmpty(selfRegistrationCodeTolerance) || StringUtils.isEmpty(selfRegistrationCodeExpiryTime)) {
+            return IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE;
+        }
+
+        try {
+            int codeTolerance = Integer.parseInt(selfRegistrationCodeTolerance);
+            int codeExpiryTime = Integer.parseInt(selfRegistrationCodeExpiryTime);
+            // If the code expiry time is less than zero, code has infinite validity. Hence, we only need this
+            // condition to check whether the code expiry time is less than code tolerance when code expiry time is
+            // greater than or equal zero.
+            if (codeExpiryTime >= 0 && codeExpiryTime < codeTolerance) {
+                String message = String.format("Self registration code expiry time is less than code tolerance. " +
+                                "Therefore setting the DEFAULT time : %s minutes",
+                        IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE);
+                log.warn(message);
+                return IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE;
+            }
+            return codeTolerance;
+        } catch (NumberFormatException e) {
+            String message = String.format("Self registration confirmation code tolerance parsing is failed. " +
+                            "Therefore setting the DEFAULT time : %s minutes",
+                    IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE);
+            log.error(message);
+            return IdentityRecoveryConstants.SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE;
+        }
+    }
+
+    /**
+     * Retrieves the ask password confirmation code tolerance period in minutes.
+     *
+     * @param tenantDomain Tenant domain of the user.
+     * @return The ask password confirmation code tolerance in minutes.
+     */
+    private static int getAskPasswordCodeExpiryTime(String tenantDomain) {
+
+        String askPasswordCodeTolerance = null;
+        String askPasswordCodeExpiryTime = null;
+        try {
+            askPasswordCodeTolerance = IdentityUtil.
+                    getProperty(IdentityRecoveryConstants.ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD);
+            askPasswordCodeExpiryTime = getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME,
+                    tenantDomain);
+        } catch (IdentityRecoveryServerException e) {
+            log.error("Error while retrieving ask password code recovery time.", e);
+            return IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE;
+        }
+
+        if (StringUtils.isEmpty(askPasswordCodeTolerance) || StringUtils.isEmpty(askPasswordCodeExpiryTime)) {
+            return IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE;
+        }
+
+        try {
+            int codeTolerance = Integer.parseInt(askPasswordCodeTolerance);
+            int codeExpiryTime = Integer.parseInt(askPasswordCodeExpiryTime);
+            // If the code expiry time is less than zero, code has infinite validity. Hence, we only need this
+            // condition to check whether the code expiry time is less than code tolerance when code expiry time is
+            // greater than or equal zero.
+            if (codeExpiryTime >= 0 && codeExpiryTime < codeTolerance) {
+                String message = String.format("Ask password code expiry time is less than code tolerance. " +
+                                "Therefore setting the DEFAULT time : %s minutes",
+                        IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE);
+                log.warn(message);
+                return IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE;
+            }
+            return codeTolerance;
+        } catch (NumberFormatException e) {
+            String message = String.format("Ask password confirmation code tolerance parsing is failed. " +
+                            "Therefore setting the DEFAULT time : %s minutes",
+                    IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE);
+            log.error(message);
+            return IdentityRecoveryConstants.ASK_PASSWORD_CODE_DEFAULT_TOLERANCE;
         }
     }
 

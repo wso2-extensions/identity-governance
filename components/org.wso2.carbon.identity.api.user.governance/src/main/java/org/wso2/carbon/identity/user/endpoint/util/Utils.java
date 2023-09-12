@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.LiteUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
@@ -276,6 +277,76 @@ public class Utils {
         } else {
             return new Claim[0];
         }
+    }
+
+    /**
+     * This method returns an array of claims generated from LiteUserRegistrationRequestDTO attributes.
+     *
+     * @param liteUserRegistrationRequestDTO LiteUserRegistrationRequestDTO
+     * @return Array of claims
+     */
+    public static Claim[] getClaims(LiteUserRegistrationRequestDTO liteUserRegistrationRequestDTO) {
+
+        List<ClaimDTO> claimDTOs = liteUserRegistrationRequestDTO.getClaims();
+        int preferredChannelClaimIndex = -1;
+        int emailClaimIndex = -1;
+        int mobileClaimIndex = -1;
+
+        for (int i = 0; i < claimDTOs.size(); i++) {
+            if (StringUtils.equals(Constants.PREFERRED_CHANNEL_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                preferredChannelClaimIndex = i;
+                continue;
+            }
+            if (StringUtils.equals(Constants.EMAIL_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                emailClaimIndex = i;
+                continue;
+            }
+            if (StringUtils.equals(Constants.MOBILE_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                mobileClaimIndex = i;
+            }
+        }
+
+        if (liteUserRegistrationRequestDTO.getPreferredChannel() != null) {
+            if (preferredChannelClaimIndex == -1) {
+                // Create Preferred Channel claim if not available in list of claims.
+                ClaimDTO preferredChannelClaim = new ClaimDTO();
+                preferredChannelClaim.setUri(Constants.PREFERRED_CHANNEL_CLAIM_URI);
+                claimDTOs.add(preferredChannelClaim);
+                preferredChannelClaimIndex = claimDTOs.size() - 1;
+            }
+            // The correct value of the 'Mobile' PreferredChannel should be 'SMS'. The 'Mobile' value is
+            // still handled by the API to maintain backward compatibility.
+            if (LiteUserRegistrationRequestDTO.PreferredChannelEnum.Mobile ==
+                    liteUserRegistrationRequestDTO.getPreferredChannel()) {
+                claimDTOs.get(preferredChannelClaimIndex)
+                        .setValue(LiteUserRegistrationRequestDTO.PreferredChannelEnum.SMS.toString());
+            } else {
+                claimDTOs.get(preferredChannelClaimIndex)
+                        .setValue(liteUserRegistrationRequestDTO.getPreferredChannel().toString().toUpperCase());
+            }
+        }
+        if (StringUtils.isNotBlank(liteUserRegistrationRequestDTO.getEmail())) {
+            if (emailClaimIndex == -1) {
+                // Create Email claim if not available in list of claims.
+                ClaimDTO emailClaim = new ClaimDTO();
+                emailClaim.setUri(Constants.EMAIL_CLAIM_URI);
+                claimDTOs.add(emailClaim);
+                emailClaimIndex = claimDTOs.size() - 1;
+            }
+            claimDTOs.get(emailClaimIndex).setValue(liteUserRegistrationRequestDTO.getEmail());
+        }
+        if (StringUtils.isNotBlank(liteUserRegistrationRequestDTO.getMobile())) {
+            if (mobileClaimIndex == -1) {
+                // Create Mobile claim if not available in list of claims.
+                ClaimDTO mobileClaim = new ClaimDTO();
+                mobileClaim.setUri(Constants.MOBILE_CLAIM_URI);
+                claimDTOs.add(mobileClaim);
+                mobileClaimIndex = claimDTOs.size() - 1;
+            }
+            claimDTOs.get(mobileClaimIndex).setValue(liteUserRegistrationRequestDTO.getMobile());
+        }
+
+        return getClaims(claimDTOs);
     }
 
     public static String[] getRoles(List<String> roleList) {

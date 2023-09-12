@@ -28,7 +28,7 @@ public class PasswordPolicyConstants {
             "http://wso2.org/claims/identity/lastPasswordUpdateTime";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM_NON_IDENTITY =
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
-    public static final String PASSWORD_RESET_PAGE = "accountrecoveryendpoint/password-recovery-confirm.jsp";
+    public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
     public static final String PASSWORD_CHANGE_EVENT_HANDLER_NAME = "enforcePasswordResetEventHandler";
     public static final String ENFORCE_PASSWORD_RESET_HANDLER = "EnforcePasswordResetHandler";
     public static final String CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS = "passwordExpiry.passwordExpiryInDays";
@@ -67,7 +67,10 @@ public class PasswordPolicyConstants {
         ERROR_WHILE_GENERATING_CONFIRMATION_CODE("80008", "Error while generating the confirmation code"),
         ERROR_PASSWORD_EXPIRED("80009", "Password has expired"),
         ERROR_WHILE_PASSWORD_EXPIRY_VALIDATION("80010", "Error while validating password expiry"),
-        ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password");
+        ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password"),
+        ERROR_RETRIEVE_PASSWORD_EXPIRED_USERS_FROM_DB("80012", "" +
+                "Error while retrieving password expired users from database."),
+        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager.");
 
         private final String code;
         private final String message;

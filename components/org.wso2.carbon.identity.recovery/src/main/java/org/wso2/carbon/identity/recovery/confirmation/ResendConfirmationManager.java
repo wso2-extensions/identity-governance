@@ -263,7 +263,12 @@ public class ResendConfirmationManager {
                 }
             }
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
+        if (properties.containsKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME)) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    properties.get(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME));
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, templateName);
+        }
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

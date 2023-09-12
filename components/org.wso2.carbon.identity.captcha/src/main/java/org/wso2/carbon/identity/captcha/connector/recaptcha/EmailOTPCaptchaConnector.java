@@ -58,7 +58,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
 
     private static final Log log = LogFactory.getLog(EmailOTPCaptchaConnector.class);
     private static final String SECURED_DESTINATIONS = "/commonauth";
-    public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
+    public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "EmailOTP";
     public static final String IS_REDIRECT_TO_EMAIL_OTP = "isRedirectToEmailOTP";
     public static final String RESEND_CODE = "resendCode";
     private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
@@ -127,7 +127,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
         AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
         String username = context.getLastAuthenticatedUser().getUserName();
-        String tenantDomain = getTenant(context, username);
+        String tenantDomain = context.getLastAuthenticatedUser().getTenantDomain();
 
         Property[] connectorConfigs = null;
         try {
@@ -223,7 +223,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         String username = context.getLastAuthenticatedUser().getUserName();
-        String tenantDomain = getTenant(context, username);
+        String tenantDomain = context.getLastAuthenticatedUser().getTenantDomain();
 
         Property[] connectorConfigs;
         try {
@@ -254,22 +254,6 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
         }
 
         return CaptchaDataHolder.getInstance().isReCaptchaEnabled();
-    }
-
-    /**
-     * Get tenant from authentication context or username.
-     *
-     * @param context   Authentication context.
-     * @param username  Username.
-     * @return          Derived tenant domain.
-     */
-    private String getTenant(AuthenticationContext context, String username) {
-
-        if (IdentityTenantUtil.isTenantedSessionsEnabled() || IdentityTenantUtil.isTenantQualifiedUrlsEnabled()) {
-            return context.getUserTenantDomain();
-        } else {
-            return MultitenantUtils.getTenantDomain(username);
-        }
     }
 
     /**

@@ -166,6 +166,13 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     }
 
     @Override
+    public List<String> getUserNamesMoreThanProvidedClaimValue(String claimURI, String claimValue, int tenantId)
+            throws IdentityException {
+
+        return identityDataStore.getUserNamesMoreThanProvidedClaimValue(claimURI, claimValue, tenantId);
+    }
+
+    @Override
     public List<String> getUserNamesBetweenProvidedClaimValues(String claimURI, String startValue, String endValue,
                                                                int tenantId) throws IdentityException {
 

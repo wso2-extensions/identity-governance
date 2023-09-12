@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.password.expiry.internal;
 
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.password.expiry.EnforcePasswordResetAuthenticationHandler;
 import org.wso2.carbon.identity.password.expiry.PasswordChangeHandler;
 import org.wso2.carbon.identity.password.expiry.PasswordExpiryConfigImpl;
@@ -34,6 +35,8 @@ import org.wso2.carbon.identity.application.authentication.framework.handler.req
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.password.expiry.services.ExpiredPasswordIdentificationService;
+import org.wso2.carbon.identity.password.expiry.services.impl.ExpiredPasswordIdentificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -64,14 +67,12 @@ public class EnforcePasswordResetComponent {
                     new PasswordExpiryConfigImpl(), null);
             context.getBundleContext().registerService(PostAuthenticationHandler.class.getName(),
                     enforcePasswordResetAuthenticationHandler, null);
+            bundleContext.registerService(ExpiredPasswordIdentificationService.class.getName(),
+                    new ExpiredPasswordIdentificationServiceImpl(), null);
 
         } catch (Throwable e) {
             log.error("Error while activating EnforcePasswordResetAuthenticationHandler.", e);
         }
-    }
-
-    public static RealmService getRealmService() {
-        return EnforcePasswordResetComponentDataHolder.getInstance().getRealmService();
     }
 
     @Reference(
@@ -105,5 +106,22 @@ public class EnforcePasswordResetComponent {
     protected void unsetIdentityGovernanceService(IdentityGovernanceService idpManager) {
 
         EnforcePasswordResetComponentDataHolder.getInstance().setIdentityGovernanceService(null);
+    }
+
+    @Reference(
+            name = "identity.governance.service",
+            service = IdentityDataStoreService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityDataStoreService"
+    )
+    protected void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        EnforcePasswordResetComponentDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
+    }
+
+    protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        EnforcePasswordResetComponentDataHolder.getInstance().setIdentityDataStoreService(null);
     }
 }

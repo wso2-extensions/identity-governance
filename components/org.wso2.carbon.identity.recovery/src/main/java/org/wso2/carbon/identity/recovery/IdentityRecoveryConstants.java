@@ -70,6 +70,8 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
     public static final String EMAIL_TEMPLATE_NAME = "templateName";
+    public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
+    public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
@@ -174,7 +176,15 @@ public class IdentityRecoveryConstants {
             "Recovery.Question.Password.SkipOnInsufficientAnswers";
     public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
+    public static final String ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "EmailVerification.AskPassword.Notification.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.Email.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_SMS_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.SMS.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int ASK_PASSWORD_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE = 0;
     public static final String EMAIL_TEMPLATE_PATH = "/identity/email";
 
     // Workflow constants.
@@ -419,7 +429,11 @@ public class IdentityRecoveryConstants {
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
 
-        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request");
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
+        ,
+        // Idle User Account Identification related Error messages.
+        ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005",
+                "Error retrieving the associated user for the user: %s in the tenant %s.");
 
         private final String code;
         private final String message;
@@ -598,6 +612,8 @@ public class IdentityRecoveryConstants {
                 ".DisableRandomValueForCredentials";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION = "EmailVerification.AskPassword" +
+                ".AccountActivation";
 
         public static final String TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME = "TenantRegistrationVerification." +
                 "AskPassword.ExpiryTime";
