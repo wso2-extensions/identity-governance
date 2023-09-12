@@ -936,6 +936,7 @@ public class UserAccountRecoveryManager {
      *
      * @param recoveryFlowId Recovery flow id of the user.
      * @param step Recovery step.
+     * @return UserRecoveryData Data associated with the provided recoveryFlowId.
      * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
      */
     public UserRecoveryData getUserRecoveryDataFromFlowId(String recoveryFlowId, RecoverySteps step)
@@ -973,6 +974,7 @@ public class UserAccountRecoveryManager {
      * Get user recovery flow data using the recovery flow id.
      *
      * @param recoveryDataDO User Recovery Data object.
+     * @return UserRecoveryFlowData Data associated with the provided UserRecoveryData.
      * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
      */
     public UserRecoveryFlowData loadUserRecoveryFlowData(UserRecoveryData recoveryDataDO)
@@ -1006,8 +1008,10 @@ public class UserAccountRecoveryManager {
      *
      * @param recoveryFlowId Recovery Flow Id.
      * @param failedAttempts Failed Attempts.
+     * @throws IdentityRecoveryException If an error occurred while updating the recovery flow data.
      */
-    public void updateRecoveryDataFailedAttempts(String recoveryFlowId, int failedAttempts) throws IdentityRecoveryException {
+    public void updateRecoveryDataFailedAttempts(String recoveryFlowId, int failedAttempts)
+            throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.updateFailedAttempts(recoveryFlowId, failedAttempts);
@@ -1018,6 +1022,7 @@ public class UserAccountRecoveryManager {
      *
      * @param recoveryFlowId Recovery Flow Id.
      * @param resendCount    Current Resend Count.
+     * @throws IdentityRecoveryException If an error occurred while updating the recovery flow data.
      */
     public void updateRecoveryDataResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
 
@@ -1029,6 +1034,7 @@ public class UserAccountRecoveryManager {
      * Invalidate the recovery Data.
      *
      * @param recoveryFlowId Recovery Flow Id.
+     * @throws IdentityRecoveryException If an error occurred while invalidating recovery data.
      */
     public void invalidateRecoveryData(String recoveryFlowId) throws IdentityRecoveryException {
 

@@ -223,9 +223,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
         validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
-        // In the recovery scenarios which are not OTP based, the confirmation code is a combination of the
-        // recovery flow id and another UUID generated. Hence, we need to get the recovery flow id from the
-        // confirmation code. In the OTP based recovery scenario, the confirmation code is the recovery flow id.
+        /* In the recovery scenarios which are not OTP based, the confirmation code is a combination of the
+        recovery flow id and another UUID generated. Hence, we need to get the recovery flow id from the
+        confirmation code. In the OTP based recovery scenario, the confirmation code is the recovery flow id. */
         String[] ids = confirmationCode.split(Pattern.quote(IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR));
         String recoveryFlowId;
         String code;
