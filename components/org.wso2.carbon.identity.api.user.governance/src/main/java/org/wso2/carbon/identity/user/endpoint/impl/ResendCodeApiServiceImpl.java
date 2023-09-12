@@ -80,8 +80,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         if (notificationResponseBean == null) {
             ErrorDTO errorDTO = new ErrorDTO();
             errorDTO.setRef(Utils.getCorrelation());
-            errorDTO.setMessage("This service is not yet implemented.");
-            return Response.status(Response.Status.NOT_IMPLEMENTED).entity(errorDTO).build();
+            errorDTO.setMessage("User recovery data is not found. Please re-initiate the recovery flow.");
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
         }
 
         //when notifications internally managed key might not be set.
