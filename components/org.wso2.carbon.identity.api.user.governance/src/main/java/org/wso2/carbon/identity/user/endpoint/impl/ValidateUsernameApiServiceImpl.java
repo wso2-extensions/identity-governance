@@ -226,5 +226,4 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         String tenantDomain = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
         return StringUtils.isNotBlank(tenantDomain) ? tenantDomain : MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
     }
-
 }
