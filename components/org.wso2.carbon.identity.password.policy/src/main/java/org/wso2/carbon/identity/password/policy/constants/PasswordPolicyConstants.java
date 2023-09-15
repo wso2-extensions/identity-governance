@@ -26,6 +26,7 @@ public class PasswordPolicyConstants {
     public static final String PW_POLICY_LENGTH_CLASS = "passwordPolicy.class.PasswordLengthPolicy";
     public static final String PW_POLICY_NAME_CLASS = "passwordPolicy.class.PasswordNamePolicy";
     public static final String PW_POLICY_PATTERN_CLASS = "passwordPolicy.class.PasswordPatternPolicy";
+    public static final String PW_POLICY_HANDLER_ENABLED = "PasswordPolicy.PasswordPolicyValidationHandler.Enable";
 
     public enum ErrorMessages {
 
