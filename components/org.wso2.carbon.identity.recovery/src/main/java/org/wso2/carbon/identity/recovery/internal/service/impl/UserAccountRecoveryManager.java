@@ -937,9 +937,9 @@ public class UserAccountRecoveryManager {
      * have recovery flow ids, which were initiated before moving to the Recovery V2 API.
      * This shouldn't be used for any other purpose and should be kept for sometime.
      *
-     * @param code Code given for recovery
+     * @param code Code given for recovery.
      * @param recoveryFlowId Recovery flow id of the user.
-     * @param step Recovery step
+     * @param step Recovery step.
      * @return UserRecoveryData Data associated with the provided code.
      * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
      */
