@@ -37,6 +37,8 @@ public class CaptchaDataHolder {
 
     private boolean reCaptchaEnabled;
 
+    private String reCaptchaType;
+
     private String reCaptchaAPIUrl;
 
     private String reCaptchaVerifyUrl;
@@ -44,6 +46,10 @@ public class CaptchaDataHolder {
     private String reCaptchaSiteKey;
 
     private String reCaptchaSecretKey;
+
+    private String reCaptchaAPIKey;
+
+    private String reCaptchaProjectID;
 
     private String reCaptchaErrorRedirectUrls;
 
@@ -84,6 +90,26 @@ public class CaptchaDataHolder {
         this.reCaptchaEnabled = reCaptchaEnabled;
     }
 
+    public String getReCaptchaType() {
+
+        return reCaptchaType;
+    }
+
+    public void setReCaptchaType(String reCaptchaType) {
+
+        this.reCaptchaType = reCaptchaType;
+    }
+
+    public String getReCaptchaProjectID() {
+
+        return reCaptchaProjectID;
+    }
+
+    public void setReCaptchaProjectID(String reCaptchaProjectID) {
+
+        this.reCaptchaProjectID = reCaptchaProjectID;
+    }
+
     public String getReCaptchaAPIUrl() {
         return reCaptchaAPIUrl;
     }
@@ -114,6 +140,14 @@ public class CaptchaDataHolder {
 
     public void setReCaptchaSecretKey(String reCaptchaSecretKey) {
         this.reCaptchaSecretKey = reCaptchaSecretKey;
+    }
+
+    public String getReCaptchaAPIKey() {
+        return reCaptchaAPIKey;
+    }
+
+    public void setReCaptchaAPIKey(String reCaptchaAPIKey) {
+        this.reCaptchaAPIKey = reCaptchaAPIKey;
     }
 
     public String getReCaptchaRequestWrapUrls() {
