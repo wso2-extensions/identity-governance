@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -659,27 +660,46 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityRecoveryException, IdentityEventException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
-                RecoverySteps.UPDATE_PASSWORD);
-        validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
-        publishEvent(userRecoveryData.getUser(), null, null, password, properties,
-                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
-        validateTenantDomain(userRecoveryData.getUser());
-        int failedAttempts = userRecoveryData.getFailedAttempts();
+        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        UserRecoveryData userRecoveryData;
+        try {
+            userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
+                    RecoverySteps.UPDATE_PASSWORD);
+            validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
+            publishEvent(userRecoveryData.getUser(), null, null, password, properties,
+                    IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
+            validateTenantDomain(userRecoveryData.getUser());
+            int failedAttempts = userRecoveryData.getFailedAttempts();
 
-        if (!StringUtils.equals(code, userRecoveryData.getSecret())) {
-            if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                    RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().getTenantDomain()))) {
-                userRecoveryDataStore.invalidateWithRecoveryFlowId(confirmationCode);
+            if (!StringUtils.equals(code, userRecoveryData.getSecret())) {
+                if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                        RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().getTenantDomain()))) {
+                    userRecoveryDataStore.invalidateWithRecoveryFlowId(confirmationCode);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
+                            confirmationCode);
+                }
+                userRecoveryDataStore.updateFailedAttempts(confirmationCode, failedAttempts + 1);
                 throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
-                        confirmationCode);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
             }
-            userRecoveryDataStore.updateFailedAttempts(confirmationCode, failedAttempts + 1);
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode(),
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
+        } catch (IdentityRecoveryException e) {
+            // This is a fallback logic to support already initiated email link based recovery flows using the
+            // recovery V1 API, which do not have recovery flow ids.
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(code, confirmationCode,
+                    RecoverySteps.UPDATE_PASSWORD);
+            validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
+            publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                    IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
+            validateTenantDomain(userRecoveryData.getUser());
+
+            // Validate recovery step.
+            if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+            }
         }
 
         // Get the notification channel.
@@ -699,7 +719,11 @@ public class NotificationPasswordRecoveryManager {
         // Update the password.
         updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
                 notificationsInternallyManaged);
-        userRecoveryDataStore.invalidateWithRecoveryFlowId(userRecoveryData.getRecoveryFlowId());
+        if (userRecoveryData.getRecoveryFlowId() != null) {
+            userRecoveryDataStore.invalidateWithRecoveryFlowId(userRecoveryData.getRecoveryFlowId());
+        } else {
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        }
         if (notificationsInternallyManaged &&
                 !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             String emailTemplate = null;

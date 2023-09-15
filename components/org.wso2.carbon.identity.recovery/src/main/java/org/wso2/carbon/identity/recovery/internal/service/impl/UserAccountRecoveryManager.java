@@ -932,6 +932,58 @@ public class UserAccountRecoveryManager {
     }
 
     /**
+     * This method is to retrieve user recovery data using the confirmation code when there's no recovery flow id.
+     * This is added as a fallback logic to handle the already initiated email link based recovery flows which do not
+     * have recovery flow ids, which were initiated before moving to the Recovery V2 API.
+     * This shouldn't be used for any other purpose and should be kept for sometime.
+     *
+     * @param code Code given for recovery
+     * @param recoveryFlowId Recovery flow id of the user.
+     * @param step Recovery step
+     * @return UserRecoveryData Data associated with the provided code.
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
+     */
+    @Deprecated
+    public UserRecoveryData getUserRecoveryDataFromConfirmationCode(String code, String recoveryFlowId,
+                                                                    RecoverySteps step)
+            throws IdentityRecoveryException {
+
+        UserRecoveryData recoveryData;
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            // Retrieve recovery data bound to the recoveryId.
+            recoveryData = userRecoveryDataStore.load(code);
+        } catch (IdentityRecoveryException e) {
+            // Map code expired error to new error codes for user account recovery.
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE.getCode()
+                    .equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID.getCode());
+            } else {
+                e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY));
+            }
+            throw e;
+        }
+        if (recoveryData == null) {
+            throw Utils
+                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_ACCOUNT_RECOVERY_DATA,
+                            recoveryFlowId);
+        }
+        if (!StringUtils.equals(recoveryData.getRemainingSetIds(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, recoveryFlowId);
+        }
+        if (!step.equals(recoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE,
+                    recoveryFlowId);
+        }
+        return recoveryData;
+    }
+
+    /**
      * Get user recovery data using the recovery flow id.
      *
      * @param recoveryFlowId Recovery flow id of the user.
