@@ -688,8 +688,8 @@ public class NotificationPasswordRecoveryManager {
         } catch (IdentityRecoveryException e) {
             // This is a fallback logic to support already initiated email link based recovery flows using the
             // recovery V1 API, which do not have recovery flow ids.
-            userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(code, confirmationCode,
-                    RecoverySteps.UPDATE_PASSWORD);
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(code,
+                    confirmationCode, RecoverySteps.UPDATE_PASSWORD);
             validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
             publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                     IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);

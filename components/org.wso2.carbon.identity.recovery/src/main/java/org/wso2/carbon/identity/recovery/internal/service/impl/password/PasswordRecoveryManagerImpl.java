@@ -273,8 +273,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         } catch (IdentityRecoveryException e) {
             // This is a fallback logic to support already initiated email link based recovery flows using the
             // recovery V1 API, which do not have recovery flow ids.
-            UserRecoveryData userRecoveryData = userAccountRecoveryManager
-                    .getUserRecoveryDataFromConfirmationCode(recoveryFlowId, recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
+            UserRecoveryData userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(
+                    recoveryFlowId, recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
             if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
