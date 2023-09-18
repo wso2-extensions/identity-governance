@@ -78,7 +78,7 @@ public class UserProfileExportServiceComponent {
             ctxt.getBundleContext().registerService(UserInformationProvider.class.getName(), securityInformationProvider,
                     null);
         } catch (Exception e) {
-            LOG.error(e.getMessage(), e);
+            LOG.error("Error while activating UserProfileExportServiceComponent", e);
         }
     }
 
