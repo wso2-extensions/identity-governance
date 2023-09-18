@@ -61,7 +61,7 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
     public static final String EMAIL_OTP_AUTHENTICATOR_NAME = "email-otp-authenticator";
     public static final String IS_REDIRECT_TO_EMAIL_OTP = "isRedirectToEmailOTP";
     public static final String RESEND_CODE = "resendCode";
-    private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/login.do";
+    private static final String ON_FAIL_REDIRECT_URL = "/authenticationendpoint/email_otp.do";
     private static final String EMAIL_OTP_LOGIN_ATTEMPT_FAIL_CLAIM = "http://wso2.org/claims/identity/failedEmailOtpAttempts";
     private static final String RECAPTCHA_PARAM = "reCaptcha";
     private static final String AUTH_FAILURE = "authFailure";

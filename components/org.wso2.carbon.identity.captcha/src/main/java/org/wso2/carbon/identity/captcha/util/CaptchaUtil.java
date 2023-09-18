@@ -190,7 +190,7 @@ public class CaptchaUtil {
         // Check whether the flow is authentication related.
         if (isAuthenticationFlow) {
             for (String url : onFailRedirectUrls) {
-                if (!StringUtils.isBlank(url) && url.equalsIgnoreCase(uriBuilder.getPath())) {
+                if (!StringUtils.isBlank(uriBuilder.getPath()) && uriBuilder.getPath().contains(url)) {
                     return getUpdatedUrl(redirectURL, attributes);
                 }
             }
