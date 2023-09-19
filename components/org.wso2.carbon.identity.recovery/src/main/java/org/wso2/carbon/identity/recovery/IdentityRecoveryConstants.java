@@ -174,7 +174,15 @@ public class IdentityRecoveryConstants {
             "Recovery.Question.Password.SkipOnInsufficientAnswers";
     public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
+    public static final String ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "EmailVerification.AskPassword.Notification.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.Email.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_SMS_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.SMS.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int ASK_PASSWORD_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE = 0;
     public static final String EMAIL_TEMPLATE_PATH = "/identity/email";
 
     // Workflow constants.
@@ -593,6 +601,8 @@ public class IdentityRecoveryConstants {
                 ".DisableRandomValueForCredentials";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION = "EmailVerification.AskPassword" +
+                ".AccountActivation";
 
         public static final String TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME = "TenantRegistrationVerification." +
                 "AskPassword.ExpiryTime";

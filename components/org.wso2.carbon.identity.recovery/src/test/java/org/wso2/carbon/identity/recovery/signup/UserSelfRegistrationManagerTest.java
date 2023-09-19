@@ -67,6 +67,8 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
 
+import java.sql.Timestamp;
+
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -76,7 +78,9 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
@@ -180,6 +184,7 @@ public class UserSelfRegistrationManagerTest {
                 .SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
         // Storing preferred notification channel in remaining set ids.
         userRecoveryData.setRemainingSetIds(preferredChannel);
+        userRecoveryData.setTimeCreated(new Timestamp(System.currentTimeMillis()));
 
         mockConfigurations("true", enableInternalNotificationManagement);
         mockJDBCRecoveryDataStore(userRecoveryData);
@@ -242,6 +247,16 @@ public class UserSelfRegistrationManagerTest {
         smsOTPConfig.setName(SELF_REGISTRATION_SMS_OTP_REGEX);
         smsOTPConfig.setValue("");
 
+        org.wso2.carbon.identity.application.common.model.Property selfRegistrationCodeExpiryConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        selfRegistrationCodeExpiryConfig.setName(SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
+        selfRegistrationCodeExpiryConfig.setValue("1440");
+
+        org.wso2.carbon.identity.application.common.model.Property selfRegistrationSMSCodeExpiryConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        selfRegistrationSMSCodeExpiryConfig.setName(SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
+        selfRegistrationSMSCodeExpiryConfig.setValue("1");
+
         when(identityGovernanceService
                 .getConfiguration(new String[]{ENABLE_SELF_SIGNUP}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{signupConfig});
@@ -251,6 +266,16 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService
                 .getConfiguration(new String[]{SELF_REGISTRATION_SMS_OTP_REGEX}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{smsOTPConfig});
+        when(identityGovernanceService
+                .getConfiguration(
+                        new String[]{SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]
+                        {selfRegistrationCodeExpiryConfig});
+        when(identityGovernanceService
+                .getConfiguration(
+                        new String[]{SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]
+                        {selfRegistrationSMSCodeExpiryConfig});
         when(otpGenerator.generateOTP(anyBoolean(), anyBoolean(), anyBoolean(), anyInt(), anyString()))
                 .thenReturn("1234-4567-890");
         mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn(TEST_USERSTORE_DOMAIN);

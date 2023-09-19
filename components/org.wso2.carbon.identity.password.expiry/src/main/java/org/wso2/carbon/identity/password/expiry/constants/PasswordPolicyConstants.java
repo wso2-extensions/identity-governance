@@ -67,7 +67,10 @@ public class PasswordPolicyConstants {
         ERROR_WHILE_GENERATING_CONFIRMATION_CODE("80008", "Error while generating the confirmation code"),
         ERROR_PASSWORD_EXPIRED("80009", "Password has expired"),
         ERROR_WHILE_PASSWORD_EXPIRY_VALIDATION("80010", "Error while validating password expiry"),
-        ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password");
+        ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password"),
+        ERROR_RETRIEVE_PASSWORD_EXPIRED_USERS_FROM_DB("80012", "" +
+                "Error while retrieving password expired users from database."),
+        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager.");
 
         private final String code;
         private final String message;

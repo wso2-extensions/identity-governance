@@ -161,7 +161,7 @@ public class PasswordPolicyUtils {
      * @return The password expiry in days.
      * @throws PostAuthenticationFailedException If an error occurs while retrieving the password expiry configuration.
      */
-    private static int getPasswordExpiryInDays(String tenantDomain) throws PostAuthenticationFailedException {
+    public static int getPasswordExpiryInDays(String tenantDomain) throws PostAuthenticationFailedException {
 
         try {
             String passwordExpiryInDaysConfiguredValue = getPasswordExpiryConfig(tenantDomain,

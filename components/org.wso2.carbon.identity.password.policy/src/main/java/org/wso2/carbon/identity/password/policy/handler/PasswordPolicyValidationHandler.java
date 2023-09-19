@@ -232,8 +232,6 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
     public void init(InitConfig configuration) throws IdentityRuntimeException {
 
         super.init(configuration);
-        IdentityPasswordPolicyServiceDataHolder.getInstance().getBundleContext().registerService
-                (IdentityConnectorConfig.class.getName(), this, null);
     }
 
     public String[] getPropertyNames() {
