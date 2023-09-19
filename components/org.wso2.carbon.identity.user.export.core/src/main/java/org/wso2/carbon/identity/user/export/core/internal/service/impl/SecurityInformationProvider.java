@@ -20,18 +20,12 @@ package org.wso2.carbon.identity.user.export.core.internal.service.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.SecurityInformationDTO;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
-import org.wso2.carbon.identity.user.export.core.service.UserInformationProvider;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.List;
 import java.util.Map;
@@ -39,14 +33,9 @@ import java.util.Map;
 /**
  * Provide basic information of user.
  */
-@Component(
-        name = "org.wso2.carbon.user.export.security",
-        immediate = true,
-        service = UserInformationProvider.class
-)
 public class SecurityInformationProvider extends BasicUserInformationProvider {
 
-    private static final Log log = LogFactory.getLog(SecurityInformationProvider.class);
+    private static final Log LOG = LogFactory.getLog(SecurityInformationProvider.class);
 
     @Override
     public UserInformationDTO getRetainedUserInformation(String username, String userStoreDomain, int tenantId)
@@ -89,8 +78,8 @@ public class SecurityInformationProvider extends BasicUserInformationProvider {
 
             return new UserInformationDTO(securityInformationDTO);
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Challenge question claim is not available in the tenant: " + tenantId);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Challenge question claim is not available in the tenant: " + tenantId);
             }
         }
         return new UserInformationDTO();
@@ -99,28 +88,6 @@ public class SecurityInformationProvider extends BasicUserInformationProvider {
     @Override
     public String getType() {
         return "security";
-    }
-
-    @Reference(
-            name = "user.realmservice.default",
-            service = org.wso2.carbon.user.core.service.RealmService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRealmService")
-    public void setRealmService(RealmService realmService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Realm Service");
-        }
-        this.realmService = realmService;
-    }
-
-    public void unsetRealmService(RealmService realmService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Unsetting the Realm Service");
-        }
-        this.realmService = null;
     }
 
 }
