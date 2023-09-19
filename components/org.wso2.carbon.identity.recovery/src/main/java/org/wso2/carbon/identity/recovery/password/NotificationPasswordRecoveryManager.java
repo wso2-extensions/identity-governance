@@ -660,7 +660,6 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityRecoveryException, IdentityEventException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         UserRecoveryData userRecoveryData;
         try {
             userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
@@ -687,20 +686,9 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
             }
         } catch (IdentityRecoveryException e) {
-            // This is a fallback logic to support already initiated email link based recovery flows using the
-            // recovery V1 API, which do not have recovery flow ids.
-            userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(code,
-                    confirmationCode, RecoverySteps.UPDATE_PASSWORD);
-            validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
-            publishEvent(userRecoveryData.getUser(), null, code, password, properties,
-                    IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
-            validateTenantDomain(userRecoveryData.getUser());
-
-            // Validate recovery step.
-            if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
-            }
+            /* This is a fallback logic to support already initiated email link based recovery flows using the
+            recovery V1 API, which do not have recovery flow ids. */
+            userRecoveryData = validateUserRecoveryDataFromCode(code, confirmationCode, password, properties);
         }
 
         // Get the notification channel.
@@ -764,6 +752,52 @@ public class NotificationPasswordRecoveryManager {
                 FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
 
         return userRecoveryData.getUser();
+    }
+
+    /**
+     * This method is to validate user recovery data using the reset code when there's no recovery flow id.
+     * This is added as a fallback logic to handle the already initiated email link based recovery flows which do not
+     * have recovery flow ids, which were initiated before moving to the Recovery V2 API.
+     * This shouldn't be used for any other purpose and should be kept for sometime.
+     *
+     * @param userAccountRecoveryManager UserAccountRecoveryManager.
+     * @param code                       Password Reset code.
+     * @param confirmationCode           Confirmation code.
+     * @param password                   New password.
+     * @param properties                 Properties.
+     * @return UserRecoveryData.
+     * @throws IdentityRecoveryException Error while updating the password.
+     */
+    @Deprecated
+    private UserRecoveryData validateUserRecoveryDataFromCode(String code, String confirmationCode, String password,
+                                                              Property[] properties) throws IdentityRecoveryException {
+        UserRecoveryData userRecoveryData;
+        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        try {
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(code, RecoverySteps.UPDATE_PASSWORD);
+        } catch (IdentityRecoveryException e) {
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
+                    e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            }
+            throw e;
+        }
+        if (!StringUtils.equals(userRecoveryData.getRemainingSetIds(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
+        }
+        validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
+        validateTenantDomain(userRecoveryData.getUser());
+
+        // Validate recovery step.
+        if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+        }
+        return userRecoveryData;
     }
 
     /**

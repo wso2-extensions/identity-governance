@@ -236,7 +236,6 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             recoveryFlowId = confirmationCode;
             code = otp;
         }
-        // Get Recovery data.
         try {
             UserRecoveryData userRecoveryData = userAccountRecoveryManager
                     .getUserRecoveryDataFromFlowId(recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
@@ -271,21 +270,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
         } catch (IdentityRecoveryException e) {
-            // This is a fallback logic to support already initiated email link based recovery flows using the
-            // recovery V1 API, which do not have recovery flow ids.
-            UserRecoveryData userRecoveryData = userAccountRecoveryManager.getUserRecoveryDataFromConfirmationCode(
-                    recoveryFlowId, recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
-            if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
-                        tenantDomain);
-            }
-            String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
-                    userRecoveryData.getUser().getUserStoreDomain());
-            if (log.isDebugEnabled()) {
-                log.debug("Valid confirmation code for user: " + domainQualifiedName);
-            }
-            return buildPasswordResetCodeDTO(recoveryFlowId);
+            /* This is a fallback logic to support already initiated email link based recovery flows using the
+            recovery V1 API, which do not have recovery flow ids. */
+            return validateConfirmationCode(userAccountRecoveryManager, recoveryFlowId, tenantDomain);
         }
     }
 
@@ -874,4 +861,48 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         return isMinNoOfRecoveryQuestionsAnswered;
     }
 
+    /**
+     * This method is to validate the confirmation code when there's no recovery flow id. This is added as a fallback
+     * logic to handle the already initiated email link based recovery flows which do not have recovery flow ids,
+     * which were initiated before moving to the Recovery V2 API. This shouldn't be used for any other purpose and
+     * should be kept for sometime.
+     *
+     * @param userAccountRecoveryManager UserAccountRecoveryManager.
+     * @param confirmationCode Confirmation code.
+     * @param tenantDomain     Tenant domain.
+     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code.
+     * @throws IdentityRecoveryException Error while confirming password recovery.
+     */
+    @Deprecated
+    private PasswordResetCodeDTO validateConfirmationCode(UserAccountRecoveryManager userAccountRecoveryManager,
+                                                          String confirmationCode, String tenantDomain)
+            throws IdentityRecoveryException {
+        UserRecoveryData userRecoveryData;
+        try {
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(confirmationCode,
+                    RecoverySteps.UPDATE_PASSWORD);
+        } catch (IdentityRecoveryException e) {
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
+                    e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            }
+            throw e;
+        }
+        if (!StringUtils.equals(userRecoveryData.getRemainingSetIds(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
+        }
+        if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                    tenantDomain);
+        }
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
+        if (log.isDebugEnabled()) {
+            log.debug("Valid confirmation code for user: " + domainQualifiedName);
+        }
+        return buildPasswordResetCodeDTO(confirmationCode);
+    }
 }
