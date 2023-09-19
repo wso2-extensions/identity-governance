@@ -760,7 +760,6 @@ public class NotificationPasswordRecoveryManager {
      * have recovery flow ids, which were initiated before moving to the Recovery V2 API.
      * This shouldn't be used for any other purpose and should be kept for sometime.
      *
-     * @param userAccountRecoveryManager UserAccountRecoveryManager.
      * @param code                       Password Reset code.
      * @param confirmationCode           Confirmation code.
      * @param password                   New password.
