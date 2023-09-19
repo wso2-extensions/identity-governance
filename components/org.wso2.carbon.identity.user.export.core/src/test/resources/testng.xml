@@ -25,6 +25,8 @@
             <class name="org.wso2.carbon.identity.user.export.core.internal.service.impl.ConsentInformationProviderTest"/>
             <class name="org.wso2.carbon.identity.user.export.core.internal.service.impl.UserInformationServiceImplTest"/>
             <class name="org.wso2.carbon.identity.user.export.core.utils.UtilsTest"/>
+            <class name="org.wso2.carbon.identity.user.export.core.service.impl.LinkedAccountsProviderTest"/>
+            <class name="org.wso2.carbon.identity.user.export.core.service.impl.UserProfileInformationProviderTest"/>
         </classes>
     </test>
 

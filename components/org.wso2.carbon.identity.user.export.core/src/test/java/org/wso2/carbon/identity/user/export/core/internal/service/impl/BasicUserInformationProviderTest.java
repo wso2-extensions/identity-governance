@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,29 +18,23 @@
 
 package org.wso2.carbon.identity.user.export.core.internal.service.impl;
 
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.CarbonException;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.dto.UserInformationDTO;
-import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.identity.user.export.core.internal.UserProfileExportDataHolder;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.Claim;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -55,46 +49,29 @@ public class BasicUserInformationProviderTest {
     public static final String USERNAME_CLAIM_VALUE = "username1";
     public static final String GIVEN_NAME_CLAIM_VALUE = "givenName1";
     public static final String LAST_NAME_CLAIM_VALUE = "lastName1";
-    private MockedStatic<AnonymousSessionUtil> mockedAnonymousSessionUtil;
-
-    @BeforeMethod
-    public void setUp() {
-
-        mockedAnonymousSessionUtil = Mockito.mockStatic(AnonymousSessionUtil.class);
-    }
-
-    @AfterMethod
-    public void tearDown() {
-
-        mockedAnonymousSessionUtil.close();
-    }
 
     @Test
     public void testGetUserAttributes() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         Claim[] claims = getClaims();
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj != null && userAttributesObj.getData() instanceof Map) {
@@ -111,27 +88,23 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesEmpty() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(null);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         UserInformationDTO userAttributesObj = basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
         if (userAttributesObj.isInformationAvailable()) {
@@ -143,7 +116,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetRealmByTenantDomain() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -155,17 +127,15 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenThrow(new CarbonException("Mock Exception"));
+        when(realmService.getTenantUserRealm(anyInt()))
+                .thenThrow(new org.wso2.carbon.user.api.UserStoreException("Mock Exception"));
 
         Claim[] claims = getClaims();
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -174,7 +144,6 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetUserStoreManager() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
@@ -186,17 +155,14 @@ public class BasicUserInformationProviderTest {
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenThrow(new UserStoreException());
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         Claim[] claims = getClaims();
 
         when(secUserStoreManager.getUserClaimValues(USERNAME_CLAIM_VALUE, null)).thenReturn(claims);
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }
@@ -205,27 +171,23 @@ public class BasicUserInformationProviderTest {
     public void testGetUserAttributesExceptionOnGetUserClaimValues() throws Exception {
 
         RealmService realmService = mock(RealmService.class);
-        RegistryService registryService = mock(RegistryService.class);
         TenantManager tenantManager = mock(TenantManager.class);
         when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(tenantManager.getDomain(anyInt())).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
 
         UserRealm userRealm = mock(UserRealm.class);
-        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
         UserStoreManager secUserStoreManager = mock(UserStoreManager.class);
 
         when(userStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(secUserStoreManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        mockedAnonymousSessionUtil.when(() -> AnonymousSessionUtil
-                .getRealmByTenantDomain(any(RegistryService.class), any(RealmService.class), anyString()))
-                .thenReturn(userRealm);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
 
         when(secUserStoreManager.getUserClaimValues(anyString(), isNull())).thenThrow(new UserStoreException());
 
         BasicUserInformationProvider basicUserInformationProvider = new BasicUserInformationProvider();
-        basicUserInformationProvider.setRealmService(realmService);
-        basicUserInformationProvider.setRegistryService(registryService);
+        UserProfileExportDataHolder.setRealmService(realmService);
         basicUserInformationProvider.getRetainedUserInformation(USERNAME_CLAIM_VALUE,
                 UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME, -1234);
     }

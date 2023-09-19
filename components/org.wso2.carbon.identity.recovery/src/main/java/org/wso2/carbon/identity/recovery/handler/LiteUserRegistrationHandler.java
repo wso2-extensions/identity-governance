@@ -47,7 +47,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -383,9 +382,13 @@ public class LiteUserRegistrationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
 
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
-
+        if (properties.containsKey(IdentityRecoveryConstants.EMAIL_TEMPLATE_NAME)) {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    properties.get(IdentityRecoveryConstants.EMAIL_TEMPLATE_NAME));
+        } else {
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM);
+        }
 
         Event identityMgtEvent = new Event(eventName, properties);
         try {

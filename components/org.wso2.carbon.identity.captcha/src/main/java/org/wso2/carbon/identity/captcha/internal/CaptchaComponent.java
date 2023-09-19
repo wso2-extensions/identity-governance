@@ -22,6 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.EmailOTPCaptchaConnector;
+import org.wso2.carbon.identity.captcha.connector.recaptcha.GenericAuthenticatorReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.LiteUserSelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.PasswordRecoveryReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.ResendConfirmationReCaptchaConnector;
@@ -79,6 +81,14 @@ public class CaptchaComponent {
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             // Initialize and register LiteUserSelfSignUpRecaptchaConnector.
             captchaConnector = new LiteUserSelfSignUpReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            // Initialize and register GenericReCaptchaConnector.
+            captchaConnector = new GenericAuthenticatorReCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            // Initialize and register EmailOTPRecaptchaConnector.
+            captchaConnector = new EmailOTPCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();

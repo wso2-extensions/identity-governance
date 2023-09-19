@@ -28,10 +28,13 @@ public class CaptchaConstants {
     public static final String CARBON_HOME = "carbon.home";
 
     public static final String ERROR_PAGE = "/authenticationendpoint/retry.do";
+    public static final String ON_FAILED_LOGIN_REDIRECT_URL = "/authenticationendpoint/login.do";
 
     public static final String CAPTCHA_CONFIG_FILE_NAME = "captcha-config.properties";
 
     public static final String RE_CAPTCHA_ENABLED = "recaptcha.enabled";
+
+    public static final String RE_CAPTCHA_TYPE = "recaptcha.type";
 
     public static final String FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS = "recaptcha" +
             ".forcefullyEnabledForAllTenants";
@@ -42,7 +45,11 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_SITE_KEY = "recaptcha.site.key";
 
+    public static final String RE_CAPTCHA_PROJECT_ID = "recaptcha.project.id";
+
     public static final String RE_CAPTCHA_SECRET_KEY = "recaptcha.secret.key";
+
+    public static final String RE_CAPTCHA_API_KEY = "recaptcha.api.key";
 
     public static final String RE_CAPTCHA_REQUEST_WRAP_URLS = "recaptcha.request.wrap.urls";
 
@@ -59,9 +66,22 @@ public class CaptchaConstants {
     public static final String CAPTCHA_SCORE = "score";
 
     public static final String CAPTCHA_SUCCESS = "success";
+    public static final String ENABLE_GENERIC_CAPTCHA_VALIDATION = "enable_captcha_validation";
+    public static final String RE_CAPTCHA = "reCaptcha";
+    public static final String AUTH_FAILURE = "authFailure";
+    public static final String AUTH_FAILURE_MSG = "authFailureMsg";
+    public static final String RECAPTCHA_FAIL_MSG_KEY = "recaptcha.fail.message";
+    public static final String TRUE = "true";
+    public static final String CAPTCHA_VALID = "valid";
+    public static final String CAPTCHA_TOKEN_PROPERTIES = "tokenProperties";
+    public static final String CAPTCHA_RISK_ANALYSIS = "riskAnalysis";
+    // Captcha Types.
+    public static final String RE_CAPTCHA_TYPE_ENTERPRISE = "recaptcha-enterprise";
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
+
+    public static final String SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME = "sso.login.recaptcha";
 
     /**
      * Captcha Connector configuration constants from the identity.xml.

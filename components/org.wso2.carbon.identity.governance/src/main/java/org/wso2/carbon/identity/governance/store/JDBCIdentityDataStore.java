@@ -387,6 +387,83 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         }
     }
 
+    @Override
+    public List<String> getUserNamesLessThanProvidedClaimValue(String claimURI, String claimValue, int tenantId)
+            throws IdentityException {
+
+        String sqlStmt = SQLQuery.FILTER_USERS_BY_DATA_KEY_LESS_THAN_DATA_VALUE;
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
+                prepStmt.setString(1, claimURI);
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, claimValue);
+                try (ResultSet resultSet = prepStmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        String username = resultSet.getString(1);
+                        userNames.add(username);
+                    }
+                }
+                IdentityDatabaseUtil.commitTransaction(connection);
+                return userNames;
+            }
+        } catch (SQLException e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+    }
+
+    @Override
+    public List<String> getUserNamesMoreThanProvidedClaimValue(String claimURI, String claimValue, int tenantId)
+            throws IdentityException {
+
+        String sqlStmt = SQLQuery.FILTER_USERS_BY_DATA_KEY_MORE_THAN_DATA_VALUE;
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
+                prepStmt.setString(1, claimURI);
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, claimValue);
+                try (ResultSet resultSet = prepStmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        String username = resultSet.getString(1);
+                        userNames.add(username);
+                    }
+                }
+                IdentityDatabaseUtil.commitTransaction(connection);
+                return userNames;
+            }
+        } catch (SQLException e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+    }
+
+    @Override
+    public  List<String> getUserNamesBetweenProvidedClaimValues(String claimURI, String startValue, String endValue,
+                                                                int tenantId) throws IdentityException {
+
+        String sqlStmt = SQLQuery.FILTER_USERS_BY_DATA_KEY_LESS_THAN_AND_GREATER_THAN_DATA_VALUES;
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
+                prepStmt.setString(1, claimURI);
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, endValue);
+                prepStmt.setString(4, startValue);
+                try (ResultSet resultSet = prepStmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        String username = resultSet.getString(1);
+                        userNames.add(username);
+                    }
+                }
+                IdentityDatabaseUtil.commitTransaction(connection);
+                return userNames;
+            }
+        } catch (SQLException e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+    }
+
+
     private void populatePrepareStatement(SqlBuilder sqlBuilder, PreparedStatement prepStmt, int startIndex,
                                           int endIndex) throws SQLException {
 
@@ -558,6 +635,18 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 "SELECT DISTINCT USER_NAME " +
                 "FROM IDN_IDENTITY_USER_DATA " +
                 "WHERE DATA_KEY = ? AND DATA_VALUE LIKE ? AND TENANT_ID = ? AND USER_NAME LIKE ?";
+
+        public static final String FILTER_USERS_BY_DATA_KEY_LESS_THAN_DATA_VALUE =
+                "SELECT USER_NAME, DATA_VALUE FROM IDN_IDENTITY_USER_DATA WHERE " +
+                        "DATA_KEY = ? AND TENANT_ID = ? AND DATA_VALUE < ?";
+
+        public static final String FILTER_USERS_BY_DATA_KEY_MORE_THAN_DATA_VALUE =
+                "SELECT USER_NAME, DATA_VALUE FROM IDN_IDENTITY_USER_DATA WHERE " +
+                        "DATA_KEY = ? AND TENANT_ID = ? AND DATA_VALUE > ?";
+
+        public static final String FILTER_USERS_BY_DATA_KEY_LESS_THAN_AND_GREATER_THAN_DATA_VALUES =
+                "SELECT USER_NAME, DATA_VALUE FROM IDN_IDENTITY_USER_DATA WHERE " +
+                        "DATA_KEY = ? AND TENANT_ID = ? AND DATA_VALUE < ? AND DATA_VALUE > ?";
 
         private SQLQuery() {
         }

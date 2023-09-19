@@ -34,7 +34,6 @@ import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
@@ -86,7 +85,6 @@ import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
 import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -110,6 +108,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -318,7 +317,7 @@ public class UserSelfRegistrationManager {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
-            String secretKey = UUIDGenerator.generateUUID();
+            String secretKey = UUID.randomUUID().toString();
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.SELF_SIGN_UP,
                     RecoverySteps.CONFIRM_SIGN_UP);
             recoveryDataDO.setRemainingSetIds(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
@@ -1422,9 +1421,13 @@ public class UserSelfRegistrationManager {
 
     private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
 
-        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
-                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
-                tenantDomain);
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            return (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CarbonException(e);
+        }
     }
 
     /**
@@ -1741,9 +1744,8 @@ public class UserSelfRegistrationManager {
                         .isNotEmpty(preferredChannel)) {
                     claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                 }
-                userStoreManager
-                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), Utils.generateRandomPassword(12),
-                                userRoles, claimsMap, null);
+                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                        new String(Utils.generateRandomPassword(12)), userRoles, claimsMap, null);
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {
@@ -1821,7 +1823,7 @@ public class UserSelfRegistrationManager {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
-            String secretKey = UUIDGenerator.generateUUID();
+            String secretKey = UUID.randomUUID().toString();
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.LITE_SIGN_UP,
                     RecoverySteps.CONFIRM_LITE_SIGN_UP);
             recoveryDataDO.setRemainingSetIds(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());

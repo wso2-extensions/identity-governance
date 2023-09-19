@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
@@ -74,7 +75,7 @@ import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManag
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -189,20 +190,6 @@ public class IdentityRecoveryServiceComponent {
     }
 
     @Reference(
-            name = "registry.service",
-            service = org.wso2.carbon.registry.core.service.RegistryService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRegistryService")
-    protected void setRegistryService(RegistryService registryService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Registry Service");
-        }
-        dataHolder.setRegistryService(registryService);
-    }
-
-    @Reference(
             name = "otpgenerator.service",
             service = org.wso2.carbon.identity.governance.service.otp.OTPGenerator.class,
             cardinality = ReferenceCardinality.MANDATORY,
@@ -220,12 +207,6 @@ public class IdentityRecoveryServiceComponent {
 
         log.debug("UnSetting the Realm Service");
         dataHolder.setRealmService(null);
-    }
-
-    protected void unsetRegistryService(RegistryService registryService) {
-
-        log.debug("UnSetting the Registry Service");
-        dataHolder.setRegistryService(null);
     }
 
     protected void unsetOtpGenerator(OTPGenerator otpGenerator) {
@@ -496,5 +477,42 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(null);
+    }
+
+    @Reference(
+            name = "identity.user.profile.mgt.component",
+            service = FederatedAssociationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetFederatedAssociationManagerService"
+    )
+    protected void setFederatedAssociationManagerService(FederatedAssociationManager
+                                                                 federatedAssociationManagerService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setFederatedAssociationManager(
+                federatedAssociationManagerService);
+    }
+
+    protected void unsetFederatedAssociationManagerService(FederatedAssociationManager
+                                                                   federatedAssociationManagerService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setFederatedAssociationManager(null);
+    }
+
+    @Reference(
+            name = "identity.governance.service",
+            service = IdentityDataStoreService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityDataStoreService"
+    )
+    protected void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
+    }
+
+    protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(null);
     }
 }
