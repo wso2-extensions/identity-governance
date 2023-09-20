@@ -877,6 +877,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     private PasswordResetCodeDTO validateConfirmationCode(UserAccountRecoveryManager userAccountRecoveryManager,
                                                           String confirmationCode, String tenantDomain)
             throws IdentityRecoveryException {
+
         UserRecoveryData userRecoveryData;
         try {
             userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(confirmationCode,

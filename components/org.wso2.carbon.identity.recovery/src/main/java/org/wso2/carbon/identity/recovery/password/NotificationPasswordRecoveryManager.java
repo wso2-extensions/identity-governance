@@ -770,6 +770,7 @@ public class NotificationPasswordRecoveryManager {
     @Deprecated
     private UserRecoveryData validateUserRecoveryDataFromCode(String code, String confirmationCode, String password,
                                                               Property[] properties) throws IdentityRecoveryException {
+
         UserRecoveryData userRecoveryData;
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         try {
