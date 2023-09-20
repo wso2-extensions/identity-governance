@@ -112,6 +112,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Recovery callback URL regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "Enable Auto Login After Password Reset");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS,
+                "Max failed attempts for OTP based recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS,
+                "Max resend attempts for OTP based recovery");
         return nameMapping;
     }
 
@@ -168,6 +172,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS);
         return properties.toArray(new String[0]);
     }
 
@@ -194,6 +200,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String minimumForcedChallengeQuestionsAnswered = "1";
         String recoveryCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableAdminPasswordResetAutoLoginProperty = "false";
+        String recoveryOTPMaxFailedAttempts = "3";
+        String recoveryOTPMaxResendAttempts = "5";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -234,6 +242,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         String adminPasswordResetAutoLoginProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
+        String otpMaxFailedAttempts = IdentityUtil.getProperty(IdentityRecoveryConstants.
+                ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS);
+        String otpMaxResendAttempts = IdentityUtil.getProperty(IdentityRecoveryConstants.
+                ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS);
 
         if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
             expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
@@ -295,6 +307,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(adminPasswordResetAutoLoginProperty)) {
             enableAdminPasswordResetAutoLoginProperty = adminPasswordResetAutoLoginProperty;
         }
+        if (StringUtils.isNotEmpty(otpMaxFailedAttempts)) {
+            recoveryOTPMaxFailedAttempts = otpMaxFailedAttempts;
+        }
+        if (StringUtils.isNotEmpty(otpMaxResendAttempts)) {
+            recoveryOTPMaxResendAttempts = otpMaxResendAttempts;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -336,6 +354,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX, recoveryCallbackRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 enableAdminPasswordResetAutoLoginProperty);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS,
+                recoveryOTPMaxFailedAttempts);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS,
+                recoveryOTPMaxResendAttempts);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -410,6 +432,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS,
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         return meta;
     }

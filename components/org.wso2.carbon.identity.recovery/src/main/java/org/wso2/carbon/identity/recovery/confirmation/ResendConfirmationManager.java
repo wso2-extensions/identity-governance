@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -147,6 +148,19 @@ public class ResendConfirmationManager {
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(resendCode, RecoverySteps.RESEND_CONFIRMATION_CODE);
         User user = userRecoveryData.getUser();
+        String recoveryFlowId = userRecoveryData.getRecoveryFlowId();
+        UserRecoveryFlowData userRecoveryFlowData = userAccountRecoveryManager.loadUserRecoveryFlowData(
+                userRecoveryData);
+        int resendCount = userRecoveryFlowData.getResendCount();
+        if (resendCount >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS, tenantDomain))) {
+            userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
+                    recoveryFlowId);
+        }
+        userAccountRecoveryManager.updateRecoveryDataResendCount(recoveryFlowId, resendCount + 1);
 
         // Validate the tenant domain and the recovery scenario in the request.
         validateRequestAttributes(user, scenario, userRecoveryData.getRecoveryScenario(), tenantDomain, resendCode);
@@ -164,8 +178,10 @@ public class ResendConfirmationManager {
         } else {
             userRecoveryDataStore.invalidate(user);
             confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(), recoveryScenario);
+            confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
+                    confirmationCode);
             // Store new confirmation code.
-            addRecoveryDataObject(confirmationCode, notificationChannel, scenario, step, user);
+            addRecoveryDataObject(confirmationCode, recoveryFlowId, notificationChannel, scenario, step, user);
         }
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 
@@ -185,6 +201,7 @@ public class ResendConfirmationManager {
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
         resendConfirmationDTO.setSuccessMessage(
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getMessage());
+        resendConfirmationDTO.setRecoveryFlowId(recoveryFlowId);
         return resendConfirmationDTO;
     }
 
@@ -274,6 +291,7 @@ public class ResendConfirmationManager {
                                       UserRecoveryData userRecoveryData) throws IdentityRecoveryServerException {
 
         String resendCode = UUID.randomUUID().toString();
+        String recoveryFlowId = userRecoveryData.getRecoveryFlowId();
         /* Checking whether the existing confirmation code issued time is in the tolerance period. If so this code
            updates the existing RESEND_CONFIRMATION_CODE with the new one by not changing the TIME_CREATED. */
         if (Utils.reIssueExistingConfirmationCode(getResendConfirmationCodeData(userRecoveryData.getUser()),
@@ -281,8 +299,8 @@ public class ResendConfirmationManager {
             invalidateResendConfirmationCode(resendCode, notificationChannel, userRecoveryData);
             return resendCode;
         }
-        addRecoveryDataObject(resendCode, notificationChannel, scenario, RecoverySteps.RESEND_CONFIRMATION_CODE,
-                userRecoveryData.getUser());
+        addRecoveryDataObject(resendCode, recoveryFlowId, notificationChannel, scenario,
+                RecoverySteps.RESEND_CONFIRMATION_CODE, userRecoveryData.getUser());
         return resendCode;
     }
 
@@ -336,23 +354,28 @@ public class ResendConfirmationManager {
      * Add the notification channel recovery data to the store.
      *
      * @param secretKey        RecoveryId
+     * @param recoveryFlowId   Recovery flow ID.
      * @param recoveryData     Data to be stored as mata which are needed to evaluate the recovery data object
      * @param recoveryScenario Recovery scenario
      * @param recoveryStep     Recovery step
      * @param user             User object
      * @throws IdentityRecoveryServerException Error storing recovery data
      */
-    private void addRecoveryDataObject(String secretKey, String recoveryData, RecoveryScenarios recoveryScenario,
-                                       RecoverySteps recoveryStep, User user)
+    private void addRecoveryDataObject(String secretKey, String recoveryFlowId, String recoveryData,
+                                       RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep, User user)
             throws IdentityRecoveryServerException {
 
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario, recoveryStep);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey, recoveryScenario, recoveryStep);
 
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
         try {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            userRecoveryDataStore.store(recoveryDataDO);
+            if (StringUtils.equals(RecoverySteps.UPDATE_PASSWORD.name(), String.valueOf(recoveryStep))) {
+                userRecoveryDataStore.storeConfirmationCode(recoveryDataDO);
+            } else {
+                userRecoveryDataStore.store(recoveryDataDO);
+            }
         } catch (IdentityRecoveryException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,
