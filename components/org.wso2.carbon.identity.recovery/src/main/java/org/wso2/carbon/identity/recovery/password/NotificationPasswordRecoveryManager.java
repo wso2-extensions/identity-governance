@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -249,16 +250,22 @@ public class NotificationPasswordRecoveryManager {
     private UserRecoveryData generateNewConfirmationCode(User user, String notificationChannel)
             throws IdentityRecoveryException {
 
+        String recoveryFlowId = null;
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+        if (userRecoveryData != null) {
+            recoveryFlowId = userRecoveryData.getRecoveryFlowId();
+        }
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+        secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
 
         // Store the notified channel in the recovery object for future reference.
         recoveryDataDO.setRemainingSetIds(notificationChannel);
-        userRecoveryDataStore.store(recoveryDataDO);
+        userRecoveryDataStore.storeConfirmationCode(recoveryDataDO);
         return recoveryDataDO;
     }
 
@@ -536,6 +543,22 @@ public class NotificationPasswordRecoveryManager {
     /**
      * Update the password of the user.
      *
+     * @param code              Password Reset code.
+     * @param confirmationCode  Confirmation code.
+     * @param password          New password.
+     * @param properties        Properties.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
+     */
+    public void updatePassword(String code, String confirmationCode, String password, Property[] properties)
+            throws IdentityRecoveryException, IdentityEventException {
+
+        updateUserPassword(code, confirmationCode, password, properties);
+    }
+
+    /**
+     * Update the password of the user.
+     *
      * @param code       Password Reset code.
      * @param password   New password.
      * @param properties Properties.
@@ -552,6 +575,8 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
         validateTenantDomain(userRecoveryData.getUser());
+        String recoveryFlowId = userRecoveryDataStore.loadWithoutCodeExpiryValidation(userRecoveryData.getUser())
+                .getRecoveryFlowId();
 
         // Validate recovery step.
         if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
@@ -575,7 +600,11 @@ public class NotificationPasswordRecoveryManager {
         // Update the password.
         updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
                 notificationsInternallyManaged);
-        userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        if (recoveryFlowId != null) {
+            userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
+        } else {
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        }
         if (notificationsInternallyManaged &&
                 !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             String emailTemplate = null;
@@ -615,6 +644,160 @@ public class NotificationPasswordRecoveryManager {
                 FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
 
         return userRecoveryData.getUser();
+    }
+
+    /**
+     * Update the password of the user.
+     *
+     * @param code              Password Reset code.
+     * @param confirmationCode  Confirmation code.
+     * @param password          New password.
+     * @param properties        Properties.
+     * @throws IdentityRecoveryException Error while updating the password.
+     * @throws IdentityEventException    Error while updating the password.
+     */
+    public User updateUserPassword(String code, String confirmationCode, String password, Property[] properties)
+            throws IdentityRecoveryException, IdentityEventException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData;
+        try {
+            userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
+                    RecoverySteps.UPDATE_PASSWORD);
+            validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
+            publishEvent(userRecoveryData.getUser(), null, null, password, properties,
+                    IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
+            validateTenantDomain(userRecoveryData.getUser());
+            int failedAttempts = userRecoveryData.getFailedAttempts();
+
+            if (!StringUtils.equals(code, userRecoveryData.getSecret())) {
+                if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.
+                        ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().
+                        getTenantDomain()))) {
+                    userRecoveryDataStore.invalidateWithRecoveryFlowId(confirmationCode);
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
+                            confirmationCode);
+                }
+                userRecoveryDataStore.updateFailedAttempts(confirmationCode, failedAttempts + 1);
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
+            }
+        } catch (IdentityRecoveryException e) {
+            /* This is a fallback logic to support already initiated email link based recovery flows using the
+            recovery V1 API, which do not have recovery flow ids. */
+            userRecoveryData = validateUserRecoveryDataFromCode(code, confirmationCode, password, properties);
+        }
+
+        // Get the notification channel.
+        String notificationChannel = getServerSupportedNotificationChannel(userRecoveryData.getRemainingSetIds());
+        boolean notificationsInternallyManaged = Boolean.parseBoolean(
+                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                        userRecoveryData.getUser().getTenantDomain()));
+        boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+                userRecoveryData.getUser().getTenantDomain()));
+        boolean isNotificationSendOnAccountActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
+                userRecoveryData.getUser().getTenantDomain()));
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
+
+        // Update the password.
+        updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
+                notificationsInternallyManaged);
+        if (userRecoveryData.getRecoveryFlowId() != null) {
+            userRecoveryDataStore.invalidateWithRecoveryFlowId(userRecoveryData.getRecoveryFlowId());
+        } else {
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
+        }
+        if (notificationsInternallyManaged &&
+                !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String emailTemplate = null;
+            if (isAskPasswordFlow(userRecoveryData) &&
+                    isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
+                if (isNotificationSendOnAccountActivation) {
+                    emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                }
+            } else if (isNotificationSendWhenSuccess) {
+                emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
+            }
+            try {
+                String eventName = Utils.resolveEventName(notificationChannel);
+                if (StringUtils.isNotBlank(emailTemplate)) {
+                    triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
+                            StringUtils.EMPTY, eventName, properties, userRecoveryData);
+                }
+            } catch (IdentityRecoveryException e) {
+                String errorMsg = String.format("Error while sending password reset success notification to user : %s",
+                        userRecoveryData.getUser().getUserName());
+                log.error(errorMsg);
+                String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+                String recoveryStep = userRecoveryData.getRecoveryStep().name();
+                auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
+                        FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
+            }
+        }
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, userRecoveryData);
+        if (log.isDebugEnabled()) {
+            String msg = "Password is updated for  user: " + domainQualifiedName;
+            log.debug(msg);
+        }
+        String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+        String recoveryStep = userRecoveryData.getRecoveryStep().name();
+        auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
+                FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
+
+        return userRecoveryData.getUser();
+    }
+
+    /**
+     * This method is to validate user recovery data using the reset code when there's no recovery flow id.
+     * This is added as a fallback logic to handle the already initiated email link based recovery flows which do not
+     * have recovery flow ids, which were initiated before moving to the Recovery V2 API.
+     * This shouldn't be used for any other purpose and should be kept for sometime.
+     *
+     * @param code                       Password Reset code.
+     * @param confirmationCode           Confirmation code.
+     * @param password                   New password.
+     * @param properties                 Properties.
+     * @return UserRecoveryData.
+     * @throws IdentityRecoveryException Error while updating the password.
+     */
+    @Deprecated
+    private UserRecoveryData validateUserRecoveryDataFromCode(String code, String confirmationCode, String password,
+                                                              Property[] properties) throws IdentityRecoveryException {
+
+        UserRecoveryData userRecoveryData;
+        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        try {
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(code, RecoverySteps.UPDATE_PASSWORD);
+        } catch (IdentityRecoveryException e) {
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
+                    e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            }
+            throw e;
+        }
+        if (!StringUtils.equals(userRecoveryData.getRemainingSetIds(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
+        }
+        validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
+        validateTenantDomain(userRecoveryData.getUser());
+
+        // Validate recovery step.
+        if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+        }
+        return userRecoveryData;
     }
 
     /**

@@ -58,6 +58,7 @@ import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockSt
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Class that implements the PasswordRecoveryManager.
@@ -106,7 +107,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                         properties);
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
         String username = recoveryChannelInfoDTO.getUsername();
+        String recoveryFlowId = recoveryChannelInfoDTO.getRecoveryFlowId();
         recoveryInformationDTO.setUsername(username);
+        recoveryInformationDTO.setRecoveryFlowId(recoveryFlowId);
         // Do not add recovery channel information if Notification based recovery is not enabled.
         recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         if (isNotificationBasedRecoveryEnabled) {
@@ -168,7 +171,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 manageNotificationsInternally, properties);
         String secretKey = notificationResponseBean.getKey();
         String resendCode = generateResendCode(notificationChannel, userRecoveryData);
-        return buildPasswordRecoveryResponseDTO(notificationChannel, secretKey, resendCode);
+        String recoveryFlowId = userRecoveryData.getRecoveryFlowId();
+        userAccountRecoveryManager.loadUserRecoveryFlowData(userRecoveryData);
+        return buildPasswordRecoveryResponseDTO(notificationChannel, secretKey, resendCode, recoveryFlowId);
     }
 
     /**
@@ -203,6 +208,75 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     }
 
     /**
+     * Validate the code given for password recovery and return the password reset code.
+     *
+     * @param otp              One Time Password.
+     * @param confirmationCode Confirmation code.
+     * @param tenantDomain     Tenant domain.
+     * @param properties       Meta properties in the confirmation request.
+     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code.
+     * @throws IdentityRecoveryException Error while confirming password recovery.
+     */
+    @Override
+    public PasswordResetCodeDTO confirm(String otp, String confirmationCode, String tenantDomain,
+                                        Map<String, String> properties) throws IdentityRecoveryException {
+
+        validateTenantDomain(tenantDomain);
+        UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
+        /* In the recovery scenarios which are not OTP based, the confirmation code is a combination of the
+        recovery flow id and another UUID generated. Hence, we need to get the recovery flow id from the
+        confirmation code. In the OTP based recovery scenario, the confirmation code is the recovery flow id. */
+        String[] ids = confirmationCode.split(Pattern.quote(IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR));
+        String recoveryFlowId;
+        String code;
+        if (ids.length == 2) {
+            recoveryFlowId = ids[0];
+            code = confirmationCode;
+        } else {
+            recoveryFlowId = confirmationCode;
+            code = otp;
+        }
+        try {
+            UserRecoveryData userRecoveryData = userAccountRecoveryManager
+                    .getUserRecoveryDataFromFlowId(recoveryFlowId, RecoverySteps.UPDATE_PASSWORD);
+            int failedAttempts = userRecoveryData.getFailedAttempts();
+            if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                        tenantDomain);
+            }
+            String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                    userRecoveryData.getUser().getUserStoreDomain());
+            if (StringUtils.equals(code, userRecoveryData.getSecret())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Valid confirmation code for user: " + domainQualifiedName);
+                }
+                return buildPasswordResetCodeDTO(code);
+            }
+            failedAttempts = failedAttempts + 1;
+            if (failedAttempts >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
+                    RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
+                userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getMessage(),
+                        recoveryFlowId);
+            }
+            userAccountRecoveryManager.updateRecoveryDataFailedAttempts(recoveryFlowId, failedAttempts);
+            if (log.isDebugEnabled()) {
+                log.debug("Invalid confirmation code for user: " + domainQualifiedName);
+            }
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
+        } catch (IdentityRecoveryException e) {
+            /* This is a fallback logic to support already initiated email link based recovery flows using the
+            recovery V1 API, which do not have recovery flow ids. */
+            return validateConfirmationCode(userAccountRecoveryManager, recoveryFlowId, tenantDomain);
+        }
+    }
+
+    /**
      * Reset the password for password recovery, if the password reset code is valid.
      *
      * @param resetCode  Password reset code
@@ -228,6 +302,50 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         Property[] metaProperties = buildPropertyList(null, properties);
         try {
             notificationPasswordRecoveryManager.updatePassword(resetCode, newPassword, metaProperties);
+        } catch (IdentityRecoveryServerException e) {
+            String errorCode = Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                    IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        } catch (IdentityRecoveryClientException e) {
+            throw mapClientExceptionWithImprovedErrorCodes(e);
+        } catch (IdentityEventException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("PasswordRecoveryManagerImpl: Error while resetting password ", e);
+            }
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_PASSWORD_RESET.getMessage(),
+                    null);
+        }
+        return buildSuccessfulPasswordUpdateDTO();
+    }
+
+    /**
+     * Reset the password for password recovery, if the password reset code is valid.
+     *
+     * @param resetCode  Password reset code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @return SuccessfulPasswordResetDTO {@link SuccessfulPasswordResetDTO} object which contain the information
+     * for a successful password update.
+     * @throws IdentityRecoveryException Error while resetting the password.
+     */
+    @Override
+    public SuccessfulPasswordResetDTO reset(String resetCode, String confirmationCode, char[] password, Map<String, String> properties)
+            throws IdentityRecoveryException {
+
+        // Validate the password.
+        if (ArrayUtils.isEmpty(password)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_PASSWORD_IN_REQUEST.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_PASSWORD_IN_REQUEST.getMessage(), null);
+        }
+        String newPassword = String.valueOf(password);
+        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = NotificationPasswordRecoveryManager
+                .getInstance();
+        Property[] metaProperties = buildPropertyList(null, properties);
+        try {
+            notificationPasswordRecoveryManager.updatePassword(resetCode, confirmationCode, newPassword, metaProperties);
         } catch (IdentityRecoveryServerException e) {
             String errorCode = Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
                     IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO);
@@ -458,10 +576,11 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      * @param notificationChannel Notified channel
      * @param confirmationCode    Confirmation code for confirm recovery
      * @param resendCode          Code to resend recovery confirmation code
+     * @param recoveryFlowId      Recovery flow ID.
      * @return PasswordRecoverDTO object
      */
     private PasswordRecoverDTO buildPasswordRecoveryResponseDTO(String notificationChannel, String confirmationCode,
-                                                                String resendCode) {
+                                                                String resendCode, String recoveryFlowId) {
 
         PasswordRecoverDTO passwordRecoverDTO = new PasswordRecoverDTO();
         passwordRecoverDTO.setNotificationChannel(notificationChannel);
@@ -469,6 +588,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             passwordRecoverDTO.setConfirmationCode(confirmationCode);
         }
         passwordRecoverDTO.setResendCode(resendCode);
+        passwordRecoverDTO.setRecoveryFlowId(recoveryFlowId);
         passwordRecoverDTO.setCode(
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_PASSWORD_RECOVERY_INTERNALLY_NOTIFIED
                         .getCode());
@@ -581,7 +701,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             invalidateRecoveryInfoSendCode(resendCode, notificationChannel, userRecoveryData);
             return resendCode;
         }
-        addRecoveryDataObject(resendCode, notificationChannel, userRecoveryData.getUser());
+        addRecoveryDataObject(resendCode, userRecoveryData.getRecoveryFlowId(), notificationChannel,
+                userRecoveryData.getUser());
         return resendCode;
     }
 
@@ -635,13 +756,14 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      * Add the notification channel recovery data to the store.
      *
      * @param secretKey    RecoveryId
+     * @param recoveryFlowId Recovery flow ID.
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
      * @throws IdentityRecoveryServerException Error storing recovery data
      */
-    private void addRecoveryDataObject(String secretKey, String recoveryData, User user)
+    private void addRecoveryDataObject(String secretKey, String recoveryFlowId, String recoveryData, User user)
             throws IdentityRecoveryServerException {
 
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.RESEND_CONFIRMATION_CODE);
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
@@ -739,4 +861,49 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         return isMinNoOfRecoveryQuestionsAnswered;
     }
 
+    /**
+     * This method is to validate the confirmation code when there's no recovery flow id. This is added as a fallback
+     * logic to handle the already initiated email link based recovery flows which do not have recovery flow ids,
+     * which were initiated before moving to the Recovery V2 API. This shouldn't be used for any other purpose and
+     * should be kept for sometime.
+     *
+     * @param userAccountRecoveryManager UserAccountRecoveryManager.
+     * @param confirmationCode Confirmation code.
+     * @param tenantDomain     Tenant domain.
+     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code.
+     * @throws IdentityRecoveryException Error while confirming password recovery.
+     */
+    @Deprecated
+    private PasswordResetCodeDTO validateConfirmationCode(UserAccountRecoveryManager userAccountRecoveryManager,
+                                                          String confirmationCode, String tenantDomain)
+            throws IdentityRecoveryException {
+
+        UserRecoveryData userRecoveryData;
+        try {
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(confirmationCode,
+                    RecoverySteps.UPDATE_PASSWORD);
+        } catch (IdentityRecoveryException e) {
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
+                    e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            }
+            throw e;
+        }
+        if (!StringUtils.equals(userRecoveryData.getRemainingSetIds(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
+        }
+        if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
+                    tenantDomain);
+        }
+        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                userRecoveryData.getUser().getUserStoreDomain());
+        if (log.isDebugEnabled()) {
+            log.debug("Valid confirmation code for user: " + domainQualifiedName);
+        }
+        return buildPasswordResetCodeDTO(confirmationCode);
+    }
 }
