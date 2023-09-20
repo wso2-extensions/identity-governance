@@ -11,6 +11,8 @@ import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.ValidateCodeApiService;
 import org.wso2.carbon.identity.recovery.endpoint.dto.CodeValidationRequestDTO;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.UserStoreException;
 
 import javax.ws.rs.core.Response;
 
@@ -28,8 +30,18 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
         try {
             NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                     .getNotificationBasedPwdRecoveryManager();
-            user = notificationPasswordRecoveryManager
-                    .getValidatedUser(codeValidationRequestDTO.getCode(), codeValidationRequestDTO.getStep());
+            String code = codeValidationRequestDTO.getCode();
+            try {
+                String hashedCode = Utils.doHash(code);
+                user = notificationPasswordRecoveryManager
+                        .getValidatedUser(hashedCode, codeValidationRequestDTO.getStep());
+            } catch (UserStoreException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+            } catch (IdentityRecoveryException e) {
+                user = notificationPasswordRecoveryManager
+                        .getValidatedUser(code, codeValidationRequestDTO.getStep());
+            }
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while validating the confirmation code ", e);

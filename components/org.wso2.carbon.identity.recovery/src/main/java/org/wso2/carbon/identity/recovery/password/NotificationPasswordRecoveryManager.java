@@ -251,6 +251,7 @@ public class NotificationPasswordRecoveryManager {
             throws IdentityRecoveryException {
 
         String recoveryFlowId = null;
+        String hashedSecretKey;
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
         if (userRecoveryData != null) {
@@ -260,12 +261,22 @@ public class NotificationPasswordRecoveryManager {
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
         secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
+        try {
+            hashedSecretKey = Utils.doHash(secretKey);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        }
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+        UserRecoveryData hashedRecoveryDataDO = new UserRecoveryData(user, recoveryFlowId, hashedSecretKey,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+
 
         // Store the notified channel in the recovery object for future reference.
         recoveryDataDO.setRemainingSetIds(notificationChannel);
-        userRecoveryDataStore.storeConfirmationCode(recoveryDataDO);
+        hashedRecoveryDataDO.setRemainingSetIds(notificationChannel);
+        userRecoveryDataStore.storeConfirmationCode(hashedRecoveryDataDO);
         return recoveryDataDO;
     }
 
@@ -570,7 +581,16 @@ public class NotificationPasswordRecoveryManager {
 
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+        UserRecoveryData userRecoveryData;
+        try {
+            String hashedCode = Utils.doHash(code);
+            userRecoveryData = userRecoveryDataStore.load(hashedCode);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        } catch (IdentityRecoveryException e) {
+            userRecoveryData = userRecoveryDataStore.load(code);
+        }
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
@@ -670,7 +690,15 @@ public class NotificationPasswordRecoveryManager {
             validateTenantDomain(userRecoveryData.getUser());
             int failedAttempts = userRecoveryData.getFailedAttempts();
 
-            if (!StringUtils.equals(code, userRecoveryData.getSecret())) {
+            String hashedCode;
+            try {
+                hashedCode = Utils.doHash(code);
+            } catch (UserStoreException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+            }
+            if (!StringUtils.equals(hashedCode, userRecoveryData.getSecret()) && !StringUtils.equals(code,
+                    userRecoveryData.getSecret())) {
                 if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.
                         ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().
                         getTenantDomain()))) {

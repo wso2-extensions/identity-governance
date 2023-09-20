@@ -304,6 +304,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
         ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data."),
         ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data."),
+        ERROR_CODE_NO_HASHING_ALGO_FOR_CODE("20065", "Error while hashing the code."),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
