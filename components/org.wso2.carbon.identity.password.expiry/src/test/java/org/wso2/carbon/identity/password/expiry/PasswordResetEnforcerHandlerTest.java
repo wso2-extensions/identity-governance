@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.password.expiry;
 
+import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
@@ -98,11 +99,15 @@ public class PasswordResetEnforcerHandlerTest {
     @Mock
     private Enumeration<String> requestHeaders;
 
+    @Mock
+    private FrameworkServiceDataHolder frameworkServiceDataHolder;
+
     private MockedStatic<PasswordPolicyUtils> mockedStaticPasswordPolicyUtils;
     private MockedStatic<MultitenantUtils> mockedStaticMultiTenantUtils;
     private MockedStatic<JDBCRecoveryDataStore> mockedStaticJDBCRecoveryDataStore;
     private MockedStatic<FrameworkUtils> mockedStaticFrameworkUtils;
     private MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
+    private MockedStatic<FrameworkServiceDataHolder> mockedStaticFrameworkServiceDataHolder;
 
     @BeforeClass
     public void beforeTest() {
@@ -112,6 +117,7 @@ public class PasswordResetEnforcerHandlerTest {
         mockedStaticMultiTenantUtils = mockStatic(MultitenantUtils.class);
         mockedStaticFrameworkUtils = mockStatic(FrameworkUtils.class);
         mockedStaticIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
+        mockedStaticFrameworkServiceDataHolder = mockStatic(FrameworkServiceDataHolder.class);
     }
 
     @AfterClass
@@ -122,6 +128,7 @@ public class PasswordResetEnforcerHandlerTest {
         mockedStaticMultiTenantUtils.close();
         mockedStaticFrameworkUtils.close();
         mockedStaticIdentityTenantUtil.close();
+        mockedStaticFrameworkServiceDataHolder.close();
     }
 
     @BeforeMethod
@@ -191,6 +198,8 @@ public class PasswordResetEnforcerHandlerTest {
 
         when(authenticationContext.getSequenceConfig()).thenReturn(sequenceConfig);
         when(sequenceConfig.getAuthenticatedUser()).thenReturn(authenticatedUser);
+        when(FrameworkServiceDataHolder.getInstance()).thenReturn(frameworkServiceDataHolder);
+        when(frameworkServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(authenticatedUser.getTenantDomain()).thenReturn(TENANT_DOMAIN);
         when(authenticatedUser.getUserName()).thenReturn(USERNAME);
         when(authenticatedUser.getUserStoreDomain()).thenReturn(USER_STORE_DOMAIN);
