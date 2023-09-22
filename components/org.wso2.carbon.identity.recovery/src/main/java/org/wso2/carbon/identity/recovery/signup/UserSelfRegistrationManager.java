@@ -1287,13 +1287,12 @@ public class UserSelfRegistrationManager {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
         }
         try {
-            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            Entity userEntity = new Entity(tenantAwareUsername, IdentityRecoveryConstants.ENTITY_TYPE_USER,
+            Entity userEntity = new Entity(username, IdentityRecoveryConstants.ENTITY_TYPE_USER,
                     IdentityTenantUtil.getTenantId(tenantDomain));
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
-                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(username) ||
                         workflowService.entityHasPendingWorkflowsOfType(userEntity,
                                 IdentityRecoveryConstants.ADD_USER_EVENT);
             }
@@ -1444,8 +1443,7 @@ public class UserSelfRegistrationManager {
             UserRealm userRealm = getUserRealm(tenantDomain);
             RealmConfiguration realmConfiguration = userRealm.getUserStoreManager().getSecondaryUserStoreManager
                     (userDomain).getRealmConfiguration();
-            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            String userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(tenantAwareUsername);
+            String userStoreDomainAwareUsername = UserCoreUtil.removeDomainFromName(username);
             isValidUsername = checkUserNameValid(userStoreDomainAwareUsername, realmConfiguration);
 
         } catch (CarbonException e) {
