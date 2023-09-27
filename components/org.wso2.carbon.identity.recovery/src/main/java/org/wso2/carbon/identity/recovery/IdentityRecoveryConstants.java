@@ -374,6 +374,7 @@ public class IdentityRecoveryConstants {
                 "User account recovery validation failed for user account: '%s'"),
         ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'."),
         ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'."),
+        ERROR_CODE_API_DISABLED("UAR-10017", "Recovery API is disabled."),
         ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
                 + "recovery flow id : '%s'."),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),

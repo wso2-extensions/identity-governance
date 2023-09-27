@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -189,6 +190,11 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     public PasswordResetCodeDTO confirm(String confirmationCode, String tenantDomain, Map<String, String> properties)
             throws IdentityRecoveryException {
 
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityConstants.Recovery.RECOVERY_V1_API_ENABLE))) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_API_DISABLED, null);
+        }
         validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         // Get Recovery data.
@@ -290,6 +296,11 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     public SuccessfulPasswordResetDTO reset(String resetCode, char[] password, Map<String, String> properties)
             throws IdentityRecoveryException {
 
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityConstants.Recovery.RECOVERY_V1_API_ENABLE))) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_API_DISABLED, null);
+        }
         // Validate the password.
         if (ArrayUtils.isEmpty(password)) {
             throw Utils.handleClientException(
