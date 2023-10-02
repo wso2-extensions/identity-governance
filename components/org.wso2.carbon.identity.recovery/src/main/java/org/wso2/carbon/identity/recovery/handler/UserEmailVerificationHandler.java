@@ -224,6 +224,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
                         confirmationCode);
             }
+            Utils.clearEmailVerifyTemporaryClaim();
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
