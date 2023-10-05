@@ -54,8 +54,8 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
-import org.wso2.carbon.user.api.UserStoreException;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -195,10 +195,10 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         // Get Recovery data.
         UserRecoveryData userRecoveryData;
         try {
-            String hashedConfirmationCode = Utils.doHash(confirmationCode);
+            String hashedConfirmationCode = Utils.hashCode(confirmationCode);
             userRecoveryData = userAccountRecoveryManager
                     .getUserRecoveryData(hashedConfirmationCode, RecoverySteps.UPDATE_PASSWORD);
-        } catch (UserStoreException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
         } catch (IdentityRecoveryException e) {
@@ -260,8 +260,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                     userRecoveryData.getUser().getUserStoreDomain());
             String hashedCode;
             try {
-                hashedCode = Utils.doHash(code);
-            } catch (UserStoreException e) {
+                hashedCode = Utils.hashCode(code);
+            } catch (NoSuchAlgorithmException e) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
             }

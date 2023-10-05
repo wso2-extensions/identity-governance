@@ -47,10 +47,10 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.user.api.UserStoreException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -183,8 +183,8 @@ public class ResendConfirmationManager {
             confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
                     confirmationCode);
             try {
-                hashedConfirmationCode = Utils.doHash(confirmationCode);
-            } catch (UserStoreException e) {
+                hashedConfirmationCode = Utils.hashCode(confirmationCode);
+            } catch (NoSuchAlgorithmException e) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
             }

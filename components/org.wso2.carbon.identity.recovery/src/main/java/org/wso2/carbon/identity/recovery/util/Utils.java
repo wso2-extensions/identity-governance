@@ -428,6 +428,19 @@ public class Utils {
     }
 
     /**
+     * @param value     Value to be hashed
+     * @return          Hashed value
+     * @throws NoSuchAlgorithmException If the algorithm is not found.
+     */
+    public static String hashCode(String value) throws NoSuchAlgorithmException {
+
+        String digsestFunction = "SHA-256";
+        MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
+        byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
+        return Base64.encode(byteValue);
+    }
+
+    /**
      * Set claim to user store manager
      *
      * @param user  user

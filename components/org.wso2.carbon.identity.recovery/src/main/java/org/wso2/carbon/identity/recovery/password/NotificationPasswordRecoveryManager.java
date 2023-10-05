@@ -65,6 +65,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -262,8 +263,8 @@ public class NotificationPasswordRecoveryManager {
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
         secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
         try {
-            hashedSecretKey = Utils.doHash(secretKey);
-        } catch (UserStoreException e) {
+            hashedSecretKey = Utils.hashCode(secretKey);
+        } catch (NoSuchAlgorithmException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
         }
@@ -583,9 +584,9 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData;
         try {
-            String hashedCode = Utils.doHash(code);
+            String hashedCode = Utils.hashCode(code);
             userRecoveryData = userRecoveryDataStore.load(hashedCode);
-        } catch (UserStoreException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
         } catch (IdentityRecoveryException e) {
@@ -692,13 +693,13 @@ public class NotificationPasswordRecoveryManager {
 
             String hashedCode;
             try {
-                hashedCode = Utils.doHash(code);
-            } catch (UserStoreException e) {
+                hashedCode = Utils.hashCode(code);
+            } catch (NoSuchAlgorithmException e) {
                 throw Utils.handleServerException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
             }
-            if (!StringUtils.equals(hashedCode, userRecoveryData.getSecret()) && !StringUtils.equals(code,
-                    userRecoveryData.getSecret())) {
+            if (!(StringUtils.equals(hashedCode, userRecoveryData.getSecret()) || StringUtils.equals(code,
+                    userRecoveryData.getSecret()))) {
                 if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.
                         ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().
                         getTenantDomain()))) {
@@ -1076,9 +1077,9 @@ public class NotificationPasswordRecoveryManager {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData;
         try {
-            String hashedCode = Utils.doHash(code);
+            String hashedCode = Utils.hashCode(code);
             userRecoveryData = userRecoveryDataStore.load(hashedCode);
-        } catch (UserStoreException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
         } catch (IdentityRecoveryException e) {
