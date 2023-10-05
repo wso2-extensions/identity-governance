@@ -30,18 +30,8 @@ public class ValidateCodeApiServiceImpl extends ValidateCodeApiService {
         try {
             NotificationPasswordRecoveryManager notificationPasswordRecoveryManager = RecoveryUtil
                     .getNotificationBasedPwdRecoveryManager();
-            String code = codeValidationRequestDTO.getCode();
-            try {
-                String hashedCode = Utils.doHash(code);
-                user = notificationPasswordRecoveryManager
-                        .getValidatedUser(hashedCode, codeValidationRequestDTO.getStep());
-            } catch (UserStoreException e) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
-            } catch (IdentityRecoveryException e) {
-                user = notificationPasswordRecoveryManager
-                        .getValidatedUser(code, codeValidationRequestDTO.getStep());
-            }
+            user = notificationPasswordRecoveryManager
+                    .getValidatedUser(codeValidationRequestDTO.getCode(), codeValidationRequestDTO.getStep());
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while validating the confirmation code ", e);

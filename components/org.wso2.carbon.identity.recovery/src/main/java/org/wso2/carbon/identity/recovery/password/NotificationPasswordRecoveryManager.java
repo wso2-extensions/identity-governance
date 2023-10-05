@@ -1074,7 +1074,16 @@ public class NotificationPasswordRecoveryManager {
     public User getValidatedUser(String code, String recoveryStep) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = userRecoveryDataStore.load(code);
+        UserRecoveryData userRecoveryData;
+        try {
+            String hashedCode = Utils.doHash(code);
+            userRecoveryData = userRecoveryDataStore.load(hashedCode);
+        } catch (UserStoreException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        } catch (IdentityRecoveryException e) {
+            userRecoveryData = userRecoveryDataStore.load(code);
+        }
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
         if (!StringUtils.equals(contextTenantDomain, userTenantDomain)) {
