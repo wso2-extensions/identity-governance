@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -169,6 +170,7 @@ public class ResendConfirmationManager {
         String notificationChannel = validateNotificationChannel(userRecoveryData.getRemainingSetIds());
 
         String confirmationCode;
+        String hashedConfirmationCode;
         UserRecoveryData confirmationCodeRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
                 scenario, step);
         /* Checking whether the existing confirmation code can be used based on the email confirmation code tolerance
@@ -180,8 +182,14 @@ public class ResendConfirmationManager {
             confirmationCode = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(), recoveryScenario);
             confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
                     confirmationCode);
+            try {
+                hashedConfirmationCode = Utils.hashCode(confirmationCode);
+            } catch (NoSuchAlgorithmException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+            }
             // Store new confirmation code.
-            addRecoveryDataObject(confirmationCode, recoveryFlowId, notificationChannel, scenario, step, user);
+            addRecoveryDataObject(hashedConfirmationCode, recoveryFlowId, notificationChannel, scenario, step, user);
         }
         ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
 

@@ -56,6 +56,7 @@ import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -198,8 +199,18 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         validateTenantDomain(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         // Get Recovery data.
-        UserRecoveryData userRecoveryData = userAccountRecoveryManager
-                .getUserRecoveryData(confirmationCode, RecoverySteps.UPDATE_PASSWORD);
+        UserRecoveryData userRecoveryData;
+        try {
+            String hashedConfirmationCode = Utils.hashCode(confirmationCode);
+            userRecoveryData = userAccountRecoveryManager
+                    .getUserRecoveryData(hashedConfirmationCode, RecoverySteps.UPDATE_PASSWORD);
+        } catch (NoSuchAlgorithmException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        } catch (IdentityRecoveryException e) {
+            userRecoveryData = userAccountRecoveryManager
+                    .getUserRecoveryData(confirmationCode, RecoverySteps.UPDATE_PASSWORD);
+        }
         if (!tenantDomain.equals(userRecoveryData.getUser().getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_TENANT_DOMAIN_MISS_MATCH_WITH_CONTEXT,
@@ -253,7 +264,15 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             }
             String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                     userRecoveryData.getUser().getUserStoreDomain());
-            if (StringUtils.equals(code, userRecoveryData.getSecret())) {
+            String hashedCode;
+            try {
+                hashedCode = Utils.hashCode(code);
+            } catch (NoSuchAlgorithmException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+            }
+            if (StringUtils.equals(hashedCode, userRecoveryData.getSecret()) || StringUtils.equals(code,
+                    userRecoveryData.getSecret())) {
                 if (log.isDebugEnabled()) {
                     log.debug("Valid confirmation code for user: " + domainQualifiedName);
                 }
