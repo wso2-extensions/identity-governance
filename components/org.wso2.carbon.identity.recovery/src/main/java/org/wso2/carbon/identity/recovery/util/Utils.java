@@ -414,13 +414,11 @@ public class Utils {
      * @return
      * @throws UserStoreException
      */
+    @Deprecated
     public static String doHash(String value) throws UserStoreException {
 
         try {
-            String digsestFunction = "SHA-256";
-            MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
-            byte[] byteValue = dgst.digest(value.getBytes(StandardCharsets.UTF_8));
-            return Base64.encode(byteValue);
+            return hashCode(value);
         } catch (NoSuchAlgorithmException e) {
             log.error(e.getMessage(), e);
             throw new UserStoreException(e.getMessage(), e);
