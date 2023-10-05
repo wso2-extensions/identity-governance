@@ -11,8 +11,6 @@ import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.ValidateCodeApiService;
 import org.wso2.carbon.identity.recovery.endpoint.dto.CodeValidationRequestDTO;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
-import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.user.api.UserStoreException;
 
 import javax.ws.rs.core.Response;
 
