@@ -34,6 +34,7 @@ import org.wso2.carbon.user.core.common.User;
 import org.wso2.carbon.user.core.constants.UserCoreClaimConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,6 +70,42 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             log.error("Error occurred while resolving user name", e);
         }
         return resolvedUserResult;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<ResolvedUserResult> resolvePossibleUsers(String loginAttribute, List<String> allowedAttributes,
+                                                         String tenantDomain) {
+
+        List<ResolvedUserResult> resolvedUserResults = new ArrayList<ResolvedUserResult>();
+        try {
+            if (allowedAttributes == null) {
+                return resolvedUserResults;
+            }
+            UserRealm userRealm = UserResolverUtil.getUserRealm(tenantDomain);
+            UniqueIDUserStoreManager userStoreManager = UserResolverUtil.getUserStoreManager(tenantDomain);
+            ClaimManager claimManager = userRealm.getClaimManager();
+
+            resolveUniqueUsersForUserStoreByClaims(loginAttribute, allowedAttributes, claimManager, userStoreManager,
+                    resolvedUserResults);
+
+            /*
+            resolve user if allowed attributes has only username claim,
+            but username claim has no configured regex pattern.
+             */
+            if (allowedAttributes.size() == 1 && resolvedUserResults.isEmpty() &&
+                    allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)) {
+                List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
+                        loginAttribute, null);
+                setPossibleUserResult(userList, UserCoreClaimConstants.USERNAME_CLAIM_URI, loginAttribute,
+                        resolvedUserResults);
+            }
+        } catch (UserStoreException e) {
+            log.error("Error occurred while resolving user names.", e);
+        }
+        return resolvedUserResults;
     }
 
     private void resolveDistinctUsersForClaims(String loginAttribute, List<String> allowedAttributes,
@@ -230,5 +267,71 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             log.error("Error occurred while resolving authenticationResult", e);
         }
         return authenticationResult;
+    }
+
+    /**
+     * This method is used to resolve unique users for user store by claims.
+     *
+     * @param loginAttribute      Login attribute.
+     * @param allowedAttributes   Allowed attributes.
+     * @param claimManager        Claim manager.
+     * @param userStoreManager    User store manager.
+     * @param resolvedUserResults List of resolved user results.
+     * @throws UserStoreException Throws when error occurred while getting the user list.
+     */
+    private void resolveUniqueUsersForUserStoreByClaims(String loginAttribute, List<String> allowedAttributes,
+                                                        ClaimManager claimManager,
+                                                        UniqueIDUserStoreManager userStoreManager,
+                                                        List<ResolvedUserResult> resolvedUserResults)
+            throws UserStoreException {
+
+        Set<String> uniqueUserIds = new HashSet<>();
+
+        for (String claimURI : allowedAttributes) {
+            Claim claim = claimManager.getClaim(claimURI);
+            if (claim == null || StringUtils.isBlank(claim.getRegEx())) {
+                continue;
+            }
+
+            Pattern pattern = Pattern.compile(claim.getRegEx());
+            String domainSeparateAttribute = UserCoreUtil.removeDomainFromName(loginAttribute);
+
+            if (pattern.matcher(domainSeparateAttribute).matches()) {
+                List<User> userList = userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
+                if (userList.isEmpty()) {
+                    continue;
+                }
+                // This is to make sure that the same user is not added to the list multiple times from different claims.
+                List<User> allowedDistinctUsersForClaim = userList.stream()
+                        .filter(user -> uniqueUserIds.add(user.getUserID()))
+                        .collect(Collectors.toList());
+
+                setPossibleUserResult(allowedDistinctUsersForClaim, claimURI, loginAttribute, resolvedUserResults);
+            }
+        }
+    }
+
+    /**
+     * This method is used to set the possible user result.
+     *
+     * @param userList           List of users.
+     * @param claimURI           Claim URI.
+     * @param loginAttribute     Login attribute.
+     * @param possibleUserResult List of possible user results.
+     * @throws org.wso2.carbon.user.core.UserStoreException Throws when error occurred while getting the user list.
+     */
+    private void setPossibleUserResult(List<User> userList, String claimURI,
+                                       String loginAttribute, List<ResolvedUserResult> possibleUserResult)
+            throws org.wso2.carbon.user.core.UserStoreException {
+
+        for (User user : userList) {
+            ResolvedUserResult resolvedUserResult = new ResolvedUserResult(ResolvedUserResult.UserResolvedStatus.FAIL);
+            resolvedUserResult.setResolvedStatus(ResolvedUserResult.UserResolvedStatus.SUCCESS);
+            resolvedUserResult.setResolvedClaim(claimURI);
+            resolvedUserResult.setResolvedValue(loginAttribute);
+            user.setUsername(user.getDomainQualifiedUsername());
+            resolvedUserResult.setUser(user);
+            possibleUserResult.add(resolvedUserResult);
+        }
     }
 }

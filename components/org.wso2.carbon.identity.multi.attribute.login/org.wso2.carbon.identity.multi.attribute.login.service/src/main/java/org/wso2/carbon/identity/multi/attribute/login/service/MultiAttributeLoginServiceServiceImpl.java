@@ -149,4 +149,25 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
         }
         return resolvedUserResult;
     }
+
+    /**
+     * This method is used to resolve possible users from given login identifier.
+     *
+     * @param loginIdentifierValue User entered login identifier value.
+     * @param tenantDomain         User tenant domain.
+     * @return List of ResolvedUserResult objects with possible users with their resolved login identifier claim.
+     */
+    @Override
+    public List<ResolvedUserResult> resolvePossibleUsers(String loginIdentifierValue, String tenantDomain) {
+
+        List<ResolvedUserResult> resolvedUserResults = null;
+        if (StringUtils.isNotBlank(loginIdentifierValue) && StringUtils.isNotBlank(tenantDomain)) {
+            List<String> allowedAttributes = getAllowedClaimsForTenant(tenantDomain);
+            resolvedUserResults = MultiAttributeLoginDataHolder.getInstance().getMultiAttributeLoginResolver().
+                    resolvePossibleUsers(loginIdentifierValue, allowedAttributes, tenantDomain);
+        }
+        return resolvedUserResults;
+    }
+
+
 }
