@@ -622,12 +622,8 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
         }
 
-        try {
-            Double reCaptchaWarnScoreThreshold = getReCaptchaWarnThreshold(properties);
-            CaptchaDataHolder.getInstance().setReCaptchaWarnScoreThreshold(reCaptchaWarnScoreThreshold);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_WARN_SCORE_THRESHOLD));
-        }
+        double reCaptchaWarnScoreThreshold = getReCaptchaWarnThreshold(properties);
+        CaptchaDataHolder.getInstance().setReCaptchaWarnScoreThreshold(reCaptchaWarnScoreThreshold);
 
         String forcefullyEnableRecaptchaForAllTenants =
                 properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS);
@@ -672,7 +668,12 @@ public class CaptchaUtil {
             }
             return CaptchaConstants.CAPTCHA_V3_DEFAULT_WARN_THRESHOLD;
         }
-        return Double.parseDouble(warnThreshold);
+        try {
+            return Double.parseDouble(warnThreshold);
+        } catch (NumberFormatException e) {
+            log.warn("NumberFormatException for ReCaptcha warn score threshold. Using default value.");
+            return CaptchaConstants.CAPTCHA_V3_DEFAULT_WARN_THRESHOLD;
+        }
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
