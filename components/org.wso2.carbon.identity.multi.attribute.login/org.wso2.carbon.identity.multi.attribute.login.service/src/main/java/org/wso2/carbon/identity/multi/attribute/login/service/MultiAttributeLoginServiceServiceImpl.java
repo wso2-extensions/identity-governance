@@ -168,6 +168,4 @@ public class MultiAttributeLoginServiceServiceImpl implements MultiAttributeLogi
         }
         return resolvedUserResults;
     }
-
-
 }
