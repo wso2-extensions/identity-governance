@@ -295,9 +295,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
         } catch (IdentityRecoveryException e) {
-            /* This method is to support already initiated email link based recovery flows using the recovery V1 API,
-            which do not have recovery flow ids, and handle recovery flows when the notifications are externally
-            managed. */
+            /* This is a fallback logic to support already initiated email link based recovery flows and EXTERNAL
+            channel based recovery flows using the recovery V1 API, which do not have recovery flow ids. */
             return validateConfirmationCode(userAccountRecoveryManager, recoveryFlowId, tenantDomain);
         }
     }
@@ -893,9 +892,10 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     }
 
     /**
-     * This method is added to handle the already initiated email link based recovery flows which do not have
-     * recovery flow ids, which were initiated before moving to the Recovery V2 API. This also handles the
-     * recovery flows when the notifications are externally managed.
+     * This method is to validate the confirmation code when there's no recovery flow id. This is added as a fallback
+     * logic to handle the already initiated email link based recovery flows and EXTERNAL channel based recovery flows
+     * which do not have recovery flow ids, which were initiated before moving to the Recovery V2 API.
+     * This shouldn't be used for any other purpose and should be kept for sometime.
      *
      * @param userAccountRecoveryManager UserAccountRecoveryManager.
      * @param confirmationCode Confirmation code.
