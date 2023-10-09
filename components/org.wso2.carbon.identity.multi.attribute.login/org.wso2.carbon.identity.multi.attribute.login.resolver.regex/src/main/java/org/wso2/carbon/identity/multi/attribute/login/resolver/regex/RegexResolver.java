@@ -92,7 +92,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
                     resolvedUserResults);
 
             /*
-            resolve user if allowed attributes has only username claim,
+            Resolve user if allowed attributes has only username claim,
             but username claim has no configured regex pattern.
              */
             if (allowedAttributes.size() == 1 && resolvedUserResults.isEmpty() &&
