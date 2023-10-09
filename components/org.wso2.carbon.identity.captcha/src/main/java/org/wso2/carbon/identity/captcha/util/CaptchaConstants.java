@@ -59,6 +59,8 @@ public class CaptchaConstants {
 
     public static final String RE_CAPTCHA_SCORE_THRESHOLD = "recaptcha.threshold";
 
+    public static final String RE_CAPTCHA_WARN_SCORE_THRESHOLD = "recaptcha.threshold.warn";
+
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
 
     public static final String BASIC_AUTH_MECHANISM = "basic";
@@ -80,6 +82,9 @@ public class CaptchaConstants {
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
+
+    // Default value for threshold for score to issue warn logs in reCAPTCHA v3.
+    public static final double CAPTCHA_V3_DEFAULT_WARN_THRESHOLD = 0.7;
 
     public static final String SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME = "sso.login.recaptcha";
 

@@ -350,6 +350,7 @@ public class CaptchaUtil {
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
+        final double warnScoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaWarnScoreThreshold();
 
         try {
             try (InputStream in = entity.getContent()) {
@@ -380,6 +381,8 @@ public class CaptchaUtil {
                     }
                     if (score < scoreThreshold) {
                         throw new CaptchaClientException("reCaptcha score is less than the threshold.");
+                    } else if (score < warnScoreThreshold) {
+                        log.warn("User access with low reCaptcha score.");
                     }
                 }
             }
@@ -394,6 +397,7 @@ public class CaptchaUtil {
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
+        final double warnScoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaWarnScoreThreshold();
 
         try {
             try (InputStream in = entity.getContent()) {
@@ -418,6 +422,8 @@ public class CaptchaUtil {
                     }
                     if (score < scoreThreshold) {
                         throw new CaptchaClientException("reCaptcha score is less than the threshold.");
+                    } else if (score < warnScoreThreshold) {
+                        log.warn("reCaptcha score is below warn threshold.");
                     }
                 } else {
                     if (log.isDebugEnabled()) {
@@ -616,6 +622,9 @@ public class CaptchaUtil {
             throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SCORE_THRESHOLD));
         }
 
+        double reCaptchaWarnScoreThreshold = getReCaptchaWarnThreshold(properties);
+        CaptchaDataHolder.getInstance().setReCaptchaWarnScoreThreshold(reCaptchaWarnScoreThreshold);
+
         String forcefullyEnableRecaptchaForAllTenants =
                 properties.getProperty(CaptchaConstants.FORCEFULLY_ENABLED_RECAPTCHA_FOR_ALL_TENANTS);
         CaptchaDataHolder.getInstance().setForcefullyEnabledRecaptchaForAllTenants(
@@ -640,6 +649,31 @@ public class CaptchaUtil {
            return CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD;
         }
         return Double.parseDouble(threshold);
+    }
+
+    /**
+     * Method to get the warn threshold value used by reCAPTCHA v3.
+     *
+     * @param properties Properties.
+     * @return Warn threshold value set by the user or the default warn threshold.
+     * @throws java.lang.NumberFormatException Error while parsing the threshold value into double.
+     */
+    private static double getReCaptchaWarnThreshold(Properties properties) throws NumberFormatException {
+
+        String warnThreshold = properties.getProperty(CaptchaConstants.RE_CAPTCHA_WARN_SCORE_THRESHOLD);
+        if (StringUtils.isBlank(warnThreshold)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error parsing recaptcha.threshold.warn from config in WebsiteConfig.properties. Hence using the default value : " +
+                        CaptchaConstants.CAPTCHA_V3_DEFAULT_WARN_THRESHOLD);
+            }
+            return CaptchaConstants.CAPTCHA_V3_DEFAULT_WARN_THRESHOLD;
+        }
+        try {
+            return Double.parseDouble(warnThreshold);
+        } catch (NumberFormatException e) {
+            log.warn("NumberFormatException for ReCaptcha warn score threshold. Using default value.");
+            return CaptchaConstants.CAPTCHA_V3_DEFAULT_WARN_THRESHOLD;
+        }
     }
 
     private static void setSSOLoginConnectorConfigs(Properties properties) {
