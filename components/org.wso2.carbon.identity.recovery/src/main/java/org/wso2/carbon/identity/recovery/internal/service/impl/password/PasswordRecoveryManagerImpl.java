@@ -928,9 +928,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 throw ex;
             }
         }
-        if (!(StringUtils.equals(userRecoveryData.getRemainingSetIds(),NotificationChannels.EMAIL_CHANNEL.
-                getChannelType()) || StringUtils.equals(userRecoveryData.getRemainingSetIds(),NotificationChannels.
-                EXTERNAL_CHANNEL.getChannelType()))) {
+        if (!(NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds()) ||
+                NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds()))) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
         }

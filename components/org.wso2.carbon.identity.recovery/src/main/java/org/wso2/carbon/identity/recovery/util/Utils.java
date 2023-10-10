@@ -1204,9 +1204,8 @@ public class Utils {
      */
     public static String concatRecoveryFlowIdWithSecretKey(String recoveryFlowId, String notificationChannel,
                                                            String secretKey) {
-        if (recoveryFlowId != null && (StringUtils.equals(notificationChannel, NotificationChannels.EMAIL_CHANNEL.
-                getChannelType()) || StringUtils.equals(notificationChannel, NotificationChannels.EXTERNAL_CHANNEL.
-                getChannelType()))) {
+        if (recoveryFlowId != null && (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel)
+                || NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel))) {
             secretKey = recoveryFlowId + IdentityRecoveryConstants.CONFIRMATION_CODE_SEPARATOR + secretKey;
         }
         return secretKey;
