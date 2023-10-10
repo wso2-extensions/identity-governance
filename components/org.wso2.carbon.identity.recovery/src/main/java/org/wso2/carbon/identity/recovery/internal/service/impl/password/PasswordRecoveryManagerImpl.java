@@ -295,8 +295,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), code);
         } catch (IdentityRecoveryException e) {
-            /* This is a fallback logic to support already initiated email link based recovery flows using the
-            recovery V1 API, which do not have recovery flow ids. */
+            /* This is a fallback logic to support already initiated email link based recovery flows and EXTERNAL
+            channel based recovery flows using the recovery V1 API, which do not have recovery flow ids. */
             return validateConfirmationCode(userAccountRecoveryManager, recoveryFlowId, tenantDomain);
         }
     }
@@ -893,9 +893,9 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
     /**
      * This method is to validate the confirmation code when there's no recovery flow id. This is added as a fallback
-     * logic to handle the already initiated email link based recovery flows which do not have recovery flow ids,
-     * which were initiated before moving to the Recovery V2 API. This shouldn't be used for any other purpose and
-     * should be kept for sometime.
+     * logic to handle the already initiated email link based recovery flows and EXTERNAL channel based recovery flows
+     * which do not have recovery flow ids, which were initiated before moving to the Recovery V2 API.
+     * This shouldn't be used for any other purpose and should be kept for sometime.
      *
      * @param userAccountRecoveryManager UserAccountRecoveryManager.
      * @param confirmationCode Confirmation code.
@@ -910,17 +910,26 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
         UserRecoveryData userRecoveryData;
         try {
-            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(confirmationCode,
+            String hashedConfirmationCode = Utils.hashCode(confirmationCode);
+            userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(hashedConfirmationCode,
                     RecoverySteps.UPDATE_PASSWORD);
+        } catch (NoSuchAlgorithmException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
         } catch (IdentityRecoveryException e) {
-            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
-                    e.getErrorCode())) {
-                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            try {
+                userRecoveryData = userAccountRecoveryManager.getUserRecoveryData(confirmationCode,
+                        RecoverySteps.UPDATE_PASSWORD);
+            } catch (IdentityRecoveryException ex) {
+                if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode().equals(
+                        ex.getErrorCode())) {
+                    ex.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+                }
+                throw ex;
             }
-            throw e;
         }
-        if (!StringUtils.equals(userRecoveryData.getRemainingSetIds(),
-                NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+        if (!(NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds()) ||
+                NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds()))) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID, confirmationCode);
         }
