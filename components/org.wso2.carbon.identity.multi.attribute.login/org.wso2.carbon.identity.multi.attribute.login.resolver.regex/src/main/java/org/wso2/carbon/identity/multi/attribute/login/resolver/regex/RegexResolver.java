@@ -255,20 +255,21 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             throws org.wso2.carbon.user.core.UserStoreException {
 
         IterativeUserStoreManager initialUserStoreManager = null;
-        IterativeUserStoreManager prevUserStoreManager = null;
+        IterativeUserStoreManager currentUserStoreManager = null;
         for (String domainName : userStorePreferenceOrder) {
             UserStoreManager userStoreManager = abstractUserStoreManager.getSecondaryUserStoreManager(domainName);
             // If the user store manager is instance of AbstractUserStoreManager then generate a user store chain using
             // IterativeUserStoreManager.
             if (userStoreManager instanceof AbstractUserStoreManager) {
                 if (initialUserStoreManager == null) {
-                    prevUserStoreManager = new IterativeUserStoreManager((AbstractUserStoreManager) userStoreManager);
-                    initialUserStoreManager = prevUserStoreManager;
+                    currentUserStoreManager =
+                            new IterativeUserStoreManager((AbstractUserStoreManager) userStoreManager);
+                    initialUserStoreManager = currentUserStoreManager;
                 } else {
-                    IterativeUserStoreManager currentUserStoreManager = new IterativeUserStoreManager(
+                    IterativeUserStoreManager nextUserStoreManager = new IterativeUserStoreManager(
                             (AbstractUserStoreManager) userStoreManager);
-                    prevUserStoreManager.setNextUserStoreManager(currentUserStoreManager);
-                    prevUserStoreManager = currentUserStoreManager;
+                    currentUserStoreManager.setNextUserStoreManager(nextUserStoreManager);
+                    currentUserStoreManager = nextUserStoreManager;
                 }
             } else {
                 return null;
