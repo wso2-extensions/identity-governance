@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.multi.attribute.login.resolver.regex;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginResolver;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils.UserResolverUtil;
@@ -211,8 +212,10 @@ public class RegexResolver implements MultiAttributeLoginResolver {
         List<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
         IterativeUserStoreManager currentUserStoreManager = userStoreManager;
         while (currentUserStoreManager != null) {
+            String domainName = UserCoreUtil.getDomainName(currentUserStoreManager.getRealmConfiguration());
+            String domainAwareUsername = domainName + CarbonConstants.DOMAIN_SEPARATOR + loginAttribute;
             userList.addAll(currentUserStoreManager.getAbstractUserStoreManager().getUserListWithID(claimURI,
-                    loginAttribute, null));
+                    domainAwareUsername, null));
             currentUserStoreManager = currentUserStoreManager.nextUserStoreManager();
         }
 
