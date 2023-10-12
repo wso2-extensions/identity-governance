@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.multi.attribute.login.resolver.regex;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginResolver;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.multi.attribute.login.resolver.regex.utils.UserResolverUtil;
@@ -28,12 +29,20 @@ import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UniqueIDUserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.common.AuthenticationResult;
+import org.wso2.carbon.user.core.common.IterativeUserStoreManager;
 import org.wso2.carbon.user.core.common.User;
+import org.wso2.carbon.user.core.config.UserStorePreferenceOrderSupplier;
 import org.wso2.carbon.user.core.constants.UserCoreClaimConstants;
+import org.wso2.carbon.user.core.model.UserMgtContext;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -79,6 +88,7 @@ public class RegexResolver implements MultiAttributeLoginResolver {
 
         Set<String> uniqueUserIds = new HashSet<>();
         Map<String, List<User>> distinctUsers = new HashMap<>();
+        List<String> userStorePreferenceOrder  = getUserStorePreferenceOrder();
 
         // Resolve the user from the regex matching.
         for (String claimURI : allowedAttributes) {
@@ -91,7 +101,8 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             String domainSeparateAttribute = UserCoreUtil.removeDomainFromName(loginAttribute);
 
             if (pattern.matcher(domainSeparateAttribute).matches()) {
-                List<User> userList = userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
+                List<User> userList = getUserList(claimURI, loginAttribute, userStorePreferenceOrder, userStoreManager);
+
                 if (userList.isEmpty()) {
                     continue;
                 }
@@ -132,8 +143,8 @@ public class RegexResolver implements MultiAttributeLoginResolver {
         Claim usernameClaim = claimManager.getClaim(UserCoreClaimConstants.USERNAME_CLAIM_URI);
         if (allowedAttributes.contains(UserCoreClaimConstants.USERNAME_CLAIM_URI)
                 && StringUtils.isBlank(usernameClaim.getRegEx())) {
-            List<User> userList = userStoreManager.getUserListWithID(UserCoreClaimConstants.USERNAME_CLAIM_URI,
-                    loginAttribute, null);
+            List<User> userList = getUserList(UserCoreClaimConstants.USERNAME_CLAIM_URI, loginAttribute,
+                    userStorePreferenceOrder, userStoreManager);
             if (!userList.isEmpty()) {
                 List<User> allowedDistinctUsersForClaim = userList.stream()
                         .filter(user -> uniqueUserIds.add(user.getUserID()))
@@ -156,6 +167,119 @@ public class RegexResolver implements MultiAttributeLoginResolver {
             resolvedUserResult.setErrorMessage("Found multiple users for " + allowedAttributes +
                     " to value " + loginAttribute);
         }
+    }
+
+    /**
+     * This method is used to get the user list according to the user store preference order if configured.
+     * If the login attribute contains a domain name, resolve users from the corresponding user store.
+     *
+     * @param claimURI                 Claim URI.
+     * @param loginAttribute           Login attribute.
+     * @param userStorePreferenceOrder User store preference order.
+     * @param userStoreManager         User store manager.
+     * @return User list.
+     * @throws org.wso2.carbon.user.core.UserStoreException If an error occurred while getting the user list.
+     */
+    private List<User> getUserList(String claimURI, String loginAttribute, List<String> userStorePreferenceOrder,
+                                   UniqueIDUserStoreManager userStoreManager)
+            throws org.wso2.carbon.user.core.UserStoreException {
+
+        if (!loginAttribute.contains(UserCoreConstants.DOMAIN_SEPARATOR) && userStorePreferenceOrder != null
+                && !userStorePreferenceOrder.isEmpty()) {
+            IterativeUserStoreManager iterativeUserStoreManager = generateUserStoreChain(userStorePreferenceOrder,
+                    (AbstractUserStoreManager) userStoreManager);
+            if (iterativeUserStoreManager != null) {
+                return getUserListAccordingToUserStorePreferenceOrder(claimURI, loginAttribute,
+                        iterativeUserStoreManager);
+            }
+        }
+        return userStoreManager.getUserListWithID(claimURI, loginAttribute, null);
+    }
+
+    /**
+     * This method is used to get the user list according to the user store preference order.
+     *
+     * @param claimURI                 Claim URI.
+     * @param loginAttribute           Login attribute.
+     * @param userStoreManager         User store manager.
+     * @return User list.
+     * @throws org.wso2.carbon.user.core.UserStoreException If an error occurred while getting the user list.
+     */
+    private List<User> getUserListAccordingToUserStorePreferenceOrder(String claimURI, String loginAttribute,
+                                                                      IterativeUserStoreManager userStoreManager)
+            throws org.wso2.carbon.user.core.UserStoreException {
+
+        List<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
+        IterativeUserStoreManager currentUserStoreManager = userStoreManager;
+        while (currentUserStoreManager != null) {
+            String domainName = UserCoreUtil.getDomainName(currentUserStoreManager.getRealmConfiguration());
+            String domainAwareUsername = domainName + CarbonConstants.DOMAIN_SEPARATOR + loginAttribute;
+            userList.addAll(currentUserStoreManager.getAbstractUserStoreManager().getUserListWithID(claimURI,
+                    domainAwareUsername, null));
+            currentUserStoreManager = currentUserStoreManager.nextUserStoreManager();
+        }
+
+        return userList;
+    }
+
+    /**
+     * This method is used to get the user store preference order.
+     *
+     * @return User store preference order.
+     * @throws org.wso2.carbon.user.core.UserStoreException If an error occurred while getting the user store
+     */
+    private List<String> getUserStorePreferenceOrder() throws org.wso2.carbon.user.core.UserStoreException {
+
+        UserMgtContext userMgtContext = UserCoreUtil.getUserMgtContextFromThreadLocal();
+        if (userMgtContext != null) {
+            UserStorePreferenceOrderSupplier<List<String>>
+                    userStorePreferenceSupplier = userMgtContext.getUserStorePreferenceOrderSupplier();
+            if (userStorePreferenceSupplier != null) {
+                List<String> userStorePreferenceOrder = userStorePreferenceSupplier.get();
+                if (userStorePreferenceOrder != null) {
+                    return userStorePreferenceOrder;
+                }
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * This method is used to generate a user store chain using the user store preference order.
+     *
+     * @param userStorePreferenceOrder User store preference order.
+     * @param abstractUserStoreManager Abstract user store manager.
+     * @return IterativeUserStoreManager.
+     * @throws org.wso2.carbon.user.core.UserStoreException If an error occurred while generating the user store chain.
+     */
+    private IterativeUserStoreManager generateUserStoreChain(List<String> userStorePreferenceOrder,
+                                                             AbstractUserStoreManager abstractUserStoreManager)
+            throws org.wso2.carbon.user.core.UserStoreException {
+
+        IterativeUserStoreManager initialUserStoreManager = null;
+        IterativeUserStoreManager currentUserStoreManager = null;
+        for (String domainName : userStorePreferenceOrder) {
+            UserStoreManager userStoreManager = abstractUserStoreManager.getSecondaryUserStoreManager(domainName);
+            // If the user store manager is instance of AbstractUserStoreManager then generate a user store chain using
+            // IterativeUserStoreManager.
+            if (userStoreManager instanceof AbstractUserStoreManager) {
+                if (initialUserStoreManager == null) {
+                    currentUserStoreManager =
+                            new IterativeUserStoreManager((AbstractUserStoreManager) userStoreManager);
+                    initialUserStoreManager = currentUserStoreManager;
+                } else {
+                    IterativeUserStoreManager nextUserStoreManager = new IterativeUserStoreManager(
+                            (AbstractUserStoreManager) userStoreManager);
+                    currentUserStoreManager.setNextUserStoreManager(nextUserStoreManager);
+                    currentUserStoreManager = nextUserStoreManager;
+                }
+            } else {
+                return null;
+            }
+        }
+        // Authenticate using the initial user store from the user store preference list.
+        return initialUserStoreManager;
     }
 
     private void setResolvedUserResult(List<User> userList, String claimURI,
