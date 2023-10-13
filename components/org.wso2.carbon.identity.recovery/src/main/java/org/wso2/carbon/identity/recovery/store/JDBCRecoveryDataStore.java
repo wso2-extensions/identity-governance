@@ -1062,7 +1062,8 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
             codeExpiryTime = Integer.parseInt(Utils.getRecoveryConfigs(
                     IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, tenantDomain));
             allowedResendAttempts = Integer.parseInt(Utils.getRecoveryConfigs(
-                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS, tenantDomain));
+                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,
+                    tenantDomain));
             recoveryFlowIdExpiryTime = codeExpiryTime * allowedResendAttempts;
         } else {
             recoveryFlowIdExpiryTime = Integer.parseInt(
