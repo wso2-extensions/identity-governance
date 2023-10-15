@@ -280,7 +280,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             }
             failedAttempts = failedAttempts + 1;
             if (failedAttempts >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.
-                    RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
+                    RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, tenantDomain))) {
                 userAccountRecoveryManager.invalidateRecoveryData(recoveryFlowId);
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode(),

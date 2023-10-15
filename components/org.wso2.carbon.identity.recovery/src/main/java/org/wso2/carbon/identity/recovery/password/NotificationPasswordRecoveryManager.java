@@ -701,7 +701,7 @@ public class NotificationPasswordRecoveryManager {
             if (!(StringUtils.equals(hashedCode, userRecoveryData.getSecret()) || StringUtils.equals(code,
                     userRecoveryData.getSecret()))) {
                 if ((failedAttempts + 1) >= Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants.
-                        ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().
+                        ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, userRecoveryData.getUser().
                         getTenantDomain()))) {
                     userRecoveryDataStore.invalidateWithRecoveryFlowId(confirmationCode);
                     throw Utils.handleClientException(

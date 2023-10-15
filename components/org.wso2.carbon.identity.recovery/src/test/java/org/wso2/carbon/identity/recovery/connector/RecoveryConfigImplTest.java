@@ -122,10 +122,10 @@ public class RecoveryConfigImplTest {
                 "Recovery callback URL regex");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "Enable Auto Login After Password Reset");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS,
-                "Max failed attempts for OTP based recovery");
-        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS,
-                "Max resend attempts for OTP based recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
+                .RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, "Max failed attempts for password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
+                .RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,"Max resend attempts for password recovery");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -265,9 +265,9 @@ public class RecoveryConfigImplTest {
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, enableAutoLoginAfterPasswordReset);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
-                RECOVERY_OTP_PASSWORD_MAX_FAILED_ATTEMPTS, recoveryOTPMaxFailedAttempts);
+                RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, recoveryOTPMaxFailedAttempts);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
-                RECOVERY_OTP_PASSWORD_MAX_RESEND_ATTEMPTS, recoveryOTPMaxResendAttempts);
+                RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, recoveryOTPMaxResendAttempts);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
