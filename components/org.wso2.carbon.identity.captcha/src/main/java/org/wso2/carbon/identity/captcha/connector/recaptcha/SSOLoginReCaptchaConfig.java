@@ -38,6 +38,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.HashMap;
@@ -120,6 +122,15 @@ public class SSOLoginReCaptchaConfig extends AbstractReCaptchaConnector implemen
         String sessionDataKey = servletRequest.getParameter(FrameworkUtils.SESSION_DATA_KEY);
         AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
         String tenantDomain = getTenant(context, username);
+
+        // Resolve the username from the multi attribute login service when the multi attribute login is enabled.
+        ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
+                MultitenantUtils.getTenantAwareUsername(username), tenantDomain);
+        if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
+                equals(resolvedUserResult.getResolvedStatus())) {
+            username = UserCoreUtil.addTenantDomainToEntry(resolvedUserResult.getUser().getUsername(),
+                    tenantDomain);
+        }
 
         // Verify whether recaptcha is enforced always for basic authentication.
         Property[] connectorConfigs = null;
