@@ -1245,7 +1245,7 @@ public class Utils {
                         otpGeneratorException.getMessage());
             }
         }
-        return UUIDGenerator.generateUUID();
+        return UUID.randomUUID().toString();
     }
 
     /**
