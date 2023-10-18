@@ -61,6 +61,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
+    public static final String ACCOUNT_ACTIVATION_SUCCESS = "accountActivationSuccess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
     public static final String NOTIFICATION_ACCOUNT_ID_RECOVERY = "accountidrecovery";
     public static final String NOTIFICATION_TYPE_SELF_SIGNUP_SUCCESS = "selfSignUpSuccess";
@@ -68,6 +69,9 @@ public class IdentityRecoveryConstants {
     public static final String RECOVERY_STATUS_INCOMPLETE = "INCOMPLETE";
     public static final String RECOVERY_STATUS_COMPLETE = "COMPLETE";
     public static final String TEMPLATE_TYPE = "TEMPLATE_TYPE";
+    public static final String EMAIL_TEMPLATE_NAME = "templateName";
+    public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
+    public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
@@ -114,7 +118,7 @@ public class IdentityRecoveryConstants {
     public static final String TENANT_ADMIN_ASK_PASSWORD_CLAIM =
             "http://wso2.org/claims/identity/tenantAdminAskPassword";
     public static final String OTP_PASSWORD_CLAIM = "http://wso2.org/claims/oneTimePassword";
-    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/role";
+    public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/roles";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
@@ -153,6 +157,7 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_CHANNEL_PROPERTY_KEY = "notificationChannel";
     public static final String VERIFIED_USER_PROPERTY_KEY = "verifiedUser";
     public static final String MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY = "manageNotificationsInternally";
+    public static final String CONFIRMATION_CODE_SEPARATOR = ".";
 
     // Recovery Scenarios.
     public static final String USER_NAME_RECOVERY = "UNR";
@@ -163,6 +168,7 @@ public class IdentityRecoveryConstants {
     public static final int SMS_OTP_CODE_LENGTH = 6;
     public static final int OTP_CODE_DEFAULT_LENGTH = 6;
     public static final String ENABLE_DETAILED_ERROR_RESPONSE = "Recovery.ErrorMessage.EnableDetailedErrorMessages";
+    public static final int RECOVERY_FLOW_ID_DEFAULT_EXPIRY_TIME = 15;
     // Recovery code given at the username and password recovery initiation.
     public static final int RECOVERY_CODE_DEFAULT_EXPIRY_TIME = 1;
     public static final int RESEND_CODE_DEFAULT_EXPIRY_TIME = 1;
@@ -171,13 +177,30 @@ public class IdentityRecoveryConstants {
             "Recovery.Question.Password.SkipOnInsufficientAnswers";
     public static final String RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD =
             "Recovery.Notification.Password.Email.ConfirmationCodeTolerancePeriod";
+    public static final String ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "EmailVerification.AskPassword.Notification.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.Email.ConfirmationCodeTolerancePeriod";
+    public static final String SELF_SIGN_UP_SMS_CONFIRMATION_CODE_TOLERANCE_PERIOD =
+            "SelfRegistration.Notification.SMS.ConfirmationCodeTolerancePeriod";
     public static final int RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int ASK_PASSWORD_CODE_DEFAULT_TOLERANCE = 0;
+    public static final int SELF_SIGN_UP_CODE_DEFAULT_TOLERANCE = 0;
+    public static final String EMAIL_TEMPLATE_PATH = "/identity/email";
 
     // Workflow constants.
     public static final String ENTITY_TYPE_USER = "USER";
     public static final String ADD_USER_EVENT = "ADD_USER";
 
     public static final String CORRELATION_ID_MDC = "Correlation-ID";
+    // Ask Password thread local property name.
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY = "apConfirmationCodeThreadLocalProperty";
+    // Ask Password thread local initial value.
+    public static final String AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE =
+            "apConfirmationCodeThreadLocalInitialValue";
+
+    // Self sign up properties.
+    public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
     private IdentityRecoveryConstants() {
 
@@ -191,11 +214,14 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_CODE("18001", "Invalid Code '%s'."),
         ERROR_CODE_EXPIRED_CODE("18002", "Expired Code '%s'."),
         ERROR_CODE_INVALID_USER("18003", "Invalid User '%s'."),
-        ERROR_CODE_FEDERATED_USER("18004", "User %s doesn't have a password for local account."),
+        ERROR_CODE_FEDERATED_USER("18006", "User %s doesn't have a password for local account."),
         ERROR_CODE_UNEXPECTED("18013", "Unexpected error"),
         ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE("18015", "Error sending recovery notification"),
         ERROR_CODE_INVALID_TENANT("18016", "Invalid tenant '%s'."),
         ERROR_CODE_CHALLENGE_QUESTION_NOT_FOUND("18017", "No challenge question found. %s"),
+        ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
+        ERROR_CODE_INVALID_FLOW_ID("18019", "Invalid flow confirmation code '%s'."),
+        ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -277,6 +303,9 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_DISABLE_LITE_SIGN_UP("20060", "Lite sign up feature is disabled"),
         ERROR_CODE_ERROR_DELETING_RECOVERY_DATA("20061", "Error deleting user recovery data of the tenant: %s"),
         ERROR_CODE_ERROR_GETTING_CONNECTOR_CONFIG("20062", "Error while getting connector configurations"),
+        ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data."),
+        ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data."),
+        ERROR_CODE_NO_HASHING_ALGO_FOR_CODE("20065", "Error while hashing the code."),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -294,16 +323,24 @@ public class IdentityRecoveryConstants {
                 " config store."),
         ERROR_CODE_FAILED_TO_FETCH_RESOURCE_FROM_CONFIG_STORE("55008", "Error occurred while fetching " +
                 "resource from config store."),
-        // USR - User Self Registration.
+        // USR - User Self Registration - client exceptions.
         ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS("USR-10001",
                 "User specified communication channel is not supported by the server"),
         ERROR_CODE_PREFERRED_CHANNEL_VALUE_EMPTY("USR-10002",
                 "User specified communication channel does not have any value"),
         ERROR_CODE_BAD_SELF_REGISTER_REQUEST("USR-10003",
                 "Bad Request"),
-        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004","Either email or mobile should be submitted."),
+        ERROR_CODE_BAD_LITE_REGISTER_REQUEST("USR-10004", "Either email or mobile should be submitted."),
         ERROR_CODE_UNSUPPORTED_SELF_REGISTER_LITE_REQUEST("USR-10005",
                 "Lite self registration is not supported."),
+        ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION("USR-10006", "User attributes do not satisfy the " +
+                "requirements of the selected registration option."),
+        ERROR_CODE_INVALID_REGISTRATION_OPTION("USR-10007", "Invalid registration option."),
+        ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS("USR-10008", "Multiple registration options are not supported."),
+
+        // USR - User Self Registration - server exceptions.
+        ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES("USR-15001", "Unexpected error while validating user " +
+                "attributes."),
 
         // UAV - User Account Verification.
         ERROR_CODE_UNSUPPORTED_VERIFICATION_CHANNEL("UAV-10001",
@@ -337,6 +374,11 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EXPIRED_RECOVERY_CODE("UAR-10013", "Invalid recovery code: '%s'"),
         ERROR_CODE_USER_ACCOUNT_RECOVERY_VALIDATION_FAILED("UAR-10014",
                 "User account recovery validation failed for user account: '%s'"),
+        ERROR_CODE_INVALID_RECOVERY_FLOW_ID("UAR-10015", "Invalid confirmation code : '%s'."),
+        ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID("UAR-10016", "Expired confirmation code : '%s'."),
+        ERROR_CODE_API_DISABLED("UAR-10017", "Recovery API is disabled."),
+        ERROR_CODE_NO_RECOVERY_FLOW_DATA("UAR-10018", "No recovery flow data found for "
+                + "recovery flow id : '%s'."),
         ERROR_CODE_ERROR_STORING_RECOVERY_DATA("UAR-15001", "Error storing user recovery data"),
         ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER("UAR-15002", "Error getting userstore manager"),
         ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM("UAR-15003", "Error getting the claims: '%s' "
@@ -387,7 +429,13 @@ public class IdentityRecoveryConstants {
                 "'%s' has been used more than once."),
 
         // UEV - User Email Verification.
-        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification");
+        ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
+        ,
+        // Idle User Account Identification related Error messages.
+        ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005",
+                "Error retrieving the associated user for the user: %s in the tenant %s.");
 
         private final String code;
         private final String message;
@@ -506,6 +554,7 @@ public class IdentityRecoveryConstants {
         public static final String PASSWORD_RECOVERY_OTP_LENGTH = "Recovery.Notification.Password.OTP.OTPLength";
         public static final String NOTIFICATION_INTERNALLY_MANAGE = "Recovery.Notification.InternallyManage";
         public static final String NOTIFY_USER_EXISTENCE = "Recovery.NotifyUserExistence";
+        public static final String NOTIFY_RECOVERY_EMAIL_EXISTENCE = "Recovery.NotifyRecoveryEmailExistence";
         public static final String NOTIFY_USER_ACCOUNT_STATUS = "Recovery.NotifyUserAccountStatus";
         public static final String NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS = "Recovery.NotifySuccess";
         public static final String NOTIFICATION_SEND_RECOVERY_SECURITY_START = "Recovery.Question.Password.NotifyStart";
@@ -567,7 +616,8 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_CALLBACK_REGEX = "LiteRegistration.CallbackRegex";
         public static final String LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME =
                 "LiteRegistration.VerificationCode.SMSOTP.ExpiryTime";
-
+        public static final String LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE =
+                "LiteRegistration.ResendVerificationOnUserExistence";
         public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
         public static final String EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL = "EmailVerification.OTP.SendOTPInEmail";
         public static final String EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "EmailVerification.OTP." +
@@ -604,6 +654,8 @@ public class IdentityRecoveryConstants {
                 ".DisableRandomValueForCredentials";
         public static final String EMAIL_ACCOUNT_LOCK_ON_CREATION = "EmailVerification.LockOnCreation";
         public static final String EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE = "EmailVerification.Notification.InternallyManage";
+        public static final String EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION = "EmailVerification.AskPassword" +
+                ".AccountActivation";
 
         public static final String TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME = "TenantRegistrationVerification." +
                 "AskPassword.ExpiryTime";
@@ -621,6 +673,24 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET = "Recovery.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN = "SelfRegistration.AutoLogin.Enable";
         public static final String SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME = "SelfRegistration.AutoLogin.AliasName";
+        public static final String RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS = "Recovery.Notification" +
+                ".Password.MaxFailedAttempts";
+        public static final String RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.Notification" +
+                ".Password.MaxResendAttempts";
+    }
+
+    public static class DBConstants {
+
+        public static final String USER_NAME = "USER_NAME";
+        public static final String TENANT_ID = "TENANT_ID";
+        public static final String USER_DOMAIN = "USER_DOMAIN";
+        public static final String CODE = "CODE";
+        public static final String SCENARIO = "SCENARIO";
+        public static final String REMAINING_SETS = "REMAINING_SETS";
+        public static final String RECOVERY_FLOW_ID = "RECOVERY_FLOW_ID";
+        public static final String FAILED_ATTEMPTS = "FAILED_ATTEMPTS";
+        public static final String RESEND_COUNT = "RESEND_COUNT";
+        public static final String TIME_CREATED = "TIME_CREATED";
     }
 
     public static class SQLQueries {
@@ -628,6 +698,11 @@ public class IdentityRecoveryConstants {
         public static final String STORE_RECOVERY_DATA = "INSERT INTO IDN_RECOVERY_DATA "
                 + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS)"
                 + "VALUES (?,?,?,?,?,?,?,?)";
+
+        public static final String STORE_RECOVERY_DATA_WITH_FLOW_ID = "INSERT INTO IDN_RECOVERY_DATA "
+                + "(USER_NAME, USER_DOMAIN, TENANT_ID, CODE, SCENARIO,STEP, TIME_CREATED, REMAINING_SETS, " +
+                "RECOVERY_FLOW_ID) VALUES (?,?,?,?,?,?,?,?,?)";
+
         public static final String LOAD_RECOVERY_DATA = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? AND CODE = ? AND " +
                 "SCENARIO = ? AND STEP = ?";
@@ -638,15 +713,18 @@ public class IdentityRecoveryConstants {
 
         public static final String LOAD_RECOVERY_DATA_FROM_CODE = "SELECT * FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
+        public static final String LOAD_RECOVERY_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * FROM IDN_RECOVERY_DATA WHERE" +
+                " RECOVERY_FLOW_ID = ? AND STEP = ?";
+
         public static final String INVALIDATE_CODE = "DELETE FROM IDN_RECOVERY_DATA WHERE CODE = ?";
 
-        public static final String INVALIDATE_USER_CODES = "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND " +
-                "USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', " +
-                "'MOBILE_VERIFICATION_ON_UPDATE')";
+        public static final String INVALIDATE_USER_CODES =
+                "DELETE FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID =? " +
+                "AND SCENARIO <> 'EMAIL_VERIFICATION_ON_UPDATE' AND SCENARIO <> 'MOBILE_VERIFICATION_ON_UPDATE'";
 
-        public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
-                "LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =? AND SCENARIO NOT IN " +
-                "('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
+        public static final String INVALIDATE_USER_CODES_CASE_INSENSITIVE =
+                "DELETE FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME) = LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID =? " +
+                "AND SCENARIO <> 'EMAIL_VERIFICATION_ON_UPDATE' AND SCENARIO <> 'MOBILE_VERIFICATION_ON_UPDATE'";
 
         public static final String INVALIDATE_USER_CODE_BY_SCENARIO = "DELETE FROM IDN_RECOVERY_DATA WHERE " +
                 "USER_NAME = ? AND SCENARIO = ? AND STEP = ? AND USER_DOMAIN = ? AND TENANT_ID =?";
@@ -660,13 +738,13 @@ public class IdentityRecoveryConstants {
 
         public static final String DELETE_USER_RECOVERY_DATA_BY_TENANT_ID = "DELETE FROM IDN_RECOVERY_DATA WHERE TENANT_ID = ?";
 
-        public static final String LOAD_RECOVERY_DATA_OF_USER = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
-                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
+        public static final String LOAD_RECOVERY_DATA_OF_USER =
+                "SELECT * FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND USER_DOMAIN = ? AND TENANT_ID = ? " +
+                "AND SCENARIO <> 'EMAIL_VERIFICATION_ON_UPDATE' AND SCENARIO <> 'MOBILE_VERIFICATION_ON_UPDATE'";
 
-        public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE = "SELECT "
-                + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? " +
-                "AND SCENARIO NOT IN ('EMAIL_VERIFICATION_ON_UPDATE', 'MOBILE_VERIFICATION_ON_UPDATE')";
+        public static final String LOAD_RECOVERY_DATA_OF_USER_CASE_INSENSITIVE =
+                "SELECT * FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND USER_DOMAIN = ? AND TENANT_ID = ? " +
+                "AND SCENARIO <> 'EMAIL_VERIFICATION_ON_UPDATE' AND SCENARIO <> 'MOBILE_VERIFICATION_ON_UPDATE'";
 
         public static final String LOAD_RECOVERY_DATA_OF_USER_BY_SCENARIO = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE USER_NAME = ? AND SCENARIO = ? AND USER_DOMAIN = ? " +
@@ -683,6 +761,24 @@ public class IdentityRecoveryConstants {
         public static final String LOAD_RECOVERY_DATA_OF_USER_BY_STEP_CASE_INSENSITIVE = "SELECT "
                 + "* FROM IDN_RECOVERY_DATA WHERE LOWER(USER_NAME)=LOWER(?) AND SCENARIO = ? AND USER_DOMAIN = ? " +
                 "AND TENANT_ID = ? AND STEP = ?";
+
+        public static final String STORE_RECOVERY_FLOW_DATA = "INSERT INTO IDN_RECOVERY_FLOW_DATA "
+                + "(RECOVERY_FLOW_ID, CODE, FAILED_ATTEMPTS, RESEND_COUNT, TIME_CREATED) VALUES (?,?,?,?,?)";
+
+        public static final String UPDATE_RECOVERY_FLOW_DATA = "UPDATE IDN_RECOVERY_FLOW_DATA SET CODE = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String UPDATE_FAILED_ATTEMPTS = "UPDATE IDN_RECOVERY_FLOW_DATA SET FAILED_ATTEMPTS = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String UPDATE_CODE_RESEND_COUNT = "UPDATE IDN_RECOVERY_FLOW_DATA SET RESEND_COUNT = ? "
+                + "WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String LOAD_RECOVERY_FLOW_DATA_FROM_RECOVERY_FLOW_ID = "SELECT * " +
+                "FROM IDN_RECOVERY_FLOW_DATA WHERE RECOVERY_FLOW_ID = ?";
+
+        public static final String INVALIDATE_BY_RECOVERY_FLOW_ID = "DELETE FROM IDN_RECOVERY_FLOW_DATA WHERE " +
+                "RECOVERY_FLOW_ID = ?";
     }
 
     public static class Questions {

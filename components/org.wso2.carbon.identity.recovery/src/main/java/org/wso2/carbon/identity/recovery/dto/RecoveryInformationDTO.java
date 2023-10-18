@@ -28,6 +28,11 @@ public class RecoveryInformationDTO {
     private String username;
 
     /**
+     * Recovery flow id of the initiated recovery flow.
+     */
+    private String recoveryFlowId;
+
+    /**
      * Available Recovery channel Information.
      */
     private RecoveryChannelInfoDTO recoveryChannelInfoDTO;
@@ -130,6 +135,26 @@ public class RecoveryInformationDTO {
     public void setUsername(String userName) {
 
         this.username = userName;
+    }
+
+    /**
+     * Get recovery flow id.
+     *
+     * @return recoveryFlowId.
+     */
+    public String getRecoveryFlowId() {
+
+        return recoveryFlowId;
+    }
+
+    /**
+     * Set recovery flow id.
+     *
+     * @param recoveryFlowId RecoveryFlowId.
+     */
+    public void setRecoveryFlowId(String recoveryFlowId) {
+
+        this.recoveryFlowId = recoveryFlowId;
     }
 
     /**

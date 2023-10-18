@@ -37,6 +37,8 @@ public class CaptchaDataHolder {
 
     private boolean reCaptchaEnabled;
 
+    private String reCaptchaType;
+
     private String reCaptchaAPIUrl;
 
     private String reCaptchaVerifyUrl;
@@ -45,12 +47,19 @@ public class CaptchaDataHolder {
 
     private String reCaptchaSecretKey;
 
+    private String reCaptchaAPIKey;
+
+    private String reCaptchaProjectID;
+
     private String reCaptchaErrorRedirectUrls;
 
     private String reCaptchaRequestWrapUrls;
 
     // Threshold for score in reCAPTCHA v3.
     private double reCaptchaScoreThreshold;
+
+    // Threshold for score for warn logs in reCAPTCHA v3.
+    private double reCaptchaWarnScoreThreshold;
 
     private IdentityGovernanceService identityGovernanceService;
 
@@ -82,6 +91,26 @@ public class CaptchaDataHolder {
 
     public void setReCaptchaEnabled(boolean reCaptchaEnabled) {
         this.reCaptchaEnabled = reCaptchaEnabled;
+    }
+
+    public String getReCaptchaType() {
+
+        return reCaptchaType;
+    }
+
+    public void setReCaptchaType(String reCaptchaType) {
+
+        this.reCaptchaType = reCaptchaType;
+    }
+
+    public String getReCaptchaProjectID() {
+
+        return reCaptchaProjectID;
+    }
+
+    public void setReCaptchaProjectID(String reCaptchaProjectID) {
+
+        this.reCaptchaProjectID = reCaptchaProjectID;
     }
 
     public String getReCaptchaAPIUrl() {
@@ -116,6 +145,14 @@ public class CaptchaDataHolder {
         this.reCaptchaSecretKey = reCaptchaSecretKey;
     }
 
+    public String getReCaptchaAPIKey() {
+        return reCaptchaAPIKey;
+    }
+
+    public void setReCaptchaAPIKey(String reCaptchaAPIKey) {
+        this.reCaptchaAPIKey = reCaptchaAPIKey;
+    }
+
     public String getReCaptchaRequestWrapUrls() {
         return reCaptchaRequestWrapUrls;
     }
@@ -132,6 +169,16 @@ public class CaptchaDataHolder {
     public void setReCaptchaScoreThreshold(double reCaptchaScoreThreshold) {
 
         this.reCaptchaScoreThreshold = reCaptchaScoreThreshold;
+    }
+
+    public double getReCaptchaWarnScoreThreshold() {
+
+        return reCaptchaWarnScoreThreshold;
+    }
+
+    public void setReCaptchaWarnScoreThreshold(double reCaptchaWarnScoreThreshold) {
+
+        this.reCaptchaWarnScoreThreshold = reCaptchaWarnScoreThreshold;
     }
 
     public String getReCaptchaErrorRedirectUrls() {

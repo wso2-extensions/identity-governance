@@ -55,7 +55,6 @@ import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionali
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementServerException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -70,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Security Question Password Recovery Manager
@@ -187,7 +187,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         ChallengeQuestion userChallengeQuestion = challengeQuestionManager.getUserChallengeQuestion(user, ids[0]);
         ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse(userChallengeQuestion);
 
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = UUID.randomUUID().toString();
         UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .QUESTION_BASED_PWD_RECOVERY, RecoverySteps.VALIDATE_CHALLENGE_QUESTION);
         recoveryData.setRemainingSetIds(metaData);
@@ -308,7 +308,7 @@ public class SecurityQuestionPasswordRecoveryManager {
         }
 
         ChallengeQuestionsResponse challengeQuestionResponse = new ChallengeQuestionsResponse(questions);
-        String secretKey = UUIDGenerator.generateUUID();
+        String secretKey = UUID.randomUUID().toString();
         UserRecoveryData recoveryData = new UserRecoveryData(user, secretKey, RecoveryScenarios
                 .QUESTION_BASED_PWD_RECOVERY, RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION);
         recoveryData.setRemainingSetIds(allChallengeQuestions.toString());
@@ -374,7 +374,7 @@ public class SecurityQuestionPasswordRecoveryManager {
                     userRecoveryDataStore.invalidate(code);
                     String remainingSetIds = userRecoveryData.getRemainingSetIds();
                     ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
-                    String secretKey = UUIDGenerator.generateUUID();
+                    String secretKey = UUID.randomUUID().toString();
                     challengeQuestionResponse.setCode(secretKey);
 
                     UserRecoveryData recoveryData = new UserRecoveryData(userRecoveryData.getUser(), secretKey, RecoveryScenarios
@@ -458,7 +458,7 @@ public class SecurityQuestionPasswordRecoveryManager {
 
                 userRecoveryDataStore.invalidate(code);
                 ChallengeQuestionResponse challengeQuestionResponse = new ChallengeQuestionResponse();
-                String secretKey = UUIDGenerator.generateUUID();
+                String secretKey = UUID.randomUUID().toString();
                 challengeQuestionResponse.setCode(secretKey);
                 challengeQuestionResponse.setStatus(IdentityRecoveryConstants.RECOVERY_STATUS_COMPLETE);
                 UserRecoveryData recoveryData =

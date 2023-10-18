@@ -16,8 +16,11 @@
 
 package org.wso2.carbon.identity.password.policy.internal;
 
+import org.apache.commons.lang.StringUtils;
 import org.osgi.framework.BundleContext;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.password.policy.constants.PasswordPolicyConstants;
 
 public class IdentityPasswordPolicyServiceDataHolder {
 
@@ -31,6 +34,19 @@ public class IdentityPasswordPolicyServiceDataHolder {
     public static IdentityPasswordPolicyServiceDataHolder getInstance() {
 
         return instance;
+    }
+
+    public boolean isPasswordPolicyHandlerEnabled() {
+
+        String passwordPolicyHandlerEnabled =
+                IdentityUtil.getProperty(PasswordPolicyConstants.PW_POLICY_HANDLER_ENABLED);
+        if (StringUtils.isBlank(passwordPolicyHandlerEnabled)) {
+            /*
+            This indicates config not in the identity.xml. In that case, we need to maintain default behaviour.
+             */
+            return false;
+        }
+        return Boolean.parseBoolean(passwordPolicyHandlerEnabled);
     }
 
     public IdentityGovernanceService getIdentityGovernanceService() {

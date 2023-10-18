@@ -1,41 +1,49 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
+import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.idp.mgt.IdpManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 public class IdentityRecoveryServiceDataHolder {
 
     private static IdentityRecoveryServiceDataHolder instance = new IdentityRecoveryServiceDataHolder();
     private RealmService realmService;
-    private RegistryService registryService;
     private IdentityEventService identityEventService;
     private IdentityGovernanceService identityGovernanceService;
     private IdpManager idpManager;
@@ -48,6 +56,11 @@ public class IdentityRecoveryServiceDataHolder {
     private UserFunctionalityManager userFunctionalityManagerService;
     private OTPGenerator otpGenerator;
     private MultiAttributeLoginService multiAttributeLoginService;
+    private InputValidationManagementService inputValidationMgtService;
+    private AuthAttributeHandlerManager authAttributeHandlerManager;
+    private FederatedAssociationManager federatedAssociationManager;
+    private IdentityDataStoreService identityDataStoreService;
+    private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
         return instance;
@@ -104,16 +117,6 @@ public class IdentityRecoveryServiceDataHolder {
     public void setRealmService(RealmService realmService) {
 
         this.realmService = realmService;
-    }
-
-    public RegistryService getRegistryService() {
-
-        return registryService;
-    }
-
-    public void setRegistryService(RegistryService registryService) {
-
-        this.registryService = registryService;
     }
 
     public AccountLockService getAccountLockService() {
@@ -268,5 +271,65 @@ public class IdentityRecoveryServiceDataHolder {
     public void setOtpGenerator(OTPGenerator otpGenerator) {
 
         this.otpGenerator = otpGenerator;
+    }
+
+    /**
+     * Get the AuthAttributeHandlerManager object held at the data holder.
+     *
+     * @return AuthAttributeHandlerManager object.
+     */
+    public AuthAttributeHandlerManager getAuthAttributeHandlerManager() {
+
+        return authAttributeHandlerManager;
+    }
+
+    /**
+     * Set the AuthAttributeHandlerManager.
+     *
+     * @param authAttributeHandlerManager AuthAttributeHandlerManager object.
+     */
+    public void setAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        this.authAttributeHandlerManager = authAttributeHandlerManager;
+    }
+
+    /**
+     * Get InputValidationMgtService OSGi service.
+     *
+     * @return Input Validation Management Service.
+     */
+    public InputValidationManagementService getInputValidationMgtService() {
+
+        return inputValidationMgtService;
+    }
+
+    /**
+     * Set InputValidationMgtService OSGi service.
+     *
+     * @param inputValidationMgtService Input Validation Management Service.
+     */
+    public void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        this.inputValidationMgtService = inputValidationMgtService;
+    }
+
+    public FederatedAssociationManager getFederatedAssociationManager() {
+
+        return federatedAssociationManager;
+    }
+
+    public void setFederatedAssociationManager(FederatedAssociationManager federatedAssociationManager) {
+
+        this.federatedAssociationManager = federatedAssociationManager;
+    }
+
+    public IdentityDataStoreService getIdentityDataStoreService() {
+
+        return identityDataStoreService;
+    }
+
+    public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        this.identityDataStoreService = identityDataStoreService;
     }
 }

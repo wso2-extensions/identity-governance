@@ -1,18 +1,17 @@
 /*
+ * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
  *
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
- * WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -35,9 +34,11 @@ import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.core.util.AnonymousSessionUtil;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
@@ -54,6 +55,12 @@ import org.wso2.carbon.identity.governance.exceptions.notiification.Notification
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.input.validation.mgt.exceptions.InputValidationMgtClientException;
+import org.wso2.carbon.identity.input.validation.mgt.exceptions.InputValidationMgtException;
+import org.wso2.carbon.identity.input.validation.mgt.model.RulesConfiguration;
+import org.wso2.carbon.identity.input.validation.mgt.model.ValidationConfiguration;
+import org.wso2.carbon.identity.input.validation.mgt.model.ValidationContext;
+import org.wso2.carbon.identity.input.validation.mgt.model.Validator;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -64,6 +71,8 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
@@ -76,7 +85,6 @@ import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
 import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -92,20 +100,25 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
+import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
+import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -117,6 +130,8 @@ public class UserSelfRegistrationManager {
     private static UserSelfRegistrationManager instance = new UserSelfRegistrationManager();
     private static final String PURPOSE_GROUP_SELF_REGISTER = "SELF-SIGNUP";
     private static final String PURPOSE_GROUP_TYPE_SYSTEM = "SYSTEM";
+    private static final String AUTH_ATTRIBUTE_USERNAME = "username";
+    private static final String AUTH_ATTRIBUTE_PASSWORD = "password";
 
     private UserSelfRegistrationManager() {
 
@@ -839,6 +854,10 @@ public class UserSelfRegistrationManager {
 
         // Validate context tenant domain name with user tenant domain.
         validateContextTenantDomainWithUserTenantDomain(user);
+
+        // Validate the recovery step to confirm self sign up, to verify email account or to verify mobile number.
+        validateRecoverySteps(recoveryData, user);
+
         return recoveryData;
     }
 
@@ -1403,9 +1422,13 @@ public class UserSelfRegistrationManager {
 
     private UserRealm getUserRealm(String tenantDomain) throws CarbonException {
 
-        return AnonymousSessionUtil.getRealmByTenantDomain(IdentityRecoveryServiceDataHolder.getInstance()
-                        .getRegistryService(), IdentityRecoveryServiceDataHolder.getInstance().getRealmService(),
-                tenantDomain);
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+            return (UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CarbonException(e);
+        }
     }
 
     /**
@@ -1450,6 +1473,44 @@ public class UserSelfRegistrationManager {
      */
     private boolean checkUserNameValid(String userName, RealmConfiguration realmConfig) {
 
+        int tenantId = realmConfig.getTenantId();
+        String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
+        Map<String, Validator> validators = IdentityRecoveryServiceDataHolder.getInstance()
+                .getInputValidationMgtService().getValidators(tenantDomain);
+
+        List<ValidationConfiguration> configurations;
+        try {
+            configurations = IdentityRecoveryServiceDataHolder.getInstance().getInputValidationMgtService()
+                    .getInputValidationConfiguration(tenantDomain);
+            String field = USERNAME;
+            ValidationConfiguration configuration = configurations.stream().filter(config ->
+                    field.equalsIgnoreCase(config.getField())).collect(Collectors.toList()).get(0);
+
+            /* If configuration for username field is found in Input Validation Mgt service, validate against them,
+             if not validate against the regex from the userStore. */
+            if (configuration != null) {
+                try {
+                    return validateAgainstConfiguration(configuration, validators, field, userName,
+                            tenantDomain);
+                } catch (InputValidationMgtClientException e) {
+                    return false;
+                }
+            } else {
+                return validateAgainstRegex(userName, realmConfig);
+            }
+        } catch(InputValidationMgtException e){
+            return ERROR_GETTING_EXISTING_CONFIGURATIONS.getCode().equals(e.getErrorCode());
+        }
+    }
+
+    /** This method is to validate username format against the regex from the userstore.
+     *
+     * @param userName      Username that needs to be validated.
+     * @param realmConfig   Realm Configuration.
+     * @return whether username values satisfy the regex.
+     */
+    private boolean validateAgainstRegex(String userName, RealmConfiguration realmConfig) {
+
         if (userName == null || CarbonConstants.REGISTRY_SYSTEM_USERNAME.equals(userName)) {
             return false;
         }
@@ -1476,7 +1537,37 @@ public class UserSelfRegistrationManager {
         }
 
         return StringUtils.isEmpty(regularExpression) || isFormatCorrect(regularExpression, userName);
+    }
 
+    /** This method is to validate username format against the username validation configured with Input Validation.
+     *
+     * @param configuration     Validation configuration for the username field.
+     * @param validators        Validators.
+     * @param field             Field name that need to be validated.
+     * @param value             Value of the field.
+     * @param tenantDomain      Tenant domain.
+     * @return whether username values satisfy the validation configurations.
+     * @throws InputValidationMgtClientException
+     */
+    private boolean validateAgainstConfiguration(ValidationConfiguration configuration, Map<String, Validator>
+            validators, String field, String value, String tenantDomain) throws InputValidationMgtClientException {
+
+        List<RulesConfiguration> rules = new ArrayList<>();
+        if (configuration.getRegEx() != null) {
+            rules = configuration.getRegEx();
+        } else if (configuration.getRules() != null) {
+            rules = configuration.getRules();
+        }
+        for (RulesConfiguration rule: rules) {
+            Validator validator = validators.get(rule.getValidatorName());
+            ValidationContext context = new ValidationContext();
+            context.setField(field);
+            context.setValue(value);
+            context.setTenantDomain(tenantDomain);
+            context.setProperties(rule.getProperties());
+            validator.validate(context);
+        }
+        return true;
     }
 
     /**
@@ -1654,9 +1745,8 @@ public class UserSelfRegistrationManager {
                         .isNotEmpty(preferredChannel)) {
                     claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                 }
-                userStoreManager
-                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), Utils.generateRandomPassword(12),
-                                userRoles, claimsMap, null);
+                userStoreManager.addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                        new String(Utils.generateRandomPassword(12)), userRoles, claimsMap, null);
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {
@@ -1917,5 +2007,72 @@ public class UserSelfRegistrationManager {
                     eventName, e);
         }
 
+    }
+
+    /**
+     * This method is used to verify the user attributes coming in the signup request against the requirement of the
+     * registration option specified in the request.
+     *
+     * @param user       User object.
+     * @param password   Password of the user.
+     * @param claims     User claims.
+     * @param properties Properties of the request.
+     * @return ValidationResult object for the provided attributes.
+     * @throws SelfRegistrationException Exception thrown when validating the user attributes.
+     */
+    public Boolean verifyUserAttributes(User user, String password, Claim[] claims, Property[] properties)
+            throws SelfRegistrationException {
+
+        Map<String, String> userAttributes = new HashMap<>();
+        userAttributes.put(AUTH_ATTRIBUTE_USERNAME, user.getUserName());
+        userAttributes.put(AUTH_ATTRIBUTE_PASSWORD, password);
+
+        if (ArrayUtils.isNotEmpty(claims)) {
+            for (Claim claim : claims) {
+                userAttributes.put(claim.getClaimUri(), claim.getValue());
+            }
+        }
+
+        String registrationOption = extractRegistrationOption(properties);
+        AuthAttributeHandlerManager authAttributeHandlerManager =
+                IdentityRecoveryServiceDataHolder.getInstance().getAuthAttributeHandlerManager();
+
+        ValidationResult validationResult = null;
+        try {
+            validationResult = authAttributeHandlerManager.validateAuthAttributes(registrationOption, userAttributes);
+        } catch (AuthAttributeHandlerException e) {
+            Utils.handleAttributeValidationFailure(e);
+        }
+        if (validationResult == null || !validationResult.isValid()) {
+            Utils.handleAttributeValidationFailure(validationResult);
+        }
+        return validationResult.isValid();
+    }
+
+    private String extractRegistrationOption(Property[] properties) throws SelfRegistrationException {
+
+        /*
+        To preserve the existing behavior, if the registration option is not specified in the request, the default is
+        considered as the Username and Password based registration.
+        This constant is defined at the BasicAuthAuthAttributeHandler class in identity-local-auth-basicauth.
+         */
+        String registrationOption = "BasicAuthAuthAttributeHandler";
+        int optionCount = 0;
+        if (ArrayUtils.isNotEmpty(properties)) {
+            for (Property property : properties) {
+                if (SIGNUP_PROPERTY_REGISTRATION_OPTION.equals(property.getKey())) {
+                    registrationOption = property.getValue();
+                    optionCount++;
+                }
+            }
+        }
+        if (optionCount > 1) {
+            throw new SelfRegistrationClientException(
+                    ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS.getCode(),
+                    ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS.getMessage(),
+                    "Registration request contains " + optionCount + " registration options. Only one registration " +
+                            "option is allowed.");
+        }
+        return registrationOption;
     }
 }

@@ -129,6 +129,10 @@ public class RecoveryConfigImplTest {
                 "Recovery callback URL regex");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
                 "Enable Auto Login After Password Reset");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
+                .RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, "Max failed attempts for password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
+                .RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,"Max resend attempts for password recovery");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -241,6 +245,8 @@ public class RecoveryConfigImplTest {
         String challengeQuestionAnswerRegex = IdentityRecoveryConstants.DEFAULT_REGEX;
         String enforceChallengeQuestionAnswerUniqueness = "false";
         String enableAutoLoginAfterPasswordReset = "false";
+        String recoveryOTPMaxFailedAttempts = "3";
+        String recoveryOTPMaxResendAttempts = "5";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -291,6 +297,10 @@ public class RecoveryConfigImplTest {
                 ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, enforceChallengeQuestionAnswerUniqueness);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, enableAutoLoginAfterPasswordReset);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, recoveryOTPMaxFailedAttempts);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, recoveryOTPMaxResendAttempts);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself

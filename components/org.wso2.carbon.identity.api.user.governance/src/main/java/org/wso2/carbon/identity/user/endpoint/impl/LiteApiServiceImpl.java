@@ -19,13 +19,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.LiteApiService;
@@ -37,7 +40,14 @@ import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM;
+import static org.wso2.carbon.identity.recovery.RecoveryScenarios.LITE_SIGN_UP;
+import static org.wso2.carbon.identity.recovery.RecoverySteps.CONFIRM_LITE_SIGN_UP;
+import static org.wso2.carbon.identity.recovery.util.Utils.getAccountStateForUserNameWithoutUserDomain;
 
 public class LiteApiServiceImpl extends LiteApiService {
 
@@ -83,14 +93,64 @@ public class LiteApiServiceImpl extends LiteApiService {
         try {
             notificationResponseBean = userSelfRegistrationManager
                     .registerLiteUser(user,
-                            Utils.getClaims(liteUserRegistrationRequestDTO.getClaims()),
+                            Utils.getClaims(liteUserRegistrationRequestDTO),
                             Utils.getProperties(properties));
         } catch (IdentityRecoveryClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client Error while self registering lite user ", e);
             }
             if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_USER_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
-                Utils.handleConflict(e.getMessage(), e.getErrorCode());
+                try {
+
+                    boolean userNotConfirmed = true;
+                    String accountState =  getAccountStateForUserNameWithoutUserDomain(user);
+                    if (StringUtils.isNotEmpty(accountState)) {
+                        /*
+                        If the user account is already exist and verified not need to trigger email notification. In
+                        case where account state cannot be retrieved return true to maintain the backward compatibility.
+                         */
+                        userNotConfirmed = IdentityRecoveryConstants.PENDING_LITE_REGISTRATION
+                                .equalsIgnoreCase(accountState);
+                    }
+                    boolean isResendVerificationEnabledOnUserExistence =
+                            Boolean.parseBoolean(org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig(
+                                    LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE, user.getTenantDomain()));
+                    if (userNotConfirmed && isResendVerificationEnabledOnUserExistence) {
+                        try {
+                            ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
+                            Property[] propertiesList = null;
+                            if (properties.size() > 1) {
+                                propertiesList = new Property[2];
+                                for (PropertyDTO property : properties) {
+                                    String key = property.getKey();
+                                    String value = property.getValue();
+                                    if (IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME.equals(key)) {
+                                        Property templateDTO = new Property();
+                                        templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
+                                        templateDTO.setValue(value);
+                                        propertiesList[0] = templateDTO;
+                                    }
+                                    if (IdentityRecoveryConstants.INITIATED_PLATFORM.equals(key)) {
+                                        Property initiatedPlatformDTO = new Property();
+                                        initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
+                                        initiatedPlatformDTO.setValue(value);
+                                        propertiesList[1] = initiatedPlatformDTO;
+                                    }
+                                }
+                            }
+                            notificationResponseBean =
+                                    resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
+                                            CONFIRM_LITE_SIGN_UP.toString(),
+                                            NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, propertiesList);
+                        } catch (IdentityRecoveryException ex) {
+                            Utils.handleInternalServerError(Constants.SERVER_ERROR, ex.getErrorCode(), LOG, ex);
+                        }
+                    } else {
+                        Utils.handleConflict(e.getMessage(), e.getErrorCode());
+                    }
+                } catch (IdentityEventException ex) {
+                    Utils.handleInternalServerError(Constants.SERVER_ERROR, ex.getErrorCode(), LOG, ex);
+                }
             } else {
                 Utils.handleBadRequest(e.getMessage(), e.getErrorCode());
             }

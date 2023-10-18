@@ -23,13 +23,12 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
-import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
-import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -59,16 +58,15 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String DATA_STORE_PROPERTY_NAME = "Data.Store";
     private static final String ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME = "EnableHybridDataStore";
     private UserIdentityDataStore identityDataStore;
+    private IdentityDataStoreService identityDataStoreService;
     private boolean isHybridDataStoreEnable = false;
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
+    public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
 
-    public IdentityStoreEventListener() throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    public IdentityStoreEventListener() {
 
-        String storeClassName = IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE,
-                this.getClass().getName()).getProperties().get(DATA_STORE_PROPERTY_NAME).toString();
-        Class clazz = Class.forName(storeClassName.trim());
-        identityDataStore = (UserIdentityDataStore) clazz.newInstance();
+        identityDataStoreService = IdentityMgtServiceDataHolder.getInstance().getIdentityDataStoreService();
         Object hybridDataStoreEnableObject =
                 IdentityUtil.readEventListenerProperty(USER_OPERATION_EVENT_LISTENER_TYPE, this.getClass().getName())
                         .getProperties().get(ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME);
@@ -126,7 +124,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
             Map.Entry<String, String> claim = it.next();
             if (claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)
-                    && !(identityDataStore instanceof UserStoreBasedIdentityDataStore)) {
+                    && !(isUserStoreBasedIdentityDataStore() ||
+                    isStoreIdentityClaimsInUserStoreEnabled(userStoreManager))) {
                 // add the identity claim to temp map
                 userDataMap.put(claim.getKey(), claim.getValue());
                 // we remove the identity claims to prevent it from getting stored in user store
@@ -189,7 +188,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 claims.putAll(userIdentityDataMap);
             }
 
-            return storeInIdentityDataStore(userName, userStoreManager, PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
+            return identityDataStoreService.storeInIdentityDataStore(userName, userStoreManager,
+                    PRE_USER_ADD_CLAIM_VALUES, userIdentityDataMap);
         } finally {
             // clear the thread local used to store identity claims
             IdentityUtil.threadLocalProperties.get().remove(USER_IDENTITY_CLAIMS);
@@ -214,14 +214,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             log.debug("doPreSetUserClaimValues executed in the IdentityStoreEventListener for user: " + userName);
         }
 
-        boolean accountLocked = Boolean.parseBoolean(claims.get(UserIdentityDataStore.ACCOUNT_LOCK));
-        if (accountLocked) {
-            IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(UserCoreConstants
-                    .ErrorCode.USER_IS_LOCKED);
-            IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-        }
-
-        return storeInIdentityDataStore(userName, userStoreManager, PRE_SET_USER_CLAIM_VALUES, claims);
+        return identityDataStoreService.storeInIdentityDataStore(userName, userStoreManager,
+                PRE_SET_USER_CLAIM_VALUES, claims);
     }
 
     @Override
@@ -239,7 +233,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // No need to separately handle if identity `data store is user store based
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
             return true;
         }
 
@@ -271,7 +265,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
         // there is/are identity claim/s . load the dto
 
-        UserIdentityClaim identityDTO = identityDataStore.load(userName, storeManager);
+        UserIdentityClaim identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
         // if no user identity data found, just continue
         if (identityDTO == null) {
             return true;
@@ -337,7 +331,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         try {
-            List<String> userIds = identityDataStore.list(claimUri, claimValue, userStoreManager);
+            List<String> userIds = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
+                    claimValue, userStoreManager);
 
             // If this is the primary domain, all the users will be retrieved since the primary domain is not appended
             // to the user name in the IDN table. So we have to filter users belongs to primary in Java level.
@@ -382,7 +377,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // No need to separately handle if identity data store is user store based.
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -415,8 +410,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 String claimValue = expressionCondition.getAttributeValue();
 
                 try {
-                    List<String> usernames = identityDataStore.list(claimUri, getClaimValueForOperation
-                            (expressionCondition.getOperation(), claimValue), userManager);
+                    List<String> usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
+                            getClaimValueForOperation(expressionCondition.getOperation(), claimValue), userManager);
 
                     updateUserList(usernames, filteredUserNameList, domain, isFirstClaimFilter);
 
@@ -506,7 +501,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // No need to separately handle if identity data store is user store based.
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -515,8 +510,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             // Extract identity Claim filter-conditions from the given conditions.
             extractIdentityClaimFilterConditions(condition, identityClaimFilterConditions);
             if (!identityClaimFilterConditions.isEmpty()) {
-                identityDataStore.listPaginatedUsersNames(identityClaimFilterConditions, identityClaimFilteredUserNames,
-                        domain, userStoreManager, limit, offset);
+                identityDataStoreService.listPaginatedUsersByClaimURIAndValue(identityClaimFilterConditions,
+                        identityClaimFilteredUserNames, domain, userStoreManager, limit, offset);
             }
         } catch (IdentityException e) {
             throw new UserStoreException("Error while listing the users for identity claim filters with pagination " +
@@ -578,7 +573,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             if (log.isDebugEnabled()) {
                 log.debug("Removed Identity Claims of user: " + userName + " from IdentityDataStore.");
             }
-            identityDataStore.remove(userName, userStoreManager);
+            identityDataStoreService.removeIdentityClaims(userName, userStoreManager);
             return true;
         } catch (IdentityException e) {
             throw new UserStoreException("Error while removing user: " + userName + " from identity data store", e);
@@ -586,7 +581,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     }
 
     /**
-     * Store identity claims in the IdentityDataStore
+     * Store identity claims in the IdentityDataStore.
      *
      * @param userName
      * @param userStoreManager
@@ -595,13 +590,14 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
      * @return
      * @throws UserStoreException
      */
+    @Deprecated
     private boolean storeInIdentityDataStore(String userName,
                                              UserStoreManager userStoreManager,
                                              String operationType,
                                              Map<String, String> claims) throws UserStoreException {
 
         // No need to separately handle if data identityDataStore is user store based
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
             return true;
         }
 
@@ -660,8 +656,11 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener.");
         }
 
+        // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
+        UserStoreManager userStoreManager = getUserStoreManager();
+
         // No need to separately handle if identity data store is user store based.
-        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+        if (isUserStoreBasedIdentityDataStore()) {
             return true;
         }
 
@@ -679,9 +678,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             return true;
         }
 
-        // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
-        UserStoreManager userStoreManager = getUserStoreManager();
-
         for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
 
             String username = userClaimSearchEntry.getUserName();
@@ -694,6 +690,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 continue;
             }
 
+            // No need to separately handle if identity data store is user store based for the users' userstore domain.
+            if (isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
+                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
+                continue;
+            }
+
             if (log.isDebugEnabled()) {
                 log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
                         "user: " + username);
@@ -703,8 +705,19 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 userClaimSearchEntry.setClaims(new HashMap<String, String>());
             }
 
+            if (!isHybridDataStoreEnable) {
+                /*
+                If hybrid data store is disabled, we need to use the identity claim value only from the identity data
+                store. Hence, we need to remove the identity claim values from the claimMap to avoid use of values from
+                user store for identity claims.
+                 */
+                userClaimSearchEntry.getClaims().entrySet().removeIf(
+                        entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
+            }
+
             // There is/are identity claim/s load the dto.
-            UserIdentityClaim identityDTO = identityDataStore.load(userClaimSearchEntry.getUserName(), userStoreManager
+            UserIdentityClaim identityDTO = identityDataStoreService
+                    .getIdentityClaimData(userClaimSearchEntry.getUserName(), userStoreManager
                     .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
 
             // If no user identity data found, just continue.
@@ -735,5 +748,23 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             throw new UserStoreException("Error occurred while retrieving user realm.", e);
         }
         return userRealm.getUserStoreManager();
+    }
+
+    /**
+     * Check weather the given user store has enabled the property "StoreIdentityClaims" to store identity claims
+     * in the user store.
+     *
+     * @param userStoreManager User Store manager.
+     * @return Weather identity claims are stored in user store or not.
+     */
+    private boolean isStoreIdentityClaimsInUserStoreEnabled(UserStoreManager userStoreManager) {
+
+        return Boolean.parseBoolean(userStoreManager.getRealmConfiguration().
+                getUserStoreProperty(STORE_IDENTITY_CLAIMS));
+    }
+
+    private boolean isUserStoreBasedIdentityDataStore() {
+
+        return identityDataStoreService.isUserStoreBasedIdentityDataStore();
     }
 }

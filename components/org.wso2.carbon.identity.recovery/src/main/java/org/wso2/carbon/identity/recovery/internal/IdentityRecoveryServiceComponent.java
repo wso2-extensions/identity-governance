@@ -1,18 +1,21 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.apache.commons.logging.Log;
@@ -27,6 +30,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
@@ -35,8 +39,11 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
+import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementServiceImpl;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -68,7 +75,7 @@ import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManag
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
-import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -140,6 +147,8 @@ public class IdentityRecoveryServiceComponent {
                     postAuthnMissingChallengeQuestions, null);
             bundleContext.registerService(AbstractEventHandler.class.getName(),
                     new ChallengeAnswerValidationHandler(), null);
+            bundleContext.registerService(InputValidationManagementService.class.getName(),
+                    new InputValidationManagementServiceImpl(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -181,20 +190,6 @@ public class IdentityRecoveryServiceComponent {
     }
 
     @Reference(
-            name = "registry.service",
-            service = org.wso2.carbon.registry.core.service.RegistryService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRegistryService")
-    protected void setRegistryService(RegistryService registryService) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the Registry Service");
-        }
-        dataHolder.setRegistryService(registryService);
-    }
-
-    @Reference(
             name = "otpgenerator.service",
             service = org.wso2.carbon.identity.governance.service.otp.OTPGenerator.class,
             cardinality = ReferenceCardinality.MANDATORY,
@@ -212,12 +207,6 @@ public class IdentityRecoveryServiceComponent {
 
         log.debug("UnSetting the Realm Service");
         dataHolder.setRealmService(null);
-    }
-
-    protected void unsetRegistryService(RegistryService registryService) {
-
-        log.debug("UnSetting the Registry Service");
-        dataHolder.setRegistryService(null);
     }
 
     protected void unsetOtpGenerator(OTPGenerator otpGenerator) {
@@ -444,5 +433,86 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetMultiAttributeLoginService(MultiAttributeLoginService multiAttributeLoginService) {
 
         dataHolder.getInstance().setMultiAttributeLoginService(null);
+    }
+
+    @Reference(
+            name = "org.wso2.carbon.identity.auth.attribute.handler.internal.AuthAttributeHandlerServiceComponent",
+            service = AuthAttributeHandlerManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetAuthAttributeHandlerManager")
+    protected void setAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        log.debug("Auth Attribute Handler Manager service is set in recovery component.");
+        dataHolder.setAuthAttributeHandlerManager(authAttributeHandlerManager);
+    }
+
+    protected void unsetAuthAttributeHandlerManager(AuthAttributeHandlerManager authAttributeHandlerManager) {
+
+        log.debug("Auth Attribute Handler Manager service is unset in recovery component.");
+        dataHolder.setAuthAttributeHandlerManager(null);
+    }
+
+    /**
+     * Sets Input Validation Mgt OSGI Service.
+     *
+     * @param inputValidationMgtService     Input Validation Mgt OSGI Service.
+     */
+    @Reference(
+            name = "identity.input.validation.mgt.component",
+            service = InputValidationManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetInputValidationMgtService")
+    protected void setInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(inputValidationMgtService);
+    }
+
+    /**
+     * Unsets Input Validation Mgt OSGI Service.
+     *
+     * @param inputValidationMgtService     Input Validation Mgt OSGI Service.
+     */
+    protected void unsetInputValidationMgtService(InputValidationManagementService inputValidationMgtService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setInputValidationMgtService(null);
+    }
+
+    @Reference(
+            name = "identity.user.profile.mgt.component",
+            service = FederatedAssociationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetFederatedAssociationManagerService"
+    )
+    protected void setFederatedAssociationManagerService(FederatedAssociationManager
+                                                                 federatedAssociationManagerService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setFederatedAssociationManager(
+                federatedAssociationManagerService);
+    }
+
+    protected void unsetFederatedAssociationManagerService(FederatedAssociationManager
+                                                                   federatedAssociationManagerService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setFederatedAssociationManager(null);
+    }
+
+    @Reference(
+            name = "identity.governance.service",
+            service = IdentityDataStoreService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityDataStoreService"
+    )
+    protected void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
+    }
+
+    protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(null);
     }
 }

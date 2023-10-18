@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
@@ -52,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_BAD_SELF_REGISTER_REQUEST;
 
 /**
  * Class which contains the implementation of MeApiService.
@@ -88,6 +91,11 @@ public class MeApiServiceImpl extends MeApiService {
     public Response mePost(SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO) {
 
         String tenantFromContext = (String) IdentityUtil.threadLocalProperties.get().get(Constants.TENANT_NAME_FROM_CONTEXT);
+
+        if (selfUserRegistrationRequestDTO == null) {
+            Utils.handleBadRequest("Invalid data for self-registration.",
+                    ERROR_CODE_BAD_SELF_REGISTER_REQUEST.getCode());
+        }
 
         if (StringUtils.isNotBlank(tenantFromContext)) {
             selfUserRegistrationRequestDTO.getUser().setTenantDomain(tenantFromContext);

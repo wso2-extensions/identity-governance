@@ -19,6 +19,7 @@ package org.wso2.carbon.identity.governance.internal;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceServiceImpl;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -33,6 +34,7 @@ public class IdentityMgtServiceDataHolder {
     private static volatile List<IdentityConnectorConfig> identityConnectorConfigList = new ArrayList<>();
     private RealmService realmService;
     private IdentityGovernanceServiceImpl identityGovernanceService;
+    private IdentityDataStoreService identityDataStoreService;
 
     public static IdentityMgtServiceDataHolder getInstance() {
 
@@ -87,5 +89,15 @@ public class IdentityMgtServiceDataHolder {
     public void setIdentityGovernanceService(IdentityGovernanceServiceImpl identityGovernanceService) {
 
         this.identityGovernanceService = identityGovernanceService;
+    }
+
+    public IdentityDataStoreService getIdentityDataStoreService() {
+
+        return identityDataStoreService;
+    }
+
+    public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
+
+        this.identityDataStoreService = identityDataStoreService;
     }
 }

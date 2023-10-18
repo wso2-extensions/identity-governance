@@ -71,6 +71,19 @@ public interface PasswordRecoveryManager {
             throws IdentityRecoveryException;
 
     /**
+     * Validate the code given for password recovery and return the password reset token.
+     *
+     * @param otp              One Time Password.
+     * @param confirmationCode Confirmation code.
+     * @param tenantDomain     Tenant domain.
+     * @param properties       Meta properties in the confirmation request.
+     * @return PasswordResetCodeDTO {@link PasswordResetCodeDTO} object which contains password reset code.
+     * @throws IdentityRecoveryException Error while confirming password recovery.
+     */
+    PasswordResetCodeDTO confirm(String otp, String confirmationCode, String tenantDomain, Map<String,
+            String> properties) throws IdentityRecoveryException;
+
+    /**
      * Update the password for password recovery, if the password reset code is valid.
      *
      * @param resetCode  Password reset code
@@ -81,6 +94,20 @@ public interface PasswordRecoveryManager {
      * @throws IdentityRecoveryException Error while resetting the password
      */
     SuccessfulPasswordResetDTO reset(String resetCode, char[] password, Map<String, String> properties)
+            throws IdentityRecoveryException;
+
+    /**
+     * Update the password for password recovery, if the password reset code is valid.
+     *
+     * @param resetCode  Password reset code.
+     * @param confirmationCode Confirmation code.
+     * @param password   New password.
+     * @param properties Properties.
+     * @return SuccessfulPasswordResetDTO {@link SuccessfulPasswordResetDTO} object which contain the information
+     * for a successful password update.
+     * @throws IdentityRecoveryException Error while resetting the password.
+     */
+    SuccessfulPasswordResetDTO reset(String resetCode, String confirmationCode, char[] password, Map<String, String> properties)
             throws IdentityRecoveryException;
 
     /**

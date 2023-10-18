@@ -23,10 +23,13 @@ import org.apache.commons.logging.Log;
 import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
@@ -36,6 +39,7 @@ import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.CodeValidateInfoResponseDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.LiteUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationUserDTO;
@@ -53,7 +57,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
 public class Utils {
 
@@ -276,6 +279,76 @@ public class Utils {
         }
     }
 
+    /**
+     * This method returns an array of claims generated from LiteUserRegistrationRequestDTO attributes.
+     *
+     * @param liteUserRegistrationRequestDTO LiteUserRegistrationRequestDTO
+     * @return Array of claims
+     */
+    public static Claim[] getClaims(LiteUserRegistrationRequestDTO liteUserRegistrationRequestDTO) {
+
+        List<ClaimDTO> claimDTOs = liteUserRegistrationRequestDTO.getClaims();
+        int preferredChannelClaimIndex = -1;
+        int emailClaimIndex = -1;
+        int mobileClaimIndex = -1;
+
+        for (int i = 0; i < claimDTOs.size(); i++) {
+            if (StringUtils.equals(Constants.PREFERRED_CHANNEL_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                preferredChannelClaimIndex = i;
+                continue;
+            }
+            if (StringUtils.equals(Constants.EMAIL_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                emailClaimIndex = i;
+                continue;
+            }
+            if (StringUtils.equals(Constants.MOBILE_CLAIM_URI, claimDTOs.get(i).getUri())) {
+                mobileClaimIndex = i;
+            }
+        }
+
+        if (liteUserRegistrationRequestDTO.getPreferredChannel() != null) {
+            if (preferredChannelClaimIndex == -1) {
+                // Create Preferred Channel claim if not available in list of claims.
+                ClaimDTO preferredChannelClaim = new ClaimDTO();
+                preferredChannelClaim.setUri(Constants.PREFERRED_CHANNEL_CLAIM_URI);
+                claimDTOs.add(preferredChannelClaim);
+                preferredChannelClaimIndex = claimDTOs.size() - 1;
+            }
+            // The correct value of the 'Mobile' PreferredChannel should be 'SMS'. The 'Mobile' value is
+            // still handled by the API to maintain backward compatibility.
+            if (LiteUserRegistrationRequestDTO.PreferredChannelEnum.Mobile ==
+                    liteUserRegistrationRequestDTO.getPreferredChannel()) {
+                claimDTOs.get(preferredChannelClaimIndex)
+                        .setValue(LiteUserRegistrationRequestDTO.PreferredChannelEnum.SMS.toString());
+            } else {
+                claimDTOs.get(preferredChannelClaimIndex)
+                        .setValue(liteUserRegistrationRequestDTO.getPreferredChannel().toString().toUpperCase());
+            }
+        }
+        if (StringUtils.isNotBlank(liteUserRegistrationRequestDTO.getEmail())) {
+            if (emailClaimIndex == -1) {
+                // Create Email claim if not available in list of claims.
+                ClaimDTO emailClaim = new ClaimDTO();
+                emailClaim.setUri(Constants.EMAIL_CLAIM_URI);
+                claimDTOs.add(emailClaim);
+                emailClaimIndex = claimDTOs.size() - 1;
+            }
+            claimDTOs.get(emailClaimIndex).setValue(liteUserRegistrationRequestDTO.getEmail());
+        }
+        if (StringUtils.isNotBlank(liteUserRegistrationRequestDTO.getMobile())) {
+            if (mobileClaimIndex == -1) {
+                // Create Mobile claim if not available in list of claims.
+                ClaimDTO mobileClaim = new ClaimDTO();
+                mobileClaim.setUri(Constants.MOBILE_CLAIM_URI);
+                claimDTOs.add(mobileClaim);
+                mobileClaimIndex = claimDTOs.size() - 1;
+            }
+            claimDTOs.get(mobileClaimIndex).setValue(liteUserRegistrationRequestDTO.getMobile());
+        }
+
+        return getClaims(claimDTOs);
+    }
+
     public static String[] getRoles(List<String> roleList) {
         if (roleList == null) {
             return new String[0];
@@ -429,5 +502,38 @@ public class Utils {
             }
         }
         return propertiesMap;
+    }
+
+    /**
+     * Handle the exceptions thrown by the self registration service.
+     *
+     * @param exception SelfRegistrationException.
+     * @param log       Log instance of the class.
+     * @throws BadRequestException          Throws a bad request error.
+     * @throws InternalServerErrorException Throws an internal server error.
+     */
+    public static void handleSelfRegistrationException(SelfRegistrationException exception, Log log)
+            throws BadRequestException, InternalServerErrorException {
+
+        ErrorDTO error = getErrorDTO(exception.getMessage(), exception.getErrorCode(), exception.getDescription());
+
+        if (exception.getCause() != null) {
+            logException(error, exception, log);
+        }
+
+        if (exception instanceof SelfRegistrationClientException) {
+            throw new BadRequestException(error);
+        }
+        throw new InternalServerErrorException(error);
+    }
+
+    private static void logException(ErrorDTO error, Throwable cause, Log log) {
+
+        String errorMessageFormat = "errorCode: %s | message: %s";
+        String errorMsg = String.format(errorMessageFormat, error.getCode(), error.getMessage());
+        if (error.getRef() != null) {
+            errorMsg = String.format("correlationID: %s | " + errorMsg, error.getRef());
+        }
+        log.error(errorMsg, cause);
     }
 }

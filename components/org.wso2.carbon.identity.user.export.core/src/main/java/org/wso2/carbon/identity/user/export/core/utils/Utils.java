@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- * Version 2.0 (the "License"); you may not use this file except
+ *  WSO2 LLC. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.user.export.core.utils;
 
 import org.wso2.carbon.consent.mgt.core.model.Receipt;
+import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.user.export.core.dto.AddressDTO;
 import org.wso2.carbon.identity.user.export.core.dto.ConsentReceiptDTO;
 import org.wso2.carbon.identity.user.export.core.dto.PiiCategoryDTO;
@@ -26,6 +27,10 @@ import org.wso2.carbon.identity.user.export.core.dto.PiiControllerDTO;
 import org.wso2.carbon.identity.user.export.core.dto.PurposeDTO;
 import org.wso2.carbon.identity.user.export.core.dto.ServiceDTO;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Utils {
@@ -98,5 +103,45 @@ public class Utils {
             return piiControllerDTO;
         }).collect(Collectors.toList()));
         return consentReceiptDTO;
+    }
+
+    /**
+     * Return the additional claims that need to be added in the user profile export API.
+     * By default, User profile export API shows the claims that are exposed in the user profile UI view. If there are
+     * any additional claims required in the export API, they can be configured in the server level via this config.
+     *
+     * @return The list of additional claims.
+     */
+    public static List<String> getAdditionalClaimsToInclude() {
+
+        return getConfigs("UserProfileExport.AdditionalClaims.AdditionalClaim");
+    }
+
+    /**
+     * Return the claims that need to be restricted in the user profile export API.
+     * By default, User profile export API shows the claims that are exposed in the user profile UI view. If there are
+     * any claims required to be excluded in the export API, they can be configured in the server level via this config.
+     *
+     * @return The list of restricted claims.
+     */
+    public static List<String> getRestrictedClaims() {
+
+        return getConfigs("UserProfileExport.RestrictedClaims.RestrictedClaim");
+    }
+
+    private static List<String> getConfigs(String configPath) {
+
+        Map<String, Object> configuration = IdentityConfigParser.getInstance().getConfiguration();
+        Object elements = configuration.get(configPath);
+        if (elements != null) {
+            List<String> configValues = new ArrayList<>();
+            if (elements instanceof List) {
+                configValues.addAll((List<String>) elements);
+            } else {
+                configValues.add(elements.toString());
+            }
+            return configValues;
+        }
+        return Collections.emptyList();
     }
 }

@@ -44,7 +44,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -56,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
@@ -182,7 +182,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
                 // Not required to handle in this handler.
             } else if (IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM.equals(claim.getClaimUri())) {
-                String confirmationCode = UUIDGenerator.generateUUID();
+                String confirmationCode = UUID.randomUUID().toString();
                 if (isNotificationInternallyManage) {
                     if (isAccountClaimExist) {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
@@ -202,14 +202,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
                         confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
-                String confirmationCode = UUIDGenerator.generateUUID();
+                String confirmationCode = UUID.randomUUID().toString();
+                if (isAccountClaimExist) {
+                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
+                }
                 if (isNotificationInternallyManage) {
-                    if (isAccountClaimExist) {
-                        setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                                IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
-                    }
                     initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
                             IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
+                } else {
+                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
+                            confirmationCode);
+                    setAskPasswordConfirmationCodeToThreadLocal(confirmationCode);
                 }
 
                 // Need to lock user account.
@@ -222,6 +226,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
                         confirmationCode);
             }
+            Utils.clearEmailVerifyTemporaryClaim();
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
@@ -707,6 +712,23 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
+        }
+    }
+
+    /**
+     * To set the confirmation code to ask password thread local.
+     *
+     * @param confirmationCode Ask password confirmation code.
+     */
+    private void setAskPasswordConfirmationCodeToThreadLocal(String confirmationCode) {
+
+        Object initialValue = IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY);
+        if (initialValue != null && initialValue.toString()
+                .equals(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE)) {
+            IdentityUtil.threadLocalProperties.get()
+                    .put(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY,
+                            confirmationCode);
         }
     }
 }

@@ -42,6 +42,7 @@ import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.NotificationChannel;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -49,17 +50,26 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.functionality.mgt.exception.UserFunctionalityManagementException;
 import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockStatus;
-import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
+import org.wso2.carbon.user.core.model.OperationalCondition;
+import org.wso2.carbon.user.core.model.OperationalOperation;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY;
@@ -136,7 +146,8 @@ public class UserAccountRecoveryManager {
             // Get the existing RESEND_CONFIRMATION_CODE details if there is any.
             UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
                     user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
-            String recoveryCode = UUIDGenerator.generateUUID();
+            String recoveryCode = UUID.randomUUID().toString();
+            String recoveryFlowId = UUID.randomUUID().toString();
             String notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
             /* Check whether the existing confirmation code can be used based on the email confirmation code tolerance
                with the extracted RESEND_CONFIRMATION_CODE details. */
@@ -147,9 +158,11 @@ public class UserAccountRecoveryManager {
                 userRecoveryDataStore.invalidateWithoutChangeTimeCreated(recoveryDataDO.getSecret(), recoveryCode,
                         RecoverySteps.SEND_RECOVERY_INFORMATION, notificationChannelList);
             } else {
-                addRecoveryDataObject(username, tenantDomain, recoveryCode, recoveryScenario, notificationChannelList);
+                addRecoveryDataObject(username, tenantDomain, recoveryFlowId, recoveryCode, recoveryScenario,
+                        notificationChannelList);
             }
-            return buildUserRecoveryInformationResponseDTO(username, recoveryCode, notificationChannelDTOS);
+            return buildUserRecoveryInformationResponseDTO(username, recoveryFlowId, recoveryCode,
+                    notificationChannelDTOS);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("No valid user found for the given claims");
@@ -284,51 +297,88 @@ public class UserAccountRecoveryManager {
                     null);
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-        String[] resultedUserList = ArrayUtils.EMPTY_STRING_ARRAY;
-        for (String key : claims.keySet()) {
-            String value = claims.get(key);
-            if (StringUtils.isNotEmpty(key) && StringUtils.isNotEmpty(value)) {
-                if (log.isDebugEnabled()) {
-                    String message = String.format("Searching users by claim : %s for value : %s", key, value);
-                    log.debug(message);
+        try {
+            List<String> userStoreDomainNames = getDomainNames(tenantId);
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
+            ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+
+            for (String domain : userStoreDomainNames) {
+                List<ExpressionCondition> expressionConditionList =
+                        getExpressionConditionList(claims, domain, claimManager);
+                if (expressionConditionList.isEmpty()) {
+                    continue;
                 }
-                // Get the matching user list for the given claim.
-                String[] matchedUserList = getUserList(tenantId, key, value);
-                // Check for duplicates with the already retrieved users, if the matched users for the claim.
-                if (!ArrayUtils.isEmpty(matchedUserList)) {
-                    // In the first iteration resultedUserList will be empty.
-                    if (ArrayUtils.isNotEmpty(resultedUserList)) {
-                        // Remove the users from already matched list who are not in the recently matched list.
-                        resultedUserList = getCommonUserEntries(resultedUserList, matchedUserList, key, value);
-                        if (ArrayUtils.isEmpty(resultedUserList)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("No user matched for given claims");
-                            }
-                            return StringUtils.EMPTY;
-                        }
-                    } else {
-                        resultedUserList = matchedUserList;
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        String message = String.format("No users matched for claim : %s for value : %s", key, value);
-                        log.debug(message);
-                    }
-                    return StringUtils.EMPTY;
+                Condition operationalCondition = getOperationalCondition(expressionConditionList);
+                /* Get the users list that matches with the condition
+                   limit : 2, offset : 1, sortBy : null, sortOrder : null */
+                resultedUserList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, domain,
+                        UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
+                if (resultedUserList.size() > 1) {
+                    log.warn("Multiple users matched for given claims set: " + claims.keySet());
+                    throw Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
                 }
             }
-        }
-        // Return matched user.
-        if (ArrayUtils.isNotEmpty(resultedUserList) && resultedUserList.length == 1) {
-            return resultedUserList[0];
-        } else {
+            // Return empty when no users are found.
+            if (resultedUserList.isEmpty()) {
+                return StringUtils.EMPTY;
+            }
+            // When the code reaches here there only be single user match.
+            return resultedUserList.get(0).getDomainQualifiedUsername();
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Multiple users matched for given claims set : " + Arrays.toString(resultedUserList));
+                log.debug("Error while retrieving users from user store for the given claim set: " +
+                        Arrays.toString(claims.keySet().toArray()));
             }
-            throw Utils
-                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS,
-                            null);
+            throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
+        } catch (UserStoreException e) {
+            throw new IdentityRecoveryException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Get the expression conditions for the claim set.
+     *
+     * @param claims   List of UserClaims
+     * @param domain   User store domain
+     * @param claimManager   Claim manager
+     * @return expressionConditionList of the claims.
+     * @throws UserStoreException Error while get attribute name.
+     */
+    private List<ExpressionCondition> getExpressionConditionList (Map<String, String> claims, String domain,
+                                                                 ClaimManager claimManager)
+            throws UserStoreException {
+
+        List<ExpressionCondition> expressionConditionList = new ArrayList<>();
+        for (Map.Entry<String,String> entry : claims.entrySet()) {
+            String attributeName = claimManager.getAttributeName(domain, entry.getKey());
+            if (StringUtils.isNotEmpty(entry.getKey()) && StringUtils.isNotEmpty(entry.getValue()) &&
+                    StringUtils.isNotEmpty(attributeName)) {
+                expressionConditionList.add(new ExpressionCondition(ExpressionOperation.EQ.toString(), attributeName,
+                        entry.getValue()));
+            }
+        }
+        return expressionConditionList;
+    }
+
+    /**
+     * Get the operational condition for expression conditions.
+     *
+     * @param expressionConditionList   List of expression conditions
+     * @return operationalCondition of the expression condition list.
+     */
+    private Condition getOperationalCondition (List<ExpressionCondition> expressionConditionList) {
+
+        Condition operationalCondition = expressionConditionList.get(0);
+        if (expressionConditionList.size() > 1) {
+            for (int i = 1; i < expressionConditionList.size(); i++) {
+                operationalCondition = new OperationalCondition(OperationalOperation.AND.toString(),
+                        operationalCondition, expressionConditionList.get(i));
+            }
+        }
+        return operationalCondition;
     }
 
     /**
@@ -380,15 +430,17 @@ public class UserAccountRecoveryManager {
      * Prepare the response to be sent to the recovery APIs.
      *
      * @param username                Username of the user
+     * @param recoveryFlowId          Recovery flow ID.
      * @param recoveryCode            Recovery code given to the user
      * @param notificationChannelDTOs List of NotificationChannelsResponseDTOs available for the user.
      * @return RecoveryChannelInfoDTO object.
      */
-    private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryCode,
-                                                                    NotificationChannelDTO[] notificationChannelDTOs) {
+    private RecoveryChannelInfoDTO buildUserRecoveryInformationResponseDTO(String username, String recoveryFlowId,
+                String recoveryCode, NotificationChannelDTO[] notificationChannelDTOs) {
 
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
         recoveryChannelInfoDTO.setUsername(username);
+        recoveryChannelInfoDTO.setRecoveryFlowId(recoveryFlowId);
         recoveryChannelInfoDTO.setRecoveryCode(recoveryCode);
         recoveryChannelInfoDTO.setNotificationChannelDTOs(notificationChannelDTOs);
         return recoveryChannelInfoDTO;
@@ -455,9 +507,11 @@ public class UserAccountRecoveryManager {
         notificationChannelDTO.setType(channelType);
         // Encode the channel Values.
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskEmailAddress(value, tenantDomain));
+            notificationChannelDTO.setValue(maskLocalClaim(value, IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM,
+                    tenantDomain));
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channelType)) {
-            notificationChannelDTO.setValue(maskMobileNumber(value));
+            notificationChannelDTO.setValue(maskLocalClaim(value, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM,
+                    tenantDomain));
         } else {
             notificationChannelDTO.setValue(value);
         }
@@ -466,48 +520,54 @@ public class UserAccountRecoveryManager {
     }
 
     /**
-     * Encode the mobile of the user.
+     * Encode the local claim of the user.
      *
-     * @param mobile Mobile number
-     * @return Encoded mobile number (Empty String if the user has no mobile number).
+     * @param claimValue    Claim Value
+     * @param claimURI      Claim URI
+     * @param tenantDomain  Tenant domain
+     * @return Encoded claim value (Empty String if a value is not assigned to the user claim)
+     * @throws IdentityRecoveryServerException IdentityRecoveryServerException
      */
-    private String maskMobileNumber(String mobile) {
+    private String maskLocalClaim(String claimValue, String claimURI, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
-        if (StringUtils.isNotEmpty(mobile)) {
-            mobile = mobile.replaceAll(IdentityRecoveryConstants.ChannelMasking.MOBILE_MASKING_REGEX,
+        String localClaimMaskingRegex = getLocalClaimMaskingRegex(claimURI,tenantDomain);
+        if (StringUtils.isNotEmpty(claimValue)) {
+            claimValue = claimValue.replaceAll(localClaimMaskingRegex,
                     IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
         }
-        return mobile;
+        return claimValue;
     }
 
     /**
-     * Encode the email address of the user.
+     * Retrieving masking regex pattern for local claim.
      *
-     * @param email        Email address
-     * @param tenantDomain Tenant domain
-     * @return Encoded email address (Empty String if user has no email)
+     * @param claimURI      Claim URI
+     * @param tenantDomain  Tenant domain
+     * @return Masking regex pattern for local claim
      * @throws IdentityRecoveryServerException Error while retrieving masking regex pattern for local claim in a given
-     *                                         tenant domain.
+     * tenant domain.
      */
-    private String maskEmailAddress(String email, String tenantDomain) throws IdentityRecoveryServerException {
+    private String getLocalClaimMaskingRegex(String claimURI, String tenantDomain)
+            throws IdentityRecoveryServerException {
 
-        String emailMaskingRegex;
-        String claimURI = IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM;
+        String localClaimMaskingRegex;
         try {
-            emailMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+            localClaimMaskingRegex = IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                     .getMaskingRegexForLocalClaim(claimURI, tenantDomain);
         } catch (ClaimMetadataException e) {
             throw new IdentityRecoveryServerException(String.format("Error while retrieving masking regex pattern " +
                     "for claim URI: %s in tenant domain: %s", claimURI, tenantDomain), e);
         }
 
-        if (StringUtils.isBlank(emailMaskingRegex)) {
-            emailMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+        if (StringUtils.isBlank(localClaimMaskingRegex)) {
+            if (IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM.equals(claimURI)) {
+                localClaimMaskingRegex = IdentityRecoveryConstants.ChannelMasking.EMAIL_MASKING_REGEX;
+            } else if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claimURI)) {
+                localClaimMaskingRegex = IdentityRecoveryConstants.ChannelMasking.MOBILE_MASKING_REGEX;
+            }
         }
-        if (StringUtils.isNotEmpty(email)) {
-            email = email.replaceAll(emailMaskingRegex, IdentityRecoveryConstants.ChannelMasking.MASKING_CHARACTER);
-        }
-        return email;
+        return localClaimMaskingRegex;
     }
 
     /**
@@ -551,6 +611,27 @@ public class UserAccountRecoveryManager {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
         }
+    }
+
+    /**
+     * Get all the domain names related to user stores.
+     * @param tenantId   Tenant ID
+     * @return A list of all the available domain names for given tenant
+     */
+    private List<String> getDomainNames(int tenantId) throws IdentityRecoveryServerException {
+
+        List<String> domainsOfUserStores = new ArrayList<>();
+        // Append the primary domain name to the front of the domain list.
+        domainsOfUserStores.add(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
+        UserStoreManager secondaryUserStore = abstractUserStoreManager.getSecondaryUserStoreManager();
+        while (secondaryUserStore != null) {
+            String domainName = secondaryUserStore.getRealmConfiguration().
+                    getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME).toUpperCase();
+            secondaryUserStore = secondaryUserStore.getSecondaryUserStoreManager();
+            domainsOfUserStores.add(domainName);
+        }
+        return domainsOfUserStores;
     }
 
     /**
@@ -851,29 +932,146 @@ public class UserAccountRecoveryManager {
     }
 
     /**
+     * Get user recovery data using the recovery flow id.
+     *
+     * @param recoveryFlowId Recovery flow id of the user.
+     * @param step Recovery step.
+     * @return UserRecoveryData Data associated with the provided recoveryFlowId.
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
+     */
+    public UserRecoveryData getUserRecoveryDataFromFlowId(String recoveryFlowId, RecoverySteps step)
+            throws IdentityRecoveryException {
+
+        UserRecoveryData recoveryData;
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            // Retrieve recovery data bound to the recoveryFlowId.
+            recoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(recoveryFlowId, step);
+        } catch (IdentityRecoveryException e) {
+            // Map code expired error to new error codes for user account recovery.
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_CODE.getCode()
+                    .equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_CODE.getCode());
+            } else {
+                e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY));
+            }
+            throw e;
+        }
+        if (recoveryData == null) {
+            throw Utils
+                    .handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_ACCOUNT_RECOVERY_DATA,
+                            recoveryFlowId);
+        }
+        return recoveryData;
+    }
+
+    /**
+     * Get user recovery flow data using the recovery flow id.
+     *
+     * @param recoveryDataDO User Recovery Data object.
+     * @return UserRecoveryFlowData Data associated with the provided UserRecoveryData.
+     * @throws IdentityRecoveryException If an error occurred while validating the recoveryId.
+     */
+    public UserRecoveryFlowData loadUserRecoveryFlowData(UserRecoveryData recoveryDataDO)
+            throws IdentityRecoveryException {
+
+        UserRecoveryFlowData userRecoveryFlowData;
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        try {
+            userRecoveryFlowData = userRecoveryDataStore.loadRecoveryFlowData(recoveryDataDO);
+        } catch (IdentityRecoveryException e) {
+            // Map code expired error to new error codes for user account recovery.
+            if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_FLOW_ID.getCode());
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_FLOW_ID.getCode().equals(e.getErrorCode())) {
+                e.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EXPIRED_RECOVERY_FLOW_ID.getCode());
+            } else {
+                e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
+                        IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY));
+            }
+            throw e;
+        }
+        if (userRecoveryFlowData == null) {
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_RECOVERY_FLOW_DATA,
+                    recoveryDataDO.getRecoveryFlowId());
+        }
+        return userRecoveryFlowData;
+    }
+
+    /**
+     * Update recovery OTP attempt.
+     *
+     * @param recoveryFlowId Recovery Flow Id.
+     * @param failedAttempts Failed Attempts.
+     * @throws IdentityRecoveryException If an error occurred while updating the recovery flow data.
+     */
+    public void updateRecoveryDataFailedAttempts(String recoveryFlowId, int failedAttempts)
+            throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.updateFailedAttempts(recoveryFlowId, failedAttempts);
+    }
+
+    /**
+     * Update recovery OTP resend count.
+     *
+     * @param recoveryFlowId Recovery Flow Id.
+     * @param resendCount    Current Resend Count.
+     * @throws IdentityRecoveryException If an error occurred while updating the recovery flow data.
+     */
+    public void updateRecoveryDataResendCount(String recoveryFlowId, int resendCount) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.updateCodeResendCount(recoveryFlowId, resendCount);
+    }
+
+    /**
+     * Invalidate the recovery Data.
+     *
+     * @param recoveryFlowId Recovery Flow Id.
+     * @throws IdentityRecoveryException If an error occurred while invalidating recovery data.
+     */
+    public void invalidateRecoveryData(String recoveryFlowId) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
+    }
+
+    /**
      * Add the notification channel recovery data to the store.
      *
      * @param username     Username
      * @param tenantDomain Tenant domain
+     * @param recoveryFlowId Recovery flow ID.
      * @param secretKey    RecoveryId
      * @param scenario     RecoveryScenario
      * @param recoveryData Data to be stored as mata which are needed to evaluate the recovery data object
      * @throws IdentityRecoveryServerException If an error occurred while storing recovery data.
      */
-    private void addRecoveryDataObject(String username, String tenantDomain, String secretKey,
+    private void addRecoveryDataObject(String username, String tenantDomain, String recoveryFlowId, String secretKey,
                                        RecoveryScenarios scenario, String recoveryData)
             throws IdentityRecoveryServerException {
 
         // Create a user object.
         User user = Utils.buildUser(username, tenantDomain);
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, scenario,
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey, scenario,
                 RecoverySteps.SEND_RECOVERY_INFORMATION);
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
         try {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-            userRecoveryDataStore.invalidate(user);
-            userRecoveryDataStore.store(recoveryDataDO);
+            UserRecoveryData userRecoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+            if (userRecoveryDataDO != null && userRecoveryDataDO.getRecoveryFlowId() != null) {
+                userRecoveryDataStore.invalidateWithRecoveryFlowId(userRecoveryDataDO.getRecoveryFlowId());
+            } else {
+                userRecoveryDataStore.invalidate(user);
+            }
+            userRecoveryDataStore.storeInit(recoveryDataDO);
         } catch (IdentityRecoveryException e) {
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_STORING_RECOVERY_DATA,

@@ -108,6 +108,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "Lite user registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Lite-Sign-Up purposes");
+        nameMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
+                "Resend confirmation email if the lite user exists");
         return nameMapping;
     }
 
@@ -144,6 +147,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Lite-Sign-Up purposes");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
+                "Resend confirmation email on lite user registration if the lite user already exists");
         return descriptionMapping;
     }
 
@@ -165,6 +171,8 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 .add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
+        properties.add(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE);
         return properties.toArray(new String[0]);
     }
 
@@ -183,6 +191,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
         String liteRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
+        String resendVerificationOnUserExistence = "false";
 
         String liteSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP);
@@ -208,7 +217,8 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
-
+        String selfRegistrationResendVerificationOnUserExistenceProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE);
         if (StringUtils.isNotEmpty(liteSignUpProperty)) {
             enableLiteSignUp = liteSignUpProperty;
         }
@@ -245,6 +255,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             liteRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
+        if (StringUtils.isNotEmpty(selfRegistrationResendVerificationOnUserExistenceProperty)) {
+            resendVerificationOnUserExistence = selfRegistrationResendVerificationOnUserExistenceProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, enableLiteSignUp);
@@ -270,6 +283,9 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
+        defaultProperties.put(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
+                resendVerificationOnUserExistence);
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));
@@ -333,7 +349,8 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
-
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
         return meta;
     }
 

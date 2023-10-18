@@ -160,7 +160,12 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         // Validate Recovery data.
         UserRecoveryData userRecoveryData = recoveryAccountManager
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
-        invalidateRecoveryCode(recoveryCode);
+        String recoveryFlowId = userRecoveryData.getRecoveryFlowId();
+        if (recoveryFlowId != null) {
+            invalidateRecoveryFlowId(recoveryFlowId);
+        } else {
+            invalidateRecoveryCode(recoveryCode);
+        }
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIdCode);
 
@@ -283,6 +288,18 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(recoveryCode);
+    }
+
+    /**
+     * Invalidate the recovery flow id.
+     *
+     * @param recoveryFlowId Recovery flow id.
+     * @throws IdentityRecoveryException If an error occurred while invalidating recovery data.
+     */
+    private void invalidateRecoveryFlowId(String recoveryFlowId) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
     }
 
     /**
