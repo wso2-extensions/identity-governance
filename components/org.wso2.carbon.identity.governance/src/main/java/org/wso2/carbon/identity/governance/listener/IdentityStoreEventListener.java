@@ -62,6 +62,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private boolean isHybridDataStoreEnable = false;
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
+    private static final String USER_IDENTITY_CLAIMS_MAP = "UserIdentityClaimsMap";
     public static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
 
     public IdentityStoreEventListener() {
@@ -193,6 +194,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         } finally {
             // clear the thread local used to store identity claims
             IdentityUtil.threadLocalProperties.get().remove(USER_IDENTITY_CLAIMS);
+            IdentityUtil.threadLocalProperties.get().remove(USER_IDENTITY_CLAIMS_MAP);
         }
     }
 

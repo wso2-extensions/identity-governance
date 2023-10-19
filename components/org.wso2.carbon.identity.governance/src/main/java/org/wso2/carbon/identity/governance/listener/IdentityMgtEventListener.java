@@ -52,6 +52,7 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This is an implementation of UserOperationEventListener. This defines
@@ -63,6 +64,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     private static final Log log = LogFactory.getLog(IdentityMgtEventListener.class);
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
     private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
+    private static final String USER_IDENTITY_CLAIMS_MAP = "UserIdentityClaimsMap";
 
     /**
      * USER_EXIST_THREAD_LOCAL_PROPERTY is used to maintain the state of user existence
@@ -194,6 +196,12 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         if (log.isDebugEnabled()) {
             log.debug("Pre add user is called in IdentityMgtEventListener");
         }
+        IdentityUtil.threadLocalProperties.get().remove(USER_IDENTITY_CLAIMS_MAP);
+        Map<String, String> identityClaims = claims.entrySet().stream()
+                .filter(claim -> claim.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        IdentityUtil.threadLocalProperties.get().put(USER_IDENTITY_CLAIMS_MAP, identityClaims);
+
         String eventName = IdentityEventConstants.Event.PRE_ADD_USER;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
