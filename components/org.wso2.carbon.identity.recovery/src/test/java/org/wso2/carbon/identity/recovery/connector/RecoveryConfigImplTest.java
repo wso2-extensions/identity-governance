@@ -222,9 +222,9 @@ public class RecoveryConfigImplTest {
 
         String testEnableNotificationBasedPasswordRecovery = "false";
         String testEnableSendOTPInEmail = "false";
-        String testUseUppercaseCharactersInOTP = StringUtils.EMPTY;
-        String testUseLowercaseCharactersInOTP = StringUtils.EMPTY;
-        String testUseNumbersInOTP = StringUtils.EMPTY;
+        String testUseUppercaseCharactersInOTP = "true";
+        String testUseLowercaseCharactersInOTP = "true";
+        String testUseNumbersInOTP = "true";
         String testOtpLength = "6";
         String testEnableQuestionBasedPasswordRecovery = "false";
         String testMinimumAnswers = "2";

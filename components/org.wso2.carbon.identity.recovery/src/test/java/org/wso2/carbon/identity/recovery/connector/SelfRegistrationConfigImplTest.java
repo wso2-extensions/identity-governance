@@ -219,9 +219,9 @@ public class SelfRegistrationConfigImplTest {
         String testEnableSelfSignUp = "false";
         String testEnableAccountLockOnCreation = "true";
         String testEnableSendOTPInEmail = "false";
-        String testUseUppercaseCharactersInOTP = StringUtils.EMPTY;
-        String testUseLowercaseCharactersInOTP = StringUtils.EMPTY;
-        String testUseNumbersInOTP = StringUtils.EMPTY;
+        String testUseUppercaseCharactersInOTP = "true";
+        String testUseLowercaseCharactersInOTP = "true";
+        String testUseNumbersInOTP = "true";
         String testOtpLength = "6";
         String testEnableSendNotificationOnCreation = "false";
         String testEnableNotificationInternallyManage = "true";

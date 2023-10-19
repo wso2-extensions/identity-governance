@@ -78,6 +78,11 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME;
@@ -242,6 +247,31 @@ public class UserSelfRegistrationManagerTest {
         notificationConfig.setName(SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         notificationConfig.setValue(enableInternalNotifications);
 
+        org.wso2.carbon.identity.application.common.model.Property sendOtpInEmailConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        sendOtpInEmailConfig.setName(SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        sendOtpInEmailConfig.setValue("false");
+
+        org.wso2.carbon.identity.application.common.model.Property useLowerCaseConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        useLowerCaseConfig.setName(SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        useLowerCaseConfig.setValue("true");
+
+        org.wso2.carbon.identity.application.common.model.Property useNumbersConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        useNumbersConfig.setName(SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
+        useNumbersConfig.setValue("true");
+
+        org.wso2.carbon.identity.application.common.model.Property useUpperCaseConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        useUpperCaseConfig.setName(SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        useUpperCaseConfig.setValue("true");
+
+        org.wso2.carbon.identity.application.common.model.Property otpLengthConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        otpLengthConfig.setName(SELF_REGISTRATION_OTP_LENGTH);
+        otpLengthConfig.setValue("6");
+
         org.wso2.carbon.identity.application.common.model.Property smsOTPConfig =
                 new org.wso2.carbon.identity.application.common.model.Property();
         smsOTPConfig.setName(SELF_REGISTRATION_SMS_OTP_REGEX);
@@ -263,6 +293,23 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService
                 .getConfiguration(new String[]{SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{notificationConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_SEND_OTP_IN_EMAIL}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{sendOtpInEmailConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP},
+                        TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{useLowerCaseConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_USE_NUMBERS_IN_OTP}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{useNumbersConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP},
+                        TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{useUpperCaseConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_OTP_LENGTH}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{otpLengthConfig});
         when(identityGovernanceService
                 .getConfiguration(new String[]{SELF_REGISTRATION_SMS_OTP_REGEX}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{smsOTPConfig});
