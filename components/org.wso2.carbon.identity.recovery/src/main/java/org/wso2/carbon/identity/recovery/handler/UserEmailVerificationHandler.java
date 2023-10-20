@@ -202,7 +202,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
                         confirmationCode);
             } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
-                String confirmationCode = UUID.randomUUID().toString();
+                String confirmationCode;
+                try {
+                    confirmationCode = Utils.generateSecretKey(
+                            NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
+                            user.getTenantDomain(), "EmailVerification");
+                } catch (IdentityRecoveryServerException e) {
+                    throw new IdentityEventException("Error while fetching the OTP pattern ", e);
+                }
                 if (isAccountClaimExist) {
                     setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                             IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
