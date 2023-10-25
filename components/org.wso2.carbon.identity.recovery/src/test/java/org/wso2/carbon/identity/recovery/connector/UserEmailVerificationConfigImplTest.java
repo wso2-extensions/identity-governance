@@ -133,7 +133,7 @@ public class UserEmailVerificationConfigImplTest {
                 "Enable to include uppercase characters in SMS and e-mail OTPs.");
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
-                "Enable to include lowercase characters in SMS and e-mail OTPs..");
+                "Enable to include lowercase characters in SMS and e-mail OTPs.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP,
                 "Enable to include numbers in SMS and e-mail OTPs.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_OTP_LENGTH,
