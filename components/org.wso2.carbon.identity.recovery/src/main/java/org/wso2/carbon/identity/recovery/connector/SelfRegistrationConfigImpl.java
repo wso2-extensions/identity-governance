@@ -87,6 +87,16 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, "User self registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account on creation");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                "Send OTP in e-mail");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Include uppercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Include lowercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP,
+                "Include numbers in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH,
+                "OTP length");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable Account Confirmation On Creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
@@ -96,8 +106,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "User self registration verification link expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration SMS OTP expiry time");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
-                "User self registration SMS OTP regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
@@ -120,6 +128,18 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Allow user's to self register to the system.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 "Lock self registered user account until e-mail verification.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Enable to include uppercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Enable to include lowercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP,
+                "Enable to include numbers in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH,
+                "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable user account confirmation when the user account is not locked on creation");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
@@ -132,10 +152,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "Specify the expiry time in minutes for the SMS OTP.");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
-                "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
-                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
-                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
@@ -156,13 +172,17 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         properties
                 .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
@@ -177,12 +197,16 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         String enableSelfSignUp = "false";
         String enableAccountLockOnCreation = "true";
+        String enableSendOTPInEmail = "false";
+        String useUppercaseCharactersInOTP = "true";
+        String useLowercaseCharactersInOTP = "true";
+        String useNumbersInOTP = "true";
+        String otpLength = "6";
         String enableSendNotificationOnCreation = "false";
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
-        String verificationSMSOTPRegex = "[a-zA-Z0-9]{6}";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableSelfSignUpConfirmationNotification = "false";
         String enableResendConfirmationRecaptcha = "false";
@@ -193,6 +217,16 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         String accountLockProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
+        String sendOTPInEmailProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        String useLowercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        String useNumbersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
+        String otpLengthProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH);
         String sendNotificationOnCreationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
         String notificationInternallyMangedProperty = IdentityUtil.getProperty(
@@ -203,8 +237,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
-        String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
@@ -222,6 +254,21 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(accountLockProperty)) {
             enableAccountLockOnCreation = accountLockProperty;
         }
+        if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
+            enableSendOTPInEmail = sendOTPInEmailProperty;
+        }
+        if (StringUtils.isNotEmpty(useUppercaseCharactersInOTPProperty)) {
+            useUppercaseCharactersInOTP = useUppercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useLowercaseCharactersInOTPProperty)) {
+            useLowercaseCharactersInOTP = useLowercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useNumbersInOTPProperty)) {
+            useNumbersInOTP = useNumbersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(otpLengthProperty)) {
+            otpLength = otpLengthProperty;
+        }
         if (StringUtils.isNotEmpty(sendNotificationOnCreationProperty)) {
             enableSendNotificationOnCreation = sendNotificationOnCreationProperty;
         }
@@ -236,9 +283,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(verificationSMSOTPExpiryTimeProperty)) {
             verificationSMSOTPExpiryTime = verificationSMSOTPExpiryTimeProperty;
-        }
-        if (StringUtils.isNotEmpty(verificationSMSOTPRegexProperty)) {
-            verificationSMSOTPRegex = verificationSMSOTPRegexProperty;
         }
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
@@ -260,6 +304,16 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 enableAccountLockOnCreation);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                enableSendOTPInEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                useUppercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                useLowercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP,
+                useNumbersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH,
+                otpLength);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 enableSendNotificationOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
@@ -272,9 +326,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
-        defaultProperties
-                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
-                        verificationSMSOTPRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 enableSelfRegistrationAutoLogin);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
@@ -314,6 +365,21 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
@@ -328,9 +394,6 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
-
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));

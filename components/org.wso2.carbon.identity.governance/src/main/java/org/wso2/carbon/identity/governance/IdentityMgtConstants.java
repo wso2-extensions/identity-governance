@@ -222,4 +222,18 @@ public class IdentityMgtConstants {
 
         }
     }
+
+    /**
+     * OTP generator constants.
+     */
+    public static class OTPGeneratorConstants {
+
+        public static final int OTP_CODE_DEFAULT_LENGTH = 6;
+        public static final int OTP_CODE_MIN_LENGTH = 4;
+        public static final int OTP_CODE_MAX_LENGTH = 10;
+        public static final String OTP_GENERATE_ALPHABET_CHAR_SET_UPPERCASE = "ABCDEFGHJKLMNPRSTUVWXYZ";
+        public static final String OTP_GENERATE_ALPHABET_CHAR_SET_LOWERCASE = "abcdefghjkmnpqrstuvwxyz";
+        public static final String OTP_GENERATE_NUMERIC_CHAR_SET_WITH_ZERO = "0123456789";
+        public static final String OTP_GENERATE_NUMERIC_CHAR_SET_WITHOUT_ZERO = "123456789";
+    }
 }

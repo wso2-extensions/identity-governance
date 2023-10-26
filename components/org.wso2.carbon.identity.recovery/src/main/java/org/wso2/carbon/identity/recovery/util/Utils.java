@@ -1130,6 +1130,7 @@ public class Utils {
     }
 
     /**
+     * This method is deprecated.
      * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel and a
      * UUID for other channels. OTP is generated based on the defined regex.
      *
@@ -1139,6 +1140,7 @@ public class Utils {
      * @return Secret key.
      * @throws IdentityRecoveryServerException while getting sms otp regex.
      */
+    @Deprecated
     public static String generateSecretKey(String channel, String tenantDomain, String recoveryScenario)
             throws IdentityRecoveryServerException {
 
@@ -1192,6 +1194,58 @@ public class Utils {
         } else {
             return UUID.randomUUID().toString();
         }
+    }
+
+    /**
+     * Generate a secret key according to the given channel. Method will generate an OTP for mobile channel, and an OTP
+     * for e-mail channel when 'sendOTPInEmail' property enabled. For other scenarios method will generate UUID.
+     *
+     * @param channel Recovery notification channel.
+     * @param recoveryScenario       Recovery scenario.
+     * @param tenantDomain           Tenant domain.
+     * @param connectorName          Connector name.
+     * @return Secret key.
+     * @throws IdentityRecoveryServerException while getting OTP generated.
+     */
+    public static String generateSecretKey(String channel, String recoveryScenario, String tenantDomain, String connectorName)
+            throws IdentityRecoveryServerException {
+
+        // Set default OTP configuration values, for scenarios that don't have specific OTP configurations.
+        boolean useUppercase = true;
+        boolean useLowercase = true;
+        boolean useNumeric = true;
+        boolean sendOTPInEmail = false;
+        int otpLength = IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH;
+        // Set connector specific OTP configuration values, for connectors that have separate OTP configurations.
+        if (StringUtils.isNotBlank(connectorName)) {
+            sendOTPInEmail = Boolean.parseBoolean(getRecoveryConfigs(
+                    connectorName + ".OTP.SendOTPInEmail", tenantDomain));
+            useUppercase = Boolean.parseBoolean(getRecoveryConfigs(
+                    connectorName + ".OTP.UseUppercaseCharactersInOTP", tenantDomain));
+            useLowercase = Boolean.parseBoolean(getRecoveryConfigs(
+                    connectorName + ".OTP.UseLowercaseCharactersInOTP", tenantDomain));
+            useNumeric = Boolean.parseBoolean(getRecoveryConfigs(
+                    connectorName + ".OTP.UseNumbersInOTP", tenantDomain));
+            try {
+                otpLength = Integer.parseInt(Utils.getRecoveryConfigs(connectorName + ".OTP.OTPLength", tenantDomain));
+            } catch (NumberFormatException ex) {
+                log.warn("Configured OTP length is not a number. Hence using default length of "
+                        + IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH + " for OTP.");
+            }
+        }
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name().equals(recoveryScenario) ||
+                sendOTPInEmail) {
+            try {
+                OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
+                return otpGenerator.generateOTP(useNumeric, useUppercase, useLowercase, otpLength,
+                        recoveryScenario);
+            } catch (OTPGeneratorException otpGeneratorException) {
+                throw new IdentityRecoveryServerException(otpGeneratorException.getErrorCode(),
+                        otpGeneratorException.getMessage());
+            }
+        }
+        return UUID.randomUUID().toString();
     }
 
     /**

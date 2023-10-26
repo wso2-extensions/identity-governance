@@ -317,7 +317,8 @@ public class UserSelfRegistrationManager {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
-            String secretKey = UUID.randomUUID().toString();
+            String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.SELF_SIGN_UP.name(),
+                    user.getTenantDomain(), "SelfRegistration");
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.SELF_SIGN_UP,
                     RecoverySteps.CONFIRM_SIGN_UP);
             recoveryDataDO.setRemainingSetIds(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());
@@ -1823,7 +1824,8 @@ public class UserSelfRegistrationManager {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             userRecoveryDataStore.invalidate(user);
 
-            String secretKey = UUID.randomUUID().toString();
+            String secretKey = Utils.generateSecretKey(preferredChannel, RecoveryScenarios.LITE_SIGN_UP.name(),
+                    user.getTenantDomain(), "LiteRegistration");
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios.LITE_SIGN_UP,
                     RecoverySteps.CONFIRM_LITE_SIGN_UP);
             recoveryDataDO.setRemainingSetIds(NotificationChannels.EXTERNAL_CHANNEL.getChannelType());

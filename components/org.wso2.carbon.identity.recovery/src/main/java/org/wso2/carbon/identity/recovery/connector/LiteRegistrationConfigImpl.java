@@ -87,6 +87,16 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, "Lite user registration");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
                 "Lock user account on creation");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL,
+                "Send OTP in e-mail");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Include uppercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Include lowercase characters in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP,
+                "Include numbers in OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH,
+                "OTP length");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Manage notifications sending internally");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
@@ -95,8 +105,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         nameMapping
                 .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         "Lite user registration SMS OTP expiry time");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
-                "Lite user registration SMS OTP regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "Lite user registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Lite-Sign-Up purposes");
@@ -114,6 +122,18 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Allow user's to self register to the system without a password.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
                 "Lock self registered user account until e-mail verification.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL,
+                "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                "Enable to include uppercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                "Enable to include lowercase characters in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP,
+                "Enable to include numbers in SMS and e-mail OTPs.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH,
+                "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Disable if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA,
@@ -124,10 +144,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "Specify the expiry time in minutes for the SMS OTP.");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
-                "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
-                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
-                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Lite-Sign-Up purposes");
@@ -143,12 +159,16 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         properties
                 .add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         properties.add(
@@ -161,11 +181,15 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
         String enableLiteSignUp = "false";
         String enableAccountLockOnCreation = "true";
+        String enableSendOTPInEmail = "false";
+        String useUppercaseCharactersInOTP = "true";
+        String useLowercaseCharactersInOTP = "true";
+        String useNumbersInOTP = "true";
+        String otpLength = "6";
         String enableNotificationInternallyManage = "true";
         String enableLiteRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
-        String verificationSMSOTPRegex = "[a-zA-Z0-9]{6}";
         String liteRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String resendVerificationOnUserExistence = "false";
 
@@ -173,6 +197,16 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP);
         String accountLockProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION);
+        String sendOTPInEmailProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL);
+        String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
+        String useLowercaseCharactersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
+        String useNumbersInOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP);
+        String otpLengthProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH);
         String notificationInternallyMangedProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         String reCaptchaProperty = IdentityUtil.getProperty(
@@ -181,8 +215,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
-        String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
         String selfRegistrationResendVerificationOnUserExistenceProperty = IdentityUtil.getProperty(
@@ -192,6 +224,21 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(accountLockProperty)) {
             enableAccountLockOnCreation = accountLockProperty;
+        }
+        if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
+            enableSendOTPInEmail = sendOTPInEmailProperty;
+        }
+        if (StringUtils.isNotEmpty(useUppercaseCharactersInOTPProperty)) {
+            useUppercaseCharactersInOTP = useUppercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useLowercaseCharactersInOTPProperty)) {
+            useLowercaseCharactersInOTP = useLowercaseCharactersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(useNumbersInOTPProperty)) {
+            useNumbersInOTP = useNumbersInOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(otpLengthProperty)) {
+            otpLength = otpLengthProperty;
         }
         if (StringUtils.isNotEmpty(notificationInternallyMangedProperty)) {
             enableNotificationInternallyManage = notificationInternallyMangedProperty;
@@ -205,9 +252,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(verificationSMSOTPExpiryTimeProperty)) {
             verificationSMSOTPExpiryTime = verificationSMSOTPExpiryTimeProperty;
         }
-        if (StringUtils.isNotEmpty(verificationSMSOTPRegexProperty)) {
-            verificationSMSOTPRegex = verificationSMSOTPRegexProperty;
-        }
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             liteRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
@@ -219,6 +263,16 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP, enableLiteSignUp);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
                 enableAccountLockOnCreation);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL,
+                enableSendOTPInEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                useUppercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                useLowercaseCharactersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP,
+                useNumbersInOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH,
+                otpLength);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RE_CAPTCHA,
@@ -229,9 +283,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
-        defaultProperties
-                .put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
-                        verificationSMSOTPRegex);
         defaultProperties.put(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE,
                 resendVerificationOnUserExistence);
@@ -267,6 +318,21 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SEND_OTP_IN_EMAIL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_USE_NUMBERS_IN_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_OTP_LENGTH,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
@@ -278,9 +344,6 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
-
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX,
-                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(LIST_PURPOSE_PROPERTY_KEY, getPropertyObject(IdentityMgtConstants.DataTypes.URI.getValue()));
 
