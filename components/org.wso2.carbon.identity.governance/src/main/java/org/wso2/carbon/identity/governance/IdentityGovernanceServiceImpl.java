@@ -41,6 +41,9 @@ import java.util.Map;
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
+    private static final String EMAIL_OTP_AUTHENTICATOR = "email-otp-authenticator";
+    public static final String EMAIL_OTP_USE_ALPHANUMERIC_CHARS = "EmailOTP.OtpRegex.UseAlphanumericChars";
+    public static final String EMAIL_OTP_USE_NUMERIC_CHARS = "EmailOTP.OtpRegex.UseNumericChars";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -51,6 +54,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
             List<IdentityProviderProperty> newProperties = new ArrayList<>();
+            convertPropertyUseNumericToUseAlphaNumeric(configurationDetails);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 String key = identityMgtProperty.getName();
@@ -233,10 +237,51 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
         for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
             if (connectorConfig.getName().equals(connectorName)) {
+                // Should remove this logic eventually.
+                convertPropertyUseNumericToUseAlphaNumeric(connectorName, connectorConfig);
                 return connectorConfig;
             }
         }
         return null;
     }
 
+    /**
+     * This method is used to make sure property value useNumericCharacters and useAlphanumericCharacters both uses
+     * same user input.
+     *
+     * @param configurationDetails Configuration details of the email OTP connector.
+     */
+    private void convertPropertyUseNumericToUseAlphaNumeric(Map<String, String> configurationDetails) {
+
+        if (configurationDetails.containsKey(EMAIL_OTP_USE_ALPHANUMERIC_CHARS) &&
+                configurationDetails.containsKey(EMAIL_OTP_USE_NUMERIC_CHARS)) {
+            boolean useNumericChars = !Boolean.parseBoolean(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS));
+            configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, String.valueOf(useNumericChars));
+        }
+    }
+
+    /**
+     * This method is used to convert the property value useNumericCharacters to useAlphanumericCharacters.
+     *
+     * @param connectorName   Name of the connector.
+     * @param connectorConfig Connector configuration.
+     */
+    private void convertPropertyUseNumericToUseAlphaNumeric(String connectorName, ConnectorConfig connectorConfig) {
+
+        // If any of the following conditions are false, it simply doesn't migrate the config.
+        if (connectorName.equals(EMAIL_OTP_AUTHENTICATOR) &&
+                connectorConfig.getProperties()[3].getName().equals(EMAIL_OTP_USE_ALPHANUMERIC_CHARS) &&
+                connectorConfig.getProperties()[4].getName().equals(EMAIL_OTP_USE_NUMERIC_CHARS)) {
+
+            if (connectorConfig.getProperties()[4].getValue() != null) {
+                // Extract the value of the useNumericCharacters property.
+                boolean useAlphanumericChars = !Boolean.parseBoolean(connectorConfig.getProperties()[4].getValue());
+                // Assign the value to the alphanumeric property.
+                connectorConfig.getProperties()[3].setValue(String.valueOf(useAlphanumericChars));
+            }
+        } else {
+            log.warn("Connector property migration skipped due to invalid email OTP authenticator property " +
+                    "configuration.");
+        }
+    }
 }
