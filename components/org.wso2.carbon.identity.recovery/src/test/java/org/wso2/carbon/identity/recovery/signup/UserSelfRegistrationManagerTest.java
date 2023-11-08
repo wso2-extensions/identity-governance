@@ -57,6 +57,7 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -209,10 +210,10 @@ public class UserSelfRegistrationManagerTest {
     private void mockJDBCRecoveryDataStore(UserRecoveryData userRecoveryData) throws IdentityRecoveryException {
 
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
-        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(ArgumentMatchers.anyObject(), ArgumentMatchers.anyObject())).
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(), any())).
                 thenReturn(userRecoveryData);
         doNothing().when(userRecoveryDataStore).invalidate(ArgumentMatchers.anyString());
-        doNothing().when(userRecoveryDataStore).store(ArgumentMatchers.any(UserRecoveryData.class));
+        doNothing().when(userRecoveryDataStore).store(any(UserRecoveryData.class));
     }
 
     /**
@@ -223,7 +224,7 @@ public class UserSelfRegistrationManagerTest {
     private void mockEmailTrigger() throws IdentityEventException {
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
-        doNothing().when(identityEventService).handleEvent(ArgumentMatchers.any(Event.class));
+        doNothing().when(identityEventService).handleEvent(any(Event.class));
     }
 
     @Test

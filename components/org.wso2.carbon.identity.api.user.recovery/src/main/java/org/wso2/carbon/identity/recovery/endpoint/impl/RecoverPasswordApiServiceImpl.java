@@ -3,7 +3,9 @@ package org.wso2.carbon.identity.recovery.endpoint.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
@@ -17,10 +19,15 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.*;
 
 
 import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreException;
 
 import javax.ws.rs.core.Response;
 
@@ -47,6 +54,41 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 .getNotificationBasedPwdRecoveryManager();
         NotificationResponseBean notificationResponseBean = null;
 
+        UserRealm realm = (UserRealm) CarbonContext.getThreadLocalCarbonContext().getUserRealm();
+        String loggedInUserName = CarbonContext.getThreadLocalCarbonContext().getUsername();
+        RealmConfiguration realmConfig = null;
+        try {
+            realmConfig = realm.getRealmConfiguration();
+        } catch (UserStoreException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("Unable to retrieve realm configuration.");
+            }
+            Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
+        if (loggedInUserName != null) {
+            if (StringUtils.isNotEmpty(loggedInUserName) &&
+                    (!loggedInUserName.contains(UserCoreConstants.DOMAIN_SEPARATOR))) {
+                loggedInUserName = addPrimaryDomainIfNotExists(loggedInUserName);
+            }
+        }
+        String adminUser = realmConfig.getAdminUserName();
+        if (StringUtils.isNotEmpty(adminUser) && (!adminUser.contains(UserCoreConstants.DOMAIN_SEPARATOR))) {
+            adminUser = addPrimaryDomainIfNotExists(adminUser);
+        }
+        if (realmConfig.getAdminUserName().equalsIgnoreCase(user.getUsername()) &&
+                !adminUser.equalsIgnoreCase(loggedInUserName)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("An attempt to change password of admin user by user : " + loggedInUserName);
+            }
+            ErrorDTO errorDTO = new ErrorDTO();
+            errorDTO.setRef(RecoveryUtil.getCorrelation());
+            errorDTO.setCode(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ERROR_NO_REQUIRED_PERMISSIONS.getCode());
+            errorDTO.setDescription("You do not have the required privilege to change the password of admin user.");
+            errorDTO.setMessage(IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_ERROR_NO_REQUIRED_PERMISSIONS.getMessage());
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
         try {
             // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
             if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
@@ -106,5 +148,16 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             return Response.accepted().build();
         }
         return Response.accepted(notificationResponseBean.getKey()).build();
+    }
+
+    private String addPrimaryDomainIfNotExists(String userName) {
+
+        if (StringUtils.isNotEmpty(userName) && (!userName.contains(UserCoreConstants.DOMAIN_SEPARATOR))) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME).append(CarbonConstants.DOMAIN_SEPARATOR)
+                    .append(userName);
+            userName = builder.toString();
+        }
+        return userName;
     }
 }

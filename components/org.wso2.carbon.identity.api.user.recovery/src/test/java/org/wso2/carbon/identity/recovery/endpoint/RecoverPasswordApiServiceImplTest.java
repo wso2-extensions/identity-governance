@@ -24,9 +24,12 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.base.CarbonBaseConstants;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 
@@ -42,18 +45,30 @@ import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryMa
 
 import java.util.ArrayList;
 import java.util.List;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
 import static org.testng.Assert.assertEquals;
+
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreException;
 
 /**
  * This class covers unit tests for RecoverPasswordApiServiceImpl.java
  */
 public class RecoverPasswordApiServiceImplTest {
 
+    CarbonContext carbonContext;
+    private UserRealm userRealm;
+    private MockedStatic<CarbonContext> mockedCarbonContext;
     private MockedStatic<RecoveryUtil> mockedRecoveryUtil;
     private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
@@ -73,9 +88,18 @@ public class RecoverPasswordApiServiceImplTest {
     @InjectMocks
     RecoverPasswordApiServiceImpl recoverPasswordApiService;
 
+    @BeforeClass
+    private void init() {
+
+        setUpCarbonHome();
+    }
+
     @BeforeMethod
     public void setUp() {
 
+        mockedCarbonContext = mockStatic(CarbonContext.class);
+        carbonContext = mock(CarbonContext.class);
+        userRealm = mock(UserRealm.class);
         MockitoAnnotations.openMocks(this);
         mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
         mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
@@ -88,6 +112,9 @@ public class RecoverPasswordApiServiceImplTest {
         mockedRecoveryUtil.close();
         mockedIdentityTenantUtil.close();
         mockedIdentityRecoveryServiceDataHolder.close();
+        if (mockedCarbonContext != null) {
+            mockedCarbonContext.close();
+        }
     }
 
     @DataProvider(name = "multiAttributeLoginEnableProperty")
@@ -100,9 +127,13 @@ public class RecoverPasswordApiServiceImplTest {
     }
 
     @Test (dataProvider = "multiAttributeLoginEnableProperty")
-    public void testRecoverPasswordPost(boolean isMultiAttributeLoginEnabled) throws IdentityRecoveryException {
+    public void testRecoverPasswordPost(boolean isMultiAttributeLoginEnabled)
+            throws IdentityRecoveryException, UserStoreException {
 
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
+        when(CarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        when(CarbonContext.getThreadLocalCarbonContext().getUserRealm()).thenReturn(userRealm);
+        when(userRealm.getRealmConfiguration()).thenReturn(this.getSampleRelaimConfiguration());
         mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
                 notificationPasswordRecoveryManager);
         Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
@@ -138,5 +169,28 @@ public class RecoverPasswordApiServiceImplTest {
         propertyDTO.setKey("Dummy Key");
         propertyDTOList.add(propertyDTO);
         return propertyDTOList;
+    }
+
+    private static void setUpCarbonHome() {
+
+        String carbonHome = Paths.get(System.getProperty("user.dir"), "target", "test-classes").toString();
+        System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
+        System.setProperty(CarbonBaseConstants.CARBON_CONFIG_DIR_PATH, Paths.get(carbonHome,
+                "repository/conf").toString());
+    }
+
+    private RealmConfiguration getSampleRelaimConfiguration() {
+
+        RealmConfiguration realmConfig = new RealmConfiguration();
+        realmConfig.setAddAdmin("admin");
+        realmConfig.setAdminPassword("admin");
+        realmConfig.setAdminRoleName("admin");
+        realmConfig.setEveryOneRoleName("everyone");
+        realmConfig.setPrimary(true);
+        realmConfig.setAdminUserName("admin");
+        Map<String, String> userStoreProperties = new HashMap<>();
+        userStoreProperties.put("WriteGroups", "true");
+        realmConfig.setUserStoreProperties(userStoreProperties);
+        return realmConfig;
     }
 }
