@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -92,13 +93,13 @@ public class RecoverPasswordApiServiceImplTest {
     private void init() {
 
         setUpCarbonHome();
+        mockedCarbonContext = mockStatic(CarbonContext.class);
+        carbonContext = mock(CarbonContext.class);
     }
 
     @BeforeMethod
     public void setUp() {
 
-        mockedCarbonContext = mockStatic(CarbonContext.class);
-        carbonContext = mock(CarbonContext.class);
         userRealm = mock(UserRealm.class);
         MockitoAnnotations.openMocks(this);
         mockedRecoveryUtil = Mockito.mockStatic(RecoveryUtil.class);
@@ -112,6 +113,11 @@ public class RecoverPasswordApiServiceImplTest {
         mockedRecoveryUtil.close();
         mockedIdentityTenantUtil.close();
         mockedIdentityRecoveryServiceDataHolder.close();
+    }
+
+    @AfterClass
+    private void cleanUp() {
+
         if (mockedCarbonContext != null) {
             mockedCarbonContext.close();
         }
