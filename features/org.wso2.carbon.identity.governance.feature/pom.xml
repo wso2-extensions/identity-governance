@@ -53,12 +53,6 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
-            <artifactId>org.wso2.carbon.identity.recovery.ui.feature</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.captcha.server.feature</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
@@ -153,9 +147,6 @@
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.idle.account.identification.server.feature
-                                </includedFeatureDef>
-                                <includedFeatureDef>
-                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery.ui.feature
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.piicontroller.server.feature

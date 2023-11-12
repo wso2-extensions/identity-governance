@@ -19,7 +19,6 @@ package org.wso2.carbon.identity.recovery.listener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
@@ -42,18 +41,6 @@ public class TenantManagementListener implements TenantMgtListener {
         PrivilegedCarbonContext.getThreadLocalCarbonContext().startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantInfoBean.getTenantId());
-
-        ChallengeQuestionManager questionManager = ChallengeQuestionManager.getInstance();
-        try {
-            questionManager.setDefaultChallengeQuestions(tenantDomain);
-            if (log.isDebugEnabled()) {
-                log.debug("Default Challenge Questions persisted to the " + tenantDomain + " tenant");
-            }
-        } catch (IdentityRecoveryException e) {
-            log.error("Error when trying to set default challenge question for tenant : " + tenantDomain, e);
-        } finally {
-            PrivilegedCarbonContext.endTenantFlow();
-        }
     }
 
     @Override
