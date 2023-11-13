@@ -44,8 +44,8 @@ public class PasswordPolicyConstants {
             "Allow users to reset the password after configured number of days";
     public static final String CONNECTOR_CONFIG_SUB_CATEGORY = "DEFAULT";
     public static final String PASSWORD_EXPIRED_ERROR_MESSAGE = "Password has expired";
-    public static final String CONNECTOR_CONFIG_NAME = "passwordExpiryV2";
-    public static final String CONNECTOR_CONFIG_FRIENDLY_NAME = "Password Expiry v2";
+    public static final String CONNECTOR_CONFIG_NAME = "passwordExpiry";
+    public static final String CONNECTOR_CONFIG_FRIENDLY_NAME = "Password Expiry";
     public static final String CONNECTOR_CONFIG_CATEGORY = "Password Policies";
     public static final String PASSWORD_GRANT_POST_AUTHENTICATION_EVENT = "PASSWORD_GRANT_POST_AUTHENTICATION";
     public static final String AUTHENTICATION_STATUS = "authenticationStatus";
