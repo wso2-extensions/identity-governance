@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationFlowHandler;
-import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedIdPData;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
@@ -34,7 +33,6 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -48,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
 
@@ -267,29 +266,12 @@ public class EmailOTPCaptchaConnector extends AbstractReCaptchaConnector {
      */
     private boolean isPreviousIdPAuthenticationFlowHandler(AuthenticationContext context) {
 
-        boolean hasPreviousAuthenticators = false;
         Map<String, AuthenticatedIdPData> currentAuthenticatedIdPs = context.getCurrentAuthenticatedIdPs();
-        if (currentAuthenticatedIdPs != null && !currentAuthenticatedIdPs.isEmpty()) {
-            for (Map.Entry<String, AuthenticatedIdPData> entry : currentAuthenticatedIdPs.entrySet()) {
-                AuthenticatedIdPData authenticatedIdPData = entry.getValue();
-                if (authenticatedIdPData != null) {
-                    List<AuthenticatorConfig> authenticators = authenticatedIdPData.getAuthenticators();
-                    if (authenticators != null) {
-                        for (AuthenticatorConfig authenticator : authenticators) {
-                            hasPreviousAuthenticators = true;
-                            if (!(authenticator.getApplicationAuthenticator() instanceof AuthenticationFlowHandler)) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (hasPreviousAuthenticators) {
-            return true;
-        }
-
-        return false;
+        return currentAuthenticatedIdPs != null && !currentAuthenticatedIdPs.isEmpty() &&
+                currentAuthenticatedIdPs.values().stream().filter(Objects::nonNull)
+                        .map(AuthenticatedIdPData::getAuthenticators).filter(Objects::nonNull)
+                        .flatMap(List::stream)
+                        .allMatch(authenticator ->
+                                authenticator.getApplicationAuthenticator() instanceof AuthenticationFlowHandler);
     }
 }
