@@ -85,6 +85,7 @@ import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ENABLE_GENERIC_CAPTCHA_VALIDATION;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ON_FAILED_LOGIN_REDIRECT_URL;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
 
 /**
  * Captcha util functions.
@@ -449,13 +450,11 @@ public class CaptchaUtil {
     public static boolean isMaximumFailedLoginAttemptsReached(String usernameWithDomain, String tenantDomain,
                                                               String failedAttemptsClaim) throws CaptchaException {
 
-        String CONNECTOR_NAME = "sso.login.recaptcha";
-
         Property[] connectorConfigs;
         try {
             connectorConfigs = CaptchaDataHolder.getInstance().getIdentityGovernanceService()
-                    .getConfiguration(new String[]{CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
-                            CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
+                    .getConfiguration(new String[]{SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE,
+                            SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS}, tenantDomain);
         } catch (Exception e) {
             // Can happen due to invalid user/ invalid tenant/ invalid configuration
             if (log.isDebugEnabled()) {
@@ -470,10 +469,10 @@ public class CaptchaUtil {
 
         String maxAttemptsStr = null;
         for (Property property : connectorConfigs) {
-            if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(property.getName())
+            if ((SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.ENABLE).equals(property.getName())
                     && !Boolean.valueOf(property.getValue())) {
                 return false;
-            } else if ((CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(property.getName())) {
+            } else if ((SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME + ReCaptchaConnectorPropertySuffixes.MAX_ATTEMPTS).equals(property.getName())) {
                 maxAttemptsStr = property.getValue();
             }
         }
