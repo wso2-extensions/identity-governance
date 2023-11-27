@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.8.88-SNAPSHOT</version>
+        <version>1.8.89-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -48,12 +48,6 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.user.server.feature</artifactId>
-            <version>${project.version}</version>
-            <type>zip</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.governance</groupId>
-            <artifactId>org.wso2.carbon.identity.recovery.ui.feature</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
@@ -153,9 +147,6 @@
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.idle.account.identification.server.feature
-                                </includedFeatureDef>
-                                <includedFeatureDef>
-                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery.ui.feature
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.piicontroller.server.feature

@@ -45,7 +45,6 @@ import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockSe
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementServiceImpl;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
-import org.wso2.carbon.identity.recovery.ChallengeQuestionManager;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
@@ -56,7 +55,6 @@ import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
-import org.wso2.carbon.identity.recovery.handler.ChallengeAnswerValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.IdentityUserMetadataMgtHandler;
 import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler;
@@ -64,12 +62,10 @@ import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationH
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
-import org.wso2.carbon.identity.recovery.handler.request.PostAuthnMissingChallengeQuestionsHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
-import org.wso2.carbon.identity.recovery.password.SecurityQuestionPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.services.username.UsernameRecoveryManager;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
@@ -96,13 +92,9 @@ public class IdentityRecoveryServiceComponent {
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(NotificationPasswordRecoveryManager.class.getName(),
                     NotificationPasswordRecoveryManager.getInstance(), null);
-            bundleContext.registerService(SecurityQuestionPasswordRecoveryManager.class.getName(),
-                    SecurityQuestionPasswordRecoveryManager.getInstance(), null);
             bundleContext.registerService(NotificationUsernameRecoveryManager.class.getName(),
                     NotificationUsernameRecoveryManager.getInstance(), null);
             bundleContext.registerService(UserSelfRegistrationManager.class.getName(), UserSelfRegistrationManager
-                    .getInstance(), null);
-            bundleContext.registerService(ChallengeQuestionManager.class.getName(), ChallengeQuestionManager
                     .getInstance(), null);
             bundleContext.registerService(ResendConfirmationManager.class.getName(), ResendConfirmationManager
                     .getInstance(), null);
@@ -140,13 +132,6 @@ public class IdentityRecoveryServiceComponent {
             PasswordRecoveryManager passwordRecoveryManager = new PasswordRecoveryManagerImpl();
             bundleContext.registerService(PasswordRecoveryManager.class.getName(),
                     passwordRecoveryManager, null);
-            // Registering missing challenge question handler as a post authn handler
-            PostAuthenticationHandler postAuthnMissingChallengeQuestions = PostAuthnMissingChallengeQuestionsHandler
-                    .getInstance();
-            bundleContext.registerService(PostAuthenticationHandler.class.getName(),
-                    postAuthnMissingChallengeQuestions, null);
-            bundleContext.registerService(AbstractEventHandler.class.getName(),
-                    new ChallengeAnswerValidationHandler(), null);
             bundleContext.registerService(InputValidationManagementService.class.getName(),
                     new InputValidationManagementServiceImpl(), null);
         } catch (Exception e) {
@@ -155,16 +140,6 @@ public class IdentityRecoveryServiceComponent {
         // register the tenant management listener
         TenantMgtListener tenantMgtListener = new TenantManagementListener();
         context.getBundleContext().registerService(TenantMgtListener.class.getName(), tenantMgtListener, null);
-        // register default challenge questions
-        try {
-            if (log.isDebugEnabled()) {
-                log.debug("Loading default challenge questions for super tenant.");
-            }
-            loadDefaultChallengeQuestions();
-            // new ChallengeQuestionManager().getAllChallengeQuestions("carbon.super", "lk_LK");
-        } catch (IdentityRecoveryException e) {
-            log.error("Error persisting challenge question for super tenant.", e);
-        }
     }
 
     @Deactivate
@@ -379,12 +354,6 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetClaimMetaMgtService(ClaimMetadataManagementService claimMetaMgtService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setClaimMetadataManagementService(null);
-    }
-
-    private void loadDefaultChallengeQuestions() throws IdentityRecoveryException {
-
-        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        ChallengeQuestionManager.getInstance().setDefaultChallengeQuestions(tenantDomain);
     }
 
     @Reference(
