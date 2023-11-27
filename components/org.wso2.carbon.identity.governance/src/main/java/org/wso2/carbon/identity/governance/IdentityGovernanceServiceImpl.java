@@ -42,7 +42,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
     private static final String EMAIL_OTP_AUTHENTICATOR = "email-otp-authenticator";
-    public static final String EMAIL_OTP_USE_ALPHANUMERIC_CHARS = "EmailOTP.OtpRegex.UseAlphanumericChars";
+    public static final String EMAIL_OTP_USE_ALPHANUMERIC_CHARS = "EmailOTP.UseAlphanumericChars";
     public static final String EMAIL_OTP_USE_NUMERIC_CHARS = "EmailOTP.OtpRegex.UseNumericChars";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
@@ -279,9 +279,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 // Assign the value to the alphanumeric property.
                 connectorConfig.getProperties()[3].setValue(String.valueOf(useAlphanumericChars));
             }
-        } else {
-            log.warn("Connector property migration skipped due to invalid email OTP authenticator property " +
-                    "configuration.");
         }
     }
 }
