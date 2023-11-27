@@ -462,11 +462,15 @@ public class ResendConfirmationManager {
         UserRecoveryData userRecoveryData = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
                 RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
-        // Validate the previous confirmation code with the data retrieved by the user recovery information.
-        validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
-
-        // Get the notification channel details stored in the remainingSetIds.
-        String storedNotificationChannel = userRecoveryData.getRemainingSetIds();
+        String storedNotificationChannel = StringUtils.EMPTY;
+        if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
+            // Validate the previous confirmation code with the data retrieved by the user recovery information.
+            validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
+            // Get the notification channel details stored in the remainingSetIds.
+            storedNotificationChannel = userRecoveryData.getRemainingSetIds();
+        } else {
+            storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        }
 
         String preferredChannel = StringUtils.EMPTY;
         /* Having a not supported storedNotificationChannel implies that the particular recovery scenario does not store
@@ -489,7 +493,9 @@ public class ResendConfirmationManager {
             secretKey = userRecoveryData.getSecret();
         } else {
             // Invalid previous confirmation code.
-            userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
+            if (userRecoveryData != null) {
+                userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
+            }
             secretKey = getSecretKey(preferredChannel, recoveryScenario, user.getTenantDomain());
             UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey, RecoveryScenarios
                     .getRecoveryScenario(recoveryScenario), RecoverySteps.getRecoveryStep(recoveryStep));
