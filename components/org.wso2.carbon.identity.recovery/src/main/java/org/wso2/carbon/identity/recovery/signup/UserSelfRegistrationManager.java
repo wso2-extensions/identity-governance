@@ -69,6 +69,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.UserWorkflowManagementService;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
@@ -79,10 +80,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementService;
-import org.wso2.carbon.identity.workflow.mgt.WorkflowManagementServiceImpl;
-import org.wso2.carbon.identity.workflow.mgt.bean.Entity;
-import org.wso2.carbon.identity.workflow.mgt.exception.WorkflowException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
@@ -108,7 +105,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1283,25 +1280,39 @@ public class UserSelfRegistrationManager {
     public boolean isUsernameAlreadyTaken(String username, String tenantDomain) throws IdentityRecoveryException {
 
         boolean isUsernameAlreadyTaken = true;
-        WorkflowManagementService workflowService = new WorkflowManagementServiceImpl();
+
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
         }
         try {
             String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            Entity userEntity = new Entity(tenantAwareUsername, IdentityRecoveryConstants.ENTITY_TYPE_USER,
-                    IdentityTenantUtil.getTenantId(tenantDomain));
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
                 isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
-                        workflowService.entityHasPendingWorkflowsOfType(userEntity,
-                                IdentityRecoveryConstants.ADD_USER_EVENT);
+                        isEntityExistWithPendingAddUserWorkflow(username, tenantDomain);
             }
-        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException | WorkflowException e) {
+        } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
         }
         return isUsernameAlreadyTaken;
+    }
+
+    private boolean isEntityExistWithPendingAddUserWorkflow(String username, String tenantDomain)
+                                        throws IdentityRecoveryException {
+
+        try{
+            UserWorkflowManagementService userWorkflowManagementService = (UserWorkflowManagementService)
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().
+                            getOSGiService(UserWorkflowManagementService.class, null);
+            if (userWorkflowManagementService != null) {
+                return userWorkflowManagementService.isUserExists(username, tenantDomain);
+            }
+            return false;
+        } catch (NullPointerException e) {
+            log.debug("UserWorkflowManagementService is not available.");
+            return false;
+        }
     }
 
     /**
