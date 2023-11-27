@@ -56,7 +56,6 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
-import org.wso2.carbon.identity.recovery.model.ChallengeQuestion;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
@@ -611,29 +610,6 @@ public class Utils {
 
         String[] components = challengeSetUri.split(IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/");
         return components.length > 1 ? components[1] : components[0];
-    }
-
-    public static ChallengeQuestion[] getDefaultChallengeQuestions() {
-
-        List<ChallengeQuestion> challengeQuestions = new ArrayList<>();
-        // locale en_US, challengeSet1
-        int count = 0;
-        for (String question : IdentityRecoveryConstants.Questions.SECRET_QUESTIONS_SET01) {
-            String setId = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" + "challengeQuestion1";
-            String questionId = "question" + (++count);
-            challengeQuestions.add(
-                    new ChallengeQuestion(setId, questionId, question, IdentityRecoveryConstants.LOCALE_EN_US));
-        }
-
-        count = 0;
-        for (String question : IdentityRecoveryConstants.Questions.SECRET_QUESTIONS_SET02) {
-            String setId = IdentityRecoveryConstants.WSO2CARBON_CLAIM_DIALECT + "/" + "challengeQuestion2";
-            String questionId = "question" + (++count);
-            challengeQuestions.add(
-                    new ChallengeQuestion(setId, questionId, question, IdentityRecoveryConstants.LOCALE_EN_US));
-        }
-
-        return challengeQuestions.toArray(new ChallengeQuestion[challengeQuestions.size()]);
     }
 
     public static boolean isAccountLocked(User user) throws IdentityRecoveryException {

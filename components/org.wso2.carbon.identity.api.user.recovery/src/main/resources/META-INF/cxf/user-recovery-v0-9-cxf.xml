@@ -24,10 +24,7 @@
     <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.ClaimsApiServiceImpl"/>
     <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.RecoverPasswordApiServiceImpl"/>
     <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.RecoverUsernameApiServiceImpl"/>
-    <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.SecurityQuestionApiServiceImpl"/>
-    <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.SecurityQuestionsApiServiceImpl"/>
     <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.SetPasswordApiServiceImpl"/>
-    <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.ValidateAnswerApiServiceImpl"/>
     <bean class="org.wso2.carbon.identity.recovery.endpoint.impl.ValidateCodeApiServiceImpl"/>
 
 </beans>
