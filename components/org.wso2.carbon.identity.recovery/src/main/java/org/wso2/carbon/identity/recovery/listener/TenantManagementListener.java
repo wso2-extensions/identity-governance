@@ -41,6 +41,7 @@ public class TenantManagementListener implements TenantMgtListener {
         PrivilegedCarbonContext.getThreadLocalCarbonContext().startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(tenantInfoBean.getTenantId());
+        PrivilegedCarbonContext.endTenantFlow();
     }
 
     @Override
