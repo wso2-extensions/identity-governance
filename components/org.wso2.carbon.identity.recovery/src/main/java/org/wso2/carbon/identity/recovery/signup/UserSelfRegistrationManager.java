@@ -1290,7 +1290,7 @@ public class UserSelfRegistrationManager {
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
                 isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
-                        isEntityExistWithPendingAddUserWorkflow(username, tenantDomain);
+                        hasPendingAddUserWorkflow(username, tenantDomain);
             }
         } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityRecoveryException("Error while retrieving user realm for tenant : " + tenantDomain, e);
@@ -1298,7 +1298,7 @@ public class UserSelfRegistrationManager {
         return isUsernameAlreadyTaken;
     }
 
-    private boolean isEntityExistWithPendingAddUserWorkflow(String username, String tenantDomain)
+    private boolean hasPendingAddUserWorkflow(String username, String tenantDomain)
                                         throws IdentityRecoveryException {
 
         try{
