@@ -16,7 +16,6 @@
 
 package org.wso2.carbon.identity.governance;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -239,7 +238,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
             if (connectorConfig.getName().equals(connectorName)) {
                 // Should remove this logic eventually.
-                if (isEmailOTPConnector(connectorName)) {
+                if (isEmailOTPConnectorWithNewConfig(connectorName, connectorConfig)) {
                     convertPropertyUseNumericToUseAlphaNumeric(connectorName, connectorConfig);
                 }
                 return connectorConfig;
@@ -272,9 +271,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private void convertPropertyUseNumericToUseAlphaNumeric(String connectorName, ConnectorConfig connectorConfig) {
 
         // Verify the order of the connector properties hasn't changed.
-        if (connectorConfig.getProperties()[3].getName().equals(EMAIL_OTP_USE_ALPHANUMERIC_CHARS) &&
-                connectorConfig.getProperties()[4].getName().equals(EMAIL_OTP_USE_NUMERIC_CHARS)) {
-
+        if (EMAIL_OTP_USE_ALPHANUMERIC_CHARS.equals(connectorConfig.getProperties()[3].getName()) &&
+                EMAIL_OTP_USE_NUMERIC_CHARS.equals(connectorConfig.getProperties()[4].getName())) {
             if (connectorConfig.getProperties()[4].getValue() != null) {
                 // Extract the value of the useNumericCharacters property.
                 boolean useAlphanumericChars = !Boolean.parseBoolean(connectorConfig.getProperties()[4].getValue());
@@ -289,11 +287,18 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     /**
      * This method is used to check whether the connector is email OTP connector or not.
      *
-     * @param connectorName Name of the connector.
-     * @return True if the connector is email OTP connector.
+     * @param connectorName   Name of the connector.
+     * @param connectorConfig Connector configuration.
+     *
+     * @return True if the connector is email OTP connector and have both old and new email OTP type related configs.
      */
-    private boolean isEmailOTPConnector(String connectorName) {
+    private boolean isEmailOTPConnectorWithNewConfig(String connectorName, ConnectorConfig connectorConfig) {
 
-        return connectorName.equals(EMAIL_OTP_AUTHENTICATOR);
+        /*
+        If the new config is also added, the length of the properties will be 5 with both old
+        and new OTP type properties. Here the purpose of adding 'at least check' is to allow
+        developers to safely add new configs.
+         */
+        return EMAIL_OTP_AUTHENTICATOR.equals(connectorName) && connectorConfig.getProperties().length >= 5;
     }
 }
