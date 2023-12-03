@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -238,7 +239,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
             if (connectorConfig.getName().equals(connectorName)) {
                 // Should remove this logic eventually.
-                convertPropertyUseNumericToUseAlphaNumeric(connectorName, connectorConfig);
+                if (isEmailOTPConnector(connectorName)) {
+                    convertPropertyUseNumericToUseAlphaNumeric(connectorName, connectorConfig);
+                }
                 return connectorConfig;
             }
         }
@@ -268,9 +271,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
      */
     private void convertPropertyUseNumericToUseAlphaNumeric(String connectorName, ConnectorConfig connectorConfig) {
 
-        // If any of the following conditions are false, it simply doesn't migrate the config.
-        if (connectorName.equals(EMAIL_OTP_AUTHENTICATOR) &&
-                connectorConfig.getProperties()[3].getName().equals(EMAIL_OTP_USE_ALPHANUMERIC_CHARS) &&
+        // Verify the order of the connector properties hasn't changed.
+        if (connectorConfig.getProperties()[3].getName().equals(EMAIL_OTP_USE_ALPHANUMERIC_CHARS) &&
                 connectorConfig.getProperties()[4].getName().equals(EMAIL_OTP_USE_NUMERIC_CHARS)) {
 
             if (connectorConfig.getProperties()[4].getValue() != null) {
@@ -279,6 +281,19 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 // Assign the value to the alphanumeric property.
                 connectorConfig.getProperties()[3].setValue(String.valueOf(useAlphanumericChars));
             }
+        } else {
+            log.debug("The order of the connector properties has changed for the connector: " + connectorName);
         }
+    }
+
+    /**
+     * This method is used to check whether the connector is email OTP connector or not.
+     *
+     * @param connectorName Name of the connector.
+     * @return True if the connector is email OTP connector.
+     */
+    private boolean isEmailOTPConnector(String connectorName) {
+
+        return connectorName.equals(EMAIL_OTP_AUTHENTICATOR);
     }
 }
