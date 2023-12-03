@@ -484,12 +484,16 @@ public class NotificationPasswordRecoveryManager {
     private void validateCallback(Property[] properties, String tenantDomain) throws IdentityRecoveryServerException {
 
         String callbackURL = null;
+        String appAccessURL = null;
         try {
             callbackURL = Utils.getCallbackURL(properties);
-            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
-                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            appAccessURL = Utils.getAccessUrl(properties);
+            if (StringUtils.isEmpty(appAccessURL) && !callbackURL.equals(appAccessURL)) {
+                if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                        IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+                    throw Utils.handleServerException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+                }
             }
         } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,

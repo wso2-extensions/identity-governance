@@ -719,6 +719,28 @@ public class Utils {
         return callbackURL;
     }
 
+    public static String getAccessUrl(org.wso2.carbon.identity.recovery.model.Property[] properties)
+            throws UnsupportedEncodingException, URISyntaxException {
+
+        if (properties == null) {
+            return null;
+        }
+        String accessURL = null;
+        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+            if (IdentityRecoveryConstants.ACCESS_URL.equals(property.getKey())) {
+                accessURL = property.getValue();
+                break;
+            }
+        }
+
+        if (StringUtils.isNotBlank(accessURL)) {
+            URI uri = new URI(accessURL);
+            accessURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null)
+                    .toString();
+        }
+        return accessURL;
+    }
+
     /**
      * Get whether this is tenant flow
      *
