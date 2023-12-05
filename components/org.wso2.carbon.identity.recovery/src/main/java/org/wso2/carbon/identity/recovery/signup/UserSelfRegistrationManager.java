@@ -154,18 +154,16 @@ public class UserSelfRegistrationManager {
 
         // Callback URL validation
         String callbackURL = null;
-        String appAccessUrl = null;
         try {
-            callbackURL = Utils.getCallbackURLFromRegistration(properties);
-            appAccessUrl = Utils.getAccessUrl(properties);
-            if (StringUtils.isEmpty(appAccessUrl) && !callbackURL.equals(appAccessUrl)) {
+            if (!Utils.isAccessUrlAvailable(properties)) {
+                callbackURL = Utils.getCallbackURLFromRegistration(properties);
                 if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
                     throw Utils.handleServerException(
                             IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
                 }
             }
-        } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException | URISyntaxException e) {
+        } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
                     callbackURL);
         }

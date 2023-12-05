@@ -719,24 +719,16 @@ public class Utils {
         return callbackURL;
     }
 
-    public static String getAccessUrl(org.wso2.carbon.identity.recovery.model.Property[] properties)
-            throws UnsupportedEncodingException, URISyntaxException {
-
+    public static boolean isAccessUrlAvailable(org.wso2.carbon.identity.recovery.model.Property[] properties) {
         if (properties == null) {
-            return null;
+            return false;
         }
-        String accessURL = null;
+        boolean accessURL = false;
         for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
-            if (IdentityRecoveryConstants.ACCESS_URL.equals(property.getKey())) {
-                accessURL = property.getValue();
+            if (IdentityRecoveryConstants.IS_ACCESS_URL_AVAILABLE.equals(property.getKey())) {
+                accessURL = Boolean.parseBoolean(property.getValue()) ;
                 break;
             }
-        }
-
-        if (StringUtils.isNotBlank(accessURL)) {
-            URI uri = new URI(accessURL);
-            accessURL = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null)
-                    .toString();
         }
         return accessURL;
     }

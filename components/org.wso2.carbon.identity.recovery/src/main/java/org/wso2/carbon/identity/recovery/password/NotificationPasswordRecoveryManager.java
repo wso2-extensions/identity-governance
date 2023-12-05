@@ -484,11 +484,9 @@ public class NotificationPasswordRecoveryManager {
     private void validateCallback(Property[] properties, String tenantDomain) throws IdentityRecoveryServerException {
 
         String callbackURL = null;
-        String appAccessURL = null;
         try {
-            callbackURL = Utils.getCallbackURL(properties);
-            appAccessURL = Utils.getAccessUrl(properties);
-            if (StringUtils.isEmpty(appAccessURL) && !callbackURL.equals(appAccessURL)) {
+            if (!Utils.isAccessUrlAvailable(properties)) {
+                callbackURL = Utils.getCallbackURL(properties);
                 if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
                         IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
                     throw Utils.handleServerException(
