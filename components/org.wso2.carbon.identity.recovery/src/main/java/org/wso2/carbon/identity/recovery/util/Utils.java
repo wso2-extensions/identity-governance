@@ -719,18 +719,22 @@ public class Utils {
         return callbackURL;
     }
 
-    public static boolean isAccessUrlAvailable(org.wso2.carbon.identity.recovery.model.Property[] properties) {
-        if (properties == null) {
-            return false;
-        }
-        boolean accessURL = false;
-        for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
-            if (IdentityRecoveryConstants.IS_ACCESS_URL_AVAILABLE.equals(property.getKey())) {
-                accessURL = Boolean.parseBoolean(property.getValue()) ;
-                break;
+    /**
+     * Get isAccessUrlAvailable property value.
+     *
+     * @param properties Properties array.
+     * @return Boolean value of the isAccessUrlAvailable property.
+     */
+    public static Boolean isAccessUrlAvailable(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
+        if (properties != null) {
+            for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+                if (IdentityRecoveryConstants.IS_ACCESS_URL_AVAILABLE.equals(property.getKey())) {
+                    return Boolean.parseBoolean(property.getValue());
+                }
             }
         }
-        return accessURL;
+        return false;
     }
 
     /**
