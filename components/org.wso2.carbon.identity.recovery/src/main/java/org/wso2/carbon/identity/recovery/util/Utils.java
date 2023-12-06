@@ -720,6 +720,24 @@ public class Utils {
     }
 
     /**
+     * Get isAccessUrlAvailable property value.
+     *
+     * @param properties Properties array.
+     * @return Boolean value of the isAccessUrlAvailable property.
+     */
+    public static Boolean isAccessUrlAvailable(org.wso2.carbon.identity.recovery.model.Property[] properties) {
+
+        if (properties != null) {
+            for (org.wso2.carbon.identity.recovery.model.Property property : properties) {
+                if (IdentityRecoveryConstants.IS_ACCESS_URL_AVAILABLE.equals(property.getKey())) {
+                    return Boolean.parseBoolean(property.getValue());
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Get whether this is tenant flow
      *
      * @param properties

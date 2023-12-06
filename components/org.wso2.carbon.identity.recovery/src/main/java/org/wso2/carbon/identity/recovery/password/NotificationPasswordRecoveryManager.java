@@ -485,11 +485,13 @@ public class NotificationPasswordRecoveryManager {
 
         String callbackURL = null;
         try {
-            callbackURL = Utils.getCallbackURL(properties);
-            if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
-                    IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
-                throw Utils.handleServerException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+            if (!Utils.isAccessUrlAvailable(properties)) {
+                callbackURL = Utils.getCallbackURL(properties);
+                if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                        IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX)) {
+                    throw Utils.handleServerException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
+                }
             }
         } catch (URISyntaxException | UnsupportedEncodingException | IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
