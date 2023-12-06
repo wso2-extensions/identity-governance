@@ -106,6 +106,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "User self registration verification link expiry time");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "User self registration SMS OTP expiry time");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
+                "User self registration SMS OTP regex");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "User self registration callback URL regex");
         nameMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Manage Self-Sign-Up purposes");
@@ -152,6 +154,10 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 "Specify the expiry time in minutes for the SMS OTP.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
+                "Regex for SMS OTP in format [allowed characters]{length}. Supported character " +
+                        "ranges are a-z, A-Z, 0-9. Minimum OTP length is " +
+                        IdentityMgtConstants.MINIMUM_SMS_OTP_LENGTH);
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 "This prefix will be used to validate the callback URL.");
         descriptionMapping.put(LIST_PURPOSE_PROPERTY_KEY, "Click here to manage Self-Sign-Up purposes");
@@ -183,6 +189,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         properties
                 .add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         properties.add(LIST_PURPOSE_PROPERTY_KEY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
@@ -198,15 +205,16 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableSelfSignUp = "false";
         String enableAccountLockOnCreation = "true";
         String enableSendOTPInEmail = "false";
-        String useUppercaseCharactersInOTP = "true";
-        String useLowercaseCharactersInOTP = "true";
-        String useNumbersInOTP = "true";
+        String useUppercaseCharactersInOTP = StringUtils.EMPTY;
+        String useLowercaseCharactersInOTP = StringUtils.EMPTY;
+        String useNumbersInOTP = StringUtils.EMPTY;
         String otpLength = "6";
         String enableSendNotificationOnCreation = "false";
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
         String verificationSMSOTPExpiryTime = "1";
+        String verificationSMSOTPRegex = "[a-zA-Z0-9]{6}";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableSelfSignUpConfirmationNotification = "false";
         String enableResendConfirmationRecaptcha = "false";
@@ -237,6 +245,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPExpiryTimeProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
+        String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX);
         String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
@@ -284,6 +294,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(verificationSMSOTPExpiryTimeProperty)) {
             verificationSMSOTPExpiryTime = verificationSMSOTPExpiryTimeProperty;
         }
+        if (StringUtils.isNotEmpty(verificationSMSOTPRegexProperty)) {
+            verificationSMSOTPRegex = verificationSMSOTPRegexProperty;
+        }
         if (StringUtils.isNotEmpty(selfRegistrationCallbackRegexProperty)) {
             selfRegistrationCallbackRegex = selfRegistrationCallbackRegexProperty;
         }
@@ -326,6 +339,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         defaultProperties
                 .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                         verificationSMSOTPExpiryTime);
+        defaultProperties
+                .put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
+                        verificationSMSOTPRegex);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 enableSelfRegistrationAutoLogin);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
@@ -394,6 +410,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
