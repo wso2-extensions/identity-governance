@@ -99,6 +99,12 @@
             <version>${project.version}</version>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.user.onboard.core.service.feature</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -153,6 +159,9 @@
                                 </includedFeatureDef>
                                 <includedFeatureDef>
                                     org.wso2.carbon.identity.governance:org.wso2.carbon.identity.auth.attribute.handler.server.feature
+                                </includedFeatureDef>
+                                <includedFeatureDef>
+                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.user.onboard.core.service.feature
                                 </includedFeatureDef>
                             </includedFeatures>
                         </configuration>
