@@ -134,12 +134,7 @@ public class ResetLinkGenerator {
                     .addDomainToName(user.getUserName(), user.getUserStoreDomain());
             if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
                 if (LOG.isDebugEnabled()) {
-                    String username = user.toFullQualifiedUsername();
-                    if (username != null) {
-                        LOG.debug("No user found for recovery with username: " + username);
-                    } else {
-                        LOG.debug("No user found for recovery.");
-                    }
+                    LOG.debug("No user found for provided username");
                 }
                 return false;
             }
