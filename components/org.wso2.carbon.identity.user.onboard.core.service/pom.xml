@@ -107,9 +107,9 @@
 
                             org.wso2.carbon.user.api.*; version="${carbon.user.api.imp.pkg.version.range}",
 
-                            org.wso2.carbon.identity.core.*; version="${project.version}",
-                            org.wso2.carbon.identity.application.*; version="${project.version}",
-                            org.wso2.carbon.identity.event.*; version="${project.version}",
+                            org.wso2.carbon.identity.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.application.*; version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.event.*; version="${carbon.identity.framework.imp.pkg.version.range}",
 
                             org.wso2.carbon.identity.recovery.*; version="${identity.governance.imp.pkg.version.range}",
                             org.wso2.carbon.identity.governance.*; version="${identity.governance.imp.pkg.version.range}"
@@ -121,6 +121,5 @@
             </plugin>
         </plugins>
     </build>
-
 
 </project>
