@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.user.onboard.core.service.model;
 
-
 /**
  * This class holds the configuration of the invite-link.
  */

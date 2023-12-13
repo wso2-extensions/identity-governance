@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.user.onboard.core.service.password;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
