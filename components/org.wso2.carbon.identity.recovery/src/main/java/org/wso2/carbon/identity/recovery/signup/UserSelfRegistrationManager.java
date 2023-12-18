@@ -61,6 +61,7 @@ import org.wso2.carbon.identity.input.validation.mgt.model.RulesConfiguration;
 import org.wso2.carbon.identity.input.validation.mgt.model.ValidationConfiguration;
 import org.wso2.carbon.identity.input.validation.mgt.model.ValidationContext;
 import org.wso2.carbon.identity.input.validation.mgt.model.Validator;
+import org.wso2.carbon.identity.input.validation.mgt.utils.Constants;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -1500,9 +1501,11 @@ public class UserSelfRegistrationManager {
             ValidationConfiguration configuration = configurations.stream().filter(config ->
                     field.equalsIgnoreCase(config.getField())).collect(Collectors.toList()).get(0);
 
-            /* If configuration for username field is found in Input Validation Mgt service, validate against them,
-             if not validate against the regex from the userStore. */
-            if (configuration != null) {
+            /* If InputValidation.Username.Enabled configuration is enabled and the configuration for username field is
+            found in Input Validation Mgt service, validate against them, if not validate against the regex from the
+            userStore. */
+            if (Boolean.parseBoolean(IdentityUtil.getProperty(Constants.INPUT_VALIDATION_USERNAME_ENABLED_CONFIG))
+                    && configuration != null) {
                 try {
                     return validateAgainstConfiguration(configuration, validators, field, userName,
                             tenantDomain);
