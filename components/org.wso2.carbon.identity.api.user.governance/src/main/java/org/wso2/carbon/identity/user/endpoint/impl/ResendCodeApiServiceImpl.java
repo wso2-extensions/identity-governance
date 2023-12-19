@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.List;
@@ -68,7 +69,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
                 resendCodeRequestDTO.getUser().getUsername(), resendCodeRequestDTO.getUser().getTenantDomain());
         if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
-            resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getPreferredUsername());
+            resendCodeRequestDTO.getUser().setUsername(
+                    UserCoreUtil.removeDomainFromName(resolvedUserResult.getUser().getUsername()));
         }
 
         NotificationResponseBean notificationResponseBean = null;
