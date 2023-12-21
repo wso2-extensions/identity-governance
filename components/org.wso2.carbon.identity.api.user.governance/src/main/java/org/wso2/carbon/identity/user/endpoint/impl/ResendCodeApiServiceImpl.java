@@ -1,18 +1,19 @@
 /*
+ * Copyright (c) 2016, WSO2 LLC. (http://www.wso2.com).
  *
- *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.wso2.carbon.identity.user.endpoint.impl;
 
@@ -35,8 +36,9 @@ import org.wso2.carbon.identity.user.endpoint.Constants;
 import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
-import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.List;
@@ -44,6 +46,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
+/**
+ * This class contains the implementation of Resend Code API Service.
+ */
 public class ResendCodeApiServiceImpl extends ResendCodeApiService {
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
     private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
@@ -64,7 +69,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         ResolvedUserResult resolvedUserResult = FrameworkUtils.processMultiAttributeLoginIdentification(
                 resendCodeRequestDTO.getUser().getUsername(), resendCodeRequestDTO.getUser().getTenantDomain());
         if (ResolvedUserResult.UserResolvedStatus.SUCCESS.equals(resolvedUserResult.getResolvedStatus())) {
-            resendCodeRequestDTO.getUser().setUsername(resolvedUserResult.getUser().getUsername());
+            resendCodeRequestDTO.getUser().setUsername(
+                    UserCoreUtil.removeDomainFromName(resolvedUserResult.getUser().getUsername()));
         }
 
         NotificationResponseBean notificationResponseBean = null;
