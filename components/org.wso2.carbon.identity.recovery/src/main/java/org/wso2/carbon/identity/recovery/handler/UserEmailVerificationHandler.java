@@ -475,6 +475,16 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
+        /*
+        Within the Email OTP flow, the email address is updated in the user profile after successfully verifying the
+        OTP. Therefore, the email is already verified & no need to verify it again.
+         */
+        if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
+                (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+            return;
+        }
+
         if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() != null) {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
@@ -541,7 +551,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString().equals
                     (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString().equals
-                            (skipEmailVerificationOnUpdateState)) {
+                            (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
+                    (skipEmailVerificationOnUpdateState)) {
 
                 String pendingVerificationEmailClaimValue = getPendingVerificationEmailValue(userStoreManager, user);
 
