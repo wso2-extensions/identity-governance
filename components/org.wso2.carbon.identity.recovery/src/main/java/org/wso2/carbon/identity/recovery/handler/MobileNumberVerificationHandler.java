@@ -242,6 +242,16 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             return;
         }
 
+        /*
+        Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
+        OTP. Therefore, the mobile number is already verified & no need to verify it again.
+         */
+        if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().equals
+                (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
+            return;
+        }
+
         if (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() != null) {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
@@ -317,7 +327,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                     SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString().equals
                     (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString().equals
-                            (skipMobileNumVerificationOnUpdateState)) {
+                            (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().equals
+                    (skipMobileNumVerificationOnUpdateState)) {
 
                 String verificationPendingMobileNumClaim = getVerificationPendingMobileNumValue(userStoreManager, user);
 

@@ -844,7 +844,12 @@ public class IdentityRecoveryConstants {
 
         /* State maintained to skip triggering an email verification when the update request contains other claims
         without the email address claim. */
-        SKIP_ON_INAPPLICABLE_CLAIMS
+        SKIP_ON_INAPPLICABLE_CLAIMS,
+
+        /* State maintained to skip triggering an email verification, when the email address was updated by user during
+         the Email OTP flow at the first login where the email address is not previously set. At the moment email
+         address was already verified during the email OTP verification. So no need to verify it again. */
+        SKIP_ON_EMAIL_OTP_FLOW
     }
 
     /**
@@ -946,6 +951,11 @@ public class IdentityRecoveryConstants {
 
         /* State maintained to skip triggering an SMS OTP verification when the update request contains other claims
         without the mobile number claim. */
-        SKIP_ON_INAPPLICABLE_CLAIMS
+        SKIP_ON_INAPPLICABLE_CLAIMS,
+
+        /* State maintained to skip triggering an SMS OTP verification, when the mobile number was updated by user
+        during the SMS OTP flow at the first login where the mobile number is not previously set. At the moment mobile
+        number was already verified during the SMS OTP verification. So no need to verify it again. */
+        SKIP_ON_SMS_OTP_FLOW
     }
 }
