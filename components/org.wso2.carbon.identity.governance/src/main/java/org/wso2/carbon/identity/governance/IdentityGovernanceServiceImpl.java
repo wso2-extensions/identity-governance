@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -41,6 +42,9 @@ import java.util.Map;
 public class IdentityGovernanceServiceImpl implements IdentityGovernanceService {
 
     private static final Log log = LogFactory.getLog(IdentityGovernanceServiceImpl.class);
+    private static final String EMAIL_OTP_AUTHENTICATOR = "email-otp-authenticator";
+    public static final String EMAIL_OTP_USE_ALPHANUMERIC_CHARS = "EmailOTP.UseAlphanumericChars";
+    public static final String EMAIL_OTP_USE_NUMERIC_CHARS = "EmailOTP.OtpRegex.UseNumericChars";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -51,6 +55,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
             List<IdentityProviderProperty> newProperties = new ArrayList<>();
+            updateEmailOTPNumericPropertyValue(configurationDetails);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 String key = identityMgtProperty.getName();
@@ -233,10 +238,88 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
         for (ConnectorConfig connectorConfig : connectorListWithConfigs) {
             if (connectorConfig.getName().equals(connectorName)) {
+                // Should remove this logic eventually.
+                if (isEmailOTPConnector(connectorName, connectorConfig)) {
+                    readEmailOTPAlphanumericPropertyValue(connectorConfig);
+                }
                 return connectorConfig;
             }
         }
         return null;
     }
 
+    /**
+     * This method writes value of alphanumeric property to numeric property for email OTP connector.
+     *
+     * @param configurationDetails Configuration details of the email OTP connector.
+     */
+    private void updateEmailOTPNumericPropertyValue(Map<String, String> configurationDetails) {
+
+        if (configurationDetails.containsKey(EMAIL_OTP_USE_ALPHANUMERIC_CHARS)) {
+            // Gets the value of alphanumeric property value and negates it.
+            if (StringUtils.isNotBlank(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS))) {
+                boolean useNumericChars = !Boolean.parseBoolean(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS));
+                configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, String.valueOf(useNumericChars));
+            } else {
+                configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, "true");
+                configurationDetails.put(EMAIL_OTP_USE_ALPHANUMERIC_CHARS, "false");
+            }
+        }
+    }
+
+    /**
+     * This method is used to convert the property value useNumericCharacters to useAlphanumericCharacters for email OTP connector.
+     *
+     * @param connectorConfig Connector configuration.
+     */
+    private void readEmailOTPAlphanumericPropertyValue(ConnectorConfig connectorConfig) {
+
+        int alphanumericPropertyIndex = -1;
+        int numericPropertyIndex = -1;
+        String numericPropertyValue = null;
+        for (int i = 0; i < connectorConfig.getProperties().length; i++) {
+            if (EMAIL_OTP_USE_ALPHANUMERIC_CHARS.equals(connectorConfig.getProperties()[i].getName())) {
+                alphanumericPropertyIndex = i;
+            } else if (EMAIL_OTP_USE_NUMERIC_CHARS.equals(connectorConfig.getProperties()[i].getName())) {
+                numericPropertyIndex = i;
+                numericPropertyValue = connectorConfig.getProperties()[i].getValue();
+            }
+        }
+        
+        if (alphanumericPropertyIndex == -1 || numericPropertyIndex == -1) {
+            log.debug("The connector: email OTP doesn't have both old and new email OTP type related " +
+                    "configs.");
+            return;
+        }
+
+        if (StringUtils.isNotBlank(numericPropertyValue)) {
+            // Extract the value of the useNumericCharacters property.
+            boolean useAlphanumericChars = !Boolean.parseBoolean(numericPropertyValue);
+            // Assign the value to the alphanumeric property.
+            connectorConfig.getProperties()[alphanumericPropertyIndex].setValue(
+                    String.valueOf(useAlphanumericChars));
+        } else {
+            // Default value of alphanumeric property should be false.
+            connectorConfig.getProperties()[numericPropertyIndex].setValue("true");
+            connectorConfig.getProperties()[alphanumericPropertyIndex].setValue("false");
+        }
+    }
+
+    /**
+     * This method is used to check whether the connector is email OTP connector or not.
+     *
+     * @param connectorName   Name of the connector.
+     * @param connectorConfig Connector configuration.
+     *
+     * @return True if the connector is email OTP connector and have both old and new email OTP type related configs.
+     */
+    private boolean isEmailOTPConnector(String connectorName, ConnectorConfig connectorConfig) {
+
+        /*
+        If the new config is also added, the length of the properties will be 5 with both old
+        and new OTP type properties. Here the purpose of adding 'at least check' is to allow
+        developers to safely add new configs.
+         */
+        return EMAIL_OTP_AUTHENTICATOR.equals(connectorName);
+    }
 }
