@@ -17,6 +17,8 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
@@ -358,6 +360,17 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
             enableUsernameRecoveryReCaptcha = userNameRecoveryReCaptcha;
         }
         if (StringUtils.isNotEmpty(recoveryCallbackRegexProperty)) {
+            try {
+                int proxyPort = ServiceURLBuilder.create().build().getPort();
+                if (proxyPort == 443 && recoveryCallbackRegexProperty.contains("https")
+                        && recoveryCallbackRegexProperty.contains(":443\\")) {
+                    // remove 443 if added to the regex since it's the proxy port.
+                    recoveryCallbackRegexProperty = recoveryCallbackRegexProperty + "|" +
+                            recoveryCallbackRegexProperty.replace(":443\\", "\\");
+                }
+            } catch (URLBuilderException e) {
+                throw new IdentityGovernanceException(e);
+            }
             recoveryCallbackRegex = recoveryCallbackRegexProperty;
         }
         if (StringUtils.isNotEmpty(adminPasswordResetAutoLoginProperty)) {
