@@ -257,8 +257,13 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
         if (configurationDetails.containsKey(EMAIL_OTP_USE_ALPHANUMERIC_CHARS)) {
             // Gets the value of alphanumeric property value and negates it.
-            boolean useNumericChars = !Boolean.parseBoolean(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS));
-            configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, String.valueOf(useNumericChars));
+            if (StringUtils.isNotBlank(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS))) {
+                boolean useNumericChars = !Boolean.parseBoolean(configurationDetails.get(EMAIL_OTP_USE_ALPHANUMERIC_CHARS));
+                configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, String.valueOf(useNumericChars));
+            } else {
+                configurationDetails.put(EMAIL_OTP_USE_NUMERIC_CHARS, "true");
+                configurationDetails.put(EMAIL_OTP_USE_ALPHANUMERIC_CHARS, "false");
+            }
         }
     }
 
