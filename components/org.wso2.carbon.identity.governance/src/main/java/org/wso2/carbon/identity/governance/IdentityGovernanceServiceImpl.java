@@ -263,7 +263,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     }
 
     /**
-     * This method is used to convert the property value useNumericCharacters to useAlphanumericCharacters.
+     * This method is used to convert the property value useNumericCharacters to useAlphanumericCharacters for email OTP connector.
      *
      * @param connectorConfig Connector configuration.
      */
