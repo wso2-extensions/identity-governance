@@ -235,6 +235,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableAdminPasswordResetAutoLoginProperty = "false";
         String recoveryMaxFailedAttempts = "3";
         String recoveryMaxResendAttempts = "5";
+        int httpsProxyPort = 443;
+        String secureHttpProtocol = "https";
 
         String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
@@ -362,11 +364,11 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(recoveryCallbackRegexProperty)) {
             try {
                 int proxyPort = ServiceURLBuilder.create().build().getPort();
-                if (proxyPort == 443 && recoveryCallbackRegexProperty.contains("https")
-                        && recoveryCallbackRegexProperty.contains(":443\\")) {
+                if (proxyPort == httpsProxyPort && recoveryCallbackRegexProperty.contains(secureHttpProtocol)
+                        && recoveryCallbackRegexProperty.contains(":" + httpsProxyPort + "\\")) {
                     // remove 443 if added to the regex since it's the proxy port.
                     recoveryCallbackRegexProperty = recoveryCallbackRegexProperty + "|" +
-                            recoveryCallbackRegexProperty.replace(":443\\", "\\");
+                            recoveryCallbackRegexProperty.replace(":" + httpsProxyPort + "\\", "\\");
                 }
             } catch (URLBuilderException e) {
                 throw new IdentityGovernanceException(e);
