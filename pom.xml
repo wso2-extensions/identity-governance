@@ -696,7 +696,7 @@
 
         <!--Carbon Identity Framework Version-->
         <carbon.identity.framework.version>5.25.623</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 6.0.0)
+        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 8.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
