@@ -49,7 +49,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
 
         UserDTO user = recoveryInitiatingRequest.getUser();
         int tenantIdFromContext = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
+        if (StringUtils.isNotBlank(user.getRealm())) {
+            String userDomainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+            user.setUsername(userDomainQualifiedUsername);
+        }
         ResolvedUserResult resolvedUserResult =
                 FrameworkUtils.processMultiAttributeLoginIdentification(user.getUsername(), user.getTenantDomain());
         if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
