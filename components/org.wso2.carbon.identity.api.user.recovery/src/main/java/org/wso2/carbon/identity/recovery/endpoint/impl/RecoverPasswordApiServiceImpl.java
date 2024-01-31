@@ -21,6 +21,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import javax.ws.rs.core.Response;
 
@@ -51,6 +52,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
             if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                     .isEnabled(user.getTenantDomain())) {
+                if (StringUtils.isNotBlank(user.getRealm())) {
+                    String userDomainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+                    user.setUsername(userDomainQualifiedUsername);
+                }
                 ResolvedUserResult resolvedUserResult =
                         IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                                 .resolveUser(user.getUsername(), user.getTenantDomain());
@@ -58,11 +63,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                         equals(resolvedUserResult.getResolvedStatus())) {
                     User resolvedUser = new User();
                     resolvedUser.setUserName(resolvedUserResult.getUser().getUsername());
-                    if (StringUtils.isBlank(user.getRealm())) {
-                        resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
-                    } else {
-                        resolvedUser.setUserStoreDomain(user.getRealm());
-                    }
+                    resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
                     resolvedUser.setTenantDomain(resolvedUserResult.getUser().getTenantDomain());
                     notificationResponseBean =
                             notificationPasswordRecoveryManager.sendRecoveryNotification(resolvedUser, type, notify,
