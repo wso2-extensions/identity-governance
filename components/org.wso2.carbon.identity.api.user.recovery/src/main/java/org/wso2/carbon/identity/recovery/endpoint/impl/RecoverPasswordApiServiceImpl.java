@@ -21,6 +21,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import javax.ws.rs.core.Response;
@@ -52,8 +53,17 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
             if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                     .isEnabled(user.getTenantDomain())) {
+                String userDomainQualifiedUsername;
                 if (StringUtils.isNotBlank(user.getRealm())) {
-                    String userDomainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+                    //The PRIMARY domain is not appended by UserCoreUtil.addDomainToName() method. Adding it here.
+                    //This is done to avoid user being resolved when PRIMARY is wrongly passed as the user's realm.
+                    if (user.getRealm().equalsIgnoreCase(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+                        userDomainQualifiedUsername = UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME +
+                                UserCoreConstants.DOMAIN_SEPARATOR + user.getUsername();
+                    } else {
+                        userDomainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(),
+                                user.getRealm());
+                    }
                     user.setUsername(userDomainQualifiedUsername);
                 }
                 ResolvedUserResult resolvedUserResult =
