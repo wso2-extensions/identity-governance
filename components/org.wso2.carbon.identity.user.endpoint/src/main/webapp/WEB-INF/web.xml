@@ -9,11 +9,6 @@
     <display-name>WSO2 Identity Server User REST API</display-name>
     <description>WSO2 Identity Server User REST API</description>
 
-    <context-param>
-        <param-name>contextConfigLocation</param-name>
-        <param-value>WEB-INF/beans.xml</param-value>
-    </context-param>
-
     <filter>
         <filter-name>CaptchaFilter</filter-name>
         <filter-class>org.wso2.carbon.identity.captcha.filter.CaptchaFilter</filter-class>
@@ -63,18 +58,37 @@
         <dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 
-    <listener>
-        <listener-class>
-            org.springframework.web.context.ContextLoaderListener
-        </listener-class>
-    </listener>
-
     <servlet>
         <servlet-name>CXFServlet</servlet-name>
         <servlet-class>
-            org.apache.cxf.transport.servlet.CXFServlet
+            org.apache.cxf.jaxrs.servlet.CXFNonSpringJaxrsServlet
         </servlet-class>
         <load-on-startup>1</load-on-startup>
+
+        <init-param>
+            <param-name>jaxrs.serviceClasses</param-name>
+            <param-value>
+                org.wso2.carbon.identity.user.endpoint.IntrospectCodeApi,
+                org.wso2.carbon.identity.user.endpoint.LiteApi,
+                org.wso2.carbon.identity.user.endpoint.MeApi,
+                org.wso2.carbon.identity.user.endpoint.PiInfoApi,
+                org.wso2.carbon.identity.user.endpoint.ResendCodeApi,
+                org.wso2.carbon.identity.user.endpoint.UpdateUsernameApi,
+                org.wso2.carbon.identity.user.endpoint.ValidateCodeApi,
+                org.wso2.carbon.identity.user.endpoint.ValidateUsernameApi
+            </param-value>
+        </init-param>
+        <init-param>
+            <param-name>jaxrs.address</param-name>
+            <param-value>/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>jaxrs.providers</param-name>
+            <param-value>
+                com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider,
+                org.wso2.carbon.identity.user.endpoint.exceptions.UserEndpointExceptionMapper
+            </param-value>
+        </init-param>
     </servlet>
 
     <servlet-mapping>
