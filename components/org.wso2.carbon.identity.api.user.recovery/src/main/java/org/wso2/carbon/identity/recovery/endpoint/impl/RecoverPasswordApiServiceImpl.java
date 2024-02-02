@@ -55,8 +55,10 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                     .isEnabled(user.getTenantDomain())) {
                 String userDomainQualifiedUsername;
                 if (StringUtils.isNotBlank(user.getRealm())) {
-                    //The PRIMARY domain is not appended by UserCoreUtil.addDomainToName() method. Adding it here.
-                    //This is done to avoid user being resolved when PRIMARY is wrongly passed as the user's realm.
+                    /*
+                    The PRIMARY domain is not appended by UserCoreUtil.addDomainToName() method. Adding it here.
+                    This is done to avoid user being resolved when PRIMARY is wrongly passed as the user's realm.
+                    */
                     if (user.getRealm().equalsIgnoreCase(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
                         userDomainQualifiedUsername = UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME +
                                 UserCoreConstants.DOMAIN_SEPARATOR + user.getUsername();
