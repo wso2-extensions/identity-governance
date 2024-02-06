@@ -61,6 +61,7 @@ import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -297,11 +298,25 @@ public class NotificationPasswordRecoveryManager {
                     getTenantUserRealm(tenantId).getUserStoreManager();
             String domainQualifiedUsername = IdentityUtil
                     .addDomainToName(user.getUserName(), user.getUserStoreDomain());
-            if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
+            try {
+                if (!userStoreManager.isExistingUser(domainQualifiedUsername)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("No user found for recovery with username: " + user.toFullQualifiedUsername());
+                    }
+                    return false;
                 }
-                return false;
+            } catch (UserStoreException e) {
+                if (e instanceof org.wso2.carbon.user.core.UserStoreException) {
+                    String errorCode = ((org.wso2.carbon.user.core.UserStoreException) e).getErrorCode();
+                    if (UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_DOMAIN_NAME
+                            .getCode().equals(errorCode)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("No tenant found for domain name : " + user.getUserStoreDomain());
+                        }
+                        return false;
+                    }
+                }
+                throw e; // to be handled by the catch block outside this try block.
             }
             return true;
         } catch (UserStoreException e) {
