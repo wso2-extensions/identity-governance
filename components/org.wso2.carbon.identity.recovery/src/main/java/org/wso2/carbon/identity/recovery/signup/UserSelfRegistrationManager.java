@@ -1287,13 +1287,13 @@ public class UserSelfRegistrationManager {
 
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
+            // If tenant domain is not provided, tenant domain is derived from the username.
+            username = MultitenantUtils.getTenantAwareUsername(username);
         }
         try {
-            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
-                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(username) ||
                         hasPendingAddUserWorkflow(username, tenantDomain);
             }
         } catch (CarbonException | org.wso2.carbon.user.core.UserStoreException e) {
