@@ -166,6 +166,7 @@ public class TenantAwareAxis2ConfigurationContextObserverTest {
         Mockito.when(tenantResourceManagerDataHolder.getConfigurationManager()).thenReturn(configurationManager);
         Mockito.when(tenantResourceManagerDataHolder.getCarbonEventPublisherService())
                 .thenReturn(carbonEventPublisherService);
+        mockedResourceUtils.when(ResourceUtils::loadTenantPublisherConfigurationFromConfigStore).thenCallRealMethod();
 
         File sampleResourceFile = new File(getSamplesPath());
         InputStream fileStream = FileUtils.openInputStream(sampleResourceFile);
