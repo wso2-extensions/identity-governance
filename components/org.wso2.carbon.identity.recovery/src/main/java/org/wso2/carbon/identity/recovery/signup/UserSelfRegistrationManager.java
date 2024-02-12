@@ -1287,7 +1287,7 @@ public class UserSelfRegistrationManager {
 
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
-            // If tenant domain is not provided, tenant domain is derived from the username.
+            // If tenant domain is not provided, domain from the username is assumed to be the tenant domain.
             username = MultitenantUtils.getTenantAwareUsername(username);
         }
         try {
