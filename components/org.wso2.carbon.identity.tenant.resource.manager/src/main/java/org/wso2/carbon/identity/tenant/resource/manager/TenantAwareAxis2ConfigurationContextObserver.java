@@ -24,22 +24,14 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.event.publisher.core.config.EventPublisherConfiguration;
 import org.wso2.carbon.event.stream.core.EventStreamConfiguration;
 import org.wso2.carbon.event.stream.core.exception.EventStreamConfigurationException;
-import org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants;
-import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
-import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
-import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants;
-import org.wso2.carbon.identity.tenant.resource.manager.exception.TenantResourceManagementException;
 import org.wso2.carbon.identity.tenant.resource.manager.internal.TenantResourceManagerDataHolder;
 import org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils;
 import org.wso2.carbon.utils.AbstractAxis2ConfigurationContextObserver;
 
 import java.util.List;
 
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_ADDING_EVENT_PUBLISHER_CONFIGURATION;
 import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_CREATING_TENANT_EVENT_STREAM_CONFIGURATION;
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.ErrorMessages.ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES;
-import static org.wso2.carbon.identity.tenant.resource.manager.constants.TenantResourceConstants.PUBLISHER;
 import static org.wso2.carbon.identity.tenant.resource.manager.util.ResourceUtils.populateMessageWithData;
 
 /**
@@ -81,59 +73,13 @@ public class TenantAwareAxis2ConfigurationContextObserver extends AbstractAxis2C
         try {
             ResourceUtils.startTenantFlow(tenantId);
             loadTenantEventStreams(eventStreamConfigurationList);
-            loadTenantPublisherConfigurationFromConfigStore();
+            ResourceUtils.loadTenantPublisherConfigurationFromConfigStore();
 
             if (activeEventPublisherConfigurations != null) {
                 ResourceUtils.loadTenantPublisherConfigurationFromSuperTenantConfig(activeEventPublisherConfigurations);
             }
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
-        }
-    }
-
-    /**
-     * This method loads publisher configurations tenant wise by fetching them from configuration store.
-     */
-    private void loadTenantPublisherConfigurationFromConfigStore() {
-
-        try {
-            List<Resource> resourcesByTypePublisher = TenantResourceManagerDataHolder.getInstance()
-                    .getConfigurationManager().getResourcesByType(PUBLISHER).getResources();
-            for (Resource resource : resourcesByTypePublisher) {
-                if (!resource.getFiles().isEmpty()) {
-                    ResourceFile tenantSpecificPublisherFile = resource.getFiles().get(0);
-                    if (tenantSpecificPublisherFile != null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("File for publisher name: " + tenantSpecificPublisherFile.getName()
-                                    + " is available in the configuration store.");
-                        }
-                        TenantResourceManagerDataHolder.getInstance().getResourceManager()
-                                .addEventPublisherConfiguration(tenantSpecificPublisherFile);
-                    }
-                }
-            }
-        } catch (ConfigurationManagementException e) {
-            if (e.getErrorCode()
-                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_FEATURE_NOT_ENABLED.getCode())) {
-                log.warn("Configuration store is disabled. Super tenant configuration will be used for the tenant "
-                        + "domain: " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain());
-            } else if (e.getErrorCode()
-                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCES_DOES_NOT_EXISTS.getCode())) {
-                log.warn("Configuration store does not contain any resources under resource type publisher. Super "
-                        + "tenant configurations will be used for the tenant domain: " + PrivilegedCarbonContext
-                        .getThreadLocalCarbonContext().getTenantDomain());
-            } else if (e.getErrorCode()
-                    .equals(ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS.getCode())) {
-                log.warn("Configuration store does not contain  publisher resource type. Super "
-                        + "tenant configurations will be used for the tenant domain: " + PrivilegedCarbonContext
-                        .getThreadLocalCarbonContext().getTenantDomain());
-            } else {
-                log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_FETCHING_TENANT_SPECIFIC_PUBLISHER_FILES,
-                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
-            }
-        } catch (TenantResourceManagementException e) {
-            log.error(populateMessageWithData(ERROR_CODE_ERROR_WHEN_ADDING_EVENT_PUBLISHER_CONFIGURATION,
-                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain()), e);
         }
     }
 
