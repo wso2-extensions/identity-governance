@@ -27,6 +27,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.core.ServerStartupObserver;
 import org.wso2.carbon.event.publisher.core.EventPublisherService;
 import org.wso2.carbon.event.stream.core.EventStreamService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -60,6 +61,8 @@ public class TenantResourceManagerServiceDS extends AbstractAxis2ConfigurationCo
             context.getBundleContext()
                     .registerService(ResourceManager.class.getName(), resourceManager, null);
             TenantResourceManagerDataHolder.getInstance().setResourceManager(resourceManager);
+            context.getBundleContext().registerService(ServerStartupObserver.class.getName(),
+                    new TenantResourceManagementServerStartupObserver(), null);
             if (log.isDebugEnabled()) {
                 log.debug("Successfully deployed the tenant resource manager service.");
             }
