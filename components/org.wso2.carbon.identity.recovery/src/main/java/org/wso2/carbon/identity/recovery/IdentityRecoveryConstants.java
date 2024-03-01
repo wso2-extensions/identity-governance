@@ -355,6 +355,8 @@ public class IdentityRecoveryConstants {
                 + "recovery request"),
         ERROR_CODE_USERNAME_RECOVERY_VALIDATION_FAILED("UNR-10003",
                 "Username recovery validation failed for user account : '%s'"),
+        ERROR_CODE_USERNAME_RECOVERY_MULTIPLE_DOMAINS("UNR-10004", "Multiple domains found in the " +
+                "given claim set"),
 
         // UAR - User Account Recovery.
         ERROR_CODE_INVALID_RECOVERY_CODE("UAR-10001", "Invalid recoveryCode : '%s'"),
