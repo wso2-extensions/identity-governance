@@ -515,7 +515,6 @@
                 <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
                 <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
                 <version>${org.wso2.carbon.identity.organization.management.core.version}</version>
-                <scope>test</scope>
             </dependency>
             <!-- Pax Logging -->
             <dependency>
@@ -724,7 +723,7 @@
         <identity.auth.otp.commons.version.range>[1.0.0, 2.0.0)</identity.auth.otp.commons.version.range>
 
         <!--Carbon Identity Organization Management Version-->
-        <org.wso2.carbon.identity.organization.management.core.version>1.0.0
+        <org.wso2.carbon.identity.organization.management.core.version>1.1.2
         </org.wso2.carbon.identity.organization.management.core.version>
         <org.wso2.carbon.identity.organization.management.core.version.range>[1.0.0, 2.0.0)
         </org.wso2.carbon.identity.organization.management.core.version.range>
