@@ -171,11 +171,21 @@ public class CaptchaDataHolder {
         this.reCaptchaScoreThreshold = reCaptchaScoreThreshold;
     }
 
+    /**
+     * Get the recaptcha score used as the threshold for printing warn logs.
+     *
+     * @return Recaptcha score threshold used for warning.
+     */
     public double getReCaptchaWarnScoreThreshold() {
 
         return reCaptchaWarnScoreThreshold;
     }
 
+    /**
+     * Set the recaptcha score used as the threshold for printing warn logs.
+     *
+     * @param reCaptchaWarnScoreThreshold Recaptcha score threshold used for warning.
+     */
     public void setReCaptchaWarnScoreThreshold(double reCaptchaWarnScoreThreshold) {
 
         this.reCaptchaWarnScoreThreshold = reCaptchaWarnScoreThreshold;

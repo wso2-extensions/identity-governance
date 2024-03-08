@@ -126,11 +126,24 @@ public class ResourceManagerImpl implements ResourceManager {
             return;
         }
 
-        if (TenantResourceManagerDataHolder.getInstance().getCarbonEventPublisherService()
-                .getActiveEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName()) != null) {
+        EventPublisherConfiguration oldEventPublisherConfiguration = TenantResourceManagerDataHolder.getInstance()
+                .getCarbonEventPublisherService().getActiveEventPublisherConfiguration(
+                        eventPublisherConfiguration.getEventPublisherName());
+
+        if (oldEventPublisherConfiguration != null) {
             destroyEventPublisherConfiguration(eventPublisherConfiguration.getEventPublisherName());
         }
-        carbonEventPublisherService.addEventPublisherConfiguration(eventPublisherConfiguration);
+
+        try {
+            carbonEventPublisherService.addEventPublisherConfiguration(eventPublisherConfiguration);
+        } catch (EventPublisherConfigurationException e) {
+            if (oldEventPublisherConfiguration != null) {
+                carbonEventPublisherService.addEventPublisherConfiguration(oldEventPublisherConfiguration);
+                log.warn("The redeploying event publisher configuration fails. " +
+                        "Hence redeploying old configuration.");
+            }
+            throw e;
+        }
     }
 
     /**

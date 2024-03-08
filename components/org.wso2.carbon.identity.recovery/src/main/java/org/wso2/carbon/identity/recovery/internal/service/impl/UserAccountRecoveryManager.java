@@ -62,6 +62,7 @@ import org.wso2.carbon.user.core.model.ExpressionOperation;
 import org.wso2.carbon.user.core.model.OperationalCondition;
 import org.wso2.carbon.user.core.model.OperationalOperation;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,27 +299,19 @@ public class UserAccountRecoveryManager {
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
-            List<String> userStoreDomainNames = getDomainNames(tenantId);
-            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager) getUserStoreManager(tenantId);
-            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-            ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
             ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
-
-            for (String domain : userStoreDomainNames) {
-                List<ExpressionCondition> expressionConditionList =
-                        getExpressionConditionList(claims, domain, claimManager);
-                if (expressionConditionList.isEmpty()) {
-                    continue;
-                }
-                Condition operationalCondition = getOperationalCondition(expressionConditionList);
-                /* Get the users list that matches with the condition
-                   limit : 2, offset : 1, sortBy : null, sortOrder : null */
-                resultedUserList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, domain,
-                        UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
-                if (resultedUserList.size() > 1) {
-                    log.warn("Multiple users matched for given claims set: " + claims.keySet());
-                    throw Utils.handleClientException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager)
+                    getUserStoreManager(tenantId);
+            String userstoreDomain = extractDomainFromClaims(claims, abstractUserStoreManager);
+            if (userstoreDomain != null) {
+                populateUserListFromClaimsForDomain(tenantId, claims, userstoreDomain, resultedUserList,
+                        abstractUserStoreManager);
+            } else {
+                // If a userstore domain is not specified in the request, consider all userstores.
+                List<String> userStoreDomainNames = getDomainNames(tenantId);
+                for (String domain : userStoreDomainNames) {
+                    populateUserListFromClaimsForDomain(tenantId, claims, domain, resultedUserList,
+                            abstractUserStoreManager);
                 }
             }
             // Return empty when no users are found.
@@ -333,8 +326,81 @@ public class UserAccountRecoveryManager {
                         Arrays.toString(claims.keySet().toArray()));
             }
             throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
-        } catch (UserStoreException e) {
+        } catch (UserStoreException | IdentityRecoveryServerException e) {
             throw new IdentityRecoveryException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extract and remove the userstore domain from the claim set.
+     *
+     * @param claims                   List of UserClaims.
+     * @param abstractUserStoreManager Abstract user store manager.
+     * @return Userstore domain of the claims.
+     * @throws IdentityRecoveryClientException Error if multiple domains are present.
+     */
+    private String extractDomainFromClaims(Map<String, String> claims,
+                                           AbstractUserStoreManager abstractUserStoreManager)
+            throws IdentityRecoveryClientException {
+
+        String domain = null;
+        for (Map.Entry<String, String> entry : claims.entrySet()) {
+            if (StringUtils.isNotBlank(entry.getValue()) && entry.getValue().contains(UserCoreConstants.DOMAIN_SEPARATOR)) {
+                String extractedDomain = IdentityUtil.extractDomainFromName(entry.getValue());
+                // Some claims (Eg:- Birth date) can have "/" in claim values. Skip such claims where
+                // secondaryUserStoreManager for the extracted domain is null.
+                UserStoreManager secondaryUserStoreManager = abstractUserStoreManager.
+                        getSecondaryUserStoreManager(extractedDomain);
+                if (secondaryUserStoreManager != null) {
+                    if (domain == null) {
+                        domain = extractedDomain;
+                    } else if (!domain.equalsIgnoreCase(extractedDomain)) {
+                        log.warn("Multiple domains found for the given claim set: " + claims.keySet());
+                        throw Utils.handleClientException(
+                                IdentityRecoveryConstants.ErrorMessages.
+                                        ERROR_CODE_USERNAME_RECOVERY_MULTIPLE_DOMAINS, null);
+                    }
+                    // Remove domain from claim value.
+                    entry.setValue(UserCoreUtil.removeDomainFromName(entry.getValue()));
+                }
+            }
+        }
+        return domain;
+    }
+
+    /**
+     * Get the users for the given claim set and userstore domain and populate the user list.
+     *
+     * @param tenantId                 Tenant ID.
+     * @param claims                   List of UserClaims.
+     * @param userstoreDomain          Userstore domain of the claims.
+     * @param userList                 List of users.
+     * @param abstractUserStoreManager Abstract user store manager.
+     * @throws IdentityRecoveryClientException Error if multiple users exist for the given claims set.
+     * @throws UserStoreException Error while getting the attribute name of a claim.
+     */
+    private void populateUserListFromClaimsForDomain(int tenantId, Map<String, String> claims, String userstoreDomain,
+                                                     ArrayList<org.wso2.carbon.user.core.common.User> userList,
+                                                     AbstractUserStoreManager abstractUserStoreManager)
+            throws UserStoreException, IdentityRecoveryClientException {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        ClaimManager claimManager = (ClaimManager) realmService.getTenantUserRealm(tenantId).getClaimManager();
+
+        List<ExpressionCondition> expressionConditionList =
+                getExpressionConditionList(claims, userstoreDomain, claimManager);
+
+        if (!expressionConditionList.isEmpty()) {
+            Condition operationalCondition = getOperationalCondition(expressionConditionList);
+            // Get the user list that matches the condition limit : 2, offset : 1, sortBy : null, sortOrder : null
+            userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
+                    UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
+
+            if (userList.size() > 1) {
+                log.warn("Multiple users matched for given claims set: " + claims.keySet());
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+            }
         }
     }
 
