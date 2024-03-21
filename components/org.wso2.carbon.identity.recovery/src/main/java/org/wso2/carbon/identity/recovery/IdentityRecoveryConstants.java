@@ -680,6 +680,8 @@ public class IdentityRecoveryConstants {
                 ".Password.MaxFailedAttempts";
         public static final String RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.Notification" +
                 ".Password.MaxResendAttempts";
+        public static final String PASSWORD_RECOVERY_EMAIL_LINK_ENABLE = "Recovery.Notification.Password.emailLink.Enable";
+        public static final String PASSWORD_RECOVERY_SMS_OTP_ENABLE = "Recovery.Notification.Password.smsOtp.Enable";
     }
 
     public static class DBConstants {
