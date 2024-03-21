@@ -135,6 +135,10 @@ public class RecoveryConfigImplTest {
                 .RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, "Max failed attempts for password recovery");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,"Max resend attempts for password recovery");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                "Notification based password recovery via an email");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                "Notification based password recovery using SMS OTP");
 
         Map<String, String> nameMapping = recoveryConfigImpl.getPropertyNameMapping();
 
@@ -253,6 +257,8 @@ public class RecoveryConfigImplTest {
         String enableAutoLoginAfterPasswordReset = "false";
         String recoveryOTPMaxFailedAttempts = "3";
         String recoveryOTPMaxResendAttempts = "5";
+        String enableEmailNotificationBasedPasswordRecovery = "false";
+        String enableSMSNotificationBasedPasswordRecovery = "false";
 
         Map<String, String> defaultPropertiesExpected = new HashMap<>();
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
@@ -309,6 +315,10 @@ public class RecoveryConfigImplTest {
                 RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, recoveryOTPMaxFailedAttempts);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
                 RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, recoveryOTPMaxResendAttempts);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, enableEmailNotificationBasedPasswordRecovery);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.
+                PASSWORD_RECOVERY_SMS_OTP_ENABLE, enableSMSNotificationBasedPasswordRecovery);
 
         String tenantDomain = "admin";
         // Here tenantDomain parameter is not used by method itself
