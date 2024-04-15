@@ -74,8 +74,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                "Notification based password recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -179,7 +177,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -214,7 +211,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
-        String enableNotificationBasedPasswordRecovery = "false";
         String enableSendOTPInEmail = "false";
         String useUppercaseCharactersInOTP = StringUtils.EMPTY;
         String useLowercaseCharactersInOTP = StringUtils.EMPTY;
@@ -246,8 +242,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableEmailNotificationBasedPasswordRecovery = "false";
         String enableSMSNotificationBasedPasswordRecovery = "false";
 
-        String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         String sendOTPInEmailProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
         String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
@@ -309,9 +303,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(smsOtpRegexProperty)) {
             smsOtpRegex = smsOtpRegexProperty;
-        }
-        if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
-            enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
         }
         if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
             enableSendOTPInEmail = sendOTPInEmailProperty;
@@ -404,8 +395,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         }
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                enableNotificationBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 enableSendOTPInEmail);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -478,9 +467,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, Property> getMetaData() {
 
         Map<String, Property> meta = new HashMap<>();
-
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
