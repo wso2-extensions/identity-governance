@@ -103,11 +103,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                     claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
+            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
             if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
                 throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getCode(), IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getMessage());
             }
+            return;
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
@@ -260,7 +262,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                 (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
-            // Not required to handle in this handler.
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
             return;
         }
 
