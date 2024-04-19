@@ -121,6 +121,8 @@ public class IdentityRecoveryConstants {
     public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/roles";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
+    public static final String MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/mobileNumbers";
+    public static final String VERIFIED_MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/verifiedMobileNumbers";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -128,6 +130,12 @@ public class IdentityRecoveryConstants {
     public static final String PENDING_ASK_PASSWORD = "PENDING_AP";
     public static final String PENDING_EMAIL_VERIFICATION = "PENDING_EV";
     public static final String ACCOUNT_STATE_UNLOCKED = "UNLOCKED";
+
+    /*
+    This constant will be used to identify that user is verifying a mobile number which needs to be added to
+    http://wso2.org/claims/verifiedMobileNumbers claim and not to http://wso2.org/claims/mobile.
+    */
+    public static final String MOBILE_NUMBER_VERIFICATION_ONLY = "verificationOnly";
 
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
@@ -433,6 +441,12 @@ public class IdentityRecoveryConstants {
 
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+
+        // UMV - User Mobile Verification.
+        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED("UMV-10001", " Verified mobile numbers claim cannot be" +
+                " updated as mobile number verification on update is disabled."),
+        ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS("UMV-10002", "Unable to verify " +
+                "multiple mobile numbers simultaneously."),
 
         INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
         ,
@@ -958,6 +972,11 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an SMS OTP verification, when the mobile number was updated by user
         during the SMS OTP flow at the first login where the mobile number is not previously set. At the moment mobile
         number was already verified during the SMS OTP verification. So no need to verify it again. */
-        SKIP_ON_SMS_OTP_FLOW
+        SKIP_ON_SMS_OTP_FLOW,
+
+        /* State maintained to skip triggering an SMS OTP verification, when the mobile number to be updated is included
+        in the verifiedMobileNumbers claim, which has been already verified.
+        */
+        SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS
     }
 }

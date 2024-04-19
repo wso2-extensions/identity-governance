@@ -22,11 +22,11 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -50,8 +50,12 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This event handler is used to send a verification SMS when a claim update event to update the mobile number
@@ -95,11 +99,15 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             }
             /* We need to empty 'MOBILE_NUMBER_PENDING_VALUE_CLAIM' because having a value in that claim implies
             a verification is pending. But verification is not enabled anymore. */
-            if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
+            if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) ||
+                    claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
-            claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
-            return;
+            if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
+                throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getCode(), IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getMessage());
+            }
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
@@ -132,7 +140,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Store verification details in the recovery data store and initiate notification.
      *
-     * @param user  User.
+     * @param user                            User.
      * @param verificationPendingMobileNumber Updated mobile number that is pending verification.
      * @throws IdentityEventException
      */
@@ -163,9 +171,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Trigger the SMS notification.
      *
-     * @param user      User.
-     * @param code      SMS OTP.
-     * @param props     Other properties.
+     * @param user                            User.
+     * @param code                            SMS OTP.
+     * @param props                           Other properties.
      * @param verificationPendingMobileNumber Mobile number to which the SMS should be sent.
      * @throws IdentityRecoveryException
      */
@@ -210,9 +218,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Form User object from username, tenant domain, and user store domain.
      *
-     * @param userName          UserName.
-     * @param tenantDomain      Tenant Domain.
-     * @param userStoreDomain   User Domain.
+     * @param userName        UserName.
+     * @param tenantDomain    Tenant Domain.
+     * @param userStoreDomain User Domain.
      * @return User.
      */
     private User getUser(String userName, String tenantDomain, String userStoreDomain) {
@@ -228,33 +236,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      * If the mobile claim is updated, set it to the 'MOBILE_NUMBER_PENDING_VALUE_CLAIM' claim.
      * Set thread local state to skip sending verification notification in inapplicable claim update scenarios.
      *
-     * @param claims            Map of claims to be updated.
-     * @param userStoreManager  User store manager.
-     * @param user              User.
+     * @param claims           Map of claims to be updated.
+     * @param userStoreManager User store manager.
+     * @param user             User.
      * @throws IdentityEventException
      */
     private void preSetUserClaimOnMobileNumberUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
                                                      User user) throws IdentityEventException {
-
-        if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
-                (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
-            // Not required to handle in this handler.
-            return;
-        }
-
-        /*
-        Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
-        OTP. Therefore, the mobile number is already verified & no need to verify it again.
-         */
-        if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().equals
-                (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
-            invalidatePendingMobileVerification(user, userStoreManager, claims);
-            return;
-        }
-
-        if (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() != null) {
-            Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
-        }
 
         if (MapUtils.isEmpty(claims)) {
             // Not required to handle in this handler.
@@ -263,57 +251,176 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+        if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM) &&
+                claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
+            throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getCode(), IdentityRecoveryConstants.
+                    ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getMessage());
+        }
 
-        if (StringUtils.isNotBlank(mobileNumber) &&
-                isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
-            String existingMobileNumber;
-            String username = user.getUserName();
-            try {
-                existingMobileNumber = userStoreManager.getUserClaimValue(username, IdentityRecoveryConstants.
-                        MOBILE_NUMBER_CLAIM, null);
-            } catch (UserStoreException e) {
-                String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
-                        "domain: %s and user store: %s", username, user.getTenantDomain(), user.getUserStoreDomain());
-                throw new IdentityEventException(error, e);
-            }
+        if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
+                (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
+            // Not required to handle in this handler.
+            return;
+        }
 
-            if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
-                            "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP verification " +
-                            "will not be triggered.", mobileNumber, username, user.getTenantDomain(),
-                            user.getUserStoreDomain()));
+        if (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() != null) {
+            Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
+        }
+
+        /*
+        Handle mobileNumbers and verifyMobileNumbers claims.
+        */
+        List<String> exisitingVerifiedNumbersList = getExistingClaimList(userStoreManager, user,
+                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+        List<String> updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
+                VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListFromString(claims.get(IdentityRecoveryConstants.
+                VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
+
+        List<String> exisitingAllNumbersList = getExistingClaimList(userStoreManager, user,
+                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        List<String> updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
+                getListFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) : exisitingAllNumbersList;
+
+        /*
+        Finds the verification pending mobile number and remove it from the verified numbers list in the payload.
+        */
+        String mobileNumber = null;
+        if (updatedVerifiedNumbersList != null) {
+            mobileNumber = getVerificationPendingMobileNumber(exisitingVerifiedNumbersList,
+                    updatedVerifiedNumbersList);
+            updatedVerifiedNumbersList.remove(mobileNumber);
+        }
+
+        /*
+        Finds the removed numbers from the existing mobile numbers list and remove them from the verified numbers list.
+        As verified numbers list should not contain numbers that are not in the mobile numbers list.
+        */
+        if (!updatedAllNumbersList.isEmpty()) {
+            for (String number : exisitingAllNumbersList) {
+                if (!updatedAllNumbersList.contains(number) && updatedVerifiedNumbersList != null) {
+                    updatedVerifiedNumbersList.remove(number);
                 }
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
+            }
+        }
+
+        if (mobileNumber == null) {
+            mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+
+            /*
+            Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
+            OTP. Therefore, the mobile number is already verified & no need to verify it again.
+             */
+            if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().
+                    equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate()) && mobileNumber != null) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
             /*
-            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
-            temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
-            check for 'verifyMobile' claim.
-             */
-            if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+            Mobile numbers in verifiedMobileNumbers claim are already verified. No need to verify again.
+            */
+            if (exisitingVerifiedNumbersList.contains(mobileNumber)) {
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
-            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
-            claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-        } else {
-            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+
+            if (StringUtils.isNotBlank(mobileNumber)) {
+                String existingMobileNumber;
+                String username = user.getUserName();
+                try {
+                    existingMobileNumber = userStoreManager.getUserClaimValue(username, IdentityRecoveryConstants.
+                            MOBILE_NUMBER_CLAIM, null);
+                } catch (UserStoreException e) {
+                    String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
+                            "domain: %s and user store: %s", username, user.getTenantDomain(), user.getUserStoreDomain());
+                    throw new IdentityEventException(error, e);
+                }
+
+                if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
+                                        "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
+                                        "verification will not be triggered.", mobileNumber, username,
+                                user.getTenantDomain(), user.getUserStoreDomain()));
+                    }
+                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
+                    invalidatePendingMobileVerification(user, userStoreManager, claims);
+                    return;
+                }
+                /*
+                When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
+                temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
+                check for 'verifyMobile' claim.
+                 */
+                if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+                    invalidatePendingMobileVerification(user, userStoreManager, claims);
+                    return;
+                }
+                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            } else {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            }
         }
+
+        if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
+            claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
+        }
+        claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, String.join(",", updatedAllNumbersList));
+        claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, String.join(",",
+                updatedVerifiedNumbersList));
+
+    }
+
+    private List<String> getListFromString(String str) {
+
+        return str != null ? new LinkedList<>(Arrays.asList(str.split(","))) : new ArrayList<>();
+    }
+
+    private List<String> getExistingClaimList(UserStoreManager userStoreManager, User user, String claimURI) throws
+            IdentityEventException {
+
+        List<String> existingClaimList;
+        try {
+            existingClaimList = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null) != null ?
+                    new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
+                            null).split(","))) : new ArrayList<>();
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
+                    " for user: " + user.toFullQualifiedUsername(), e);
+        }
+        return existingClaimList;
+    }
+
+    private String getVerificationPendingMobileNumber(List<String> existingVerifiedNumbersList,
+                                                      List<String> updatedVerifiedNumbersList) throws
+            IdentityEventException {
+
+        String mobileNumber = null;
+        for (String verificationPendingNumber : updatedVerifiedNumbersList) {
+            if (!existingVerifiedNumbersList.contains(verificationPendingNumber)) {
+                if (mobileNumber == null) {
+                    mobileNumber = verificationPendingNumber;
+                } else {
+                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                            ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getCode(), IdentityRecoveryConstants.
+                            ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getMessage());
+                }
+            }
+        }
+        return mobileNumber;
     }
 
     /**
      * Initiate notification sending process if the thread local is not set to skip verification process.
      *
-     * @param user              User.
-     * @param userStoreManager  User store manager.
+     * @param user             User.
+     * @param userStoreManager User store manager.
      * @throws IdentityEventException
      */
     private void postSetUserClaimOnMobileNumberUpdate(User user, UserStoreManager userStoreManager) throws
@@ -325,11 +432,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             if (!IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                     (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants.
                     SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString().equals
-                    (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants
+                            (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString().equals
                             (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().equals
-                    (skipMobileNumVerificationOnUpdateState)) {
+                            (skipMobileNumVerificationOnUpdateState) && !IdentityRecoveryConstants.
+                    SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString().
+                    equals(skipMobileNumVerificationOnUpdateState)) {
 
                 String verificationPendingMobileNumClaim = getVerificationPendingMobileNumValue(userStoreManager, user);
 
@@ -345,8 +454,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Get the 'http://wso2.org/claims/identity/mobileNumber.pendingValue' claim value.
      *
-     * @param userStoreManager  User store manager.
-     * @param user              User.
+     * @param userStoreManager User store manager.
+     * @param user             User.
      * @return Claim value.
      * @throws IdentityEventException
      */
@@ -379,7 +488,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Check whether mobile verification on update feature is enabled via connector configuration.
      *
-     * @param userTenantDomain      Tenant domain of the user.
+     * @param userTenantDomain Tenant domain of the user.
      * @return True if the feature is enabled, false otherwise.
      * @throws IdentityEventException
      */
@@ -392,13 +501,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Invalidate pending mobile number verification.
      *
-     * @param user              User.
-     * @param userStoreManager  User store manager.
-     * @param claims            User claims.
+     * @param user             User.
+     * @param userStoreManager User store manager.
+     * @param claims           User claims.
      * @throws IdentityEventException
      */
     private void invalidatePendingMobileVerification(User user, UserStoreManager userStoreManager,
-                                                    Map<String, String> claims ) throws IdentityEventException {
+                                                     Map<String, String> claims) throws IdentityEventException {
 
         if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain()) &&
                 StringUtils.isNotBlank(getVerificationPendingMobileNumValue(userStoreManager, user))) {
@@ -417,7 +526,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     /**
      * Check if the claims contain the temporary claim 'verifyMobile' and it is set to true.
      *
-     * @param claims    User claims.
+     * @param claims User claims.
      * @return True if 'verifyMobile' claim is available as true, false otherwise.
      */
     private boolean isVerifyMobileClaimAvailable(Map<String, String> claims) {

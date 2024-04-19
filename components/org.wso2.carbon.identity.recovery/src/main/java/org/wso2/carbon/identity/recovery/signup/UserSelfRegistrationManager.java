@@ -98,16 +98,15 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -832,7 +831,7 @@ public class UserSelfRegistrationManager {
 
     /**
      * Introspects self registration confirmation code details without invalidating it.
-     * Does not triggering notification events or update user claims.
+     * Does not trigger notification events or update user claims.
      *
      * @param skipExpiredCodeValidation   Skip confirmation code validation against expiration.
      * @param code                      Confirmation code.
@@ -844,7 +843,7 @@ public class UserSelfRegistrationManager {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
-        // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
+        // If the code is validated, the load method will return data. Otherwise, method will throw exceptions.
         UserRecoveryData recoveryData;
         if (!skipExpiredCodeValidation) {
             recoveryData = userRecoveryDataStore.load(code);
@@ -927,10 +926,50 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
+                /*
+                Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
+                claim.
+                */
+                if (Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.MOBILE_NUMBER_VERIFICATION_ONLY))) {
+                    try {
+                        String existingVerifiedMobileNumbers = userStoreManager.getUserClaimValue(user.getUserName(),
+                                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, null);
+                        List<String> existingVerifiedMobileNumbersList = new ArrayList<>();
+                        if (StringUtils.isNotBlank(existingVerifiedMobileNumbers)) {
+                            existingVerifiedMobileNumbersList.addAll(Arrays.asList(existingVerifiedMobileNumbers.split(
+                                    ",")));
+                        }
+                        if (!existingVerifiedMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                            existingVerifiedMobileNumbersList.add(pendingMobileNumberClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                                    String.join(",", existingVerifiedMobileNumbersList));
+                        }
+
+                        /*
+                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence adding the verified number to
+                        mobileNumbers claim as well.
+                        */
+                        String allMobileNumbers = userStoreManager.getUserClaimValue(user.getUserName(),
+                                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, null);
+                        List<String> allMobileNumbersList = new ArrayList<>();
+                        if (StringUtils.isNotBlank(allMobileNumbers)) {
+                            allMobileNumbersList.addAll(Arrays.asList(allMobileNumbers.split(",")));
+                        }
+                        if (!allMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                            allMobileNumbersList.add(pendingMobileNumberClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                                    String.join(",", allMobileNumbersList));
+                        }
+                    } catch (UserStoreException e) {;
+                        log.error("Error while retrieving verified mobile numbers for user : " + user.getUserName(),
+                                e);
+                    }
+                } else {
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                    userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+                }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                               Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }
