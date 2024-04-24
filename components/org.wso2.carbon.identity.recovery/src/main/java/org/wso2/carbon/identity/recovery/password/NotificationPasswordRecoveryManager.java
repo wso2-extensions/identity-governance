@@ -507,8 +507,8 @@ public class NotificationPasswordRecoveryManager {
      */
     private void validatePasswordRecoveryConfiguration(String tenantDomain) throws IdentityRecoveryException {
 
-        boolean isRecoveryEnable = Boolean.parseBoolean(
-                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+        boolean isEmailRecoveryEnable = Boolean.parseBoolean(
+                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
                         tenantDomain));
         boolean isSMSOtpRecoveryEnable = Boolean.parseBoolean(
                 Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
