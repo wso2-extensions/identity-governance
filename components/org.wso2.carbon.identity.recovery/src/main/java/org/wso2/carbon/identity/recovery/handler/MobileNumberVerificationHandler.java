@@ -273,16 +273,17 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         /*
         Handle mobileNumbers and verifyMobileNumbers claims.
         */
-        List<String> exisitingVerifiedNumbersList = getExistingClaimList(userStoreManager, user,
+        List<String> exisitingVerifiedNumbersList = getExistingClaimValue(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         List<String> updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
-                VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListFromString(claims.get(IdentityRecoveryConstants.
+                VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.
                 VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
 
-        List<String> exisitingAllNumbersList = getExistingClaimList(userStoreManager, user,
+        List<String> exisitingAllNumbersList = getExistingClaimValue(userStoreManager, user,
                 IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         List<String> updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
-                getListFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) : exisitingAllNumbersList;
+                getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) :
+                exisitingAllNumbersList;
 
         /*
         Finds the verification pending mobile number and remove it from the verified numbers list in the payload.
@@ -312,7 +313,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             /*
             Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
             OTP. Therefore, the mobile number is already verified & no need to verify it again.
-             */
+            */
             if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().
                     equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate()) && mobileNumber != null) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
@@ -379,26 +380,48 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
     }
 
-    private List<String> getListFromString(String str) {
+    /**
+     * Convert comma separated list of mobile numbers to a list.
+     *
+     * @param mobileNumbers Comma separated list of mobile numbers.
+     * @return List of mobile numbers.
+     */
+    private List<String> getListOfMobileNumbersFromString(String mobileNumbers) {
 
-        return str != null ? new LinkedList<>(Arrays.asList(str.split(","))) : new ArrayList<>();
+        return mobileNumbers != null ? new LinkedList<>(Arrays.asList(mobileNumbers.split(","))) :
+                new ArrayList<>();
     }
 
-    private List<String> getExistingClaimList(UserStoreManager userStoreManager, User user, String claimURI) throws
+    /**
+     * Get the existing claim value of the given claim URI.
+     *
+     * @param userStoreManager User store manager.
+     * @param user User.
+     * @param claimURI Claim URI.
+     * @return List of existing claim values.
+     */
+    private List<String> getExistingClaimValue(UserStoreManager userStoreManager, User user, String claimURI) throws
             IdentityEventException {
 
-        List<String> existingClaimList;
+        List<String> existingClaimValue;
         try {
-            existingClaimList = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null) != null ?
+            existingClaimValue = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null) != null ?
                     new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
                             null).split(","))) : new ArrayList<>();
         } catch (UserStoreException e) {
             throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
                     " for user: " + user.toFullQualifiedUsername(), e);
         }
-        return existingClaimList;
+        return existingClaimValue;
     }
 
+    /**
+     * Get the mobile number that is pending verification.
+     *
+     * @param existingVerifiedNumbersList List of existing verified mobile numbers.
+     * @param updatedVerifiedNumbersList  List of updated verified mobile numbers.
+     * @return Mobile number that is pending verification.
+     */
     private String getVerificationPendingMobileNumber(List<String> existingVerifiedNumbersList,
                                                       List<String> updatedVerifiedNumbersList) throws
             IdentityEventException {
