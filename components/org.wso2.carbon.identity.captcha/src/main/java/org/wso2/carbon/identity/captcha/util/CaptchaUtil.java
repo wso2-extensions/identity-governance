@@ -18,26 +18,20 @@
 
 package org.wso2.carbon.identity.captcha.util;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.hc.core5.net.URIBuilder;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.http.client.HttpClientConstants;
+import org.wso2.carbon.http.client.exception.HttpClientException;
+import org.wso2.carbon.http.client.handler.JsonResponseHandler;
+import org.wso2.carbon.http.client.request.HttpPostRequest;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -65,7 +59,6 @@ import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URISyntaxException;
@@ -79,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import javax.servlet.ServletRequest;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_MECHANISM;
@@ -274,8 +268,6 @@ public class CaptchaUtil {
 
     public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
 
-        CloseableHttpClient httpclient =
-                CaptchaDataHolder.getInstance().getHttpClientService().getClosableHttpClient(CaptchaUtil.class.getName());
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
         HttpPost httpPost;
@@ -290,24 +282,27 @@ public class CaptchaUtil {
             httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
         }
 
-        CloseableHttpResponse response;
+        JsonObject verificationResponse;
         try {
-            response = httpclient.execute(httpPost);
+            verificationResponse = CaptchaDataHolder.getInstance().getHttpClientService()
+                    .getClosableHttpClient(CaptchaUtil.class.getName()).execute(httpPost, new JsonResponseHandler());
+        } catch (HttpClientException e) {
+            if (HttpClientConstants.Error.RESPONSE_ENTITY_EMPTY.getCode().equals(e.getErrorCode())) {
+                throw new CaptchaServerException("reCaptcha verification response is not received.");
+            }
+            throw new CaptchaServerException("Unable to read the verification response.", e.getCause());
         } catch (IOException e) {
             throw new CaptchaServerException("Unable to get the verification response.", e);
         }
-
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            throw new CaptchaServerException("reCaptcha verification response is not received.");
+        if (verificationResponse == null) {
+            throw new CaptchaClientException("Error receiving reCaptcha response from the server");
         }
-
         if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
             // For ReCaptcha Enterprise.
-            verifyReCaptchaEnterpriseResponse(entity);
+            verifyReCaptchaEnterpriseResponse(verificationResponse);
         } else {
             // For Recaptcha v2 and v3.
-            verifyReCaptchaResponse(entity);
+            verifyReCaptchaResponse(verificationResponse);
         }
 
         return true;
@@ -315,127 +310,97 @@ public class CaptchaUtil {
 
     private static HttpPost createReCaptchaEnterpriseVerificationHttpPost(String reCaptchaResponse) {
 
-        HttpPost httpPost;
         String recaptchaUrl = CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl();
         String projectID = CaptchaDataHolder.getInstance().getReCaptchaProjectID();
         String siteKey = CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
         String apiKey = CaptchaDataHolder.getInstance().getReCaptchaAPIKey();
 
         String verifyUrl = recaptchaUrl + "/v1/projects/" + projectID + "/assessments?key=" + apiKey;
-        httpPost = new HttpPost(verifyUrl);
-
-        httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         String json = String.format("{ \"event\": { \"token\": \"%s\", \"siteKey\": \"%s\" } }", reCaptchaResponse,
                 siteKey);
 
-        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
-
-        httpPost.setEntity(entity);
-
-        return httpPost;
+        return HttpPostRequest.createJsonRequest(verifyUrl, json);
     }
 
     private static HttpPost createReCaptchaVerificationHttpPost(String reCaptchaResponse) {
 
-        HttpPost httpPost;
-        httpPost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
-        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
-                        .getInstance().getReCaptchaSecretKey()),
-                new BasicNameValuePair("response", reCaptchaResponse));
-        httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
-
-        return httpPost;
+        Map<String, String> params = new HashMap<>();
+        params.put("secret", CaptchaDataHolder.getInstance().getReCaptchaSecretKey());
+        params.put("response", reCaptchaResponse);
+        return HttpPostRequest.createUrlEncodedRequest(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl(), params);
     }
 
-    private static void verifyReCaptchaEnterpriseResponse(HttpEntity entity)
+    private static void verifyReCaptchaEnterpriseResponse(JsonObject verificationResponse)
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
         final double warnScoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaWarnScoreThreshold();
 
         try {
-            try (InputStream in = entity.getContent()) {
-                JsonElement jsonElement = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-                JsonObject verificationResponse = jsonElement.getAsJsonObject();
-                if (verificationResponse == null) {
-                    throw new CaptchaClientException("Error receiving reCaptcha response from the server");
-                }
-                JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES).
-                        getAsJsonObject();
-                boolean success = tokenProperties.get(CaptchaConstants.CAPTCHA_VALID).getAsBoolean();
+            JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES).
+                    getAsJsonObject();
+            boolean success = tokenProperties.get(CaptchaConstants.CAPTCHA_VALID).getAsBoolean();
 
-                JsonObject riskAnalysis = verificationResponse.get(CaptchaConstants.CAPTCHA_RISK_ANALYSIS).
-                        getAsJsonObject();
+            JsonObject riskAnalysis = verificationResponse.get(CaptchaConstants.CAPTCHA_RISK_ANALYSIS).
+                    getAsJsonObject();
 
-                // Whether this request was a valid reCAPTCHA token.
-                if (!success) {
-                    throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
-                            verificationResponse.get("error-codes"));
+            // Whether this request was a valid reCAPTCHA token.
+            if (!success) {
+                throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
+                        verificationResponse.get("error-codes"));
+            }
+            if (riskAnalysis.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
+                double score = riskAnalysis.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
+                // reCAPTCHA enterprise response contains score.
+                if (log.isDebugEnabled()) {
+                    log.debug("reCAPTCHA Enterprise response { timestamp:" +
+                            tokenProperties.get("createTime") + ", action: " +
+                            tokenProperties.get("action") + ", score: " + score + " }");
                 }
-                if (riskAnalysis.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
-                    double score = riskAnalysis.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
-                    // reCAPTCHA enterprise response contains score.
-                    if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCHA Enterprise response { timestamp:" +
-                                tokenProperties.get("createTime") + ", action: " +
-                                tokenProperties.get("action") + ", score: " + score + " }");
-                    }
-                    if (score < scoreThreshold) {
-                        throw new CaptchaClientException("reCaptcha score is less than the threshold.");
-                    } else if (score < warnScoreThreshold) {
-                        log.warn("User access with low reCaptcha score.");
-                    }
+                if (score < scoreThreshold) {
+                    throw new CaptchaClientException("reCaptcha score is less than the threshold.");
+                } else if (score < warnScoreThreshold) {
+                    log.warn("User access with low reCaptcha score.");
                 }
             }
-        } catch (IOException e) {
-            throw new CaptchaServerException("Unable to read the verification response.", e);
         } catch (ClassCastException e) {
             throw new CaptchaServerException("Unable to cast the response value.", e);
         }
     }
 
-    private static void verifyReCaptchaResponse(HttpEntity entity)
+    private static void verifyReCaptchaResponse(JsonObject verificationResponse)
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
         final double warnScoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaWarnScoreThreshold();
 
         try {
-            try (InputStream in = entity.getContent()) {
-                JsonElement jsonElement = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-                JsonObject verificationResponse = jsonElement.getAsJsonObject();
-                if (verificationResponse == null) {
-                    throw new CaptchaClientException("Error receiving reCaptcha response from the server");
+            boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
+            // Whether this request was a valid reCAPTCHA token.
+            if (!success) {
+                throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
+                        verificationResponse.get("error-codes"));
+            }
+            if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
+                double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
+                // reCAPTCHA v3 response contains score.
+                if (log.isDebugEnabled()) {
+                    log.debug("reCAPTCHA v3 response { timestamp:" +
+                            verificationResponse.get("challenge_ts") + ", action: " +
+                            verificationResponse.get("action") + ", score: " + score + " }");
                 }
-                boolean success = verificationResponse.get(CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean();
-                // Whether this request was a valid reCAPTCHA token.
-                if (!success) {
-                    throw new CaptchaClientException("reCaptcha token is invalid. Error:" +
-                            verificationResponse.get("error-codes"));
+                if (score < scoreThreshold) {
+                    throw new CaptchaClientException("reCaptcha score is less than the threshold.");
+                } else if (score < warnScoreThreshold) {
+                    log.warn("reCaptcha score is below warn threshold.");
                 }
-                if (verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE) != null) {
-                    double score = verificationResponse.get(CaptchaConstants.CAPTCHA_SCORE).getAsDouble();
-                    // reCAPTCHA v3 response contains score.
-                    if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCHA v3 response { timestamp:" +
-                                verificationResponse.get("challenge_ts") + ", action: " +
-                                verificationResponse.get("action") + ", score: " + score + " }");
-                    }
-                    if (score < scoreThreshold) {
-                        throw new CaptchaClientException("reCaptcha score is less than the threshold.");
-                    } else if (score < warnScoreThreshold) {
-                        log.warn("reCaptcha score is below warn threshold.");
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("reCAPTCHA v2 response { timestamp:" +
-                                verificationResponse.get("challenge_ts") + " }");
-                    }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("reCAPTCHA v2 response { timestamp:" +
+                            verificationResponse.get("challenge_ts") + " }");
                 }
             }
-        } catch (IOException e) {
-            throw new CaptchaServerException("Unable to read the verification response.", e);
         } catch (ClassCastException e) {
             throw new CaptchaServerException("Unable to cast the response value.", e);
         }

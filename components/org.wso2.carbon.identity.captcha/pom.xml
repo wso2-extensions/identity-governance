@@ -165,10 +165,8 @@
                             org.apache.commons.lang; version="${commons-lang.wso2.osgi.version.range}",
                             org.apache.commons.collections; version="${commons-collections.wso2.osgi.version.range}",
                             org.apache.commons.logging.*; version="${commons-logging.osgi.version.range}",
-                            org.apache.http.*,
-                            org.apache.http.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
-                            org.apache.http.impl.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
-                            org.apache.http.message.*;version="${httpcore.osgi.version.range}",
+                            org.apache.hc.client5.http.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.hc.core5.*;version="${httpcore.osgi.version.range}",
 
                             javax.servlet.*; version="${imp.pkg.version.javax.servlet}",
 
@@ -203,6 +201,7 @@
                             org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.http.client.*; version="${carbon.kernel.package.import.version.range}",
                         </Import-Package>
                     </instructions>
                 </configuration>
