@@ -26,17 +26,17 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.hc.core5.net.URIBuilder;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
@@ -274,7 +274,8 @@ public class CaptchaUtil {
 
     public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
 
-        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
+        CloseableHttpClient httpclient =
+                CaptchaDataHolder.getInstance().getHttpClientService().getClosableHttpClient(CaptchaUtil.class.getName());
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
         HttpPost httpPost;
@@ -289,7 +290,7 @@ public class CaptchaUtil {
             httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
         }
 
-        HttpResponse response;
+        CloseableHttpResponse response;
         try {
             response = httpclient.execute(httpPost);
         } catch (IOException e) {
