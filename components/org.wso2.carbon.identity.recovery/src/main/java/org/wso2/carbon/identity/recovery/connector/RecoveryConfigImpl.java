@@ -74,8 +74,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, String> getPropertyNameMapping() {
 
         Map<String, String> nameMapping = new HashMap<>();
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                "Notification based password recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -127,6 +125,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 "Max failed attempts for password recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,
                 "Max resend attempts for password recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                "Notification based password recovery via an email");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                "Notification based password recovery using SMS OTP");
         return nameMapping;
     }
 
@@ -175,7 +177,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public String[] getPropertyNames() {
 
         List<String> properties = new ArrayList<>();
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -202,13 +203,14 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE);
         return properties.toArray(new String[0]);
     }
 
     @Override
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
-        String enableNotificationBasedPasswordRecovery = "false";
         String enableSendOTPInEmail = "false";
         String useUppercaseCharactersInOTP = StringUtils.EMPTY;
         String useLowercaseCharactersInOTP = StringUtils.EMPTY;
@@ -237,9 +239,9 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String recoveryMaxResendAttempts = "5";
         int httpsProxyPort = 443;
         String secureHttpProtocol = "https";
+        String enableEmailNotificationBasedPasswordRecovery = "false";
+        String enableSMSNotificationBasedPasswordRecovery = "false";
 
-        String notificationBasedPasswordRecovery = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY);
         String sendOTPInEmailProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
         String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
@@ -291,15 +293,16 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS);
         String maxResendAttempts = IdentityUtil.getProperty(IdentityRecoveryConstants.
                 ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS);
+        String emailNotificationBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE);
+        String smsNotificationBasedPasswordRecovery = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE);
 
         if (StringUtils.isNotEmpty(expiryTimeSMSOTPProperty)) {
             expiryTimeSMSOTP = expiryTimeSMSOTPProperty;
         }
         if (StringUtils.isNotEmpty(smsOtpRegexProperty)) {
             smsOtpRegex = smsOtpRegexProperty;
-        }
-        if (StringUtils.isNotEmpty(notificationBasedPasswordRecovery)) {
-            enableNotificationBasedPasswordRecovery = notificationBasedPasswordRecovery;
         }
         if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
             enableSendOTPInEmail = sendOTPInEmailProperty;
@@ -384,10 +387,14 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(maxResendAttempts)) {
             recoveryMaxResendAttempts = maxResendAttempts;
         }
+        if (StringUtils.isNotEmpty(emailNotificationBasedPasswordRecovery)) {
+            enableEmailNotificationBasedPasswordRecovery = emailNotificationBasedPasswordRecovery;
+        }
+        if (StringUtils.isNotEmpty(smsNotificationBasedPasswordRecovery)) {
+            enableSMSNotificationBasedPasswordRecovery = smsNotificationBasedPasswordRecovery;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                enableNotificationBasedPasswordRecovery);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 enableSendOTPInEmail);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
@@ -439,6 +446,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 .RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, recoveryMaxFailedAttempts);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig
                 .RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, recoveryMaxResendAttempts);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                enableEmailNotificationBasedPasswordRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                enableSMSNotificationBasedPasswordRecovery);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
@@ -456,9 +467,6 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
     public Map<String, Property> getMetaData() {
 
         Map<String, Property> meta = new HashMap<>();
-
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
@@ -534,6 +542,15 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
 
         return meta;
     }
