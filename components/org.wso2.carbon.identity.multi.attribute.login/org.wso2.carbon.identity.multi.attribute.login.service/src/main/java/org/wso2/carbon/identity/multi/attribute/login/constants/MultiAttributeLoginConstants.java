@@ -24,7 +24,6 @@ package org.wso2.carbon.identity.multi.attribute.login.constants;
 public class MultiAttributeLoginConstants {
 
     public static final String USERNAME_CLAIM_URI = "http://wso2.org/claims/username";
-    public static final String MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI = "internal.user.identifier.claim.uri";
 
     public static final String MULTI_ATTRIBUTE_LOGIN_PROPERTY = "account.multiattributelogin.handler.enable";
     public static final String ALLOWED_LOGIN_ATTRIBUTES = "account.multiattributelogin.handler.allowedattributes";
