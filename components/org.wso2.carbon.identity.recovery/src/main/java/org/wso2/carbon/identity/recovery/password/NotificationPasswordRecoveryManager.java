@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADMIN_INITIATED;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
 import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 
@@ -913,9 +914,15 @@ public class NotificationPasswordRecoveryManager {
             }
         }
         // We don not need to change any states during user initiated password recovery.
-        if (!(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
-                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario))
-                && Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
+        if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+            IdentityUtil.threadLocalProperties.get().put(ADMIN_INITIATED, false);
+        }
+
+        if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                     IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
@@ -928,7 +935,6 @@ public class NotificationPasswordRecoveryManager {
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
-            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
         }
         return userClaims;
     }

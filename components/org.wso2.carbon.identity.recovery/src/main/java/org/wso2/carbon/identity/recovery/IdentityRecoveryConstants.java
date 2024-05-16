@@ -203,6 +203,8 @@ public class IdentityRecoveryConstants {
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
+    public static final String ADMIN_INITIATED = "AdminInitiated";
+
     private IdentityRecoveryConstants() {
 
     }
