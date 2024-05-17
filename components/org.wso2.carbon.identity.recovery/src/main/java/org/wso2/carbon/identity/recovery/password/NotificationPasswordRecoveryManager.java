@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -919,9 +920,15 @@ public class NotificationPasswordRecoveryManager {
             }
         }
         // We don not need to change any states during user initiated password recovery.
-        if (!(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
-                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario))
-                && Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
+        if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+            IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
+        }
+
+        if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                     IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
@@ -934,7 +941,6 @@ public class NotificationPasswordRecoveryManager {
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
-            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
         }
         return userClaims;
     }
