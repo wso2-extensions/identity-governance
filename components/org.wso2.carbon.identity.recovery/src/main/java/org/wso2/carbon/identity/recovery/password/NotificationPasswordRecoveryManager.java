@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -72,7 +73,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ADMIN_INITIATED;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
 import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 
@@ -925,7 +925,7 @@ public class NotificationPasswordRecoveryManager {
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
-            IdentityUtil.threadLocalProperties.get().put(ADMIN_INITIATED, false);
+            IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
         }
 
         if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
