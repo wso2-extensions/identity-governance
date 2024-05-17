@@ -203,7 +203,12 @@ public class IdentityRecoveryConstants {
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
 
-    public static final String ADMIN_INITIATED = "AdminInitiated";
+    // Properties related to password recovery failure due to account status.
+    public static final String ERROR_KEY = "error-key";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_STATUS_NOTIFY = "passwordRecoveryFailureNotify";
+    public static final String ACCOUNT_STATUS_LOCKED = "password.recovery.failed.account.locked";
+    public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
+    public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
 
     private IdentityRecoveryConstants() {
 
