@@ -104,7 +104,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
             claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
-            if (!claims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM).isEmpty()) {
+            if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
                 throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getCode(), IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getMessage());
