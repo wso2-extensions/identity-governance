@@ -31,6 +31,9 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.multi.attribute.login.constants.MultiAttributeLoginConstants;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -297,6 +300,32 @@ public class UserAccountRecoveryManager {
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getMessage(),
                     null);
         }
+
+        MultiAttributeLoginService multiAttributeLoginService = IdentityRecoveryServiceDataHolder.getInstance()
+                .getMultiAttributeLoginService();
+
+        if (multiAttributeLoginService.isEnabled(tenantDomain) && claims.containsKey(MultiAttributeLoginConstants
+                .MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI)) {
+            /* Multiple claims are not allowed when user identifier claim is enabled since identifier claim cannot be
+             used in combination with other claims. */
+            if (claims.keySet().size() > 1) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getCode(), IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+               throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getMessage(), null);
+            }
+            // Resolve the user with the multi attribute login service.
+            ResolvedUserResult resolvedUserResult = multiAttributeLoginService.resolveUser(
+                    claims.get(MultiAttributeLoginConstants.MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI), tenantDomain);
+            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS
+                    .equals(resolvedUserResult.getResolvedStatus())) {
+                return resolvedUserResult.getUser().getDomainQualifiedUsername();
+            }
+            return StringUtils.EMPTY;
+        }
+
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         try {
             ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();

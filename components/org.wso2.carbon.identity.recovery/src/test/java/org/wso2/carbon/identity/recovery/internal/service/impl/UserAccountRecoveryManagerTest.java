@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -98,6 +99,9 @@ public class UserAccountRecoveryManagerTest {
 
     @Mock
     ClaimManager claimManager;
+
+    @Mock
+    MultiAttributeLoginService multiAttributeLoginService;
 
     /**
      * User claims map.
@@ -292,6 +296,9 @@ public class UserAccountRecoveryManagerTest {
             when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
                     anyInt(),anyInt(),isNull(), isNull())).
                     thenReturn(new ArrayList<org.wso2.carbon.user.core.common.User>());
+            when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                    .thenReturn(multiAttributeLoginService);
+            when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
             userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY, RecoveryScenarios.USERNAME_RECOVERY,
                             null);
@@ -428,6 +435,9 @@ public class UserAccountRecoveryManagerTest {
                     anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
             when(claimManager.getAttributeName(anyString(),anyString())).
                     thenReturn("http://wso2.org/claims/mockedClaim");
+            when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                    .thenReturn(multiAttributeLoginService);
+            when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
             String username = userAccountRecoveryManager
                     .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
             assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "

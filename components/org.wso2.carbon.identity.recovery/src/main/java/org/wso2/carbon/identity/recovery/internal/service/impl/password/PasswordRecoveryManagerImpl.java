@@ -630,10 +630,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      */
     private void validateConfigurations(String tenantDomain) throws IdentityRecoveryException {
 
-        boolean isRecoveryEnable = Boolean.parseBoolean(
-                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                        tenantDomain));
-        if (!isRecoveryEnable) {
+        if (!isNotificationBasedRecoveryEnabled(tenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_WITH_NOTIFICATIONS_NOT_ENABLED,
                     null);
@@ -674,9 +671,13 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
 
         // Check whether the challenge question based recovery is enabled.
         try {
-            return Boolean.parseBoolean(
-                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+            boolean isEmailRecoveryEnable = Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
                             tenantDomain));
+            boolean isSMSOtpRecoveryEnable = Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                            tenantDomain));
+            return isEmailRecoveryEnable || isSMSOtpRecoveryEnable;
         } catch (IdentityRecoveryServerException e) {
             // Prepend scenario to the thrown exception.
             String errorCode = Utils
