@@ -290,7 +290,7 @@ public class CaptchaUtil {
             if (HttpClientConstants.Error.RESPONSE_ENTITY_EMPTY.getCode().equals(e.getErrorCode())) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
             }
-            throw new CaptchaServerException("Unable to read the verification response.", e.getCause());
+            throw new CaptchaServerException("Unable to read the verification response.", e);
         } catch (IOException e) {
             throw new CaptchaServerException("Unable to get the verification response.", e);
         }

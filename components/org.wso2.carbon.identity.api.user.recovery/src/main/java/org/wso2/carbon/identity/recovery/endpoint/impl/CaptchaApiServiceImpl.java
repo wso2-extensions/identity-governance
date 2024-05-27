@@ -18,12 +18,14 @@
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.wso2.carbon.http.client.HttpClientConstants;
+import org.wso2.carbon.http.client.exception.HttpClientException;
+import org.wso2.carbon.http.client.handler.JsonResponseHandler;
+import org.wso2.carbon.http.client.request.HttpPostRequest;
+import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.recovery.endpoint.CaptchaApiService;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
@@ -33,7 +35,8 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaVerificationResponseDTO;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import javax.ws.rs.core.Response;
 
@@ -78,24 +81,19 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         }
 
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
-        boolean reCaptchaEnabled = Boolean.valueOf(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
+        boolean reCaptchaEnabled = Boolean.parseBoolean(properties.getProperty(CaptchaConstants.RE_CAPTCHA_ENABLED));
         String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
 
         if (!reCaptchaEnabled) {
             RecoveryUtil.handleBadRequest("ReCaptcha is disabled", Constants.INVALID);
         }
 
-        HttpResponse response = RecoveryUtil.makeCaptchaVerificationHttpRequest(reCaptchaResponse, properties);
-        HttpEntity entity = response.getEntity();
+        HttpPost httpPost = RecoveryUtil.makeCaptchaVerificationHttpRequest(reCaptchaResponse.getToken(), properties);
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
 
-        if (entity == null) {
-            RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
-                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
-        }
-        try (InputStream in = entity.getContent()) {
-            JsonObject verificationResponse = new JsonParser().parse(IOUtils.toString(in)).getAsJsonObject();
-
+        try {
+            JsonObject verificationResponse = CaptchaDataHolder.getInstance().getHttpClientService()
+                    .getClosableHttpClient(CaptchaApiServiceImpl.class.getName()).execute(httpPost, new JsonResponseHandler());
             if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
                 // For Recaptcha Enterprise.
                 JsonObject tokenProperties = verificationResponse.get(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES)
@@ -107,9 +105,16 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
                 reCaptchaVerificationResponseDTO.setSuccess(verificationResponse.get(
                         CaptchaConstants.CAPTCHA_SUCCESS).getAsBoolean());
             }
-        } catch (IOException e) {
+        } catch (HttpClientException e) {
+            if (HttpClientConstants.Error.RESPONSE_ENTITY_EMPTY.getCode().equals(e.getErrorCode())) {
+                RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
+                        Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+            }
             log.error("Unable to read the verification response.", e);
             RecoveryUtil.handleBadRequest("Unable to read the verification response.",
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        } catch (IOException e) {
+            RecoveryUtil.handleBadRequest(String.format("Unable to get the verification response : %s", e.getMessage()),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
 
