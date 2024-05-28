@@ -92,9 +92,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         if (IdentityEventConstants.Event.POST_AUTHENTICATION.equals(event.getEventName())) {
             if (log.isDebugEnabled()) {
-                log.debug(
-                        String.format("Handling PostAuthenticate for user: %s in userstore: %s in tenant: %s",
-                                Utils.maskIfRequired(userName), domainName, tenantDomain));
+                log.debug("Handling PostAuthenticate for " + user);
             }
             boolean isAccountLocked;
             try {
@@ -125,7 +123,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             } else if (isInvalidCredentialsScenario(operationStatus, user)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
-                                    "to log in with an invalid password", Utils.maskIfRequired(userName), domainName,
+                                    "to log in with an invalid password", userName, domainName,
                             tenantDomain));
                 }
                 IdentityErrorMsgContext customErrorMessageContext =
