@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -1091,8 +1091,8 @@ public class Utils {
 
         if (!isLegacyAuditLogsDisabled()) {
             AUDIT_LOG.info(String
-                    .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, LoggerUtils.isLogMaskingEnable ?
-                            LoggerUtils.getMaskedContent(target) : target, dataObject, result));
+                    .format(AuditConstants.AUDIT_MESSAGE, getInitiator(), action, maskIfRequired(target),
+                    dataObject, result));
         }
     }
 
@@ -1652,6 +1652,17 @@ public class Utils {
                 ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES.getMessage(),
                 e.getMessage(),
                 e);
+    }
+
+    /**
+     * Mask the given value if it is required.
+     *
+     * @param value Value to be masked.
+     * @return Masked/unmasked value.
+     */
+    public static String maskIfRequired(String value) {
+
+        return LoggerUtils.isLogMaskingEnable ? LoggerUtils.getMaskedContent(value) : value;
     }
 
     /**
