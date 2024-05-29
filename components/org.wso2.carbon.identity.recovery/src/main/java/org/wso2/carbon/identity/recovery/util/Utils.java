@@ -82,11 +82,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -1676,4 +1672,28 @@ public class Utils {
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         return stringBuilder.toString();
     }
+
+    /**
+     * Get the existing multi-valued claims such as emailAddresses and verifiedEmailAddresses of the given claim URI.
+     *
+     * @param userStoreManager User store manager.
+     * @param user             User.
+     * @param claimURI         Claim URI.
+     * @return List of existing claim values.
+     */
+    public static List<String> getExistingClaimValue(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                     User user, String claimURI) throws IdentityEventException {
+
+        List<String> existingClaimValue;
+        try {
+            existingClaimValue = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null) != null ?
+                    new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
+                            null).split(","))) : new ArrayList<>();
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
+                    " for user: " + user.toFullQualifiedUsername(), e);
+        }
+        return existingClaimValue;
+    }
+
 }
