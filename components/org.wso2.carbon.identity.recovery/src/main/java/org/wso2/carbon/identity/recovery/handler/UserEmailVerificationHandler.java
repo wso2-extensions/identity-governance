@@ -115,8 +115,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
 
-                if (supportMultipleEmails && claims.containsKey(
-                        IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) {
+                if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) {
                     throw new IdentityEventClientException(ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED.getCode(),
                             ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED.getMessage());
                 }
