@@ -123,6 +123,8 @@ public class IdentityRecoveryConstants {
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
     public static final String MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/mobileNumbers";
     public static final String VERIFIED_MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/verifiedMobileNumbers";
+    public static final String EMAIL_ADDRESSES_CLAIM = "http://wso2.org/claims/emailAddresses";
+    public static final String VERIFIED_EMAIL_ADDRESSES_CLAIM = "http://wso2.org/claims/verifiedEmailAddresses";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -210,6 +212,16 @@ public class IdentityRecoveryConstants {
 
     // Self sign up properties.
     public static final String SIGNUP_PROPERTY_REGISTRATION_OPTION = "registrationOption";
+
+    // Properties related to password recovery failure due to account status.
+    public static final String ERROR_KEY = "error-key";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_STATUS_NOTIFY = "passwordRecoveryFailureNotify";
+    public static final String ACCOUNT_STATUS_LOCKED = "password.recovery.failed.account.locked";
+    public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
+    public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
+
+    public static final String SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
+            "SupportMultipleEmailsAndMobileNumberPerUser.Enabled";
 
     private IdentityRecoveryConstants() {
 
@@ -441,6 +453,13 @@ public class IdentityRecoveryConstants {
 
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+        ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED("UEV-10002", "Email verification is not enabled"),
+        ERROR_CODE_VERIFY_MULTIPLE_EMAILS("UEV-10003", "Unable to verify multiple email addresses " +
+                "simultaneously"),
+        ERROR_CODE_SUPPORT_MULTIPLE_EMAILS_NOT_ENABLED("UEV-10004", "Support for multiple email addresses " +
+                "per user is not enabled"),
+        ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_EMAIL_ADDRESS("UEV-10005", "Cannot initiate verification for email" +
+                " address claim as support for multiple email addresses per user is enabled."),
 
         // UMV - User Mobile Verification.
         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED("UMV-10001", " Verified mobile numbers claim cannot be" +
@@ -450,6 +469,8 @@ public class IdentityRecoveryConstants {
 
         INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
         ,
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request"),
+
         // Idle User Account Identification related Error messages.
         ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005",
                 "Error retrieving the associated user for the user: %s in the tenant %s.");
@@ -865,7 +886,12 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an email verification, when the email address was updated by user during
          the Email OTP flow at the first login where the email address is not previously set. At the moment email
          address was already verified during the email OTP verification. So no need to verify it again. */
-        SKIP_ON_EMAIL_OTP_FLOW
+        SKIP_ON_EMAIL_OTP_FLOW,
+
+        /* State maintained to skip triggering an SMS OTP verification, when the email address to be updated is included
+        in the verifiedEmailAddresses claim, which has been already verified.
+        */
+        SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES
     }
 
     /**

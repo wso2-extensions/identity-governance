@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -65,7 +66,9 @@ import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -156,12 +159,15 @@ public class NotificationPasswordRecoveryManager {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FEDERATED_USER,
                     user.getUserName());
         }
+        String eventName = Utils.resolveEventName(notificationChannel);
         if (Utils.isAccountDisabled(user)) {
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLED_ACCOUNT,
                         user.getUserName());
             }
+            triggerAccountStatusNotification(user, notificationChannel,
+                    IdentityRecoveryConstants.ACCOUNT_STATUS_DISABLED, eventName, properties);
             return new NotificationResponseBean(user);
         } else if (Utils.isAccountLocked(user)) {
             // Check user in PENDING_SR or PENDING_AP status.
@@ -171,6 +177,8 @@ public class NotificationPasswordRecoveryManager {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
                         user.getUserName());
             }
+            triggerAccountStatusNotification(user, notificationChannel,
+                    IdentityRecoveryConstants.ACCOUNT_STATUS_LOCKED, eventName, properties);
             return new NotificationResponseBean(user);
         }
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -188,7 +196,6 @@ public class NotificationPasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
             // Manage notifications by the identity server.
-            String eventName = Utils.resolveEventName(notificationChannel);
             triggerNotification(user, notificationChannel, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET,
                     secretKey, eventName, properties, recoveryDataDO);
         } else {
@@ -913,9 +920,15 @@ public class NotificationPasswordRecoveryManager {
             }
         }
         // We don not need to change any states during user initiated password recovery.
-        if (!(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
-                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario))
-                && Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
+        if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+            IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
+        }
+
+        if (Utils.isAccountStateClaimExisting(userRecoveryData.getUser().getTenantDomain())) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                     IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
@@ -928,7 +941,6 @@ public class NotificationPasswordRecoveryManager {
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
-            userClaims.remove(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
         }
         return userClaims;
     }
@@ -1020,6 +1032,55 @@ public class NotificationPasswordRecoveryManager {
                     user.getUserName(), e);
         }
 
+    }
+
+    /**
+     * Trigger notification to send account status information.
+     *
+     * @param user                User
+     * @param notificationChannel Notification channel
+     * @param status              Account status
+     * @param eventName           Event name
+     * @param metaProperties      Meta properties to be sent with the notification.
+     * @throws IdentityRecoveryException Error while triggering notification.
+     */
+    private void triggerAccountStatusNotification(User user, String notificationChannel,
+                                                  String status, String eventName, Property[] metaProperties)
+            throws IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+        if (StringUtils.isNotBlank(status)) {
+            properties.put(IdentityRecoveryConstants.ERROR_KEY,
+                    Base64.getUrlEncoder().encodeToString(status.getBytes(StandardCharsets.UTF_8)));
+        }
+        // This property is used to ignore throwing an error if the template is not found. This allows to preserve the
+        // backward compatibility for the tenants without the specific email template.
+        properties.put(IdentityRecoveryConstants.IGNORE_IF_TEMPLATE_NOT_FOUND, true);
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_STATUS_NOTIFY);
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            auditAccountStatusNotify(notificationChannel, user, null,
+                    FrameworkConstants.AUDIT_SUCCESS);
+        } catch (IdentityEventException e) {
+            auditAccountStatusNotify(notificationChannel, user,
+                    e.getMessage(), FrameworkConstants.AUDIT_FAILED);
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.getUserName(), e);
+        }
     }
 
     private void publishEvent(User user, String notify, String code, String password, Property[] metaProperties,
@@ -1135,6 +1196,23 @@ public class NotificationPasswordRecoveryManager {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
         Utils.createAuditMessage(action, user.getUserName(), dataObject, result);
+    }
+
+    private void auditAccountStatusNotify(String notificationChannel, User user, String errorMsg, String result) {
+
+        JSONObject dataObject = new JSONObject();
+        dataObject.put(AuditConstants.REMOTE_ADDRESS_KEY, MDC.get(AuditConstants.REMOTE_ADDRESS_QUERY_KEY));
+        dataObject.put(AuditConstants.USER_AGENT_KEY, MDC.get(AuditConstants.USER_AGENT_QUERY_KEY));
+        dataObject.put(AuditConstants.NOTIFICATION_CHANNEL, notificationChannel);
+        dataObject.put(AuditConstants.SERVICE_PROVIDER_KEY, MDC.get(AuditConstants.SERVICE_PROVIDER_QUERY_KEY));
+        dataObject.put(AuditConstants.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        dataObject.put(AuditConstants.TENANT_DOMAIN, user.getTenantDomain());
+        dataObject.put(AuditConstants.NOTIFICATION_TEMPLATE_TYPE, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_STATUS_NOTIFY);
+
+        if (AUDIT_FAILED.equals(result)) {
+            dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
+        }
+        Utils.createAuditMessage(AuditConstants.ACTION_ACCOUNT_STATUS_NOTIFY, user.getUserName(), dataObject, result);
     }
 
     private void auditPasswordReset(User user, String action, String errorMsg, String result, String recoveryScenario,

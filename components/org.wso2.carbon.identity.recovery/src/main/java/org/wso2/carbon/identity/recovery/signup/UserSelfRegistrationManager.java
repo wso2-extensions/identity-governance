@@ -758,12 +758,39 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
+        boolean supportMultipleEmailsAndMobileNumbers = Boolean.parseBoolean(IdentityUtil
+                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
                 eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue); //todo??
+                if (supportMultipleEmailsAndMobileNumbers) {
+                    try {
+                        List<String> verifiedEmails = Utils.getExistingClaimValue(
+                                (org.wso2.carbon.user.core.UserStoreManager) eventProperties.get(
+                                        IdentityEventConstants.EventProperty.USER_STORE_MANAGER), user,
+                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                        verifiedEmails.add(pendingEmailClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
+                                verifiedEmails, ","));
+
+                        List<String> allEmails = Utils.getExistingClaimValue(
+                                (org.wso2.carbon.user.core.UserStoreManager) eventProperties.get(
+                                        IdentityEventConstants.EventProperty.USER_STORE_MANAGER), user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                        if (!allEmails.contains(pendingEmailClaimValue)) {
+                            allEmails.add(pendingEmailClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
+                                    allEmails, ",")) ;
+                        }
+                    } catch (IdentityEventException e) {
+                        log.error("Error occurred while obtaining claim for the user ");
+                    }
+                } else {
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                }
                 // Todo passes when email address is properly set here.
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
