@@ -1692,7 +1692,8 @@ public class Utils {
 
         List<String> existingClaimValue;
         try {
-            existingClaimValue = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null) != null ?
+            existingClaimValue = StringUtils.isNotBlank(userStoreManager.getUserClaimValue(user.getUserName(),
+                    claimURI, null)) ?
                     new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
                             null).split(","))) : new ArrayList<>();
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
@@ -1701,5 +1702,4 @@ public class Utils {
         }
         return existingClaimValue;
     }
-
 }

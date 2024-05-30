@@ -710,7 +710,8 @@ public class UserSelfRegistrationManager {
     }
 
     private UserRecoveryData validateSelfRegistrationCode(String code, String verifiedChannelType,
-                                                          String verifiedChannelClaim, Map<String, String> properties, boolean skipExpiredCodeValidation)
+                                                          String verifiedChannelClaim, Map<String, String> properties,
+                                                          boolean skipExpiredCodeValidation)
             throws IdentityRecoveryException {
 
         Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
@@ -786,7 +787,9 @@ public class UserSelfRegistrationManager {
                                     allEmails, ",")) ;
                         }
                     } catch (IdentityEventException e) {
-                        log.error("Error occurred while obtaining claim for the user ");
+                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
+                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
+                                "value for the user : " + user.getUserName(), e);
                     }
                 } else {
                     userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);

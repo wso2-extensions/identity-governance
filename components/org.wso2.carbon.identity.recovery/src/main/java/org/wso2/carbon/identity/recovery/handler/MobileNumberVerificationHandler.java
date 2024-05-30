@@ -54,7 +54,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,26 +110,45 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             }
             claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+
+            if (supportMultipleMobileNumbers) {
+                List<String> allMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
+                        IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
+                        !allMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
+                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                            ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages
+                                    .ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getMessage());
+                }
+            } else {
+                // Multiple mobile numbers per user support is disabled.
+                if (log.isDebugEnabled()) {
+                    log.debug("Supporting multiple mobile numbers per user is disabled.");
+                }
+                claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+            }
             return;
-        }
-
-        if (supportMultipleMobileNumbers) {
-
-            List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
-                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-            String updatedMobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-            if (StringUtils.isNotBlank(updatedMobileNumber) && !verifiedMobileNumbers.contains(updatedMobileNumber)) {
-                throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                        ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER.getCode(), IdentityRecoveryConstants
-                        .ErrorMessages.ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER.getMessage());
-            }
         } else {
-            // Multiple mobile numbers per user support is disabled.
-            if (log.isDebugEnabled()) {
-                log.debug("Supporting multiple mobile numbers per user is disabled.");
+            if (supportMultipleMobileNumbers) {
+                List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
+                        IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
+                        !verifiedMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
+                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                            ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages
+                                    .ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getMessage());
+                }
+            } else {
+                // Multiple mobile numbers per user support is disabled.
+                if (log.isDebugEnabled()) {
+                    log.debug("Supporting multiple mobile numbers per user is disabled.");
+                }
+                claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
             }
-
-            claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
@@ -288,15 +306,15 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 .SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
 
         String mobileNumber = null;
-        List<String> exisitingVerifiedNumbersList = getExistingClaimValue(userStoreManager, user,
+        List<String> exisitingVerifiedNumbersList = Utils.getExistingClaimValue(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
 
         if (supportMultipleMobileNumbers) {
             List<String> updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
                     VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListOfMobileNumbersFromString(claims.get(
-                            IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
 
-            List<String> exisitingAllNumbersList = getExistingClaimValue(userStoreManager, user,
+            List<String> exisitingAllNumbersList = Utils.getExistingClaimValue(userStoreManager, user,
                     IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
             List<String> updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
                     getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) :
@@ -345,14 +363,12 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             /*
             Mobile numbers in verifiedMobileNumbers claim are already verified. No need to verify again.
             */
-            if (exisitingVerifiedNumbersList != null &&  exisitingVerifiedNumbersList.contains(mobileNumber)) {
+            if (exisitingVerifiedNumbersList != null && exisitingVerifiedNumbersList.contains(mobileNumber)) {
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
-            }
-
-            else {
+            } else {
                 String existingMobileNumber;
                 String username = user.getUserName();
                 try {
@@ -418,30 +434,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         return StringUtils.isBlank(mobileNumbers) ? new ArrayList<>() : new LinkedList<>(Arrays.asList(
                 mobileNumbers.split(","))).stream().map(String::trim).collect(Collectors.toList());
-    }
-
-    /**
-     * Get the existing claim value of the given claim URI.
-     *
-     * @param userStoreManager User store manager.
-     * @param user User.
-     * @param claimURI Claim URI.
-     * @return List of existing claim values.
-     */
-    private List<String> getExistingClaimValue(UserStoreManager userStoreManager, User user, String claimURI) throws
-            IdentityEventException {
-
-        List<String> existingClaimValue;
-        try {
-            existingClaimValue = StringUtils.isNotBlank(userStoreManager.getUserClaimValue(user.getUserName(),
-                    claimURI, null)) ? new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(
-                            user.getUserName(), claimURI, null).split(","))).stream().map(String::trim)
-                    .collect(Collectors.toList()) : new ArrayList<>();
-        } catch (UserStoreException e) {
-            throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
-                    " for user: " + user.toFullQualifiedUsername(), e);
-        }
-        return existingClaimValue;
     }
 
     /**

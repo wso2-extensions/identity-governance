@@ -60,7 +60,9 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.*;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
@@ -118,24 +120,41 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
 
-                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                if (supportMultipleEmails) {
+                    List<String> allEmails = Utils.getExistingClaimValue(userStoreManager, user,
+                            IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                    if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                            !allEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
+                        throw new IdentityEventClientException(ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST
+                                .getCode(), ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST.getMessage());
+                    }
+                } else {
+                    // Supporting multiple email addresses per user is disabled.
+                    if (log.isDebugEnabled()) {
+                        log.debug("Supporting multiple email addresses per user is disabled.");
+                    }
+                    claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                }
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
-            }
-            if (supportMultipleEmails) {
-                List<String> verifiedEmails = Utils.getExistingClaimValue(userStoreManager, user,
-                        IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-                if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
-                        !verifiedEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
-                    throw new IdentityEventClientException(ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_EMAIL_ADDRESS
-                            .getCode(), ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_EMAIL_ADDRESS.getMessage());
-
-                }
             } else {
-                // Supporting multiple email addresses per user is disabled.
-                if (log.isDebugEnabled()) {
-                    log.debug("Supporting multiple email addresses per user is disabled.");
+                if (supportMultipleEmails) {
+                    List<String> verifiedEmails = Utils.getExistingClaimValue(userStoreManager, user,
+                            IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                    if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                            !verifiedEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
+                        throw new IdentityEventClientException(
+                                ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getCode(),
+                                ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getMessage());
+                    }
+                } else {
+                    // Multiple email addresses per user support is disabled.
+                    if (log.isDebugEnabled()) {
+                        log.debug("Supporting multiple mobile email addresses per user is disabled.");
+                    }
+                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                    claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                 }
-                claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
             }
         }
 
@@ -630,11 +649,11 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 }
             }
 
-        /*
-        When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
-        claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
-        'verifyEmail' claim.
-         */
+            /*
+            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
+            claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
+            'verifyEmail' claim.
+             */
             if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());

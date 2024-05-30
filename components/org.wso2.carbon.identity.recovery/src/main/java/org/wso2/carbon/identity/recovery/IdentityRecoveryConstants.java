@@ -455,8 +455,12 @@ public class IdentityRecoveryConstants {
                 "simultaneously"),
         ERROR_CODE_SUPPORT_MULTIPLE_EMAILS_NOT_ENABLED("UEV-10004", "Support for multiple email addresses " +
                 "per user is not enabled"),
-        ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_EMAIL_ADDRESS("UEV-10005", "Cannot initiate verification for email" +
-                " address claim as support for multiple email addresses per user is enabled."),
+        ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST("UEV-10005", "As multiple " +
+                "email addresses support is enabled, primary email address should be included in the email " +
+                "addresses list."),
+        ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST("UEV-10006", "As multiple " +
+                "email addresses support and email verification is enabled, primary email address should be included " +
+                "in the verified email addresses list."),
 
         // UMV - User Mobile Verification.
         ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED("UMV-10001", " Verified mobile numbers claim cannot be" +
@@ -465,8 +469,12 @@ public class IdentityRecoveryConstants {
                 "multiple mobile numbers simultaneously."),
         ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED("UEV-10003", "Support for multiple mobile " +
                 "numbers per user is not enabled"),
-        ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER("UMV-10004", "Cannot initiate " +
-                "verification for mobile number claim as support for multiple mobile numbers per user is enabled."),
+        ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST("UMV-10004", "As multiple " +
+                "mobile numbers support is enabled, primary mobile number should be included in the mobile " +
+                "numbers list."),
+        ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST("UMV-10005", "As multiple " +
+                "mobile numbers support and mobile verification is enabled, primary mobile number should be included " +
+                "in the verified mobile numbers list."),
 
         INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request"),
 
@@ -888,8 +896,7 @@ public class IdentityRecoveryConstants {
         SKIP_ON_EMAIL_OTP_FLOW,
 
         /* State maintained to skip triggering an email verification, when the email address to be updated is included
-        in the verifiedEmailAddresses claim, which has been already verified.
-        */
+        in the verifiedEmailAddresses claim, which has been already verified. */
         SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES
     }
 
@@ -1000,8 +1007,7 @@ public class IdentityRecoveryConstants {
         SKIP_ON_SMS_OTP_FLOW,
 
         /* State maintained to skip triggering an SMS OTP verification, when the mobile number to be updated is included
-        in the verifiedMobileNumbers claim, which has been already verified.
-        */
+        in the verifiedMobileNumbers claim, which has been already verified. */
         SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS
     }
 }
