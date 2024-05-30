@@ -133,12 +133,6 @@ public class IdentityRecoveryConstants {
     public static final String PENDING_EMAIL_VERIFICATION = "PENDING_EV";
     public static final String ACCOUNT_STATE_UNLOCKED = "UNLOCKED";
 
-    /*
-    This constant will be used to identify that user is verifying a mobile number which needs to be added to
-    http://wso2.org/claims/verifiedMobileNumbers claim and not to http://wso2.org/claims/mobile.
-    */
-    public static final String MOBILE_NUMBER_VERIFICATION_ONLY = "verificationOnly";
-
     public static final String PASSWORD_RESET_FAIL_ATTEMPTS_CLAIM = "http://wso2" +
             ".org/claims/identity/failedPasswordRecoveryAttempts";
     public static final String SIGN_UP_ROLE_SEPARATOR = ",";
@@ -220,6 +214,9 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
     public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
 
+    /*
+    This config enables the support to store multiple mobile numbers and email addresses per user.
+    */
     public static final String SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
             "SupportMultipleEmailsAndMobileNumberPerUser.Enabled";
 
@@ -890,7 +887,7 @@ public class IdentityRecoveryConstants {
          address was already verified during the email OTP verification. So no need to verify it again. */
         SKIP_ON_EMAIL_OTP_FLOW,
 
-        /* State maintained to skip triggering an SMS OTP verification, when the email address to be updated is included
+        /* State maintained to skip triggering an email verification, when the email address to be updated is included
         in the verifiedEmailAddresses claim, which has been already verified.
         */
         SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES

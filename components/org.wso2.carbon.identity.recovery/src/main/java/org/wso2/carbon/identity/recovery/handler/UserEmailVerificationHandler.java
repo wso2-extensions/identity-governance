@@ -96,13 +96,16 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
 
         boolean enable = false;
+
         if (IdentityEventConstants.Event.PRE_ADD_USER.equals(eventName) ||
                 IdentityEventConstants.Event.POST_ADD_USER.equals(eventName)) {
             enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                     .ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
         } else if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName) ||
                 IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
+
             enable = isEmailVerificationOnUpdateEnabled(user.getTenantDomain());
+
             if (!enable) {
                 /* We need to empty 'EMAIL_ADDRESS_PENDING_VALUE_CLAIM' because having a value in that claim implies
                 a verification is pending. But verification is not enabled anymore. */
@@ -115,12 +118,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
 
-                if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) {
-                    throw new IdentityEventClientException(ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED.getCode(),
-                            ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED.getMessage());
-                }
+                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
-            } else if (supportMultipleEmails) {
+            }
+            if (supportMultipleEmails) {
                 List<String> verifiedEmails = Utils.getExistingClaimValue(userStoreManager, user,
                         IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
@@ -129,6 +130,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                             .getCode(), ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_EMAIL_ADDRESS.getMessage());
 
                 }
+            } else {
+                // Supporting multiple email addresses per user is disabled.
+                if (log.isDebugEnabled()) {
+                    log.debug("Supporting multiple email addresses per user is disabled.");
+                }
+                claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
             }
         }
 

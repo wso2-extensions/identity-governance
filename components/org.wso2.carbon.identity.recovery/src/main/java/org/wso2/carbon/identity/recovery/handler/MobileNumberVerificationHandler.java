@@ -51,7 +51,13 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -104,40 +110,27 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
             }
             claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
-            if (claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) {
-                throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getCode(), IdentityRecoveryConstants.ErrorMessages.
-                        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED.getMessage());
-            }
+            claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
             return;
         }
 
-        List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
-                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-        List<String> mobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
-                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         if (supportMultipleMobileNumbers) {
-            if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
-            !verifiedMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
+
+            List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+            String updatedMobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            if (StringUtils.isNotBlank(updatedMobileNumber) && !verifiedMobileNumbers.contains(updatedMobileNumber)) {
                 throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
                         ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER.getCode(), IdentityRecoveryConstants
                         .ErrorMessages.ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER.getMessage());
             }
         } else {
-            /* Check whether the mobile numbers and verified mobile numbers claims have been updated when support for
-            multiple mobile numbers is disabled. */
-            List<String> updatedVerifiedNumbers = StringUtils.isNotBlank(claims.get(IdentityRecoveryConstants
-                    .VERIFIED_MOBILE_NUMBERS_CLAIM)) ? getListOfMobileNumbersFromString(claims.get(
-                            IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : new ArrayList<>();
-            List<String> updatedAllNumbers = StringUtils.isNotBlank(claims.get(IdentityRecoveryConstants
-                    .MOBILE_NUMBERS_CLAIM)) ? getListOfMobileNumbersFromString(claims.get(
-                            IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) : new ArrayList<>();
-            if (!(new HashSet<>(updatedVerifiedNumbers).equals(new HashSet<>(verifiedMobileNumbers))) ||
-                    !(new HashSet<>(updatedAllNumbers).equals(new HashSet<>(mobileNumbers)))) {
-                throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                        ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED.getCode(), IdentityRecoveryConstants
-                        .ErrorMessages.ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED.getMessage());
+            // Multiple mobile numbers per user support is disabled.
+            if (log.isDebugEnabled()) {
+                log.debug("Supporting multiple mobile numbers per user is disabled.");
             }
+
+            claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
