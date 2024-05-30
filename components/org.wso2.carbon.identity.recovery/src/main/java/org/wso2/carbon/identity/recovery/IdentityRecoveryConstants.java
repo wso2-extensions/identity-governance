@@ -466,9 +466,11 @@ public class IdentityRecoveryConstants {
                 " updated as mobile number verification on update is disabled."),
         ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS("UMV-10002", "Unable to verify " +
                 "multiple mobile numbers simultaneously."),
+        ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED("UEV-10003", "Support for multiple mobile " +
+                "numbers per user is not enabled"),
+        ERROR_CODE_CANNOT_INITIATE_VERIFICATION_FOR_MOBILE_NUMBER("UMV-10004", "Cannot initiate " +
+                "verification for mobile number claim as support for multiple mobile numbers per user is enabled."),
 
-        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
-        ,
         INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request"),
 
         // Idle User Account Identification related Error messages.

@@ -950,6 +950,9 @@ public class UserSelfRegistrationManager {
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
 
+        boolean supportMultipleEmailsAndMobileNumbers = Boolean.parseBoolean(IdentityUtil
+                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
@@ -957,7 +960,7 @@ public class UserSelfRegistrationManager {
                 Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
                 claim.
                 */
-                if (Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.MOBILE_NUMBER_VERIFICATION_ONLY))) {
+                if (supportMultipleEmailsAndMobileNumbers) {
                     try {
                         String existingVerifiedMobileNumbers = userStoreManager.getUserClaimValue(user.getUserName(),
                                 IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, null);
@@ -973,7 +976,7 @@ public class UserSelfRegistrationManager {
                         }
 
                         /*
-                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence adding the verified number to
+                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
                         mobileNumbers claim as well.
                         */
                         String allMobileNumbers = userStoreManager.getUserClaimValue(user.getUserName(),
@@ -988,7 +991,7 @@ public class UserSelfRegistrationManager {
                                     String.join(",", allMobileNumbersList));
                         }
                     } catch (UserStoreException e) {;
-                        log.error("Error while retrieving verified mobile numbers for user : " + user.getUserName(),
+                        log.error("Error while retrieving mobile numbers claims for user : " + user.getUserName(),
                                 e);
                     }
                 } else {

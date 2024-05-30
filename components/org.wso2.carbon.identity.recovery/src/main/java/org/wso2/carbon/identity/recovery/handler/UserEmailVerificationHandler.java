@@ -566,8 +566,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
                     updatedAllEmailAddresses, ","));
         } else {
-            // email addresses and verified email addresses should not be updated when support for multiple email
-            // addresses is disabled.
+            /*
+            email addresses and verified email addresses should not be updated when support for multiple email
+            addresses is disabled.
+             */
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
             claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
 
