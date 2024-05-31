@@ -700,7 +700,7 @@
         </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
-        <carbon.identity.account.lock.handler.version>1.9.4</carbon.identity.account.lock.handler.version>
+        <carbon.identity.account.lock.handler.version>1.9.5</carbon.identity.account.lock.handler.version>
         <carbon.identity.account.lock.handler.imp.pkg.version.range>[1.1.12, 2.0.0)
         </carbon.identity.account.lock.handler.imp.pkg.version.range>
 

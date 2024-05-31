@@ -935,6 +935,14 @@ public class NotificationPasswordRecoveryManager {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
         }
 
+        // If the recovery scenario is ASK_PASSWORD, it indicates a password set flow.
+        // Hence, update the thread-local properties to specify that this is a password set flow.
+        if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+            IdentityUtil.threadLocalProperties.get().put(AccountConstants.PASSWORD_SET_FLOW, true);
+        } else {
+            IdentityUtil.threadLocalProperties.get().put(AccountConstants.PASSWORD_SET_FLOW, false);
+        }
+
         // If the scenario is initiated by the admin, set the account locked claim to FALSE.
         if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
