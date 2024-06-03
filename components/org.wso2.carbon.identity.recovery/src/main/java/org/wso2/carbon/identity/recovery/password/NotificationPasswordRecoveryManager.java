@@ -626,58 +626,53 @@ public class NotificationPasswordRecoveryManager {
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                 userRecoveryData.getUser().getUserStoreDomain());
 
-        try {
-            // Update the password.
-            updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
-                    notificationsInternallyManaged);
-            if (recoveryFlowId != null) {
-                userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
-            } else {
-                userRecoveryDataStore.invalidate(userRecoveryData.getUser());
-            }
-            if (notificationsInternallyManaged &&
-                    !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                String emailTemplate = null;
-                if (isAskPasswordFlow(userRecoveryData) &&
-                        isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
-                    if (isNotificationSendOnAccountActivation) {
-                        emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
-                    }
-                } else if (isNotificationSendWhenSuccess) {
-                    emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
-                }
-                try {
-                    String eventName = Utils.resolveEventName(notificationChannel);
-                    if (StringUtils.isNotBlank(emailTemplate)) {
-                        triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
-                                StringUtils.EMPTY, eventName, properties, userRecoveryData);
-                    }
-                } catch (IdentityRecoveryException e) {
-                    String errorMsg =
-                            String.format("Error while sending password reset success notification to user : %s",
-                                    userRecoveryData.getUser().getUserName());
-                    log.error(errorMsg);
-                    String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
-                    String recoveryStep = userRecoveryData.getRecoveryStep().name();
-                    auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
-                            FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
-                }
-            }
-            publishEvent(userRecoveryData.getUser(), null, code, password, properties,
-                    IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, userRecoveryData);
-            if (log.isDebugEnabled()) {
-                String msg = "Password is updated for  user: " + domainQualifiedName;
-                log.debug(msg);
-            }
-            String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
-            String recoveryStep = userRecoveryData.getRecoveryStep().name();
-            auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
-                    FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
-
-            return userRecoveryData.getUser();
-        } finally {
-            IdentityUtil.threadLocalProperties.get().remove(AccountConstants.PASSWORD_SET_FLOW);
+        // Update the password.
+        updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
+                notificationsInternallyManaged);
+        if (recoveryFlowId != null) {
+            userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
+        } else {
+            userRecoveryDataStore.invalidate(userRecoveryData.getUser());
         }
+        if (notificationsInternallyManaged &&
+                !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String emailTemplate = null;
+            if (isAskPasswordFlow(userRecoveryData) &&
+                    isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
+                if (isNotificationSendOnAccountActivation) {
+                    emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                }
+            } else if (isNotificationSendWhenSuccess) {
+                emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
+            }
+            try {
+                String eventName = Utils.resolveEventName(notificationChannel);
+                if (StringUtils.isNotBlank(emailTemplate)) {
+                    triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
+                            StringUtils.EMPTY, eventName, properties, userRecoveryData);
+                }
+            } catch (IdentityRecoveryException e) {
+                String errorMsg = String.format("Error while sending password reset success notification to user : %s",
+                        userRecoveryData.getUser().getUserName());
+                log.error(errorMsg);
+                String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+                String recoveryStep = userRecoveryData.getRecoveryStep().name();
+                auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, errorMsg,
+                        FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
+            }
+        }
+        publishEvent(userRecoveryData.getUser(), null, code, password, properties,
+                IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, userRecoveryData);
+        if (log.isDebugEnabled()) {
+            String msg = "Password is updated for  user: " + domainQualifiedName;
+            log.debug(msg);
+        }
+        String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
+        String recoveryStep = userRecoveryData.getRecoveryStep().name();
+        auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
+                FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
+
+        return userRecoveryData.getUser();
     }
 
     /**
@@ -888,6 +883,8 @@ public class NotificationPasswordRecoveryManager {
                         + "for the user: " + domainQualifiedName, e);
             }
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
+        } finally {
+            IdentityUtil.threadLocalProperties.get().remove(AccountConstants.PASSWORD_SET_FLOW);
         }
     }
 
