@@ -589,7 +589,6 @@ public class NotificationPasswordRecoveryManager {
     public User updateUserPassword(String code, String password, Property[] properties)
             throws IdentityRecoveryException, IdentityEventException {
 
-
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         UserRecoveryData userRecoveryData;
         try {
@@ -654,8 +653,9 @@ public class NotificationPasswordRecoveryManager {
                                 StringUtils.EMPTY, eventName, properties, userRecoveryData);
                     }
                 } catch (IdentityRecoveryException e) {
-                    String errorMsg = String.format("Error while sending password reset success notification to user : %s",
-                            userRecoveryData.getUser().getUserName());
+                    String errorMsg =
+                            String.format("Error while sending password reset success notification to user : %s",
+                                    userRecoveryData.getUser().getUserName());
                     log.error(errorMsg);
                     String recoveryScenario = userRecoveryData.getRecoveryScenario().name();
                     String recoveryStep = userRecoveryData.getRecoveryStep().name();
@@ -675,7 +675,7 @@ public class NotificationPasswordRecoveryManager {
                     FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
 
             return userRecoveryData.getUser();
-        }  finally {
+        } finally {
             IdentityUtil.threadLocalProperties.get().remove(AccountConstants.PASSWORD_SET_FLOW);
         }
     }
