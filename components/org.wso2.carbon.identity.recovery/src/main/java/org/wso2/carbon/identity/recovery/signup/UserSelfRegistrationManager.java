@@ -759,8 +759,8 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
-        boolean supportMultipleEmailsAndMobileNumbers = Boolean.parseBoolean(IdentityUtil
-                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user
+                .getTenantDomain());
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
@@ -953,8 +953,8 @@ public class UserSelfRegistrationManager {
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
 
-        boolean supportMultipleEmailsAndMobileNumbers = Boolean.parseBoolean(IdentityUtil
-                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user
+                .getTenantDomain());
 
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();

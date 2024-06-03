@@ -214,12 +214,6 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
     public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
 
-    /*
-    This config enables the support to store multiple mobile numbers and email addresses per user.
-    */
-    public static final String SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
-            "SupportMultipleEmailsAndMobileNumberPerUser.Enabled";
-
     private IdentityRecoveryConstants() {
 
     }
@@ -693,6 +687,9 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER = "UserClaimUpdate.MobileNumber." +
                 "EnableVerificationByPrivilegedUser";
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
+        // This config enables the support to store multiple mobile numbers and email addresses per user.
+        public static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
+                "UserClaimUpdate.SupportMultiEmailsAndMobileNumbers.Enable";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS = "EmailVerification.AskPassword" +

@@ -94,8 +94,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
 
-        boolean supportMultipleEmails = Boolean.parseBoolean(IdentityUtil
-                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
 
         boolean enable = false;
 
@@ -547,8 +546,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        boolean supportMultipleEmails = Boolean.parseBoolean(IdentityUtil
-                .getProperty(IdentityRecoveryConstants.SUPPORT_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
 
         String emailAddress = null;
         List<String> existingVerifiedEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
