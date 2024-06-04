@@ -354,7 +354,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             OTP. Therefore, the mobile number is already verified & no need to verify it again.
             */
             if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().
-                    equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate()) && mobileNumber != null) {
+                    equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
                 return;
             }
@@ -430,7 +430,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
      */
     private List<String> getListOfMobileNumbersFromString(String mobileNumbers) {
 
-        return StringUtils.isBlank(mobileNumbers) ? new ArrayList<>() : new LinkedList<>(Arrays.asList(
+        return StringUtils.isBlank(mobileNumbers) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(
                 mobileNumbers.split(","))).stream().map(String::trim).collect(Collectors.toList());
     }
 
@@ -451,9 +451,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 if (mobileNumber == null) {
                     mobileNumber = verificationPendingNumber;
                 } else {
-                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                            ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getCode(), IdentityRecoveryConstants.
-                            ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getMessage());
+                    throw new IdentityEventClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getCode(),
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS.getMessage());
                 }
             }
         }

@@ -119,6 +119,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
 
+                // Drop the verified email addresses claim as verification on update is not enabled.
+                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+
                 if (supportMultipleEmails) {
                     List<String> allEmails = Utils.getExistingClaimValue(userStoreManager, user,
                             IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
@@ -133,7 +136,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         log.debug("Supporting multiple email addresses per user is disabled.");
                     }
                     claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                 }
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
             } else {
@@ -523,12 +525,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private void preSetUserClaimsOnEmailUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
                                                User user) throws IdentityEventException {
 
-        if (MapUtils.isEmpty(claims)) {
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants.
-                    SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-            return;
-        }
-
         if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                 (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
             // Not required to handle in this handler.
@@ -659,6 +655,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 return;
             }
             claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        } else {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
         }
         claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
     }
