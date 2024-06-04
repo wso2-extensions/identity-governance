@@ -884,6 +884,7 @@ public class NotificationPasswordRecoveryManager {
             }
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, null, e);
         } finally {
+            IdentityUtil.threadLocalProperties.get().remove(AccountConstants.ADMIN_INITIATED);
             IdentityUtil.threadLocalProperties.get().remove(AccountConstants.PASSWORD_SET_FLOW);
         }
     }
