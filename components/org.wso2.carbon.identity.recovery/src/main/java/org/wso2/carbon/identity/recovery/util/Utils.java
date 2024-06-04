@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
@@ -1709,10 +1710,11 @@ public class Utils {
 
         List<String> existingClaimValue;
         try {
+            String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
             existingClaimValue = StringUtils.isNotBlank(userStoreManager.getUserClaimValue(user.getUserName(),
                     claimURI, null)) ?
                     new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
-                            null).split(","))) : new ArrayList<>();
+                            null).split(multiAttributeSeparator))) : new ArrayList<>();
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
                     " for user: " + user.toFullQualifiedUsername(), e);
