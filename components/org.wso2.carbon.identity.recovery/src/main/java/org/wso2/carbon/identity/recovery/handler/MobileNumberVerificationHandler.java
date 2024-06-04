@@ -415,6 +415,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         } else {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
         }
 
         if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
