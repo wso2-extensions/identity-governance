@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -770,16 +770,14 @@ public class UserSelfRegistrationManager {
                 if (supportMultipleEmailsAndMobileNumbers) {
                     try {
                         List<String> verifiedEmails = Utils.getExistingClaimValue(
-                                (org.wso2.carbon.user.core.UserStoreManager) eventProperties.get(
-                                        IdentityEventConstants.EventProperty.USER_STORE_MANAGER), user,
+                                (org.wso2.carbon.user.core.UserStoreManager) userStoreManager, user,
                                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                         verifiedEmails.add(pendingEmailClaimValue);
                         userClaims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
                                 verifiedEmails, ","));
 
                         List<String> allEmails = Utils.getExistingClaimValue(
-                                (org.wso2.carbon.user.core.UserStoreManager) eventProperties.get(
-                                        IdentityEventConstants.EventProperty.USER_STORE_MANAGER), user,
+                                (org.wso2.carbon.user.core.UserStoreManager) userStoreManager, user,
                                 IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                         if (!allEmails.contains(pendingEmailClaimValue)) {
                             allEmails.add(pendingEmailClaimValue);
@@ -1002,7 +1000,7 @@ public class UserSelfRegistrationManager {
                     userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
                 }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                               Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
         }

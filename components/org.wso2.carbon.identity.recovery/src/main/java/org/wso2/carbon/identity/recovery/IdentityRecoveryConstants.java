@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery;
@@ -449,10 +451,10 @@ public class IdentityRecoveryConstants {
                 "simultaneously"),
         ERROR_CODE_SUPPORT_MULTIPLE_EMAILS_NOT_ENABLED("UEV-10004", "Support for multiple email addresses " +
                 "per user is not enabled"),
-        ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST("UEV-10005", "As multiple " +
+        ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST("UEV-10005", "As multiple " +
                 "email addresses support is enabled, primary email address should be included in the email " +
                 "addresses list."),
-        ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST("UEV-10006", "As multiple " +
+        ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST("UEV-10006", "As multiple " +
                 "email addresses support and email verification is enabled, primary email address should be included " +
                 "in the verified email addresses list."),
 
@@ -463,12 +465,12 @@ public class IdentityRecoveryConstants {
                 "multiple mobile numbers simultaneously."),
         ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED("UEV-10003", "Support for multiple mobile " +
                 "numbers per user is not enabled"),
-        ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST("UMV-10004", "As multiple " +
-                "mobile numbers support is enabled, primary mobile number should be included in the mobile " +
-                "numbers list."),
-        ERROR_CODE_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST("UMV-10005", "As multiple " +
-                "mobile numbers support and mobile verification is enabled, primary mobile number should be included " +
-                "in the verified mobile numbers list."),
+        ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST("UMV-10004",
+                "As multiple mobile numbers support is enabled, primary mobile number should be included in " +
+                        "the mobile numbers list."),
+        ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST("UMV-10005", "As " +
+                "multiple mobile numbers support and mobile verification is enabled, primary mobile number should be " +
+                "included in the verified mobile numbers list."),
 
         INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request"),
 
@@ -689,7 +691,7 @@ public class IdentityRecoveryConstants {
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
         // This config enables the support to store multiple mobile numbers and email addresses per user.
         public static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
-                "UserClaimUpdate.SupportMultiEmailsAndMobileNumbers.Enable";
+                "UserClaimUpdate.EnableMultipleEmailsAndMobileNumbers";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS = "EmailVerification.AskPassword" +

@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery.handler;
@@ -21,6 +23,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
@@ -60,8 +63,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
@@ -127,8 +130,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                             IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
                             !allEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
-                        throw new IdentityEventClientException(ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST
-                                .getCode(), ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST.getMessage());
+                        throw new IdentityEventClientException(ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST
+                                .getCode(), ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST.getMessage());
                     }
                 } else {
                     // Supporting multiple email addresses per user is disabled.
@@ -145,8 +148,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
                             !verifiedEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
                         throw new IdentityEventClientException(
-                                ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getCode(),
-                                ERROR_CODE_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getMessage());
+                                ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getCode(),
+                                ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getMessage());
                     }
                 } else {
                     // Multiple email addresses per user support is disabled.
@@ -549,23 +552,24 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = null;
+
         List<String> existingVerifiedEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        List<String> existingAllEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
+                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+        List<String> updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
+                VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
+                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
+        List<String> updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
+                getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
+                existingAllEmailAddresses;
 
         // Handle email addresses and verified email addresses claims.
         if (supportMultipleEmails) {
-
-            List<String> updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
-                    VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
-                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
-
-            List<String> existingAllEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
-                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-            List<String> updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
-                    getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
-                    existingAllEmailAddresses;
 
             // Find the verification pending email address and remove it from verified email addresses list in the payload.
             if (updatedVerifiedEmailAddresses != null) {
@@ -587,10 +591,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     }
                 }
             }
-            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
-                    updatedVerifiedEmailAddresses, ","));
-            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
-                    updatedAllEmailAddresses, ","));
+            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
         } else {
             /*
             email addresses and verified email addresses should not be updated when support for multiple email
@@ -638,11 +642,15 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
 
                     if (supportMultipleEmails) {
-                        if (existingVerifiedEmailAddresses!= null &&
-                                !existingVerifiedEmailAddresses.contains(emailAddress)) {
-                            existingVerifiedEmailAddresses.add(emailAddress);
-                            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
-                                    existingVerifiedEmailAddresses, ","));
+                        if (!updatedVerifiedEmailAddresses.contains(emailAddress)) {
+                            updatedVerifiedEmailAddresses.add(emailAddress);
+                            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+                        }
+                        if (!updatedAllEmailAddresses.contains(emailAddress)) {
+                            updatedAllEmailAddresses.add(emailAddress);
+                            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
                         }
                     }
                     return;
@@ -703,8 +711,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
      */
     private List<String> getListOfEmailAddressesFromString(String emails) {
 
-        return emails != null ? new LinkedList<>(Arrays.asList(emails.split(","))).stream().map(String::trim)
-                .collect(Collectors.toList()) : new ArrayList<>();
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+        return emails != null ? new LinkedList<>(Arrays.asList(emails.split(multiAttributeSeparator))).stream()
+                .map(String::trim).collect(Collectors.toList()) : new ArrayList<>();
     }
 
     private void postSetUserClaimsOnEmailUpdate(User user, UserStoreManager userStoreManager) throws

@@ -1,18 +1,21 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.axiom.om.OMElement;
@@ -72,7 +75,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
     private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
     private static final String ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER = "EnableVerificationByPrivilegedUser";
-    private static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_ELEMENT = "SupportMultiEmailsAndMobileNumbers";
+    private static final String ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT = "EnableMultipleEmailsAndMobileNumbers";
     private static String enableEmailVerificationOnUpdateProperty = null;
     private static String enableSendOTPInEmailProperty = null;
     private static String useUppercaseCharactersInOTPProperty = null;
@@ -306,7 +309,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         // Read configuration values defined in identity.xml.
         OMElement userClaimUpdate = IdentityConfigParser.getInstance().getConfigElement(USER_CLAIM_UPDATE_ELEMENT);
-        OMElement supportMultiEmailsAndMobileNumbers = null;
         Iterator claims = null;
         OMElement otpConfigs = null;
         if (userClaimUpdate != null) {
@@ -314,9 +316,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     .IDENTITY_DEFAULT_NAMESPACE, CLAIM_ELEMENT));
             otpConfigs = userClaimUpdate.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_ELEMENT));
-            supportMultiEmailsAndMobileNumbers = userClaimUpdate.getFirstChildWithName(
+            supportMultiEmailsAndMobileNumbersProperty = userClaimUpdate.getFirstChildWithName(
                     new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
-                            SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_ELEMENT));
+                            ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT)).getText();
         }
 
         if (claims != null) {
@@ -335,7 +337,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
                         if (verificationCode != null) {
                             emailVerificationOnUpdateCodeExpiryProperty = verificationCode.getFirstChildWithName(new
-                                    QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
+                                            QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
                                     .getText();
                         }
                     }
@@ -361,7 +363,7 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                                 (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, VERIFICATION_CODE_ELEMENT));
                         if (verificationCode != null) {
                             mobileNumVerificationOnUpdateCodeExpiryProperty = verificationCode.getFirstChildWithName(
-                                    new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
+                                            new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, EXPIRY_TIME_ELEMENT))
                                     .getText();
                         }
                     }
@@ -379,10 +381,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, USE_NUMERIC_ELEMENT)).getText();
             otpLengthProperty = otpConfigs.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_LENGTH_ELEMENT)).getText();
-        }
-        if (supportMultiEmailsAndMobileNumbers != null) {
-            supportMultiEmailsAndMobileNumbersProperty = supportMultiEmailsAndMobileNumbers.getFirstChildWithName(
-                    new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, ENABLE_ELEMENT)).getText();
         }
     }
 
