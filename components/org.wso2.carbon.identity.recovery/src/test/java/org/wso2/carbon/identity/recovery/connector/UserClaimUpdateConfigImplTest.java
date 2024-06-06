@@ -66,7 +66,7 @@ public class UserClaimUpdateConfigImplTest {
             "EnableMultipleEmailsAndMobileNumbers";
     private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
 
-    @BeforeMethod
+    @BeforeTest
     public void init() {
 
         userClaimUpdateConfig = new UserClaimUpdateConfigImpl();
