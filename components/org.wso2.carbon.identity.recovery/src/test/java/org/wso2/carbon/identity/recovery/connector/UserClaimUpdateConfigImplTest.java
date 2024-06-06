@@ -62,9 +62,11 @@ public class UserClaimUpdateConfigImplTest {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT =
+            "EnableMultipleEmailsAndMobileNumbers";
     private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
 
-    @BeforeTest
+    @BeforeMethod
     public void init() {
 
         userClaimUpdateConfig = new UserClaimUpdateConfigImpl();
@@ -195,6 +197,7 @@ public class UserClaimUpdateConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = userClaimUpdateConfig.getPropertyNames();
@@ -226,6 +229,8 @@ public class UserClaimUpdateConfigImplTest {
                 VERIFICATION_CODE_ELEMENT))).thenReturn(mockOMElement);
         when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
                 EXPIRY_TIME_ELEMENT))).thenReturn(mockOMElement);
+        when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                USER_CLAIM_UPDATE_ELEMENT))).thenReturn(mockOMElement);
 
         Properties defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(TENANT_DOMAIN);
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig

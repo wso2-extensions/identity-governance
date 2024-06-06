@@ -311,14 +311,15 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         OMElement userClaimUpdate = IdentityConfigParser.getInstance().getConfigElement(USER_CLAIM_UPDATE_ELEMENT);
         Iterator claims = null;
         OMElement otpConfigs = null;
+        OMElement supportMultiEmailsAndMobileNumbers = null;
         if (userClaimUpdate != null) {
             claims = userClaimUpdate.getChildrenWithName(new QName(IdentityCoreConstants
                     .IDENTITY_DEFAULT_NAMESPACE, CLAIM_ELEMENT));
             otpConfigs = userClaimUpdate.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_ELEMENT));
-            supportMultiEmailsAndMobileNumbersProperty = userClaimUpdate.getFirstChildWithName(
+            supportMultiEmailsAndMobileNumbers = userClaimUpdate.getFirstChildWithName(
                     new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
-                            ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT)).getText();
+                            ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT));
         }
 
         if (claims != null) {
@@ -381,6 +382,9 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, USE_NUMERIC_ELEMENT)).getText();
             otpLengthProperty = otpConfigs.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_LENGTH_ELEMENT)).getText();
+        }
+        if (supportMultiEmailsAndMobileNumbers != null) {
+            supportMultiEmailsAndMobileNumbersProperty = supportMultiEmailsAndMobileNumbers.getText();
         }
     }
 
