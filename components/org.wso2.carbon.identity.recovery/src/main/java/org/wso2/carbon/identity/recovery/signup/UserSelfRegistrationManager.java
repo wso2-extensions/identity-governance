@@ -116,6 +116,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
+import static org.wso2.carbon.identity.organization.management.service.constant.OrganizationManagementConstants.ErrorMessages.ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
 
@@ -366,6 +367,13 @@ public class UserSelfRegistrationManager {
                     ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
         }
 
+        if (e instanceof org.wso2.carbon.user.core.UserStoreException) {
+            String errorCode = ((org.wso2.carbon.user.core.UserStoreException) e).getErrorCode();
+            if (ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION.getCode().equals(errorCode)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_INVALID_DOMAIN, user.getUserName(), e);
+            }
+        }
         throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
                 ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
     }
