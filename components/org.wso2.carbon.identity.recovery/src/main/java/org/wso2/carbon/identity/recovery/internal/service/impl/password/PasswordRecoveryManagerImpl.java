@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -439,6 +440,11 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     private NotificationResponseBean notifyUser(User user, String notificationChannel,
                                                 boolean manageNotificationInternally, Map<String, String> properties)
             throws IdentityRecoveryException {
+
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get().get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
+        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
 
         Property[] metaProperties = buildPropertyList(notificationChannel, properties);
         NotificationResponseBean notificationResponseBean;

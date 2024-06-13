@@ -427,7 +427,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         if (log.isDebugEnabled()) {
             log.debug("Sending self user registration notification user: " + user.getUserName());
         }
+
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get().get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
+
         HashMap<String, Object> properties = new HashMap<>();
+        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
@@ -454,7 +460,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
     private void triggerAccountCreationNotification(User user) throws IdentityRecoveryServerException {
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get().get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
+
         HashMap<String, Object> properties = new HashMap<>();
+        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+            properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
