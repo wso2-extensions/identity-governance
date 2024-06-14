@@ -423,7 +423,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get().get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
 
         HashMap<String, Object> properties = new HashMap<>();
-        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+        if (serviceProviderUUID.isBlank()) {
             properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
         }
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
