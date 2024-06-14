@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance;
@@ -27,9 +29,12 @@ import org.wso2.carbon.identity.application.common.util.IdentityApplicationConst
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.exceptions.general.IdentityGovernanceClientException;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,6 +65,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
             List<IdentityProviderProperty> newProperties = new ArrayList<>();
             updateEmailOTPNumericPropertyValue(configurationDetails);
+            IdPManagementUtil.validatePasswordRecoveryPropertyValues(configurationDetails);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
@@ -93,10 +99,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
                     FederatedAuthenticatorConfig[configsToSave.size()]));
             identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
+        } catch (IdentityProviderManagementClientException e) {
+            log.debug("Client error while updating identityManagement Properties of Resident Idp.", e);
+            throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
         }
-
     }
 
     @Override
@@ -328,6 +336,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         return EMAIL_OTP_AUTHENTICATOR.equals(connectorName);
     }
 
+    /**
+     * This method updates the password recovery property values based on the new configurations.
+     *
+     * @param configurationDetails    Updating configuration details of the resident identity provider.
+     * @param identityMgtProperties   Identity management properties of the resident identity provider.
+     */
     private void updatePasswordRecoveryPropertyValues(Map<String, String> configurationDetails,
                                                       IdentityProviderProperty[] identityMgtProperties) {
 
@@ -344,10 +358,10 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             if (recoveryNotificationPasswordProperty) {
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(emailLinkPasswordRecoveryProperty ||
-                            StringUtils.isBlank(emailLinkPwRecProp)));
+                                StringUtils.isBlank(emailLinkPwRecProp)));
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(smsOtpPasswordRecoveryProperty ||
-                            StringUtils.isBlank(smsOtpPwRecProp)));
+                                StringUtils.isBlank(smsOtpPwRecProp)));
             } else if (StringUtils.isBlank(recNotPwProp)) {
                 // Connector is not explicitly enabled or disabled. The connector state is derived from new and existing
                 // configurations.
@@ -379,5 +393,4 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             }
         }
     }
-
 }
