@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -54,6 +54,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private static final String EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY
             = "Recovery.Notification.Password.emailLink.Enable";
     private static final String SMS_OTP_PASSWORD_RECOVERY_PROPERTY = "Recovery.Notification.Password.smsOtp.Enable";
+    private static final String FALSE_STRING = "false";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -100,7 +101,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                     FederatedAuthenticatorConfig[configsToSave.size()]));
             identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
         } catch (IdentityProviderManagementClientException e) {
-            log.debug("Client error while updating identityManagement Properties of Resident Idp.", e);
+            log.debug("Client error while updating identityManagement properties of Resident IdP.", e);
             throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
@@ -388,8 +389,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                         String.valueOf(enableEmailLinkPasswordRecovery || enableSmsOtpPasswordRecovery));
             } else {
                 // This is the scenario where the RECOVERY_NOTIFICATION_PASSWORD_PROPERTY is being disabled.
-                configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY, "false");
-                configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY, "false");
+                configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
+                configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
             }
         }
     }
