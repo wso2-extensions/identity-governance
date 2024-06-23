@@ -442,7 +442,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             throws IdentityRecoveryException {
 
         String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get().get(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID);
-        if (serviceProviderUUID.isBlank()) {
+        if (!serviceProviderUUID.isBlank()) {
             properties.put(IdentityEventConstants.EventProperty.SERVICE_PROVIDER_UUID, serviceProviderUUID);
         }
 
