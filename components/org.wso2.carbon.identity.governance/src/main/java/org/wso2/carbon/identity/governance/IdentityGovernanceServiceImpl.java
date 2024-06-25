@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance;
@@ -27,9 +29,12 @@ import org.wso2.carbon.identity.application.common.util.IdentityApplicationConst
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.governance.exceptions.general.IdentityGovernanceClientException;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +50,11 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private static final String EMAIL_OTP_AUTHENTICATOR = "email-otp-authenticator";
     public static final String EMAIL_OTP_USE_ALPHANUMERIC_CHARS = "EmailOTP.UseAlphanumericChars";
     public static final String EMAIL_OTP_USE_NUMERIC_CHARS = "EmailOTP.OtpRegex.UseNumericChars";
+    private static final String RECOVERY_NOTIFICATION_PASSWORD_PROPERTY = "Recovery.Notification.Password.Enable";
+    private static final String EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY
+            = "Recovery.Notification.Password.emailLink.Enable";
+    private static final String SMS_OTP_PASSWORD_RECOVERY_PROPERTY = "Recovery.Notification.Password.smsOtp.Enable";
+    private static final String FALSE_STRING = "false";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -56,6 +66,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
             List<IdentityProviderProperty> newProperties = new ArrayList<>();
             updateEmailOTPNumericPropertyValue(configurationDetails);
+            IdPManagementUtil.validatePasswordRecoveryPropertyValues(configurationDetails);
+            updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 String key = identityMgtProperty.getName();
@@ -88,10 +100,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
                     FederatedAuthenticatorConfig[configsToSave.size()]));
             identityProviderManager.updateResidentIdP(residentIdp, tenantDomain);
+        } catch (IdentityProviderManagementClientException e) {
+            log.debug("Client error while updating identityManagement properties of Resident IdP.", e);
+            throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
         }
-
     }
 
     @Override
@@ -321,5 +335,63 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         developers to safely add new configs.
          */
         return EMAIL_OTP_AUTHENTICATOR.equals(connectorName);
+    }
+
+    /**
+     * This method updates the password recovery property values based on the new configurations.
+     *
+     * @param configurationDetails    Updating configuration details of the resident identity provider.
+     * @param identityMgtProperties   Identity management properties of the resident identity provider.
+     */
+    private void updatePasswordRecoveryPropertyValues(Map<String, String> configurationDetails,
+                                                      IdentityProviderProperty[] identityMgtProperties) {
+
+        if (configurationDetails.containsKey(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY) ||
+                configurationDetails.containsKey(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY) ||
+                configurationDetails.containsKey(SMS_OTP_PASSWORD_RECOVERY_PROPERTY)) {
+            // Perform process only if notification based password recovery connector or options are updated.
+            String recNotPwProp = configurationDetails.get(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY);
+            String emailLinkPwRecProp = configurationDetails.get(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY);
+            String smsOtpPwRecProp = configurationDetails.get(SMS_OTP_PASSWORD_RECOVERY_PROPERTY);
+            boolean recoveryNotificationPasswordProperty = Boolean.parseBoolean(recNotPwProp);
+            boolean smsOtpPasswordRecoveryProperty = Boolean.parseBoolean(smsOtpPwRecProp);
+            boolean emailLinkPasswordRecoveryProperty = Boolean.parseBoolean(emailLinkPwRecProp);
+            if (recoveryNotificationPasswordProperty) {
+                configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(emailLinkPasswordRecoveryProperty ||
+                                StringUtils.isBlank(emailLinkPwRecProp)));
+                configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(smsOtpPasswordRecoveryProperty ||
+                                StringUtils.isBlank(smsOtpPwRecProp)));
+            } else if (StringUtils.isBlank(recNotPwProp)) {
+                // Connector is not explicitly enabled or disabled. The connector state is derived from new and existing
+                // configurations.
+                boolean isEmailLinkCurrentlyEnabled = false;
+                boolean isSmsOtpCurrentlyEnabled = false;
+                for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
+                    if (EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY.equals(identityMgtProperty.getName())) {
+                        isEmailLinkCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
+                    } else if (SMS_OTP_PASSWORD_RECOVERY_PROPERTY.equals(identityMgtProperty.getName())) {
+                        isSmsOtpCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
+                    }
+                }
+                boolean enableEmailLinkPasswordRecovery = emailLinkPasswordRecoveryProperty ||
+                        ( StringUtils.isBlank(emailLinkPwRecProp) &&
+                                isEmailLinkCurrentlyEnabled );
+                boolean enableSmsOtpPasswordRecovery = smsOtpPasswordRecoveryProperty ||
+                        ( StringUtils.isBlank(smsOtpPwRecProp) &&
+                                isSmsOtpCurrentlyEnabled );
+                configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(enableEmailLinkPasswordRecovery));
+                configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(enableSmsOtpPasswordRecovery));
+                configurationDetails.put(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY,
+                        String.valueOf(enableEmailLinkPasswordRecovery || enableSmsOtpPasswordRecovery));
+            } else {
+                // This is the scenario where the RECOVERY_NOTIFICATION_PASSWORD_PROPERTY is being disabled.
+                configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
+                configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
+            }
+        }
     }
 }
