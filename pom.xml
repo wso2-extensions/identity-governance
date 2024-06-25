@@ -695,8 +695,8 @@
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>5.25.623</carbon.identity.framework.version>
-        <carbon.identity.framework.imp.pkg.version.range>[5.20.211, 8.0.0)
+        <carbon.identity.framework.version>7.3.15</carbon.identity.framework.version>
+        <carbon.identity.framework.imp.pkg.version.range>[7.3.6, 8.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
         <!--Carbon Identity Extension Versions-->
@@ -735,7 +735,7 @@
         <javax.validation-api>2.0.1.Final</javax.validation-api>
 
         <!-- Unit test versions -->
-        <testng.version>6.9.10</testng.version>
+        <testng.version>7.10.1</testng.version>
         <jacoco.version>0.8.7</jacoco.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
         <slf4j.api.version>1.6.1</slf4j.api.version>
