@@ -826,8 +826,8 @@ public class IdentityRecoveryConstants {
         public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
         public static final String RESIDENT_IDP = "Resident IDP";
 
-        //This is used for retrieve SP-UUID from the event.
-        //To-DO: onc ethe framework version bump to 7.3.14.x or above use the constant from framework insted of this.
+        // This is used for retrieve SP-UUID from the event.
+        // Todo: once the framework version bump to 7.3.14.x or above use the constant from framework instead of this.
         public static final String SERVICE_PROVIDER_UUID = "serviceProviderUUID";
     }
 
