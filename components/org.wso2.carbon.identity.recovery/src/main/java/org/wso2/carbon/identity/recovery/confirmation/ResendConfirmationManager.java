@@ -253,8 +253,8 @@ public class ResendConfirmationManager {
     private void triggerNotification(User user, String notificationChannel, String templateName, String code,
                                      String eventName, Property[] metaProperties) throws IdentityRecoveryException {
 
-              String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                      .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
 
         HashMap<String, Object> properties = new HashMap<>();
         if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {

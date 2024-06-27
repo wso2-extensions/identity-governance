@@ -462,8 +462,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
     private void triggerAccountCreationNotification(User user) throws IdentityRecoveryServerException {
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
 
-              String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                      .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
 
         HashMap<String, Object> properties = new HashMap<>();
         if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {

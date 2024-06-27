@@ -440,8 +440,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                                                 boolean manageNotificationInternally, Map<String, String> properties)
             throws IdentityRecoveryException {
 
-              String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                      .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
 
         if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
             properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);

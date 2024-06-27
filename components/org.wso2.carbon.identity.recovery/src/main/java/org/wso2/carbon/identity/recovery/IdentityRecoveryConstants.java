@@ -87,8 +87,6 @@ public class IdentityRecoveryConstants {
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
     public static final String ACCOUNT_CONFIRMED_TIME_CLAIM = "http://wso2.org/claims/identity/accountConfirmedTime";
-
-
     public static final String FUNCTION_LOCKOUT_COUNT_PROPERTY = "LockoutCount";
     public static final String FUNCTION_FAILED_ATTEMPTS_PROPERTY = "FailedAttempts";
     public static final String FUNCTION_MAX_ATTEMPTS_PROPERTY = "MaxAttempts";
