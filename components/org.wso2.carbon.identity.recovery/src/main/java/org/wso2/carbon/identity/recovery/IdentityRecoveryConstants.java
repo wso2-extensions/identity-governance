@@ -87,7 +87,6 @@ public class IdentityRecoveryConstants {
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
     public static final String ACCOUNT_CONFIRMED_TIME_CLAIM = "http://wso2.org/claims/identity/accountConfirmedTime";
-
     public static final String FUNCTION_LOCKOUT_COUNT_PROPERTY = "LockoutCount";
     public static final String FUNCTION_FAILED_ATTEMPTS_PROPERTY = "FailedAttempts";
     public static final String FUNCTION_MAX_ATTEMPTS_PROPERTY = "MaxAttempts";
@@ -830,6 +829,10 @@ public class IdentityRecoveryConstants {
         public static final String PURPOSE_ID = "purposeId";
         public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
         public static final String RESIDENT_IDP = "Resident IDP";
+
+        // This is used for retrieve SP-UUID from the event.
+        // Todo: once the framework version bump to 7.3.14.x or above use the constant from framework instead of this.
+        public static final String SERVICE_PROVIDER_UUID = "serviceProviderUUID";
     }
 
     /**
