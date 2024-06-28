@@ -15,12 +15,15 @@
  */
 package org.wso2.carbon.identity.governance.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Object which encapsulates notification template properties.
  */
-public class NotificationTemplate {
+public class NotificationTemplate implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     private String type;
     private String displayName;
