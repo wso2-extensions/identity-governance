@@ -1,20 +1,21 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.axiom.om.OMElement;
@@ -61,6 +62,8 @@ public class UserClaimUpdateConfigImplTest {
     private static final String VERIFICATION_CODE_ELEMENT = "VerificationCode";
     private static final String EXPIRY_TIME_ELEMENT = "ExpiryTime";
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
+    private static final String ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT =
+            "EnableMultipleEmailsAndMobileNumbers";
     private MockedStatic<IdentityConfigParser> mockedIdentityConfigParser;
 
     @BeforeTest
@@ -137,6 +140,8 @@ public class UserClaimUpdateConfigImplTest {
                 "Mobile number verification on update SMS OTP expiry time");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Enable mobile number verification by privileged users");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
+                "Support multiple emails and mobile numbers per user");
         Map<String, String> nameMapping = userClaimUpdateConfig.getPropertyNameMapping();
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal.");
     }
@@ -171,6 +176,8 @@ public class UserClaimUpdateConfigImplTest {
                 "Validity time of the mobile number confirmation OTP in minutes.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Allow privileged users to initiate mobile number verification on update.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
+                "Allow users to add multiple email addresses and mobile numbers to their account.");
         Map<String, String> descriptionMapping = userClaimUpdateConfig.getPropertyDescriptionMapping();
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal.");
     }
@@ -189,6 +196,8 @@ public class UserClaimUpdateConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER);
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = userClaimUpdateConfig.getPropertyNames();
@@ -220,6 +229,8 @@ public class UserClaimUpdateConfigImplTest {
                 VERIFICATION_CODE_ELEMENT))).thenReturn(mockOMElement);
         when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
                 EXPIRY_TIME_ELEMENT))).thenReturn(mockOMElement);
+        when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                USER_CLAIM_UPDATE_ELEMENT))).thenReturn(mockOMElement);
 
         Properties defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(TENANT_DOMAIN);
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
@@ -244,7 +255,8 @@ public class UserClaimUpdateConfigImplTest {
                 EMAIL_VERIFICATION_ON_UPDATE_OTP_LENGTH, IdentityRecoveryConstants.ConnectorConfig
                 .EMAIL_VERIFICATION_ON_UPDATE_EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE, IdentityRecoveryConstants.ConnectorConfig
-                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,"testproperty"};
+                .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, IdentityRecoveryConstants.ConnectorConfig
+                .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER, "testproperty"};
 
         IdentityConfigParser mockConfigParser = mock(IdentityConfigParser.class);
         mockedIdentityConfigParser.when(IdentityConfigParser::getInstance).thenReturn(mockConfigParser);
