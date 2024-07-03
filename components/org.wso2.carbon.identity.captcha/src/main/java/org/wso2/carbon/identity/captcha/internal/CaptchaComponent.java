@@ -201,4 +201,21 @@ public class CaptchaComponent {
 
         CaptchaDataHolder.getInstance().setAccountLockService(null);
     }
+
+    @Reference(
+            name = "HttpClientService",
+            service = org.wso2.carbon.http.client.services.HttpClientService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetHttpClientService"
+    )
+    protected void setHttpClientService(org.wso2.carbon.http.client.services.HttpClientService httpClientService) {
+
+        CaptchaDataHolder.getInstance().setHttpClientService(httpClientService);
+    }
+
+    protected void unsetHttpClientService(org.wso2.carbon.http.client.services.HttpClientService httpClientService) {
+
+        CaptchaDataHolder.getInstance().setHttpClientService(null);
+    }
 }

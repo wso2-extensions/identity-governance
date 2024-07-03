@@ -12,6 +12,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.http.client.request.HttpPostRequest;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -50,6 +51,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -403,7 +405,11 @@ public class RecoveryUtil {
      * @param reCaptchaResponse ReCaptcha response token
      * @param properties        ReCaptcha properties
      * @return httpResponse
+     *
+     * @deprecated Please use {@link #makeCaptchaVerificationHttpRequest(String reCaptchaResponseToken,
+     * Properties properties)} for httpclient 5.x version
      */
+    @Deprecated
     public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
                                                                   Properties properties) {
 
@@ -423,6 +429,24 @@ public class RecoveryUtil {
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return response;
+    }
+
+    /**
+     * Make HTTP call for ReCaptcha Verification with the provided ReCaptcha response token.
+     *
+     * @param reCaptchaResponseToken    ReCaptcha response token.
+     * @param properties                ReCaptcha properties.
+     * @return HTTP Response
+     */
+    public static org.apache.hc.client5.http.classic.methods.HttpPost makeCaptchaVerificationHttpRequest(
+            String reCaptchaResponseToken, Properties properties) {
+
+        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
+        String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
+        Map<String, String> params = new HashMap<>();
+        params.put("secret", reCaptchaSecretKey);
+        params.put("response", reCaptchaResponseToken);
+        return HttpPostRequest.createUrlEncodedRequest(reCaptchaVerifyUrl, params);
     }
 
     /**
