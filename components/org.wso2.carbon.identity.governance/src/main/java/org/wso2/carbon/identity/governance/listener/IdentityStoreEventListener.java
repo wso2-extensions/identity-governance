@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
+import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -553,6 +554,35 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             if (!identityClaimFilterConditions.isEmpty()) {
                 identityDataStoreService.listPaginatedUsersByClaimURIAndValue(identityClaimFilterConditions,
                         identityClaimFilteredUserNames, domain, userStoreManager, limit, offset);
+            }
+        } catch (IdentityException e) {
+            throw new UserStoreException("Error while listing the users for identity claim filters with pagination " +
+                    "parameters.", e);
+        }
+        return true;
+    }
+
+    public boolean doPreGetPaginatedUserList(Condition condition, List<String> identityClaimFilteredUserNames,
+                                             String domain, UserStoreManager userStoreManager, int limit, String cursor,
+                                             UserCoreConstants.PaginationDirection direction)
+            throws UserStoreException {
+
+        if (!isEnable()) {
+            return true;
+        }
+
+        // No need to separately handle if identity data store is user store based.
+        if (identityDataStore instanceof UserStoreBasedIdentityDataStore) {
+            return true;
+        }
+
+        List<ExpressionCondition> identityClaimFilterConditions = new ArrayList<>();
+        try {
+            // Extract identity Claim filter-conditions from the given conditions.
+            extractIdentityClaimFilterConditions(condition, identityClaimFilterConditions);
+            if (!identityClaimFilterConditions.isEmpty()) {
+                identityDataStore.listPaginatedUsersNames(identityClaimFilterConditions, identityClaimFilteredUserNames,
+                        domain, userStoreManager, limit, cursor, direction);
             }
         } catch (IdentityException e) {
             throw new UserStoreException("Error while listing the users for identity claim filters with pagination " +
