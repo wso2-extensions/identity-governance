@@ -129,6 +129,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     List<String> allEmails = Utils.getExistingClaimValue(userStoreManager, user,
                             IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty() &&
                             !allEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
                         throw new IdentityEventClientException(ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST
                                 .getCode(), ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST.getMessage());
@@ -146,6 +147,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     List<String> verifiedEmails = Utils.getExistingClaimValue(userStoreManager, user,
                             IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty() &&
                             !verifiedEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
                         throw new IdentityEventClientException(
                                 ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST.getCode(),

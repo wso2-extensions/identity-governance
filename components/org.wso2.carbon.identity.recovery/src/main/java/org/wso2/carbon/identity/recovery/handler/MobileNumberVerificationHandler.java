@@ -115,6 +115,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 List<String> allMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
                         IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
+                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
                         !allMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
                     throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
                             ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getCode(),
@@ -133,6 +134,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
                         IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
+                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
                         !verifiedMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
                     throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
                             ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getCode(),
