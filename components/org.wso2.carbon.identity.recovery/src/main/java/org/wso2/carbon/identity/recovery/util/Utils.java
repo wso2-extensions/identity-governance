@@ -11,7 +11,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
@@ -83,7 +84,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -1334,6 +1337,23 @@ public class Utils {
     }
 
     /**
+     * Check whether the supporting multiple email addresses and mobile numbers per user is enabled.
+     *
+     * @return True if the config is set to true, false otherwise.
+     */
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain) {
+
+       try {
+           return Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                   .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER, tenantDomain));
+       } catch (IdentityEventException e) {
+           log.error("Error while getting connector configurations support multi emails and mobile numbers per" +
+                   " user.", e);
+           return true;
+       }
+    }
+
+    /**
      * Trigger recovery event.
      *
      * @param map              The map containing the event properties.
@@ -1686,5 +1706,30 @@ public class Utils {
         }
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         return stringBuilder.toString();
+    }
+
+    /**
+     * Get the existing multi-valued claims such as emailAddresses and verifiedEmailAddresses of the given claim URI.
+     *
+     * @param userStoreManager User store manager.
+     * @param user             User.
+     * @param claimURI         Claim URI.
+     * @return List of existing claim values.
+     */
+    public static List<String> getExistingClaimValue(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                     User user, String claimURI) throws IdentityEventException {
+
+        List<String> existingClaimValue;
+        try {
+            String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+            existingClaimValue = StringUtils.isNotBlank(userStoreManager.getUserClaimValue(user.getUserName(),
+                    claimURI, null)) ?
+                    new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
+                            null).split(multiAttributeSeparator))) : new ArrayList<>();
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
+                    " for user: " + user.toFullQualifiedUsername(), e);
+        }
+        return existingClaimValue;
     }
 }
