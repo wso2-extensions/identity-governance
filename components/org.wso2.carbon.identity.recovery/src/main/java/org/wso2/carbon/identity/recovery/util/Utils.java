@@ -65,6 +65,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -827,12 +828,19 @@ public class Utils {
         try {
             userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
+            if (((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
+                    user.getUserStoreDomain()) != null) {
+                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
+                        user.getUserStoreDomain()).getRealmConfiguration();
+            } else {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
+                        user.getUserStoreDomain(),
+                        new UserStoreClientException("Invalid Domain Name: " + user.getUserStoreDomain()));
+            }
         } catch (UserStoreException userStoreException) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
         }
-        return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
-                .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
 
     /**
