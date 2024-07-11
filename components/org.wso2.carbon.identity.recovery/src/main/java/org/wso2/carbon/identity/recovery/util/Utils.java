@@ -824,19 +824,18 @@ public class Utils {
     private static RealmConfiguration getRealmConfiguration(User user) throws IdentityRecoveryClientException {
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        UserStoreManager userStoreManager;
         try {
-            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
-            if (((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
-                    user.getUserStoreDomain()) != null) {
-                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
-                        user.getUserStoreDomain()).getRealmConfiguration();
-            } else {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
-                        user.getUserStoreDomain(),
-                        new UserStoreClientException("Invalid Domain Name: " + user.getUserStoreDomain()));
+            userStoreManager = ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
+                    user.getUserStoreDomain());
+            if (userStoreManager != null) {
+                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration();
             }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
+                    user.getUserStoreDomain(),
+                    new UserStoreClientException("Invalid Domain Name: " + user.getUserStoreDomain()));
+
         } catch (UserStoreException userStoreException) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
