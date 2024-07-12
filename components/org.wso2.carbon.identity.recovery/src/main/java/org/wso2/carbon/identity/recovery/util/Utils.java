@@ -834,7 +834,7 @@ public class Utils {
             }
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
                     user.getUserStoreDomain(),
-                    new UserStoreClientException("Invalid Domain Name: " + user.getUserStoreDomain()));
+                    new UserStoreClientException("Invalid domain " + user.getUserStoreDomain() + " provided."));
 
         } catch (UserStoreException userStoreException) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
