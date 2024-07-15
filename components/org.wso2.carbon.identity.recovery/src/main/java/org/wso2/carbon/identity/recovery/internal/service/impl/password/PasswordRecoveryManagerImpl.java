@@ -137,44 +137,31 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     public PasswordRecoverDTO notify(String recoveryCode, String channelId, String tenantDomain,
                                      Map<String, String> properties) throws IdentityRecoveryException {
 
-        log.info(String.format("DEBUG_SMSOTP : %s : 1/11 : Notify reached", tenantDomain));
         validateTenantDomain(tenantDomain);
         validateConfigurations(tenantDomain);
-
-        log.info(String.format("DEBUG_SMSOTP : %s : 2/11 : Valid domain. Notification recovery enabled.",
-                tenantDomain));
         int channelIDCode = validateChannelID(channelId);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
 
         // Get Recovery data.
         UserRecoveryData userRecoveryData = userAccountRecoveryManager
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
-
-        log.info(String.format("DEBUG_SMSOTP : %s : 3/11 : Recovery data retrieved", tenantDomain));
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIDCode);
-        log.info(String.format("DEBUG_SMSOTP : %s : 4/11 : Notification channel %s extracted", tenantDomain,
-                notificationChannel));
         if(!isRecoveryChannelEnabled(notificationChannel, tenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getMessage(),
                     notificationChannel);
         }
-        log.info(String.format("DEBUG_SMSOTP : %s : 5/11 : Notification channel %s validated", tenantDomain,
-                notificationChannel));
         // Resolve notify status according to the notification channel of the user.
         boolean manageNotificationsInternally = true;
         if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
             manageNotificationsInternally = false;
         }
-        log.info(String.format("DEBUG_SMSOTP : %s : 6/11 : notifyUser reached.", tenantDomain));
         NotificationResponseBean notificationResponseBean = notifyUser(userRecoveryData.getUser(), notificationChannel,
                 manageNotificationsInternally, properties);
-        log.info(String.format("DEBUG_SMSOTP : %s : 10/11 : notifyUser success.", tenantDomain));
         String secretKey = notificationResponseBean.getKey();
         String resendCode = generateResendCode(notificationChannel, userRecoveryData);
-        log.info(String.format("DEBUG_SMSOTP : %s : 11/11 : ResendCode Generated", tenantDomain));
         String recoveryFlowId = userRecoveryData.getRecoveryFlowId();
         userAccountRecoveryManager.loadUserRecoveryFlowData(userRecoveryData);
         return buildPasswordRecoveryResponseDTO(notificationChannel, secretKey, resendCode, recoveryFlowId);
@@ -472,20 +459,16 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
 
         if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
-            log.info(String.format("DEBUG_SMSOTP : 7/11 : service provider added to properties. %s",
-                    serviceProviderUUID));
             properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);
         }
 
         Property[] metaProperties = buildPropertyList(notificationChannel, properties);
         NotificationResponseBean notificationResponseBean;
         try {
-            log.info(String.format("DEBUG_SMSOTP : 8/11 :notifyUser point reached"));
             notificationResponseBean = NotificationPasswordRecoveryManager
                     .getInstance().
                             sendRecoveryNotification(user, null, manageNotificationInternally, metaProperties);
         } catch (IdentityRecoveryException exception) {
-            log.info(String.format("DEBUG_SMSOTP : 9/11 :notifyUser failed with exception."));
             if (StringUtils.isNotEmpty(exception.getErrorCode())) {
                 String errorCode = exception.getErrorCode();
                 if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID.getCode()
