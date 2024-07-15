@@ -25,6 +25,7 @@ import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.otp.core.model.OTP;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -267,8 +268,20 @@ public class ResendConfirmationManager {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String sendTo = Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            if (StringUtils.isEmpty(sendTo)) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND, user.getUserName());
+            }
+            properties.put(IdentityRecoveryConstants.SEND_TO, sendTo);
+        }
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
+                properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0, 0));
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
         if (metaProperties != null) {
             for (Property metaProperty : metaProperties) {

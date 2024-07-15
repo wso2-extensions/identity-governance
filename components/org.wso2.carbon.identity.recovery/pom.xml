@@ -132,6 +132,17 @@
             <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.multi.attribute.login.service</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.auth.otp.commons</groupId>
+            <artifactId>org.wso2.carbon.identity.auth.otp.core</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.wso2.carbon.identity.framework</groupId>
+                    <artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
@@ -188,6 +199,8 @@
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.service;
                             version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.auth.otp.core.model;
+                            version="${identity.auth.otp.commons.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
