@@ -506,6 +506,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.identity.auth.otp.commons</groupId>
+                <artifactId>org.wso2.carbon.identity.auth.otp.core</artifactId>
+                <version>${identity.auth.otp.commons.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.multi.attribute.login.server.feature</artifactId>
                 <version>${project.version}</version>
@@ -713,6 +718,9 @@
         <!--Carbon commons version-->
         <carbon.commons.version>4.7.50</carbon.commons.version>
         <carbon.commons.imp.pkg.version>[4.7.2, 5.0.0)</carbon.commons.imp.pkg.version>
+
+        <identity.auth.otp.commons.version>1.0.3</identity.auth.otp.commons.version>
+        <identity.auth.otp.commons.version.range>[1.0.0, 2.0.0)</identity.auth.otp.commons.version.range>
 
         <!--Carbon Identity Organization Management Version-->
         <org.wso2.carbon.identity.organization.management.core.version>1.0.0

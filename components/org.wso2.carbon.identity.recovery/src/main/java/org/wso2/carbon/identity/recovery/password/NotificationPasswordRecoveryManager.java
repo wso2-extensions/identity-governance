@@ -24,6 +24,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.auth.otp.core.model.OTP;
 import org.json.JSONObject;
 import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -58,16 +59,15 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.registry.core.Resource;
-import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -141,7 +141,8 @@ public class NotificationPasswordRecoveryManager {
                             user.getUserName());
                 }
                 return new NotificationResponseBean(user);
-            } else if (isExistingUser(user) && StringUtils.isEmpty(getEmail(user))) {
+            } else if (isExistingUser(user) && StringUtils.isEmpty(Utils.getUserClaim(user,
+                    IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
 
             /* If the email is not found for the user, Check for NOTIFY_RECOVERY_EMAIL_EXISTENCE property.
             If the property is not enabled, notify with an empty NotificationResponseBean.*/
@@ -193,6 +194,16 @@ public class NotificationPasswordRecoveryManager {
             recoveryDataDO = generateNewConfirmationCode(user, notificationChannel);
         }
         secretKey = recoveryDataDO.getSecret();
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
+            String sendTo = Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            if (StringUtils.isEmpty(sendTo)) {
+                /* If the mobile number is not found for the user, notify with an empty
+                NotificationResponseBean.*/
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND, user.getUserName());
+            }
+            properties = addMobileNumberToProperties(properties, sendTo);
+        }
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
             // Manage notifications by the identity server.
@@ -1010,7 +1021,13 @@ public class NotificationPasswordRecoveryManager {
                     userRecoveryData.getRecoveryScenario().name());
         }
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
+                /* Generate time and validity period not added since only used to pass the otp code to notification
+                event handler. */
+                properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0,0));
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
         if (metaProperties != null) {
             for (Property metaProperty : metaProperties) {
@@ -1099,6 +1116,9 @@ public class NotificationPasswordRecoveryManager {
         }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            /* Generate time and validity period not added since only used to pass the otp code to notification
+            event handler. */
+            properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0,0));
         }
 
         if (StringUtils.isNotBlank(notify)) {
@@ -1289,35 +1309,13 @@ public class NotificationPasswordRecoveryManager {
         return templateType != null;
     }
 
-    /**
-     * Retrieve email address of the user.
-     *
-     * @param user      User the email need to be retrieved.
-     * @return email address of the user.
-     * @throws IdentityRecoveryServerException
-     */
-    private String getEmail(User user) throws IdentityRecoveryServerException {
+    private Property[] addMobileNumberToProperties(Property[] properties, String mobile) {
 
-        String userStoreDomain = user.getUserStoreDomain();
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        try {
-            UserRealm userRealm = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
-            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
-
-            if (userStoreManager == null) {
-                throw new IdentityRecoveryServerException(String.format("userStoreManager is null for user: " +
-                        "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain()));
-            }
-            if (StringUtils.isNotBlank(userStoreDomain) && !PRIMARY_DEFAULT_DOMAIN_NAME.equals(userStoreDomain)) {
-                userStoreManager = ((AbstractUserStoreManager) userStoreManager).getSecondaryUserStoreManager(userStoreDomain);
-            }
-
-            return userStoreManager.getUserClaimValue(user.getUserName(), IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
-
-        } catch (UserStoreException e) {
-            String error = String.format("Error occurred while retrieving existing email address for user: " +
-                    "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain());
-            throw new IdentityRecoveryServerException(error, e);
+        if (ArrayUtils.isEmpty(properties)) {
+            properties = new Property[0];
         }
+        Property[] newProperties = Arrays.copyOf(properties, properties.length + 1);
+        newProperties[properties.length] = new Property(IdentityRecoveryConstants.SEND_TO, mobile);
+        return newProperties;
     }
 }
