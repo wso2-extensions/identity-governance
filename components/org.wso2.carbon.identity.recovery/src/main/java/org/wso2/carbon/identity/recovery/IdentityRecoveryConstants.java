@@ -74,6 +74,7 @@ public class IdentityRecoveryConstants {
     public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String OTP_TOKEN = "otpToken";
+    public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
