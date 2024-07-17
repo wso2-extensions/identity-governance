@@ -24,7 +24,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.auth.otp.core.model.OTP;
 import org.json.JSONObject;
 import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -1022,9 +1021,7 @@ public class NotificationPasswordRecoveryManager {
         }
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
-                /* Generate time and validity period not added since only used to pass the otp code to notification
-                event handler. */
-                properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0,0));
+                properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
             } else {
                 properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }
@@ -1116,9 +1113,7 @@ public class NotificationPasswordRecoveryManager {
         }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-            /* Generate time and validity period not added since only used to pass the otp code to notification
-            event handler. */
-            properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0,0));
+            properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
         }
 
         if (StringUtils.isNotBlank(notify)) {

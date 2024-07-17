@@ -25,7 +25,6 @@ import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.auth.otp.core.model.OTP;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -278,7 +277,7 @@ public class ResendConfirmationManager {
         }
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
-                properties.put(IdentityRecoveryConstants.OTP_TOKEN, new OTP(code, 0, 0));
+                properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
             } else {
                 properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }

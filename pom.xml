@@ -506,11 +506,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.carbon.identity.auth.otp.commons</groupId>
-                <artifactId>org.wso2.carbon.identity.auth.otp.core</artifactId>
-                <version>${identity.auth.otp.commons.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.wso2.carbon.identity.governance</groupId>
                 <artifactId>org.wso2.carbon.identity.multi.attribute.login.server.feature</artifactId>
                 <version>${project.version}</version>
