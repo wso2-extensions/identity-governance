@@ -25,11 +25,10 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
-import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -42,7 +41,6 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
-@WithCarbonHome
 public class UtilsTest {
 
     private static final String TENANT_DOMAIN = "test.com";
@@ -61,6 +59,7 @@ public class UtilsTest {
     private MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
     private MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+    private MockedStatic<IdentityUtil> mockedIdentityUtil;
 
     @BeforeMethod
     public void setUp() {
@@ -74,6 +73,7 @@ public class UtilsTest {
         mockedStaticIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
         mockedStaticUserStoreManager = mockStatic(UserStoreManager.class);
         mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedIdentityUtil = mockStatic(IdentityUtil.class);
     }
 
     @AfterClass
@@ -82,27 +82,16 @@ public class UtilsTest {
         mockedStaticIdentityTenantUtil.close();
         mockedStaticUserStoreManager.close();
         mockedIdentityRecoveryServiceDataHolder.close();
+        mockedIdentityUtil.close();
     }
 
-    @DataProvider(name = "CheckPasswordPatternViolation")
-    public Object[][] CheckPasswordPatternViolation() {
-
-        return new Object[][]{
-                {new UserStoreException("Invalid Domain Name"), createUser()}
-        };
-    }
-
-    private static User createUser() {
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void testCheckPasswordPatternViolationForInvalidDomain() throws Exception {
 
         User user = new User();
         user.setUserName(USER_NAME);
         user.setTenantDomain(TENANT_DOMAIN);
         user.setUserStoreDomain(USER_STORE_DOMAIN);
-        return user;
-    }
-
-    @Test(dataProvider = "CheckPasswordPatternViolation", expectedExceptions = IdentityRecoveryClientException.class)
-    public void testCheckPasswordPatternViolation(UserStoreException exception, User user) throws Exception {
 
         when(IdentityTenantUtil.getTenantId(user.getTenantDomain())).thenReturn(TENANT_ID);
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
@@ -110,16 +99,16 @@ public class UtilsTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
         when(userStoreManager.getSecondaryUserStoreManager(USER_STORE_DOMAIN)).thenReturn(null);
 
         try {
-            Utils.checkPasswordPatternViolation(exception, user);
+            Utils.checkPasswordPatternViolation(new UserStoreException("Invalid Domain Name"), user);
         } catch (IdentityRecoveryClientException e) {
             assertEquals(e.getErrorCode(),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED.getCode());
             assertEquals(e.getMessage(), "Invalid domain " + user.getUserStoreDomain() + " provided.");
             throw e;
         }
-
     }
 }

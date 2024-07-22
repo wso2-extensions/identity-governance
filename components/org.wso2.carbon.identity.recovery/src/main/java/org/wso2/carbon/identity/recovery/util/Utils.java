@@ -92,6 +92,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
+import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainName;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
@@ -827,15 +828,18 @@ public class Utils {
         try {
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
-            userStoreManager = ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
-                    user.getUserStoreDomain());
-            if (userStoreManager != null) {
+            if (StringUtils.equals(user.getUserStoreDomain(), getPrimaryDomainName())) {
+                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration();
+            }
+            UserStoreManager secondaryUserStoreManager =
+                    ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
+                            user.getUserStoreDomain());
+            if (secondaryUserStoreManager != null) {
                 return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration();
             }
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
                     user.getUserStoreDomain(),
                     new UserStoreClientException("Invalid domain " + user.getUserStoreDomain() + " provided."));
-
         } catch (UserStoreException userStoreException) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
