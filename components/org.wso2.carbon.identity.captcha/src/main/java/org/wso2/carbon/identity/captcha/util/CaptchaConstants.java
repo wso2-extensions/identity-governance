@@ -79,6 +79,7 @@ public class CaptchaConstants {
     public static final String CAPTCHA_RISK_ANALYSIS = "riskAnalysis";
     // Captcha Types.
     public static final String RE_CAPTCHA_TYPE_ENTERPRISE = "recaptcha-enterprise";
+    public static final String RE_CAPTCHA_BYPASSED_API_ENDPOINTS = "recaptcha.bypassed.api.endpoints";
 
     // Default value for threshold for score in reCAPTCHA v3.
     public static final double CAPTCHA_V3_DEFAULT_THRESHOLD = 0.5;
