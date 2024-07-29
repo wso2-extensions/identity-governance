@@ -26,6 +26,7 @@ public class PasswordPolicyConstants {
     public static final String AUTHENTICATOR_TYPE = "LOCAL";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM =
             "http://wso2.org/claims/identity/lastPasswordUpdateTime";
+    public static final String GROUPS_CLAIM = "http://wso2.org/claims/groups";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM_NON_IDENTITY =
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
     public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
@@ -53,6 +54,9 @@ public class PasswordPolicyConstants {
     public static final String FALSE = "false";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
+    public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
+    public static final String APPLICATION_AUDIENCE = "application";
+    public static final String ORGANIZATION_AUDIENCE = "organization";
 
     public enum ErrorMessages {
         ERROR_WHILE_GETTING_USER_STORE_DOMAIN("80001",
@@ -70,7 +74,9 @@ public class PasswordPolicyConstants {
         ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password"),
         ERROR_RETRIEVE_PASSWORD_EXPIRED_USERS_FROM_DB("80012", "" +
                 "Error while retrieving password expired users from database."),
-        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager.");
+        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager."),
+        ERROR_WHILE_RETRIEVING_USER_ROLES("80014", "Error while retrieving user roles."),
+        ERROR_WHILE_RETRIEVING_USER_CLAIMS("80015", "Error while retrieving user claims.");
 
         private final String code;
         private final String message;

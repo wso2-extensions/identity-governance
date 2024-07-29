@@ -84,10 +84,7 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
         for (AuthenticatorConfig authenticator : authenticators) {
             if (PasswordPolicyConstants.BASIC_AUTHENTICATOR.equals(authenticator.getName())) {
                 if (!authenticatedUser.isFederatedUser()) {
-
-                    String username = authenticatedUser.toFullQualifiedUsername();
-                    String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-                    if (PasswordPolicyUtils.isPasswordExpired(tenantDomain, tenantAwareUsername)) {
+                    if (PasswordPolicyUtils.isPasswordExpired(tenantDomain, authenticatedUser)) {
                         if (log.isDebugEnabled()) {
                             try {
                                 log.debug(String.format("User: %s password has expired.",
