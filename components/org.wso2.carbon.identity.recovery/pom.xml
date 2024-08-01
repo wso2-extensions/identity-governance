@@ -190,6 +190,17 @@
                             version="${identity.governance.imp.pkg.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager,
+                            osgi.service;objectClass=org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager,
+                            osgi.service;objectClass=org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.governance.service.IdentityDataStoreService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.governance.service.otp.OTPGenerator,
+                            osgi.service;objectClass=org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
