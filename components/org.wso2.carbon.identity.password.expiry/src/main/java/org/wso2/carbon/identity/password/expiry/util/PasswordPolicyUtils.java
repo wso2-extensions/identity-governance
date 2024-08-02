@@ -20,8 +20,6 @@ package org.wso2.carbon.identity.password.expiry.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
-import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
@@ -44,6 +42,7 @@ import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -58,7 +57,6 @@ import java.util.Set;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.APPLICATION_AUDIENCE;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.CONNECTOR_CONFIG_NAME;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.GROUPS_CLAIM;
-import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.ORGANIZATION_AUDIENCE;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.PASSWORD_RESET_PAGE;
 
 /**
@@ -166,18 +164,17 @@ public class PasswordPolicyUtils {
      * This method checks if the password has expired.
      *
      * @param tenantDomain      The tenant domain of the user trying to authenticate.
-     * @param authenticatedUser The authenticated user object.
+     * @param tenantAwareUsername The tenant aware username of the user trying to authenticate.
      * @return true if the password had expired.
      * @throws PostAuthenticationFailedException If an error occurred while checking the password expiry.
      */
-    public static boolean isPasswordExpired(String tenantDomain, AuthenticatedUser authenticatedUser)
+    public static boolean isPasswordExpiredBasedOnRules(String tenantDomain, String tenantAwareUsername)
             throws PostAuthenticationFailedException {
 
         try {
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-            String tenantAwareUsername = authenticatedUser.getUserName();
-            String userId = authenticatedUser.getUserId();
+            String userId = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(tenantAwareUsername);
             String lastPasswordUpdatedTime =
                     getLastPasswordUpdatedTime(tenantAwareUsername, userStoreManager, userRealm);
             long lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
@@ -202,10 +199,11 @@ public class PasswordPolicyUtils {
             }
             // Apply general policy if no specific rule applies.
             return applyGeneralPasswordExpiry(tenantDomain, daysDifference, lastPasswordUpdatedTime);
-        } catch (UserIdNotFoundException e) {
-            log.error("Error while getting user id for the user.", e);
+        } catch (UserStoreException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
         }
-        return false;
     }
 
     /**
@@ -218,7 +216,7 @@ public class PasswordPolicyUtils {
      * @return true if the rule is applicable, false otherwise.
      * @throws PostAuthenticationFailedException If an error occurs during the check.
      */
-    public static boolean isRuleApplicable(String tenantDomain, String tenantAwareUsername, String userId,
+    private static boolean isRuleApplicable(String tenantDomain, String tenantAwareUsername, String userId,
                                             PasswordExpiryRule passwordExpiryRule)
             throws PostAuthenticationFailedException {
 
@@ -284,7 +282,7 @@ public class PasswordPolicyUtils {
 
         Set<String> userGroups = new HashSet<>(Arrays.asList(groupClaimValue.split(",")));
         for (String ruleGroup : ruleGroups) {
-            if (!userGroups.contains(ruleGroup.toLowerCase().trim())) {
+            if (!userGroups.contains(ruleGroup)) {
                 return false;
             }
         }
@@ -347,13 +345,7 @@ public class PasswordPolicyUtils {
             String userStoreDomain = UserCoreUtil.getDomainFromThreadLocal();
             String domainQualifiedUsername = UserCoreUtil.addDomainToName(tenantAwareUsername, userStoreDomain);
 
-            String claimValue = "";
-            Map<String, String> claimValueMap =
-                    userStoreManager.getUserClaimValues(domainQualifiedUsername, new String[]{claimURI}, null);
-            if (claimValueMap != null && claimValueMap.get(claimURI) != null) {
-                claimValue = claimValueMap.get(claimURI);
-            }
-            return claimValue;
+            return userStoreManager.getUserClaimValue(domainQualifiedUsername, claimURI, null);
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
@@ -457,7 +449,7 @@ public class PasswordPolicyUtils {
      * @param userStoreManager    The user store manager to retrieve the last password updated time from.
      * @param userRealm           The user realm to retrieve the claim manager from.
      * @return The last password updated time.
-     * @throws PostAuthenticationFailedException
+     * @throws PostAuthenticationFailedException If an error occurs while retrieving the last password updated time.
      */
     @SuppressFBWarnings("FORMAT_STRING_MANIPULATION")
     private static String getLastPasswordUpdatedTime(String tenantAwareUsername, UserStoreManager userStoreManager,

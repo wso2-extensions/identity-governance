@@ -61,7 +61,7 @@ public class PasswordExpiryRule {
             String value = parts[i].trim();
             if ((StringUtils.startsWith(value, "'") && StringUtils.endsWith(value, "'")) ||
                     (StringUtils.startsWith(value, "\"") && StringUtils.endsWith(value, "\""))) {
-                value = value.substring(1, value.length() - 1);
+                value = value.substring(1, value.length() - 1).trim();
             }
             this.values.add(value);
         }
