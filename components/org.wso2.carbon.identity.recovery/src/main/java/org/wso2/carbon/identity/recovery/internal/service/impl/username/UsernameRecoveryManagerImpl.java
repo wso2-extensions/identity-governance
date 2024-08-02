@@ -311,7 +311,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
      * @param metaProperties      Meta properties to be send with the notification.
      * @throws IdentityRecoveryException Error while triggering notification.
      */
-    private void triggerNotification(User user, String notificationChannel, String eventName,
+    public void triggerNotification(User user, String notificationChannel, String eventName,
                                      Map<String, String> metaProperties)
             throws IdentityRecoveryException {
 

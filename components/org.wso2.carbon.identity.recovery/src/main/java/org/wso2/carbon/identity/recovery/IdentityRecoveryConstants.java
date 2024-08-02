@@ -77,6 +77,7 @@ public class IdentityRecoveryConstants {
     public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
+    public static final String GIVEN_NAME = "givenName";
     public static final String NOTIFY = "notify";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
@@ -559,6 +560,8 @@ public class IdentityRecoveryConstants {
         public static final String RECOVERY_CODE_EXPIRY_TIME = "Recovery.Notification.ExpiryTime.RecoveryCode";
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
+        public static final String USERNAME_RECOVERY_SHARED_EMAIL =
+                "SelfRegistration.SharedEmail";
         public static final String PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL = "Recovery.Notification.Password.OTP.SendOTPInEmail";
         public static final String PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
                 "OTP.UseUppercaseCharactersInOTP";
