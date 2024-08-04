@@ -202,7 +202,7 @@ public class PasswordChangeHandlerTest {
         String timestamp = String.valueOf(System.currentTimeMillis());
         claimValueMap.put(PasswordPolicyConstants.LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM, timestamp);
         String[] claimURIs = new String[]{PasswordPolicyConstants.LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM};
-        when(PasswordPolicyUtils.isPasswordExpired(TENANT_DOMAIN, USERNAME)).thenReturn(false);
+        when(PasswordPolicyUtils.isPasswordExpiredBasedOnRules(TENANT_DOMAIN, USERNAME)).thenReturn(false);
         when(userStoreManager.getUserClaimValues(USERNAME, claimURIs, null)).thenReturn(claimValueMap);
         passwordChangeHandler.handleEvent(event);
 
@@ -222,7 +222,7 @@ public class PasswordChangeHandlerTest {
         Map<String, String> claimValueMap = new HashMap<>();
         claimValueMap.put(PasswordPolicyConstants.LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM, "1672559229000");
         String[] claimURIs = new String[]{PasswordPolicyConstants.LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM};
-        when(PasswordPolicyUtils.isPasswordExpired(TENANT_DOMAIN, USERNAME)).thenReturn(true);
+        when(PasswordPolicyUtils.isPasswordExpiredBasedOnRules(TENANT_DOMAIN, USERNAME)).thenReturn(true);
 
         when(userStoreManager.getUserClaimValues(USERNAME, claimURIs, null)).thenReturn(claimValueMap);
         try {
