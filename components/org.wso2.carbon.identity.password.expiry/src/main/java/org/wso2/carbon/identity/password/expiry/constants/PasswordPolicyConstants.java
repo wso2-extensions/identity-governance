@@ -43,6 +43,12 @@ public class PasswordPolicyConstants {
             "Enable Password Expiry";
     public static final String CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DESCRIPTION =
             "Allow users to reset the password after configured number of days";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES =
+            "passwordExpiry.skipIfNoApplicableRules";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DISPLAYED_NAME =
+            "Skip password expiry if no applicable rules";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION =
+            "Skip password expiry if no applicable rules are found for the user";
     public static final String CONNECTOR_CONFIG_SUB_CATEGORY = "DEFAULT";
     public static final String PASSWORD_EXPIRED_ERROR_MESSAGE = "Password has expired";
     public static final String CONNECTOR_CONFIG_NAME = "passwordExpiry";

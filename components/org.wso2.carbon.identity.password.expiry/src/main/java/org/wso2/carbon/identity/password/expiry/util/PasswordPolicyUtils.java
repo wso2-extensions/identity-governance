@@ -76,6 +76,7 @@ public class PasswordPolicyUtils {
         List<String> properties = new ArrayList<>();
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
+        properties.add(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES);
         return properties.toArray(new String[0]);
     }
 
@@ -181,9 +182,9 @@ public class PasswordPolicyUtils {
             int daysDifference = getDaysDifference(lastPasswordUpdatedTimeInMillis);
 
             List<PasswordExpiryRule> passwordExpiryRules = getPasswordExpiryRules(tenantDomain);
-            // Apply general policy if no rules given.
+            // Apply default password expiry policy if no rules given.
             if (CollectionUtils.isEmpty(passwordExpiryRules)) {
-                return applyGeneralPasswordExpiry(tenantDomain, daysDifference, lastPasswordUpdatedTime);
+                return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
             }
 
             for (PasswordExpiryRule rule : passwordExpiryRules) {
@@ -197,8 +198,8 @@ public class PasswordPolicyUtils {
                     return daysDifference > expiryDays || lastPasswordUpdatedTime == null;
                 }
             }
-            // Apply general policy if no specific rule applies.
-            return applyGeneralPasswordExpiry(tenantDomain, daysDifference, lastPasswordUpdatedTime);
+            // Apply default password expiry policy if no specific rule applies.
+            return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
@@ -290,19 +291,20 @@ public class PasswordPolicyUtils {
     }
 
     /**
-     * Apply general password expiry policy.
+     * Check if the password has expired according to the default password expiry policy.
      *
      * @param tenantDomain            The tenant domain.
      * @param daysDifference          The number of days since the password was last updated.
      * @param lastPasswordUpdatedTime The last password updated time.
-     * @return true if the password has expired.
-     * @throws PostAuthenticationFailedException If an error occurs while applying the general password expiry policy.
+     * @return true if the password has expired, false otherwise.
+     * @throws PostAuthenticationFailedException If an error occurs while checking the password expiry.
      */
-    private static boolean applyGeneralPasswordExpiry(String tenantDomain, int daysDifference,
-                                                      String lastPasswordUpdatedTime)
+    private static boolean isPasswordExpiredUnderDefaultPolicy(String tenantDomain, int daysDifference,
+                                                               String lastPasswordUpdatedTime)
             throws PostAuthenticationFailedException {
 
-        return (daysDifference > getPasswordExpiryInDays(tenantDomain) || lastPasswordUpdatedTime == null);
+        if (isSkipIfNoApplicableRulesEnabled(tenantDomain)) return false;
+        return lastPasswordUpdatedTime == null || daysDifference > getPasswordExpiryInDays(tenantDomain);
     }
 
     /**
@@ -513,6 +515,26 @@ public class PasswordPolicyUtils {
         try {
             return Boolean.parseBoolean(PasswordPolicyUtils.getPasswordExpiryConfig(tenantDomain,
                     PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY));
+        } catch (IdentityGovernanceException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getMessage(), e);
+        }
+    }
+
+    /**
+     * This method checks if the "skip if no applicable rules" option is enabled for a given tenant domain.
+     *
+     * @param tenantDomain The tenant domain to check for the configuration.
+     * @return true if "skip if no applicable rules" is enabled, false otherwise.
+     * @throws PostAuthenticationFailedException If an error occurs while reading system configurations.
+     */
+    public static boolean isSkipIfNoApplicableRulesEnabled(String tenantDomain)
+            throws PostAuthenticationFailedException {
+
+        try {
+            return Boolean.parseBoolean(PasswordPolicyUtils.getPasswordExpiryConfig(tenantDomain,
+                    PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES));
         } catch (IdentityGovernanceException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_READING_SYSTEM_CONFIGURATIONS.getCode(),
