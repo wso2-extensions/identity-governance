@@ -46,15 +46,16 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+import org.wso2.carbon.user.core.common.Group;
 
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.APPLICATION_AUDIENCE;
+import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.CONNECTOR_CONFIG_NAME;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.GROUPS_CLAIM;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.PASSWORD_RESET_PAGE;
@@ -164,7 +165,7 @@ public class PasswordPolicyUtils {
     /**
      * This method checks if the password has expired.
      *
-     * @param tenantDomain      The tenant domain of the user trying to authenticate.
+     * @param tenantDomain        The tenant domain of the user trying to authenticate.
      * @param tenantAwareUsername The tenant aware username of the user trying to authenticate.
      * @return true if the password had expired.
      * @throws PostAuthenticationFailedException If an error occurred while checking the password expiry.
@@ -210,10 +211,10 @@ public class PasswordPolicyUtils {
     /**
      * Determines if a password expiry rule is applicable to a user.
      *
-     * @param tenantDomain         The tenant domain.
-     * @param tenantAwareUsername  The tenant-aware username.
-     * @param userId               The user's ID.
-     * @param passwordExpiryRule   The password expiry rule to check.
+     * @param tenantDomain        The tenant domain.
+     * @param tenantAwareUsername The tenant-aware username.
+     * @param userId              The user's ID.
+     * @param passwordExpiryRule  The password expiry rule to check.
      * @return true if the rule is applicable, false otherwise.
      * @throws PostAuthenticationFailedException If an error occurs during the check.
      */
@@ -237,31 +238,19 @@ public class PasswordPolicyUtils {
      *
      * @param tenantDomain The tenant domain.
      * @param userId       The user ID.
-     * @param ruleRoles    The roles specified in the rule.
+     * @param ruleRoleIds    The roles specified in the rule.
      * @return true if the user's roles match the rule's roles.
      * @throws PostAuthenticationFailedException If an error occurs while checking the user's roles.
      */
-    private static boolean doUserRolesMatchRule(String tenantDomain, String userId, List<String> ruleRoles)
+    private static boolean doUserRolesMatchRule(String tenantDomain, String userId, List<String> ruleRoleIds)
             throws PostAuthenticationFailedException {
 
         List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
         if (CollectionUtils.isEmpty(userRoles)) {
             return false;
         }
-
-        Set<String> userRoleNames = new HashSet<>();
-        for (RoleBasicInfo userRole : userRoles) {
-            String fullRoleName = (APPLICATION_AUDIENCE.equals(userRole.getAudience())
-                    ? userRole.getAudienceName() + "/" : "") + userRole.getName();
-            userRoleNames.add(fullRoleName);
-        }
-
-        for (String ruleRole : ruleRoles) {
-            if (!userRoleNames.contains(ruleRole)) {
-                return false;
-            }
-        }
-        return true;
+        Set<String> userRoleIds = userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
+        return userRoleIds.containsAll(ruleRoleIds);
     }
 
     /**
@@ -269,25 +258,58 @@ public class PasswordPolicyUtils {
      *
      * @param tenantDomain        The tenant domain.
      * @param tenantAwareUsername The tenant aware username.
-     * @param ruleGroups          The groups specified in the rule.
+     * @param ruleGroupIds        The groups specified in the rule.
      * @return true if the user's groups match the rule's groups.
      * @throws PostAuthenticationFailedException If an error occurs while checking the user's groups.
      */
     private static boolean doUserGroupsMatchRule(String tenantDomain, String tenantAwareUsername,
-                                                 List<String> ruleGroups) throws PostAuthenticationFailedException {
+                                                 List<String> ruleGroupIds)
+            throws PostAuthenticationFailedException {
 
         String groupClaimValue = getUserClaimValue(tenantDomain, tenantAwareUsername, GROUPS_CLAIM);
         if (StringUtils.isBlank(groupClaimValue)) {
             return false;
         }
 
-        Set<String> userGroups = new HashSet<>(Arrays.asList(groupClaimValue.split(",")));
-        for (String ruleGroup : ruleGroups) {
-            if (!userGroups.contains(ruleGroup)) {
-                return false;
+        UserRealm userRealm = getUserRealm(tenantDomain);
+        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
+        String userStoreDomain = UserCoreUtil.extractDomainFromName(tenantAwareUsername);
+
+        String multiAttributeSeparator = getMultivaluedAttributeSeparator(tenantDomain, userStoreDomain);
+        String[] groupNames = groupClaimValue.split(multiAttributeSeparator);
+
+        Set<String> userGroupIds = new HashSet<>();
+        for (String groupName : groupNames) {
+            try {
+                String domainAwareGroupName = UserCoreUtil.addDomainToName(groupName, userStoreDomain);
+                Group group =
+                        ((AbstractUserStoreManager) userStoreManager).getGroupByGroupName(domainAwareGroupName,
+                                null);
+                if (group != null) {
+                    userGroupIds.add(group.getGroupID());
+                }
+            } catch (UserStoreException e) {
+                throw new PostAuthenticationFailedException(
+                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
+                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
             }
         }
-        return true;
+
+        return userGroupIds.containsAll(ruleGroupIds);
+    }
+
+    private static String getMultivaluedAttributeSeparator(String tenantDomain, String userStoreDomain)
+            throws PostAuthenticationFailedException {
+
+        String multiValuedAttributeSeparator = ",";
+        UserRealm userRealm = getUserRealm(tenantDomain);
+        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
+        String claimSeparator = userStoreManager.getSecondaryUserStoreManager(userStoreDomain)
+                .getRealmConfiguration().getUserStoreProperty(MULTI_ATTRIBUTE_SEPARATOR);
+        if (StringUtils.isNotBlank(claimSeparator)) {
+            multiValuedAttributeSeparator = claimSeparator;
+        }
+        return multiValuedAttributeSeparator;
     }
 
     /**
@@ -312,7 +334,7 @@ public class PasswordPolicyUtils {
      *
      * @param tenantDomain The tenant domain.
      * @param userId       The user ID.
-     * @return             The roles of the user.
+     * @return The roles of the user.
      * @throws PostAuthenticationFailedException If an error occurs while getting the user roles.
      */
     public static List<RoleBasicInfo> getUserRoles(String tenantDomain, String userId)
@@ -350,8 +372,8 @@ public class PasswordPolicyUtils {
             return userStoreManager.getUserClaimValue(domainQualifiedUsername, claimURI, null);
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
-                    ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
-                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
+                    ERROR_WHILE_RETRIEVING_USER_CLAIMS.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_CLAIMS.getMessage());
         }
     }
 
