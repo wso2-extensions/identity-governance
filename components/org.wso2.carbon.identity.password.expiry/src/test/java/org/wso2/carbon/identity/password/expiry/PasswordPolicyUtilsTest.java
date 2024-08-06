@@ -44,11 +44,13 @@ import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
 import org.wso2.carbon.identity.role.v2.mgt.core.model.RoleBasicInfo;
 import org.wso2.carbon.identity.role.v2.mgt.core.exception.IdentityRoleManagementException;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.user.core.common.Group;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -94,20 +97,36 @@ public class PasswordPolicyUtilsTest {
     @Mock
     private RoleManagementService roleManagementService;
 
+    private MockedStatic<UserCoreUtil> mockedStaticUserCoreUtil;
+
     private final String tenantDomain = "test.com";
     private final String tenantAwareUsername = "tom@gmail.com";
     private final String userId = "testUserId";
+
+    private static final Map<String, String> ROLE_MAP = new HashMap<>();
+    static {
+        ROLE_MAP.put("employee", "a40ac8c2-5e51-4526-b75e-11353f473ad7");
+        ROLE_MAP.put("contractor", "994b309d-3724-4519-8b0c-f23671451999");
+        ROLE_MAP.put("manager", "674b309d-3724-4519-8b0c-f2367145151d");
+    }
+
+    private static final Map<String, String> GROUP_MAP = new HashMap<>();
+    static {
+        GROUP_MAP.put("admin", "eea0316e-3d99-4731-b8f1-475c1af72c6d");
+    }
 
     @BeforeClass
     public void beforeTest() {
 
         mockedStaticIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
+        mockedStaticUserCoreUtil = mockStatic(UserCoreUtil.class);
     }
 
     @AfterClass
     public void afterTest() {
 
         mockedStaticIdentityTenantUtil.close();
+        mockedStaticUserCoreUtil.close();
     }
 
     @BeforeMethod
@@ -179,30 +198,32 @@ public class PasswordPolicyUtilsTest {
         Assert.assertEquals(0, rule1.getExpiryDays());
         Assert.assertEquals(AttributeEnum.GROUPS, rule1.getAttribute());
         Assert.assertEquals(OperatorEnum.NE, rule1.getOperator());
-        Assert.assertEquals(Collections.singletonList("admin"), rule1.getValues());
+        Assert.assertEquals(Collections.singletonList(GROUP_MAP.get("admin")), rule1.getValues());
 
         Assert.assertEquals(2, rule2.getPriority());
         Assert.assertEquals(40, rule2.getExpiryDays());
         Assert.assertEquals(AttributeEnum.ROLES, rule2.getAttribute());
         Assert.assertEquals(OperatorEnum.EQ, rule2.getOperator());
-        Assert.assertEquals(Arrays.asList("employee", "contractor"), rule2.getValues());
+        Assert.assertEquals(Arrays.asList(ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")), rule2.getValues());
 
         Assert.assertEquals(3, rule3.getPriority());
         Assert.assertEquals(60, rule3.getExpiryDays());
         Assert.assertEquals(AttributeEnum.ROLES, rule3.getAttribute());
         Assert.assertEquals(OperatorEnum.EQ, rule3.getOperator());
-        Assert.assertEquals(Arrays.asList("employee", "welfare/manager"), rule3.getValues());
+        Assert.assertEquals(Arrays.asList(ROLE_MAP.get("employee"), ROLE_MAP.get("manager")), rule3.getValues());
     }
 
+    @Test
     private void testGetUserClaimValue() throws PostAuthenticationFailedException, UserStoreException {
 
-        String userGroups = "Employee,Contractor";
+        String userGroups = "admin,manager";
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(3);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userRealm.getClaimManager()).thenReturn(claimManager);
-        when(UserCoreUtil.getDomainFromThreadLocal()).thenReturn(null);
-        when(UserCoreUtil.addDomainToName(tenantAwareUsername, anyString())).thenReturn(tenantAwareUsername);
+        when(UserCoreUtil.getDomainFromThreadLocal()).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        when(UserCoreUtil.extractDomainFromName(anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        when(UserCoreUtil.addDomainToName(anyString(), anyString())).thenReturn(tenantAwareUsername);
         when(userStoreManager.getUserClaimValue(tenantAwareUsername, PasswordPolicyConstants.GROUPS_CLAIM,
                 null)).thenReturn(userGroups);
 
@@ -236,6 +257,7 @@ public class PasswordPolicyUtilsTest {
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(userRealm.getClaimManager()).thenReturn(claimManager);
+        when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
 
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
 
@@ -261,13 +283,19 @@ public class PasswordPolicyUtilsTest {
     @DataProvider(name = "passwordExpiryTestCases")
     public Object[][] passwordExpiryTestCases() {
         return new Object[][] {
-                // {daysAgo, roles, groups, skipIfNoApplicableRules, expectedExpired, description}
-                {55, new String[]{"employee", "welfare/manager"}, new String[]{}, false, false, "Not expired: 3rd rule (60) applies"},
-                {55, new String[]{"employee", "welfare/manager", "contractor"}, new String[]{}, false, true, "Expired: 2nd rule (40) applies"},
-                {35, new String[]{"employee", "contractor"}, new String[]{}, false, false, "Not expired: 2nd rule (40) applies"},
-                {35, new String[]{"employee", "contractor"}, new String[]{"admin"}, false, false, "Not expired: 1st rule (skip) applies."},
-                {35, new String[]{"employee"}, new String[]{}, false, true, "Expired: Default expiry policy applies."},
-                {35, new String[]{"employee"}, new String[]{}, true, false, "Not expired: Default expiry policy applies - skip if no rules applicable."},
+            // {daysAgo, roles, groups, skipIfNoApplicableRules, expectedExpired, description}
+            {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager")}, new String[]{}, false, false,
+                    "Not expired: 3rd rule (60) applies"},
+            {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager"), ROLE_MAP.get("contractor")},
+                    new String[]{}, false, true, "Expired: 2nd rule (40) applies"},
+            {35, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")}, new String[]{}, false, false,
+                    "Not expired: 2nd rule (40) applies"},
+            {35, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")}, new String[]{"admin"}, false,
+                    false, "Not expired: 1st rule (skip) applies."},
+            {35, new String[]{ROLE_MAP.get("employee")}, new String[]{}, false, true,
+                    "Expired: Default expiry policy applies."},
+            {35, new String[]{ROLE_MAP.get("employee")}, new String[]{}, true, false,
+                    "Not expired: Default expiry policy applies - skip if no rules applicable."},
         };
     }
 
@@ -282,6 +310,7 @@ public class PasswordPolicyUtilsTest {
         when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
         when(userRealm.getClaimManager()).thenReturn(claimManager);
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
+        when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
 
         // Mock user roles.
         when(roleManagementService.getRoleListOfUser(userId, tenantDomain)).thenReturn(getRoles(roles));
@@ -290,6 +319,18 @@ public class PasswordPolicyUtilsTest {
         String userGroupsString = String.join(",", groups);
         when(userStoreManager.getUserClaimValue(tenantAwareUsername, PasswordPolicyConstants.GROUPS_CLAIM, null))
                 .thenReturn(userGroupsString);
+
+        Arrays.stream(groups).forEach(groupName -> {
+            Group groupObj = new Group();
+            groupObj.setGroupID(GROUP_MAP.get(groupName));
+            try {
+                when(abstractUserStoreManager.getGroupByGroupName(eq(groupName), any())).thenReturn(groupObj);
+            } catch (UserStoreException e) {
+                Assert.fail("Error occurred while mocking group: " + groupName);
+            }
+        });
+        when(UserCoreUtil.extractDomainFromName(anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        when(UserCoreUtil.addDomainToName(anyString(), anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
 
         // Mock last password update time.
         Long updateTime = getUpdateTime(daysAgo);
@@ -314,25 +355,15 @@ public class PasswordPolicyUtilsTest {
 
     private static Long getUpdateTime(Integer daysAgo) {
 
-        return daysAgo != null ? System.currentTimeMillis() - daysAgo * 24L * 60 * 60 * 1000 : null;
+        return daysAgo != null ? System.currentTimeMillis() - daysAgo * 24 * 60 * 60 * 1000L : null;
     }
 
-    private List<RoleBasicInfo> getRoles(String[] roles) {
+    private List<RoleBasicInfo> getRoles(String[] roleIds) {
 
         List<RoleBasicInfo> userRoles = new ArrayList<>();
-        for (String role : roles) {
+        for (String roleId : roleIds) {
             RoleBasicInfo roleInfo = new RoleBasicInfo();
-            String roleName = role;
-            String audienceName = "";
-            String audience = PasswordPolicyConstants.ORGANIZATION_AUDIENCE;
-            if (role.contains("/")) {
-                audience = PasswordPolicyConstants.APPLICATION_AUDIENCE;
-                audienceName = role.split("/")[0];
-                roleName = role.split("/")[1];
-            }
-            roleInfo.setName(roleName);
-            roleInfo.setAudience(audience);
-            roleInfo.setAudienceName(audienceName);
+            roleInfo.setId(roleId);
             userRoles.add(roleInfo);
         }
         return userRoles;
@@ -344,11 +375,12 @@ public class PasswordPolicyUtilsTest {
         Property expiryRule2 = new Property();
         Property expiryRule3 = new Property();
         expiryRule1.setName(PasswordPolicyConstants.PASSWORD_EXPIRY_RULES_PREFIX+"1");
-        expiryRule1.setValue("1,0,groups,ne,admin");
+        expiryRule1.setValue(String.format("1,0,groups,ne,%s", GROUP_MAP.get("admin")));
         expiryRule2.setName(PasswordPolicyConstants.PASSWORD_EXPIRY_RULES_PREFIX+"2");
-        expiryRule2.setValue("2,40,roles,eq,employee,contractor");
+        expiryRule2.setValue(
+                String.format("2,40,roles,eq,%s,%s", ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")));
         expiryRule3.setName(PasswordPolicyConstants.PASSWORD_EXPIRY_RULES_PREFIX+"3");
-        expiryRule3.setValue("3,60,roles,eq,employee,welfare/manager");
+        expiryRule3.setValue(String.format("3,60,roles,eq,%s,%s", ROLE_MAP.get("employee"), ROLE_MAP.get("manager")));
 
         Property[] properties = new Property[3];
         properties[0] = expiryRule1;
