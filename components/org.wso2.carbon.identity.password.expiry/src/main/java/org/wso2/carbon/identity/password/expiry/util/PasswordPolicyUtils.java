@@ -159,7 +159,7 @@ public class PasswordPolicyUtils {
 
         // Getting the configured number of days before password expiry in days.
         int passwordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
-        return (daysDifference > passwordExpiryInDays || lastPasswordUpdatedTime == null);
+        return (daysDifference >= passwordExpiryInDays || lastPasswordUpdatedTime == null);
     }
 
     /**
@@ -196,7 +196,7 @@ public class PasswordPolicyUtils {
                     }
                     int expiryDays =
                             rule.getExpiryDays() > 0 ? rule.getExpiryDays() : getPasswordExpiryInDays(tenantDomain);
-                    return daysDifference > expiryDays || lastPasswordUpdatedTime == null;
+                    return daysDifference >= expiryDays || lastPasswordUpdatedTime == null;
                 }
             }
             // Apply default password expiry policy if no specific rule applies.
@@ -326,7 +326,7 @@ public class PasswordPolicyUtils {
             throws PostAuthenticationFailedException {
 
         if (isSkipIfNoApplicableRulesEnabled(tenantDomain)) return false;
-        return lastPasswordUpdatedTime == null || daysDifference > getPasswordExpiryInDays(tenantDomain);
+        return lastPasswordUpdatedTime == null || daysDifference >= getPasswordExpiryInDays(tenantDomain);
     }
 
     /**
