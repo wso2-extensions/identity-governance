@@ -80,13 +80,16 @@ public class PasswordExpiryConfigImplTest {
     public void testGetPropertyNameMapping() {
 
         Map<String, String> propertyNameMapping = passwordPolicyConfig.getPropertyNameMapping();
-        Assert.assertEquals(propertyNameMapping.size(), 2);
+        Assert.assertEquals(propertyNameMapping.size(), 3);
         Assert.assertEquals(
                 propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DISPLAYED_NAME);
         Assert.assertEquals(
                 propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DISPLAYED_NAME);
+        Assert.assertEquals(
+                propertyNameMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
+                PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DISPLAYED_NAME);
     }
 
     @Test
@@ -100,34 +103,41 @@ public class PasswordExpiryConfigImplTest {
     public void testGetPropertyNames() {
 
         String[] propertyNames = passwordPolicyConfig.getPropertyNames();
-        Assert.assertEquals(propertyNames.length, 2);
+        Assert.assertEquals(propertyNames.length, 3);
         Assert.assertEquals(propertyNames[0], PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         Assert.assertEquals(propertyNames[1], PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
+        Assert.assertEquals(propertyNames[2], PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES);
     }
 
     @Test
     public void testGetPropertyDescriptionMapping() {
 
         Map<String, String> propertyDescriptionMapping = passwordPolicyConfig.getPropertyDescriptionMapping();
-        Assert.assertEquals(propertyDescriptionMapping.size(), 2);
+        Assert.assertEquals(propertyDescriptionMapping.size(), 3);
         Assert.assertEquals(
                 propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DESCRIPTION);
         Assert.assertEquals(
                 propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY),
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DESCRIPTION);
+        Assert.assertEquals(
+                propertyDescriptionMapping.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
+                PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION);
     }
 
     @Test
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
 
         Properties defaultPropertyValues = passwordPolicyConfig.getDefaultPropertyValues("test.com");
-        Assert.assertEquals(defaultPropertyValues.size(), 2);
+        Assert.assertEquals(defaultPropertyValues.size(), 3);
         Assert.assertEquals(
                 defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS),
                 String.valueOf(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DEFAULT_VALUE));
         Assert.assertEquals(
                 defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY),
+                PasswordPolicyConstants.FALSE);
+        Assert.assertEquals(
+                defaultPropertyValues.get(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES),
                 PasswordPolicyConstants.FALSE);
     }
 }

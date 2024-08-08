@@ -38,8 +38,10 @@ import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class which contains exposed identity governance services.
@@ -168,6 +170,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         Property[] properties = this.getConfiguration(tenantDomain);
         List<ConnectorConfig> configs = new ArrayList<>(list.size());
         String[] connectorProperties;
+        String connectorName;
         for (int i = 0; i < list.size(); i++) {
             ConnectorConfig config = new ConnectorConfig();
             Map<String, String> propertyFriendlyNames = list.get(i).getPropertyNameMapping();
@@ -180,28 +183,38 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             config.setSubCategory(list.get(i).getSubCategory());
             config.setOrder(list.get(i).getOrder());
             connectorProperties = list.get(i).getPropertyNames();
-            Property[] configProperties = new Property[connectorProperties.length];
-            for (int j = 0; j < connectorProperties.length; j++) {
+            connectorName = list.get(i).getName();
+            List<Property> configProperties = new ArrayList<>();
+            Set<String> addedProperties = new HashSet<>();
+
+            for (String connectorProperty : connectorProperties) {
                 for (Property property : properties) {
-                    if (connectorProperties[j].equals(property.getName())) {
-                        configProperties[j] = property;
-                        String resourceName = configProperties[j].getName();
-                        configProperties[j].setDisplayName(propertyFriendlyNames.get(resourceName));
-                        configProperties[j].setDescription(propertyDescriptions.get(resourceName));
-                        if (metaData != null && metaData.containsKey(resourceName)) {
-                            configProperties[j].setType(metaData.get(resourceName).getType());
-                            configProperties[j].setRegex(metaData.get(resourceName).getRegex());
-                            configProperties[j].setGroupId(metaData.get(resourceName).getGroupId());
+                    if (StringUtils.isBlank(property.getName()) || addedProperties.contains(property.getName())) {
+                        continue;
+                    }
+                    if (connectorProperty.equals(property.getName()) ||
+                            (StringUtils.isNotBlank(connectorName) && property.getName().startsWith(connectorName))) {
+                        Property configProperty = new Property();
+                        configProperty.setName(property.getName());
+                        configProperty.setValue(property.getValue());
+                        configProperty.setDisplayName(propertyFriendlyNames.get(property.getName()));
+                        configProperty.setDescription(propertyDescriptions.get(property.getName()));
+
+                        if (metaData != null && metaData.containsKey(property.getName())) {
+                            configProperty.setType(metaData.get(property.getName()).getType());
+                            configProperty.setRegex(metaData.get(property.getName()).getRegex());
+                            configProperty.setGroupId(metaData.get(property.getName()).getGroupId());
                         }
                         if (confidentialProperties != null &&
-                                confidentialProperties.contains(configProperties[j].getName())) {
-                            configProperties[j].setConfidential(true);
+                                confidentialProperties.contains(configProperty.getName())) {
+                            configProperty.setConfidential(true);
                         }
-                        break;
+                        configProperties.add(configProperty);
+                        addedProperties.add(property.getName());
                     }
                 }
             }
-            config.setProperties(configProperties);
+            config.setProperties(configProperties.toArray(new Property[0]));
             configs.add(i, config);
         }
         return configs;

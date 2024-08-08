@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.password.expiry.services.ExpiredPasswordIdentificationService;
 import org.wso2.carbon.identity.password.expiry.services.impl.ExpiredPasswordIdentificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
 
 /**
  * OSGi declarative services component which handles registration and un-registration of password enforce reset handler
@@ -123,5 +124,22 @@ public class EnforcePasswordResetComponent {
     protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         EnforcePasswordResetComponentDataHolder.getInstance().setIdentityDataStoreService(null);
+    }
+
+    @Reference(
+            name = "role.management.service",
+            service = RoleManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetRoleManagementService"
+    )
+    protected void setRoleManagementService(RoleManagementService roleManagementService) {
+
+        EnforcePasswordResetComponentDataHolder.getInstance().setRoleManagementService(roleManagementService);
+    }
+
+    protected void unsetRoleManagementService(RoleManagementService roleManagementService) {
+    
+        EnforcePasswordResetComponentDataHolder.getInstance().setRoleManagementService(null);
     }
 }

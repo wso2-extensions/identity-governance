@@ -78,6 +78,8 @@ public class PasswordExpiryConfigImpl implements IdentityConnectorConfig {
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DISPLAYED_NAME);
         nameMapping.put(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS,
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DISPLAYED_NAME);
+        nameMapping.put(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES,
+                PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DISPLAYED_NAME);
         return nameMapping;
     }
 
@@ -90,6 +92,8 @@ public class PasswordExpiryConfigImpl implements IdentityConnectorConfig {
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DESCRIPTION);
         nameMapping.put(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS,
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DESCRIPTION);
+        nameMapping.put(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES,
+                PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION);
         return nameMapping;
     }
 
@@ -107,11 +111,14 @@ public class PasswordExpiryConfigImpl implements IdentityConnectorConfig {
         String enablePasswordExpiry = PasswordPolicyConstants.FALSE;
         String passwordExpiryInDays =
                 String.valueOf(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS_DEFAULT_VALUE);
+        String skipIfNoApplicableRules = PasswordPolicyConstants.FALSE;
 
         String enablePasswordExpiryProperty = IdentityUtil.getProperty(
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY);
         String passwordExpiryInDaysProperty = IdentityUtil.getProperty(
                 PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
+        String skipIfNoApplicableRulesProperty = IdentityUtil.getProperty(
+                PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES);
 
         if (StringUtils.isNotBlank(enablePasswordExpiryProperty)) {
             enablePasswordExpiry = enablePasswordExpiryProperty;
@@ -119,9 +126,15 @@ public class PasswordExpiryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotBlank(passwordExpiryInDaysProperty)) {
             passwordExpiryInDays = passwordExpiryInDaysProperty;
         }
+        if (StringUtils.isNotBlank(skipIfNoApplicableRulesProperty)) {
+            skipIfNoApplicableRules = skipIfNoApplicableRulesProperty;
+        }
+
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY, enablePasswordExpiry);
         defaultProperties.put(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS, passwordExpiryInDays);
+        defaultProperties.put(PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES,
+                skipIfNoApplicableRules);
 
         Properties properties = new Properties();
         properties.putAll(defaultProperties);
