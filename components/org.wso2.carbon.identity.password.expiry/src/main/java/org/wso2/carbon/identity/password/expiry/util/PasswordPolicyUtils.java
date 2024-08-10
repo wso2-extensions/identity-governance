@@ -151,28 +151,6 @@ public class PasswordPolicyUtils {
     public static boolean isPasswordExpired(String tenantDomain, String tenantAwareUsername)
             throws PostAuthenticationFailedException {
 
-        UserRealm userRealm = getUserRealm(tenantDomain);
-        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-        String lastPasswordUpdatedTime = getLastPasswordUpdatedTime(tenantAwareUsername, userStoreManager, userRealm);
-        long lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
-        int daysDifference = getDaysDifference(lastPasswordUpdatedTimeInMillis);
-
-        // Getting the configured number of days before password expiry in days.
-        int passwordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
-        return (daysDifference >= passwordExpiryInDays || lastPasswordUpdatedTime == null);
-    }
-
-    /**
-     * This method checks if the password has expired.
-     *
-     * @param tenantDomain        The tenant domain of the user trying to authenticate.
-     * @param tenantAwareUsername The tenant aware username of the user trying to authenticate.
-     * @return true if the password had expired.
-     * @throws PostAuthenticationFailedException If an error occurred while checking the password expiry.
-     */
-    public static boolean isPasswordExpiredBasedOnRules(String tenantDomain, String tenantAwareUsername)
-            throws PostAuthenticationFailedException {
-
         try {
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);

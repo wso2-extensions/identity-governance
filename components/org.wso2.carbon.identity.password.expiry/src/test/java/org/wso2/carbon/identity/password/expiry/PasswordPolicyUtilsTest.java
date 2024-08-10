@@ -160,25 +160,6 @@ public class PasswordPolicyUtilsTest {
     }
 
     @Test
-    private void testPasswordExpired() throws PostAuthenticationFailedException, UserStoreException,
-            IdentityGovernanceException {
-
-        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
-        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(Integer.valueOf(3));
-        when(userRealm.getClaimManager()).thenReturn(claimManager);
-
-        
-        Property[] properties = getPasswordExpiryInDaysProperty();
-        when(identityGovernanceService.getConfiguration(new String[]{
-                PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS}, tenantDomain)).thenReturn(
-                properties);
-
-        Assert.assertEquals(PasswordPolicyUtils.isPasswordExpired(tenantDomain, "tom@gmail.com"),
-                true);
-    }
-
-    @Test
     private void testGetPasswordExpiryRules() throws PostAuthenticationFailedException, IdentityGovernanceException {
 
         ConnectorConfig connectorConfig = new ConnectorConfig();
@@ -249,7 +230,7 @@ public class PasswordPolicyUtilsTest {
     }
 
     @Test(dataProvider = "generalPasswordExpiryTestCases")
-    public void testIsPasswordExpiredBasedOnRulesWithoutRules(Integer daysAgo, boolean expectedExpired,
+    public void testIsPasswordExpiredWithoutRules(Integer daysAgo, boolean expectedExpired,
                                                             String testDescription)
             throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
 
@@ -276,7 +257,7 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.FALSE));
 
-        boolean isExpired = PasswordPolicyUtils.isPasswordExpiredBasedOnRules(tenantDomain, tenantAwareUsername);
+        boolean isExpired = PasswordPolicyUtils.isPasswordExpired(tenantDomain, tenantAwareUsername);
         Assert.assertEquals(isExpired, expectedExpired, testDescription);
     }
 
@@ -300,7 +281,7 @@ public class PasswordPolicyUtilsTest {
     }
 
     @Test(dataProvider = "passwordExpiryTestCases")
-    public void testIsPasswordExpiredBasedOnRules(int daysAgo, String[] roles, String[] groups,
+    public void testIsPasswordExpiredWithRules(int daysAgo, String[] roles, String[] groups,
                                                   boolean skipIfNoApplicableRules, boolean expectedExpired,
                                                   String description)
             throws PostAuthenticationFailedException, UserStoreException, IdentityGovernanceException, IdentityRoleManagementException {
@@ -349,7 +330,7 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(Boolean.toString(skipIfNoApplicableRules)));
 
-        boolean isExpired = PasswordPolicyUtils.isPasswordExpiredBasedOnRules(tenantDomain, tenantAwareUsername);
+        boolean isExpired = PasswordPolicyUtils.isPasswordExpired(tenantDomain, tenantAwareUsername);
         Assert.assertEquals(isExpired, expectedExpired, description);
     }
 

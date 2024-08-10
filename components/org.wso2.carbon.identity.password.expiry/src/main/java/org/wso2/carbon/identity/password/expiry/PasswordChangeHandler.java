@@ -107,7 +107,7 @@ public class PasswordChangeHandler extends AbstractEventHandler {
                 log.debug("Checking password validity");
             }
             try {
-                if (PasswordPolicyUtils.isPasswordExpiredBasedOnRules(tenantDomain, username)) {
+                if (PasswordPolicyUtils.isPasswordExpired(tenantDomain, username)) {
                     if (log.isDebugEnabled()) {
                         log.debug("User password is expired.");
                     }

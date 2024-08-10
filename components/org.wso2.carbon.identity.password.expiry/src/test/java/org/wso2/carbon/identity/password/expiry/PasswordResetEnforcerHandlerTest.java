@@ -157,7 +157,7 @@ public class PasswordResetEnforcerHandlerTest {
 
         List<AuthenticatorConfig> authenticators = getAuthenticatorConfigs();
         when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(true);
-        when(PasswordPolicyUtils.isPasswordExpiredBasedOnRules(anyString(), anyString())).thenReturn(true);
+        when(PasswordPolicyUtils.isPasswordExpired(anyString(), anyString())).thenReturn(true);
 
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
