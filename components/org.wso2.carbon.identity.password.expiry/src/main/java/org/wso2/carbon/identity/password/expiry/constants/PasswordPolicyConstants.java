@@ -61,8 +61,6 @@ public class PasswordPolicyConstants {
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
-    public static final String APPLICATION_AUDIENCE = "application";
-    public static final String ORGANIZATION_AUDIENCE = "organization";
 
     public enum ErrorMessages {
         ERROR_WHILE_GETTING_USER_STORE_DOMAIN("80001",

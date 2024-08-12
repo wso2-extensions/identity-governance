@@ -46,7 +46,6 @@ public class PasswordExpiryRule {
         // Using regex to split by comma but not within quotes.
         String[] parts = rule.split(",(?=(?:[^']*'[^']*')*[^']*$)");
 
-        // Ensure that the rule has at least the basic required parts
         if (parts.length < 4) {
             throw new IllegalArgumentException("Invalid rule format: not enough parts in the rule definition.");
         }
