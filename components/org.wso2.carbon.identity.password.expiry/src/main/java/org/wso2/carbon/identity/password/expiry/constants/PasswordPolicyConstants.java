@@ -26,7 +26,6 @@ public class PasswordPolicyConstants {
     public static final String AUTHENTICATOR_TYPE = "LOCAL";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM =
             "http://wso2.org/claims/identity/lastPasswordUpdateTime";
-    public static final String GROUPS_CLAIM = "http://wso2.org/claims/groups";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM_NON_IDENTITY =
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
     public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
@@ -80,8 +79,7 @@ public class PasswordPolicyConstants {
                 "Error while retrieving password expired users from database."),
         ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager."),
         ERROR_WHILE_RETRIEVING_USER_ROLES("80014", "Error while retrieving user roles."),
-        ERROR_WHILE_RETRIEVING_USER_CLAIMS("80015", "Error while retrieving user claims."),
-        ERROR_WHILE_RETRIEVING_USER_GROUPS("80016", "Error while retrieving user groups.");
+        ERROR_WHILE_RETRIEVING_USER_GROUPS("80015", "Error while retrieving user groups.");
 
         private final String code;
         private final String message;

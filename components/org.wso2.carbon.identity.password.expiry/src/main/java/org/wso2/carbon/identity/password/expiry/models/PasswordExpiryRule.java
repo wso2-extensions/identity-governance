@@ -23,16 +23,20 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class to represent a password expiry rule.
+ */
 public class PasswordExpiryRule {
 
     private int priority;
     private int expiryDays;
-    private AttributeEnum attribute;
-    private OperatorEnum operator;
+    private PasswordExpiryRuleAttributeEnum attribute;
+    private PasswordExpiryRuleOperatorEnum operator;
     private List<String> values;
+    private static final String RULE_SPLIT_REGEX = ",(?=(?:[^']*'[^']*')*[^']*$)";
 
-    public PasswordExpiryRule(int priority, int expiryDays, AttributeEnum attribute, OperatorEnum operator,
-                              List<String> values) {
+    public PasswordExpiryRule(int priority, int expiryDays, PasswordExpiryRuleAttributeEnum attribute,
+                              PasswordExpiryRuleOperatorEnum operator, List<String> values) {
 
         this.priority = priority;
         this.expiryDays = expiryDays;
@@ -41,32 +45,37 @@ public class PasswordExpiryRule {
         this.values = values;
     }
 
-    public PasswordExpiryRule(String rule) {
+    public PasswordExpiryRule(String rule) throws IllegalArgumentException{
 
-        // Using regex to split by comma but not within quotes.
-        String[] parts = rule.split(",(?=(?:[^']*'[^']*')*[^']*$)");
-
-        if (parts.length < 4) {
-            throw new IllegalArgumentException("Invalid rule format: not enough parts in the rule definition.");
-        }
-
-        this.priority = Integer.parseInt(parts[0].trim());
-        this.expiryDays = Integer.parseInt(parts[1].trim());
-        this.attribute = AttributeEnum.fromString(parts[2].trim());
-        this.operator = OperatorEnum.fromString(parts[3].trim());
-        this.values = new ArrayList<>();
-
-        for (int i = 4; i < parts.length; i++) {
-            String value = parts[i].trim();
-            if ((StringUtils.startsWith(value, "'") && StringUtils.endsWith(value, "'")) ||
-                    (StringUtils.startsWith(value, "\"") && StringUtils.endsWith(value, "\""))) {
-                value = value.substring(1, value.length() - 1).trim();
+        try {
+            // Rule format: "priority,expiryDays,attribute,operator,value1,value2, ...".
+            // Eg: "1,40,roles,eq,12ec01e1-aa45-8a485d10c8fa,cc40ad49-8435-75fa1b627332".
+            String[] ruleSections = rule.split(RULE_SPLIT_REGEX);
+            if (ruleSections.length < 4) {
+                throw new IllegalArgumentException("Invalid rule format: not enough parts in the rule definition.");
             }
-            this.values.add(value);
-        }
 
-        if (this.values.isEmpty()) {
-            throw new IllegalArgumentException("Invalid rule format: no valid values provided.");
+            this.priority = Integer.parseInt(ruleSections[0].trim());
+            this.expiryDays = Integer.parseInt(ruleSections[1].trim());
+            this.attribute = PasswordExpiryRuleAttributeEnum.fromString(ruleSections[2].trim());
+            this.operator = PasswordExpiryRuleOperatorEnum.fromString(ruleSections[3].trim());
+            this.values = new ArrayList<>();
+
+            // Extract values from the rule removing quotes if present.
+            for (int i = 4; i < ruleSections.length; i++) {
+                String value = ruleSections[i].trim();
+                if ((StringUtils.startsWith(value, "'") && StringUtils.endsWith(value, "'")) ||
+                        (StringUtils.startsWith(value, "\"") && StringUtils.endsWith(value, "\""))) {
+                    value = value.substring(1, value.length() - 1).trim();
+                }
+                this.values.add(value);
+            }
+
+            if (this.values.isEmpty()) {
+                throw new IllegalArgumentException("Invalid rule format: no valid values provided.");
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid rule format: " + e.getMessage());
         }
     }
 
@@ -90,22 +99,22 @@ public class PasswordExpiryRule {
         this.expiryDays = expiryDays;
     }
 
-    public AttributeEnum getAttribute() {
+    public PasswordExpiryRuleAttributeEnum getAttribute() {
 
         return attribute;
     }
 
-    public void setAttribute(AttributeEnum attribute) {
+    public void setAttribute(PasswordExpiryRuleAttributeEnum attribute) {
 
         this.attribute = attribute;
     }
 
-    public OperatorEnum getOperator() {
+    public PasswordExpiryRuleOperatorEnum getOperator() {
 
         return operator;
     }
 
-    public void setOperator(OperatorEnum operator) {
+    public void setOperator(PasswordExpiryRuleOperatorEnum operator) {
 
         this.operator = operator;
     }

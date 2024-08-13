@@ -18,14 +18,17 @@
 
 package org.wso2.carbon.identity.password.expiry.models;
 
-public enum AttributeEnum {
+/**
+ * Enum for the password expiry operator types.
+ */
+public enum PasswordExpiryRuleOperatorEnum {
 
-    ROLES("roles"),
-    GROUPS("groups");
+    EQ("eq"),
+    NE("ne");
 
     private final String value;
 
-    AttributeEnum(String value) {
+    PasswordExpiryRuleOperatorEnum(String value) {
         this.value = value;
     }
 
@@ -33,10 +36,10 @@ public enum AttributeEnum {
         return value;
     }
 
-    public static AttributeEnum fromString(String text) {
-        for (AttributeEnum b : AttributeEnum.values()) {
-            if (b.value.equalsIgnoreCase(text)) {
-                return b;
+    public static PasswordExpiryRuleOperatorEnum fromString(String text) {
+        for (PasswordExpiryRuleOperatorEnum operator : PasswordExpiryRuleOperatorEnum.values()) {
+            if (operator.value.equalsIgnoreCase(text)) {
+                return operator;
             }
         }
         throw new IllegalArgumentException("No enum constant with text " + text + " found");

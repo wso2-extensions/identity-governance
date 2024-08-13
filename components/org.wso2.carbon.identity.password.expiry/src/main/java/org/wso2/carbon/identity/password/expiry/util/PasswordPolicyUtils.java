@@ -33,7 +33,8 @@ import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.password.expiry.models.OperatorEnum;
+import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRuleAttributeEnum;
+import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRuleOperatorEnum;
 import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
 import org.wso2.carbon.identity.role.v2.mgt.core.exception.IdentityRoleManagementException;
@@ -49,6 +50,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.user.core.common.Group;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,6 +104,7 @@ public class PasswordPolicyUtils {
      * @return List of password expiry rules.
      * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry rules.
      */
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public static List<PasswordExpiryRule> getPasswordExpiryRules(String tenantDomain)
             throws PostAuthenticationFailedException {
 
@@ -126,7 +129,13 @@ public class PasswordPolicyUtils {
                         PasswordExpiryRule passwordExpiryRule = new PasswordExpiryRule(property.getValue());
                         passwordExpiryRules.add(passwordExpiryRule);
                     } catch (Exception e) {
-                        log.error("Error while parsing password expiry rule.", e);
+                        // Log and skip the rule if an error occurred while parsing the rule, without failing the
+                        // authentication flow.
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Error parsing password expiry rule: %s. Rule will be skipped.",
+                                    property.getValue()));
+                        }
+                        log.error("Error parsing password expiry rule.", e);
                     }
                 }
             }
@@ -164,10 +173,15 @@ public class PasswordPolicyUtils {
                 return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
             }
 
+            // Analyze rules to determine required user attributes and fetch them.
+            Set<PasswordExpiryRuleAttributeEnum> requiredAttributes = analyzeRulesForAttributes(passwordExpiryRules);
+            Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
+                    fetchUserAttributes(tenantDomain, userId, requiredAttributes);
+
             for (PasswordExpiryRule rule : passwordExpiryRules) {
-                if (isRuleApplicable(tenantDomain, userId, rule)) {
+                if (isRuleApplicable(rule, userAttributes)) {
                     // Skip the rule if the operator is not equals.
-                    if (OperatorEnum.NE.equals(rule.getOperator())) {
+                    if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
                         return false;
                     }
                     int expiryDays =
@@ -184,73 +198,58 @@ public class PasswordPolicyUtils {
         }
     }
 
-    /**
-     * Determines if a password expiry rule is applicable to a user.
-     *
-     * @param tenantDomain        The tenant domain.
-     * @param userId              The user's ID.
-     * @param passwordExpiryRule  The password expiry rule to check.
-     * @return true if the rule is applicable, false otherwise.
-     * @throws PostAuthenticationFailedException If an error occurs during the check.
-     */
-    private static boolean isRuleApplicable(String tenantDomain, String userId, PasswordExpiryRule passwordExpiryRule)
-            throws PostAuthenticationFailedException {
+    private static Set<PasswordExpiryRuleAttributeEnum> analyzeRulesForAttributes(List<PasswordExpiryRule> rules) {
 
-        List<String> ruleValues = passwordExpiryRule.getValues();
-        switch (passwordExpiryRule.getAttribute()) {
-            case ROLES:
-                return doUserRolesMatchRule(tenantDomain, userId, ruleValues);
-            case GROUPS:
-                return doUserGroupsMatchRule(tenantDomain, userId, ruleValues);
-            default:
-                return false;
-        }
+        return rules.stream()
+                .map(PasswordExpiryRule::getAttribute)
+                .collect(Collectors.toSet());
     }
 
-    /**
-     * Checks if the user's roles match the roles specified in the password expiry rule.
-     *
-     * @param tenantDomain The tenant domain.
-     * @param userId       The user ID.
-     * @param ruleRoleIds    The roles specified in the rule.
-     * @return true if the user's roles match the rule's roles.
-     * @throws PostAuthenticationFailedException If an error occurs while checking the user's roles.
-     */
-    private static boolean doUserRolesMatchRule(String tenantDomain, String userId, List<String> ruleRoleIds)
+    private static Map<PasswordExpiryRuleAttributeEnum, Set<String>> fetchUserAttributes(
+            String tenantDomain, String userId, Set<PasswordExpiryRuleAttributeEnum> requiredAttributes)
             throws PostAuthenticationFailedException {
 
-        List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
-        if (CollectionUtils.isEmpty(userRoles)) {
-            return false;
-        }
-        Set<String> userRoleIds = userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
-        return userRoleIds.containsAll(ruleRoleIds);
-    }
-
-    /**
-     * Checks if the user's groups match the rule's groups.
-     *
-     * @param tenantDomain        The tenant domain.
-     * @param ruleGroupIds        The groups specified in the rule.
-     * @return true if the user's groups match the rule's groups.
-     * @throws PostAuthenticationFailedException If an error occurs while checking the user's groups.
-     */
-    private static boolean doUserGroupsMatchRule(String tenantDomain, String userId, List<String> ruleGroupIds)
-            throws PostAuthenticationFailedException {
-
+        Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
+                new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
         try {
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-            List<Group> userGroups =
-                    ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(
-                            userId, null, null);
-            Set<String> userGroupIds = userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
-            return userGroupIds.containsAll(ruleGroupIds);
+
+            if (requiredAttributes.contains(PasswordExpiryRuleAttributeEnum.ROLES)) {
+                List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
+                Set<String> userRoleIds = userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
+                userAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, userRoleIds);
+            }
+            if (requiredAttributes.contains(PasswordExpiryRuleAttributeEnum.GROUPS)) {
+                List<Group> userGroups =
+                        ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(userId,
+                                null, null);
+                Set<String> userGroupIds = userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
+                userAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, userGroupIds);
+            }
+            return userAttributes;
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
         }
+    }
+
+    /**
+     * Determines if a password expiry rule is applicable to a user.
+     *
+     * @param rule  The password expiry rule to check.
+     * @param userAttributes The user attributes required by the rule.
+     * @return true if the rule is applicable, false otherwise.
+     */
+    private static boolean isRuleApplicable(PasswordExpiryRule rule,
+                                            Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes) {
+
+        Set<String> userAttributeValues = userAttributes.get(rule.getAttribute());
+        if (CollectionUtils.isEmpty(userAttributeValues)) {
+            return false;
+        }
+        return userAttributeValues.containsAll(rule.getValues());
     }
 
     /**

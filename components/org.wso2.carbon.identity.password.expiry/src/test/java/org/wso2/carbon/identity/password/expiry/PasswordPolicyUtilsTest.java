@@ -21,10 +21,9 @@ package org.wso2.carbon.identity.password.expiry;
 import org.testng.annotations.DataProvider;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
-import org.wso2.carbon.identity.password.expiry.models.AttributeEnum;
+import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRuleAttributeEnum;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
-
-import org.wso2.carbon.identity.password.expiry.models.OperatorEnum;
+import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRuleOperatorEnum;
 import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.mockito.Mock;
@@ -71,8 +70,6 @@ import static org.mockito.Mockito.verify;
  * Tests for password change utils.
  */
 public class PasswordPolicyUtilsTest {
-
-    private PasswordPolicyUtils passwordPolicyUtils;
 
     @Mock
     private IdentityGovernanceService identityGovernanceService;
@@ -132,7 +129,6 @@ public class PasswordPolicyUtilsTest {
     public void setUp() {
 
         MockitoAnnotations.openMocks(this);
-        passwordPolicyUtils = new PasswordPolicyUtils();
         EnforcePasswordResetComponentDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
         EnforcePasswordResetComponentDataHolder.getInstance().setRealmService(realmService);
         EnforcePasswordResetComponentDataHolder.getInstance().setRoleManagementService(roleManagementService);
@@ -155,11 +151,11 @@ public class PasswordPolicyUtilsTest {
         properties[0] = property;
         when(identityGovernanceService.getConfiguration(new String[]{
                 PasswordPolicyConstants.CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY}, tenantDomain)).thenReturn(properties);
-        Assert.assertEquals(PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain), false);
+        Assert.assertFalse(PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain));
     }
 
     @Test
-    private void testGetPasswordExpiryRules() throws PostAuthenticationFailedException, IdentityGovernanceException {
+    public void testGetPasswordExpiryRules() throws PostAuthenticationFailedException, IdentityGovernanceException {
 
         ConnectorConfig connectorConfig = new ConnectorConfig();
         connectorConfig.setProperties(getPasswordExpiryRulesProperties());
@@ -176,25 +172,25 @@ public class PasswordPolicyUtilsTest {
 
         Assert.assertEquals(1, rule1.getPriority());
         Assert.assertEquals(0, rule1.getExpiryDays());
-        Assert.assertEquals(AttributeEnum.GROUPS, rule1.getAttribute());
-        Assert.assertEquals(OperatorEnum.NE, rule1.getOperator());
+        Assert.assertEquals(PasswordExpiryRuleAttributeEnum.GROUPS, rule1.getAttribute());
+        Assert.assertEquals(PasswordExpiryRuleOperatorEnum.NE, rule1.getOperator());
         Assert.assertEquals(Collections.singletonList(GROUP_MAP.get("admin")), rule1.getValues());
 
         Assert.assertEquals(2, rule2.getPriority());
         Assert.assertEquals(40, rule2.getExpiryDays());
-        Assert.assertEquals(AttributeEnum.ROLES, rule2.getAttribute());
-        Assert.assertEquals(OperatorEnum.EQ, rule2.getOperator());
+        Assert.assertEquals(PasswordExpiryRuleAttributeEnum.ROLES, rule2.getAttribute());
+        Assert.assertEquals(PasswordExpiryRuleOperatorEnum.EQ, rule2.getOperator());
         Assert.assertEquals(Arrays.asList(ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")), rule2.getValues());
 
         Assert.assertEquals(3, rule3.getPriority());
         Assert.assertEquals(60, rule3.getExpiryDays());
-        Assert.assertEquals(AttributeEnum.ROLES, rule3.getAttribute());
-        Assert.assertEquals(OperatorEnum.EQ, rule3.getOperator());
+        Assert.assertEquals(PasswordExpiryRuleAttributeEnum.ROLES, rule3.getAttribute());
+        Assert.assertEquals(PasswordExpiryRuleOperatorEnum.EQ, rule3.getOperator());
         Assert.assertEquals(Arrays.asList(ROLE_MAP.get("employee"), ROLE_MAP.get("manager")), rule3.getValues());
     }
 
     @Test
-    private void testGetUserRoles() throws PostAuthenticationFailedException, IdentityRoleManagementException {
+    public void testGetUserRoles() throws PostAuthenticationFailedException, IdentityRoleManagementException {
 
         PasswordPolicyUtils.getUserRoles(tenantDomain, userId);
         verify(roleManagementService).getRoleListOfUser(userId, tenantDomain);
@@ -203,6 +199,7 @@ public class PasswordPolicyUtilsTest {
     @DataProvider(name = "passwordExpiryWithoutRulesTestCases")
     public Object[][] passwordExpiryWithoutRulesTestCases() {
         return new Object[][] {
+                // {daysAgo, expectedExpired, description}.
                 {20, Boolean.FALSE, "Password should not be expired when updated 25 days ago"},
                 {35, Boolean.TRUE, "Password should be expired when updated 35 days ago"},
                 {null, Boolean.TRUE, "Password should be considered expired when last update time is null"}
@@ -244,7 +241,7 @@ public class PasswordPolicyUtilsTest {
     @DataProvider(name = "passwordExpiryTestCases")
     public Object[][] passwordExpiryTestCases() {
         return new Object[][] {
-            // {daysAgo, roles, groups, skipIfNoApplicableRules, expectedExpired, description}
+            // {daysAgo, roles, groups, skipIfNoApplicableRules, expectedExpired, description}.
             {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager")}, new String[]{}, false, false,
                     "Not expired: 3rd rule (60) applies"},
             {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager"), ROLE_MAP.get("contractor")},
