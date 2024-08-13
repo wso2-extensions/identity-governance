@@ -173,8 +173,8 @@ public class PasswordPolicyUtils {
                 return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
             }
 
-            // Analyze rules to determine required user attributes and fetch them.
-            Set<PasswordExpiryRuleAttributeEnum> requiredAttributes = analyzeRulesForAttributes(passwordExpiryRules);
+            Set<PasswordExpiryRuleAttributeEnum> requiredAttributes =
+                    passwordExpiryRules.stream().map(PasswordExpiryRule::getAttribute).collect(Collectors.toSet());
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     fetchUserAttributes(tenantDomain, userId, requiredAttributes);
 
@@ -196,13 +196,6 @@ public class PasswordPolicyUtils {
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
         }
-    }
-
-    private static Set<PasswordExpiryRuleAttributeEnum> analyzeRulesForAttributes(List<PasswordExpiryRule> rules) {
-
-        return rules.stream()
-                .map(PasswordExpiryRule::getAttribute)
-                .collect(Collectors.toSet());
     }
 
     private static Map<PasswordExpiryRuleAttributeEnum, Set<String>> fetchUserAttributes(
