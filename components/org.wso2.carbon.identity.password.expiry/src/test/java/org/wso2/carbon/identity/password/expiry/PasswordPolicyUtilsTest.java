@@ -44,7 +44,6 @@ import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
 import org.wso2.carbon.identity.role.v2.mgt.core.model.RoleBasicInfo;
 import org.wso2.carbon.identity.role.v2.mgt.core.exception.IdentityRoleManagementException;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.claim.ClaimManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
@@ -195,33 +194,14 @@ public class PasswordPolicyUtilsTest {
     }
 
     @Test
-    private void testGetUserClaimValue() throws PostAuthenticationFailedException, UserStoreException {
-
-        String userGroups = "admin,manager";
-        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
-        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(3);
-        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-        when(userRealm.getClaimManager()).thenReturn(claimManager);
-        when(UserCoreUtil.getDomainFromThreadLocal()).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
-        when(UserCoreUtil.extractDomainFromName(anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
-        when(UserCoreUtil.addDomainToName(anyString(), anyString())).thenReturn(tenantAwareUsername);
-        when(userStoreManager.getUserClaimValue(tenantAwareUsername, PasswordPolicyConstants.GROUPS_CLAIM,
-                null)).thenReturn(userGroups);
-
-        Assert.assertEquals(PasswordPolicyUtils.getUserClaimValue(tenantDomain, tenantAwareUsername,
-                PasswordPolicyConstants.GROUPS_CLAIM), userGroups);
-
-    }
-
-    @Test
     private void testGetUserRoles() throws PostAuthenticationFailedException, IdentityRoleManagementException {
 
         PasswordPolicyUtils.getUserRoles(tenantDomain, userId);
         verify(roleManagementService).getRoleListOfUser(userId, tenantDomain);
     }
 
-    @DataProvider(name = "generalPasswordExpiryTestCases")
-    public Object[][] generalPasswordExpiryTestCases() {
+    @DataProvider(name = "passwordExpiryWithoutRulesTestCases")
+    public Object[][] passwordExpiryWithoutRulesTestCases() {
         return new Object[][] {
                 {20, Boolean.FALSE, "Password should not be expired when updated 25 days ago"},
                 {35, Boolean.TRUE, "Password should be expired when updated 35 days ago"},
@@ -229,7 +209,7 @@ public class PasswordPolicyUtilsTest {
         };
     }
 
-    @Test(dataProvider = "generalPasswordExpiryTestCases")
+    @Test(dataProvider = "passwordExpiryWithoutRulesTestCases")
     public void testIsPasswordExpiredWithoutRules(Integer daysAgo, boolean expectedExpired,
                                                             String testDescription)
             throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
@@ -292,26 +272,15 @@ public class PasswordPolicyUtilsTest {
         when(userRealm.getClaimManager()).thenReturn(claimManager);
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
         when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
-
-        // Mock user roles.
         when(roleManagementService.getRoleListOfUser(userId, tenantDomain)).thenReturn(getRoles(roles));
 
-        // Mock user groups.
-        String userGroupsString = String.join(",", groups);
-        when(userStoreManager.getUserClaimValue(tenantAwareUsername, PasswordPolicyConstants.GROUPS_CLAIM, null))
-                .thenReturn(userGroupsString);
-
+        List<Group> userGroups = new ArrayList<>();
         Arrays.stream(groups).forEach(groupName -> {
             Group groupObj = new Group();
             groupObj.setGroupID(GROUP_MAP.get(groupName));
-            try {
-                when(abstractUserStoreManager.getGroupByGroupName(eq(groupName), any())).thenReturn(groupObj);
-            } catch (UserStoreException e) {
-                Assert.fail("Error occurred while mocking group: " + groupName);
-            }
+            userGroups.add(groupObj);
         });
-        when(UserCoreUtil.extractDomainFromName(anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
-        when(UserCoreUtil.addDomainToName(anyString(), anyString())).thenReturn(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+        when(abstractUserStoreManager.getGroupListOfUser(userId, null, null)).thenReturn(userGroups);
 
         // Mock last password update time.
         Long updateTime = getUpdateTime(daysAgo);

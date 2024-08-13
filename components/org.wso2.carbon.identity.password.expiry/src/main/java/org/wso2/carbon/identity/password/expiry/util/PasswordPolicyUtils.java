@@ -49,15 +49,12 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.user.core.common.Group;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.CONNECTOR_CONFIG_NAME;
-import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.GROUPS_CLAIM;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.PASSWORD_RESET_PAGE;
 
 /**
@@ -123,7 +120,8 @@ public class PasswordPolicyUtils {
             }
 
             for (Property property : properties) {
-                if (StringUtils.startsWith(property.getName(), PasswordPolicyConstants.PASSWORD_EXPIRY_RULES_PREFIX)) {
+                if (StringUtils.startsWith(property.getName(), PasswordPolicyConstants.PASSWORD_EXPIRY_RULES_PREFIX) &&
+                        StringUtils.isNotEmpty(property.getValue())) {
                     try {
                         PasswordExpiryRule passwordExpiryRule = new PasswordExpiryRule(property.getValue());
                         passwordExpiryRules.add(passwordExpiryRule);
@@ -167,7 +165,7 @@ public class PasswordPolicyUtils {
             }
 
             for (PasswordExpiryRule rule : passwordExpiryRules) {
-                if (isRuleApplicable(tenantDomain, tenantAwareUsername, userId, rule)) {
+                if (isRuleApplicable(tenantDomain, userId, rule)) {
                     // Skip the rule if the operator is not equals.
                     if (OperatorEnum.NE.equals(rule.getOperator())) {
                         return false;
@@ -190,14 +188,12 @@ public class PasswordPolicyUtils {
      * Determines if a password expiry rule is applicable to a user.
      *
      * @param tenantDomain        The tenant domain.
-     * @param tenantAwareUsername The tenant-aware username.
      * @param userId              The user's ID.
      * @param passwordExpiryRule  The password expiry rule to check.
      * @return true if the rule is applicable, false otherwise.
      * @throws PostAuthenticationFailedException If an error occurs during the check.
      */
-    private static boolean isRuleApplicable(String tenantDomain, String tenantAwareUsername, String userId,
-                                            PasswordExpiryRule passwordExpiryRule)
+    private static boolean isRuleApplicable(String tenantDomain, String userId, PasswordExpiryRule passwordExpiryRule)
             throws PostAuthenticationFailedException {
 
         List<String> ruleValues = passwordExpiryRule.getValues();
@@ -205,7 +201,7 @@ public class PasswordPolicyUtils {
             case ROLES:
                 return doUserRolesMatchRule(tenantDomain, userId, ruleValues);
             case GROUPS:
-                return doUserGroupsMatchRule(tenantDomain, tenantAwareUsername, ruleValues);
+                return doUserGroupsMatchRule(tenantDomain, userId, ruleValues);
             default:
                 return false;
         }
@@ -235,59 +231,26 @@ public class PasswordPolicyUtils {
      * Checks if the user's groups match the rule's groups.
      *
      * @param tenantDomain        The tenant domain.
-     * @param tenantAwareUsername The tenant aware username.
      * @param ruleGroupIds        The groups specified in the rule.
      * @return true if the user's groups match the rule's groups.
      * @throws PostAuthenticationFailedException If an error occurs while checking the user's groups.
      */
-    private static boolean doUserGroupsMatchRule(String tenantDomain, String tenantAwareUsername,
-                                                 List<String> ruleGroupIds)
+    private static boolean doUserGroupsMatchRule(String tenantDomain, String userId, List<String> ruleGroupIds)
             throws PostAuthenticationFailedException {
 
-        String groupClaimValue = getUserClaimValue(tenantDomain, tenantAwareUsername, GROUPS_CLAIM);
-        if (StringUtils.isBlank(groupClaimValue)) {
-            return false;
+        try {
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            UserStoreManager userStoreManager = getUserStoreManager(userRealm);
+            List<Group> userGroups =
+                    ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(
+                            userId, null, null);
+            Set<String> userGroupIds = userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
+            return userGroupIds.containsAll(ruleGroupIds);
+        } catch (UserStoreException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
         }
-
-        UserRealm userRealm = getUserRealm(tenantDomain);
-        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-        String userStoreDomain = UserCoreUtil.extractDomainFromName(tenantAwareUsername);
-
-        String multiAttributeSeparator = getMultivaluedAttributeSeparator(tenantDomain, userStoreDomain);
-        String[] groupNames = groupClaimValue.split(multiAttributeSeparator);
-
-        Set<String> userGroupIds = new HashSet<>();
-        for (String groupName : groupNames) {
-            try {
-                String domainAwareGroupName = UserCoreUtil.addDomainToName(groupName, userStoreDomain);
-                Group group =
-                        ((AbstractUserStoreManager) userStoreManager).getGroupByGroupName(domainAwareGroupName,
-                                null);
-                if (group != null) {
-                    userGroupIds.add(group.getGroupID());
-                }
-            } catch (UserStoreException e) {
-                throw new PostAuthenticationFailedException(
-                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
-                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
-            }
-        }
-
-        return userGroupIds.containsAll(ruleGroupIds);
-    }
-
-    private static String getMultivaluedAttributeSeparator(String tenantDomain, String userStoreDomain)
-            throws PostAuthenticationFailedException {
-
-        String multiValuedAttributeSeparator = ",";
-        UserRealm userRealm = getUserRealm(tenantDomain);
-        UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-        String claimSeparator = userStoreManager.getSecondaryUserStoreManager(userStoreDomain)
-                .getRealmConfiguration().getUserStoreProperty(MULTI_ATTRIBUTE_SEPARATOR);
-        if (StringUtils.isNotBlank(claimSeparator)) {
-            multiValuedAttributeSeparator = claimSeparator;
-        }
-        return multiValuedAttributeSeparator;
     }
 
     /**
@@ -326,32 +289,6 @@ public class PasswordPolicyUtils {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_RETRIEVING_USER_ROLES.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_ROLES.getMessage());
-        }
-    }
-
-    /**
-     * Get the claim value of a given Claim URI for a given user.
-     *
-     * @param tenantDomain        The tenant domain.
-     * @param tenantAwareUsername The tenant aware username.
-     * @param claimURI            The claim URI.
-     * @return The claim value.
-     * @throws PostAuthenticationFailedException If an error occurs while getting the claim value.
-     */
-    public static String getUserClaimValue(String tenantDomain, String tenantAwareUsername, String claimURI)
-            throws PostAuthenticationFailedException {
-
-        try {
-            UserRealm userRealm = getUserRealm(tenantDomain);
-            UserStoreManager userStoreManager = getUserStoreManager(userRealm);
-            String userStoreDomain = UserCoreUtil.getDomainFromThreadLocal();
-            String domainQualifiedUsername = UserCoreUtil.addDomainToName(tenantAwareUsername, userStoreDomain);
-
-            return userStoreManager.getUserClaimValue(domainQualifiedUsername, claimURI, null);
-        } catch (UserStoreException e) {
-            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
-                    ERROR_WHILE_RETRIEVING_USER_CLAIMS.getCode(),
-                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_CLAIMS.getMessage());
         }
     }
 
@@ -440,8 +377,7 @@ public class PasswordPolicyUtils {
     private static int getDaysDifference(long passwordChangedTime) {
 
         long currentTimeMillis = System.currentTimeMillis();
-        int daysDifference = (int) ((currentTimeMillis - passwordChangedTime) / (1000 * 60 * 60 * 24));
-        return daysDifference;
+        return (int) ((currentTimeMillis - passwordChangedTime) / (1000 * 60 * 60 * 24));
     }
 
     /**
