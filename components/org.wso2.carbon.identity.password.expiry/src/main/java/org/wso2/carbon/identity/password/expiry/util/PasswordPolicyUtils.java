@@ -51,6 +51,7 @@ import org.wso2.carbon.user.core.common.Group;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,17 +169,26 @@ public class PasswordPolicyUtils {
             int daysDifference = getDaysDifference(lastPasswordUpdatedTimeInMillis);
 
             List<PasswordExpiryRule> passwordExpiryRules = getPasswordExpiryRules(tenantDomain);
+            boolean skipIfNoApplicableRules = isSkipIfNoApplicableRulesEnabled(tenantDomain);
+
             // Apply default password expiry policy if no rules given.
             if (CollectionUtils.isEmpty(passwordExpiryRules)) {
-                return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
+                return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime,
+                        skipIfNoApplicableRules);
             }
+            Set<PasswordExpiryRuleAttributeEnum> requiredAttributes = new HashSet<>();
 
-            Set<PasswordExpiryRuleAttributeEnum> requiredAttributes =
-                    passwordExpiryRules.stream().map(PasswordExpiryRule::getAttribute).collect(Collectors.toSet());
+            // If the default behavior is to skip the password expiry, rules with skip logic are not necessary.
+            List<PasswordExpiryRule> filteredRules = passwordExpiryRules.stream()
+                    .filter(rule -> !skipIfNoApplicableRules ||
+                            !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
+                    .peek(rule -> requiredAttributes.add(rule.getAttribute()))
+                    .collect(Collectors.toList());
+
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     fetchUserAttributes(tenantDomain, userId, requiredAttributes);
 
-            for (PasswordExpiryRule rule : passwordExpiryRules) {
+            for (PasswordExpiryRule rule : filteredRules) {
                 if (isRuleApplicable(rule, userAttributes)) {
                     // Skip the rule if the operator is not equals.
                     if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
@@ -190,7 +200,8 @@ public class PasswordPolicyUtils {
                 }
             }
             // Apply default password expiry policy if no specific rule applies.
-            return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime);
+            return isPasswordExpiredUnderDefaultPolicy(tenantDomain, daysDifference, lastPasswordUpdatedTime,
+                    skipIfNoApplicableRules);
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
@@ -255,10 +266,11 @@ public class PasswordPolicyUtils {
      * @throws PostAuthenticationFailedException If an error occurs while checking the password expiry.
      */
     private static boolean isPasswordExpiredUnderDefaultPolicy(String tenantDomain, int daysDifference,
-                                                               String lastPasswordUpdatedTime)
+                                                               String lastPasswordUpdatedTime,
+                                                               boolean skipIfNoApplicableRules)
             throws PostAuthenticationFailedException {
 
-        if (isSkipIfNoApplicableRulesEnabled(tenantDomain)) return false;
+        if (skipIfNoApplicableRules) return false;
         return lastPasswordUpdatedTime == null || daysDifference >= getPasswordExpiryInDays(tenantDomain);
     }
 
