@@ -32,26 +32,18 @@ public class PasswordExpiryRule {
     private int expiryDays;
     private PasswordExpiryRuleAttributeEnum attribute;
     private PasswordExpiryRuleOperatorEnum operator;
-    private List<String> values;
+    private List<String> values = new ArrayList<>();
     private static final String RULE_SPLIT_REGEX = ",(?=(?:[^']*'[^']*')*[^']*$)";
-
-    public PasswordExpiryRule(int priority, int expiryDays, PasswordExpiryRuleAttributeEnum attribute,
-                              PasswordExpiryRuleOperatorEnum operator, List<String> values) {
-
-        this.priority = priority;
-        this.expiryDays = expiryDays;
-        this.attribute = attribute;
-        this.operator = operator;
-        this.values = values;
-    }
 
     public PasswordExpiryRule(String rule) throws IllegalArgumentException{
 
         try {
             // Rule format: "priority,expiryDays,attribute,operator,value1,value2, ...".
-            // Eg: "1,40,roles,eq,12ec01e1-aa45-8a485d10c8fa,cc40ad49-8435-75fa1b627332".
+            // At least 5 parts are required in the rule definition.
+            int ruleSectionLength = 4;
+
             String[] ruleSections = rule.split(RULE_SPLIT_REGEX);
-            if (ruleSections.length < 4) {
+            if (ruleSections.length < ruleSectionLength) {
                 throw new IllegalArgumentException("Invalid rule format: not enough parts in the rule definition.");
             }
 
@@ -59,9 +51,9 @@ public class PasswordExpiryRule {
             this.expiryDays = Integer.parseInt(ruleSections[1].trim());
             this.attribute = PasswordExpiryRuleAttributeEnum.fromString(ruleSections[2].trim());
             this.operator = PasswordExpiryRuleOperatorEnum.fromString(ruleSections[3].trim());
-            this.values = new ArrayList<>();
 
             // Extract values from the rule removing quotes if present.
+            // Eg: "1,40,roles,eq,'12ec01e1-aa45,8a485d10c8fa',cc40ad49-8435-75fa1b627332".
             for (int i = 4; i < ruleSections.length; i++) {
                 String value = ruleSections[i].trim();
                 if ((StringUtils.startsWith(value, "'") && StringUtils.endsWith(value, "'")) ||

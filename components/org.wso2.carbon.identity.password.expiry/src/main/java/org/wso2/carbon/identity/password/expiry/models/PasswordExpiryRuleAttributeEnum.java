@@ -29,14 +29,17 @@ public enum PasswordExpiryRuleAttributeEnum {
     private final String value;
 
     PasswordExpiryRuleAttributeEnum(String value) {
+
         this.value = value;
     }
 
     public String getValue() {
+
         return value;
     }
 
     public static PasswordExpiryRuleAttributeEnum fromString(String text) {
+
         for (PasswordExpiryRuleAttributeEnum attribute : PasswordExpiryRuleAttributeEnum.values()) {
             if (attribute.value.equalsIgnoreCase(text)) {
                 return attribute;

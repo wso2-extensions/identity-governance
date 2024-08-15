@@ -29,14 +29,17 @@ public enum PasswordExpiryRuleOperatorEnum {
     private final String value;
 
     PasswordExpiryRuleOperatorEnum(String value) {
+
         this.value = value;
     }
 
     public String getValue() {
+
         return value;
     }
 
     public static PasswordExpiryRuleOperatorEnum fromString(String text) {
+
         for (PasswordExpiryRuleOperatorEnum operator : PasswordExpiryRuleOperatorEnum.values()) {
             if (operator.value.equalsIgnoreCase(text)) {
                 return operator;
