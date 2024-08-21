@@ -118,26 +118,7 @@ public class LiteApiServiceImpl extends LiteApiService {
                     if (userNotConfirmed && isResendVerificationEnabledOnUserExistence) {
                         try {
                             ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
-                            Property[] propertiesList = null;
-                            if (properties.size() > 1) {
-                                propertiesList = new Property[2];
-                                for (PropertyDTO property : properties) {
-                                    String key = property.getKey();
-                                    String value = property.getValue();
-                                    if (IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME.equals(key)) {
-                                        Property templateDTO = new Property();
-                                        templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
-                                        templateDTO.setValue(value);
-                                        propertiesList[0] = templateDTO;
-                                    }
-                                    if (IdentityRecoveryConstants.INITIATED_PLATFORM.equals(key)) {
-                                        Property initiatedPlatformDTO = new Property();
-                                        initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
-                                        initiatedPlatformDTO.setValue(value);
-                                        propertiesList[1] = initiatedPlatformDTO;
-                                    }
-                                }
-                            }
+                            Property[] propertiesList = getPropertyDTOList(properties);
                             notificationResponseBean =
                                     resendConfirmationManager.resendConfirmationCode(user, LITE_SIGN_UP.toString(),
                                             CONFIRM_LITE_SIGN_UP.toString(),
@@ -161,6 +142,42 @@ public class LiteApiServiceImpl extends LiteApiService {
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
         }
         return buildSuccessfulAPIResponse(notificationResponseBean);
+    }
+
+    /**
+     * Filter list of properties to resend confirmation from provided properties.
+     *
+     * @param properties List of properties
+     * @return Property[]
+     */
+    private static Property[] getPropertyDTOList(List<PropertyDTO> properties) {
+
+        List<PropertyDTO> propertiesList = new ArrayList<>();
+        if (properties.size() > 1) {
+            for (PropertyDTO property : properties) {
+                String key = property.getKey();
+                String value = property.getValue();
+                if (IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME.equals(key)) {
+                    PropertyDTO templateDTO = new PropertyDTO();
+                    templateDTO.setKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME);
+                    templateDTO.setValue(value);
+                    propertiesList.add(templateDTO);
+                }
+                if (IdentityRecoveryConstants.INITIATED_PLATFORM.equals(key)) {
+                    PropertyDTO initiatedPlatformDTO = new PropertyDTO();
+                    initiatedPlatformDTO.setKey(IdentityRecoveryConstants.INITIATED_PLATFORM);
+                    initiatedPlatformDTO.setValue(value);
+                    propertiesList.add(initiatedPlatformDTO);
+                }
+                if (IdentityRecoveryConstants.CAMPAIGN.equals(key)) {
+                    PropertyDTO campaignDTO = new PropertyDTO();
+                    campaignDTO.setKey(IdentityRecoveryConstants.CAMPAIGN);
+                    campaignDTO.setValue(value);
+                    propertiesList.add(campaignDTO);
+                }
+            }
+        }
+        return Utils.getProperties(propertiesList);
     }
 
     /**
