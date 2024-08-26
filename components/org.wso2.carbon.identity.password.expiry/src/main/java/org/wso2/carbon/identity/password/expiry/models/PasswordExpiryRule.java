@@ -51,8 +51,12 @@ public class PasswordExpiryRule {
             this.priority = Integer.parseInt(ruleSections[0].trim());
             this.expiryDays = Integer.parseInt(ruleSections[1].trim());
 
-            if (this.priority < 0 || this.expiryDays < 0) {
-                throw new IllegalArgumentException("Invalid rule format: priority and expiry days should be positive.");
+            if (this.priority <= 0) {
+                throw new IllegalArgumentException("Invalid rule format: priority should be positive.");
+            }
+            // Expiry days can be 0 in skip password expiry scenarios.
+            if (this.expiryDays < 0) {
+                throw new IllegalArgumentException("Invalid rule format: expiry days should be positive.");
             }
 
             this.attribute = PasswordExpiryRuleAttributeEnum.fromString(ruleSections[2].trim());
