@@ -253,9 +253,14 @@ public class PasswordPolicyUtils {
             switch (attribute) {
                 case ROLES:
                     // Fetch roles assigned to user via groups.
-                    Set<String> userGroupIds = getUserGroupIds(userId, userStoreManager);
+                    Set<String> userGroupIds;
+                    if (fetchedUserAttributes.containsKey(PasswordExpiryRuleAttributeEnum.GROUPS)) {
+                        userGroupIds = fetchedUserAttributes.get(PasswordExpiryRuleAttributeEnum.GROUPS);
+                    } else {
+                        userGroupIds = getUserGroupIds(userId, userStoreManager);
+                        fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, userGroupIds);
+                    }
                     List<String> roleIdsOfGroups = getRoleIdsOfGroups(new ArrayList<>(userGroupIds), tenantDomain);
-                    fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, userGroupIds);
 
                     List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
                     Set<String> userRoleIds =
