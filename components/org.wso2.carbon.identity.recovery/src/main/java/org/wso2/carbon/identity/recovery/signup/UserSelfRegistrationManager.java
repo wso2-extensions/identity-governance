@@ -1270,15 +1270,16 @@ public class UserSelfRegistrationManager {
         WorkflowManagementService workflowService = new WorkflowManagementServiceImpl();
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = MultitenantUtils.getTenantDomain(username);
+            // If tenant domain is not provided, domain from the username is assumed to be the tenant domain.
+            username = MultitenantUtils.getTenantAwareUsername(username);
         }
         try {
-            String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-            Entity userEntity = new Entity(tenantAwareUsername, IdentityRecoveryConstants.ENTITY_TYPE_USER,
+            Entity userEntity = new Entity(username, IdentityRecoveryConstants.ENTITY_TYPE_USER,
                     IdentityTenantUtil.getTenantId(tenantDomain));
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             if (userRealm != null) {
-                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(tenantAwareUsername) ||
+                isUsernameAlreadyTaken = userRealm.getUserStoreManager().isExistingUser(username) ||
                         workflowService.entityHasPendingWorkflowsOfType(userEntity,
                                 IdentityRecoveryConstants.ADD_USER_EVENT);
             }
