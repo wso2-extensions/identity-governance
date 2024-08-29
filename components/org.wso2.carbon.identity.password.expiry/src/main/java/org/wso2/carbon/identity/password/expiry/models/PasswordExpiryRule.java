@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.password.expiry.models;
 
 import org.apache.commons.lang.StringUtils;
+import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public class PasswordExpiryRule {
         try {
             // Rule format: "priority,expiryDays,attribute,operator,value1,value2, ...".
             // At least 5 parts are required in the rule definition.
-            int ruleSectionLength = 4;
+            int ruleSectionLength = 5;
 
             String[] ruleSections = rule.split(RULE_SPLIT_REGEX);
             if (ruleSections.length < ruleSectionLength) {
@@ -49,6 +50,15 @@ public class PasswordExpiryRule {
 
             this.priority = Integer.parseInt(ruleSections[0].trim());
             this.expiryDays = Integer.parseInt(ruleSections[1].trim());
+
+            if (this.priority <= 0) {
+                throw new IllegalArgumentException("Invalid rule format: priority should be positive.");
+            }
+            // Expiry days can be 0 in skip password expiry scenarios.
+            if (this.expiryDays < 0) {
+                throw new IllegalArgumentException("Invalid rule format: expiry days should be positive.");
+            }
+
             this.attribute = PasswordExpiryRuleAttributeEnum.fromString(ruleSections[2].trim());
             this.operator = PasswordExpiryRuleOperatorEnum.fromString(ruleSections[3].trim());
 
@@ -65,6 +75,10 @@ public class PasswordExpiryRule {
 
             if (this.values.isEmpty()) {
                 throw new IllegalArgumentException("Invalid rule format: no valid values provided.");
+            }
+            if (this.values.size() > PasswordPolicyConstants.MAX_PASSWORD_EXPIRY_RULE_VALUES) {
+                throw new IllegalArgumentException("Invalid rule format: number of values exceeds the maximum limit of "
+                        + PasswordPolicyConstants.MAX_PASSWORD_EXPIRY_RULE_VALUES + ".");
             }
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid rule format: " + e.getMessage());

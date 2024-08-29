@@ -250,25 +250,28 @@ public class PasswordPolicyUtils {
             throws PostAuthenticationFailedException {
 
         if (!fetchedUserAttributes.containsKey(attribute)) {
-            try {
-                switch (attribute) {
-                    case ROLES:
-                        List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
-                        Set<String> userRoleIds = userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
-                        fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, userRoleIds);
-                        break;
-                    case GROUPS:
-                        List<Group> userGroups =
-                                ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(userId,
-                                        null, null);
-                        Set<String> userGroupIds = userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
+            switch (attribute) {
+                case ROLES:
+                    // Fetch roles assigned to user via groups.
+                    Set<String> userGroupIds;
+                    if (fetchedUserAttributes.containsKey(PasswordExpiryRuleAttributeEnum.GROUPS)) {
+                        userGroupIds = fetchedUserAttributes.get(PasswordExpiryRuleAttributeEnum.GROUPS);
+                    } else {
+                        userGroupIds = getUserGroupIds(userId, userStoreManager);
                         fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, userGroupIds);
-                        break;
-                }
-            } catch (UserStoreException e) {
-                throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
-                        ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
-                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
+                    }
+                    List<String> roleIdsOfGroups = getRoleIdsOfGroups(new ArrayList<>(userGroupIds), tenantDomain);
+
+                    List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
+                    Set<String> userRoleIds =
+                            userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
+                    userRoleIds.addAll(roleIdsOfGroups);
+                    fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, userRoleIds);
+                    break;
+                case GROUPS:
+                    Set<String> groupIds = getUserGroupIds(userId, userStoreManager);
+                    fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, groupIds);
+                    break;
             }
         }
         return fetchedUserAttributes.get(attribute);
@@ -307,6 +310,51 @@ public class PasswordPolicyUtils {
             RoleManagementService roleManagementService = EnforcePasswordResetComponentDataHolder.getInstance()
                     .getRoleManagementService();
             return roleManagementService.getRoleListOfUser(userId, tenantDomain);
+        } catch (IdentityRoleManagementException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_RETRIEVING_USER_ROLES.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_ROLES.getMessage());
+        }
+    }
+
+    /**
+     * Get the group IDs of the given user.
+     *
+     * @param userId           The user ID.
+     * @param userStoreManager The user store manager.
+     * @return The group IDs of the user.
+     * @throws PostAuthenticationFailedException If an error occurs while getting the group IDs of the user.
+     */
+    private static Set<String> getUserGroupIds(String userId, UserStoreManager userStoreManager)
+            throws PostAuthenticationFailedException {
+
+        try {
+            List<Group> userGroups =
+                    ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(userId,
+                            null, null);
+            return userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
+        } catch (UserStoreException e) {
+                throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                        ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
+                        PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_RETRIEVING_USER_GROUPS.getMessage());
+        }
+    }
+
+    /**
+     * Get the role IDs of the given groups.
+     *
+     * @param groupIds     The group IDs.
+     * @param tenantDomain The tenant domain.
+     * @return The role IDs of the groups.
+     * @throws PostAuthenticationFailedException If an error occurs while getting the role IDs of the groups.
+     */
+    private static List<String> getRoleIdsOfGroups(List<String> groupIds, String tenantDomain)
+            throws PostAuthenticationFailedException {
+
+        try {
+            RoleManagementService roleManagementService = EnforcePasswordResetComponentDataHolder.getInstance()
+                    .getRoleManagementService();
+            return roleManagementService.getRoleIdListOfGroups(groupIds, tenantDomain);
         } catch (IdentityRoleManagementException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_RETRIEVING_USER_ROLES.getCode(),
