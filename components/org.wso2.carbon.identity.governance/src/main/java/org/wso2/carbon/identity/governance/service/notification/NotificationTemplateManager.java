@@ -106,6 +106,7 @@ public interface NotificationTemplateManager {
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL)
      * @param tenantDomain        Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the default notification templates
+     * Sample change to run sample PR builder
      */
     @Deprecated
     default void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
