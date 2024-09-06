@@ -435,7 +435,8 @@ public class UserAccountRecoveryManager {
                     try {
                         IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
                     } catch (IdentityEventException e) {
-                        log.warn("Error while triggering notification for the user: ", e);
+                        throw Utils.handleClientException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_RECOVERY_NOTIFICATION_FAILURE, null);
                     }
                 }
             }
