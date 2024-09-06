@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
@@ -53,6 +54,7 @@ import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -62,6 +64,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -426,27 +431,29 @@ public class UserAccountRecoveryManagerTest {
     private void testMultipleUsersMatchingForGivenClaims() throws Exception {
 
         mockUserstoreManager();
-        try {
-            mockedUtils.when(() -> Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
-                    .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),""));
-            when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
-                    anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
-            when(claimManager.getAttributeName(anyString(),anyString())).
-                    thenReturn("http://wso2.org/claims/mockedClaim");
-            when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
-                    .thenReturn(multiAttributeLoginService);
-            when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
-            String username = userAccountRecoveryManager
-                    .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "
-                    + "value for an identified user cannot be returned : ");
-        } catch (IdentityRecoveryException e) {
-            assertEquals(e.getErrorCode(),
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),
-                    "Invalid error code for existing multiple users for given set of claims");
-        }
+        org.wso2.carbon.user.core.common.User testUser = mock(org.wso2.carbon.user.core.common.User.class);
+        when(testUser.getDomainQualifiedUsername()).thenReturn("KD123");
+        when(testUser.getTenantDomain()).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        List<org.wso2.carbon.user.core.common.User> users = Arrays.asList(testUser, testUser, testUser);
+
+        User recoveryUser = mock(User.class);
+        when(Utils.buildUser(anyString(), anyString())).thenReturn(recoveryUser);
+        when(recoveryUser.getUserName()).thenReturn("KD123");
+        when(recoveryUser.getTenantDomain()).thenReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        when(recoveryUser.getUserStoreDomain()).thenReturn("PRIMARY");
+
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class), anyString(), anyString(),
+                anyInt(), anyInt(), isNull(), isNull())).thenReturn(users);
+        when(claimManager.getAttributeName(anyString(), anyString())).thenReturn("http://wso2.org/claims/mockedClaim");
+        when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService()).thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
+
+        IdentityEventService identityEventService = mock(IdentityEventService.class);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(identityEventService);
+
+        userAccountRecoveryManager.getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+
+        verify(identityEventService, times(3)).handleEvent(any(Event.class));
     }
 
 
