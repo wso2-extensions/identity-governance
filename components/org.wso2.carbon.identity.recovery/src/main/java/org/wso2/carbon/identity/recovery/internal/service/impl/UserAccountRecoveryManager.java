@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2024, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.recovery.internal.service.impl;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,7 +68,6 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +84,6 @@ public class UserAccountRecoveryManager {
 
     private static final Log log = LogFactory.getLog(UserAccountRecoveryManager.class);
     private static UserAccountRecoveryManager instance = new UserAccountRecoveryManager();
-    private static final String FORWARD_SLASH = "/";
     private static final NotificationChannels[] notificationChannels = {
             NotificationChannels.EMAIL_CHANNEL, NotificationChannels.SMS_CHANNEL};
     private static final boolean PER_USER_FUNCTIONALITY_LOCKING_ENABLED = Utils.isPerUserFunctionalityLockingEnabled();
@@ -343,8 +340,8 @@ public class UserAccountRecoveryManager {
                             abstractUserStoreManager);
                 }
             }
-            // Return empty when no users are found.
-            if (resultedUserList.isEmpty()) {
+            // Return empty when no users or more than only one user is found.
+            if (resultedUserList.size() != 1) {
                 return StringUtils.EMPTY;
             }
             // When the code reaches here there only be single user match.
@@ -423,12 +420,24 @@ public class UserAccountRecoveryManager {
             Condition operationalCondition = getOperationalCondition(expressionConditionList);
             // Get the user list that matches the condition limit : 2, offset : 1, sortBy : null, sortOrder : null
             userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
-                    UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
+                    UserCoreConstants.DEFAULT_PROFILE, Integer.MAX_VALUE, 1, null, null));
 
             if (userList.size() > 1) {
-                log.warn("Multiple users matched for given claims set: " + claims.keySet());
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+                for (org.wso2.carbon.user.core.common.User user : userList) {
+                    User recoveryUser = Utils.buildUser(user.getDomainQualifiedUsername(), user.getTenantDomain());
+                    HashMap<String, Object> properties = new HashMap<>();
+                    properties.put(IdentityEventConstants.EventProperty.USER_NAME, recoveryUser.getUserName());
+                    properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, recoveryUser.getTenantDomain());
+                    properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, recoveryUser.getUserStoreDomain());
+                    properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, NotificationChannels.EMAIL_CHANNEL.getChannelType());
+                    properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
+                    Event identityMgtEvent = new Event(IdentityEventConstants.Event.TRIGGER_NOTIFICATION, properties);
+                    try {
+                        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+                    } catch (IdentityEventException e) {
+                        log.warn("Error while triggering notification for the user: ", e);
+                    }
+                }
             }
         }
     }
@@ -666,49 +675,6 @@ public class UserAccountRecoveryManager {
     }
 
     /**
-     * Get the users list for a matching claim.
-     *
-     * @param tenantId   Tenant ID
-     * @param claimUri   Claim to be searched
-     * @param claimValue Claim value to be matched
-     * @return Matched users list
-     * @throws IdentityRecoveryServerException If an error occurred while retrieving claims from the userstore manager.
-     */
-    private String[] getUserList(int tenantId, String claimUri, String claimValue)
-            throws IdentityRecoveryServerException {
-
-        String[] userList = new String[0];
-        UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-        try {
-            if (userStoreManager != null) {
-                if (StringUtils.isNotBlank(claimValue) && claimValue.contains(FORWARD_SLASH)) {
-                    String extractedDomain = IdentityUtil.extractDomainFromName(claimValue);
-                    UserStoreManager secondaryUserStoreManager = userStoreManager.
-                            getSecondaryUserStoreManager(extractedDomain);
-                    /*
-                    Some claims (Eg:- Birth date) can have "/" in claim values. But in user store level we are trying
-                    to extract the claim value and find the user store domain. Hence we are adding an extra "/" to
-                    the claim value to avoid such issues.
-                     */
-                    if (secondaryUserStoreManager == null) {
-                        claimValue = FORWARD_SLASH + claimValue;
-                    }
-                }
-                userList = userStoreManager.getUserList(claimUri, claimValue, null);
-            }
-            return userList;
-        } catch (UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                String error = String
-                        .format("Unable to retrieve the claim : %1$s for the given tenant : %2$s", claimUri, tenantId);
-                log.debug(error, e);
-            }
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
-        }
-    }
-
-    /**
      * Get all the domain names related to user stores.
      * @param tenantId   Tenant ID
      * @return A list of all the available domain names for given tenant
@@ -785,39 +751,6 @@ public class UserAccountRecoveryManager {
             }
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
-        }
-    }
-
-    /**
-     * Keep the common users list from the previously matched list and the new list.
-     *
-     * @param resultedUserList Already matched users for previous claims
-     * @param matchedUserList  Retrieved users list for the given claim
-     * @param claim            Claim used for filtering
-     * @param value            Value given for the claim
-     * @return Users list with no duplicates.
-     */
-    private String[] getCommonUserEntries(String[] resultedUserList, String[] matchedUserList, String claim,
-                                          String value) {
-
-        ArrayList<String> matchedUsers = new ArrayList<>(Arrays.asList(matchedUserList));
-        ArrayList<String> resultedUsers = new ArrayList<>(Arrays.asList(resultedUserList));
-        // Remove not matching users.
-        resultedUsers.retainAll(matchedUsers);
-        if (resultedUsers.size() > 0) {
-            resultedUserList = resultedUsers.toArray(new String[0]);
-            if (log.isDebugEnabled()) {
-                log.debug("Current matching temporary user list :" + Arrays.toString(resultedUserList));
-            }
-            return resultedUserList;
-        } else {
-            if (log.isDebugEnabled()) {
-                String message = String
-                        .format("There are no common users for claim : %1$s with the value : %2$s with the "
-                                + "previously filtered user list", claim, value);
-                log.debug(message);
-            }
-            return new String[0];
         }
     }
 
