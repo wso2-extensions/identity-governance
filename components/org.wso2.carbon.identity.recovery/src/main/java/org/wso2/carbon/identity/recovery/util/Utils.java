@@ -65,6 +65,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -82,7 +83,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,9 +91,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
+import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainName;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
+import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
 /**
@@ -823,16 +825,25 @@ public class Utils {
     private static RealmConfiguration getRealmConfiguration(User user) throws IdentityRecoveryClientException {
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-        UserStoreManager userStoreManager;
         try {
-            userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
+            if (StringUtils.equals(user.getUserStoreDomain(), getPrimaryDomainName())) {
+                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration();
+            }
+            UserStoreManager secondaryUserStoreManager =
+                    ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getSecondaryUserStoreManager(
+                            user.getUserStoreDomain());
+            if (secondaryUserStoreManager != null) {
+                return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager).getRealmConfiguration();
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DOMAIN_VIOLATED,
+                    user.getUserStoreDomain(),
+                    new UserStoreClientException("Invalid domain " + user.getUserStoreDomain() + " provided."));
         } catch (UserStoreException userStoreException) {
             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
                     null, userStoreException);
         }
-        return ((org.wso2.carbon.user.core.UserStoreManager) userStoreManager)
-                .getSecondaryUserStoreManager(user.getUserStoreDomain()).getRealmConfiguration();
     }
 
     /**
@@ -949,7 +960,8 @@ public class Utils {
 
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
             return IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + notificationChannel
-                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX
+                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX_LOCAL;
         } else {
             return IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         }
@@ -1686,5 +1698,40 @@ public class Utils {
         }
         stringBuilder.deleteCharAt(stringBuilder.length() - 1);
         return stringBuilder.toString();
+    }
+
+    /**
+     * Retrieve user claim of the user.
+     *
+     * @param user      User from whom the claim needs to be retrieved.
+     * @param userClaim Claim URI of the user.
+     * @return Claim value of the user.
+     * @throws IdentityRecoveryServerException Error while retrieving the claim.
+     */
+    public static String getUserClaim(User user, String userClaim) throws IdentityRecoveryServerException {
+
+        String userStoreDomain = user.getUserStoreDomain();
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        try {
+            org.wso2.carbon.user.api.UserRealm userRealm =
+                    realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
+
+            if (userStoreManager == null) {
+                throw new IdentityRecoveryServerException(String.format("userStoreManager is null for user: " +
+                        "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain()));
+            }
+            if (StringUtils.isNotBlank(userStoreDomain) && !PRIMARY_DEFAULT_DOMAIN_NAME.equals(userStoreDomain)) {
+                userStoreManager =
+                        ((AbstractUserStoreManager) userStoreManager).getSecondaryUserStoreManager(userStoreDomain);
+            }
+
+            return userStoreManager.getUserClaimValue(user.getUserName(), userClaim, null);
+
+        } catch (UserStoreException e) {
+            String error = String.format("Error occurred while retrieving claim for user: " +
+                    "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain());
+            throw new IdentityRecoveryServerException(error, e);
+        }
     }
 }

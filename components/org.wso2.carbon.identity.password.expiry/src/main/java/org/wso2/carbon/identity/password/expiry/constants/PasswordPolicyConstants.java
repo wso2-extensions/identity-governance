@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -42,6 +42,12 @@ public class PasswordPolicyConstants {
             "Enable Password Expiry";
     public static final String CONNECTOR_CONFIG_ENABLE_PASSWORD_EXPIRY_DESCRIPTION =
             "Allow users to reset the password after configured number of days";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES =
+            "passwordExpiry.skipIfNoApplicableRules";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DISPLAYED_NAME =
+            "Skip password expiry if no applicable rules";
+    public static final String CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES_DESCRIPTION =
+            "Skip password expiry if no applicable rules are found for the user";
     public static final String CONNECTOR_CONFIG_SUB_CATEGORY = "DEFAULT";
     public static final String PASSWORD_EXPIRED_ERROR_MESSAGE = "Password has expired";
     public static final String CONNECTOR_CONFIG_NAME = "passwordExpiry";
@@ -53,6 +59,8 @@ public class PasswordPolicyConstants {
     public static final String FALSE = "false";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
+    public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
+    public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
 
     public enum ErrorMessages {
         ERROR_WHILE_GETTING_USER_STORE_DOMAIN("80001",
@@ -70,7 +78,9 @@ public class PasswordPolicyConstants {
         ERROR_WHILE_UPDATING_PASSWORD("80011", "Error while updating the password"),
         ERROR_RETRIEVE_PASSWORD_EXPIRED_USERS_FROM_DB("80012", "" +
                 "Error while retrieving password expired users from database."),
-        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager.");
+        ERROR_RETRIEVE_USER_STORE_MANAGER("80013", "Error while retrieving user store manager."),
+        ERROR_WHILE_RETRIEVING_USER_ROLES("80014", "Error while retrieving user roles."),
+        ERROR_WHILE_RETRIEVING_USER_GROUPS("80015", "Error while retrieving user groups.");
 
         private final String code;
         private final String message;

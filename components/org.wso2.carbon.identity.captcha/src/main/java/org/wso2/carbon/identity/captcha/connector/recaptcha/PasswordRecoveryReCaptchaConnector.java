@@ -50,6 +50,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -100,7 +101,8 @@ public class PasswordRecoveryReCaptchaConnector extends AbstractReCaptchaConnect
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        return !StringUtils.isBlank(path) &&
+        List<String> reCaptchaBypassedApiEndpoints = CaptchaDataHolder.getInstance().getReCaptchaBypassedApiEndpoints();
+        return !StringUtils.isBlank(path) && !reCaptchaBypassedApiEndpoints.contains(path) &&
                 (CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTION_URL) ||
                         CaptchaUtil.isPathAvailable(path, ACCOUNT_SECURITY_QUESTIONS_URL) ||
                         CaptchaUtil.isPathAvailable(path, ACCOUNT_VALIDATE_ANSWER_URL) ||

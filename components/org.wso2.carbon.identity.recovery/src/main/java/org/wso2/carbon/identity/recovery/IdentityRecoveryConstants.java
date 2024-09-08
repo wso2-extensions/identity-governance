@@ -72,7 +72,10 @@ public class IdentityRecoveryConstants {
     public static final String EMAIL_TEMPLATE_NAME = "templateName";
     public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
     public static final String INITIATED_PLATFORM = "initiated-platform";
+    public static final String CAMPAIGN = "campaign";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String OTP_TOKEN = "otpToken";
+    public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
@@ -134,6 +137,7 @@ public class IdentityRecoveryConstants {
 
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
+    public static final String NOTIFICATION_EVENTNAME_SUFFIX_LOCAL = "_LOCAL";
     public static final String SEND_TO = "send-to";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
@@ -229,6 +233,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
         ERROR_CODE_INVALID_FLOW_ID("18019", "Invalid flow confirmation code '%s'."),
         ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
+        ERROR_CODE_MOBILE_NOT_FOUND("18021", "Mobile number is not found for the user %s."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),

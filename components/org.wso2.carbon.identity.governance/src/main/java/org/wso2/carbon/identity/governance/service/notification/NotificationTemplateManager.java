@@ -270,6 +270,7 @@ public interface NotificationTemplateManager {
      * @param tenantDomain        Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the default notification templates
      */
+    @Deprecated
     default void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
 

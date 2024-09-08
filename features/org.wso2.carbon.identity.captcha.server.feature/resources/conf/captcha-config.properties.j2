@@ -51,6 +51,12 @@ recaptcha.failed.redirect.urls={{recaptcha.redirect_urls}}
 #recaptcha.failed.redirect.urls=
 []
 
+{% if recaptcha.bypassed_api_endpoints is defined %}
+# reCaptcha bypassed API endpoints
+{% set bypassed_api_endpoints = recaptcha.bypassed_api_endpoints %}
+recaptcha.bypassed.api.endpoints={{ bypassed_api_endpoints | join(',') }}
+{% endif %}
+
 # recaptcha request wrapping paths comma separated
 recaptcha.request.wrap.urls={{recaptcha.request_wrap_urls}}
 
