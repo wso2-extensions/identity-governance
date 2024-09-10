@@ -74,7 +74,10 @@ public class IdentityRecoveryConstants {
     public static final String EMAIL_TEMPLATE_NAME = "templateName";
     public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
     public static final String INITIATED_PLATFORM = "initiated-platform";
+    public static final String CAMPAIGN = "campaign";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String OTP_TOKEN = "otpToken";
+    public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
@@ -89,7 +92,6 @@ public class IdentityRecoveryConstants {
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
     public static final String ACCOUNT_CONFIRMED_TIME_CLAIM = "http://wso2.org/claims/identity/accountConfirmedTime";
-
     public static final String FUNCTION_LOCKOUT_COUNT_PROPERTY = "LockoutCount";
     public static final String FUNCTION_FAILED_ATTEMPTS_PROPERTY = "FailedAttempts";
     public static final String FUNCTION_MAX_ATTEMPTS_PROPERTY = "MaxAttempts";
@@ -141,6 +143,7 @@ public class IdentityRecoveryConstants {
 
     public static final String NOTIFICATION_EVENTNAME_PREFIX = "TRIGGER_";
     public static final String NOTIFICATION_EVENTNAME_SUFFIX = "_NOTIFICATION";
+    public static final String NOTIFICATION_EVENTNAME_SUFFIX_LOCAL = "_LOCAL";
     public static final String SEND_TO = "send-to";
     public static final String LOCALE_EN_US = "en_US";
     public static final String LOCALE_LK_LK = "lk_lk";
@@ -236,6 +239,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_EMAIL_NOT_FOUND("18018", "Sending email address is not found for the user %s."),
         ERROR_CODE_INVALID_FLOW_ID("18019", "Invalid flow confirmation code '%s'."),
         ERROR_CODE_EXPIRED_FLOW_ID("18020", "Expired flow confirmation code '%s'."),
+        ERROR_CODE_MOBILE_NOT_FOUND("18021", "Mobile number is not found for the user %s."),
         ERROR_CODE_INVALID_CREDENTIALS("17002", "Invalid Credentials"),
         ERROR_CODE_LOCKED_ACCOUNT("17003", "User account is locked - '%s'."),
         ERROR_CODE_DISABLED_ACCOUNT("17004", "user account is disabled '%s'."),
@@ -320,6 +324,8 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_STORING_RECOVERY_FLOW_DATA("20063", "Error while storing recovery data."),
         ERROR_CODE_UPDATING_RECOVERY_FLOW_DATA("20064", "Error while updating recovery data."),
         ERROR_CODE_NO_HASHING_ALGO_FOR_CODE("20065", "Error while hashing the code."),
+        ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI("20066", "Multiple claims not allowed " +
+                "when user identifier claim is used."),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
@@ -721,6 +727,8 @@ public class IdentityRecoveryConstants {
                 ".Password.MaxFailedAttempts";
         public static final String RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS = "Recovery.Notification" +
                 ".Password.MaxResendAttempts";
+        public static final String PASSWORD_RECOVERY_EMAIL_LINK_ENABLE = "Recovery.Notification.Password.emailLink.Enable";
+        public static final String PASSWORD_RECOVERY_SMS_OTP_ENABLE = "Recovery.Notification.Password.smsOtp.Enable";
     }
 
     public static class DBConstants {
@@ -860,6 +868,10 @@ public class IdentityRecoveryConstants {
         public static final String PURPOSE_ID = "purposeId";
         public static final String INFINITE_TERMINATION = "DATE_UNTIL:INDEFINITE";
         public static final String RESIDENT_IDP = "Resident IDP";
+
+        // This is used for retrieve SP-UUID from the event.
+        // Todo: once the framework version bump to 7.3.14.x or above use the constant from framework instead of this.
+        public static final String SERVICE_PROVIDER_UUID = "serviceProviderUUID";
     }
 
     /**

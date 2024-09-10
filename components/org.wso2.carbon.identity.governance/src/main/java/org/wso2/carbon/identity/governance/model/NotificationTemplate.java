@@ -15,16 +15,21 @@
  */
 package org.wso2.carbon.identity.governance.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Object which encapsulates notification template properties.
  */
-public class NotificationTemplate {
+public class NotificationTemplate implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     private String type;
+    private String typeKey;
     private String displayName;
     private String locale;
+    private String localeKey;
     private String body;
     private String contentType;
     private String notificationChannel;
@@ -129,6 +134,7 @@ public class NotificationTemplate {
     public void setType(String type) {
 
         this.type = type;
+        this.typeKey = type != null ? type.toLowerCase() : null;
     }
 
     /**
@@ -169,6 +175,7 @@ public class NotificationTemplate {
     public void setLocale(String locale) {
 
         this.locale = locale;
+        this.localeKey = locale != null ? locale.toLowerCase() : null;
     }
 
     /**
@@ -197,8 +204,8 @@ public class NotificationTemplate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NotificationTemplate that = (NotificationTemplate) o;
-        return Objects.equals(type, that.type) && Objects.equals(displayName, that.displayName) &&
-                Objects.equals(locale, that.locale) && Objects.equals(body, that.body) &&
+        return Objects.equals(typeKey, that.typeKey) && Objects.equals(displayName, that.displayName) &&
+                Objects.equals(localeKey, that.localeKey) && Objects.equals(body, that.body) &&
                 Objects.equals(contentType, that.contentType) &&
                 Objects.equals(notificationChannel, that.notificationChannel) &&
                 Objects.equals(subject, that.subject) && Objects.equals(footer, that.footer);

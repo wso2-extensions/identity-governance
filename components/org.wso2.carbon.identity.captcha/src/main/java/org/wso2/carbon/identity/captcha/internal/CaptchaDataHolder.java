@@ -77,6 +77,8 @@ public class CaptchaDataHolder {
 
     private boolean forcefullyEnabledRecaptchaForAllTenants;
 
+    private List<String> reCaptchaBypassedApiEndpoints = new ArrayList<>();
+
     private CaptchaDataHolder() {
 
     }
@@ -267,5 +269,15 @@ public class CaptchaDataHolder {
     public void setForcefullyEnabledRecaptchaForAllTenants(boolean forcefullyEnabledRecaptchaForAllTenants) {
 
         this.forcefullyEnabledRecaptchaForAllTenants = forcefullyEnabledRecaptchaForAllTenants;
+    }
+
+    public List<String> getReCaptchaBypassedApiEndpoints() {
+
+        return reCaptchaBypassedApiEndpoints;
+    }
+
+    public void setReCaptchaBypassedApiEndpoints(List<String> reCaptchaBypassedApiEndpoints) {
+
+        this.reCaptchaBypassedApiEndpoints = reCaptchaBypassedApiEndpoints;
     }
 }

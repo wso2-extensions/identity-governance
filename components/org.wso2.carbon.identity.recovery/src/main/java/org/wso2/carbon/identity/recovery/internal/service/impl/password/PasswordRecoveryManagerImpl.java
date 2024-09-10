@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
+import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
 import org.wso2.carbon.identity.recovery.dto.PasswordRecoverDTO;
 import org.wso2.carbon.identity.recovery.dto.PasswordResetCodeDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
@@ -57,6 +58,7 @@ import org.wso2.carbon.identity.user.functionality.mgt.model.FunctionalityLockSt
 
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -103,6 +105,13 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         RecoveryChannelInfoDTO recoveryChannelInfoDTO = userAccountRecoveryManager
                 .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY,
                         properties);
+        List<NotificationChannelDTO> list = new ArrayList<>();
+        for (NotificationChannelDTO notificationChannelDTO : recoveryChannelInfoDTO.getNotificationChannelDTOs()) {
+            if (isRecoveryChannelEnabled(notificationChannelDTO.getType(), tenantDomain)) {
+                list.add(notificationChannelDTO);
+            }
+        }
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(list.toArray(new NotificationChannelDTO[0]));
         String username = recoveryChannelInfoDTO.getUsername();
         String recoveryFlowId = recoveryChannelInfoDTO.getRecoveryFlowId();
         recoveryInformationDTO.setUsername(username);
@@ -138,6 +147,12 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                 .getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION);
         String notificationChannel = extractNotificationChannelDetails(userRecoveryData.getRemainingSetIds(),
                 channelIDCode);
+        if(!isRecoveryChannelEnabled(notificationChannel, tenantDomain)) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getMessage(),
+                    notificationChannel);
+        }
         // Resolve notify status according to the notification channel of the user.
         boolean manageNotificationsInternally = true;
         if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
@@ -440,6 +455,13 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
                                                 boolean manageNotificationInternally, Map<String, String> properties)
             throws IdentityRecoveryException {
 
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
+
+        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+            properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
+
         Property[] metaProperties = buildPropertyList(notificationChannel, properties);
         NotificationResponseBean notificationResponseBean;
         try {
@@ -630,10 +652,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      */
     private void validateConfigurations(String tenantDomain) throws IdentityRecoveryException {
 
-        boolean isRecoveryEnable = Boolean.parseBoolean(
-                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                        tenantDomain));
-        if (!isRecoveryEnable) {
+        if (!isNotificationBasedRecoveryEnabled(tenantDomain)) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PASSWORD_RECOVERY_WITH_NOTIFICATIONS_NOT_ENABLED,
                     null);
@@ -672,10 +691,41 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
      */
     private boolean isNotificationBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
 
-        // Check whether the challenge question based recovery is enabled.
         try {
             return Boolean.parseBoolean(
-                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private boolean isEmailLinkBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private boolean isSMSOTPBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return  Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
                             tenantDomain));
         } catch (IdentityRecoveryServerException e) {
             // Prepend scenario to the thrown exception.
@@ -889,4 +939,16 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         }
         return buildPasswordResetCodeDTO(confirmationCode);
     }
+
+    private boolean isRecoveryChannelEnabled(String notificationChannelType, String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isEmailLinkBasedRecoveryEnabled(tenantDomain);
+        } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isSMSOTPBasedRecoveryEnabled(tenantDomain);
+        }
+        return false;
+    }
+
 }
