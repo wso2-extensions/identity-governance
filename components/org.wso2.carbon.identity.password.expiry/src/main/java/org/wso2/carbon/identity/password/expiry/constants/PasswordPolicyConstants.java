@@ -57,6 +57,7 @@ public class PasswordPolicyConstants {
     public static final String AUTHENTICATION_STATUS = "authenticationStatus";
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
     public static final String FALSE = "false";
+    public static final String TRUE = "true";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
