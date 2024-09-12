@@ -219,6 +219,9 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
     public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
 
+    public static final String TRUE = "true";
+    public static final String FALSE = "false";
+
     private IdentityRecoveryConstants() {
 
     }

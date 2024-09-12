@@ -91,6 +91,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
 
         boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
 
