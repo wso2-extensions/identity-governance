@@ -214,6 +214,6 @@ public class NotificationTemplate implements Serializable {
     @Override
     public int hashCode() {
 
-        return Objects.hash(type, displayName, locale, body, contentType, notificationChannel, subject, footer);
+        return Objects.hash(typeKey, displayName, localeKey, body, contentType, notificationChannel, subject, footer);
     }
 }
