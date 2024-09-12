@@ -97,7 +97,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
         boolean enable = false;
 
@@ -126,7 +126,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
 
                 if (supportMultipleEmails) {
-                    List<String> allEmails = Utils.getExistingClaimValue(userStoreManager, user,
+                    List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
                             IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
                             !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty() &&
@@ -144,7 +144,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
             } else {
                 if (supportMultipleEmails) {
-                    List<String> verifiedEmails = Utils.getExistingClaimValue(userStoreManager, user,
+                    List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
                             IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
                             !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty() &&
@@ -558,14 +558,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = null;
 
-        List<String> existingVerifiedEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
+        List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        List<String> existingAllEmailAddresses = Utils.getExistingClaimValue(userStoreManager, user,
+        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
                 IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
 
         List<String> updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.

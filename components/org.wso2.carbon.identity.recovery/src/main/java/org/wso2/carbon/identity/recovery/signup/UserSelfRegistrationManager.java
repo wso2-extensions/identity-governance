@@ -759,8 +759,7 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
-        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user
-                .getTenantDomain());
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
@@ -769,14 +768,14 @@ public class UserSelfRegistrationManager {
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 if (supportMultipleEmailsAndMobileNumbers) {
                     try {
-                        List<String> verifiedEmails = Utils.getExistingClaimValue(
+                        List<String> verifiedEmails = Utils.getMultiValuedClaim(
                                 (org.wso2.carbon.user.core.UserStoreManager) userStoreManager, user,
                                 IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                         verifiedEmails.add(pendingEmailClaimValue);
                         userClaims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
                                 verifiedEmails, ","));
 
-                        List<String> allEmails = Utils.getExistingClaimValue(
+                        List<String> allEmails = Utils.getMultiValuedClaim(
                                 (org.wso2.carbon.user.core.UserStoreManager) userStoreManager, user,
                                 IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
                         if (!allEmails.contains(pendingEmailClaimValue)) {
@@ -951,8 +950,7 @@ public class UserSelfRegistrationManager {
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
 
-        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user
-                .getTenantDomain());
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
