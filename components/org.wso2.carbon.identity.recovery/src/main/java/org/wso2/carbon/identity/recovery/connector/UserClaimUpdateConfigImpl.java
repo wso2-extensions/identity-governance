@@ -59,7 +59,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME = "5";
     private static final String DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE = "false";
     private static final String DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS = "false";
-    private static final String DEFAULT_SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS = "true";
     private static final String USER_CLAIM_UPDATE_ELEMENT = "UserClaimUpdate";
     private static final String ENABLE_ELEMENT = "Enable";
     private static final String SEND_OTP_IN_EMAIL_ELEMENT = "SendOTPInEmail";
@@ -87,7 +86,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static String enableMobileNumVerificationOnUpdateProperty = null;
     private static String mobileNumVerificationOnUpdateCodeExpiryProperty = null;
     private static String mobileNumVerificationByPrivilegedUsersProperty = null;
-    private static String supportMultiEmailsAndMobileNumbersProperty = null;
 
     @Override
     public String getName() {
@@ -145,8 +143,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Enable mobile number verification by privileged users");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 "Mobile number verification on update SMS OTP expiry time");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
-                "Support multiple emails and mobile numbers per user");
         return nameMapping;
     }
 
@@ -179,8 +175,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 "Validity time of the mobile number confirmation OTP in minutes.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 "Allow privileged users to initiate mobile number verification on update.");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
-                "Allow users to add multiple email addresses and mobile numbers to their account.");
         return descriptionMapping;
     }
 
@@ -199,7 +193,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER);
         return properties.toArray(new String[0]);
     }
 
@@ -217,7 +210,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         String enableMobileNumVerificationOnUpdate = DEFAULT_ENABLE_VALUE_FOR_MOBILE_NUMBER_VERIFICATION_ON_UPDATE;
         String mobileNumVerificationOnUpdateCodeExpiry = DEFAULT_MOBILE_NUM_VERIFICATION_ON_UPDATE_SMS_OTP_EXPIRY_TIME;
         String mobileNumVerificationByPrivilegedUsers = DEFAULT_MOBILE_NUM_VERIFICATION_BY_PRIVILEGED_USERS;
-        String supportMultiEmailsAndMobileNumbers = DEFAULT_SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS;
 
         loadConfigurations();
 
@@ -254,9 +246,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotBlank(mobileNumVerificationByPrivilegedUsersProperty)) {
             mobileNumVerificationByPrivilegedUsers = mobileNumVerificationByPrivilegedUsersProperty;
         }
-        if (StringUtils.isNotBlank(supportMultiEmailsAndMobileNumbersProperty)) {
-            supportMultiEmailsAndMobileNumbers = supportMultiEmailsAndMobileNumbersProperty;
-        }
 
         Properties properties = new Properties();
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
@@ -281,8 +270,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
                 mobileNumVerificationOnUpdateCodeExpiry);
         properties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER,
                 mobileNumVerificationByPrivilegedUsers);
-        properties.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
-                supportMultiEmailsAndMobileNumbers);
         return properties;
     }
 
@@ -311,15 +298,11 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
         OMElement userClaimUpdate = IdentityConfigParser.getInstance().getConfigElement(USER_CLAIM_UPDATE_ELEMENT);
         Iterator claims = null;
         OMElement otpConfigs = null;
-        OMElement supportMultiEmailsAndMobileNumbers = null;
         if (userClaimUpdate != null) {
             claims = userClaimUpdate.getChildrenWithName(new QName(IdentityCoreConstants
                     .IDENTITY_DEFAULT_NAMESPACE, CLAIM_ELEMENT));
             otpConfigs = userClaimUpdate.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_ELEMENT));
-            supportMultiEmailsAndMobileNumbers = userClaimUpdate.getFirstChildWithName(
-                    new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
-                            ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT));
         }
 
         if (claims != null) {
@@ -383,9 +366,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
             otpLengthProperty = otpConfigs.getFirstChildWithName(new QName
                     (IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE, OTP_LENGTH_ELEMENT)).getText();
         }
-        if (supportMultiEmailsAndMobileNumbers != null) {
-            supportMultiEmailsAndMobileNumbersProperty = supportMultiEmailsAndMobileNumbers.getText();
-        }
     }
 
     @Override
@@ -422,9 +402,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME,
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
-
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
-                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         return meta;
     }
