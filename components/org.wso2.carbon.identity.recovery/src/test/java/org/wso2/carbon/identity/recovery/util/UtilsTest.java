@@ -26,9 +26,11 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -37,16 +39,19 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 public class UtilsTest {
 
-    private static final String TENANT_DOMAIN = "test.com";
-    private static final int TENANT_ID = 123;
-    private static final String USER_NAME = "testUser";
-    private static final String USER_STORE_DOMAIN = "TEST";
     @Mock
     private UserStoreManager userStoreManager;
     @Mock
@@ -56,50 +61,58 @@ public class UtilsTest {
     @Mock
     private IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
 
-    private MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
-    private MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
-    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
-    private MockedStatic<IdentityUtil> mockedIdentityUtil;
+    private static MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
+    private static MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
+    private static MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
+    private static MockedStatic<IdentityUtil> mockedStaticIdentityUtil;
+    private static MockedStatic<FrameworkUtils> mockedStaticFrameworkUtils;
 
-    @BeforeMethod
-    public void setUp() {
-
-        MockitoAnnotations.openMocks(this);
-    }
+    private static final String TENANT_DOMAIN = "test.com";
+    private static final int TENANT_ID = 123;
+    private static final String USER_NAME = "testUser";
+    private static final String USER_STORE_DOMAIN = "TEST";
 
     @BeforeClass
-    public void beforeTest() {
+    public static void beforeClass() {
 
         mockedStaticIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
         mockedStaticUserStoreManager = mockStatic(UserStoreManager.class);
         mockedIdentityRecoveryServiceDataHolder = Mockito.mockStatic(IdentityRecoveryServiceDataHolder.class);
-        mockedIdentityUtil = mockStatic(IdentityUtil.class);
+        mockedStaticIdentityUtil = mockStatic(IdentityUtil.class);
+        mockedStaticFrameworkUtils = mockStatic(FrameworkUtils.class);
     }
 
     @AfterClass
-    public void afterTest() {
+    public static void afterClass() {
 
         mockedStaticIdentityTenantUtil.close();
         mockedStaticUserStoreManager.close();
         mockedIdentityRecoveryServiceDataHolder.close();
-        mockedIdentityUtil.close();
+        mockedStaticIdentityUtil.close();
+        mockedStaticFrameworkUtils.close();
+    }
+
+    @BeforeMethod
+    public void setUp() throws UserStoreException {
+
+        MockitoAnnotations.openMocks(this);
+
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+
+        when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+
+        mockedStaticIdentityUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+        mockedStaticIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
+        mockedStaticFrameworkUtils.when(FrameworkUtils::getMultiAttributeSeparator).thenReturn(",");
     }
 
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
     public void testCheckPasswordPatternViolationForInvalidDomain() throws Exception {
 
-        User user = new User();
-        user.setUserName(USER_NAME);
-        user.setTenantDomain(TENANT_DOMAIN);
-        user.setUserStoreDomain(USER_STORE_DOMAIN);
-
-        when(IdentityTenantUtil.getTenantId(user.getTenantDomain())).thenReturn(TENANT_ID);
-        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(
-                identityRecoveryServiceDataHolder);
-        when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
-        when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
-        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
+        User user = getUser();
         when(userStoreManager.getSecondaryUserStoreManager(USER_STORE_DOMAIN)).thenReturn(null);
 
         try {
@@ -110,5 +123,50 @@ public class UtilsTest {
             assertEquals(e.getMessage(), "Invalid domain " + user.getUserStoreDomain() + " provided.");
             throw e;
         }
+    }
+
+    @Test
+    public void testGetClaimFromUserStoreManager() throws Exception {
+
+        User user = getUser();
+        Map<String, String> claimMap = new HashMap<>();
+        claimMap.put("testClaim", "testValue");
+        when(userStoreManager.getUserClaimValues(any(), any(), anyString()))
+                .thenReturn(claimMap);
+
+        String result = Utils.getClaimFromUserStoreManager(user, "testClaim");
+        assertEquals("testValue", result);
+    }
+
+    @Test
+    public void testGetMultiValuedClaim() throws IdentityEventException, org.wso2.carbon.user.core.UserStoreException {
+
+        User user = getUser();
+        String claimValue = "value1,value2,value3";
+        List<String> expectedClaimList = Arrays.asList("value1", "value2", "value3");
+        when(userStoreManager.getUserClaimValue(any(), anyString(), any()))
+                .thenReturn(claimValue);
+
+        List<String> result = Utils.getMultiValuedClaim(userStoreManager, user, "testClaim");
+        assertEquals(expectedClaimList, result);
+    }
+
+    @Test
+    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                        .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("true");
+        boolean result = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        assertEquals(result, true);
+    }
+
+    private static User getUser() {
+
+        User user = new User();
+        user.setUserName(USER_NAME);
+        user.setTenantDomain(TENANT_DOMAIN);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+        return user;
     }
 }

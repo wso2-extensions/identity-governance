@@ -95,7 +95,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims = new HashMap<>();
         }
 
-        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
+        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
         boolean enable = isMobileVerificationOnUpdateEnabled(user.getTenantDomain());
 
@@ -115,7 +115,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
 
             if (supportMultipleMobileNumbers) {
-                List<String> allMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
+                List<String> allMobileNumbers = Utils.getMultiValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
                         !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
@@ -134,7 +134,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             return;
         } else {
             if (supportMultipleMobileNumbers) {
-                List<String> verifiedMobileNumbers = Utils.getExistingClaimValue(userStoreManager, user,
+                List<String> verifiedMobileNumbers = Utils.getMultiValuedClaim(userStoreManager, user,
                         IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
                         !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
@@ -303,18 +303,18 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
 
-        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
+        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String mobileNumber = null;
 
-        List<String> exisitingVerifiedNumbersList = Utils.getExistingClaimValue(userStoreManager, user,
+        List<String> exisitingVerifiedNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
                 IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         List<String> updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
                 VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListOfMobileNumbersFromString(claims.get(
                 IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
 
-        List<String> exisitingAllNumbersList = Utils.getExistingClaimValue(userStoreManager, user,
+        List<String> exisitingAllNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
                 IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         List<String> updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
                 getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) :

@@ -1354,7 +1354,7 @@ public class Utils {
      *
      * @return True if the config is set to true, false otherwise.
      */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain) {
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled() {
 
         return Boolean.parseBoolean(IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
@@ -1751,27 +1751,28 @@ public class Utils {
     }
 
     /**
-     * Get the existing multi-valued claims such as emailAddresses and verifiedEmailAddresses of the given claim URI.
+     * Retrieves the existing multi-valued claims for a given claim URI.
      *
      * @param userStoreManager User store manager.
-     * @param user             User.
-     * @param claimURI         Claim URI.
+     * @param user User object.
+     * @param claimURI Claim URI to retrieve.
      * @return List of existing claim values.
+     * @throws IdentityEventException If an error occurs while retrieving the claim value.
      */
-    public static List<String> getExistingClaimValue(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
-                                                     User user, String claimURI) throws IdentityEventException {
+    public static List<String> getMultiValuedClaim(UserStoreManager userStoreManager, User user, String claimURI)
+            throws IdentityEventException {
 
-        List<String> existingClaimValue;
         try {
-            String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
-            existingClaimValue = StringUtils.isNotBlank(userStoreManager.getUserClaimValue(user.getUserName(),
-                    claimURI, null)) ?
-                    new LinkedList<>(Arrays.asList(userStoreManager.getUserClaimValue(user.getUserName(), claimURI,
-                            null).split(multiAttributeSeparator))) : new ArrayList<>();
-        } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            throw new IdentityEventException("Error occurred while retrieving claim value of " + claimURI +
+            String claimValue = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null);
+            if (StringUtils.isBlank(claimValue)) {
+                return new ArrayList<>();
+            }
+
+            String separator = FrameworkUtils.getMultiAttributeSeparator();
+            return new ArrayList<>(Arrays.asList(claimValue.split(separator)));
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error retrieving claim " + claimURI +
                     " for user: " + user.toFullQualifiedUsername(), e);
         }
-        return existingClaimValue;
     }
 }

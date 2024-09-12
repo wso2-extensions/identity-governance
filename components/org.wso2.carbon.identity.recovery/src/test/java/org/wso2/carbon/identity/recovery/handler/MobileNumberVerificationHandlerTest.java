@@ -121,7 +121,7 @@ public class MobileNumberVerificationHandlerTest {
     private static final String newMobileNumber = "0722222222";
 
     @BeforeMethod
-    public void setUp() throws UserStoreException {
+    public void setUpMethod() throws UserStoreException {
 
         MockitoAnnotations.openMocks(this);
         mobileNumberVerificationHandler = new MobileNumberVerificationHandler();
@@ -253,7 +253,7 @@ public class MobileNumberVerificationHandlerTest {
 
         // Mock existing verified mobile numbers.
         List<String> exisitingVerifiedNumbersList = Arrays.asList(existingNumber1, existingNumber2);
-        mockedUtils.when(() -> Utils.getExistingClaimValue(any(), any(),
+        mockedUtils.when(() -> Utils.getMultiValuedClaim(any(), any(),
                         eq(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)))
                 .thenReturn(exisitingVerifiedNumbersList);
 
@@ -315,10 +315,14 @@ public class MobileNumberVerificationHandlerTest {
          * Case 2: Try to update primary mobile number which is in the verified mobile numbers list.
          * Expected: Thread local should be set to skip sending SMS OTP verification.
          */
-        List<String> existingVerifiedNumbersList1 = new ArrayList<>(Arrays.asList(existingNumber1, newMobileNumber));
-        mockExistingVerifiedNumbersList(existingVerifiedNumbersList1);
+        String newVerifiedMobileNumbers2 = existingNumber1 + "," + newMobileNumber;
+        String newMobileNumbers2 = existingNumber1 + "," + newMobileNumber;
+        Event event2 = getEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                newVerifiedMobileNumbers2, newMobileNumbers2, newMobileNumber);
+        List<String> existingVerifiedNumbersList2 = new ArrayList<>(Arrays.asList(existingNumber1, newMobileNumber));
+        mockExistingVerifiedNumbersList(existingVerifiedNumbersList2);
 
-        mobileNumberVerificationHandler.handleEvent(event1);
+        mobileNumberVerificationHandler.handleEvent(event2);
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                 eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
                         .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
@@ -391,6 +395,16 @@ public class MobileNumberVerificationHandlerTest {
         mockVerificationPendingMobileNumber();
         mobileNumberVerificationHandler.handleEvent(event);
         verify(identityEventService).handleEvent(any());
+
+        // Case 3: Handle exception thrown from userStoreManager.getUserClaimValues.
+        when(userStoreManager.getUserClaimValues(eq(username),
+                eq(new String[]{IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM}), isNull()))
+                .thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            mobileNumberVerificationHandler.handleEvent(event);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
     }
 
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
@@ -401,14 +415,14 @@ public class MobileNumberVerificationHandlerTest {
 
     private void mockExistingNumbersList(List<String> existingAllMobileNumbers) {
 
-        mockedUtils.when(() -> Utils.getExistingClaimValue(any(), any(),
+        mockedUtils.when(() -> Utils.getMultiValuedClaim(any(), any(),
                         eq(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)))
                 .thenReturn(existingAllMobileNumbers);
     }
 
     private void mockExistingVerifiedNumbersList(List<String> exisitingVerifiedNumbersList) {
 
-        mockedUtils.when(() -> Utils.getExistingClaimValue(any(), any(),
+        mockedUtils.when(() -> Utils.getMultiValuedClaim(any(), any(),
                         eq(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)))
                 .thenReturn(exisitingVerifiedNumbersList);
     }
@@ -424,8 +438,8 @@ public class MobileNumberVerificationHandlerTest {
     private void mockUtilMethods(boolean mobileVerificationEnabled, boolean multiAttributeEnabled,
                                  boolean useVerifyClaimEnabled) {
 
-        mockedUtils.when(() ->
-                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString())).thenReturn(multiAttributeEnabled);
+        mockedUtils.when(
+                Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(useVerifyClaimEnabled);
         mockedUtils.when(() -> Utils.getConnectorConfig(
                         eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE),
