@@ -734,50 +734,6 @@ public class UserAccountRecoveryManager {
         return localClaimMaskingRegex;
     }
 
-    //TODO remove
-    /**
-     * Get the users list for a matching claim.
-     *
-     * @param tenantId   Tenant ID
-     * @param claimUri   Claim to be searched
-     * @param claimValue Claim value to be matched
-     * @return Matched users list
-     * @throws IdentityRecoveryServerException If an error occurred while retrieving claims from the userstore manager.
-     */
-    private String[] getUserList(int tenantId, String claimUri, String claimValue)
-            throws IdentityRecoveryServerException {
-
-        String[] userList = new String[0];
-        UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-        try {
-            if (userStoreManager != null) {
-                if (StringUtils.isNotBlank(claimValue) && claimValue.contains(FORWARD_SLASH)) {
-                    String extractedDomain = IdentityUtil.extractDomainFromName(claimValue);
-                    UserStoreManager secondaryUserStoreManager = userStoreManager.
-                            getSecondaryUserStoreManager(extractedDomain);
-                    /*
-                    Some claims (Eg:- Birth date) can have "/" in claim values. But in user store level we are trying
-                    to extract the claim value and find the user store domain. Hence we are adding an extra "/" to
-                    the claim value to avoid such issues.
-                     */
-                    if (secondaryUserStoreManager == null) {
-                        claimValue = FORWARD_SLASH + claimValue;
-                    }
-                }
-                userList = userStoreManager.getUserList(claimUri, claimValue, null);
-            }
-            return userList;
-        } catch (UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                String error = String
-                        .format("Unable to retrieve the claim : %1$s for the given tenant : %2$s", claimUri, tenantId);
-                log.debug(error, e);
-            }
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
-        }
-    }
-
     /**
      * Get all the domain names related to user stores.
      * @param tenantId   Tenant ID
@@ -855,40 +811,6 @@ public class UserAccountRecoveryManager {
             }
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
-        }
-    }
-
-    //TODO remove
-    /**
-     * Keep the common users list from the previously matched list and the new list.
-     *
-     * @param resultedUserList Already matched users for previous claims
-     * @param matchedUserList  Retrieved users list for the given claim
-     * @param claim            Claim used for filtering
-     * @param value            Value given for the claim
-     * @return Users list with no duplicates.
-     */
-    private String[] getCommonUserEntries(String[] resultedUserList, String[] matchedUserList, String claim,
-                                          String value) {
-
-        ArrayList<String> matchedUsers = new ArrayList<>(Arrays.asList(matchedUserList));
-        ArrayList<String> resultedUsers = new ArrayList<>(Arrays.asList(resultedUserList));
-        // Remove not matching users.
-        resultedUsers.retainAll(matchedUsers);
-        if (resultedUsers.size() > 0) {
-            resultedUserList = resultedUsers.toArray(new String[0]);
-            if (log.isDebugEnabled()) {
-                log.debug("Current matching temporary user list :" + Arrays.toString(resultedUserList));
-            }
-            return resultedUserList;
-        } else {
-            if (log.isDebugEnabled()) {
-                String message = String
-                        .format("There are no common users for claim : %1$s with the value : %2$s with the "
-                                + "previously filtered user list", claim, value);
-                log.debug(message);
-            }
-            return new String[0];
         }
     }
 
