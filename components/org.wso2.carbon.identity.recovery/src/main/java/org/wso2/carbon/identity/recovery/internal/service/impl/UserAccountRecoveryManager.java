@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.recovery.internal.service.impl;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,7 +68,6 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -361,6 +359,84 @@ public class UserAccountRecoveryManager {
     }
 
     /**
+     * Get the user list for the given claims.
+     *
+     * @param claims       List of UserClaims
+     * @param tenantDomain Tenant domain
+     * @return Username (Return null if there are no users).
+     * @throws IdentityRecoveryException Error while retrieving the users list.
+     */
+    public ArrayList<org.wso2.carbon.user.core.common.User> getUserListByClaims(Map<String, String> claims, String tenantDomain)
+            throws IdentityRecoveryException {
+
+        ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+
+        if (MapUtils.isEmpty(claims)) {
+            // Get error code with scenario.
+            String errorCode = Utils.prependOperationScenarioToErrorCode(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
+                    IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+            throw Utils.handleClientException(errorCode,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getMessage(),
+                    null);
+        }
+
+        MultiAttributeLoginService multiAttributeLoginService = IdentityRecoveryServiceDataHolder.getInstance()
+                .getMultiAttributeLoginService();
+
+        if (multiAttributeLoginService.isEnabled(tenantDomain) && claims.containsKey(MultiAttributeLoginConstants
+                .MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI)) {
+            /* Multiple claims are not allowed when user identifier claim is enabled since identifier claim cannot be
+             used in combination with other claims. */
+            if (claims.keySet().size() > 1) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getCode(), IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getMessage(), null);
+            }
+            // Resolve the user with the multi attribute login service.
+            ResolvedUserResult resolvedUserResult = multiAttributeLoginService.resolveUser(
+                    claims.get(MultiAttributeLoginConstants.MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI), tenantDomain);
+            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS
+                    .equals(resolvedUserResult.getResolvedStatus())) {
+                resultedUserList.add(resolvedUserResult.getUser());
+                return resultedUserList;
+            }
+            return resultedUserList;
+        }
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        try {
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager)
+                    getUserStoreManager(tenantId);
+            String userstoreDomain = extractDomainFromClaims(claims, abstractUserStoreManager);
+            if (userstoreDomain != null) {
+                populateUserListFromClaimsForDomain(tenantId, claims, userstoreDomain, resultedUserList,
+                        abstractUserStoreManager);
+            } else {
+                // If a userstore domain is not specified in the request, consider all userstores.
+                List<String> userStoreDomainNames = getDomainNames(tenantId);
+                for (String domain : userStoreDomainNames) {
+                    populateUserListFromClaimsForDomain(tenantId, claims, domain, resultedUserList,
+                            abstractUserStoreManager);
+                }
+            }
+            // When the code reaches here there only be single user match.
+            return resultedUserList;
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while retrieving users from user store for the given claim set: " +
+                        Arrays.toString(claims.keySet().toArray()));
+            }
+            throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
+        } catch (UserStoreException | IdentityRecoveryServerException e) {
+            throw new IdentityRecoveryException(e.getMessage(), e);
+        }
+    }
+
+    /**
      * Extract and remove the userstore domain from the claim set.
      *
      * @param claims                   List of UserClaims.
@@ -423,13 +499,7 @@ public class UserAccountRecoveryManager {
             Condition operationalCondition = getOperationalCondition(expressionConditionList);
             // Get the user list that matches the condition limit : 2, offset : 1, sortBy : null, sortOrder : null
             userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
-                    UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
-
-            if (userList.size() > 1) {
-                log.warn("Multiple users matched for given claims set: " + claims.keySet());
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
-            }
+                    UserCoreConstants.DEFAULT_PROFILE, Integer.MAX_VALUE, 1, null, null));
         }
     }
 
