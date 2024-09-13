@@ -423,7 +423,6 @@ public class UserAccountRecoveryManager {
                             abstractUserStoreManager);
                 }
             }
-            // When the code reaches here there only be single user match.
             return resultedUserList;
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             if (log.isDebugEnabled()) {
@@ -735,6 +734,7 @@ public class UserAccountRecoveryManager {
         return localClaimMaskingRegex;
     }
 
+    //TODO remove
     /**
      * Get the users list for a matching claim.
      *
@@ -858,6 +858,7 @@ public class UserAccountRecoveryManager {
         }
     }
 
+    //TODO remove
     /**
      * Keep the common users list from the previously matched list and the new list.
      *
