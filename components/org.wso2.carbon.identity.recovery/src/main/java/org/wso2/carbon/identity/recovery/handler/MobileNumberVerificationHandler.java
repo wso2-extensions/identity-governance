@@ -116,15 +116,21 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
 
             if (supportMultipleMobileNumbers) {
-                List<String> allMobileNumbers = Utils.getMultiValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
                 if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
-                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
-                        !allMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
-                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                            ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getCode(),
-                            IdentityRecoveryConstants.ErrorMessages
-                                    .ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getMessage());
+                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty()) {
+                    String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                    List<String> exisitingAllNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
+                            IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                    List<String> updatedAllNumbersList =
+                            claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)
+                                    ? getListOfMobileNumbersFromString(
+                                            claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM))
+                                    : exisitingAllNumbersList;
+                    if (!updatedAllNumbersList.contains(mobileNumber)) {
+                        updatedAllNumbersList.add(mobileNumber);
+                        claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                                String.join(FrameworkUtils.getMultiAttributeSeparator(), updatedAllNumbersList));
+                    }
                 }
             } else {
                 // Multiple mobile numbers per user support is disabled.

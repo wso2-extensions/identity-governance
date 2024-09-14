@@ -186,20 +186,18 @@ public class MobileNumberVerificationHandlerTest {
 
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
                 null, null, newMobileNumber);
-
         mockVerificationPendingMobileNumber();
         mockUtilMethods(false, true, false);
 
-        // New primary mobile number is not included in all mobile numbers list.
-        List<String> allMobileNumbers = Arrays.asList(existingNumber1, existingNumber2);
+        // New primary mobile number is not included in existing all mobile numbers list.
+        List<String> allMobileNumbers = new ArrayList<>(Arrays.asList(existingNumber1, existingNumber2));
         mockExistingNumbersList(allMobileNumbers);
 
-        try {
-            mobileNumberVerificationHandler.handleEvent(event);
-        } catch (IdentityEventClientException e) {
-            Assert.assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.
-                    ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST.getCode());
-        }
+        // Expectation: New mobile number should be added to the mobile numbers claim.
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertTrue(StringUtils.contains(
+                userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), newMobileNumber));
     }
 
     @Test(description = "PRE_SET_USER_CLAIMS: Verification enabled, Multi-attribute disabled, Claims null")
