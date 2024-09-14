@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -299,6 +300,16 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             return;
         }
 
+        /*
+        Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
+        OTP. Therefore, the mobile number is already verified & no need to verify it again.
+        */
+        if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().
+                equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
+            return;
+        }
+
         if (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate() != null) {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
@@ -308,23 +319,26 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         String mobileNumber = null;
 
-        List<String> exisitingVerifiedNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
-                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-        List<String> updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
-                VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListOfMobileNumbersFromString(claims.get(
-                IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
-
-        List<String> exisitingAllNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
-                IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-        List<String> updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
-                getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) :
-                exisitingAllNumbersList;
+        List<String> updatedVerifiedNumbersList = new ArrayList<>();
+        List<String> updatedAllNumbersList;
 
         if (supportMultipleMobileNumbers) {
+            List<String> exisitingVerifiedNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+            updatedVerifiedNumbersList = claims.containsKey(IdentityRecoveryConstants.
+                    VERIFIED_MOBILE_NUMBERS_CLAIM) ? getListOfMobileNumbersFromString(claims.get(
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM)) : exisitingVerifiedNumbersList;
+
+            List<String> exisitingAllNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+            updatedAllNumbersList = claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM) ?
+                    getListOfMobileNumbersFromString(claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)) :
+                    exisitingAllNumbersList;
+
             /*
             Finds the verification pending mobile number and remove it from the verified numbers list in the payload.
             */
-            if (updatedVerifiedNumbersList != null) {
+            if (CollectionUtils.isNotEmpty(updatedVerifiedNumbersList)) {
                 mobileNumber = getVerificationPendingMobileNumber(exisitingVerifiedNumbersList,
                         updatedVerifiedNumbersList);
                 updatedVerifiedNumbersList.remove(mobileNumber);
@@ -334,98 +348,76 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Finds the removed numbers from the existing mobile numbers list and remove them from the verified numbers
             list. As verified numbers list should not contain numbers that are not in the mobile numbers list.
             */
-            if (!updatedAllNumbersList.isEmpty()) {
-                for (String number : exisitingAllNumbersList) {
-                    if (!updatedAllNumbersList.contains(number) && updatedVerifiedNumbersList != null) {
-                        updatedVerifiedNumbersList.remove(number);
-                    }
-                }
+            if (CollectionUtils.isNotEmpty(updatedAllNumbersList)) {
+                updatedVerifiedNumbersList.removeIf(number -> !updatedAllNumbersList.contains(number));
             }
+
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                     String.join(multiAttributeSeparator, updatedAllNumbersList));
             claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
                     String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
         } else {
+            updatedAllNumbersList = new ArrayList<>();
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
 
             mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
         }
 
-        if (mobileNumber != null) {
-
-            /*
-            Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
-            OTP. Therefore, the mobile number is already verified & no need to verify it again.
-            */
-            if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_SMS_OTP_FLOW.toString().
-                    equals(Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
-                invalidatePendingMobileVerification(user, userStoreManager, claims);
-                return;
-            }
-            /*
-            Mobile numbers in verifiedMobileNumbers claim are already verified. No need to verify again.
-            */
-            if (exisitingVerifiedNumbersList != null && exisitingVerifiedNumbersList.contains(mobileNumber)) {
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
-                invalidatePendingMobileVerification(user, userStoreManager, claims);
-                return;
-            } else {
-                String existingMobileNumber;
-                String username = user.getUserName();
-                try {
-                    existingMobileNumber = userStoreManager.getUserClaimValue(username, IdentityRecoveryConstants.
-                            MOBILE_NUMBER_CLAIM, null);
-                } catch (UserStoreException e) {
-                    String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
-                            "domain: %s and user store: %s", username, user.getTenantDomain(), user.getUserStoreDomain());
-                    throw new IdentityEventException(error, e);
-                }
-
-                if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
-                                        "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
-                                        "verification will not be triggered.", mobileNumber, username,
-                                user.getTenantDomain(), user.getUserStoreDomain()));
-                    }
-                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
-                    invalidatePendingMobileVerification(user, userStoreManager, claims);
-
-                    if (supportMultipleMobileNumbers) {
-                        if (!updatedVerifiedNumbersList.contains(mobileNumber)) {
-                            updatedVerifiedNumbersList.add(mobileNumber);
-                            claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
-                        }
-                        if (!updatedAllNumbersList.contains(mobileNumber)) {
-                            updatedAllNumbersList.add(mobileNumber);
-                            claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, updatedAllNumbersList));
-                        }
-                    }
-                    return;
-                }
-                /*
-                When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
-                temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
-                check for 'verifyMobile' claim.
-                 */
-                if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
-                    Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                            .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                    invalidatePendingMobileVerification(user, userStoreManager, claims);
-                    return;
-                }
-                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-            }
-        } else {
+        if (mobileNumber == null) {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
             return;
         }
+
+        String existingMobileNumber;
+        String username = user.getUserName();
+        try {
+            existingMobileNumber = userStoreManager.getUserClaimValue(username, IdentityRecoveryConstants.
+                    MOBILE_NUMBER_CLAIM, null);
+        } catch (UserStoreException e) {
+            String error = String.format("Error occurred while retrieving existing mobile number for user: %s in " +
+                    "domain: %s and user store: %s", username, user.getTenantDomain(), user.getUserStoreDomain());
+            throw new IdentityEventException(error, e);
+        }
+
+        if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
+                                "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
+                                "verification will not be triggered.", mobileNumber, username,
+                        user.getTenantDomain(), user.getUserStoreDomain()));
+            }
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
+
+            if (supportMultipleMobileNumbers) {
+                if (!updatedVerifiedNumbersList.contains(mobileNumber)) {
+                    updatedVerifiedNumbersList.add(mobileNumber);
+                    claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                            String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+                }
+                if (!updatedAllNumbersList.contains(mobileNumber)) {
+                    updatedAllNumbersList.add(mobileNumber);
+                    claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                            String.join(multiAttributeSeparator, updatedAllNumbersList));
+                }
+            }
+            return;
+        }
+        /*
+        When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
+        temporary claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to
+        check for 'verifyMobile' claim.
+         */
+        if (Utils.isUseVerifyClaimEnabled() && !isVerifyMobileClaimAvailable(claims)) {
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
+            return;
+        }
+        claims.remove(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
         if (isVerificationPendingMobileClaimConfigAvailable(user.getTenantDomain())) {
             claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, mobileNumber);
