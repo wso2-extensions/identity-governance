@@ -363,7 +363,7 @@ public class UserAccountRecoveryManager {
      *
      * @param claims       List of UserClaims
      * @param tenantDomain Tenant domain
-     * @return Username (Return null if there are no users).
+     * @return resultedUserList (Returns an empty list if there are no users).
      * @throws IdentityRecoveryException Error while retrieving the users list.
      */
     public ArrayList<org.wso2.carbon.user.core.common.User> getUserListByClaims(Map<String, String> claims, String tenantDomain)
