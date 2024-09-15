@@ -301,11 +301,12 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
-                (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
+        (Utils.getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate())) {
             invalidatePendingMobileVerification(user, userStoreManager, claims);
             return;
         }
-
+        
+        // TODO: Check why this was moved to the bottom before? This was not triggered due to that.
         /*
         Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
         OTP. Therefore, the mobile number is already verified & no need to verify it again.

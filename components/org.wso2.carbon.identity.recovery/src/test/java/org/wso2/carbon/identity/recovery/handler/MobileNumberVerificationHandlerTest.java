@@ -208,10 +208,10 @@ public class MobileNumberVerificationHandlerTest {
          */
         mockVerificationPendingMobileNumber();
         mockUtilMethods(true, false, false);
-        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
+        Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
                 null, null, null);
 
-        mobileNumberVerificationHandler.handleEvent(event);
+        mobileNumberVerificationHandler.handleEvent(event1);
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                 eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
                         .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));

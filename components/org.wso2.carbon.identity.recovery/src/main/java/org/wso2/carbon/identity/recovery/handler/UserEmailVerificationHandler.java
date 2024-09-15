@@ -96,6 +96,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
 
         boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
@@ -122,17 +125,27 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
 
-                // Drop the verified email addresses claim as verification on update is not enabled.
-                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-
                 if (supportMultipleEmails) {
-                    List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
-                            IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                    // Drop the verified email addresses claim as verification on update is not enabled.
+                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+
                     if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
-                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty() &&
-                            !allEmails.contains(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
-                        throw new IdentityEventClientException(ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST
-                                .getCode(), ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST.getMessage());
+                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty()) {
+
+                        String email = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+                        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+                        List<String> updatedAllEmailAddresses = claims.containsKey(
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)
+                                ? getListOfEmailAddressesFromString(
+                                        claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM))
+                                : existingAllEmailAddresses;
+                        if (!updatedAllEmailAddresses.contains(email)) {
+                            updatedAllEmailAddresses.add(email);
+                            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                                    String.join(FrameworkUtils.getMultiAttributeSeparator(), updatedAllEmailAddresses));
+                        }
                     }
                 } else {
                     // Supporting multiple email addresses per user is disabled.
@@ -547,6 +560,17 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
+        // TODO: Check why this was moved to the bottom before? This was not triggered due to that.
+        /*
+        Within the Email OTP flow, the email address is updated in the user profile after successfully verifying the
+        OTP. Therefore, the email is already verified & no need to verify it again.
+         */
+        if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
+                (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+            return;
+        }
+
         if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() != null) {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
@@ -562,27 +586,45 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = null;
-
-        List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
-                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
-                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-
-        List<String> updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
-                VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
-                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
-        List<String> updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
-                getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
-                existingAllEmailAddresses;
+        List<String> updatedVerifiedEmailAddresses = new ArrayList<>();
+        List<String> updatedAllEmailAddresses = new ArrayList<>();
 
         // Handle email addresses and verified email addresses claims.
         if (supportMultipleEmails) {
+            List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+            List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+            updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
+                    VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
+                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
+            updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
+                    getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
+                    existingAllEmailAddresses;
 
             // Find the verification pending email address and remove it from verified email addresses list in the payload.
             if (updatedVerifiedEmailAddresses != null) {
                 emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
                         updatedVerifiedEmailAddresses);
                 updatedVerifiedEmailAddresses.remove(emailAddress);
+            }
+
+            /*
+                TODO: Check if this can be removed, this is not triggered. But if we can skip throwing an error when
+                the primary mobile number is not in the existing verified list, instead go with verification process,
+                then, this can be useful.
+             */
+            if (existingVerifiedEmailAddresses.contains(emailAddress)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("The email address to be updated: %s is same as the existing email " +
+                            "address for user: %s in domain %s. Hence an email verification will not be " +
+                            "triggered.", emailAddress, user.getUserName(), user.getTenantDomain()));
+                }
+                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString());
+                invalidatePendingEmailVerification(user, userStoreManager, claims);
+                return;
             }
 
             /*
@@ -612,75 +654,54 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
             emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
         }
-        if (emailAddress != null) {
 
-            /*
-            Within the Email OTP flow, the email address is updated in the user profile after successfully verifying the
-            OTP. Therefore, the email is already verified & no need to verify it again.
-             */
-            if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
-                    (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
-                invalidatePendingEmailVerification(user, userStoreManager, claims);
-                return;
-            }
-
-            if (existingVerifiedEmailAddresses != null && existingVerifiedEmailAddresses.contains(emailAddress)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("The email address to be updated: %s is same as the existing email " +
-                            "address for user: %s in domain %s. Hence an email verification will not be " +
-                            "triggered.", emailAddress, user.getUserName(), user.getTenantDomain()));
-                }
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString());
-                invalidatePendingEmailVerification(user, userStoreManager, claims);
-                return;
-            } else {
-                String existingEmail;
-                existingEmail = getEmailClaimValue(user, userStoreManager);
-
-                if (emailAddress.equals(existingEmail)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("The email address to be updated: %s is already verified and contains" +
-                                " in the verified email addresses list. Hence an email verification will not be " +
-                                "triggered.", emailAddress));
-                    }
-                    Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                            .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
-                    invalidatePendingEmailVerification(user, userStoreManager, claims);
-
-                    if (supportMultipleEmails) {
-                        if (!updatedVerifiedEmailAddresses.contains(emailAddress)) {
-                            updatedVerifiedEmailAddresses.add(emailAddress);
-                            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-                        }
-                        if (!updatedAllEmailAddresses.contains(emailAddress)) {
-                            updatedAllEmailAddresses.add(emailAddress);
-                            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
-                        }
-                    }
-                    return;
-                }
-            }
-
-            /*
-            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
-            claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
-            'verifyEmail' claim.
-             */
-            if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                invalidatePendingEmailVerification(user, userStoreManager, claims);
-                return;
-            }
-            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
-            claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-        } else {
+        if (emailAddress == null) {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
         }
+
+        String existingEmail;
+        existingEmail = getEmailClaimValue(user, userStoreManager);
+
+        if (emailAddress.equals(existingEmail)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("The email address to be updated: %s is already verified and contains" +
+                        " in the verified email addresses list. Hence an email verification will not be " +
+                        "triggered.", emailAddress));
+            }
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+
+            if (supportMultipleEmails) {
+                if (!updatedVerifiedEmailAddresses.contains(emailAddress)) {
+                    updatedVerifiedEmailAddresses.add(emailAddress);
+                    claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+                }
+                if (!updatedAllEmailAddresses.contains(emailAddress)) {
+                    updatedAllEmailAddresses.add(emailAddress);
+                    claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+                }
+            }
+            return;
+        }
+
+        /*
+        When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
+        claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
+        'verifyEmail' claim.
+         */
+        if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+            return;
+        }
+        claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
+        claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
     }
 
     /**
