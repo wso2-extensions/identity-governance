@@ -560,7 +560,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        // TODO: Check why this was moved to the bottom before? This was not triggered due to that.
         /*
         Within the Email OTP flow, the email address is updated in the user profile after successfully verifying the
         OTP. Therefore, the email is already verified & no need to verify it again.
@@ -573,13 +572,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         if (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate() != null) {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
-        }
-
-        if (MapUtils.isEmpty(claims)) {
-            // Not required to handle in this handler.
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants.
-                    SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-            return;
         }
 
         boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
@@ -610,11 +602,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 updatedVerifiedEmailAddresses.remove(emailAddress);
             }
 
-            /*
-                TODO: Check if this can be removed, this is not triggered. But if we can skip throwing an error when
-                the primary mobile number is not in the existing verified list, instead go with verification process,
-                then, this can be useful.
-             */
             if (existingVerifiedEmailAddresses.contains(emailAddress)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The email address to be updated: %s is same as the existing email " +

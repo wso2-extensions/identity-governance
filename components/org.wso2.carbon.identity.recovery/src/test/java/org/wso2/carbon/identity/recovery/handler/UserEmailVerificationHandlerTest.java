@@ -24,11 +24,11 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -40,14 +40,11 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.user.api.ClaimManager;
-import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.config.RealmConfiguration;
-import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.tenant.TenantManager;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -56,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
@@ -74,18 +72,6 @@ public class UserEmailVerificationHandlerTest {
     private RealmConfiguration realmConfiguration;
 
     @Mock
-    private ClaimManager claimManager;
-
-    @Mock
-    private RealmService realmService;
-
-    @Mock
-    private UserRealm userRealm;
-
-    @Mock
-    private TenantManager tenantManager;
-
-    @Mock
     private UserRecoveryDataStore userRecoveryDataStore;
 
     @Mock
@@ -98,6 +84,7 @@ public class UserEmailVerificationHandlerTest {
     private MockedStatic<Utils> mockedUtils;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
     private MockedStatic<FrameworkUtils> mockedFrameworkUtils;
+    private MockedStatic<IdentityUtil> mockedIdentityUtils;
 
     private static final String tenantDomain = "test.com";
     private static final String userStoreDomainName = "TESTING";
@@ -106,34 +93,34 @@ public class UserEmailVerificationHandlerTest {
     private static final String existingEmail2 = "old2@abc.com";
     private static final String newEmail = "new@abc.com";
 
-    @BeforeClass
-    public void init() {
-
-        mockedJDBCRecoveryDataStore = mockStatic(JDBCRecoveryDataStore.class);
-        mockedUtils = mockStatic(Utils.class);
-        mockedIdentityRecoveryServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
-        mockedFrameworkUtils = mockStatic(FrameworkUtils.class);
-    }
-
-    @AfterClass
+    @AfterMethod
     public void close() {
 
         mockedJDBCRecoveryDataStore.close();
         mockedUtils.close();
         mockedIdentityRecoveryServiceDataHolder.close();
         mockedFrameworkUtils.close();
+        mockedIdentityUtils.close();
     }
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws NoSuchFieldException, IllegalAccessException {
 
         MockitoAnnotations.openMocks(this);
+        mockedJDBCRecoveryDataStore = mockStatic(JDBCRecoveryDataStore.class);
+        mockedUtils = mockStatic(Utils.class);
+        mockedIdentityRecoveryServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedFrameworkUtils = mockStatic(FrameworkUtils.class);
+        mockedIdentityUtils = mockStatic(IdentityUtil.class);
+
         userEmailVerificationHandler = new UserEmailVerificationHandler();
 
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
                 .thenReturn(serviceDataHolder);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
         mockedFrameworkUtils.when(FrameworkUtils::getMultiAttributeSeparator).thenReturn(",");
+        mockedIdentityUtils.when(() -> IdentityUtil.addDomainToName(eq(username), anyString()))
+                .thenReturn(String.format("%s/%s", username, userStoreDomainName));
 
         when(serviceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
         when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
@@ -150,7 +137,7 @@ public class UserEmailVerificationHandlerTest {
 
     @Test(description = "Verification - Disabled, Multi attribute - Disabled")
     public void testHandleEventPreSetUserClaimsVerificationDisabledMultiDisabled()
-            throws IdentityEventException, IdentityRecoveryException, UserStoreException {
+            throws IdentityEventException, UserStoreException {
 
         /*
          Notification on email update is enabled.
@@ -161,14 +148,30 @@ public class UserEmailVerificationHandlerTest {
 
         mockUtilMethods(false, false, false,
                 true);
-        mockPrimaryEmail(existingEmail2);
-        mockPendingVerificationEmail(existingEmail1);
+        mockPrimaryEmail(existingEmail1);
+        mockPendingVerificationEmail(existingEmail2);
 
         userEmailVerificationHandler.handleEvent(event);
         verify(identityEventService).handleEvent(any());
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
                 StringUtils.EMPTY);
+
+        // Case 2: Throw UserStoreException when getting the primary email.
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail);
+
+        mockUtilMethods(false, false, false,
+                true);
+        mockPendingVerificationEmail(existingEmail2);
+        when(userStoreManager.getUserClaimValue(anyString(), eq(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
+                any())).thenThrow(new UserStoreException("error"));
+
+        try {
+            userEmailVerificationHandler.handleEvent(event2);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
     }
 
     @Test(description = "Verification - Disabled, Multi attribute - Enabled")
@@ -191,24 +194,46 @@ public class UserEmailVerificationHandlerTest {
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertTrue(StringUtils.contains(
                 userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM), newEmail));
+
+        // Case 2 : Send email addresses claim with event.
+        String emailsClaim = String.format("%s,%s", existingEmail1, existingEmail2);
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, emailsClaim, newEmail);
+
+        mockUtilMethods(false, true, false,
+                false);
+
+        userEmailVerificationHandler.handleEvent(event2);
+        Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
+        Assert.assertTrue(StringUtils.contains(
+                userClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM), newEmail));
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Disabled")
     public void testHandleEventPreSetUserClaimsVerificationEnabledMultiDisabled()
             throws IdentityEventException, IdentityRecoveryException, UserStoreException {
 
-        /*
-         New Email is not in the existing email address list.
-         Expected: IdentityEventClientException should be thrown.
-         */
-        Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, newEmail);
         mockUtilMethods(true, false, false,
                 false);
+        mockPendingVerificationEmail(existingEmail1);
 
-        userEmailVerificationHandler.handleEvent(event1);
-        Map<String, String> userClaimsC1 = getUserClaimsFromEvent(event1);
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaimsC1 = getUserClaimsFromEvent(event);
         Assert.assertEquals(userClaimsC1.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), newEmail);
+
+        // Case 2: Send SELF_SIGNUP_ROLE with the event.
+        mockPendingVerificationEmail(existingEmail1);
+        String[] roleList = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
+        Map<String, Object> additionalEventProperties = new HashMap<>();
+        additionalEventProperties.put(IdentityEventConstants.EventProperty.ROLE_LIST, roleList);
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail, additionalEventProperties, null);
+
+        userEmailVerificationHandler.handleEvent(event2);
+        Map<String, String> userClaimsC2 = getUserClaimsFromEvent(event2);
+        Assert.assertFalse(userClaimsC2.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM));
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Change primary email which is not in the " +
@@ -336,6 +361,49 @@ public class UserEmailVerificationHandlerTest {
     }
 
     @Test
+    public void testHandleEventThreadLocalValues() throws IdentityEventException, UserStoreException {
+
+        mockUtilMethods(true, false, false,
+                false);
+        mockPendingVerificationEmail(existingEmail1);
+
+        // Case 1: Thread local value = SKIP_ON_CONFIRM.
+        Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail);
+
+        mockedUtils.when(Utils::getThreadLocalToSkipSendingEmailVerificationOnUpdate).thenReturn(
+                IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM
+                        .toString());
+
+        userEmailVerificationHandler.handleEvent(event1);
+        Map<String, String> userClaims1 = getUserClaimsFromEvent(event1);
+        Assert.assertFalse(userClaims1.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+
+        // Case 2: Thread local value = SKIP_ON_CONFIRM.
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail);
+
+        mockedUtils.when(Utils::getThreadLocalToSkipSendingEmailVerificationOnUpdate).thenReturn(
+                IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW
+                .toString());
+
+        userEmailVerificationHandler.handleEvent(event2);
+        Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
+        Assert.assertFalse(userClaims2.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+
+        // Case 2: Thread local value = random value.
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail);
+
+        mockedUtils.when(Utils::getThreadLocalToSkipSendingEmailVerificationOnUpdate).thenReturn("test");
+
+        userEmailVerificationHandler.handleEvent(event3);
+        Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
+        Assert.assertFalse(userClaims3.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
+
+    }
+
+    @Test
     public void testHandleEventPostSetUserClaims()
             throws IdentityEventException, IdentityRecoveryException, UserStoreException {
 
@@ -347,6 +415,143 @@ public class UserEmailVerificationHandlerTest {
 
         userEmailVerificationHandler.handleEvent(event);
         verify(identityEventService).handleEvent(any());
+    }
+
+    @Test
+    public void testHandleEventPreAddUserVerifyEmailClaim() throws IdentityEventException {
+
+        /*
+         Case 1: Enable verifyEmail claim and not provide the email address claim value.
+         */
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        Event event1 = createEvent(IdentityEventConstants.Event.PRE_ADD_USER, IdentityRecoveryConstants.TRUE,
+                null, null, null);
+
+        try {
+            userEmailVerificationHandler.handleEvent(event1);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventClientException);
+            Assert.assertEquals(((IdentityEventClientException) e).getErrorCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getCode());
+        }
+
+        /*
+         Case 2: Provide the email address claim value.
+         */
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_ADD_USER, IdentityRecoveryConstants.TRUE,
+                null, null, newEmail);
+
+        userEmailVerificationHandler.handleEvent(event2);
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM),
+                any()));
+    }
+
+    @Test
+    public void testHandleEventPreAddUserAskPasswordClaim() throws IdentityEventException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        mockedIdentityUtils.when(() -> IdentityUtil.getProperty(eq(IdentityRecoveryConstants
+                .ConnectorConfig.ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS)))
+                .thenReturn(Boolean.TRUE.toString());
+        char[] password = "test1".toCharArray();
+        mockedUtils.when(() -> Utils.generateRandomPassword(anyInt()))
+                .thenReturn(password);
+
+        StringBuffer credentials = new StringBuffer("test1");
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credentials);
+
+        Map<String, String> additionalClaims = new HashMap<>();
+        additionalClaims.put(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM, Boolean.TRUE.toString());
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, newEmail, additionalProperties, additionalClaims);
+
+
+        userEmailVerificationHandler.handleEvent(event);
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD),
+                any()));
+    }
+
+    @Test
+    public void testHandleEventPostAddUserVerifyEmailClaim() throws IdentityEventException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
+                true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                        .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,true);
+
+        mockedUtils.when(() -> Utils.isAccountStateClaimExisting(anyString())).thenReturn(true);
+
+        Claim claim = new Claim();
+        claim.setClaimUri(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+        claim.setValue(Boolean.TRUE.toString());
+        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(claim);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.TRUE,
+                null, null, null);
+
+        userEmailVerificationHandler.handleEvent(event);
+        verify(identityEventService).handleEvent(any());
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM),
+                any()));
+    }
+
+    @Test(priority = 99)
+    public void testHandleEventPostAddUserAskPasswordClaimNotificationInternallyManaged()
+            throws IdentityEventException, IdentityRecoveryException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
+                true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,true);
+
+        mockedUtils.when(() -> Utils.isAccountStateClaimExisting(anyString())).thenReturn(true);
+
+        Claim temporaryEmailClaim = new Claim();
+        temporaryEmailClaim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+        temporaryEmailClaim.setValue(Boolean.TRUE.toString());
+        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(temporaryEmailClaim);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+
+        userEmailVerificationHandler.handleEvent(event);
+        verify(userRecoveryDataStore).store(any());
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
+                any()));
+    }
+
+    @Test(priority = 100)
+    public void testHandleEventPostAddUserAskPasswordClaimNotificationExternallyManaged()
+            throws IdentityEventException, IdentityRecoveryException {
+
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
+                true);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,false);
+
+        Claim temporaryEmailClaim = new Claim();
+        temporaryEmailClaim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
+        temporaryEmailClaim.setValue(Boolean.TRUE.toString());
+        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(temporaryEmailClaim);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+
+        userEmailVerificationHandler.handleEvent(event);
+
+        verify(userRecoveryDataStore).store(any());
+        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
+                eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
+                any()));
     }
 
     private void mockExistingEmailAddressesList(List<String> existingEmails) {
@@ -384,14 +589,16 @@ public class UserEmailVerificationHandlerTest {
         mockedUtils.when(
                 Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(userVerifyClaimEnabled);
-        mockedUtils.when(() -> Utils.getConnectorConfig(
-                        eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE),
-                        anyString()))
-                .thenReturn(String.valueOf(emailVerificationEnabled));
-        mockedUtils.when(() -> Utils.getConnectorConfig(
-                        eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE),
-                        anyString()))
-                .thenReturn(String.valueOf(notificationOnEmailUpdate));
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
+                emailVerificationEnabled);
+        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_NOTIFICATION_ON_EMAIL_UPDATE,
+                notificationOnEmailUpdate);
+    }
+
+    private void mockGetConnectorConfig(String connectorConfig, boolean value) {
+
+        mockedUtils.when(() -> Utils.getConnectorConfig(eq(connectorConfig), anyString()))
+                .thenReturn(String.valueOf(value));
     }
 
     @SuppressWarnings("unchecked")
