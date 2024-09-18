@@ -25,12 +25,10 @@ import org.apache.commons.logging.LogFactory;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
@@ -39,6 +37,7 @@ import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
 import org.wso2.carbon.consent.mgt.core.model.AddReceiptResponse;
 import org.wso2.carbon.consent.mgt.core.model.ConsentManagerConfigurationHolder;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
@@ -80,6 +79,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
@@ -98,56 +98,86 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorM
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
 
+/**
+ * Test class for UserSelfRegistrationManager class.
+ */
 @WithCarbonHome
 public class UserSelfRegistrationManagerTest {
 
-    private UserSelfRegistrationManager userSelfRegistrationManager = UserSelfRegistrationManager.getInstance();
-    private ReceiptInput resultReceipt;
-    private String TEST_TENANT_DOMAIN_NAME = "carbon.super";
-    private String TEST_USERSTORE_DOMAIN = "PRIMARY";
+    private UserSelfRegistrationManager userSelfRegistrationManager;
+
+    @Mock
+    private IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
+
+    @Mock
+    private UserRecoveryDataStore userRecoveryDataStore;
+
+    @Mock
+    private IdentityEventService identityEventService;
+
+    @Mock
+    private UserStoreManager userStoreManager;
+
+    @Mock
+    private UserRealm userRealm;
+
+    @Mock
     private IdentityProviderManager identityProviderManager;
+
+    @Mock
     private AuthAttributeHandlerManager authAttributeHandlerManager;
+
+    @Mock
     private IdentityGovernanceService identityGovernanceService;
+
+    @Mock
+    private ReceiptInput resultReceipt;
+
+    @Mock
     private RealmService realmService;
+
+    @Mock
     private OTPGenerator otpGenerator;
-    private final String TEST_USER_NAME = "dummyUser";
-    private final String TEST_CLAIM_URI = "ttp://wso2.org/claims/emailaddress";
-    private final String TEST_CLAIM_VALUE = "dummyuser@wso2.com";
-    private final String TEST_MOBILE_CLAIM_VALUE = "0775553443";
-    private final UserRealm userRealm = Mockito.mock(UserRealm.class);
-    private final UserStoreManager userStoreManager = Mockito.mock(UserStoreManager.class);
-    private static final Log LOG = LogFactory.getLog(UserSelfRegistrationManagerTest.class);
 
-    @Mock
-    UserRecoveryDataStore userRecoveryDataStore;
-
-    @Mock
-    IdentityEventService identityEventService;
-
+    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedServiceDataHolder;
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
     private MockedStatic<IdentityProviderManager> mockedIdentityProviderManager;
     private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
+    private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
+
+    private final String TEST_TENANT_DOMAIN_NAME = "carbon.super";
+    private final String TEST_USERSTORE_DOMAIN = "PRIMARY";
+    private final String TEST_USER_NAME = "dummyUser";
+    private final String TEST_CLAIM_URI = "ttp://wso2.org/claims/emailaddress";
+    private final String TEST_CLAIM_VALUE = "dummyuser@wso2.com";
+    private final String TEST_MOBILE_CLAIM_VALUE = "0775553443";
+
+    private static final Log LOG = LogFactory.getLog(UserSelfRegistrationManagerTest.class);
 
     @BeforeMethod
     public void setUp() {
 
-        mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
-        mockedJDBCRecoveryDataStore = Mockito.mockStatic(JDBCRecoveryDataStore.class);
-        mockedIdentityProviderManager = Mockito.mockStatic(IdentityProviderManager.class);
-        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
-        identityProviderManager = Mockito.mock(IdentityProviderManager.class);
-        authAttributeHandlerManager = Mockito.mock(AuthAttributeHandlerManager.class);
-        identityGovernanceService = Mockito.mock(IdentityGovernanceService.class);
-        otpGenerator = Mockito.mock(OTPGenerator.class);
-        realmService = Mockito.mock(RealmService.class);
+        MockitoAnnotations.openMocks(this);
 
-        IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
-        IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
-        IdentityRecoveryServiceDataHolder.getInstance().setOtpGenerator(otpGenerator);
-        IdentityRecoveryServiceDataHolder.getInstance().setAuthAttributeHandlerManager(authAttributeHandlerManager);
-        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
+        userSelfRegistrationManager = UserSelfRegistrationManager.getInstance();
 
+        mockedServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedIdentityUtil = mockStatic(IdentityUtil.class);
+        mockedJDBCRecoveryDataStore = mockStatic(JDBCRecoveryDataStore.class);
+        mockedIdentityProviderManager = mockStatic(IdentityProviderManager.class);
+        mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
+        mockedPrivilegedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
+
+        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
+        mockedServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+        when(identityRecoveryServiceDataHolder.getIdentityGovernanceService()).thenReturn(identityGovernanceService);
+        when(identityRecoveryServiceDataHolder.getOtpGenerator()).thenReturn(otpGenerator);
+        when(identityRecoveryServiceDataHolder.getAuthAttributeHandlerManager()).thenReturn(authAttributeHandlerManager);
+        when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
     }
 
     @AfterMethod
@@ -157,13 +187,8 @@ public class UserSelfRegistrationManagerTest {
         mockedJDBCRecoveryDataStore.close();
         mockedIdentityProviderManager.close();
         mockedIdentityTenantUtil.close();
-    }
-
-    @BeforeTest
-    void setup() {
-
-        MockitoAnnotations.openMocks(this);
-        this.resultReceipt = null;
+        mockedPrivilegedCarbonContext.close();
+        mockedServiceDataHolder.close();
     }
 
     String consentData =
@@ -380,10 +405,9 @@ public class UserSelfRegistrationManagerTest {
     public void testAddConsent() throws Exception {
 
         IdentityProvider identityProvider = new IdentityProvider();
-        mockedIdentityProviderManager.when(IdentityProviderManager::getInstance).thenReturn(identityProviderManager);
         when(identityProviderManager.getResidentIdP(ArgumentMatchers.anyString())).thenReturn(identityProvider);
         ConsentManager consentManager = new MyConsentManager(new ConsentManagerConfigurationHolder());
-        IdentityRecoveryServiceDataHolder.getInstance().setConsentManager(consentManager);
+        when(identityRecoveryServiceDataHolder.getConsentManager()).thenReturn(consentManager);
         userSelfRegistrationManager.addUserConsent(consentData, "wso2.com");
         Assert.assertEquals(IdentityRecoveryConstants.Consent.COLLECTION_METHOD_SELF_REGISTRATION,
                 resultReceipt.getCollectionMethod());
