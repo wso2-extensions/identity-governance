@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.connector;
 import org.apache.axiom.om.OMElement;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
@@ -29,6 +30,7 @@ import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.application.common.model.Property;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -258,5 +260,12 @@ public class UserClaimUpdateConfigImplTest {
                 TENANT_DOMAIN);
         assertEquals(defaultPropertyValues.size(), propertyNames.length - 1, "Maps are not equal as" +
                 " their size differs.");
+    }
+
+    @Test
+    public void testGetMetaData() {
+
+        Map<String, Property> metaData = userClaimUpdateConfig.getMetaData();
+        Assert.assertEquals(metaData.size(), 10);
     }
 }

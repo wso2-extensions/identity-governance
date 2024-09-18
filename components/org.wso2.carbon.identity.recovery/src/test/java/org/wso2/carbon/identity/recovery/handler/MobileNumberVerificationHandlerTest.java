@@ -370,6 +370,24 @@ public class MobileNumberVerificationHandlerTest {
         } catch (Exception e) {
             Assert.assertTrue(e instanceof IdentityEventClientException);
         }
+
+        // Case 3: Added new number is existing primary mobile number.
+        String newVerifiedMobileNumbers3 = existingNumber1 + "," + newMobileNumber;
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS,
+                IdentityRecoveryConstants.FALSE,
+                newVerifiedMobileNumbers3, null, null);
+
+        mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(existingNumber1)));
+        mockExistingNumbersList(new ArrayList<>(Arrays.asList(existingNumber1)));
+        mockExistingPrimaryMobileNumber(newMobileNumber);
+
+        mobileNumberVerificationHandler.handleEvent(event3);
+
+        Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
+        Assert.assertTrue(
+                StringUtils.contains(userClaims3.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), newMobileNumber));
+        Assert.assertTrue(StringUtils.contains(userClaims3.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                newMobileNumber));
     }
 
     @Test(description = "POST_SET_USER_CLAIMS: Verification enabled, Multi-attribute enabled")

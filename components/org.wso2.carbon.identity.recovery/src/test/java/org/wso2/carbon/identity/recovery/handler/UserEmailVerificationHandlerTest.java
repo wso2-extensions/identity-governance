@@ -501,7 +501,7 @@ public class UserEmailVerificationHandlerTest {
                 any()));
     }
 
-    @Test(priority = 99)
+    @Test
     public void testHandleEventPostAddUserAskPasswordClaimNotificationInternallyManaged()
             throws IdentityEventException, IdentityRecoveryException {
 
@@ -528,7 +528,7 @@ public class UserEmailVerificationHandlerTest {
                 any()));
     }
 
-    @Test(priority = 100)
+    @Test
     public void testHandleEventPostAddUserAskPasswordClaimNotificationExternallyManaged()
             throws IdentityEventException, IdentityRecoveryException {
 

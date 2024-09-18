@@ -74,7 +74,6 @@ public class UserClaimUpdateConfigImpl implements IdentityConnectorConfig {
     private static final String VERIFICATION_ON_UPDATE_ELEMENT = "VerificationOnUpdate";
     private static final String NOTIFICATION_ON_UPDATE_ELEMENT = "NotificationOnUpdate";
     private static final String ENABLE_MOBILE_VERIFICATION_PRIVILEGED_USER = "EnableVerificationByPrivilegedUser";
-    private static final String ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT = "EnableMultipleEmailsAndMobileNumbers";
     private static String enableEmailVerificationOnUpdateProperty = null;
     private static String enableSendOTPInEmailProperty = null;
     private static String useUppercaseCharactersInOTPProperty = null;
