@@ -63,9 +63,10 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
+        .ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
+        .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
