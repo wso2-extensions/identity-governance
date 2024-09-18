@@ -335,7 +335,8 @@ public class MobileNumberVerificationHandlerTest {
         mobileNumberVerificationHandler.handleEvent(event);
 
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
+                eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
+                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
     }
 
     @Test(description = "Verification enabled, Multi-attribute enabled, Add new mobile to verified list")

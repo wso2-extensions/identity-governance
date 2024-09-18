@@ -33,6 +33,7 @@
     <test name="recovery-handler" preserve-order="true" parallel="false">
         <classes>
             <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
+            <class name="org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandlerTest" />
         </classes>
     </test>
 </suite>
