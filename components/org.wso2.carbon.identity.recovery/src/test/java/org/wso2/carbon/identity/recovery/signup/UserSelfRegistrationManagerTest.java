@@ -46,6 +46,7 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
@@ -66,13 +67,18 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.sql.Timestamp;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -102,10 +108,14 @@ public class UserSelfRegistrationManagerTest {
     private IdentityProviderManager identityProviderManager;
     private AuthAttributeHandlerManager authAttributeHandlerManager;
     private IdentityGovernanceService identityGovernanceService;
+    private RealmService realmService;
     private OTPGenerator otpGenerator;
     private final String TEST_USER_NAME = "dummyUser";
     private final String TEST_CLAIM_URI = "ttp://wso2.org/claims/emailaddress";
     private final String TEST_CLAIM_VALUE = "dummyuser@wso2.com";
+    private final String TEST_MOBILE_CLAIM_VALUE = "0775553443";
+    private final UserRealm userRealm = Mockito.mock(UserRealm.class);
+    private final UserStoreManager userStoreManager = Mockito.mock(UserStoreManager.class);
     private static final Log LOG = LogFactory.getLog(UserSelfRegistrationManagerTest.class);
 
     @Mock
@@ -117,6 +127,7 @@ public class UserSelfRegistrationManagerTest {
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
     private MockedStatic<IdentityProviderManager> mockedIdentityProviderManager;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
 
     @BeforeMethod
     public void setUp() {
@@ -124,15 +135,18 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityUtil = Mockito.mockStatic(IdentityUtil.class);
         mockedJDBCRecoveryDataStore = Mockito.mockStatic(JDBCRecoveryDataStore.class);
         mockedIdentityProviderManager = Mockito.mockStatic(IdentityProviderManager.class);
+        mockedIdentityTenantUtil = Mockito.mockStatic(IdentityTenantUtil.class);
         identityProviderManager = Mockito.mock(IdentityProviderManager.class);
         authAttributeHandlerManager = Mockito.mock(AuthAttributeHandlerManager.class);
         identityGovernanceService = Mockito.mock(IdentityGovernanceService.class);
         otpGenerator = Mockito.mock(OTPGenerator.class);
+        realmService = Mockito.mock(RealmService.class);
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
         IdentityRecoveryServiceDataHolder.getInstance().setOtpGenerator(otpGenerator);
         IdentityRecoveryServiceDataHolder.getInstance().setAuthAttributeHandlerManager(authAttributeHandlerManager);
+        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
 
     }
 
@@ -142,6 +156,7 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityUtil.close();
         mockedJDBCRecoveryDataStore.close();
         mockedIdentityProviderManager.close();
+        mockedIdentityTenantUtil.close();
     }
 
     @BeforeTest
@@ -194,6 +209,13 @@ public class UserSelfRegistrationManagerTest {
         mockConfigurations("true", enableInternalNotificationManagement);
         mockJDBCRecoveryDataStore(userRecoveryData);
         mockEmailTrigger();
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(userStoreManager.getUserClaimValue(any(), eq(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), any()))
+                .thenReturn(TEST_MOBILE_CLAIM_VALUE);
+        when(userStoreManager.getUserClaimValue(any(), eq(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), any()))
+                .thenReturn(TEST_CLAIM_VALUE);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
 
         NotificationResponseBean responseBean =
                 userSelfRegistrationManager.resendConfirmationCode(user, null);

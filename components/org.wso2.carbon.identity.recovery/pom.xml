@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.9.16-SNAPSHOT</version>
+        <version>1.11.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -128,6 +128,10 @@
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.input.validation.mgt</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.governance</groupId>
+            <artifactId>org.wso2.carbon.identity.multi.attribute.login.service</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -182,6 +186,8 @@
                             org.apache.commons.logging.*; version="${commons-logging.osgi.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.multi.attribute.login.service;
+                            version="${identity.governance.imp.pkg.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>

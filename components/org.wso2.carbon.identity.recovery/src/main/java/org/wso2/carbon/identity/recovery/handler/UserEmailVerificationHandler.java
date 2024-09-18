@@ -480,8 +480,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
+        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
 
         HashMap<String, Object> properties = new HashMap<>();
+        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
+            properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);
+        }
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());

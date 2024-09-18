@@ -30,6 +30,8 @@ import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 
+import java.util.List;
+
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -66,7 +68,9 @@ public class SelfSignUpReCaptchaConnector extends AbstractReCaptchaConnector {
 
         String path = ((HttpServletRequest) servletRequest).getRequestURI();
 
-        if (StringUtils.isBlank(path) || (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
+        List<String> reCaptchaBypassedApiEndpoints = CaptchaDataHolder.getInstance().getReCaptchaBypassedApiEndpoints();
+        if (StringUtils.isBlank(path) || reCaptchaBypassedApiEndpoints.contains(path) ||
+                (!CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_INITIATE_URL) &&
                 !CaptchaUtil.isPathAvailable(path, SELF_REGISTRATION_URL))) {
             return false;
         }

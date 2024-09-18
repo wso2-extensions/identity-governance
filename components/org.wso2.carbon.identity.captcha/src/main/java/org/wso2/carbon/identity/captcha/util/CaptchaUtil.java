@@ -614,6 +614,13 @@ public class CaptchaUtil {
         }
         CaptchaDataHolder.getInstance().setReCaptchaRequestWrapUrls(reCaptchaRequestWrapUrls);
 
+        String reCaptchaBypassedApiEndpointsString = properties.getProperty(
+                CaptchaConstants.RE_CAPTCHA_BYPASSED_API_ENDPOINTS);
+        if (StringUtils.isNotBlank(reCaptchaBypassedApiEndpointsString)) {
+            CaptchaDataHolder.getInstance().setReCaptchaBypassedApiEndpoints(
+                    Arrays.asList(reCaptchaBypassedApiEndpointsString.split(",")));
+        }
+
         try {
             Double reCaptchaScoreThreshold = getReCaptchaThreshold(properties);
             CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(reCaptchaScoreThreshold);

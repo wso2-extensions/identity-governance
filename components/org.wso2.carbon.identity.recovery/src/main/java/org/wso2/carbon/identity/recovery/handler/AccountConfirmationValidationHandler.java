@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery.handler;
@@ -63,10 +65,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         Map<String, Object> eventProperties = event.getEventProperties();
         String userName = (String) eventProperties.get(IdentityEventConstants.EventProperty.USER_NAME);
-        UserStoreManager userStoreManager = (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
+        UserStoreManager userStoreManager =
+                (UserStoreManager) eventProperties.get(IdentityEventConstants.EventProperty.USER_STORE_MANAGER);
 
         String tenantDomain = (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
-        String domainName = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+        String domainName = userStoreManager.getRealmConfiguration()
+                .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
         User user = new User();
         user.setUserName(userName);
@@ -115,17 +119,18 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                         IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE,
-                        "User : " + userName + " not confirmed yet.");
+                        "User : " + Utils.maskIfRequired(userName) + " not confirmed yet.");
             } else if (isInvalidCredentialsScenario(operationStatus, user)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
-                            "to log in with an invalid password", userName, domainName, tenantDomain));
+                                    "to log in with an invalid password", userName, domainName,
+                            tenantDomain));
                 }
                 IdentityErrorMsgContext customErrorMessageContext =
                         new IdentityErrorMsgContext(IdentityCoreConstants.USER_INVALID_CREDENTIALS);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_INVALID_CREDENTIALS,
-                        "Invalid login attempt by self registered user: " + userName);
+                        "Invalid login attempt by self registered user: " + Utils.maskIfRequired(userName));
             }
         }
     }
