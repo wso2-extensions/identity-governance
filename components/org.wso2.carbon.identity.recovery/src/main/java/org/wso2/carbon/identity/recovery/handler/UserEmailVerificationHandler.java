@@ -649,8 +649,20 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             return;
         }
 
-        String existingEmail;
-        existingEmail = getEmailClaimValue(user, userStoreManager);
+        String existingEmail = getEmailClaimValue(user, userStoreManager);
+
+        if (StringUtils.isNotBlank(existingEmail) && supportMultipleEmails) {
+            if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
+                updatedVerifiedEmailAddresses.add(existingEmail);
+                claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                        StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+            }
+            if (!updatedAllEmailAddresses.contains(existingEmail)) {
+                updatedAllEmailAddresses.add(existingEmail);
+                claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                        StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+            }
+        }
 
         if (emailAddress.equals(existingEmail)) {
             if (log.isDebugEnabled()) {
@@ -661,19 +673,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
             invalidatePendingEmailVerification(user, userStoreManager, claims);
-
-            if (supportMultipleEmails) {
-                if (!updatedVerifiedEmailAddresses.contains(emailAddress)) {
-                    updatedVerifiedEmailAddresses.add(emailAddress);
-                    claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                            StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-                }
-                if (!updatedAllEmailAddresses.contains(emailAddress)) {
-                    updatedAllEmailAddresses.add(emailAddress);
-                    claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                            StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
-                }
-            }
             return;
         }
 

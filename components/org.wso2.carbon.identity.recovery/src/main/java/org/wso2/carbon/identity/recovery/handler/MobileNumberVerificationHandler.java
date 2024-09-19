@@ -388,6 +388,19 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             throw new IdentityEventException(error, e);
         }
 
+        if (supportMultipleMobileNumbers) {
+            if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
+                updatedVerifiedNumbersList.add(existingMobileNumber);
+                claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                        String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+            }
+            if (!updatedAllNumbersList.contains(existingMobileNumber)) {
+                updatedAllNumbersList.add(existingMobileNumber);
+                claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                        String.join(multiAttributeSeparator, updatedAllNumbersList));
+            }
+        }
+
         if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
@@ -398,19 +411,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
             invalidatePendingMobileVerification(user, userStoreManager, claims);
-
-            if (supportMultipleMobileNumbers) {
-                if (!updatedVerifiedNumbersList.contains(mobileNumber)) {
-                    updatedVerifiedNumbersList.add(mobileNumber);
-                    claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                            String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
-                }
-                if (!updatedAllNumbersList.contains(mobileNumber)) {
-                    updatedAllNumbersList.add(mobileNumber);
-                    claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                            String.join(multiAttributeSeparator, updatedAllNumbersList));
-                }
-            }
             return;
         }
         /*
