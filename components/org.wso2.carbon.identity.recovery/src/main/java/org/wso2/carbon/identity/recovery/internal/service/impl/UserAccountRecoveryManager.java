@@ -359,7 +359,7 @@ public class UserAccountRecoveryManager {
     }
 
     /**
-     * Get the user list for the given claims.
+     * Get the userlist for the given claims.
      *
      * @param claims       List of UserClaims
      * @param tenantDomain Tenant domain
