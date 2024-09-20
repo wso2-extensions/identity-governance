@@ -496,9 +496,17 @@ public class UserAccountRecoveryManager {
 
         if (!expressionConditionList.isEmpty()) {
             Condition operationalCondition = getOperationalCondition(expressionConditionList);
-            // Get the user list that matches the condition limit : 2, offset : 1, sortBy : null, sortOrder : null
+            // Get the user list that matches the condition limit : Integer.MAX_VALUE, offset : 1, sortBy : null, sortOrder : null
             userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
                     UserCoreConstants.DEFAULT_PROFILE, Integer.MAX_VALUE, 1, null, null));
+
+            //If multiple users are found for the given claim set and the config is not enabled, throw an exception.
+            if (userList.size() > 1 && !Boolean.parseBoolean(IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SHARED_CLAIMS))) {
+                log.warn("Multiple users matched for given claims set: " + claims.keySet());
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
+            }
         }
     }
 
