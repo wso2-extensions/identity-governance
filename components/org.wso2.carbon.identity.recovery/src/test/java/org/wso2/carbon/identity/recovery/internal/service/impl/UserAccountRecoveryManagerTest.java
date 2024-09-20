@@ -1024,7 +1024,7 @@ public class UserAccountRecoveryManagerTest {
     }
 
     /**
-     * Test multiple users matching for the given set of claims error.
+     * Test multiple users matching for the given set of claims.
      *
      * @throws Exception Error while checking for matched users.
      */
@@ -1041,13 +1041,46 @@ public class UserAccountRecoveryManagerTest {
 
         IdentityEventService identityEventService = mock(IdentityEventService.class);
         when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(identityEventService);
-
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty
+                        (IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SHARED_CLAIMS))
+                .thenReturn("true");
         ArrayList<org.wso2.carbon.user.core.common.User> list =
                 userAccountRecoveryManager.getUserListByClaims
                         (userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         assertEquals(3,list.size());
     }
 
+    /**
+     * Test multiple users matching for the given set of claims error.
+     *
+     * @throws Exception Error while checking for matched users.
+     */
+    @Test
+    private void testMultipleUsersMatchingForGivenClaimsException() throws Exception {
+
+        mockUserstoreManager();
+        try {
+            mockedUtils.when(() -> Utils.handleClientException(
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
+                    .thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),""));
+            when(abstractUserStoreManager.getUserListWithID(any(Condition.class),anyString(),anyString(),
+                    anyInt(),anyInt(),isNull(), isNull())).thenReturn(getFilteredUsers());
+            when(claimManager.getAttributeName(anyString(),anyString())).
+                    thenReturn("http://wso2.org/claims/mockedClaim");
+            when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                    .thenReturn(multiAttributeLoginService);
+            when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
+            String username = userAccountRecoveryManager
+                    .getUsernameByClaims(userClaims, MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            assertNull(username, "UserAccountRecoveryManager: Exception should be thrown. Therefore, a "
+                    + "value for an identified user cannot be returned : ");
+        } catch (IdentityRecoveryException e) {
+            assertEquals(e.getErrorCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS.getCode(),
+                    "Invalid error code for existing multiple users for given set of claims");
+        }
+    }
 
     /**
      * Get UserstoreManager by mocking IdentityRecoveryServiceDataHolder.
