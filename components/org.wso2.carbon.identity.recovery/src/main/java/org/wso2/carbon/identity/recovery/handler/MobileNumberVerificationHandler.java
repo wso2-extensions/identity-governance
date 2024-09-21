@@ -100,6 +100,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         boolean enable = isMobileVerificationOnUpdateEnabled(user.getTenantDomain());
 
+        if (!supportMultipleMobileNumbers) {
+            // Multiple mobile numbers per user support is disabled.
+            log.debug("Supporting multiple mobile numbers per user is disabled.");
+            claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+            claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        }
+
         if (!enable) {
             // Mobile Number Verification feature is disabled.
             if (log.isDebugEnabled()) {
@@ -139,24 +146,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
             }
             return;
-        } else {
-            if (supportMultipleMobileNumbers) {
-                List<String> verifiedMobileNumbers = Utils.getMultiValuedClaim(userStoreManager, user,
-                        IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
-                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty() &&
-                        !verifiedMobileNumbers.contains(claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))) {
-                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
-                            ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getCode(),
-                            IdentityRecoveryConstants.ErrorMessages
-                                    .ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getMessage());
-                }
-            } else {
-                // Multiple mobile numbers per user support is disabled.
-                log.debug("Supporting multiple mobile numbers per user is disabled.");
-                claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-            }
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
@@ -305,8 +294,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             invalidatePendingMobileVerification(user, userStoreManager, claims);
             return;
         }
-        
-        // TODO: Check why this was moved to the bottom before? This was not triggered due to that.
+
         /*
         Within the SMS OTP flow, the mobile number is updated in the user profile after successfully verifying the
         OTP. Therefore, the mobile number is already verified & no need to verify it again.
@@ -324,7 +312,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
-        String mobileNumber = null;
+        String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
         List<String> updatedVerifiedNumbersList = new ArrayList<>();
         List<String> updatedAllNumbersList;
@@ -345,7 +333,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             /*
             Finds the verification pending mobile number and remove it from the verified numbers list in the payload.
             */
-            if (CollectionUtils.isNotEmpty(updatedVerifiedNumbersList)) {
+            if (mobileNumber == null && CollectionUtils.isNotEmpty(updatedVerifiedNumbersList)) {
                 mobileNumber = getVerificationPendingMobileNumber(exisitingVerifiedNumbersList,
                         updatedVerifiedNumbersList);
                 updatedVerifiedNumbersList.remove(mobileNumber);
@@ -355,7 +343,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Finds the removed numbers from the existing mobile numbers list and remove them from the verified numbers
             list. As verified numbers list should not contain numbers that are not in the mobile numbers list.
             */
-            if (CollectionUtils.isNotEmpty(updatedAllNumbersList)) {
+            if (updatedAllNumbersList != null) {
                 updatedVerifiedNumbersList.removeIf(number -> !updatedAllNumbersList.contains(number));
             }
 
@@ -367,14 +355,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             updatedAllNumbersList = new ArrayList<>();
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-
-            mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-        }
-
-        if (mobileNumber == null) {
-            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-            return;
         }
 
         String existingMobileNumber;
@@ -388,7 +368,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             throw new IdentityEventException(error, e);
         }
 
-        if (supportMultipleMobileNumbers) {
+        if (supportMultipleMobileNumbers && StringUtils.isNotBlank(existingMobileNumber)) {
             if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
                 updatedVerifiedNumbersList.add(existingMobileNumber);
                 claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
@@ -399,6 +379,20 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                         String.join(multiAttributeSeparator, updatedAllNumbersList));
             }
+        }
+
+        if (mobileNumber == null) {
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
+        }
+
+        if (supportMultipleMobileNumbers && updatedVerifiedNumbersList.contains(mobileNumber)) {
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
+                    IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
+                            .SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
+            invalidatePendingMobileVerification(user, userStoreManager, claims);
+            return;
         }
 
         if (StringUtils.equals(mobileNumber, existingMobileNumber)) {

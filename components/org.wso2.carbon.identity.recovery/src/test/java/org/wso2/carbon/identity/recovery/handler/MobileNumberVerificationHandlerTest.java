@@ -300,21 +300,16 @@ public class MobileNumberVerificationHandlerTest {
     public void testUpdatePrimaryMobileNotInVerifiedList() throws Exception {
 
         mockUtilMethods(true, true, false);
-        String newVerifiedMobileNumbers = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
-        String newMobileNumbers = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
-                newVerifiedMobileNumbers, newMobileNumbers, NEW_MOBILE_NUMBER);
+                null, null, NEW_MOBILE_NUMBER);
         mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
-        mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1, NEW_MOBILE_NUMBER)));
+        mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        mockVerificationPendingMobileNumber();
 
-        try {
-            mobileNumberVerificationHandler.handleEvent(event);
-            Assert.fail("Expected IdentityEventClientException was not thrown");
-        } catch (IdentityEventClientException e) {
-            Assert.assertEquals(e.getErrorCode(),
-                    IdentityRecoveryConstants.ErrorMessages
-                            .ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST.getCode());
-        }
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                NEW_MOBILE_NUMBER);
     }
 
     @Test(description = "Verification enabled, Multi-attribute enabled, Update primary mobile in verified list")
@@ -334,7 +329,7 @@ public class MobileNumberVerificationHandlerTest {
 
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                 eq(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
+                        .SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString())));
     }
 
     @Test(description = "Verification enabled, Multi-attribute enabled, Add new mobile to verified list")

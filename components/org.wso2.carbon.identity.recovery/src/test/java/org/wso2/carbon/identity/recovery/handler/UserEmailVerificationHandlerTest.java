@@ -245,7 +245,7 @@ public class UserEmailVerificationHandlerTest {
          Try to change the primary email, new Email is not in the existing verified email address list.
          Expected: IdentityEventClientException should be thrown.
          */
-        Event event1 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
 
         mockUtilMethods(true, true, false,
@@ -256,11 +256,9 @@ public class UserEmailVerificationHandlerTest {
         List<String> existingVerifiedEmails = new ArrayList<>(Arrays.asList(EXISTING_EMAIL_1));
         mockExistingVerifiedEmailAddressesList(existingVerifiedEmails);
 
-        try {
-            userEmailVerificationHandler.handleEvent(event1);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IdentityEventClientException);
-        }
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Change primary email which is already " +
@@ -285,7 +283,7 @@ public class UserEmailVerificationHandlerTest {
             userEmailVerificationHandler.handleEvent(event);
             mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(
                     eq(IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates
-                            .SKIP_ON_INAPPLICABLE_CLAIMS.toString())));
+                            .SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString())));
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Update verified list with new email")
