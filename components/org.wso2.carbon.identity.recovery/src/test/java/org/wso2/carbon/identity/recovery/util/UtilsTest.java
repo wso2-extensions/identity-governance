@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -28,9 +29,15 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
+import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
+import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
@@ -38,21 +45,38 @@ import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockSe
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
+import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.claim.ClaimManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.constants.UserCoreErrorConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +90,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,6 +99,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 
 public class UtilsTest {
 
@@ -84,11 +110,21 @@ public class UtilsTest {
     @Mock
     private RealmService realmService;
     @Mock
+    private RealmConfiguration realmConfiguration;
+    @Mock
     private IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
     @Mock
     private IdentityGovernanceService identityGovernanceService;
     @Mock
     private AccountLockService accountLockService;
+    @Mock
+    private TenantManager tenantManager;
+    @Mock
+    private ClaimManager claimManager;
+    @Mock
+    private AbstractUserStoreManager abstractUserStoreManager;
+    @Mock
+    private IdentityEventService identityEventService;
 
     private static MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
     private static MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
@@ -96,6 +132,7 @@ public class UtilsTest {
     private static MockedStatic<IdentityUtil> mockedStaticIdentityUtil;
     private static MockedStatic<FrameworkUtils> mockedStaticFrameworkUtils;
     private static MockedStatic<MultitenantUtils> mockedStaticMultiTenantUtils;
+    private static MockedStatic<UserCoreUtil> mockedStaticUserCoreUtil;
 
     private static final String TENANT_DOMAIN = "test.com";
     private static final int TENANT_ID = 123;
@@ -111,6 +148,7 @@ public class UtilsTest {
         mockedStaticIdentityUtil = mockStatic(IdentityUtil.class);
         mockedStaticFrameworkUtils = mockStatic(FrameworkUtils.class);
         mockedStaticMultiTenantUtils = mockStatic(MultitenantUtils.class);
+        mockedStaticUserCoreUtil = mockStatic(UserCoreUtil.class);
     }
 
     @AfterClass
@@ -122,6 +160,7 @@ public class UtilsTest {
         mockedStaticIdentityUtil.close();
         mockedStaticFrameworkUtils.close();
         mockedStaticMultiTenantUtils.close();
+        mockedStaticUserCoreUtil.close();
     }
 
     @BeforeMethod
@@ -142,9 +181,15 @@ public class UtilsTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
         when(identityRecoveryServiceDataHolder.getIdentityGovernanceService()).thenReturn(identityGovernanceService);
         when(identityRecoveryServiceDataHolder.getAccountLockService()).thenReturn(accountLockService);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
 
         when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
+        when(realmService.getBootstrapRealm()).thenReturn(userRealm);
+        when(realmService.getTenantManager()).thenReturn(tenantManager);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(userRealm.getClaimManager()).thenReturn(claimManager);
+        when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        when(tenantManager.getTenantId(eq(TENANT_DOMAIN))).thenReturn(TENANT_ID);
     }
 
     @Test(expectedExceptions = IdentityRecoveryClientException.class)
@@ -431,7 +476,6 @@ public class UtilsTest {
 
         String key = "recovery.key";
         String expectedValue = "test_value";
-
         Property property = new Property();
         property.setName(key);
         property.setValue(expectedValue);
@@ -664,7 +708,8 @@ public class UtilsTest {
         assertTrue(Utils.isAccessUrlAvailable(propertiesTrue));
 
         // Case 2: When IS_ACCESS_URL_AVAILABLE property is not present.
-        org.wso2.carbon.identity.recovery.model.Property[] propertiesNoAccessUrl = new org.wso2.carbon.identity.recovery.model.Property[]{
+        org.wso2.carbon.identity.recovery.model.Property[] propertiesNoAccessUrl =
+                new org.wso2.carbon.identity.recovery.model.Property[]{
                 new org.wso2.carbon.identity.recovery.model.Property("someOtherKey", "someValue")
         };
         assertFalse(Utils.isAccessUrlAvailable(propertiesNoAccessUrl));
@@ -715,6 +760,122 @@ public class UtilsTest {
     }
 
     @Test
+    public void testCheckPasswordPatternViolation() throws Exception {
+
+        String PROPERTY_PASSWORD_ERROR_MSG = "PasswordJavaRegExViolationErrorMsg";
+        String errorCode = UserCoreErrorConstants.ErrorMessages
+                .ERROR_CODE_ERROR_DURING_PRE_UPDATE_CREDENTIAL_BY_ADMIN.getCode();
+        String errorMessage = "TEST_CUSTOM_PASSWORD_ERROR_MSG";
+        User user = getUser();
+        user.setUserStoreDomain(UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME);
+
+        when(realmConfiguration.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG)).thenReturn(errorMessage);
+        UserStoreException exceptionWithViolation =
+                new UserStoreException(String.format("%s: %s", errorCode, errorMessage));
+
+        try {
+            Utils.checkPasswordPatternViolation(exceptionWithViolation, user);
+            fail("Expected IdentityRecoveryClientException was not thrown");
+        } catch (IdentityRecoveryClientException e) {
+            assertEquals(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                    e.getErrorCode());
+        }
+
+        // Case 2 - Password error message property is not set.
+        when(realmConfiguration.getUserStoreProperty(PROPERTY_PASSWORD_ERROR_MSG)).thenReturn("");
+        UserStoreException exceptionWithInvalidPasswordCode = new UserStoreException(
+                UserCoreErrorConstants.ErrorMessages.ERROR_CODE_INVALID_PASSWORD.getCode());
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_JAVA_REG_EX))
+                .thenReturn("^[a-zA-Z0-9]{5,10}$");
+        try {
+            Utils.checkPasswordPatternViolation(exceptionWithInvalidPasswordCode, user);
+            fail("Expected IdentityRecoveryClientException was not thrown");
+        } catch (IdentityRecoveryClientException e) {
+            assertEquals(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(), e.getErrorCode());
+            assertTrue(e.getMessage().contains("^[a-zA-Z0-9]{5,10}$"));
+        }
+    }
+
+    @Test
+    public void testIsAccountStateClaimExisting() throws Exception {
+
+        Claim mockClaim = mock(Claim.class);
+        when(claimManager.getClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)).thenReturn(mockClaim);
+        boolean result = Utils.isAccountStateClaimExisting(TENANT_DOMAIN);
+        assertTrue(result);
+
+        // Case 2: Throws UserStoreException.
+        when(claimManager.getClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI))
+                .thenThrow(new UserStoreException("Test exception"));
+        try {
+            Utils.isAccountStateClaimExisting(TENANT_DOMAIN);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityEventException);
+        }
+    }
+
+    @Test
+    public void testPrependOperationScenarioToErrorCode() {
+
+        String scenario = "USR";
+        String errorCode = "20045";
+
+        // Test with valid scenario and error code.
+        String result = Utils.prependOperationScenarioToErrorCode(errorCode, scenario);
+        assertEquals(result, "USR-20045");
+
+        // Test with empty error code.
+        result = Utils.prependOperationScenarioToErrorCode("", scenario);
+        assertEquals(result, "");
+
+        // Test with scenario already in error code.
+        result = Utils.prependOperationScenarioToErrorCode("USR-20045", scenario);
+        assertEquals(result, "USR-20045");
+    }
+
+    @Test
+    public void testIsNotificationsInternallyManaged() throws Exception {
+
+        Property[] properties = new Property[1];
+        properties[0] = new Property();
+        properties[0].setName(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
+        properties[0].setValue(Boolean.TRUE.toString());
+        when(identityGovernanceService.getConfiguration(any(String[].class), eq(TENANT_DOMAIN)))
+                .thenReturn(properties);
+
+        // Case 1: Empty properties.
+        assertTrue(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, new HashMap<>()));
+
+        // Case 2: Properties with MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY set to true.
+        Map<String, String> props = new HashMap<>();
+        props.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY, "true");
+        assertTrue(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, props));
+
+        // Case 4: Properties without MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY.
+        props.remove(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY);
+        assertTrue(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, props));
+
+        // Case 5: Invalid boolean value.
+        props.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY, "invalid");
+        assertFalse(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, props));
+    }
+
+    @Test
+    public void testResolveEventName() {
+
+        // Case 1: SMS channel.
+        String smsChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String expectedSmsEventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + smsChannel
+                + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX
+                + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX_LOCAL;
+        assertEquals(Utils.resolveEventName(smsChannel), expectedSmsEventName);
+
+        // Case 2: Other channels.
+        String otherChannel = "EMAIL";
+        assertEquals(Utils.resolveEventName(otherChannel), IdentityEventConstants.Event.TRIGGER_NOTIFICATION);
+    }
+
+    @Test
     public void testValidateEmailUsernameValidEmail() throws IdentityRecoveryClientException {
 
         mockedStaticIdentityUtil.when(IdentityUtil::isEmailUsernameEnabled).thenReturn(true);
@@ -733,6 +894,395 @@ public class UtilsTest {
             Utils.validateEmailUsername(user);
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryClientException);
+        }
+    }
+
+    @Test
+    public void testBuildUser() {
+
+        mockedStaticUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(USER_NAME)).thenReturn(USER_NAME);
+        User user = Utils.buildUser(USER_NAME, TENANT_DOMAIN);
+        assertEquals(user.getUserName(), USER_NAME);
+        assertEquals(user.getTenantDomain(), TENANT_DOMAIN);
+    }
+
+    @Test
+    public void testIsPerUserFunctionalityLockingEnabled() {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                UserFunctionalityMgtConstants.ENABLE_PER_USER_FUNCTIONALITY_LOCKING)).thenReturn("true");
+        assertTrue(Utils.isPerUserFunctionalityLockingEnabled());
+    }
+
+    @Test
+    public void testIsDetailedErrorResponseEnabled() {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ENABLE_DETAILED_ERROR_RESPONSE)).thenReturn("true");
+        assertTrue(Utils.isDetailedErrorResponseEnabled());
+    }
+
+    @Test
+    public void testGetUserId() throws Exception {
+
+        String expectedUserId = "12345-67890-abcde-fghij";
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getUserIDFromUserName(USER_NAME)).thenReturn(expectedUserId);
+
+        String userId = Utils.getUserId(USER_NAME, TENANT_ID);
+        assertEquals(userId, expectedUserId);
+
+        // Case 2: RealmService is null.
+        when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(null);
+        try {
+            Utils.getUserId(USER_NAME, TENANT_ID);
+            fail("Expected IdentityRecoveryServerException was not thrown");
+        } catch (IdentityRecoveryServerException e) {
+            assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE.getCode());
+        }
+
+        // Reset RealmService mock.
+        when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
+
+        // Case 4: UserStoreException when getting UserStoreManager.
+        when(realmService.getTenantUserRealm(TENANT_ID)).thenThrow(new UserStoreException("Test exception"));
+        try {
+            Utils.getUserId(USER_NAME, TENANT_ID);
+            fail("Expected IdentityRecoveryServerException was not thrown");
+        } catch (IdentityRecoveryServerException e) {
+            assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages
+                    .ERROR_CODE_FAILED_TO_LOAD_REALM_SERVICE.getCode());
+        }
+
+        // Reset UserStoreManager mock.
+        doReturn(userRealm).when(realmService).getTenantUserRealm(TENANT_ID);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+
+        // Case 5: UserStoreException when getting user ID
+        when(abstractUserStoreManager.getUserIDFromUserName(USER_NAME)).thenThrow(
+                new UserStoreException("Test exception"));
+        try {
+            Utils.getUserId(USER_NAME, TENANT_ID);
+            fail("Expected IdentityRecoveryServerException was not thrown");
+        } catch (IdentityRecoveryServerException e) {
+            assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_FAILED_TO_UPDATE_USER_CLAIMS.getCode());
+        }
+    }
+
+    @Test
+    public void testIsSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled() {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                IdentityRecoveryConstants.RECOVERY_QUESTION_PASSWORD_SKIP_ON_INSUFFICIENT_ANSWERS))
+                .thenReturn("true");
+        assertTrue(Utils.isSkipRecoveryWithChallengeQuestionsForInsufficientAnswersEnabled());
+    }
+
+    @Test
+    public void testIsUseVerifyClaimEnabled() {
+
+        mockedStaticIdentityUtil.when(() ->IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.USE_VERIFY_CLAIM_ON_UPDATE)).thenReturn("true");
+        assertTrue(Utils.isUseVerifyClaimEnabled());
+    }
+
+    @Test
+    public void testPublishRecoveryEvent() throws IdentityEventException {
+
+        Map<String, Object> map = new HashMap<>();
+        String eventName = "testEvent";
+        String confirmationCode = "123456";
+
+        Utils.publishRecoveryEvent(map, eventName, confirmationCode);
+        verify(identityEventService).handleEvent(any());
+    }
+
+    @Test
+    public void testGetAccountState() throws UserStoreException {
+
+        String expectedAccountState = "testValue";
+        User user = getUser();
+
+        // Case 1: Existing user.
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.isExistingUser(user.getUserName())).thenReturn(true);
+
+        Map<String, String> claimMap = new HashMap<>();
+        claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, expectedAccountState);
+        when(abstractUserStoreManager.getUserClaimValues(user.getUserName(),
+                new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default"))
+                .thenReturn(claimMap);
+        String accountState = Utils.getAccountState(user);
+        assertEquals(accountState, expectedAccountState);
+
+        // Case 2: User doesn't exist in primary user store, secondary user store null.
+        when(abstractUserStoreManager.isExistingUser(user.getUserName())).thenReturn(false);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager()).thenReturn(null);
+
+        accountState = Utils.getAccountState(user);
+        assertEquals(accountState, StringUtils.EMPTY);
+    }
+
+    @Test
+    public void testGetAccountStateForUserNameWithoutUserDomain() throws UserStoreException {
+
+        User user = getUser();
+        String expectedAccountState = "testValue";
+        String userStoreDomainQualifiedUsername = USER_STORE_DOMAIN + UserCoreConstants.DOMAIN_SEPARATOR + USER_NAME;
+        mockedStaticUserCoreUtil.when(() -> UserCoreUtil.addDomainToName(USER_NAME, USER_STORE_DOMAIN))
+                .thenReturn(userStoreDomainQualifiedUsername);
+
+        // Case 1: Existing user.
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.isExistingUser(user.getUserName())).thenReturn(true);
+
+        Map<String, String> claimMap = new HashMap<>();
+        claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, expectedAccountState);
+        when(abstractUserStoreManager.getUserClaimValues(userStoreDomainQualifiedUsername,
+                new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI}, "default"))
+                .thenReturn(claimMap);
+
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        assertEquals(accountState, expectedAccountState);
+    }
+
+    @Test
+    public void testGenerateRandomPassword() {
+
+        int passwordLength = 10;
+        char[] result = Utils.generateRandomPassword(passwordLength);
+        assertEquals(result.length, passwordLength);
+    }
+
+    @Test
+    public void testReIssueExistingConfirmationCodeNotificationBasedPasswordRecovery() {
+
+        int recoveryConfirmationTolerancePeriod = 10;
+        int recoveryCodeExpiryTime = 20;
+
+        UserRecoveryData recoveryData = new UserRecoveryData(getUser(), "12345",
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, -5); 
+        Date creationTime = calendar.getTime();
+        Timestamp timestamp = new Timestamp(creationTime.getTime());
+
+        recoveryData.setTimeCreated(timestamp);
+
+        // Case 1: With RECOVERY_CONFIRMATION_CODE_DEFAULT_TOLERANCE, ConfirmationTolerancePeriod = 10.
+        boolean result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 2: With RECOVERY_CODE_DEFAULT_EXPIRY_TIME, ConfirmationTolerancePeriod = 10.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(recoveryConfirmationTolerancePeriod));
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 3: RecoveryCodeExpiryTime = 20, ConfirmationTolerancePeriod = 10.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME,
+                String.valueOf(recoveryCodeExpiryTime));
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertTrue(result);
+
+        // Case 4: Invalid value for RECOVERY_CODE_EXPIRY_TIME.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CODE_EXPIRY_TIME,
+                "invalid");
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 5: Invalid value for RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.RECOVERY_CONFIRMATION_CODE_TOLERANCE_PERIOD, "invalid");
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testReIssueExistingConfirmationCodeSelfSignupEmail() throws IdentityGovernanceException {
+
+        int selfRegistrationCodeTolerance = 10;
+        int selfRegistrationCodeExpiryTime = 20;
+
+        UserRecoveryData recoveryData = new UserRecoveryData(getUser(), "12345",
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.UPDATE_PASSWORD);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, -5); 
+        Date creationTime = calendar.getTime();
+        Timestamp timestamp = new Timestamp(creationTime.getTime());
+
+        recoveryData.setTimeCreated(timestamp);
+
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(selfRegistrationCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, String.valueOf(selfRegistrationCodeExpiryTime));
+
+        boolean result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertTrue(result);
+
+        // Case 2: Invalid value for SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                "invalid");
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 3: Invalid value for SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(selfRegistrationCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, "invalid");
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 4: SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME less than tolerance period.
+        selfRegistrationCodeTolerance = 10;
+        selfRegistrationCodeExpiryTime = 5;
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(selfRegistrationCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, String.valueOf(selfRegistrationCodeExpiryTime));
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testReIssueExistingConfirmationCodeSelfSignupSMS() throws IdentityGovernanceException {
+
+        int selfRegistrationCodeTolerance = 10;
+        int selfRegistrationCodeExpiryTime = 20;
+
+        UserRecoveryData recoveryData = new UserRecoveryData(getUser(), "12345",
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.UPDATE_PASSWORD);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, -5);
+        Date creationTime = calendar.getTime();
+        Timestamp timestamp = new Timestamp(creationTime.getTime());
+
+        recoveryData.setTimeCreated(timestamp);
+
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_SMS_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(selfRegistrationCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME,
+                String.valueOf(selfRegistrationCodeExpiryTime));
+
+        boolean result = Utils.reIssueExistingConfirmationCode(recoveryData, "SMS");
+        assertTrue(result);
+
+        // Other notification channel.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.SELF_SIGN_UP_EMAIL_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(5));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, String.valueOf(selfRegistrationCodeExpiryTime));
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "OTHER");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testReIssueExistingConfirmationCodeAskPassword() throws IdentityGovernanceException {
+
+        int askPasswordCodeTolerance = 10;
+        int askPasswordCodeExpiryTime = 20;
+
+        UserRecoveryData recoveryData = new UserRecoveryData(getUser(), "12345",
+                RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, -5);
+        Date creationTime = calendar.getTime();
+        Timestamp timestamp = new Timestamp(creationTime.getTime());
+
+        recoveryData.setTimeCreated(timestamp);
+
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(askPasswordCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                        .ASK_PASSWORD_EXPIRY_TIME,
+                String.valueOf(askPasswordCodeExpiryTime));
+
+        boolean result = Utils.reIssueExistingConfirmationCode(recoveryData, "SMS");
+        assertTrue(result);
+
+        // Case 3: Invalid value for SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME.
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(askPasswordCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ASK_PASSWORD_EXPIRY_TIME, "invalid");
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+
+        // Case 4: Code expiry time is less than tolerance period.
+        askPasswordCodeExpiryTime = 5;
+        mockIdentityUtilsGetProperty(IdentityRecoveryConstants.ASK_PASSWORD_CONFIRMATION_CODE_TOLERANCE_PERIOD,
+                String.valueOf(askPasswordCodeTolerance));
+        mockGetRecoveryConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ASK_PASSWORD_EXPIRY_TIME, String.valueOf(askPasswordCodeExpiryTime));
+
+        result = Utils.reIssueExistingConfirmationCode(recoveryData, "EMAIL");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testHandleAttributeValidationFailureWithValidationResult() {
+
+        // Case 1: Validation result is null.
+        ValidationResult validationResult = null;
+        try {
+            Utils.handleAttributeValidationFailure(validationResult);
+        } catch (Exception e) {
+            assertTrue(e instanceof SelfRegistrationClientException);
+            assertEquals(((SelfRegistrationClientException) e).getErrorCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES
+                            .getCode());
+        }
+
+        // Case 2: Validation result is not null.
+        ValidationFailureReason validationFailureReason = new ValidationFailureReason();
+        validationFailureReason.setErrorCode("test-code");
+        validationFailureReason.setReason("test-reason");
+        validationFailureReason.setAuthAttribute("test-auth-attribute");
+
+        validationResult = new ValidationResult();
+        validationResult.setValidationFailureReasons(new ArrayList<>(Arrays.asList(validationFailureReason)));
+
+        try {
+            Utils.handleAttributeValidationFailure(validationResult);
+        } catch (Exception e) {
+            assertTrue(e instanceof SelfRegistrationClientException);
+            assertEquals(((SelfRegistrationClientException) e).getErrorCode(),
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION
+                            .getCode());
+        }
+    }
+
+    @Test
+    public void testHandleAttributeValidationFailure() {
+
+        AuthAttributeHandlerException exception =
+                new AuthAttributeHandlerClientException(ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getCode(),
+                        ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND.getMessage());
+        try {
+            Utils.handleAttributeValidationFailure(exception);
+        } catch (Exception e) {
+            assertTrue(e instanceof SelfRegistrationClientException);
+        }
+
+        // Case 2: AuthAttributeHandlerException exception.
+        AuthAttributeHandlerException exception1 =
+                new AuthAttributeHandlerException("test-code", "test-message");
+        try {
+            Utils.handleAttributeValidationFailure(exception1);
+        } catch (Exception e) {
+            assertTrue(e instanceof SelfRegistrationException);
         }
     }
 
@@ -766,6 +1316,22 @@ public class UtilsTest {
         user.setTenantDomain(TENANT_DOMAIN);
         user.setUserStoreDomain(USER_STORE_DOMAIN);
         return user;
+    }
+
+    private static void mockIdentityUtilsGetProperty(String key, String value) {
+
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(key)).thenReturn(value);
+    }
+
+    private void mockGetRecoveryConfig(String key, String value) throws IdentityGovernanceException {
+
+        Property property = new Property();
+        property.setName(key);
+        property.setValue(value);
+        Property[] properties = new Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(eq(new String[]{key}), eq(TENANT_DOMAIN)))
+                .thenReturn(properties);
     }
 
     private static String getUserStoreQualifiedUsername(String username, String userStoreDomainName) {
