@@ -33,6 +33,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
 import org.wso2.carbon.consent.mgt.core.ConsentManagerImpl;
 import org.wso2.carbon.consent.mgt.core.exception.ConsentManagementException;
@@ -60,10 +61,15 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
 import org.wso2.carbon.identity.input.validation.mgt.exceptions.InputValidationMgtException;
+import org.wso2.carbon.identity.input.validation.mgt.model.RulesConfiguration;
 import org.wso2.carbon.identity.input.validation.mgt.model.ValidationConfiguration;
+import org.wso2.carbon.identity.input.validation.mgt.model.Validator;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
+import org.wso2.carbon.identity.input.validation.mgt.utils.Constants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.UserWorkflowManagementService;
@@ -78,6 +84,8 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.config.RealmConfiguration;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.user.core.UserRealm;
@@ -90,6 +98,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -101,16 +110,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 
+import static org.testng.Assert.fail;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP;
@@ -196,6 +210,9 @@ public class UserSelfRegistrationManagerTest {
 
     @Mock
     private ValidationConfiguration validationConfiguration;
+
+    @Mock
+    private AbstractUserStoreManager abstractUserStoreManager;
 
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedServiceDataHolder;
     private MockedStatic<IdentityUtil> mockedIdentityUtil;
@@ -514,9 +531,9 @@ public class UserSelfRegistrationManagerTest {
                 resultReceipt.getCollectionMethod());
         Assert.assertEquals("someJurisdiction", resultReceipt.getJurisdiction());
         Assert.assertEquals("en", resultReceipt.getLanguage());
-        Assert.assertNotNull(resultReceipt.getServices());
+        assertNotNull(resultReceipt.getServices());
         Assert.assertEquals(1, resultReceipt.getServices().size());
-        Assert.assertNotNull(resultReceipt.getServices().get(0).getPurposes());
+        assertNotNull(resultReceipt.getServices().get(0).getPurposes());
         Assert.assertEquals(1, resultReceipt.getServices().get(0).getPurposes().size());
         Assert.assertEquals(new Integer(3), resultReceipt.getServices().get(0).getPurposes().get(0).getPurposeId());
         Assert.assertEquals(IdentityRecoveryConstants.Consent.EXPLICIT_CONSENT_TYPE,
@@ -544,8 +561,8 @@ public class UserSelfRegistrationManagerTest {
 
         Property property = new Property("registrationOption", "MagicLinkAuthAttributeHandler");
 
-        Boolean response = userSelfRegistrationManager.verifyUserAttributes(user, "password", new Claim[]{claim},
-                new Property[]{property});
+        Boolean response = userSelfRegistrationManager.verifyUserAttributes(user, "password",
+                new Claim[]{claim}, new Property[]{property});
 
         Assert.assertTrue(response);
     }
@@ -660,7 +677,7 @@ public class UserSelfRegistrationManagerTest {
     public void testGetConfirmedSelfRegisteredUserVerifyEmail()
             throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
-        String verifiedChannelType = "EMAIL";
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
         String verificationPendingEmail = "pasindu@gmail.com";
         Map<String, String> metaProperties = new HashMap<>();
@@ -701,13 +718,24 @@ public class UserSelfRegistrationManagerTest {
 
         assertTrue(StringUtils.contains(updatedVerifiedEmailAddresses, verificationPendingEmail));
         assertEquals(verificationPendingEmailAddress, StringUtils.EMPTY);
+
+        // Case 2 : Throws user store exception while getting user store manager.
+        when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryServerException);
+        }
     }
+
 
     @Test
     public void testGetConfirmedSelfRegisteredUserVerifyMobile()
             throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
-        String verifiedChannelType = "SMS";
+        String verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
         String verifiedChannelClaim = "http://wso2.org/claims/mobile";
         String verificationPendingMobileNumber = "077888888";
         Map<String, String> metaProperties = new HashMap<>();
@@ -739,6 +767,9 @@ public class UserSelfRegistrationManagerTest {
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
                     .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(IdentityRecoveryConstants.ConnectorConfig
+                            .SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
+                    anyString())).thenReturn("true");
             userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
                     verifiedChannelClaim, metaProperties);
         }
@@ -757,6 +788,87 @@ public class UserSelfRegistrationManagerTest {
         assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
         assertEquals(verificationPendingMobileNumberClaim, StringUtils.EMPTY);
         assertEquals(updatedMobileNumberClaimValue, verificationPendingMobileNumber);
+
+        // Case 3: External Verified Channel type.
+        verifiedChannelType = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                            eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
+                            anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(IdentityRecoveryConstants.ConnectorConfig
+                            .SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
+                    anyString())).thenReturn("true");
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+        }
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor1 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor1.capture(), isNull());
+
+        Map<String, String> capturedClaims1 = claimsCaptor1.getValue();
+        String emailVerifiedClaim =
+                capturedClaims1.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+        assertEquals(emailVerifiedClaim, Boolean.TRUE.toString());
+
+        // Case 4: With wrong verified channel claim value.
+        verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
+        verifiedChannelClaim = "http://wso2.org/claims/invalid";
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                            eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
+                            anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(IdentityRecoveryConstants.ConnectorConfig
+                            .SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
+                    anyString())).thenReturn("true");
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
+    }
+
+    @Test
+    public void testGetConfirmedSelfRegisteredUserConfirmSignUp()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
+
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
+        String verificationPendingEmail = "pasindu@gmail.com";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        // Setting verification pending email claim value.
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(false);
+
+        org.wso2.carbon.identity.application.common.model.Property property =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
+                metaProperties);
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+        String updatedVerifiedMobileNumbers =
+                capturedClaims.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM);
+        assertEquals(updatedVerifiedMobileNumbers, Boolean.FALSE.toString());
     }
 
     @Test
@@ -767,7 +879,7 @@ public class UserSelfRegistrationManagerTest {
         when(userStoreManager.isExistingRole(eq(IdentityRecoveryConstants.SELF_SIGNUP_ROLE))).thenReturn(true);
         when(privilegedCarbonContext.getOSGiService(any(), isNull())).thenReturn(notificationChannelManager);
         when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
-                .thenReturn("EMAIL");
+                .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
 
         Property property = new Property(IdentityRecoveryConstants.Consent.CONSENT, consentData);
         NotificationResponseBean notificationResponseBean =
@@ -782,9 +894,85 @@ public class UserSelfRegistrationManagerTest {
     }
 
     @Test
+    public void testRegisterUserNotificationExternallyAccountLockedOnCreation() throws Exception {
+
+        User user = new User();
+        user.setUserName(TEST_USER_NAME);
+        Property property = new Property(IdentityRecoveryConstants.Consent.CONSENT, consentData);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                    .thenReturn("false");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ENABLE_SELF_SIGNUP), anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(Utils::getNotificationChannelManager).thenReturn(notificationChannelManager);
+
+            when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
+                    .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+            NotificationResponseBean notificationResponseBean =
+                    userSelfRegistrationManager.registerUser(user, "test-pwd", new Claim[0],
+                            new Property[]{property});
+
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getCode(),
+                    notificationResponseBean.getCode());
+            verify(userStoreManager).addUser(anyString(), anyString(), any(), any(), isNull());
+            verify(consentManger).addConsent(any());
+            verify(identityEventService, atLeastOnce()).handleEvent(any());
+        }
+    }
+
+    @Test
+    public void testRegisterUserVerifiedPreferredChannel() throws Exception {
+
+        String emailVerifiedClaimURI = "http://wso2.org/claims/identity/emailVerified";
+        User user = getUser();
+        Property property = new Property(IdentityRecoveryConstants.Consent.CONSENT, consentData);
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        eq(IdentityRecoveryConstants.ConnectorConfig
+                                .ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL)))
+                .thenReturn("false");
+        when(consentUtilityService.filterPIIsFromReceipt(any(), any())).thenReturn(
+                new HashSet<>(Arrays.asList(emailVerifiedClaimURI)));
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                    .thenReturn("false");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ENABLE_SELF_SIGNUP), anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(Utils::getNotificationChannelManager).thenReturn(notificationChannelManager);
+
+            when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
+                    .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+            Claim claim = new Claim();
+            claim.setClaimUri(emailVerifiedClaimURI);
+            claim.setValue("true");
+            Claim[] claims = new Claim[]{claim};
+
+            NotificationResponseBean notificationResponseBean =
+                    userSelfRegistrationManager.registerUser(user, "test-pwd", claims,
+                            new Property[]{property});
+
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL.getCode(),
+                    notificationResponseBean.getCode());
+            verify(userStoreManager).addUser(anyString(), anyString(), any(), any(), isNull());
+            verify(consentManger).addConsent(any());
+            verify(identityEventService, atLeastOnce()).handleEvent(any());
+        }
+    }
+
+    @Test
     public void testIsUserConfirmed() throws IdentityRecoveryException {
 
-        User user = getUser();
+        User user = new User();
+        user.setUserName(TEST_USER_NAME);
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
                 RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
         when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any())).thenReturn(userRecoveryData);
@@ -815,6 +1003,30 @@ public class UserSelfRegistrationManagerTest {
                 capturedClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
         assertEquals(updatedAccountLockedClaim, Boolean.FALSE.toString());
         assertEquals(updatedEmailVerifiedClaim, Boolean.TRUE.toString());
+
+        // Case 2: Invalid Tenant.
+        User user1 = getUser();
+        user1.setTenantDomain("invalid");
+        userRecoveryData = new UserRecoveryData(user1, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+        when(userRecoveryDataStore.load(anyString())).thenReturn(userRecoveryData);
+        try {
+            userSelfRegistrationManager.confirmUserSelfRegistration(TEST_CODE);
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryClientException);
+        }
+
+        // Case 3: Invalid recovery step.
+        userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.UPDATE_PASSWORD);
+        when(userRecoveryDataStore.load(anyString())).thenReturn(userRecoveryData);
+        try {
+            userSelfRegistrationManager.confirmUserSelfRegistration(TEST_CODE);
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryClientException);
+        }
     }
 
     @Test
@@ -826,7 +1038,7 @@ public class UserSelfRegistrationManagerTest {
         when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
         when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
 
-        String verifiedChannelType = "EMAIL";
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
 
         UserRecoveryData resultUserRecoveryData = userSelfRegistrationManager.introspectUserSelfRegistration(TEST_CODE,
@@ -879,6 +1091,14 @@ public class UserSelfRegistrationManagerTest {
         boolean isValid = userSelfRegistrationManager.isValidUserStoreDomain(
                 TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME);
         assertTrue(isValid);
+
+        // Case 2: Throws UserStoreException.
+        when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.isValidUserStoreDomain(TEST_USERSTORE_DOMAIN, TEST_TENANT_DOMAIN_NAME);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
     }
 
     @Test
@@ -900,6 +1120,14 @@ public class UserSelfRegistrationManagerTest {
 
         boolean isUsernameAlreadyTaken2 = userSelfRegistrationManager.isUsernameAlreadyTaken(TEST_USER_NAME);
         assertTrue(isUsernameAlreadyTaken2);
+
+        // Case 3: Throw UserStoreException.
+        when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.isUsernameAlreadyTaken(TEST_USER_NAME);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
     }
 
     @Test
@@ -909,10 +1137,21 @@ public class UserSelfRegistrationManagerTest {
         boolean isSelfRegistrationEnabled = userSelfRegistrationManager
                 .isSelfRegistrationEnabled(TEST_TENANT_DOMAIN_NAME);
         assertTrue(isSelfRegistrationEnabled);
+
+        // Case 2: Throw Governance Exception.
+        when(identityGovernanceService.getConfiguration(any(), anyString()))
+                .thenThrow(new IdentityGovernanceException("test error"));
+        try {
+            userSelfRegistrationManager.isSelfRegistrationEnabled(TEST_TENANT_DOMAIN_NAME);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
     }
 
     @Test
-    public void testIsMatchUserNameRegex() throws IdentityRecoveryException, InputValidationMgtException {
+    public void testIsMatchUserNameRegex()
+            throws IdentityRecoveryException, InputValidationMgtException,
+            UserStoreException {
 
         mockedMultiTenantUtils.when(() -> MultitenantUtils
                 .getTenantAwareUsername(anyString())).thenReturn(TEST_USER_NAME);
@@ -923,14 +1162,257 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityUtil.when(() -> IdentityTenantUtil.getTenantDomain(TEST_TENANT_ID))
                 .thenReturn(TEST_TENANT_DOMAIN_NAME);
 
-        when(inputValidationManagementService.getValidators(anyString())).thenReturn(null);
         when(inputValidationManagementService.getInputValidationConfiguration(anyString()))
                 .thenReturn(Arrays.asList(validationConfiguration));
         when(validationConfiguration.getField()).thenReturn("username");
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(Constants.INPUT_VALIDATION_USERNAME_ENABLED_CONFIG))
+                .thenReturn("false");
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX))
+                .thenReturn("^[\\S]{5,30}$");
 
-        boolean isMatchUsernameRegex = userSelfRegistrationManager
-                .isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        boolean isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
         assertTrue(isMatchUsernameRegex);
+
+        /*
+         Case 2: INPUT_VALIDATION_USERNAME_ENABLED_CONFIG enabled.
+         */
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(Constants.INPUT_VALIDATION_USERNAME_ENABLED_CONFIG))
+                .thenReturn("true");
+
+        Map<String, Validator> validators = new HashMap<>();
+        Validator validator = mock(Validator.class);
+        validators.put("MockValidator", validator);
+        when(inputValidationManagementService.getValidators(anyString())).thenReturn(validators);
+
+        RulesConfiguration rulesConfiguration = mock(RulesConfiguration.class);
+        when(rulesConfiguration.getValidatorName()).thenReturn("MockValidator");
+        when(rulesConfiguration.getProperties()).thenReturn(new HashMap<>());
+        when(validationConfiguration.getRegEx()).thenReturn(Arrays.asList(rulesConfiguration));
+
+         isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        assertTrue(isMatchUsernameRegex);
+
+        /*
+         Case 3: Throw UserStoreException while getting user store manager.
+         */
+        when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
+
+        /*
+         Case 4: Throw Error while getting tenant id.
+         */
+        when(tenantManager.getTenantId(anyString())).thenThrow(new UserStoreException());
+        try {
+            userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryException);
+        }
+    }
+
+    @Test
+    public void testPreValidatePasswordWithConfirmationKey() throws Exception {
+
+        String confirmationKey = "testConfirmationKey";
+        String password = "testPassword";
+        User user = getUser();
+
+        UserRecoveryData recoveryData = new UserRecoveryData(user, confirmationKey,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+        when(userRecoveryDataStore.load(confirmationKey)).thenReturn(recoveryData);
+
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(TEST_USERSTORE_DOMAIN)).thenReturn(userStoreManager);
+
+        userSelfRegistrationManager.preValidatePasswordWithConfirmationKey(confirmationKey, password);
+        verify(identityEventService).handleEvent(any(Event.class));
+
+        // Case 2: Throws UserStoreException.
+        when(userRealm.getUserStoreManager()).thenThrow(new  org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.preValidatePasswordWithConfirmationKey(confirmationKey, password);
+        } catch(Exception e) {
+            assertTrue(e instanceof IdentityRecoveryServerException);
+        }
+    }
+
+    @Test
+    public void testPreValidatePasswordWithUsername() throws Exception {
+
+        String password = "testPassword";
+        String username = TEST_USERSTORE_DOMAIN + CarbonConstants.DOMAIN_SEPARATOR + TEST_USER_NAME;
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(username)).thenReturn(TEST_USER_NAME);
+
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(TEST_USERSTORE_DOMAIN)).thenReturn(userStoreManager);
+
+        userSelfRegistrationManager.preValidatePasswordWithUsername(username, password);
+        verify(identityEventService).handleEvent(any(Event.class));
+    }
+
+    @Test
+    public void testRegisterLiteUser() throws Exception {
+
+        String emailVerifiedClaimURI = "http://wso2.org/claims/identity/emailVerified";
+        User user = new User();
+        user.setUserName(TEST_USER_NAME);
+
+        Claim claim1 = new Claim();
+        claim1.setClaimUri("http://wso2.org/claims/emailaddress");
+        claim1.setValue("test@example.com");
+
+        Claim[] claims = new Claim[]{claim1};
+
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        eq(IdentityRecoveryConstants.ConnectorConfig
+                                .ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL)))
+                .thenReturn("false");
+        when(consentUtilityService.filterPIIsFromReceipt(any(), any())).thenReturn(
+                new HashSet<>(Arrays.asList(emailVerifiedClaimURI)));
+
+        Property[] properties = new Property[]{
+                new Property(IdentityRecoveryConstants.Consent.CONSENT, consentData)
+        };
+        when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), anyMap()))
+                .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(Utils::getNotificationChannelManager).thenReturn(notificationChannelManager);
+            mockedUtils.when(() -> Utils.getCallbackURLFromRegistration(any())).thenReturn("https://test.com");
+            mockedUtils.when(() -> Utils.validateCallbackURL(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.generateRandomPassword(anyInt())).thenReturn("test-pwd-123".toCharArray());
+            mockedUtils.when(() -> Utils.handleClientException(any(), anyString()))
+                    .thenThrow(new IdentityRecoveryClientException("error-code", "message"));
+            mockedUtils.when(() -> Utils.handleClientException(any(IdentityRecoveryConstants.ErrorMessages.class),
+                            anyString(), any()))
+                    .thenReturn(new IdentityRecoveryClientException("error-code", "message"));
+            mockedUtils.when(() -> Utils.handleServerException(any(), anyString()))
+                    .thenThrow(new IdentityRecoveryServerException("error-code", "message"));
+            mockedUtils.when(() -> Utils.handleServerException(any(IdentityRecoveryConstants.ErrorMessages.class),
+                            anyString(), any()))
+                    .thenReturn(new IdentityRecoveryServerException("error-code", "message"));
+
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP),
+                    anyString())).thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(
+                    IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION),
+                    anyString())).thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE),
+                    anyString())).thenReturn("true");
+
+            /*
+             Case 1: Notification internally managed. Account Lock on creation enabled.
+             */
+            NotificationResponseBean response = userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+
+            verify(userStoreManager).addUser(anyString(), any(), any(), anyMap(), isNull());
+            assertNotNull(response);
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_INTERNAL_VERIFICATION.getCode(),
+                    response.getCode());
+            assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), response.getNotificationChannel());
+
+            /*
+             Case 2: Lite sign-up disabled.
+             Expected: Client error should be thrown.
+             */
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP),
+                    anyString())).thenReturn("false");
+
+            try {
+                userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+            } catch (Exception e) {
+                assertTrue(e instanceof IdentityRecoveryClientException);
+            }
+
+            /*
+              Case 3: Preferred channel is verified.
+             */
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_LITE_SIGN_UP),
+                    anyString())).thenReturn("true");
+
+            Claim claim2 = new Claim();
+            claim2.setClaimUri(emailVerifiedClaimURI);
+            claim2.setValue("true");
+            claims = new Claim[]{claim1, claim2};
+
+            response = userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+
+            assertNotNull(response);
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL.getCode(),
+                    response.getCode());
+
+            /*
+              Case 4: Notification externally managed. Account Lock on creation enabled.
+             */
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(
+                            IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION),
+                    anyString())).thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE),
+                    anyString())).thenReturn("false");
+            claims = new Claim[]{claim1};
+
+            response = userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+            assertNotNull(response);
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getCode(),
+                    response.getCode());
+
+            /*
+              Case 5: Account Lock on creation is disabled.
+             */
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(
+                            IdentityRecoveryConstants.ConnectorConfig.LITE_ACCOUNT_LOCK_ON_CREATION),
+                    anyString())).thenReturn("false");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(
+                    eq(IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE),
+                    anyString())).thenReturn("true");
+            claims = new Claim[]{claim1};
+
+            response = userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+            assertNotNull(response);
+            assertEquals(IdentityRecoveryConstants.SuccessEvents
+                            .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_UNLOCKED_WITH_NO_VERIFICATION.getCode(),
+                    response.getCode());
+
+            /*
+             Case 6: Invalid callback URL.
+             */
+            mockedUtils.when(() -> Utils.validateCallbackURL(anyString(), anyString(), anyString()))
+                    .thenReturn(false);
+            try {
+                userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+            } catch (Exception e) {
+                assertTrue(e instanceof IdentityRecoveryServerException);
+            }
+
+            mockedUtils.when(() -> Utils.validateCallbackURL(anyString(), anyString(), anyString()))
+                    .thenReturn(true);
+            /*
+             Case 7: Throw UserStoreException while adding user.
+             */
+            doThrow(new org.wso2.carbon.user.core.UserStoreException("test-msg"))
+                    .when(userStoreManager).addUser(anyString(), any(), any(), anyMap(), isNull());
+            try {
+                userSelfRegistrationManager.registerLiteUser(user, claims, properties);
+            } catch (Exception e) {
+                assertTrue(e instanceof IdentityRecoveryServerException);
+            }
+        }
     }
 
     private User getUser() {
