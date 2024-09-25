@@ -42,7 +42,7 @@ import java.lang.reflect.Method;
 
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.*;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL;
 
 public class NotificationPasswordRecoveryManagerTest {
 
