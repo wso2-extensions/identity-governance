@@ -28,15 +28,20 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -44,6 +49,7 @@ import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org. wso2.carbon. identity. application. common. model.User;
 import org.wso2.carbon.user.core.config.RealmConfiguration;
 
 import java.util.Arrays;
@@ -56,6 +62,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -79,6 +89,9 @@ public class UserEmailVerificationHandlerTest {
 
     @Mock
     private IdentityRecoveryServiceDataHolder serviceDataHolder;
+
+    @Mock
+    private MessageContext messageContext;
 
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
     private MockedStatic<Utils> mockedUtils;
@@ -157,10 +170,20 @@ public class UserEmailVerificationHandlerTest {
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
                 StringUtils.EMPTY);
 
+        // Case 2: Throw error when triggering event.
+        doThrow(new IdentityEventException("error")).when(identityEventService).handleEvent(any());
+        try {
+            userEmailVerificationHandler.handleEvent(event);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
+
+        // Reset.
+        doNothing().when(identityEventService).handleEvent(any());
+
         // Case 2: Throw UserStoreException when getting the primary email.
         Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
-
         mockUtilMethods(false, false, false,
                 true);
         mockPendingVerificationEmail(EXISTING_EMAIL_2);
@@ -234,6 +257,43 @@ public class UserEmailVerificationHandlerTest {
         userEmailVerificationHandler.handleEvent(event2);
         Map<String, String> userClaimsC2 = getUserClaimsFromEvent(event2);
         Assert.assertFalse(userClaimsC2.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM));
+
+        // Case 3: Try to change the primary email value with existing primary email value.
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockPendingVerificationEmail(EXISTING_EMAIL_1);
+        mockPrimaryEmail(NEW_EMAIL);
+        userEmailVerificationHandler.handleEvent(event3);
+        Map<String, String> userClaimsC3 = getUserClaimsFromEvent(event3);
+        Assert.assertEquals(userClaimsC3.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+                StringUtils.EMPTY);
+    }
+
+    @Test(description = "Verification - Enabled, Multi attribute - Disabled, User verify - Enabled")
+    public void testHandleEventPreSetUserClaimsVerificationEnabledMultiDisabledUserVerifyEnabled()
+            throws IdentityEventException, IdentityRecoveryException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.TRUE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, true,
+                false);
+        mockPendingVerificationEmail(EXISTING_EMAIL_1);
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaimsC1 = getUserClaimsFromEvent(event);
+        Assert.assertEquals(userClaimsC1.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+
+        // Case 2: verifyEmail claim is false.
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, NEW_EMAIL);
+        mockUtilMethods(true, false, true,
+                false);
+        mockPendingVerificationEmail(EXISTING_EMAIL_1);
+
+        userEmailVerificationHandler.handleEvent(event2);
+        Map<String, String> userClaimsC2 = getUserClaimsFromEvent(event2);
+        Assert.assertEquals(userClaimsC2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM),
+                StringUtils.EMPTY);
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Change primary email which is not in the " +
@@ -332,6 +392,26 @@ public class UserEmailVerificationHandlerTest {
         Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
         String updatedVerifiedEmails = userClaims2.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
         Assert.assertTrue(StringUtils.contains(updatedVerifiedEmails, NEW_EMAIL));
+
+        /*
+         Case 3: Add multiple new emails to verified emails list.
+         Expected: Error should be thrown.
+         */
+        String newVerifiedEmails3 = String.format("%s,%s", EXISTING_EMAIL_1, NEW_EMAIL);
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                newVerifiedEmails3, null, null);
+
+        mockUtilMethods(true, true, false,
+                false);
+        mockExistingEmailAddressesList(new ArrayList<>());
+        mockExistingVerifiedEmailAddressesList(new ArrayList<>());
+
+        try {
+            userEmailVerificationHandler.handleEvent(event3);
+        } catch(IdentityEventClientException e) {
+            Assert.assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.
+                    ERROR_CODE_VERIFY_MULTIPLE_EMAILS.getCode());
+        }
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Remove email from email list")
@@ -413,6 +493,20 @@ public class UserEmailVerificationHandlerTest {
 
         userEmailVerificationHandler.handleEvent(event);
         verify(identityEventService).handleEvent(any());
+
+        // Case 2: Error is thrown when retrieving verification pending email.
+        Event event1 = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        mockUtilMethods(true, true, false,
+                true);
+        when(userStoreManager.getUserClaimValues(TEST_USERNAME, new String[]{
+                IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM}, null))
+                .thenThrow(new UserStoreException());
+        try {
+            userEmailVerificationHandler.handleEvent(event1);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
     }
 
     @Test
@@ -524,6 +618,33 @@ public class UserEmailVerificationHandlerTest {
         mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
                 eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
                 any()));
+
+        // Case 2: Utils.generateSecretKey() throws an exception.
+        mockedUtils.when(() -> Utils.generateSecretKey(
+                NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
+                TEST_TENANT_DOMAIN, "EmailVerification"))
+                .thenThrow(new IdentityRecoveryServerException("test_error"));
+        try {
+            userEmailVerificationHandler.handleEvent(event);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
+
+        // Reset.
+        mockedUtils.when(() -> Utils.generateSecretKey(
+                        NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
+                        TEST_TENANT_DOMAIN, "EmailVerification"))
+                .thenReturn("test_key");
+
+        // Case 3: Claims are null.
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        Event event3 = new Event(IdentityEventConstants.Event.POST_ADD_USER, eventProperties);
+        userEmailVerificationHandler.handleEvent(event3);
+        verify(userRecoveryDataStore, atLeastOnce()).store(any());
     }
 
     @Test
@@ -550,6 +671,23 @@ public class UserEmailVerificationHandlerTest {
         mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
                 eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
                 any()));
+    }
+
+    @Test
+    public void testGetPriority() {
+
+        Assert.assertEquals(userEmailVerificationHandler.getPriority(messageContext), 65);
+    }
+
+    @Test
+    public void testGetRecoveryData() throws IdentityEventException, IdentityRecoveryException {
+
+        User user = new User();
+        UserRecoveryData userRecoveryData = mock(UserRecoveryData.class);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user)).thenReturn(userRecoveryData);
+
+        UserRecoveryData response = userEmailVerificationHandler.getRecoveryData(user);
+        Assert.assertEquals(response, userRecoveryData);
     }
 
     private void mockExistingEmailAddressesList(List<String> existingEmails) {
