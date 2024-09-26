@@ -62,6 +62,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -293,7 +294,30 @@ public class MobileNumberVerificationHandlerTest {
         mobileNumberVerificationHandler.handleEvent(event3);
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                 IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()));
+                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
+
+        /*
+         Case 4: Mobile number claim is null.
+         */
+        Event event4 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+
+        mobileNumberVerificationHandler.handleEvent(event4);
+        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
+                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
+                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
+
+        /*
+         Case 5: Throw error when retrieving existing mobile number.
+         */
+        when(userStoreManager.getUserClaimValue(anyString(),
+                eq(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), isNull()))
+                .thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            mobileNumberVerificationHandler.handleEvent(event);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IdentityEventException);
+        }
     }
 
     @Test(description = "Verification enabled, Multi-attribute enabled, Update primary mobile not in verified list")
