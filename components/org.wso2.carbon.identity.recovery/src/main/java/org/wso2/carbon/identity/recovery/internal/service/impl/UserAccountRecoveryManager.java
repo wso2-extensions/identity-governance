@@ -502,7 +502,7 @@ public class UserAccountRecoveryManager {
 
             //If multiple users are found for the given claim set and the config is not enabled, throw an exception.
             if (userList.size() > 1 && !Boolean.parseBoolean(IdentityUtil.getProperty(
-                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SHARED_CLAIMS))) {
+                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))) {
                 log.warn("Multiple users matched for given claims set: " + claims.keySet());
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
