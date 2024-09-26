@@ -288,6 +288,22 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * Return the default system notification template which matches the given channel and template name.
+     *
+     * @param notificationChannel Notification Channel Name (Eg: SMS or EMAIL)
+     * @param templateType        Display name of the template
+     * @param locale              Locale
+     * @return Return {@link org.wso2.carbon.identity.governance.model.NotificationTemplate} object
+     * @throws NotificationTemplateManagerException If an error occurred while getting the notification template
+     */
+    default NotificationTemplate getSystemNotificationTemplate(String notificationChannel, String templateType,
+                                                                String locale)
+            throws NotificationTemplateManagerException {
+
+        return null;
+    }
+
+    /**
      * Check whether the given notification template exists in the system.
      *
      * @param notificationChannel     Notification channel.
