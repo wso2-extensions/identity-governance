@@ -1297,6 +1297,15 @@ public class UtilsTest {
 
         List<String> result = Utils.getMultiValuedClaim(userStoreManager, user, "testClaim");
         assertEquals(expectedClaimList, result);
+
+        // Case 2: Throw user store exception when retrieving user claim value.
+        when(userStoreManager.getUserClaimValue(any(), anyString(), any()))
+                .thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            Utils.getMultiValuedClaim(userStoreManager, user, "testClaim");
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityEventException);
+        }
     }
 
     @Test

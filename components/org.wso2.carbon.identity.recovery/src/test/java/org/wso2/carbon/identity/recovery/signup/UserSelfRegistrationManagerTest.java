@@ -673,6 +673,28 @@ public class UserSelfRegistrationManagerTest {
         assertEquals(mobileNumberClaims, verificationPendingMobileNumber);
     }
 
+    @Test(expectedExceptions = IdentityRecoveryServerException.class)
+    public void testConfirmVerificationCodeMeUserStoreException()
+            throws IdentityRecoveryException, UserStoreException {
+
+        // Case 3: Throws user store exception while getting user claim values.
+        String verificationPendingMobileNumber = "0700000000";
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(true);
+        when(userStoreManager.getUserClaimValue(any(), eq(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                any())).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+    }
+
     @Test
     public void testGetConfirmedSelfRegisteredUserVerifyEmail()
             throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
@@ -719,8 +741,33 @@ public class UserSelfRegistrationManagerTest {
         assertTrue(StringUtils.contains(updatedVerifiedEmailAddresses, verificationPendingEmail));
         assertEquals(verificationPendingEmailAddress, StringUtils.EMPTY);
 
-        // Case 2 : Throws user store exception while getting user store manager.
+        // Case 2: Multiple email and mobile per user is disabled.
+        mockMultiAttributeEnabled(false);
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
+                metaProperties);
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+
+        Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
+        String emailAddressClaim =
+                capturedClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        assertEquals(emailAddressClaim, verificationPendingEmail);
+
+        // Case 3 : Throws user store exception while getting user store manager.
         when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+            fail();
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryServerException);
+        }
+
+        // Case 4 : Throws user store exception while getting user claim values.
+        when(userStoreManager.getUserClaimValue(any(), eq(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
+                any())).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
         try {
             userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
                     verifiedChannelClaim, metaProperties);
@@ -789,7 +836,7 @@ public class UserSelfRegistrationManagerTest {
         assertEquals(verificationPendingMobileNumberClaim, StringUtils.EMPTY);
         assertEquals(updatedMobileNumberClaimValue, verificationPendingMobileNumber);
 
-        // Case 3: External Verified Channel type.
+        // Case 2: External Verified Channel type.
         verifiedChannelType = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
@@ -811,6 +858,28 @@ public class UserSelfRegistrationManagerTest {
         String emailVerifiedClaim =
                 capturedClaims1.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
         assertEquals(emailVerifiedClaim, Boolean.TRUE.toString());
+
+        // Case 3: Throws user store exception while getting user claim values.
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                            eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
+                            anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(IdentityRecoveryConstants.ConnectorConfig
+                            .SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
+                    anyString())).thenReturn("true");
+
+            when(userStoreManager.getUserClaimValue(anyString(), eq(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM), isNull()))
+                    .thenThrow(new org.wso2.carbon.user.core.UserStoreException("test exception"));
+            mockedUtils.when(() -> Utils.getMultiValuedClaim(eq(userStoreManager), eq(user),
+                    eq(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM))).thenCallRealMethod();
+
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryServerException);
+        }
 
         // Case 4: With wrong verified channel claim value.
         verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
