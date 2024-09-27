@@ -609,8 +609,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             updatedAllEmailAddresses = new ArrayList<>();
         }
 
-        String existingEmail = getEmailClaimValue(user, userStoreManager);
+        if (StringUtils.isBlank(emailAddress)) {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
+        }
 
+        String existingEmail = getEmailClaimValue(user, userStoreManager);
         if (StringUtils.isNotBlank(existingEmail) && supportMultipleEmails) {
             if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
                 updatedVerifiedEmailAddresses.add(existingEmail);
@@ -622,12 +627,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
                         StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
             }
-        }
-
-        if (emailAddress == null) {
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-            return;
         }
 
         if (supportMultipleEmails && updatedVerifiedEmailAddresses.contains(emailAddress)) {

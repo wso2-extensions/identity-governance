@@ -357,6 +357,12 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         }
 
+        if (StringUtils.isBlank(mobileNumber)) {
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
+        }
+
         String existingMobileNumber;
         String username = user.getUserName();
         try {
@@ -379,12 +385,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                         String.join(multiAttributeSeparator, updatedAllNumbersList));
             }
-        }
-
-        if (mobileNumber == null) {
-            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-            return;
         }
 
         if (supportMultipleMobileNumbers && updatedVerifiedNumbersList.contains(mobileNumber)) {
