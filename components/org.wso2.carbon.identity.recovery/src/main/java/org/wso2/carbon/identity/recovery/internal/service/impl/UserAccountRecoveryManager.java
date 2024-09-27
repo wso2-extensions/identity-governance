@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static java.lang.Integer.MAX_VALUE;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.USERNAME_RECOVERY;
@@ -496,13 +497,15 @@ public class UserAccountRecoveryManager {
 
         if (!expressionConditionList.isEmpty()) {
             Condition operationalCondition = getOperationalCondition(expressionConditionList);
-            // Get the user list that matches the condition limit : Integer.MAX_VALUE, offset : 1, sortBy : null, sortOrder : null
+            boolean nonUniqueUsernameEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME));
+            int limit = nonUniqueUsernameEnabled ? MAX_VALUE : 2;
+            // Get the user list that matches the condition limit : MAX_VALUE or 2, offset : 1, sortBy : null, sortOrder : null
             userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
-                    UserCoreConstants.DEFAULT_PROFILE, Integer.MAX_VALUE, 1, null, null));
+                    UserCoreConstants.DEFAULT_PROFILE, limit, 1, null, null));
 
             //If multiple users are found for the given claim set and the config is not enabled, throw an exception.
-            if (userList.size() > 1 && !Boolean.parseBoolean(IdentityUtil.getProperty(
-                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))) {
+            if (userList.size() > 1 && !nonUniqueUsernameEnabled) {
                 log.warn("Multiple users matched for given claims set: " + claims.keySet());
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
