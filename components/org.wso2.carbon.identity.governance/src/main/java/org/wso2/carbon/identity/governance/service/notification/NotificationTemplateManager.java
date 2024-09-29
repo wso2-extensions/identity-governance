@@ -111,6 +111,18 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * Get all available system  notification templates of given type.
+     *
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
+     * @return List of system notification templates.
+     */
+    default List<NotificationTemplate> getAllSystemNotificationTemplatesOfType(String notificationChannel,
+                                             String templateDisplayName) throws NotificationTemplateManagerException {
+
+        return null;
+    }
+
+    /**
      * Get all notification templates of the given type.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
