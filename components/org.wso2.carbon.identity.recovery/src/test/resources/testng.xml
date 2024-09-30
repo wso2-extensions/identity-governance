@@ -28,12 +28,9 @@
             <class name="org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManagerTest"/>
             <class name="org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManagerTest"/>
             <class name="org.wso2.carbon.identity.recovery.util.UtilsTest"/>
-        </classes>
-    </test>
-    <test name="recovery-handler" preserve-order="true" parallel="false">
-        <classes>
-            <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandlerTest" />
+            <class name="org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManagerTest" />
+            <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />
         </classes>
     </test>
 </suite>
