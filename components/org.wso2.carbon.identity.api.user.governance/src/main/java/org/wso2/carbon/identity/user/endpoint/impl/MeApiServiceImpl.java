@@ -280,7 +280,9 @@ public class MeApiServiceImpl extends MeApiService {
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
             return recoveryScenario;
         }
 
@@ -293,7 +295,8 @@ public class MeApiServiceImpl extends MeApiService {
 
         UserRecoveryData userRecoveryData = null;
         // Currently this me/resend-code API supports resend code during mobile verification scenario only.
-        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
             userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
         }
         if (userRecoveryData == null) {
@@ -307,6 +310,18 @@ public class MeApiServiceImpl extends MeApiService {
 
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE,
+                    resendCodeRequestDTO);
+        }
+
+        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
+
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE,
                     resendCodeRequestDTO);

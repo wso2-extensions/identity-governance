@@ -64,8 +64,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
-        .ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
         .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
@@ -288,6 +286,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            if (supportMultipleEmails && !claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(true);
+            }
             preSetUserClaimsOnEmailUpdate(claims, userStoreManager, user);
             claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
         }
@@ -389,10 +390,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
-            userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
-                    RecoverySteps.VERIFY_EMAIL);
-            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                    RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            UserRecoveryData recoveryDataDO;
+            if (Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated()) {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            } else {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            }
             /* Email address persisted in remaining set ids to maintain context information about the email address
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
@@ -736,6 +745,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             }
         } finally {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+            Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         }
     }
 

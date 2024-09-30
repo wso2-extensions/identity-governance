@@ -187,11 +187,27 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString(), RecoverySteps.VERIFY_EMAIL.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
+                    RecoverySteps.VERIFY_EMAIL.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE, resendCodeRequestDTO);
         } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
         }

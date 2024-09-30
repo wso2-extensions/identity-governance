@@ -788,7 +788,9 @@ public class UserSelfRegistrationManager {
                         throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
                                 "value for the user : " + user.getUserName(), e);
                     }
-                } else {
+                }
+                if (!RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(recoveryData.getRecoveryScenario())) {
                     userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
                 }
                 // Todo passes when email address is properly set here.
@@ -826,7 +828,10 @@ public class UserSelfRegistrationManager {
                                 "value for the user : " + user.getUserName(), e);
                     }
                 }
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(recoveryData.getRecoveryScenario())) {
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 // Todo passes when mobile number is properly set here.
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
@@ -1013,10 +1018,12 @@ public class UserSelfRegistrationManager {
                         throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
                                 "value for the user : " + user.getUserName(), e);
                     }
-                } else {
-                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                    userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
                 }
+                if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(recoveryData.getRecoveryScenario())) {
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                }
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());

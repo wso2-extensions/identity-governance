@@ -414,6 +414,12 @@ public class MobileNumberVerificationHandlerTest {
                 null, null, null);
         mockUtilMethods(true, true, false);
 
+        MockedStatic<RecoveryScenarios> mockedStaticRecoveryScenarios = mockStatic(RecoveryScenarios.class);
+        mockedStaticRecoveryScenarios.when(() ->
+                        RecoveryScenarios.getRecoveryScenario(
+                                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()))
+                .thenReturn(RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE);
+
         /*
          Case 1: skipSendingSmsOtpVerificationOnUpdate set to skip.
          Expected: Invalidation should not be triggered.
@@ -443,6 +449,8 @@ public class MobileNumberVerificationHandlerTest {
             mobileNumberVerificationHandler.handleEvent(event);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof IdentityEventException);
+        } finally {
+            mockedStaticRecoveryScenarios.close();
         }
     }
 

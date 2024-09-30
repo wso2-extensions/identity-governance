@@ -87,7 +87,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -130,6 +129,18 @@ public class Utils {
      * purpose is not to update the mobile number with a new value.
      */
     private static ThreadLocal<String> skipSendingSmsOtpVerificationOnUpdate = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to stop verification pending mobile number from being set as the primary
+     * mobile number when only updating the verifiedMobileNumbers claim.
+     */
+    private static ThreadLocal<Boolean> isOnlyVerifiedMobileNumbersUpdated = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to stop verification pending email address from being set as the primary
+     * email address when only updating the verifiedEmailAddress claim.
+     */
+    private static ThreadLocal<Boolean> isOnlyVerifiedEmailAddressesUpdated = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -253,6 +264,38 @@ public class Utils {
     public static void setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(String value) {
 
         skipSendingSmsOtpVerificationOnUpdate.set(value);
+    }
+
+    public static void unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated() {
+
+        isOnlyVerifiedMobileNumbersUpdated.remove();
+    }
+
+    public static void setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(Boolean value) {
+
+        isOnlyVerifiedMobileNumbersUpdated.set(value);
+    }
+
+    public static boolean getThreadLocalIsOnlyVerifiedMobileNumbersUpdated() {
+
+        Boolean value = isOnlyVerifiedMobileNumbersUpdated.get();
+        return value != null && value;
+    }
+
+    public static void unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated() {
+
+        isOnlyVerifiedEmailAddressesUpdated.remove();
+    }
+
+    public static void setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(Boolean value) {
+
+        isOnlyVerifiedEmailAddressesUpdated.set(value);
+    }
+
+    public static boolean getThreadLocalIsOnlyVerifiedEmailAddressesUpdated() {
+
+        Boolean value = isOnlyVerifiedEmailAddressesUpdated.get();
+        return value != null && value;
     }
 
     public static String getClaimFromUserStoreManager(User user, String claim)

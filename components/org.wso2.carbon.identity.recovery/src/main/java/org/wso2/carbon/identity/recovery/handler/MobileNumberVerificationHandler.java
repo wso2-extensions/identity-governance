@@ -149,6 +149,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            if (supportMultipleMobileNumbers && !claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
+                Utils.setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(true);
+            }
             preSetUserClaimOnMobileNumberUpdate(claims, userStoreManager, user);
             claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
         }
@@ -188,13 +191,25 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
-            userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
-                    RecoverySteps.VERIFY_MOBILE_NUMBER);
             String secretKey = Utils.generateSecretKey(NotificationChannels.SMS_CHANNEL.getChannelType(),
                     String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), user.getTenantDomain(),
                     "UserClaimUpdate");
-            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+
+            UserRecoveryData recoveryDataDO;
+            if (Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated()) {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+            } else {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+            }
+
             /* Mobile number is persisted in remaining set ids to maintain context information about the mobile number
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
@@ -498,6 +513,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             }
         } finally {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
+            Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         }
     }
 
