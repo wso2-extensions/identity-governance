@@ -1042,7 +1042,7 @@ public class UserAccountRecoveryManagerTest {
         IdentityEventService identityEventService = mock(IdentityEventService.class);
         when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService()).thenReturn(identityEventService);
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty
-                        (IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SHARED_CLAIMS))
+                        (IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))
                 .thenReturn("true");
         ArrayList<org.wso2.carbon.user.core.common.User> list =
                 userAccountRecoveryManager.getUserListByClaims

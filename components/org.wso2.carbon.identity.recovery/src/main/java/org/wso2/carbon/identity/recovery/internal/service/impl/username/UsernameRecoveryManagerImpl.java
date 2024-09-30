@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (http://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -190,18 +190,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
      */
     private boolean useLegacyAPIApproach(Map<String, String> properties) {
 
-        if (MapUtils.isNotEmpty(properties)) {
-            try {
-                return Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
-            } catch (NumberFormatException e) {
-                if (log.isDebugEnabled()) {
-                    String message = String.format("Invalid boolean value : %s to enable legacyAPIs", properties
-                            .get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
-                    log.debug(message);
-                }
-            }
-        }
-        return false;
+        return Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
     }
 
     /**
