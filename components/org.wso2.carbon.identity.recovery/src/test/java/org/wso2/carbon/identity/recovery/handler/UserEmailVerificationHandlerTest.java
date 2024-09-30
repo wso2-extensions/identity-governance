@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.handler;
 
 import org.apache.commons.lang.StringUtils;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -40,6 +41,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
@@ -67,6 +69,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -507,6 +510,43 @@ public class UserEmailVerificationHandlerTest {
         } catch (Exception e) {
             Assert.assertTrue(e instanceof IdentityEventException);
         }
+    }
+
+    @Test
+    public void testHandleEventPostSetUserClaimsRecoveryScenarios()
+            throws IdentityEventException, IdentityRecoveryException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        mockUtilMethods(true, true, false,
+                true);
+        mockPendingVerificationEmail(EXISTING_EMAIL_1);
+
+        // Case 1: Change primary email address.
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedEmailAddressesUpdated).thenReturn(false);
+        userEmailVerificationHandler.handleEvent(event);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_EMAIL, capturedRecoveryData.getRecoveryStep());
+
+        reset(userRecoveryDataStore);
+
+        // Case 2: Change verified list.
+        Event event2 = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedEmailAddressesUpdated).thenReturn(true);
+        userEmailVerificationHandler.handleEvent(event2);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor2 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor2.capture());
+        UserRecoveryData capturedRecoveryData2 = recoveryDataCaptor2.getValue();
+        Assert.assertEquals(RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData2.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_EMAIL, capturedRecoveryData2.getRecoveryStep());
     }
 
     @Test

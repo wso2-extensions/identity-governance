@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.handler;
 
 import org.apache.commons.lang.StringUtils;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -38,6 +39,7 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
@@ -65,6 +67,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -150,6 +153,10 @@ public class MobileNumberVerificationHandlerTest {
         mockedUtils.close();
         mockedIdentityRecoveryServiceDataHolder.close();
         mockedFrameworkUtils.close();
+        Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
+        Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
+        Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+        Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
     }
 
     @Test
@@ -427,9 +434,9 @@ public class MobileNumberVerificationHandlerTest {
         mockedUtils.when(Utils::getThreadLocalToSkipSendingSmsOtpVerificationOnUpdate)
                 .thenReturn(IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
                         .SKIP_ON_EXISTING_MOBILE_NUM.toString());
+
         mobileNumberVerificationHandler.handleEvent(event);
-        verify(userRecoveryDataStore, never()).invalidate(any(), eq(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE),
-                eq(RecoverySteps.VERIFY_MOBILE_NUMBER));
+        verify(identityEventService, never()).handleEvent(any());
 
         /*
          Case 2: skipSendingSmsOtpVerificationOnUpdate set to null.
@@ -452,6 +459,47 @@ public class MobileNumberVerificationHandlerTest {
         } finally {
             mockedStaticRecoveryScenarios.close();
         }
+    }
+
+    @Test
+    public void testHandleEventPostSetRecoveryScenarios()
+            throws IdentityEventException, IdentityRecoveryException, UserStoreException {
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
+                null, null, null);
+        mockUtilMethods(true, true, false);
+
+        MockedStatic<RecoveryScenarios> mockedStaticRecoveryScenarios = mockStatic(RecoveryScenarios.class);
+        mockedStaticRecoveryScenarios.when(() ->
+                        RecoveryScenarios.getRecoveryScenario(
+                                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()))
+                .thenReturn(RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE);
+        mockVerificationPendingMobileNumber();
+
+        // Case 1: Update the primary mobile number.
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedMobileNumbersUpdated).thenReturn(false);
+        mobileNumberVerificationHandler.handleEvent(event);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        Assert.assertEquals(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_MOBILE_NUMBER, capturedRecoveryData.getRecoveryStep());
+
+        reset(userRecoveryDataStore);
+        // Case 2: Update the verified list.
+        Event event2 = createEvent(IdentityEventConstants.Event.POST_SET_USER_CLAIMS, null,
+                null, null, null);
+        mockedUtils.when(Utils::getThreadLocalIsOnlyVerifiedMobileNumbersUpdated).thenReturn(true);
+        mobileNumberVerificationHandler.handleEvent(event2);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor2 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor2.capture());
+        UserRecoveryData capturedRecoveryData2 = recoveryDataCaptor2.getValue();
+        Assert.assertEquals(RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData2.getRecoveryScenario());
+        Assert.assertEquals(RecoverySteps.VERIFY_MOBILE_NUMBER, capturedRecoveryData2.getRecoveryStep());
     }
 
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
