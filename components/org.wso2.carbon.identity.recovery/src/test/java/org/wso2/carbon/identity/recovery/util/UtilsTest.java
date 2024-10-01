@@ -275,6 +275,44 @@ public class UtilsTest {
     }
 
     @Test
+    public void testIsOnlyVerifiedMobileNumbersUpdatedThreadLocal() {
+
+        // Initially should be false.
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated());
+
+        // Set to true.
+        Utils.setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(true);
+        assertTrue(Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated());
+
+        // Set to false.
+        Utils.setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(false);
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated());
+
+        // Unset.
+        Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated());
+    }
+
+    @Test
+    public void testIsOnlyVerifiedEmailAddressesUpdatedThreadLocal() {
+
+        // Initially should be false.
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated());
+
+        // Set to true.
+        Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(true);
+        assertTrue(Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated());
+
+        // Set to false.
+        Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(false);
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated());
+
+        // Unset.
+        Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
+        assertFalse(Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated());
+    }
+
+    @Test
     public void testGetClaimFromUserStoreManager() throws Exception {
 
         User user = getUser();

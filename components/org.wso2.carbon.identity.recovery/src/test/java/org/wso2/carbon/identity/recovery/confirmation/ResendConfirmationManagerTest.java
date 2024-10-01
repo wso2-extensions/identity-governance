@@ -68,6 +68,7 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 @WithCarbonHome
 public class ResendConfirmationManagerTest {
@@ -317,6 +318,7 @@ public class ResendConfirmationManagerTest {
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+            fail();
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryClientException);
         }
@@ -327,6 +329,7 @@ public class ResendConfirmationManagerTest {
                     "",
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+            fail();
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryClientException);
         }
@@ -337,6 +340,7 @@ public class ResendConfirmationManagerTest {
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
                     "",
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+            fail();
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryClientException);
         }
@@ -347,6 +351,7 @@ public class ResendConfirmationManagerTest {
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     "", properties);
+            fail();
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryClientException);
         }

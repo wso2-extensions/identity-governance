@@ -113,14 +113,15 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
-
 import static org.testng.Assert.fail;
+
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
@@ -652,8 +653,10 @@ public class UserSelfRegistrationManagerTest {
                 capturedClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         String updatedVerificationPendingMobile =
                 capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
+        String updatedPrimaryMobile = capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
         assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
+        assertEquals(updatedPrimaryMobile, verificationPendingMobileNumber);
         assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
 
         // Case 2: Multiple email and mobile per user is disabled.
@@ -671,6 +674,63 @@ public class UserSelfRegistrationManagerTest {
 
         assertEquals(updatedVerificationPendingMobile2, StringUtils.EMPTY);
         assertEquals(mobileNumberClaims, verificationPendingMobileNumber);
+
+        // Case 3: Wrong recovery step.
+        UserRecoveryData userRecoveryData3 = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VALIDATE_ALL_CHALLENGE_QUESTION);
+        userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData3);
+        try {
+            userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+            fail();
+        } catch (IdentityRecoveryException e) {
+            assertEquals(e.getErrorCode(), IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode());
+        }
+    }
+
+    @Test
+    public void testConfirmVerificationCodeMeVerificationOnVerifiedListUpdate()
+            throws IdentityRecoveryException, UserStoreException {
+
+        // Case 1: Recovery Scenario - MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
+        String verificationPendingMobileNumber = "0700000000";
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(true);
+        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, verificationPendingMobileNumber);
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, verificationPendingMobileNumber);
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+        String updatedVerificationPendingMobile =
+                capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
+
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
+        assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
+
+        reset(userStoreManager);
+
+        // Case 2: When pending mobile number claim value is null.
+        UserRecoveryData userRecoveryData2 = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData2);
+
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
+        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
     }
 
     @Test(expectedExceptions = IdentityRecoveryServerException.class)
@@ -757,17 +817,6 @@ public class UserSelfRegistrationManagerTest {
 
         // Case 3 : Throws user store exception while getting user store manager.
         when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
-        try {
-            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
-                    verifiedChannelClaim, metaProperties);
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof IdentityRecoveryServerException);
-        }
-
-        // Case 4 : Throws user store exception while getting user claim values.
-        when(userStoreManager.getUserClaimValue(any(), eq(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
-                any())).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
         try {
             userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
                     verifiedChannelClaim, metaProperties);

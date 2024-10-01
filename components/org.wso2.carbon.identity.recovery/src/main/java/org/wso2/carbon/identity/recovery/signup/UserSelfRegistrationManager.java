@@ -984,50 +984,48 @@ public class UserSelfRegistrationManager {
 
         boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
-        if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
-            String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
-            if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
-                /*
-                Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
-                claim.
-                */
-                if (supportMultipleEmailsAndMobileNumbers) {
-                    try {
-                        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
-                        List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
-                                user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                        if (!existingVerifiedMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
-                            existingVerifiedMobileNumbersList.add(pendingMobileNumberClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
-                        }
-
-                        /*
-                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
-                        mobileNumbers claim as well.
-                        */
-                        List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
-                                user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-                        if (!allMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
-                            allMobileNumbersList.add(pendingMobileNumberClaimValue);
-                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                                    String.join(multiAttributeSeparator, allMobileNumbersList));
-                        }
-                    } catch (IdentityEventException e) {
-                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
-                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
-                                "value for the user : " + user.getUserName(), e);
+        String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
+        if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
+            /*
+            Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
+            claim.
+            */
+            if (supportMultipleEmailsAndMobileNumbers) {
+                try {
+                    String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+                    List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                            user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                    if (!existingVerifiedMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                        existingVerifiedMobileNumbersList.add(pendingMobileNumberClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                                String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
                     }
+
+                    /*
+                    VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
+                    mobileNumbers claim as well.
+                    */
+                    List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                            user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                    if (!allMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                        allMobileNumbersList.add(pendingMobileNumberClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                                String.join(multiAttributeSeparator, allMobileNumbersList));
+                    }
+                } catch (IdentityEventException e) {
+                    log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
+                    throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
+                            "value for the user : " + user.getUserName(), e);
                 }
-                if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
-                        .equals(recoveryData.getRecoveryScenario())) {
-                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                }
-                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
             }
+            if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                    .equals(recoveryData.getRecoveryScenario())) {
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+            }
+            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
