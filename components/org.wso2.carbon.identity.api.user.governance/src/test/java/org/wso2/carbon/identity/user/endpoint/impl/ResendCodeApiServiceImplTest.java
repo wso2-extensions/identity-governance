@@ -109,16 +109,21 @@ public class ResendCodeApiServiceImplTest {
 
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
         assertEquals(resendCodeApiService.resendCodePost(emptyResendCodeRequestDTO()).getStatus(), 201);
-        assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(),
+                201);
         assertEquals(resendCodeApiService.resendCodePost(multipleResendCodeRequestDTO()).getStatus(), 201);
 
-        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 400);
+        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO()))
+                .thenReturn(null);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(),
+                400);
 
         mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(
                 userRecoveryData);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 400);
-        assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(),
+                400);
+        assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(),
+                201);
     }
 
     @Test
@@ -227,38 +232,79 @@ public class ResendCodeApiServiceImplTest {
 
     @DataProvider(name = "recoveryScenarioProvider")
     public Object[][] recoveryScenarioProvider() {
+
         return new Object[][] {
-                {RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD},
-                {RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD},
-                {RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP},
-                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD},
-                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD},
-                {RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD},
-                {RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP},
-                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL},
-                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL},
-                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER},
-                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER},
+                {RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, RecoveryScenarios.ASK_PASSWORD,
+                        RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, RecoveryScenarios.SELF_SIGN_UP,
+                        RecoverySteps.CONFIRM_SIGN_UP, 201},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP, RecoveryScenarios.LITE_SIGN_UP,
+                        RecoverySteps.CONFIRM_LITE_SIGN_UP, 201},
+
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL, 400},
         };
     }
 
     @Test(dataProvider = "recoveryScenarioProvider")
-    public void testRecoveryScenarios(RecoveryScenarios scenario, RecoverySteps step) throws Exception {
+    public void testRecoveryScenarios(RecoveryScenarios scenario, RecoverySteps step,
+                                      RecoveryScenarios userRecoveryDataScenario, RecoverySteps userRecoveryDataStep,
+                                      int expectedStatusCode) throws Exception {
 
         ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(scenario.name());
         User user = new User();
-        UserRecoveryData recoveryData = new UserRecoveryData(user, "test-secret", scenario, step);
+        UserRecoveryData recoveryData = new UserRecoveryData(user, "test-secret",
+                userRecoveryDataScenario, userRecoveryDataStep);
         when(Utils.getUserRecoveryData(any(), anyString())).thenReturn(recoveryData);
         when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
 
         NotificationResponseBean expectedResponse = new NotificationResponseBean(user);
+        expectedResponse.setKey("test-key");
         when(resendConfirmationManager.resendConfirmationCode(any(), anyString(), anyString(), anyString(), any()))
                 .thenReturn(expectedResponse);
 
         Response result = resendCodeApiService.resendCodePost(requestDTO);
 
         assertNotNull(result);
-        assertEquals(result.getStatus(), Response.Status.CREATED.getStatusCode());
+        assertEquals(result.getStatus(), expectedStatusCode);
     }
 
     private ResendCodeRequestDTO createResendCodeRequestDTO(String recoveryScenario) {

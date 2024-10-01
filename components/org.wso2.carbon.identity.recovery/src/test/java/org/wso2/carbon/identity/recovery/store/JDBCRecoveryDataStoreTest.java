@@ -173,7 +173,15 @@ public class JDBCRecoveryDataStoreTest {
                 { RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER },
                 { RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER },
                 { RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL },
-                { RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL }
+                { RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL },
+                { RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.VERIFY_EMAIL },
+                { RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP },
+                { RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP },
+                { RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.VALIDATE_CHALLENGE_QUESTION },
+                { RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD },
         };
     }
 
@@ -235,6 +243,33 @@ public class JDBCRecoveryDataStoreTest {
                 .thenReturn("10");
         mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
                         .ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants
+                        .ConnectorConfig.TENANT_ADMIN_ASK_PASSWORD_EXPIRY_TIME))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.RESEND_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.LITE_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
+                .thenReturn("10");
+        mockedUtils.when(() -> Utils.getRecoveryConfigs(IdentityRecoveryConstants
+                        .ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME, TEST_TENANT_DOMAIN))
                 .thenReturn("10");
     }
 
