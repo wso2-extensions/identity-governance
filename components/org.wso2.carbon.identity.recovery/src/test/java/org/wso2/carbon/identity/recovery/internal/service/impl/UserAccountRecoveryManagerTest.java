@@ -50,6 +50,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.claim.ClaimManager;
@@ -62,6 +63,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -727,6 +729,78 @@ public class UserAccountRecoveryManagerTest {
                 { "getUsernameByClaims" },
                 { "getUserListByClaims" }
         };
+    }
+
+    /**
+     * Tests that an IdentityRecoveryServerException is thrown during GetClaimListOfUser
+     *
+     * @throws Exception if there is an issue with mocking or method invocation.
+     */
+    @Test (expectedExceptions = IdentityRecoveryServerException.class)
+    public void testGetClaimListOfUserException() throws Exception {
+
+        mockUserstoreManager();
+        mockBuildUser();
+        mockedUtils.when(() -> Utils.isNotificationsInternallyManaged(anyString(), any()))
+                .thenReturn(true);
+        when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                .thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class), anyString(), anyString(),
+                anyInt(), anyInt(), isNull(), isNull())).thenReturn(getOneFilteredUser());
+        when(claimManager.getAttributeName(anyString(), anyString()))
+                .thenReturn("http://wso2.org/claims/mockedClaim");
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
+        when(abstractUserStoreManager.getUserClaimValues(anyString(), any(String[].class), isNull()))
+                .thenThrow(new UserStoreException("Simulated exception"));
+        HashMap<String, String> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, "user");
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService())
+                .thenReturn(identityEventService);
+        doThrow(new IdentityEventException("error"))
+                .when(identityEventService).handleEvent(any(Event.class));
+        when(Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_LOADING_USER_CLAIMS, null))
+                .thenReturn(new IdentityRecoveryServerException(null, null, null));
+        userAccountRecoveryManager.retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY,
+                RecoveryScenarios.USERNAME_RECOVERY, properties);
+    }
+
+    /**
+     * Tests testGetDomainNames through retrieveUserRecoveryInformation
+     *
+     * @throws Exception if there is an issue with mocking or method invocation.
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testGetDomainNames() throws Exception {
+
+        mockUserstoreManager();
+        mockBuildUser();
+        mockedUtils.when(() -> Utils.isNotificationsInternallyManaged(anyString(), any()))
+                .thenReturn(true);
+        when(identityRecoveryServiceDataHolder.getMultiAttributeLoginService())
+                .thenReturn(multiAttributeLoginService);
+        when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
+        when(abstractUserStoreManager.getUserListWithID(any(Condition.class), anyString(), anyString(),
+                anyInt(), anyInt(), isNull(), isNull())).thenReturn(getOneFilteredUser());
+        when(claimManager.getAttributeName(anyString(), anyString()))
+                .thenReturn("http://wso2.org/claims/mockedClaim");
+        RealmConfiguration realmConfiguration = mock(RealmConfiguration.class);
+        when(realmConfiguration.getUserStoreProperty("DomainName")).thenReturn("PRIMARY");
+        mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
+        when(abstractUserStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        when(Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null))
+                .thenReturn(new IdentityRecoveryServerException(null, null, null));
+
+        AtomicInteger callCount = new AtomicInteger(0);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager()).thenAnswer(invocation -> {
+            if (callCount.incrementAndGet() == 1) {
+                return abstractUserStoreManager;
+            }
+            return null;
+        });
+
+        userAccountRecoveryManager.retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY,
+                RecoveryScenarios.USERNAME_RECOVERY, null);
     }
 
     /**
