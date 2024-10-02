@@ -68,6 +68,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -184,6 +185,14 @@ public class MobileNumberVerificationHandlerTest {
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
                 StringUtils.EMPTY);
+
+        reset(userRecoveryDataStore);
+        // Case 2: User claims null.
+        Event event2 =
+                createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
+                        null, null, null);
+        mobileNumberVerificationHandler.handleEvent(event2);
+        verify(userRecoveryDataStore, never()).invalidate(any(), eq(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), any());
     }
 
     @Test(description = "Verification disabled, Multi-attribute enabled, Change primary mobile")
@@ -204,6 +213,36 @@ public class MobileNumberVerificationHandlerTest {
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertTrue(StringUtils.contains(
                 userClaims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), NEW_MOBILE_NUMBER));
+
+        // Case 2: Send mobile numbers claim with mobile number claim.
+        Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
+                null, EXISTING_NUMBER_1, NEW_MOBILE_NUMBER);
+        mockVerificationPendingMobileNumber();
+        mockUtilMethods(false, true, false);
+
+        // New primary mobile number is not included in existing all mobile numbers list.
+        mockExistingNumbersList(null);
+
+        // Expectation: New mobile number should be added to the mobile numbers claim.
+        mobileNumberVerificationHandler.handleEvent(event2);
+        Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
+        Assert.assertTrue(StringUtils.contains(
+                userClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), NEW_MOBILE_NUMBER));
+        Assert.assertTrue(StringUtils.contains(
+                userClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), EXISTING_NUMBER_1));
+
+        // Case 3: Updated verified mobile numbers list.
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIM, null,
+                NEW_MOBILE_NUMBER, null, null);
+        mockVerificationPendingMobileNumber();
+
+        // Expectation: Verified mobile number claim should be removed from user claims.
+        mobileNumberVerificationHandler.handleEvent(event3);
+        verify(userRecoveryDataStore, times(3)).invalidate(any(),
+                eq(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE),
+                eq(RecoverySteps.VERIFY_MOBILE_NUMBER));
+        Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
+        Assert.assertFalse(userClaims3.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
     }
 
     @Test(description = "PRE_SET_USER_CLAIMS: Verification enabled, Multi-attribute disabled, Claims null")
