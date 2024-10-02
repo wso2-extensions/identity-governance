@@ -561,6 +561,7 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL = "Recovery.Notification.Password.OTP.SendOTPInEmail";
+        public static final String PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE = "Recovery.Notification.Password.OTP.SendOnlyOTPAsConfirmationCode";
         public static final String PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
                 "OTP.UseUppercaseCharactersInOTP";
         public static final String PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
