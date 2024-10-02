@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (http://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -53,6 +53,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,40 +91,42 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         boolean manageNotificationsInternally = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
         if (useLegacyAPIApproach) {
             // Use legacy API approach to support legacy username recovery.
-            String username = userAccountRecoveryManager.getUsernameByClaims(claims, tenantDomain);
-            if (StringUtils.isNotEmpty(username)) {
-                if (manageNotificationsInternally) {
-                    User user = createUser(username, tenantDomain);
-                    triggerNotification(user, NotificationChannels.EMAIL_CHANNEL.getChannelType(),
-                            IdentityEventConstants.Event.TRIGGER_NOTIFICATION, null);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Successful username recovery for user: " + username + ". " +
-                                "User notified Internally");
+            ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = userAccountRecoveryManager
+                    .getUserListByClaims(claims, tenantDomain);
+            for (org.wso2.carbon.user.core.common.User recoveredUser : resultedUserList) {
+                String username = recoveredUser.getDomainQualifiedUsername();
+                if (StringUtils.isNotEmpty(username)) {
+                    if (manageNotificationsInternally) {
+                        User user = createUser(username, tenantDomain);
+                        triggerNotification(user, NotificationChannels.EMAIL_CHANNEL.getChannelType(),
+                                IdentityEventConstants.Event.TRIGGER_NOTIFICATION, null);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Successful username recovery for user: " + username + ". " +
+                                    "User notified Internally");
+                        }
+                        auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_INTERNAL,
+                                username, null, FrameworkConstants.AUDIT_SUCCESS);
                     }
-                    auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_INTERNAL,
+                    if (log.isDebugEnabled()) {
+                        log.debug("Successful username recovery for user: " + username + ". User notified Externally");
+                    }
+                    auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_EXTERNAL,
                             username, null, FrameworkConstants.AUDIT_SUCCESS);
-                    return null;
+                    recoveryInformationDTO.setUsername(username);
+                } else {
+                    String errorMsg =
+                            String.format("No user found for the given claims in tenant domain : %s", tenantDomain);
+                    if (log.isDebugEnabled()) {
+                        log.debug(errorMsg);
+                    }
+                    auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, "N/A", username, errorMsg,
+                            FrameworkConstants.AUDIT_FAILED);
+                    if (Boolean.parseBoolean(
+                            IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
+                        throw Utils.handleClientException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null);
+                    }
                 }
-                if (log.isDebugEnabled()) {
-                    log.debug("Successful username recovery for user: " + username + ". User notified Externally");
-                }
-                auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, NOTIFICATION_TYPE_EXTERNAL,
-                        username, null, FrameworkConstants.AUDIT_SUCCESS);
-                recoveryInformationDTO.setUsername(username);
-            } else {
-                String errorMsg =
-                        String.format("No user found for the given claims in tenant domain : %s", tenantDomain);
-                if (log.isDebugEnabled()) {
-                    log.debug(errorMsg);
-                }
-                auditUserNameRecovery(AuditConstants.ACTION_USERNAME_RECOVERY, claims, "N/A", username, errorMsg,
-                        FrameworkConstants.AUDIT_FAILED);
-                if (Boolean.parseBoolean(
-                        IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.NOTIFY_USER_EXISTENCE))) {
-                    throw Utils.handleClientException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null);
-                }
-                return null;
             }
             return recoveryInformationDTO;
         }
@@ -187,18 +190,7 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
      */
     private boolean useLegacyAPIApproach(Map<String, String> properties) {
 
-        if (MapUtils.isNotEmpty(properties)) {
-            try {
-                return Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
-            } catch (NumberFormatException e) {
-                if (log.isDebugEnabled()) {
-                    String message = String.format("Invalid boolean value : %s to enable legacyAPIs", properties
-                            .get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
-                    log.debug(message);
-                }
-            }
-        }
-        return false;
+        return Boolean.parseBoolean(properties.get(IdentityRecoveryConstants.USE_LEGACY_API_PROPERTY_KEY));
     }
 
     /**
