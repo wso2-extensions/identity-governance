@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020, WSO2 LLC. (https://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.recovery.internal.service.impl;
 
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,12 +68,12 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static java.lang.Integer.MAX_VALUE;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY;
 import static org.wso2.carbon.identity.recovery.RecoveryScenarios.USERNAME_RECOVERY;
@@ -361,6 +360,83 @@ public class UserAccountRecoveryManager {
     }
 
     /**
+     * Get the userlist for the given claims.
+     *
+     * @param claims       List of UserClaims
+     * @param tenantDomain Tenant domain
+     * @return resultedUserList (Returns an empty list if there are no users).
+     * @throws IdentityRecoveryException Error while retrieving the users list.
+     */
+    public ArrayList<org.wso2.carbon.user.core.common.User> getUserListByClaims(Map<String, String> claims, String tenantDomain)
+            throws IdentityRecoveryException {
+
+        ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+
+        if (MapUtils.isEmpty(claims)) {
+            // Get error code with scenario.
+            String errorCode = Utils.prependOperationScenarioToErrorCode(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getCode(),
+                    IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+            throw Utils.handleClientException(errorCode,
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_FIELD_FOUND_FOR_USER_RECOVERY.getMessage(),
+                    null);
+        }
+
+        MultiAttributeLoginService multiAttributeLoginService = IdentityRecoveryServiceDataHolder.getInstance()
+                .getMultiAttributeLoginService();
+
+        if (multiAttributeLoginService.isEnabled(tenantDomain) && claims.containsKey(MultiAttributeLoginConstants
+                .MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI)) {
+            /* Multiple claims are not allowed when user identifier claim is enabled since identifier claim cannot be
+             used in combination with other claims. */
+            if (claims.keySet().size() > 1) {
+                String errorCode = Utils.prependOperationScenarioToErrorCode(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getCode(), IdentityRecoveryConstants.USER_ACCOUNT_RECOVERY);
+                throw Utils.handleClientException(errorCode,
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI
+                                .getMessage(), null);
+            }
+            // Resolve the user with the multi attribute login service.
+            ResolvedUserResult resolvedUserResult = multiAttributeLoginService.resolveUser(
+                    claims.get(MultiAttributeLoginConstants.MULTI_ATTRIBUTE_USER_IDENTIFIER_CLAIM_URI), tenantDomain);
+            if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS
+                    .equals(resolvedUserResult.getResolvedStatus())) {
+                resultedUserList.add(resolvedUserResult.getUser());
+                return resultedUserList;
+            }
+            return resultedUserList;
+        }
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        try {
+            AbstractUserStoreManager abstractUserStoreManager = (AbstractUserStoreManager)
+                    getUserStoreManager(tenantId);
+            String userstoreDomain = extractDomainFromClaims(claims, abstractUserStoreManager);
+            if (userstoreDomain != null) {
+                populateUserListFromClaimsForDomain(tenantId, claims, userstoreDomain, resultedUserList,
+                        abstractUserStoreManager);
+            } else {
+                // If a userstore domain is not specified in the request, consider all userstores.
+                List<String> userStoreDomainNames = getDomainNames(tenantId);
+                for (String domain : userStoreDomainNames) {
+                    populateUserListFromClaimsForDomain(tenantId, claims, domain, resultedUserList,
+                            abstractUserStoreManager);
+                }
+            }
+            return resultedUserList;
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error while retrieving users from user store for the given claim set: " +
+                        Arrays.toString(claims.keySet().toArray()));
+            }
+            throw new IdentityRecoveryException(e.getErrorCode(), "Error occurred while retrieving users.", e);
+        } catch (UserStoreException | IdentityRecoveryServerException e) {
+            throw new IdentityRecoveryException(e.getMessage(), e);
+        }
+    }
+
+    /**
      * Extract and remove the userstore domain from the claim set.
      *
      * @param claims                   List of UserClaims.
@@ -421,11 +497,15 @@ public class UserAccountRecoveryManager {
 
         if (!expressionConditionList.isEmpty()) {
             Condition operationalCondition = getOperationalCondition(expressionConditionList);
-            // Get the user list that matches the condition limit : 2, offset : 1, sortBy : null, sortOrder : null
+            boolean nonUniqueUsernameEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                    IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME));
+            int limit = nonUniqueUsernameEnabled ? MAX_VALUE : 2;
+            // Get the user list that matches the condition limit : MAX_VALUE or 2, offset : 1, sortBy : null, sortOrder : null
             userList.addAll(abstractUserStoreManager.getUserListWithID(operationalCondition, userstoreDomain,
-                    UserCoreConstants.DEFAULT_PROFILE, 2, 1, null, null));
+                    UserCoreConstants.DEFAULT_PROFILE, limit, 1, null, null));
 
-            if (userList.size() > 1) {
+            //If multiple users are found for the given claim set and the config is not enabled, throw an exception.
+            if (userList.size() > 1 && !nonUniqueUsernameEnabled) {
                 log.warn("Multiple users matched for given claims set: " + claims.keySet());
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_MATCHING_USERS, null);
@@ -666,49 +746,6 @@ public class UserAccountRecoveryManager {
     }
 
     /**
-     * Get the users list for a matching claim.
-     *
-     * @param tenantId   Tenant ID
-     * @param claimUri   Claim to be searched
-     * @param claimValue Claim value to be matched
-     * @return Matched users list
-     * @throws IdentityRecoveryServerException If an error occurred while retrieving claims from the userstore manager.
-     */
-    private String[] getUserList(int tenantId, String claimUri, String claimValue)
-            throws IdentityRecoveryServerException {
-
-        String[] userList = new String[0];
-        UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-        try {
-            if (userStoreManager != null) {
-                if (StringUtils.isNotBlank(claimValue) && claimValue.contains(FORWARD_SLASH)) {
-                    String extractedDomain = IdentityUtil.extractDomainFromName(claimValue);
-                    UserStoreManager secondaryUserStoreManager = userStoreManager.
-                            getSecondaryUserStoreManager(extractedDomain);
-                    /*
-                    Some claims (Eg:- Birth date) can have "/" in claim values. But in user store level we are trying
-                    to extract the claim value and find the user store domain. Hence we are adding an extra "/" to
-                    the claim value to avoid such issues.
-                     */
-                    if (secondaryUserStoreManager == null) {
-                        claimValue = FORWARD_SLASH + claimValue;
-                    }
-                }
-                userList = userStoreManager.getUserList(claimUri, claimValue, null);
-            }
-            return userList;
-        } catch (UserStoreException e) {
-            if (log.isDebugEnabled()) {
-                String error = String
-                        .format("Unable to retrieve the claim : %1$s for the given tenant : %2$s", claimUri, tenantId);
-                log.debug(error, e);
-            }
-            throw Utils.handleServerException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_RETRIEVING_USER_CLAIM, claimUri, e);
-        }
-    }
-
-    /**
      * Get all the domain names related to user stores.
      * @param tenantId   Tenant ID
      * @return A list of all the available domain names for given tenant
@@ -785,39 +822,6 @@ public class UserAccountRecoveryManager {
             }
             throw Utils.handleServerException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, e);
-        }
-    }
-
-    /**
-     * Keep the common users list from the previously matched list and the new list.
-     *
-     * @param resultedUserList Already matched users for previous claims
-     * @param matchedUserList  Retrieved users list for the given claim
-     * @param claim            Claim used for filtering
-     * @param value            Value given for the claim
-     * @return Users list with no duplicates.
-     */
-    private String[] getCommonUserEntries(String[] resultedUserList, String[] matchedUserList, String claim,
-                                          String value) {
-
-        ArrayList<String> matchedUsers = new ArrayList<>(Arrays.asList(matchedUserList));
-        ArrayList<String> resultedUsers = new ArrayList<>(Arrays.asList(resultedUserList));
-        // Remove not matching users.
-        resultedUsers.retainAll(matchedUsers);
-        if (resultedUsers.size() > 0) {
-            resultedUserList = resultedUsers.toArray(new String[0]);
-            if (log.isDebugEnabled()) {
-                log.debug("Current matching temporary user list :" + Arrays.toString(resultedUserList));
-            }
-            return resultedUserList;
-        } else {
-            if (log.isDebugEnabled()) {
-                String message = String
-                        .format("There are no common users for claim : %1$s with the value : %2$s with the "
-                                + "previously filtered user list", claim, value);
-                log.debug(message);
-            }
-            return new String[0];
         }
     }
 

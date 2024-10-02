@@ -22,7 +22,7 @@
     <parent>
         <artifactId>identity-governance</artifactId>
         <groupId>org.wso2.carbon.identity.governance</groupId>
-        <version>1.11.2-SNAPSHOT</version>
+        <version>1.11.6-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -72,6 +72,11 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
         </dependency>
     </dependencies>
 
@@ -139,6 +144,25 @@
                 <configuration>
                     <threshold>Medium</threshold>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -59,6 +59,7 @@ public class PasswordPolicyConstants {
     public static final String FALSE = "false";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
+    public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
 
