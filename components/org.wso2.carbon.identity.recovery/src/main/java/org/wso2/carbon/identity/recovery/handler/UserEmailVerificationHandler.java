@@ -589,6 +589,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
                     existingAllEmailAddresses;
 
+            if (updatedAllEmailAddresses == null) {
+                updatedAllEmailAddresses = new ArrayList<>();
+            }
+            if (updatedVerifiedEmailAddresses == null) {
+                updatedVerifiedEmailAddresses = new ArrayList<>();
+            }
+
             // Find the verification pending email address and remove it from verified email addresses in the payload.
             if (emailAddress == null && CollectionUtils.isNotEmpty(updatedVerifiedEmailAddresses)) {
                 emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
@@ -601,9 +608,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             addresses list, as verified email addresses list should not contain email addresses that are not in the
             email addresses list.
             */
-            if (updatedAllEmailAddresses != null) {
-                updatedVerifiedEmailAddresses.removeIf(number -> !updatedAllEmailAddresses.contains(number));
-            }
+            final List<String> tempUpdatedAllEmailAddresses = new ArrayList<>(updatedAllEmailAddresses);
+            updatedVerifiedEmailAddresses.removeIf(number -> !tempUpdatedAllEmailAddresses.contains(number));
 
             claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
                     StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
@@ -626,18 +632,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         String existingEmail = getEmailClaimValue(user, userStoreManager);
-        if (StringUtils.isNotBlank(existingEmail) && supportMultipleEmails) {
-            if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
-                updatedVerifiedEmailAddresses.add(existingEmail);
-                claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                        StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-            }
-            if (!updatedAllEmailAddresses.contains(existingEmail)) {
-                updatedAllEmailAddresses.add(existingEmail);
-                claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                        StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
-            }
-        }
 
         if (supportMultipleEmails && updatedVerifiedEmailAddresses.contains(emailAddress)) {
             if (log.isDebugEnabled()) {
@@ -660,6 +654,19 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
             invalidatePendingEmailVerification(user, userStoreManager, claims);
+
+            if (supportMultipleEmails) {
+                if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
+                    updatedVerifiedEmailAddresses.add(existingEmail);
+                    claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+                }
+                if (!updatedAllEmailAddresses.contains(existingEmail)) {
+                    updatedAllEmailAddresses.add(existingEmail);
+                    claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+                }
+            }
             return;
         }
 

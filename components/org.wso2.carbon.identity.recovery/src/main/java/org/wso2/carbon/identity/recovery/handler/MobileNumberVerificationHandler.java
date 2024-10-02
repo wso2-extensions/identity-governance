@@ -390,19 +390,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             throw new IdentityEventException(error, e);
         }
 
-        if (supportMultipleMobileNumbers && StringUtils.isNotBlank(existingMobileNumber)) {
-            if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
-                updatedVerifiedNumbersList.add(existingMobileNumber);
-                claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                        String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
-            }
-            if (!updatedAllNumbersList.contains(existingMobileNumber)) {
-                updatedAllNumbersList.add(existingMobileNumber);
-                claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                        String.join(multiAttributeSeparator, updatedAllNumbersList));
-            }
-        }
-
         if (supportMultipleMobileNumbers && updatedVerifiedNumbersList.contains(mobileNumber)) {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                     IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
@@ -421,6 +408,19 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
             invalidatePendingMobileVerification(user, userStoreManager, claims);
+
+            if (supportMultipleMobileNumbers) {
+                if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
+                    updatedVerifiedNumbersList.add(existingMobileNumber);
+                    claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                            String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+                }
+                if (!updatedAllNumbersList.contains(existingMobileNumber)) {
+                    updatedAllNumbersList.add(existingMobileNumber);
+                    claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                            String.join(multiAttributeSeparator, updatedAllNumbersList));
+                }
+            }
             return;
         }
         /*
