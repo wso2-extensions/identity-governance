@@ -735,7 +735,7 @@
         <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
         <jackson-jaxrs-json-provider.version>2.13.2</jackson-jaxrs-json-provider.version>
         <jackson-databind.version>2.13.2.1</jackson-databind.version>
-        <cxf-bundle.version>3.6.4</cxf-bundle.version>
+        <cxf-bundle.version>3.5.9</cxf-bundle.version>
         <spring-web.version>4.3.29.RELEASE</spring-web.version>
         <swagger-jaxrs.version>1.6.2</swagger-jaxrs.version>
         <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
