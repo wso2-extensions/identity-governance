@@ -286,6 +286,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
             if (supportMultipleEmails && !claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
                 Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(true);
             }

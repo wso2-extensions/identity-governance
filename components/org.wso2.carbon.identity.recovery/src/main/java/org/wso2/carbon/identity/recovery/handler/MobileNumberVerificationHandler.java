@@ -149,6 +149,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
             if (supportMultipleMobileNumbers && !claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM)) {
                 Utils.setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(true);
             }
