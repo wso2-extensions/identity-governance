@@ -45,6 +45,7 @@ import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManag
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -54,6 +55,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.governance.service.otp.OTPGenerator;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -65,10 +67,12 @@ import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.sql.Timestamp;
@@ -79,7 +83,9 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
@@ -479,6 +485,25 @@ public class UserSelfRegistrationManagerTest {
         } catch (SelfRegistrationException e) {
             Assert.assertEquals(e.getErrorCode(), expectedErrorCode);
         }
+    }
+
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void registerUserInvalidOrganizationEmailDomain()
+            throws IdentityRecoveryException, org.wso2.carbon.user.api.UserStoreException {
+
+        try (MockedStatic<Utils> utilsMockedStatic = Mockito.mockStatic(Utils.class)) {
+            utilsMockedStatic.when(() -> Utils.handleClientException(any(IdentityRecoveryConstants.ErrorMessages.class),
+                    isNull(), any())).thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                    "err-code", ""));
+            utilsMockedStatic.when(() -> Utils.getSignUpConfigs(anyString(), anyString())).thenReturn("true");
+            when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+            when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+            // Mock addUser to throw UserStoreException
+            doThrow(new UserStoreException("Simulated exception", "ORG-60091")).when(userStoreManager)
+                    .isExistingRole(anyString());
+            userSelfRegistrationManager.registerUser(new User(), "", new Claim[]{}, null);
+        }
+
     }
 
     /**
