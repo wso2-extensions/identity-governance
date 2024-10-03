@@ -240,7 +240,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             log.debug("Sending: " + notificationType + " notification to user: " + user.toFullQualifiedUsername());
         }
 
-        String eventName = IdentityEventConstants.Event.TRIGGER_SMS_NOTIFICATION;
+        String eventName = Utils.resolveEventName(NotificationChannels.SMS_CHANNEL.getChannelType());
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
@@ -258,6 +258,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         }
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
         }
 
         Event identityMgtEvent = new Event(eventName, properties);

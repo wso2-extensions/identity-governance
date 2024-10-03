@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
 import org.testng.Assert;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -134,6 +135,8 @@ public class MobileNumberVerificationHandlerTest {
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
                 .thenReturn(serviceDataHolder);
         mockedFrameworkUtils.when(FrameworkUtils::getMultiAttributeSeparator).thenReturn(",");
+        mockedUtils.when(() -> Utils.resolveEventName(NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(
+                "TRIGGER_SMS_NOTIFICATION_LOCAL");
 
         when(serviceDataHolder.getRealmService()).thenReturn(realmService);
         when(serviceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
