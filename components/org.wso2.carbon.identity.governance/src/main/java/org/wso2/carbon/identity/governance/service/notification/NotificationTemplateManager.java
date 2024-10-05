@@ -274,6 +274,21 @@ public interface NotificationTemplateManager {
 
     }
 
+
+    /**
+     * Delete all organization and application notification templates of a type from the system.
+     *
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
+     * @param templateType        Display name of the template.
+     * @param tenantDomain        Tenant domain.
+     * @throws NotificationTemplateManagerException If an error occurred while deleting the notification template.
+     */
+    default void deleteCustomizedNotificationTemplates(String notificationChannel, String templateType,
+                                                       String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+    }
+
     /**
      * Add the default notification templates which matches the given notification channel to the respective tenants
      * registry.
