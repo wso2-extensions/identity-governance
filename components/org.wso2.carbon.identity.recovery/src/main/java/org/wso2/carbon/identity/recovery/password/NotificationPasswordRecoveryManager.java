@@ -278,7 +278,9 @@ public class NotificationPasswordRecoveryManager {
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(),
                 user.getTenantDomain(), "Recovery.Notification.Password");
-        secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
+        if (!skipConcatForOTPBasedEmailRecovery(user.getTenantDomain())) {
+            secretKey = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel, secretKey);
+        }
         try {
             hashedSecretKey = Utils.hashCode(secretKey);
         } catch (NoSuchAlgorithmException e) {
@@ -296,6 +298,27 @@ public class NotificationPasswordRecoveryManager {
         hashedRecoveryDataDO.setRemainingSetIds(notificationChannel);
         userRecoveryDataStore.storeConfirmationCode(hashedRecoveryDataDO);
         return recoveryDataDO;
+    }
+
+    /**
+     * Skip concatenation of recovery flow id with the secret key for OTP based email recovery.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if the concatenation should be skipped.
+     */
+    private static boolean skipConcatForOTPBasedEmailRecovery(String tenantDomain) {
+
+        boolean isSendOtpAsEmailConfirmationCodeEnabled = Boolean.parseBoolean(IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE));
+        if (isSendOtpAsEmailConfirmationCodeEnabled) {
+            try {
+                return Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, tenantDomain));
+            } catch (IdentityRecoveryException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /**

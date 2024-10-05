@@ -351,6 +351,7 @@ public class IdentityRecoveryConstants {
                 "requirements of the selected registration option."),
         ERROR_CODE_INVALID_REGISTRATION_OPTION("USR-10007", "Invalid registration option."),
         ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS("USR-10008", "Multiple registration options are not supported."),
+        ERROR_CODE_INVALID_DOMAIN("USR-10009", "The email domain does not match the organization's email domain."),
 
         // USR - User Self Registration - server exceptions.
         ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES("USR-15001", "Unexpected error while validating user " +
@@ -561,6 +562,7 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_ACCOUNT_LOCK_FOR_VERIFIED_PREFERRED_CHANNEL =
                 "SelfRegistration.EnableAccountLockForVerifiedPreferredChannel";
         public static final String PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL = "Recovery.Notification.Password.OTP.SendOTPInEmail";
+        public static final String PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE = "Recovery.Notification.Password.OTP.SendOnlyOTPAsConfirmationCode";
         public static final String PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
                 "OTP.UseUppercaseCharactersInOTP";
         public static final String PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP = "Recovery.Notification.Password." +
@@ -579,6 +581,7 @@ public class IdentityRecoveryConstants {
         public static final String FORCE_ADD_PW_RECOVERY_QUESTION = "Recovery.Question.Password.Forced.Enable";
         public static final String FORCE_MIN_NO_QUESTION_ANSWERED = "Recovery.Question.MinQuestionsToAnswer";
         public static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
+        public static final String USERNAME_RECOVERY_NON_UNIQUE_USERNAME = "Recovery.Notification.Username.NonUniqueUsername";
         public static final String QUESTION_CHALLENGE_SEPARATOR = "Recovery.Question.Password.Separator";
         public static final String QUESTION_MIN_NO_ANSWER = "Recovery.Question.Password.MinAnswers";
         public static final String EXPIRY_TIME = "Recovery.ExpiryTime";
