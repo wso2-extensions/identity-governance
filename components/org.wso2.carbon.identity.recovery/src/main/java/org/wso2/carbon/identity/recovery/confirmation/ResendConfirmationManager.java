@@ -570,8 +570,7 @@ public class ResendConfirmationManager {
 
         String eventName;
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(preferredChannel)) {
-            eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
-                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+            eventName = Utils.resolveEventName(preferredChannel);
         } else {
             eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         }
