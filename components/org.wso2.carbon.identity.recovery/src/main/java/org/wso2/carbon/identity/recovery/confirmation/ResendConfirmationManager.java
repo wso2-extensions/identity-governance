@@ -267,20 +267,11 @@ public class ResendConfirmationManager {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
-            String sendTo = Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-            if (StringUtils.isEmpty(sendTo)) {
-                throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND, user.getUserName());
-            }
-            properties.put(IdentityRecoveryConstants.SEND_TO, sendTo);
-        }
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
-            } else {
-                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
             }
+            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
         if (metaProperties != null) {
             for (Property metaProperty : metaProperties) {
@@ -288,6 +279,15 @@ public class ResendConfirmationManager {
                     properties.put(metaProperty.getKey(), metaProperty.getValue());
                 }
             }
+        }
+        if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel) &&
+                properties.get(IdentityRecoveryConstants.SEND_TO) == null) {
+            String sendTo = Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+            if (StringUtils.isEmpty(sendTo)) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND, user.getUserName());
+            }
+            properties.put(IdentityRecoveryConstants.SEND_TO, sendTo);
         }
         if (properties.containsKey(IdentityRecoveryConstants.RESEND_EMAIL_TEMPLATE_NAME)) {
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
@@ -391,7 +391,8 @@ public class ResendConfirmationManager {
                                        RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep, User user)
             throws IdentityRecoveryServerException {
 
-        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey, recoveryScenario, recoveryStep);
+        UserRecoveryData recoveryDataDO = new UserRecoveryData(user, recoveryFlowId, secretKey, recoveryScenario,
+                recoveryStep);
 
         // Store available channels in remaining setIDs.
         recoveryDataDO.setRemainingSetIds(recoveryData);
@@ -474,6 +475,12 @@ public class ResendConfirmationManager {
         resolveUserAttributes(user);
 
         boolean notificationInternallyManage = isNotificationInternallyManage(user, recoveryScenario);
+        boolean mobileVerificationOnUpdateScenario = RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString()
+                .equals(recoveryScenario)
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
+                .equals(recoveryScenario)
+                || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -499,10 +506,10 @@ public class ResendConfirmationManager {
                 preferredChannel = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
             }
         }
-        if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+        if (emailVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
-        if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+        if (mobileVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
 
@@ -524,13 +531,12 @@ public class ResendConfirmationManager {
                 notificationResponseBean.setNotificationChannel(preferredChannel);
             }
 
-            if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
-                    RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
+            if (emailVerificationOnUpdateScenario && RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
                 String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
                 properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
                         verificationPendingEmailClaimValue)};
                 recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
-            } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
+            } else if (mobileVerificationOnUpdateScenario &&
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
                 String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
                 properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
@@ -564,8 +570,7 @@ public class ResendConfirmationManager {
 
         String eventName;
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(preferredChannel)) {
-            eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
-                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
+            eventName = Utils.resolveEventName(preferredChannel);
         } else {
             eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
         }
@@ -653,10 +658,12 @@ public class ResendConfirmationManager {
             return Boolean.parseBoolean(Utils.getSignUpConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.LITE_SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                             user.getTenantDomain()));
-        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
             // We manage the notifications internally for EMAIL_VERIFICATION_ON_UPDATE.
             return true;
-        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)) {
+        } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
             // We manage the notifications internally for MOBILE_VERIFICATION_ON_UPDATE.
             return true;
         } else {
@@ -732,7 +739,9 @@ public class ResendConfirmationManager {
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "Recovery.Notification.Password");
                 case EMAIL_VERIFICATION_ON_UPDATE:
+                case EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                 case MOBILE_VERIFICATION_ON_UPDATE:
+                case MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "UserClaimUpdate");
                 case ASK_PASSWORD:

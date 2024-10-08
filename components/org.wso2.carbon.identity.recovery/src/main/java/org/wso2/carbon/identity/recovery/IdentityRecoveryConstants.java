@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery;
@@ -123,6 +125,10 @@ public class IdentityRecoveryConstants {
     public static final String USER_ROLES_CLAIM = "http://wso2.org/claims/roles";
     public static final String EMAIL_ADDRESS_CLAIM = "http://wso2.org/claims/emailaddress";
     public static final String MOBILE_NUMBER_CLAIM = "http://wso2.org/claims/mobile";
+    public static final String MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/mobileNumbers";
+    public static final String VERIFIED_MOBILE_NUMBERS_CLAIM = "http://wso2.org/claims/verifiedMobileNumbers";
+    public static final String EMAIL_ADDRESSES_CLAIM = "http://wso2.org/claims/emailAddresses";
+    public static final String VERIFIED_EMAIL_ADDRESSES_CLAIM = "http://wso2.org/claims/verifiedEmailAddresses";
     public static final String DEFAULT_CHALLENGE_QUESTION_SEPARATOR = "!";
     public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
     public static final String PENDING_SELF_REGISTRATION = "PENDING_SR";
@@ -212,6 +218,9 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_STATUS_LOCKED = "password.recovery.failed.account.locked";
     public static final String ACCOUNT_STATUS_DISABLED = "password.recovery.failed.account.disabled";
     public static final String IGNORE_IF_TEMPLATE_NOT_FOUND = "ignoreIfTemplateNotFound";
+
+    public static final String TRUE = "true";
+    public static final String FALSE = "false";
 
     private IdentityRecoveryConstants() {
 
@@ -447,9 +456,34 @@ public class IdentityRecoveryConstants {
 
         // UEV - User Email Verification.
         ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND("UEV-10001", "Email address not found for email verification"),
+        ERROR_CODE_EMAIL_VERIFICATION_NOT_ENABLED("UEV-10002", "Email verification is not enabled"),
+        ERROR_CODE_VERIFY_MULTIPLE_EMAILS("UEV-10003", "Unable to verify multiple email addresses " +
+                "simultaneously"),
+        ERROR_CODE_SUPPORT_MULTIPLE_EMAILS_NOT_ENABLED("UEV-10004", "Support for multiple email addresses " +
+                "per user is not enabled"),
+        ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_EMAILS_LIST("UEV-10005", "As multiple " +
+                "email addresses support is enabled, primary email address should be included in the email " +
+                "addresses list."),
+        ERROR_CODE_PRIMARY_EMAIL_SHOULD_BE_INCLUDED_IN_VERIFIED_EMAILS_LIST("UEV-10006", "As multiple " +
+                "email addresses support and email verification is enabled, primary email address should be included " +
+                "in the verified email addresses list."),
 
-        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request")
-        ,
+        // UMV - User Mobile Verification.
+        ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLED("UMV-10001", " Verified mobile numbers claim cannot be" +
+                " updated as mobile number verification on update is disabled."),
+        ERROR_CODE_VERIFY_MULTIPLE_MOBILE_NUMBERS("UMV-10002", "Unable to verify " +
+                "multiple mobile numbers simultaneously."),
+        ERROR_CODE_SUPPORT_MULTIPLE_MOBILE_NUMBERS_NOT_ENABLED("UEV-10003", "Support for multiple mobile " +
+                "numbers per user is not enabled"),
+        ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_MOBILE_NUMBERS_LIST("UMV-10004",
+                "As multiple mobile numbers support is enabled, primary mobile number should be included in " +
+                        "the mobile numbers list."),
+        ERROR_CODE_PRIMARY_MOBILE_NUMBER_SHOULD_BE_INCLUDED_IN_VERIFIED_MOBILES_LIST("UMV-10005", "As " +
+                "multiple mobile numbers support and mobile verification is enabled, primary mobile number should be " +
+                "included in the verified mobile numbers list."),
+
+        INVALID_PASSWORD_RECOVERY_REQUEST("APR-10000", "Invalid Password Recovery Request"),
+
         // Idle User Account Identification related Error messages.
         ERROR_RETRIEVING_ASSOCIATED_USER("UMM-65005",
                 "Error retrieving the associated user for the user: %s in the tenant %s.");
@@ -667,6 +701,9 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER = "UserClaimUpdate.MobileNumber." +
                 "EnableVerificationByPrivilegedUser";
         public static final String USE_VERIFY_CLAIM_ON_UPDATE = "UserClaimUpdate.UseVerifyClaim";
+        // This config enables the support to store multiple mobile numbers and email addresses per user.
+        public static final String SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER =
+                "UserClaimUpdate.EnableMultipleEmailsAndMobileNumbers";
         public static final String ASK_PASSWORD_EXPIRY_TIME = "EmailVerification.AskPassword.ExpiryTime";
         public static final String ASK_PASSWORD_TEMP_PASSWORD_GENERATOR = "EmailVerification.AskPassword.PasswordGenerator";
         public static final String ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS = "EmailVerification.AskPassword" +
@@ -873,7 +910,11 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an email verification, when the email address was updated by user during
          the Email OTP flow at the first login where the email address is not previously set. At the moment email
          address was already verified during the email OTP verification. So no need to verify it again. */
-        SKIP_ON_EMAIL_OTP_FLOW
+        SKIP_ON_EMAIL_OTP_FLOW,
+
+        /* State maintained to skip triggering an email verification, when the email address to be updated is included
+        in the verifiedEmailAddresses claim, which has been already verified. */
+        SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES
     }
 
     /**
@@ -980,6 +1021,10 @@ public class IdentityRecoveryConstants {
         /* State maintained to skip triggering an SMS OTP verification, when the mobile number was updated by user
         during the SMS OTP flow at the first login where the mobile number is not previously set. At the moment mobile
         number was already verified during the SMS OTP verification. So no need to verify it again. */
-        SKIP_ON_SMS_OTP_FLOW
+        SKIP_ON_SMS_OTP_FLOW,
+
+        /* State maintained to skip triggering an SMS OTP verification, when the mobile number to be updated is included
+        in the verifiedMobileNumbers claim, which has been already verified. */
+        SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS
     }
 }

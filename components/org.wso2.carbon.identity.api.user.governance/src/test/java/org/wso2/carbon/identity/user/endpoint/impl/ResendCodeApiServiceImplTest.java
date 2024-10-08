@@ -23,13 +23,18 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.internal.FrameworkServiceDataHolder;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
@@ -39,8 +44,13 @@ import org.wso2.carbon.identity.user.endpoint.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.core.Response;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * This class contains unit tests for ResendCodeApiServiceImpl.java
@@ -62,8 +72,15 @@ public class ResendCodeApiServiceImplTest {
     @Mock
     private MultiAttributeLoginService mockedMultiAttributeLoginService;
 
+    @Mock
+    private ResendConfirmationManager resendConfirmationManager;
+
     @InjectMocks
     private ResendCodeApiServiceImpl resendCodeApiService;
+
+    private final String TEST_USERNAME = "testUser";
+    private final String TEST_TENANT_DOMAIN = "testTenantDomain";
+    private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
 
     @BeforeMethod
     public void setUp() {
@@ -86,27 +103,33 @@ public class ResendCodeApiServiceImplTest {
     @Test
     public void testResendCodePost() throws IdentityRecoveryException {
 
-        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
+        when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenReturn(notificationResponseBean);
+
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 201);
         assertEquals(resendCodeApiService.resendCodePost(emptyResendCodeRequestDTO()).getStatus(), 201);
-        assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(emptyPropertyResendCodeRequestDTO()).getStatus(),
+                201);
         assertEquals(resendCodeApiService.resendCodePost(multipleResendCodeRequestDTO()).getStatus(), 201);
 
-        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(null);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 400);
+        mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO()))
+                .thenReturn(null);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(),
+                400);
 
         mockedUtils.when(() -> Utils.getUserRecoveryData(recoveryScenarioResendCodeRequestDTO())).thenReturn(
                 userRecoveryData);
-        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(), 400);
-        assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(), 201);
+        assertEquals(resendCodeApiService.resendCodePost(recoveryScenarioResendCodeRequestDTO()).getStatus(),
+                400);
+        assertEquals(resendCodeApiService.resendCodePost(duplicateScenarioResendCodeRequestDTO()).getStatus(),
+                201);
     }
 
     @Test
     public void testIdentityRecoveryExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
+        when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 400);
@@ -115,7 +138,7 @@ public class ResendCodeApiServiceImplTest {
     @Test
     public void testIdentityRecoveryClientExceptioninResendCodePost() throws IdentityRecoveryException {
 
-        Mockito.when(userSelfRegistrationManager.resendConfirmationCode(
+        when(userSelfRegistrationManager.resendConfirmationCode(
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 400);
@@ -205,5 +228,101 @@ public class ResendCodeApiServiceImplTest {
         propertyDTO.setKey("RecoveryScenario");
         propertyDTO.setValue("ASK_PASSWORD");
         return propertyDTO;
+    }
+
+    @DataProvider(name = "recoveryScenarioProvider")
+    public Object[][] recoveryScenarioProvider() {
+
+        return new Object[][] {
+                {RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, RecoveryScenarios.ASK_PASSWORD,
+                        RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP, RecoveryScenarios.SELF_SIGN_UP,
+                        RecoverySteps.CONFIRM_SIGN_UP, 201},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
+                        RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD, 201},
+                {RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP, RecoveryScenarios.LITE_SIGN_UP,
+                        RecoverySteps.CONFIRM_LITE_SIGN_UP, 201},
+
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 201},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 400},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER,
+                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL, 400},
+        };
+    }
+
+    @Test(dataProvider = "recoveryScenarioProvider")
+    public void testRecoveryScenarios(RecoveryScenarios scenario, RecoverySteps step,
+                                      RecoveryScenarios userRecoveryDataScenario, RecoverySteps userRecoveryDataStep,
+                                      int expectedStatusCode) throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(scenario.name());
+        User user = new User();
+        UserRecoveryData recoveryData = new UserRecoveryData(user, "test-secret",
+                userRecoveryDataScenario, userRecoveryDataStep);
+        when(Utils.getUserRecoveryData(any(), anyString())).thenReturn(recoveryData);
+        when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
+
+        NotificationResponseBean expectedResponse = new NotificationResponseBean(user);
+        expectedResponse.setKey("test-key");
+        when(resendConfirmationManager.resendConfirmationCode(any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(expectedResponse);
+
+        Response result = resendCodeApiService.resendCodePost(requestDTO);
+
+        assertNotNull(result);
+        assertEquals(result.getStatus(), expectedStatusCode);
+    }
+
+    private ResendCodeRequestDTO createResendCodeRequestDTO(String recoveryScenario) {
+
+        ResendCodeRequestDTO requestDTO = new ResendCodeRequestDTO();
+        UserDTO userDTO = new UserDTO();
+        userDTO.setTenantDomain(TEST_TENANT_DOMAIN);
+        userDTO.setUsername(TEST_USERNAME);
+        requestDTO.setUser(userDTO);
+
+        List<PropertyDTO> properties = new ArrayList<>();
+
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setKey(RECOVERY_SCENARIO_KEY);
+        propertyDTO.setValue(recoveryScenario);
+
+        properties.add(propertyDTO);
+        requestDTO.setProperties(properties);
+        return requestDTO;
     }
 }
