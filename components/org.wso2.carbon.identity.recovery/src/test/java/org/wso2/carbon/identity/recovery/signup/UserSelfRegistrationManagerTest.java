@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManag
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -1530,6 +1531,25 @@ public class UserSelfRegistrationManagerTest {
             } catch (Exception e) {
                 assertTrue(e instanceof IdentityRecoveryServerException);
             }
+        }
+    }
+
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void registerUserInvalidOrganizationEmailDomain()
+            throws IdentityRecoveryException, org.wso2.carbon.user.api.UserStoreException {
+
+        try (MockedStatic<Utils> utilsMockedStatic = mockStatic(Utils.class)) {
+            utilsMockedStatic.when(() -> Utils.handleClientException(any(IdentityRecoveryConstants.ErrorMessages.class),
+                    isNull(), any())).thenReturn(IdentityException.error(IdentityRecoveryClientException.class,
+                    "err-code", ""));
+            utilsMockedStatic.when(() -> Utils.getSignUpConfigs(anyString(), anyString())).thenReturn("true");
+            when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+            when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+            // Mock addUser to throw UserStoreException.
+            doThrow(new org.wso2.carbon.user.core.UserStoreException("Simulated exception", "ORG-60091"))
+                    .when(userStoreManager)
+                    .isExistingRole(anyString());
+            userSelfRegistrationManager.registerUser(new User(), "", new Claim[]{}, null);
         }
     }
 
