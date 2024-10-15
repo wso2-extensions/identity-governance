@@ -51,6 +51,7 @@ import org.wso2.carbon.user.core.common.Group;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,6 +160,8 @@ public class PasswordPolicyUtils {
             throws PostAuthenticationFailedException {
 
         try {
+            if (!isPasswordExpiryEnabled(tenantDomain)) return false;
+
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);
             String userId = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(tenantAwareUsername);
@@ -193,7 +196,7 @@ public class PasswordPolicyUtils {
                     }
                     int expiryDays =
                             rule.getExpiryDays() > 0 ? rule.getExpiryDays() : getPasswordExpiryInDays(tenantDomain);
-                    return daysDifference >= expiryDays || lastPasswordUpdatedTime == null;
+                    return daysDifference >= expiryDays || StringUtils.isBlank(lastPasswordUpdatedTime);
                 }
             }
             // Apply default password expiry policy if no specific rule applies.
@@ -292,7 +295,95 @@ public class PasswordPolicyUtils {
             throws PostAuthenticationFailedException {
 
         if (skipIfNoApplicableRules) return false;
-        return lastPasswordUpdatedTime == null || daysDifference >= getPasswordExpiryInDays(tenantDomain);
+        return StringUtils.isBlank(lastPasswordUpdatedTime) || daysDifference >= getPasswordExpiryInDays(tenantDomain);
+    }
+
+    /**
+     * This method returns password expiry time for the given user.
+     *
+     * @param tenantDomain         The tenant domain.
+     * @param tenantAwareUsername  The tenant aware username.
+     * @param groupIds             The group IDs of the user.
+     * @param roleIds              The role IDs of the user.
+     * @return The password expiry time in milliseconds.
+     * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
+     */
+    public static Long getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername,
+                                                   List<String> groupIds, List<String> roleIds)
+            throws PostAuthenticationFailedException {
+
+        try {
+            // If the password expiry is not enabled, password expiry time is not applicable.
+            if (!isPasswordExpiryEnabled(tenantDomain)) return null;
+
+            UserRealm userRealm = getUserRealm(tenantDomain);
+            UserStoreManager userStoreManager = getUserStoreManager(userRealm);
+            String userId = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(tenantAwareUsername);
+            String lastPasswordUpdatedTime =
+                    getLastPasswordUpdatedTime(tenantAwareUsername, userStoreManager, userRealm);
+
+            // If last password update time is not available, it will be considered as expired.
+            if (StringUtils.isBlank(lastPasswordUpdatedTime)) {
+                return System.currentTimeMillis();
+            }
+
+            long lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
+            int defaultPasswordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
+            boolean skipIfNoApplicableRules = isSkipIfNoApplicableRulesEnabled(tenantDomain);
+
+            List<PasswordExpiryRule> passwordExpiryRules = getPasswordExpiryRules(tenantDomain);
+
+            // If no rules are defined, use the default expiry time if "skipIfNoApplicableRules" is disabled.
+            if (CollectionUtils.isEmpty(passwordExpiryRules)) {
+                if (skipIfNoApplicableRules) return null;
+                return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays);
+            }
+
+            // If the default behavior is to skip the password expiry, rules with skip logic are not necessary.
+            List<PasswordExpiryRule> filteredRules = passwordExpiryRules.stream()
+                    .filter(rule -> !skipIfNoApplicableRules ||
+                            !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
+                    .collect(Collectors.toList());
+
+            Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
+                    new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
+            if (groupIds != null) {
+                userAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, new HashSet<>(groupIds));
+            }
+            if (roleIds != null) {
+                userAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, new HashSet<>(roleIds));
+            }
+
+            for (PasswordExpiryRule rule : filteredRules) {
+                if (isRuleApplicable(rule, userAttributes, tenantDomain, userId, userStoreManager)) {
+                    // Skip the rule if the operator is not equals.
+                    if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
+                        return null;
+                    }
+                    int expiryDays =
+                            rule.getExpiryDays() > 0 ? rule.getExpiryDays() : getPasswordExpiryInDays(tenantDomain);
+                    return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(expiryDays);
+                }
+            }
+
+            if (skipIfNoApplicableRules) return null;
+            return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays);
+        } catch (UserStoreException e) {
+            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+                    ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
+                    PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
+        }
+    }
+
+    /**
+     * This method returns the time in milliseconds for the given number of days.
+     *
+     * @param days The number of days.
+     * @return The time in milliseconds.
+     */
+    private static long getDaysTimeInMillis(int days) {
+
+        return (long) days * 24 * 60 * 60 * 1000;
     }
 
     /**
