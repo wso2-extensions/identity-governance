@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -165,23 +166,68 @@ public class MeApiServiceImplTest {
             Mockito.when(userRecoveryData.getRecoveryStep()).thenReturn(
                     RecoverySteps.getRecoveryStep("VERIFY_MOBILE_NUMBER"));
 
-            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 201);
+            assertEquals(meApiService.meResendCodePost(
+                    meResendCodeRequestDTO(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.name())).getStatus(),
+                    201);
+
             assertEquals(meApiService.meResendCodePost(
                     meResendCodeRequestDTOWithInvalidScenarioProperty()).getStatus(), 400);
 
             mockedUtils.when(() -> Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString()))
                     .thenReturn(null);
-            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
+            assertEquals(meApiService.meResendCodePost(
+                    meResendCodeRequestDTO(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.name())).getStatus(),
+                    400);
 
             Mockito.when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.
                     getRecoveryScenario("ASK_PASSWORD"));
-            assertEquals(meApiService.meResendCodePost(meResendCodeRequestDTO()).getStatus(), 400);
+            assertEquals(meApiService.meResendCodePost(
+                    meResendCodeRequestDTO(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.name())).getStatus(),
+                    400);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
     }
 
-    private SelfRegistrationUserDTO buildSelfRegistartion() {
+    @DataProvider(name = "recoveryScenarioProvider")
+    public Object[][] recoveryScenarioProvider() {
+        return new Object[][] {
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL, 400},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER, 201},
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER, 201}
+        };
+    }
+
+    @Test(dataProvider = "recoveryScenarioProvider")
+    public void testMeResendCodePostRecoveryScenarios(RecoveryScenarios recoveryScenario, RecoverySteps recoveryStep,
+                                                      int expectedStatusCode) throws IdentityRecoveryException {
+
+        try {
+            String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
+            System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
+            Mockito.when(resendConfirmationManager.resendConfirmationCode(isNull(), anyString(), anyString(),
+                    anyString(), isNull())).thenReturn(notificationResponseBean);
+            mockedUtils.when(() -> Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString()))
+                    .thenReturn(userRecoveryData);
+            mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+            Mockito.when(userRecoveryData.getRecoveryScenario()).thenReturn(recoveryScenario);
+            Mockito.when(userRecoveryData.getRecoveryStep()).thenReturn(recoveryStep);
+
+            assertEquals(meApiService.meResendCodePost(
+                            meResendCodeRequestDTO(recoveryScenario.name())).getStatus(),
+                    expectedStatusCode);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    private SelfRegistrationUserDTO buildSelfRegistration() {
 
         SelfRegistrationUserDTO selfRegistrationUserDTO = new SelfRegistrationUserDTO();
         selfRegistrationUserDTO.setUsername("TestUser");
@@ -212,11 +258,11 @@ public class MeApiServiceImplTest {
         SelfUserRegistrationRequestDTO selfUserRegistrationRequestDTO = new SelfUserRegistrationRequestDTO();
         List<ClaimDTO> listClaimDTO = new ArrayList<>();
         listClaimDTO.add(buildClaimDTO());
-        buildSelfRegistartion().setClaims(listClaimDTO);
+        buildSelfRegistration().setClaims(listClaimDTO);
         List<PropertyDTO> listPropertyDTOs = new ArrayList<>();
         listPropertyDTOs.add(buildSelfUserRegistrationRequestDTO());
         selfUserRegistrationRequestDTO.setProperties(listPropertyDTOs);
-        selfUserRegistrationRequestDTO.setUser(buildSelfRegistartion());
+        selfUserRegistrationRequestDTO.setUser(buildSelfRegistration());
         return selfUserRegistrationRequestDTO;
     }
 
@@ -227,11 +273,11 @@ public class MeApiServiceImplTest {
         return codeValidationRequestDTO;
     }
 
-    private MeResendCodeRequestDTO meResendCodeRequestDTO() {
+    private MeResendCodeRequestDTO meResendCodeRequestDTO(String recoveryScenario) {
 
         MeResendCodeRequestDTO meResendCodeRequestDTO = new MeResendCodeRequestDTO();
         List<PropertyDTO> listProperty = new ArrayList<>();
-        listProperty.add(buildPropertyDTO("RecoveryScenario", "MOBILE_VERIFICATION_ON_UPDATE"));
+        listProperty.add(buildPropertyDTO("RecoveryScenario", recoveryScenario));
         meResendCodeRequestDTO.setProperties(listProperty);
         return meResendCodeRequestDTO;
     }
