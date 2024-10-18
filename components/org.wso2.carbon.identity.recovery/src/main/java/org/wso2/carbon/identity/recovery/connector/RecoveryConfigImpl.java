@@ -99,6 +99,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, "Number of questions " +
                 "required for password recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, "Username recovery");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                "Notification based username recovery via EMAIL");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
+                "Notification based username recovery via SMS");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
                 "Enable reCaptcha for username recovery");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, "Recovery link expiry time in minutes");
@@ -193,6 +197,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS);
@@ -227,6 +233,8 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         String enableRecoveryQuestionPasswordReCaptcha = "true";
         String recoveryQuestionPasswordReCaptchaMaxFailedAttempts = "2";
         String enableUsernameRecovery = "false";
+        String enableUsernameRecoveryEmail = "false";
+        String enableUsernameRecoverySMS = "false";
         String enableNotificationInternallyManage = "true";
         String expiryTime = "1440";
         String expiryTimeSMSOTP = "1";
@@ -272,6 +280,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
         String usernameRecovery = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
+        String usernameRecoveryEmail = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE);
+        String usernameRecoverySMS = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE);
         String notificationInternallyManged = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
         String expiryTimeProperty = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME);
@@ -351,6 +363,14 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(usernameRecovery)) {
             enableUsernameRecovery = usernameRecovery;
+            // Setting the username recovery value to keep backward compatibility.
+            enableUsernameRecoveryEmail = usernameRecovery;
+        }
+        if (StringUtils.isNotEmpty(usernameRecoveryEmail)){
+            enableUsernameRecoveryEmail = usernameRecoveryEmail;
+        }
+        if (StringUtils.isNotEmpty(usernameRecoverySMS)) {
+            enableUsernameRecoverySMS = usernameRecoverySMS;
         }
         if (StringUtils.isNotEmpty(expiryTimeProperty)) {
             expiryTime = expiryTimeProperty;
@@ -433,6 +453,10 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 recoveryQuestionPasswordReCaptchaMaxFailedAttempts);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
                 enableUsernameRecovery);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                enableUsernameRecoveryEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
+                enableUsernameRecoverySMS);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
                 enableUsernameRecoveryReCaptcha);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
@@ -516,6 +540,12 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
