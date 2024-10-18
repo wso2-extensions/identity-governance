@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.recovery.handler;
@@ -21,6 +23,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
@@ -50,14 +53,18 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
+        .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
@@ -88,16 +95,31 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
+        if (claims == null) {
+            claims = new HashMap<>();
+        }
+
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
 
         boolean enable = false;
+
         if (IdentityEventConstants.Event.PRE_ADD_USER.equals(eventName) ||
                 IdentityEventConstants.Event.POST_ADD_USER.equals(eventName)) {
             enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                     .ENABLE_EMAIL_VERIFICATION, user.getTenantDomain()));
         } else if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName) ||
                 IdentityEventConstants.Event.POST_SET_USER_CLAIMS.equals(eventName)) {
-            enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                    .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, user.getTenantDomain()));
+
+            enable = isEmailVerificationOnUpdateEnabled(user.getTenantDomain());
+
+            if (!supportMultipleEmails) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Supporting multiple email addresses per user is disabled.");
+                }
+                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+            }
+
             if (!enable) {
                 /* We need to empty 'EMAIL_ADDRESS_PENDING_VALUE_CLAIM' because having a value in that claim implies
                 a verification is pending. But verification is not enabled anymore. */
@@ -108,6 +130,30 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                                 IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_UPDATE_WITHOUT_VERIFICATION);
                     }
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
+                }
+
+                if (supportMultipleEmails) {
+                    // Drop the verified email addresses claim as verification on update is not enabled.
+                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+
+                    if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
+                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty()) {
+
+                        String email = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+                        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+                        List<String> updatedAllEmailAddresses = claims.containsKey(
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)
+                                ? getListOfEmailAddressesFromString(
+                                        claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM))
+                                : existingAllEmailAddresses;
+                        if (!updatedAllEmailAddresses.contains(email)) {
+                            updatedAllEmailAddresses.add(email);
+                            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                                    String.join(FrameworkUtils.getMultiAttributeSeparator(), updatedAllEmailAddresses));
+                        }
+                    }
                 }
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
             }
@@ -137,7 +183,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             if (claims == null || claims.isEmpty()) {
                 // Not required to handle in this handler.
                 return;
-            } else if (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM))) {
+            } else if (claims.containsKey(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM) &&
+                    Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM))) {
                 if (!claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)
                         || StringUtils.isBlank(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM))) {
                     throw new IdentityEventClientException(ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND.getCode(),
@@ -148,8 +195,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claim.setValue(claims.get(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM));
                 Utils.setEmailVerifyTemporaryClaim(claim);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
-                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM, null);
-            } else if (claims.containsKey(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) && Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
+                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM,
+                        null);
+            } else if (claims.containsKey(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) &&
+                    Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
                 Claim claim = new Claim();
                 claim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
                 claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
@@ -237,6 +286,10 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         }
 
         if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+            Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
+            if (supportMultipleEmails && !claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                Utils.setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(true);
+            }
             preSetUserClaimsOnEmailUpdate(claims, userStoreManager, user);
             claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
         }
@@ -245,6 +298,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             postSetUserClaimsOnEmailUpdate(user, userStoreManager);
             claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
         }
+    }
+
+    private boolean isEmailVerificationOnUpdateEnabled(String tenantDomain) throws IdentityEventException {
+
+        return Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                .ENABLE_EMAIL_VERIFICATION_ON_UPDATE, tenantDomain));
     }
 
     @Override
@@ -297,7 +356,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
     /**
      * This method sets a random value for the credentials, if the ask password flow is enabled.
-     * @param credentials   Credentials object
+     *
+     * @param credentials Credentials object
      */
     private void setRandomValueForCredentials(Object credentials) {
 
@@ -331,10 +391,18 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
         try {
-            userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
-                    RecoverySteps.VERIFY_EMAIL);
-            UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                    RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            UserRecoveryData recoveryDataDO;
+            if (Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated()) {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            } else {
+                userRecoveryDataStore.invalidate(user, RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_EMAIL);
+                recoveryDataDO = new UserRecoveryData(user, secretKey,
+                        RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
+            }
             /* Email address persisted in remaining set ids to maintain context information about the email address
             associated with the verification code generated. */
             recoveryDataDO.setRemainingSetIds(verificationPendingEmailAddress);
@@ -474,6 +542,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private void preSetUserClaimsOnEmailUpdate(Map<String, String> claims, UserStoreManager userStoreManager,
                                                User user) throws IdentityEventException {
 
+        if (MapUtils.isEmpty(claims)) {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants.
+                    SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            return;
+        }
+
         if (IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                 (Utils.getThreadLocalToSkipSendingEmailVerificationOnUpdate())) {
             // Not required to handle in this handler.
@@ -494,56 +568,161 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
 
-        if (MapUtils.isEmpty(claims)) {
-            // Not required to handle in this handler.
-            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants.
-                    SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+
+        String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        List<String> updatedVerifiedEmailAddresses = new ArrayList<>();
+        List<String> updatedAllEmailAddresses;
+
+        // Handle email addresses and verified email addresses claims.
+        if (supportMultipleEmails) {
+            List<String> existingVerifiedEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+            List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
+                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
+            updatedVerifiedEmailAddresses = claims.containsKey(IdentityRecoveryConstants.
+                    VERIFIED_EMAIL_ADDRESSES_CLAIM) ? getListOfEmailAddressesFromString(claims.get(
+                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM)) : existingVerifiedEmailAddresses;
+            updatedAllEmailAddresses = claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM) ?
+                    getListOfEmailAddressesFromString(claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)) :
+                    existingAllEmailAddresses;
+
+            if (updatedAllEmailAddresses == null) {
+                updatedAllEmailAddresses = new ArrayList<>();
+            }
+            if (updatedVerifiedEmailAddresses == null) {
+                updatedVerifiedEmailAddresses = new ArrayList<>();
+            }
+
+            // Find the verification pending email address and remove it from verified email addresses in the payload.
+            if (emailAddress == null && CollectionUtils.isNotEmpty(updatedVerifiedEmailAddresses)) {
+                emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
+                        updatedVerifiedEmailAddresses);
+                updatedVerifiedEmailAddresses.remove(emailAddress);
+            }
+
+            /*
+            Find the removed numbers from the existing email addresses list and remove them from the verified email
+            addresses list, as verified email addresses list should not contain email addresses that are not in the
+            email addresses list.
+            */
+            final List<String> tempUpdatedAllEmailAddresses = new ArrayList<>(updatedAllEmailAddresses);
+            updatedVerifiedEmailAddresses.removeIf(number -> !tempUpdatedAllEmailAddresses.contains(number));
+
+            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+        } else {
+            /*
+            email addresses and verified email addresses should not be updated when support for multiple email
+            addresses is disabled.
+             */
+            claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+            claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+            updatedAllEmailAddresses = new ArrayList<>();
+        }
+
+        if (StringUtils.isBlank(emailAddress)) {
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
             return;
         }
 
-        String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        String existingEmail = getEmailClaimValue(user, userStoreManager);
 
-        if (StringUtils.isNotBlank(emailAddress)) {
-
-            String existingEmail;
-            String username = user.getUserName();
-            try {
-                existingEmail = userStoreManager.getUserClaimValue(username,
-                        IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, null);
-            } catch (UserStoreException e) {
-                String error = String.format("Error occurred while retrieving existing email address for user: %s in " +
-                        "domain : %s", username, user.getTenantDomain());
-                throw new IdentityEventException(error, e);
+        if (supportMultipleEmails && updatedVerifiedEmailAddresses.contains(emailAddress)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("The email address to be updated: %s is same as the existing email " +
+                        "address for user: %s in domain %s. Hence an email verification will not be " +
+                        "triggered.", emailAddress, user.getUserName(), user.getTenantDomain()));
             }
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString());
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+            return;
+        }
 
-            if (emailAddress.equals(existingEmail)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("The email address to be updated: %s is same as the existing email " +
-                            "address for user: %s in domain %s. Hence an email verification will not be " +
-                            "triggered.", emailAddress, username, user.getTenantDomain()));
+        if (emailAddress.equals(existingEmail)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("The email address to be updated: %s is already verified and contains" +
+                        " in the verified email addresses list. Hence an email verification will not be " +
+                        "triggered.", emailAddress));
+            }
+            Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+
+            if (supportMultipleEmails) {
+                if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
+                    updatedVerifiedEmailAddresses.add(existingEmail);
+                    claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
                 }
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
-                invalidatePendingEmailVerification(user, userStoreManager, claims);
-                return;
+                if (!updatedAllEmailAddresses.contains(existingEmail)) {
+                    updatedAllEmailAddresses.add(existingEmail);
+                    claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                            StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+                }
             }
-            /*
-            When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
-            claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
-            'verifyEmail' claim.
-             */
-            if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
-                Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
-                invalidatePendingEmailVerification(user, userStoreManager, claims);
-                return;
-            }
-            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
-            claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-        } else {
+            return;
+        }
+
+        /*
+        When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyEmail' temporary
+        claim exists as 'true' in the claim list. If 'UseVerifyClaim' is disabled, no need to check for
+        'verifyEmail' claim.
+         */
+        if (Utils.isUseVerifyClaimEnabled() && !isVerifyEmailClaimAvailable(claims)) {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString());
+            invalidatePendingEmailVerification(user, userStoreManager, claims);
+            return;
         }
+        claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, emailAddress);
+        claims.remove(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+    }
+
+    /**
+     * Get the email address that is pending verification.
+     *
+     * @param existingVerifiedEmailAddresses List of existing verified email addresses.
+     * @param updatedVerifiedEmailAddresses  List of updated verified email addresses.
+     * @return email address that is pending verification.
+     */
+    private String getVerificationPendingEmailAddress(List<String> existingVerifiedEmailAddresses,
+                                                      List<String> updatedVerifiedEmailAddresses) throws
+            IdentityEventException {
+
+        String emailAddress = null;
+        for (String verificationPendingEmailAddress : updatedVerifiedEmailAddresses) {
+            if (existingVerifiedEmailAddresses.stream().noneMatch(email ->
+                    email.trim().equalsIgnoreCase(verificationPendingEmailAddress.trim()))) {
+                if (emailAddress == null) {
+                    emailAddress = verificationPendingEmailAddress;
+                } else {
+                    throw new IdentityEventClientException(IdentityRecoveryConstants.ErrorMessages.
+                            ERROR_CODE_VERIFY_MULTIPLE_EMAILS.getCode(), IdentityRecoveryConstants.
+                            ErrorMessages.ERROR_CODE_VERIFY_MULTIPLE_EMAILS.getMessage());
+                }
+            }
+        }
+        return emailAddress;
+    }
+
+    /**
+     * Convert comma separated list of email addresses to a list.
+     *
+     * @param emails Comma separated list of mobile numbers.
+     * @return List of email addresses.
+     */
+    private List<String> getListOfEmailAddressesFromString(String emails) {
+
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+        return emails != null ? new LinkedList<>(Arrays.asList(emails.split(multiAttributeSeparator))).stream()
+                .map(String::trim).collect(Collectors.toList()) : new ArrayList<>();
     }
 
     private void postSetUserClaimsOnEmailUpdate(User user, UserStoreManager userStoreManager) throws
@@ -554,11 +733,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             if (!IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString().equals
                     (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants.
                     SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString().equals
-                    (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
+                            (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_INAPPLICABLE_CLAIMS.toString().equals
                             (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_EMAIL_OTP_FLOW.toString().equals
-                    (skipEmailVerificationOnUpdateState)) {
+                            (skipEmailVerificationOnUpdateState) && !IdentityRecoveryConstants.
+                    SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString().equals(
+                            skipEmailVerificationOnUpdateState)) {
 
                 String pendingVerificationEmailClaimValue = getPendingVerificationEmailValue(userStoreManager, user);
 
@@ -572,6 +753,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             }
         } finally {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
+            Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         }
     }
 
@@ -604,13 +786,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     /**
      * Invalidate pending email verification.
      *
-     * @param user              User.
-     * @param userStoreManager  User store manager.
-     * @param claims            User claims.
+     * @param user             User.
+     * @param userStoreManager User store manager.
+     * @param claims           User claims.
      * @throws IdentityEventException
      */
     private void invalidatePendingEmailVerification(User user, UserStoreManager userStoreManager,
-                                                    Map<String, String> claims ) throws IdentityEventException {
+                                                    Map<String, String> claims) throws IdentityEventException {
 
         if (StringUtils.isNotBlank(getPendingVerificationEmailValue(userStoreManager, user))) {
             claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
@@ -628,7 +810,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     /**
      * Check if the claims contain the temporary claim 'verifyEmail' and it is set to true.
      *
-     * @param claims    User claims.
+     * @param claims User claims.
      * @return True if 'verifyEmail' claim is available as true, false otherwise.
      */
     private boolean isVerifyEmailClaimAvailable(Map<String, String> claims) {
@@ -650,7 +832,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
      * @throws IdentityEventException IdentityEventException.
      */
     private void sendNotificationToExistingEmailOnEmailUpdate(User user, UserStoreManager userStoreManager,
-                                         String newEmailAddress, String templateType) throws IdentityEventException {
+                                                              String newEmailAddress, String templateType) throws IdentityEventException {
         boolean enable = Boolean.parseBoolean(Utils.getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
                 .ENABLE_NOTIFICATION_ON_EMAIL_UPDATE, user.getTenantDomain()));
         if (!enable) {

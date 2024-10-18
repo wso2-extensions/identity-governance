@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+ * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -34,6 +34,7 @@ import org.wso2.carbon.consent.mgt.core.model.Purpose;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
@@ -98,16 +99,15 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -116,6 +116,7 @@ import static org.wso2.carbon.identity.application.authentication.framework.util
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_SUCCESS;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.Configs.USERNAME;
 import static org.wso2.carbon.identity.input.validation.mgt.utils.Constants.ErrorMessages.ERROR_GETTING_EXISTING_CONFIGURATIONS;
+import static org.wso2.carbon.identity.organization.management.service.constant.OrganizationManagementConstants.ErrorMessages.ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
 
@@ -366,6 +367,13 @@ public class UserSelfRegistrationManager {
                     ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
         }
 
+        if (e instanceof org.wso2.carbon.user.core.UserStoreException) {
+            String errorCode = ((org.wso2.carbon.user.core.UserStoreException) e).getErrorCode();
+            if (ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION.getCode().equals(errorCode)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_INVALID_DOMAIN, user.getUserName(), e);
+            }
+        }
         throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
                 ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
     }
@@ -711,7 +719,8 @@ public class UserSelfRegistrationManager {
     }
 
     private UserRecoveryData validateSelfRegistrationCode(String code, String verifiedChannelType,
-                                                          String verifiedChannelClaim, Map<String, String> properties, boolean skipExpiredCodeValidation)
+                                                          String verifiedChannelClaim, Map<String, String> properties,
+                                                          boolean skipExpiredCodeValidation)
             throws IdentityRecoveryException {
 
         Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
@@ -759,12 +768,39 @@ public class UserSelfRegistrationManager {
         HashMap<String, String> userClaims = getClaimsListToUpdate(user, verifiedChannelType,
                 externallyVerifiedClaim, recoveryData.getRecoveryScenario().toString());
 
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+
         if (RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep())) {
             String pendingEmailClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingEmailClaimValue)) {
                 eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_EMAIL, pendingEmailClaimValue);
                 userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue); //todo??
+                if (supportMultipleEmailsAndMobileNumbers) {
+                    try {
+                        List<String> verifiedEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+                        verifiedEmails.add(pendingEmailClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.join(
+                                verifiedEmails, multiAttributeSeparator));
+
+                        List<String> allEmails = Utils.getMultiValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+                        if (!allEmails.contains(pendingEmailClaimValue)) {
+                            allEmails.add(pendingEmailClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
+                                    allEmails, multiAttributeSeparator)) ;
+                        }
+                    } catch (IdentityEventException e) {
+                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
+                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
+                                "value for the user : " + user.getUserName(), e);
+                    }
+                }
+                if (!RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(recoveryData.getRecoveryScenario())) {
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, pendingEmailClaimValue);
+                }
                 // Todo passes when email address is properly set here.
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
@@ -773,8 +809,38 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingMobileClaimValue)) {
+                if (supportMultipleEmailsAndMobileNumbers) {
+                    try {
+                        List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                                user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                        if (!existingVerifiedMobileNumbersList.contains(pendingMobileClaimValue)) {
+                            existingVerifiedMobileNumbersList.add(pendingMobileClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                                    String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
+                        }
+
+                        /*
+                        VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
+                        mobileNumbers claim as well.
+                        */
+                        List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                                user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                        if (!allMobileNumbersList.contains(pendingMobileClaimValue)) {
+                            allMobileNumbersList.add(pendingMobileClaimValue);
+                            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                                    String.join(multiAttributeSeparator, allMobileNumbersList));
+                        }
+                    } catch (IdentityEventException e) {
+                        log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
+                        throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
+                                "value for the user : " + user.getUserName(), e);
+                    }
+                }
+                if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(recoveryData.getRecoveryScenario())) {
+                    userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
+                }
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileClaimValue);
                 // Todo passes when mobile number is properly set here.
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
@@ -832,7 +898,7 @@ public class UserSelfRegistrationManager {
 
     /**
      * Introspects self registration confirmation code details without invalidating it.
-     * Does not triggering notification events or update user claims.
+     * Does not trigger notification events or update user claims.
      *
      * @param skipExpiredCodeValidation   Skip confirmation code validation against expiration.
      * @param code                      Confirmation code.
@@ -844,7 +910,7 @@ public class UserSelfRegistrationManager {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
 
-        // If the code is validated, the load method will return data. Otherwise method will throw exceptions.
+        // If the code is validated, the load method will return data. Otherwise, method will throw exceptions.
         UserRecoveryData recoveryData;
         if (!skipExpiredCodeValidation) {
             recoveryData = userRecoveryDataStore.load(code);
@@ -924,15 +990,50 @@ public class UserSelfRegistrationManager {
         UserStoreManager userStoreManager = getUserStoreManager(user);
         HashMap<String, String> userClaims = new HashMap<>();
 
-        if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
-            String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
-            if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
-                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
-                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
-                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
+        boolean supportMultipleEmailsAndMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+
+        String pendingMobileNumberClaimValue = recoveryData.getRemainingSetIds();
+        if (StringUtils.isNotBlank(pendingMobileNumberClaimValue)) {
+            /*
+            Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
+            claim.
+            */
+            if (supportMultipleEmailsAndMobileNumbers) {
+                try {
+                    String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
+                    List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                            user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+                    if (!existingVerifiedMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                        existingVerifiedMobileNumbersList.add(pendingMobileNumberClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                                String.join(multiAttributeSeparator, existingVerifiedMobileNumbersList));
+                    }
+
+                    /*
+                    VerifiedMobileNumbers is a subset of mobileNumbers. Hence, adding the verified number to
+                    mobileNumbers claim as well.
+                    */
+                    List<String> allMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
+                            user, IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+                    if (!allMobileNumbersList.contains(pendingMobileNumberClaimValue)) {
+                        allMobileNumbersList.add(pendingMobileNumberClaimValue);
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                                String.join(multiAttributeSeparator, allMobileNumbersList));
+                    }
+                } catch (IdentityEventException e) {
+                    log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
+                    throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
+                            "value for the user : " + user.getUserName(), e);
+                }
             }
+            if (!RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                    .equals(recoveryData.getRecoveryScenario())) {
+                userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+            }
+            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+            userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
+            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
         }
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);

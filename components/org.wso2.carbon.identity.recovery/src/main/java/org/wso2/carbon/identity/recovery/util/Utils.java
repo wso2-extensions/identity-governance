@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
@@ -83,6 +84,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +129,18 @@ public class Utils {
      * purpose is not to update the mobile number with a new value.
      */
     private static ThreadLocal<String> skipSendingSmsOtpVerificationOnUpdate = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to stop verification pending mobile number from being set as the primary
+     * mobile number when only updating the verifiedMobileNumbers claim.
+     */
+    private static ThreadLocal<Boolean> isOnlyVerifiedMobileNumbersUpdated = new ThreadLocal<>();
+
+    /**
+     * This thread local variable is used to stop verification pending email address from being set as the primary
+     * email address when only updating the verifiedEmailAddress claim.
+     */
+    private static ThreadLocal<Boolean> isOnlyVerifiedEmailAddressesUpdated = new ThreadLocal<>();
 
     //Error messages that are caused by password pattern violations
     private static final String[] pwdPatternViolations = new String[]{UserCoreErrorConstants.ErrorMessages
@@ -249,6 +264,38 @@ public class Utils {
     public static void setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(String value) {
 
         skipSendingSmsOtpVerificationOnUpdate.set(value);
+    }
+
+    public static void unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated() {
+
+        isOnlyVerifiedMobileNumbersUpdated.remove();
+    }
+
+    public static void setThreadLocalIsOnlyVerifiedMobileNumbersUpdated(Boolean value) {
+
+        isOnlyVerifiedMobileNumbersUpdated.set(value);
+    }
+
+    public static boolean getThreadLocalIsOnlyVerifiedMobileNumbersUpdated() {
+
+        Boolean value = isOnlyVerifiedMobileNumbersUpdated.get();
+        return value != null && value;
+    }
+
+    public static void unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated() {
+
+        isOnlyVerifiedEmailAddressesUpdated.remove();
+    }
+
+    public static void setThreadLocalIsOnlyVerifiedEmailAddressesUpdated(Boolean value) {
+
+        isOnlyVerifiedEmailAddressesUpdated.set(value);
+    }
+
+    public static boolean getThreadLocalIsOnlyVerifiedEmailAddressesUpdated() {
+
+        Boolean value = isOnlyVerifiedEmailAddressesUpdated.get();
+        return value != null && value;
     }
 
     public static String getClaimFromUserStoreManager(User user, String claim)
@@ -1346,6 +1393,17 @@ public class Utils {
     }
 
     /**
+     * Check whether the supporting multiple email addresses and mobile numbers per user is enabled.
+     *
+     * @return True if the config is set to true, false otherwise.
+     */
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled() {
+
+        return Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+    }
+
+    /**
      * Trigger recovery event.
      *
      * @param map              The map containing the event properties.
@@ -1732,6 +1790,32 @@ public class Utils {
             String error = String.format("Error occurred while retrieving claim for user: " +
                     "%s in tenant domain : %s", user.getUserName(), user.getTenantDomain());
             throw new IdentityRecoveryServerException(error, e);
+        }
+    }
+
+    /**
+     * Retrieves the existing multi-valued claims for a given claim URI.
+     *
+     * @param userStoreManager User store manager.
+     * @param user User object.
+     * @param claimURI Claim URI to retrieve.
+     * @return List of existing claim values.
+     * @throws IdentityEventException If an error occurs while retrieving the claim value.
+     */
+    public static List<String> getMultiValuedClaim(UserStoreManager userStoreManager, User user, String claimURI)
+            throws IdentityEventException {
+
+        try {
+            String claimValue = userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null);
+            if (StringUtils.isBlank(claimValue)) {
+                return new ArrayList<>();
+            }
+
+            String separator = FrameworkUtils.getMultiAttributeSeparator();
+            return new ArrayList<>(Arrays.asList(claimValue.split(separator)));
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error retrieving claim " + claimURI +
+                    " for user: " + user.toFullQualifiedUsername(), e);
         }
     }
 }
