@@ -96,7 +96,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             claims = new HashMap<>();
         }
 
-        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleMobileNumbers =
+                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
 
         boolean enable = isMobileVerificationOnUpdateEnabled(user.getTenantDomain());
 
@@ -326,7 +327,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingSmsOtpVerificationOnUpdate();
         }
 
-        boolean supportMultipleMobileNumbers = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleMobileNumbers =
+                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);

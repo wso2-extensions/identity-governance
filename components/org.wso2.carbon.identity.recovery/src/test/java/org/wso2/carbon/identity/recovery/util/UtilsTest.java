@@ -1347,12 +1347,12 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() {
+    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() throws IdentityGovernanceException {
 
-        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                        .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
-                .thenReturn("true");
-        boolean result = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        mockGetRecoveryConfig(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
+                Boolean.TRUE.toString());
+        boolean result = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN);
         assertEquals(result, true);
     }
 

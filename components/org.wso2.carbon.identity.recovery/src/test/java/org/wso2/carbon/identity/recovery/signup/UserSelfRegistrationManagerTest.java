@@ -627,7 +627,7 @@ public class UserSelfRegistrationManagerTest {
 
     @Test
     public void testConfirmVerificationCodeMe()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
         // Case 1: Multiple email and mobile per user is enabled.
         String verificationPendingMobileNumber = "0700000000";
@@ -691,7 +691,7 @@ public class UserSelfRegistrationManagerTest {
 
     @Test
     public void testConfirmVerificationCodeMeVerificationOnVerifiedListUpdate()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
         // Case 1: Recovery Scenario - MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
         String verificationPendingMobileNumber = "0700000000";
@@ -736,7 +736,7 @@ public class UserSelfRegistrationManagerTest {
 
     @Test(expectedExceptions = IdentityRecoveryServerException.class)
     public void testConfirmVerificationCodeMeUserStoreException()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
         // Case 3: Throws user store exception while getting user claim values.
         String verificationPendingMobileNumber = "0700000000";
@@ -776,7 +776,6 @@ public class UserSelfRegistrationManagerTest {
         when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
         when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
 
-        mockMultiAttributeEnabled(true);
         mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.EMPTY);
         mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.EMPTY);
 
@@ -787,6 +786,7 @@ public class UserSelfRegistrationManagerTest {
 
         when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
 
+        mockMultiAttributeEnabled(true);
         userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
                 metaProperties);
 
@@ -859,7 +859,8 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -889,7 +890,8 @@ public class UserSelfRegistrationManagerTest {
         // Case 2: External Verified Channel type.
         verifiedChannelType = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -911,7 +913,8 @@ public class UserSelfRegistrationManagerTest {
 
         // Case 3: Throws user store exception while getting user claim values.
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -935,7 +938,8 @@ public class UserSelfRegistrationManagerTest {
         verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
         verifiedChannelClaim = "http://wso2.org/claims/invalid";
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -1562,16 +1566,29 @@ public class UserSelfRegistrationManagerTest {
         return user;
     }
 
-    private void mockMultiAttributeEnabled(Boolean isEnabled) {
+    private void mockMultiAttributeEnabled(Boolean isEnabled) throws IdentityGovernanceException {
 
-        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
-                eq(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER)))
-                .thenReturn(isEnabled.toString());
+        mockGetRecoveryConfig(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER,
+                isEnabled.toString());
     }
 
     private void mockGetUserClaimValue(String claimUri, String claimValue) throws UserStoreException {
 
         when(userStoreManager.getUserClaimValue(any(), eq(claimUri), any())).thenReturn(claimValue);
+    }
+
+    private void mockGetRecoveryConfig(String key, String value) throws IdentityGovernanceException {
+
+        org.wso2.carbon.identity.application.common.model.Property
+                property = new org.wso2.carbon.identity.application.common.model.Property();
+        property.setName(key);
+        property.setValue(value);
+        org.wso2.carbon.identity.application.common.model.Property[] properties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(eq(new String[]{key}), eq(TEST_TENANT_DOMAIN_NAME)))
+                .thenReturn(properties);
     }
 
     /**
