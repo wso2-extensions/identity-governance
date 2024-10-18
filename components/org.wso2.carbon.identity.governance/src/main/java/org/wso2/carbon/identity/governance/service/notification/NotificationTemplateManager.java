@@ -27,9 +27,9 @@ public interface NotificationTemplateManager {
 
 
     /**
-     * Add a new notification template to the system (db/ registry).
+     * Add new notification template type to the system.
      *
-     * @param notificationChannel Notification channel
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param displayName         Notification template display name
      * @param tenantDomain        Tenant domain
      * @throws NotificationTemplateManagerException If an error occurred while adding the template to the registry
@@ -40,7 +40,7 @@ public interface NotificationTemplateManager {
     }
 
     /**
-     * Add a new notification template to the system (db/ registry).
+     * Add new notification template type to the system.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param displayName         Notification template display name.
@@ -71,7 +71,7 @@ public interface NotificationTemplateManager {
     /**
      * Delete a notification template type from the tenant registry.
      *
-     * @param notificationChannel Notification channel.
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param templateDisplayName Display name of the template type.
      * @param tenantDomain        Tenant domain.
      * @throws NotificationTemplateManagerException If an error occurred while deleting the notification template type.
@@ -85,7 +85,7 @@ public interface NotificationTemplateManager {
     /**
      * Check whether the given notification template type exists in the system.
      *
-     * @param notificationChannel     Notification channel.
+     * @param notificationChannel     Notification channel (Eg: SMS, EMAIL).
      * @param templateTypeDisplayName Display name of the template type.
      * @param tenantDomain            Tenant Domain.
      * @throws NotificationTemplateManagerException If an error occurred while checking if template type exists.
@@ -98,7 +98,7 @@ public interface NotificationTemplateManager {
     }
 
     /**
-     * Get all available notification template types for the tenant.
+     * Get all available notification template types in the tenant for a given notification channel.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param tenantDomain        Tenant domain.
@@ -275,8 +275,7 @@ public interface NotificationTemplateManager {
     }
 
     /**
-     * Deletes the template type in the database resulting in the deletion of all it's user defined templates
-     * and recreates the type.
+     * Resets the template type in the database by deleting of all it's user defined templates.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param templateType        Display name of the template.
@@ -332,9 +331,9 @@ public interface NotificationTemplateManager {
     /**
      * Check whether the given notification template exists in the system.
      *
-     * @param notificationChannel     Notification channel.
-     * @param templateDisplayName     Display name of the template.
-     * @param tenantDomain            Tenant Domain.
+     * @param notificationChannel   Notification channel.
+     * @param templateDisplayName   Display name of the template.
+     * @param tenantDomain          Tenant Domain.
      * @throws NotificationTemplateManagerException If an error occurred while checking if template type exists.
      */
     default boolean isNotificationTemplateExists(String notificationChannel, String templateDisplayName, String locale,
