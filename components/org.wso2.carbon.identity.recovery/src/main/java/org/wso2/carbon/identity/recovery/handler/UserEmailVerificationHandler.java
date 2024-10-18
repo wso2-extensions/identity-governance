@@ -99,7 +99,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             claims = new HashMap<>();
         }
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
 
         boolean enable = false;
 
@@ -568,7 +568,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain());
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
