@@ -233,6 +233,8 @@ public class UserClaimUpdateConfigImplTest {
                 EXPIRY_TIME_ELEMENT))).thenReturn(mockOMElement);
         when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
                 USER_CLAIM_UPDATE_ELEMENT))).thenReturn(mockOMElement);
+        when(mockOMElement.getFirstChildWithName(new QName(IdentityCoreConstants.IDENTITY_DEFAULT_NAMESPACE,
+                ENABLE_MULTIPLE_EMAILS_AND_MOBILE_NUMBERS_ELEMENT))).thenReturn(mockOMElement);
 
         Properties defaultPropertyValues = userClaimUpdateConfig.getDefaultPropertyValues(TENANT_DOMAIN);
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
@@ -243,6 +245,8 @@ public class UserClaimUpdateConfigImplTest {
                 .ENABLE_MOBILE_NUM_VERIFICATION_ON_UPDATE));
         assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
                 .MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME));
+        assertNotNull(defaultPropertyValues.getProperty(IdentityRecoveryConstants.ConnectorConfig
+                .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
     }
 
     @Test
