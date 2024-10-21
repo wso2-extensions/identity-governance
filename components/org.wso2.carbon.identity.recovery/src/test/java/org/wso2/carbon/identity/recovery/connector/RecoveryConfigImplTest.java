@@ -410,37 +410,71 @@ public class RecoveryConfigImplTest {
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue());
 
         // Adding properties to the expected metadata map.
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, testNotificationBasedPasswordRecovery);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, testPasswordRecoverySendOtpInEmail);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP, testPasswordRecoveryUseUppercaseCharactersInOtp);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP, testPasswordRecoveryUseLowercaseCharactersInOtp);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP, testPasswordRecoveryUseNumbersInOtp);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH, testPasswordRecoveryOtpLength);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, testPasswordRecoveryRecaptchaEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, testQuestionBasedPwRecovery);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
+                testNotificationBasedPasswordRecovery);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                testPasswordRecoverySendOtpInEmail);
+        metaDataExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP,
+                testPasswordRecoveryUseUppercaseCharactersInOtp);
+        metaDataExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP,
+                testPasswordRecoveryUseLowercaseCharactersInOtp);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP,
+                testPasswordRecoveryUseNumbersInOtp);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH,
+                testPasswordRecoveryOtpLength);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE,
+                testPasswordRecoveryRecaptchaEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY,
+                testQuestionBasedPwRecovery);
         metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, testQuestionMinNoAnswer);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, testEnforceChallengeQuestionAnswerUniqueness);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE, testRecoveryQuestionPasswordRecaptchaEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, testRecoveryQuestionPasswordRecaptchaMaxFailedAttempts);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, testUsernameRecoveryEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE, testUsernameRecoveryEmailEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE, testUsernameRecoverySmsEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, testUsernameRecoveryRecaptchaEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, testNotificationInternallyManage);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS,
+                testEnforceChallengeQuestionAnswerUniqueness);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE,
+                testRecoveryQuestionPasswordRecaptchaEnable);
+        metaDataExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS,
+                testRecoveryQuestionPasswordRecaptchaMaxFailedAttempts);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
+                testUsernameRecoveryEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                testUsernameRecoveryEmailEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
+                testUsernameRecoverySmsEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE,
+                testUsernameRecoveryRecaptchaEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                testNotificationInternallyManage);
         metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, testPasswordRecoverySmsOtpExpiryTime);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, testNotificationSendRecoveryNotificationSuccess);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START, testNotificationSendRecoverySecurityStart);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, testForceAddPwRecoveryQuestion);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED, testForceMinNoQuestionAnswered);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, testEnableAutoLoginAfterPasswordReset);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX, testChallengeQuestionAnswerRegex);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX, testRecoveryCallbackRegex);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, testRecoveryNotificationPasswordMaxFailedAttempts);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, testRecoveryNotificationPasswordMaxResendAttempts);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, testPasswordRecoveryEmailLinkEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, testPasswordRecoverySmsOtpEnable);
-        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, testPasswordRecoverySmsOtpRegex);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME,
+                testPasswordRecoverySmsOtpExpiryTime);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+                testNotificationSendRecoveryNotificationSuccess);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START,
+                testNotificationSendRecoverySecurityStart);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION,
+                testForceAddPwRecoveryQuestion);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED,
+                testForceMinNoQuestionAnswered);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET,
+                testEnableAutoLoginAfterPasswordReset);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX,
+                testChallengeQuestionAnswerRegex);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX,
+                testRecoveryCallbackRegex);
+        metaDataExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS,
+                testRecoveryNotificationPasswordMaxFailedAttempts);
+        metaDataExpected.put(
+                IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS,
+                testRecoveryNotificationPasswordMaxResendAttempts);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE,
+                testPasswordRecoveryEmailLinkEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE,
+                testPasswordRecoverySmsOtpEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX,
+                testPasswordRecoverySmsOtpRegex);
 
         // Fetching actual metadata from the method.
         Map<String, Property> metaData = recoveryConfigImpl.getMetaData();
