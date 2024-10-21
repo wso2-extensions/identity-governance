@@ -98,6 +98,19 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * Resets the template type in the database by deleting of all it's user defined templates.
+     *
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
+     * @param templateType        Display name of the template.
+     * @param tenantDomain        Tenant domain.
+     * @throws NotificationTemplateManagerException If an error occurred while resetting the notification template type.
+     */
+    default void resetNotificationTemplateType(String notificationChannel, String templateType, String tenantDomain)
+            throws NotificationTemplateManagerException {
+
+    }
+
+    /**
      * Get all available notification template types in the tenant for a given notification channel.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
@@ -106,18 +119,6 @@ public interface NotificationTemplateManager {
      */
     default List<NotificationTemplate> getAllNotificationTemplates(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
-
-        return null;
-    }
-
-    /**
-     * Get all available system  notification templates of given type.
-     *
-     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
-     * @return List of system notification templates.
-     */
-    default List<NotificationTemplate> getAllSystemNotificationTemplatesOfType(String notificationChannel,
-                                             String templateDisplayName) throws NotificationTemplateManagerException {
 
         return null;
     }
@@ -275,19 +276,6 @@ public interface NotificationTemplateManager {
     }
 
     /**
-     * Resets the template type in the database by deleting of all it's user defined templates.
-     *
-     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
-     * @param templateType        Display name of the template.
-     * @param tenantDomain        Tenant domain.
-     * @throws NotificationTemplateManagerException If an error occurred while resetting the notification template type.
-     */
-    default void resetNotificationTemplateType(String notificationChannel, String templateType, String tenantDomain)
-            throws NotificationTemplateManagerException {
-
-    }
-
-    /**
      * Add the default notification templates which matches the given notification channel to the respective tenants
      * registry.
      *
@@ -308,22 +296,6 @@ public interface NotificationTemplateManager {
      * @return List of default notification templates
      */
     default List<NotificationTemplate> getDefaultNotificationTemplates(String notificationChannel) {
-
-        return null;
-    }
-
-    /**
-     * Return the default system notification template which matches the given channel and template name.
-     *
-     * @param notificationChannel Notification Channel Name (Eg: SMS or EMAIL)
-     * @param templateType        Display name of the template
-     * @param locale              Locale
-     * @return Return {@link org.wso2.carbon.identity.governance.model.NotificationTemplate} object
-     * @throws NotificationTemplateManagerException If an error occurred while getting the notification template
-     */
-    default NotificationTemplate getSystemNotificationTemplate(String notificationChannel, String templateType,
-                                                                String locale)
-            throws NotificationTemplateManagerException {
 
         return null;
     }
@@ -358,5 +330,33 @@ public interface NotificationTemplateManager {
             throws NotificationTemplateManagerException {
 
         return false;
+    }
+
+    /**
+     * Get all available system notification templates of given type.
+     *
+     * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
+     * @return List of system notification templates.
+     */
+    default List<NotificationTemplate> getAllSystemNotificationTemplatesOfType(String notificationChannel,
+                                                                               String templateDisplayName) throws NotificationTemplateManagerException {
+
+        return null;
+    }
+
+    /**
+     * Return the default system notification template which matches the given channel and template name.
+     *
+     * @param notificationChannel Notification Channel Name (Eg: SMS or EMAIL)
+     * @param templateType        Display name of the template
+     * @param locale              Locale
+     * @return Return {@link org.wso2.carbon.identity.governance.model.NotificationTemplate} object
+     * @throws NotificationTemplateManagerException If an error occurred while getting the notification template
+     */
+    default NotificationTemplate getSystemNotificationTemplate(String notificationChannel, String templateType,
+                                                               String locale)
+            throws NotificationTemplateManagerException {
+
+        return null;
     }
 }
