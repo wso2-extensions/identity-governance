@@ -108,6 +108,8 @@ public class SelfRegistrationConfigImplTest {
                 "OTP length");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable Account Confirmation On Creation");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
+                "Handle existing user name");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Manage notifications sending internally");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
@@ -155,6 +157,8 @@ public class SelfRegistrationConfigImplTest {
                 "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable user account confirmation when the user account is not locked on creation");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
+                "Adopt the same behavior for both existing and non-existing users in the system.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Disable if the client application handles notification sending");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -198,6 +202,7 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         propertiesExpected
@@ -231,6 +236,7 @@ public class SelfRegistrationConfigImplTest {
         String testUseNumbersInOTP = StringUtils.EMPTY;
         String testOtpLength = "6";
         String testEnableSendNotificationOnCreation = "false";
+        String testHandleExistingUsername = "false";
         String testEnableNotificationInternallyManage = "true";
         String testEnableSelfRegistrationReCaptcha = "true";
         String testVerificationCodeExpiryTime = "1440";
@@ -258,6 +264,8 @@ public class SelfRegistrationConfigImplTest {
                 testOtpLength);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 testEnableSendNotificationOnCreation);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
+                testHandleExistingUsername);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 testEnableNotificationInternallyManage);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
