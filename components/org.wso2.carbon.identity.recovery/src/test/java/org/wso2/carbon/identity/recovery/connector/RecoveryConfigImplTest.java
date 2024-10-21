@@ -17,9 +17,11 @@
  */
 package org.wso2.carbon.identity.recovery.connector;
 
+import com.hazelcast.org.apache.calcite.runtime.Resources;
 import org.apache.commons.lang.StringUtils;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -32,6 +34,7 @@ import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
 
 /**
  * This class does unit test coverage for RecoveryConfigImpl class.
@@ -338,6 +341,114 @@ public class RecoveryConfigImplTest {
         Map<String, String> defaultProperties = new HashMap<String, String>((Map) properties);
         assertEquals(defaultProperties, defaultPropertiesExpected, "Maps are not equal");
     }
+
+    @Test
+    public void testGetMetaData() {
+        Map<String, Property> metaDataExpected = new HashMap<>();
+
+        Property testNotificationBasedPasswordRecovery =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoverySendOtpInEmail =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoveryUseUppercaseCharactersInOtp =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoveryUseLowercaseCharactersInOtp =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoveryUseNumbersInOtp =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoveryOtpLength =
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue());
+        Property testPasswordRecoveryRecaptchaEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testQuestionBasedPwRecovery =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testQuestionMinNoAnswer =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testEnforceChallengeQuestionAnswerUniqueness =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testRecoveryQuestionPasswordRecaptchaEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testRecoveryQuestionPasswordRecaptchaMaxFailedAttempts =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testUsernameRecoveryEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testUsernameRecoveryEmailEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testUsernameRecoverySmsEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testUsernameRecoveryRecaptchaEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testNotificationInternallyManage =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testExpiryTime =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testPasswordRecoverySmsOtpExpiryTime =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testNotificationSendRecoveryNotificationSuccess =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testNotificationSendRecoverySecurityStart =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testForceAddPwRecoveryQuestion =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testForceMinNoQuestionAnswered =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testEnableAutoLoginAfterPasswordReset =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testChallengeQuestionAnswerRegex =
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue());
+        Property testRecoveryCallbackRegex =
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue());
+        Property testRecoveryNotificationPasswordMaxFailedAttempts =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testRecoveryNotificationPasswordMaxResendAttempts =
+                getPropertyObject(IdentityMgtConstants.DataTypes.INTEGER.getValue());
+        Property testPasswordRecoveryEmailLinkEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoverySmsOtpEnable =
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue());
+        Property testPasswordRecoverySmsOtpRegex =
+                getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue());
+
+        // Adding properties to the expected metadata map.
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, testNotificationBasedPasswordRecovery);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, testPasswordRecoverySendOtpInEmail);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP, testPasswordRecoveryUseUppercaseCharactersInOtp);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP, testPasswordRecoveryUseLowercaseCharactersInOtp);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP, testPasswordRecoveryUseNumbersInOtp);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH, testPasswordRecoveryOtpLength);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE, testPasswordRecoveryRecaptchaEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY, testQuestionBasedPwRecovery);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER, testQuestionMinNoAnswer);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS, testEnforceChallengeQuestionAnswerUniqueness);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE, testRecoveryQuestionPasswordRecaptchaEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS, testRecoveryQuestionPasswordRecaptchaMaxFailedAttempts);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE, testUsernameRecoveryEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE, testUsernameRecoveryEmailEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE, testUsernameRecoverySmsEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE, testUsernameRecoveryRecaptchaEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE, testNotificationInternallyManage);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME, testExpiryTime);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME, testPasswordRecoverySmsOtpExpiryTime);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS, testNotificationSendRecoveryNotificationSuccess);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START, testNotificationSendRecoverySecurityStart);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION, testForceAddPwRecoveryQuestion);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED, testForceMinNoQuestionAnswered);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET, testEnableAutoLoginAfterPasswordReset);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX, testChallengeQuestionAnswerRegex);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX, testRecoveryCallbackRegex);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS, testRecoveryNotificationPasswordMaxFailedAttempts);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS, testRecoveryNotificationPasswordMaxResendAttempts);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, testPasswordRecoveryEmailLinkEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, testPasswordRecoverySmsOtpEnable);
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX, testPasswordRecoverySmsOtpRegex);
+
+        // Fetching actual metadata from the method.
+        Map<String, Property> metaData = recoveryConfigImpl.getMetaData();
+
+        // Asserting that the expected and actual maps are equal.
+        assertEquals(metaData, metaDataExpected);
+    }
+
 
     @Test
     public void testGetDefaultProperties() throws IdentityGovernanceException {
