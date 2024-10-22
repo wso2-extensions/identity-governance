@@ -19,9 +19,17 @@ package org.wso2.carbon.identity.recovery.connector;
 
 import com.hazelcast.org.apache.calcite.runtime.Resources;
 import org.apache.commons.lang.StringUtils;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.core.ServiceURL;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -32,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
@@ -342,8 +352,59 @@ public class RecoveryConfigImplTest {
         assertEquals(defaultProperties, defaultPropertiesExpected, "Maps are not equal");
     }
 
+    @Test(dataProvider = "defaultPropertyNames")
+    public void testGetDefaultPropertyValuesConditional(String property) throws IdentityGovernanceException{
+
+        String tenantDomain = "admin";
+        String testPropertyValue = "testValue";
+        try(MockedStatic<IdentityUtil> identityUtilMockedStatic = Mockito.mockStatic(IdentityUtil.class)) {
+            identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(property)).thenReturn(testPropertyValue);
+
+            Properties properties = recoveryConfigImpl.getDefaultPropertyValues(tenantDomain);
+            assertEquals(testPropertyValue, properties.getProperty(property));
+        }
+    }
+
+    @DataProvider(name="defaultPropertyNames")
+    public Object[][] buildPropertyNameList(){
+
+        return new Object[][] {
+                {IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_UPPERCASE_CHARACTERS_IN_OTP},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_LOWERCASE_CHARACTERS_IN_OTP},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_USE_NUMBERS_IN_OTP},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_OTP_LENGTH},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_RECAPTCHA_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.QUESTION_BASED_PW_RECOVERY},
+                {IdentityRecoveryConstants.ConnectorConfig.QUESTION_MIN_NO_ANSWER},
+                {IdentityRecoveryConstants.ConnectorConfig.CHALLENGE_QUESTION_ANSWER_REGEX},
+                {IdentityRecoveryConstants.ConnectorConfig.ENFORCE_CHALLENGE_QUESTION_ANSWER_UNIQUENESS},
+                {IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS},
+                {IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_RECAPTCHA_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE},
+                {IdentityRecoveryConstants.ConnectorConfig.EXPIRY_TIME},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_EXPIRY_TIME},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_REGEX},
+                {IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS},
+                {IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_SECURITY_START},
+                {IdentityRecoveryConstants.ConnectorConfig.FORCE_ADD_PW_RECOVERY_QUESTION},
+                {IdentityRecoveryConstants.ConnectorConfig.FORCE_MIN_NO_QUESTION_ANSWERED},
+                {IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET},
+                {IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_FAILED_ATTEMPTS},
+                {IdentityRecoveryConstants.ConnectorConfig.RECOVERY_NOTIFICATION_PASSWORD_MAX_RESEND_ATTEMPTS},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE},
+                {IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE}
+        };
+    }
+
     @Test
     public void testGetMetaData() {
+
         Map<String, Property> metaDataExpected = new HashMap<>();
 
         Property testNotificationBasedPasswordRecovery =
