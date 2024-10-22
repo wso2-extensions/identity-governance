@@ -1,18 +1,21 @@
 /*
- * Copyright (c) 2019-2024, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2019-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.wso2.carbon.identity.governance.service.notification;
 
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationTemplateManagerException;
@@ -37,6 +40,7 @@ public interface NotificationTemplateManager {
     default void addNotificationTemplateType(String notificationChannel, String displayName, String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -48,10 +52,12 @@ public interface NotificationTemplateManager {
      * @param applicationUuid     Application UUID.
      * @throws NotificationTemplateManagerException If an error occurred while adding the template to the registry.
      */
+    @Deprecated
     default void addNotificationTemplateType(String notificationChannel, String displayName,
                                              String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -65,7 +71,7 @@ public interface NotificationTemplateManager {
     default List<String> getAllNotificationTemplateTypes(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -80,6 +86,7 @@ public interface NotificationTemplateManager {
                                                 String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -94,7 +101,7 @@ public interface NotificationTemplateManager {
                                                      String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return false;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -108,6 +115,7 @@ public interface NotificationTemplateManager {
     default void resetNotificationTemplateType(String notificationChannel, String templateType, String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -120,7 +128,7 @@ public interface NotificationTemplateManager {
     default List<NotificationTemplate> getAllNotificationTemplates(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -136,7 +144,7 @@ public interface NotificationTemplateManager {
                                                                       String templateDisplayName, String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -153,7 +161,7 @@ public interface NotificationTemplateManager {
                                               String templateDisplayName, String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -170,7 +178,7 @@ public interface NotificationTemplateManager {
                                                          String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -188,7 +196,7 @@ public interface NotificationTemplateManager {
                                                          String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -202,6 +210,7 @@ public interface NotificationTemplateManager {
     default void addNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -215,6 +224,7 @@ public interface NotificationTemplateManager {
     default void addNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain,
                                          String applicationUuid) throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -228,6 +238,7 @@ public interface NotificationTemplateManager {
     default void updateNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -241,6 +252,7 @@ public interface NotificationTemplateManager {
     default void updateNotificationTemplate(NotificationTemplate notificationTemplate, String tenantDomain,
                                          String applicationUuid) throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -256,6 +268,7 @@ public interface NotificationTemplateManager {
                                             String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
 
@@ -273,6 +286,7 @@ public interface NotificationTemplateManager {
                                             String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -287,6 +301,7 @@ public interface NotificationTemplateManager {
     default void addDefaultNotificationTemplates(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
 
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -297,7 +312,7 @@ public interface NotificationTemplateManager {
      */
     default List<NotificationTemplate> getDefaultNotificationTemplates(String notificationChannel) {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -312,7 +327,7 @@ public interface NotificationTemplateManager {
                                                  String tenantDomain)
             throws NotificationTemplateManagerException {
 
-        return false;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -329,7 +344,7 @@ public interface NotificationTemplateManager {
                                                  String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
 
-        return false;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -341,7 +356,7 @@ public interface NotificationTemplateManager {
     default List<NotificationTemplate> getAllSystemNotificationTemplatesOfType(String notificationChannel,
                                                                                String templateDisplayName) throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     /**
@@ -357,6 +372,6 @@ public interface NotificationTemplateManager {
                                                                String locale)
             throws NotificationTemplateManagerException {
 
-        return null;
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }
