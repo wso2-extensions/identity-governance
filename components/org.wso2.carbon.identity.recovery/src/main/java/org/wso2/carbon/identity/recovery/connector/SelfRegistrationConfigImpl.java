@@ -99,8 +99,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "OTP length");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable Account Confirmation On Creation");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
-                "Handle existing user name");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY,
+                "Show username unavailability");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Manage notifications sending internally");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA, "Prompt reCaptcha");
@@ -146,8 +146,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Length of the OTP for SMS and e-mail verifications. OTP length must be 4-10.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 "Enable user account confirmation when the user account is not locked on creation");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
-                "Adopt the same behavior for both existing and non-existing users in the system.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY,
+                "Show a descriptive error message to the user if the username is already taken. However, this may lead to username enumeration");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 "Disable if the client application handles notification sending");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -188,7 +188,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME);
@@ -215,7 +215,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String useNumbersInOTP = StringUtils.EMPTY;
         String otpLength = "6";
         String enableSendNotificationOnCreation = "false";
-        String handleExistingUsername = "false";
+        String showUsernameUnavailability = "true";
         String enableNotificationInternallyManage = "true";
         String enableSelfRegistrationReCaptcha = "true";
         String verificationCodeExpiryTime = "1440";
@@ -243,8 +243,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_OTP_LENGTH);
         String sendNotificationOnCreationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION);
-        String handleExistingUsernameProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME);
+        String showUsernameUnavailabilityProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY);
         String notificationInternallyMangedProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE);
         String reCaptchaProperty = IdentityUtil.getProperty(
@@ -290,8 +290,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(sendNotificationOnCreationProperty)) {
             enableSendNotificationOnCreation = sendNotificationOnCreationProperty;
         }
-        if (StringUtils.isNotEmpty(handleExistingUsernameProperty)) {
-            handleExistingUsername = handleExistingUsernameProperty;
+        if (StringUtils.isNotEmpty(showUsernameUnavailabilityProperty)) {
+            showUsernameUnavailability = showUsernameUnavailabilityProperty;
         }
         if (StringUtils.isNotEmpty(notificationInternallyMangedProperty)) {
             enableNotificationInternallyManage = notificationInternallyMangedProperty;
@@ -340,8 +340,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 otpLength);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 enableSendNotificationOnCreation);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
-                handleExistingUsername);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY,
+                showUsernameUnavailability);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
                 enableNotificationInternallyManage);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_RE_CAPTCHA,
@@ -412,7 +412,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.HANDLE_EXISTING_USERNAME,
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SHOW_USERNAME_UNAVAILABILITY,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE,
