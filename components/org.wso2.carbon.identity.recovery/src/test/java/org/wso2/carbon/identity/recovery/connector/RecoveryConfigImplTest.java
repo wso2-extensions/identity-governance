@@ -17,18 +17,13 @@
  */
 package org.wso2.carbon.identity.recovery.connector;
 
-import com.hazelcast.org.apache.calcite.runtime.Resources;
 import org.apache.commons.lang.StringUtils;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.core.ServiceURL;
-import org.wso2.carbon.identity.core.ServiceURLBuilder;
-import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
@@ -40,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.wso2.carbon.identity.governance.IdentityGovernanceUtil.getPropertyObject;
