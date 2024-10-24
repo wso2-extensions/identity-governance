@@ -1397,10 +1397,16 @@ public class Utils {
      *
      * @return True if the config is set to true, false otherwise.
      */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled() {
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain) {
 
-        return Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        try {
+            return Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
+                    .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER, tenantDomain));
+        } catch (IdentityEventException e) {
+            log.error("Error while getting connector configurations support multi emails and mobile numbers per" +
+                    " user.", e);
+            return true;
+        }
     }
 
     /**
