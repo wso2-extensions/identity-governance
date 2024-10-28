@@ -1356,4 +1356,15 @@ public class Utils {
             return IdentityRecoveryConstants.RECOVERY_CODE_DEFAULT_EXPIRY_TIME;
         }
     }
+
+    /**
+     * Checks whether the user's name claims contain any of <, >, " and ` characters
+     *
+     * @param name username to validate
+     * @return true if any invalid character is found in the name
+     */
+    public static boolean isValidName(String name) {
+        
+        return !name.contains("<") && !name.contains(">") && !name.contains("\"") && !name.contains("`");
+    }
 }

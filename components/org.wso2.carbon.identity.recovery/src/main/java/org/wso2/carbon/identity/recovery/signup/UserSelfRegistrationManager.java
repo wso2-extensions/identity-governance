@@ -192,6 +192,14 @@ public class UserSelfRegistrationManager {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
 
+            String givenNameClaim = claimsMap.get(IdentityRecoveryConstants.GIVENNAME_CLAIM);
+            String lastNameClaim = claimsMap.get(IdentityRecoveryConstants.LASTNAME_CLAIM);
+            if ((StringUtils.isNotEmpty(givenNameClaim) && !Utils.isValidName(givenNameClaim)) ||
+                    (StringUtils.isNotEmpty(lastNameClaim) && !Utils.isValidName(lastNameClaim))) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                        ERROR_CODE_INVALID_GIVEN_NAME_CLAIM, null);
+            }
+
             //Set arbitrary properties to use in UserSelfRegistrationHandler
             Utils.setArbitraryProperties(properties);
             validateAndFilterFromReceipt(consent, claimsMap);
