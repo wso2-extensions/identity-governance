@@ -33,6 +33,10 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.AttributeMapping;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -125,6 +129,8 @@ public class UtilsTest {
     private AbstractUserStoreManager abstractUserStoreManager;
     @Mock
     private IdentityEventService identityEventService;
+    @Mock
+    private ClaimMetadataManagementService claimMetadataManagementService;
 
     private static MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
     private static MockedStatic<UserStoreManager> mockedStaticUserStoreManager;
@@ -182,6 +188,8 @@ public class UtilsTest {
         when(identityRecoveryServiceDataHolder.getIdentityGovernanceService()).thenReturn(identityGovernanceService);
         when(identityRecoveryServiceDataHolder.getAccountLockService()).thenReturn(accountLockService);
         when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService()).thenReturn(
+                claimMetadataManagementService);
 
         when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
         when(realmService.getBootstrapRealm()).thenReturn(userRealm);
@@ -1347,13 +1355,68 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() {
+    public void testIsMultiEmailsAndMobileNumbersPerUserEnabled() throws Exception {
 
-        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig
-                        .SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+        // Mock ClaimMetadataManagementService
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
+                .thenReturn(claimMetadataManagementService);
+
+        // Case 1: When support_multi_emails_and_mobile_numbers_per_user config is false
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
+                .thenReturn("false");
+
+        boolean isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 2: When support_multi_emails_and_mobile_numbers_per_user config is true.
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
                 .thenReturn("true");
-        boolean result = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
-        assertEquals(result, true);
+
+        List<LocalClaim> localClaims = new ArrayList<>();
+
+        // Add claims with valid mappings.
+        LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        mobileNumbersClaim.setMappedAttributes(
+                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "mobileNumbers")));
+
+        LocalClaim verifiedMobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+        verifiedMobileNumbersClaim.setMappedAttributes(
+                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "verifiedMobileNumbers")));
+
+        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        emailAddressesClaim.setMappedAttributes(
+                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "emailAddresses")));
+
+        LocalClaim verifiedEmailAddressesClaim =
+                new LocalClaim(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        verifiedEmailAddressesClaim.setMappedAttributes(
+                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "verifiedEmailAddresses")));
+
+        localClaims.add(verifiedMobileNumbersClaim);
+        localClaims.add(mobileNumbersClaim);
+        localClaims.add(emailAddressesClaim);
+        localClaims.add(verifiedEmailAddressesClaim);
+
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(localClaims);
+
+        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertTrue(isEnabled);
+
+        // Case 3: When one claim mapping is missing.
+        localClaims.remove(verifiedEmailAddressesClaim);
+
+        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 4: When ClaimMetadataException is thrown.
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN))
+                .thenThrow(new ClaimMetadataException("Test exception"));
+
+        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
     }
 
     private static User getUser() {

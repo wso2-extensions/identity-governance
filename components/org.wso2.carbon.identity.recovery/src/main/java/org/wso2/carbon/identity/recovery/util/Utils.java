@@ -36,6 +36,9 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureRe
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -1393,14 +1396,56 @@ public class Utils {
     }
 
     /**
-     * Check whether the supporting multiple email addresses and mobile numbers per user is enabled.
+     * Check whether the supporting multiple email addresses and mobile numbers per user feature is enabled.
      *
+     * @param tenantDomain   Tenant domain.
+     * @param userStoreDomain User store domain.
      * @return True if the config is set to true, false otherwise.
      */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled() {
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
 
-        return Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
+            return false;
+        }
+
+        try {
+            List<LocalClaim> localClaims =
+                    IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                            .getLocalClaims(tenantDomain);
+
+            List<String> claimURIsToCheck = Arrays.asList(
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+
+            for (String claimUri : claimURIsToCheck) {
+                boolean isValidClaim = localClaims.stream()
+                        .filter(claim -> claimUri.equals(claim.getClaimURI()))
+                        .anyMatch(claim -> {
+                            // Check if claim is supported by default.
+                            Map<String, String> claimProperties = claim.getClaimProperties();
+                            boolean isSupportedByDefault = Boolean.parseBoolean(
+                                    claimProperties.getOrDefault(
+                                            ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.FALSE.toString()));
+
+                            boolean hasValidMapping = StringUtils.isNotBlank(claim.getMappedAttribute(userStoreDomain));
+
+                            // Return true only if both conditions are met
+                            return isSupportedByDefault && hasValidMapping;
+
+                        });
+
+                if (!isValidClaim) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (ClaimMetadataException e) {
+            log.error("Error while retrieving multiple emails and mobiles config.", e);
+            return false;
+        }
     }
 
     /**
