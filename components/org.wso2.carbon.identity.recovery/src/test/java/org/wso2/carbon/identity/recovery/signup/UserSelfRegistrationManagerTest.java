@@ -51,8 +51,8 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
-import org.wso2.carbon.identity.claim.metadata.mgt.model.AttributeMapping;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -1585,24 +1585,18 @@ public class UserSelfRegistrationManagerTest {
                 .thenReturn(claimMetadataManagementService);
 
         List<LocalClaim> localClaims = new ArrayList<>();
+        Map<String, String> claimProperties = new HashMap<>();
+        claimProperties.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
 
-        // Add claims with valid mappings.
         LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-        mobileNumbersClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(TEST_USERSTORE_DOMAIN, "mobileNumbers")));
-
+        mobileNumbersClaim.setClaimProperties(claimProperties);
         LocalClaim verifiedMobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-        verifiedMobileNumbersClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(TEST_USERSTORE_DOMAIN, "verifiedMobileNumbers")));
-
+        verifiedMobileNumbersClaim.setClaimProperties(claimProperties);
         LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-        emailAddressesClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(TEST_USERSTORE_DOMAIN, "emailAddresses")));
-
+        emailAddressesClaim.setClaimProperties(claimProperties);
         LocalClaim verifiedEmailAddressesClaim =
                 new LocalClaim(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        verifiedEmailAddressesClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(TEST_USERSTORE_DOMAIN, "verifiedEmailAddresses")));
+        verifiedEmailAddressesClaim.setClaimProperties(claimProperties);
 
         localClaims.add(verifiedMobileNumbersClaim);
         localClaims.add(mobileNumbersClaim);
