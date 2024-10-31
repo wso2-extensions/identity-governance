@@ -56,7 +56,11 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private static final String EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY
             = "Recovery.Notification.Password.emailLink.Enable";
     private static final String SMS_OTP_PASSWORD_RECOVERY_PROPERTY = "Recovery.Notification.Password.smsOtp.Enable";
+    private static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
+    private  static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
+    private static final String USERNAME_RECOVERY_SMS_ENABLE = "Recovery.Notification.Username.SMS.Enable";
     private static final String FALSE_STRING = "false";
+    private static final String TRUE_STRING = "true";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -70,6 +74,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             updateEmailOTPNumericPropertyValue(configurationDetails);
             IdPManagementUtil.validatePasswordRecoveryPropertyValues(configurationDetails);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
+            updateUsernameRecoveryPropertyValues(configurationDetails);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 String key = identityMgtProperty.getName();
@@ -404,6 +409,34 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 // This is the scenario where the RECOVERY_NOTIFICATION_PASSWORD_PROPERTY is being disabled.
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
+            }
+        }
+    }
+
+    /**
+     * This method updates the username recovery property values based on the new configurations.
+     *
+     * @param configurationDetails    Updating configuration details of the resident identity provider.
+     */
+    private void updateUsernameRecoveryPropertyValues(Map<String, String> configurationDetails) {
+
+        if (configurationDetails.containsKey(USERNAME_RECOVERY_ENABLE) ||
+                configurationDetails.containsKey(USERNAME_RECOVERY_EMAIL_ENABLE) ||
+                configurationDetails.containsKey(USERNAME_RECOVERY_SMS_ENABLE)) {
+            boolean usernameRecoveryProperty = Boolean.parseBoolean(configurationDetails.get(USERNAME_RECOVERY_ENABLE));
+            boolean usernameRecoveryEmailProperty = Boolean.parseBoolean(
+                    configurationDetails.get(USERNAME_RECOVERY_EMAIL_ENABLE));
+            boolean usernameRecoverySmsProperty = Boolean.parseBoolean(
+                    configurationDetails.get(USERNAME_RECOVERY_SMS_ENABLE));
+
+            // If user trying to update only username recovery config as in previous versions, automatically it will
+            // enable the email channel to maintain the backward compatibility.
+            if (usernameRecoveryProperty && !(usernameRecoverySmsProperty || usernameRecoveryEmailProperty)) {
+                configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
+            } else if (usernameRecoverySmsProperty || usernameRecoveryEmailProperty) {
+                configurationDetails.put(USERNAME_RECOVERY_ENABLE, TRUE_STRING);
+            } else {
+                configurationDetails.put(USERNAME_RECOVERY_ENABLE, FALSE_STRING);
             }
         }
     }
