@@ -60,7 +60,6 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private  static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
     private static final String USERNAME_RECOVERY_SMS_ENABLE = "Recovery.Notification.Username.SMS.Enable";
     private static final String FALSE_STRING = "false";
-    private static final String TRUE_STRING = "true";
 
     public void updateConfiguration(String tenantDomain, Map<String, String> configurationDetails)
             throws IdentityGovernanceException {
@@ -74,7 +73,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             updateEmailOTPNumericPropertyValue(configurationDetails);
             IdPManagementUtil.validatePasswordRecoveryPropertyValues(configurationDetails);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
-            updateUsernameRecoveryPropertyValues(configurationDetails);
+            updateUsernameRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 String key = identityMgtProperty.getName();
@@ -418,25 +417,51 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
      *
      * @param configurationDetails    Updating configuration details of the resident identity provider.
      */
-    private void updateUsernameRecoveryPropertyValues(Map<String, String> configurationDetails) {
+    private void updateUsernameRecoveryPropertyValues(Map<String, String> configurationDetails,
+                                                      IdentityProviderProperty[] identityMgtProperties) {
 
         if (configurationDetails.containsKey(USERNAME_RECOVERY_ENABLE) ||
                 configurationDetails.containsKey(USERNAME_RECOVERY_EMAIL_ENABLE) ||
                 configurationDetails.containsKey(USERNAME_RECOVERY_SMS_ENABLE)) {
-            boolean usernameRecoveryProperty = Boolean.parseBoolean(configurationDetails.get(USERNAME_RECOVERY_ENABLE));
-            boolean usernameRecoveryEmailProperty = Boolean.parseBoolean(
-                    configurationDetails.get(USERNAME_RECOVERY_EMAIL_ENABLE));
-            boolean usernameRecoverySmsProperty = Boolean.parseBoolean(
-                    configurationDetails.get(USERNAME_RECOVERY_SMS_ENABLE));
 
-            // If user trying to update only username recovery config as in previous versions, automatically it will
-            // enable the email channel to maintain the backward compatibility.
-            if (usernameRecoveryProperty && !(usernameRecoverySmsProperty || usernameRecoveryEmailProperty)) {
-                configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
-            } else if (usernameRecoverySmsProperty || usernameRecoveryEmailProperty) {
-                configurationDetails.put(USERNAME_RECOVERY_ENABLE, TRUE_STRING);
+            String usernameRecoveryProp = configurationDetails.get(USERNAME_RECOVERY_ENABLE);
+            String usernameRecoveryEmailProp = configurationDetails.get(USERNAME_RECOVERY_EMAIL_ENABLE);
+            String usernameRecoverySmsProp = configurationDetails.get(USERNAME_RECOVERY_SMS_ENABLE);
+
+            boolean usernameRecoveryProperty = Boolean.parseBoolean(usernameRecoveryProp);
+            boolean usernameRecoveryEmailProperty = Boolean.parseBoolean(usernameRecoveryEmailProp);
+            boolean usernameRecoverySmsProperty = Boolean.parseBoolean(usernameRecoverySmsProp);
+
+            if(usernameRecoveryProperty) {
+                configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE,
+                        String.valueOf(usernameRecoveryEmailProperty || StringUtils.isBlank(usernameRecoveryProp)));
+            } else if (StringUtils.isBlank(usernameRecoveryProp)) {
+                // Connector is not explicitly enabled or disabled. The connector state is derived from new and existing
+                // configurations.
+                boolean isUsernameEmailRecoveryCurrentlyEnabled = false;
+                boolean isUsernameSmsRecoveryCurrentlyEnabled = false;
+                for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
+                    if (USERNAME_RECOVERY_EMAIL_ENABLE.equals(identityMgtProperty.getName())) {
+                        isUsernameEmailRecoveryCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
+                    } else if (USERNAME_RECOVERY_SMS_ENABLE.equals(identityMgtProperty.getName())) {
+                        isUsernameSmsRecoveryCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
+                    }
+                }
+                boolean enableUsernameEmailRecovery = usernameRecoveryEmailProperty ||
+                        ( StringUtils.isBlank(usernameRecoveryEmailProp) &&
+                                isUsernameEmailRecoveryCurrentlyEnabled );
+                boolean enableUsernameSmsRecovery = usernameRecoverySmsProperty ||
+                        ( StringUtils.isBlank(usernameRecoverySmsProp) &&
+                                isUsernameSmsRecoveryCurrentlyEnabled );
+                configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE,
+                        String.valueOf(enableUsernameEmailRecovery));
+                configurationDetails.put(USERNAME_RECOVERY_SMS_ENABLE,
+                        String.valueOf(enableUsernameSmsRecovery));
+                configurationDetails.put(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY,
+                        String.valueOf(enableUsernameEmailRecovery || enableUsernameSmsRecovery));
             } else {
-                configurationDetails.put(USERNAME_RECOVERY_ENABLE, FALSE_STRING);
+                configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE, FALSE_STRING);
+                configurationDetails.put(USERNAME_RECOVERY_SMS_ENABLE, FALSE_STRING);
             }
         }
     }
