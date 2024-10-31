@@ -111,6 +111,7 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
+    public static final String EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME = "ExcludedUserStoreDomains";
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -1409,43 +1410,59 @@ public class Utils {
             return false;
         }
 
+        if (StringUtils.isBlank(tenantDomain) || StringUtils.isBlank(userStoreDomain)) {
+            return false;
+        }
+
         try {
             List<LocalClaim> localClaims =
                     IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
                             .getLocalClaims(tenantDomain);
 
-            List<String> claimURIsToCheck = Arrays.asList(
+            List<String> requiredClaims = Arrays.asList(
                     IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
                     IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                     IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
                     IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
 
-            for (String claimUri : claimURIsToCheck) {
-                boolean isValidClaim = localClaims.stream()
-                        .filter(claim -> claimUri.equals(claim.getClaimURI()))
-                        .anyMatch(claim -> {
-                            // Check if claim is supported by default.
-                            Map<String, String> claimProperties = claim.getClaimProperties();
-                            boolean isSupportedByDefault = Boolean.parseBoolean(
-                                    claimProperties.getOrDefault(
-                                            ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.FALSE.toString()));
-
-                            boolean hasValidMapping = StringUtils.isNotBlank(claim.getMappedAttribute(userStoreDomain));
-
-                            // Return true only if both conditions are met
-                            return isSupportedByDefault && hasValidMapping;
-
-                        });
-
-                if (!isValidClaim) {
-                    return false;
-                }
-            }
-            return true;
+            // Check if all required claims are valid for the user store.
+            return requiredClaims.stream().allMatch(claimUri ->
+                            isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
         } catch (ClaimMetadataException e) {
             log.error("Error while retrieving multiple emails and mobiles config.", e);
             return false;
         }
+    }
+
+    /**
+     * Check if a claim is supported and not excluded for a specific user store.
+     *
+     * @param localClaims     List of local claims.
+     * @param claimUri        URI of the claim to check.
+     * @param userStoreDomain User store domain to validate against.
+     * @return True if claim is supported and not excluded.
+     */
+    private static boolean isClaimSupportedForUserStore(List<LocalClaim> localClaims, String claimUri,
+                                                        String userStoreDomain) {
+
+        return localClaims.stream()
+            .filter(claim -> claimUri.equals(claim.getClaimURI()))
+            .anyMatch(claim -> {
+                Map<String, String> properties = claim.getClaimProperties();
+
+                // Check if claim is supported by default.
+                boolean isSupported = Boolean.parseBoolean(
+                        properties.getOrDefault(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY,
+                                Boolean.FALSE.toString()));
+
+                // Check if user store is not in excluded list.
+                String excludedUserStoreDomains = properties.get(EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME);
+                boolean isNotExcluded = StringUtils.isBlank(excludedUserStoreDomains) ||
+                        !Arrays.asList(excludedUserStoreDomains.toUpperCase().split(","))
+                                .contains(userStoreDomain.toUpperCase());
+
+                return isSupported && isNotExcluded;
+            });
     }
 
     /**

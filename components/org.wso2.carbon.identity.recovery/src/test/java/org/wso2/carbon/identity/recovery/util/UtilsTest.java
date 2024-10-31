@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementServic
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.AttributeMapping;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -1362,7 +1363,7 @@ public class UtilsTest {
         when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
                 .thenReturn(claimMetadataManagementService);
 
-        // Case 1: When support_multi_emails_and_mobile_numbers_per_user config is false
+        // Case 1: When support_multi_emails_and_mobile_numbers_per_user config is false.
         mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
                 .thenReturn("false");
@@ -1375,49 +1376,65 @@ public class UtilsTest {
                         IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))
                 .thenReturn("true");
 
-        List<LocalClaim> localClaims = new ArrayList<>();
-
-        // Add claims with valid mappings.
-        LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-        mobileNumbersClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "mobileNumbers")));
-
-        LocalClaim verifiedMobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-        verifiedMobileNumbersClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "verifiedMobileNumbers")));
-
-        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-        emailAddressesClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "emailAddresses")));
-
-        LocalClaim verifiedEmailAddressesClaim =
-                new LocalClaim(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-        verifiedEmailAddressesClaim.setMappedAttributes(
-                Arrays.asList(new AttributeMapping(USER_STORE_DOMAIN, "verifiedEmailAddresses")));
-
-        localClaims.add(verifiedMobileNumbersClaim);
-        localClaims.add(mobileNumbersClaim);
-        localClaims.add(emailAddressesClaim);
-        localClaims.add(verifiedEmailAddressesClaim);
-
-        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(localClaims);
+        Map<String, String> claimProperties2 = new HashMap<>();
+        claimProperties2.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties2));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertTrue(isEnabled);
 
-        // Case 3: When one claim mapping is missing.
-        localClaims.remove(verifiedEmailAddressesClaim);
+        // Case 3: When support by default is disabled for feature related claims.
+        Map<String, String> claimProperties3 = new HashMap<>();
+        claimProperties3.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.FALSE.toString());
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties3));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
 
-        // Case 4: When ClaimMetadataException is thrown.
+        // Case 4: When user store domain is excluded for feature related claims.
+        Map<String, String> claimProperties4 = new HashMap<>();
+        claimProperties4.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+        claimProperties4.put(Utils.EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME, USER_STORE_DOMAIN);
+        when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
+                returnMultiEmailAndMobileRelatedLocalClaims(claimProperties4));
+
+        isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
+        assertFalse(isEnabled);
+
+        // Case 5: When ClaimMetadataException is thrown.
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN))
                 .thenThrow(new ClaimMetadataException("Test exception"));
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
     }
+
+    private static List<LocalClaim> returnMultiEmailAndMobileRelatedLocalClaims(Map<String, String> claimProperties) {
+
+        List<LocalClaim> localClaims = new ArrayList<>();
+
+        LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        mobileNumbersClaim.setClaimProperties(claimProperties);
+
+        LocalClaim verifiedMobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+        verifiedMobileNumbersClaim.setClaimProperties(claimProperties);
+
+        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        emailAddressesClaim.setClaimProperties(claimProperties);
+
+        LocalClaim verifiedEmailAddressesClaim =
+                new LocalClaim(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        verifiedEmailAddressesClaim.setClaimProperties(claimProperties);
+
+        localClaims.add(verifiedMobileNumbersClaim);
+        localClaims.add(mobileNumbersClaim);
+        localClaims.add(emailAddressesClaim);
+        localClaims.add(verifiedEmailAddressesClaim);
+
+        return localClaims;
+    };
 
     private static User getUser() {
 
