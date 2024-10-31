@@ -769,7 +769,7 @@
         <org.wso2.securevault.version>1.1.3</org.wso2.securevault.version>
         <org.wso2.securevault.import.version.range>[1.1.0, 2.0.0)</org.wso2.securevault.import.version.range>
 
-        <config.mapper.version>1.0.13</config.mapper.version>
+        <config.mapper.version>1.0.25</config.mapper.version>
     
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
