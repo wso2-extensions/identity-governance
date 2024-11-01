@@ -725,18 +725,34 @@ public class UserSelfRegistrationManagerTest {
         assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
 
         reset(userStoreManager);
+        // Case 2: Multiple email and mobile per user is disabled.
+        mockMultiAttributeEnabled(false);
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
 
-        // Case 2: When pending mobile number claim value is null.
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+        Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                StringUtils.EMPTY);
+        assertEquals(capturedClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM),
+                verificationPendingMobileNumber);
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+
+        reset(userStoreManager);
+        reset(userRecoveryDataStore);
+        // Case 3: When pending mobile number claim value is null.
         UserRecoveryData userRecoveryData2 = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData2.setRemainingSetIds(null);
         when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData2);
 
         userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
 
-        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
-        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
-        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
-        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+        ArgumentCaptor<Map<String, String>> claimsCaptor3 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor3.capture(), isNull());
+        assertFalse(claimsCaptor3.getValue().containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
+        assertFalse(claimsCaptor3.getValue().containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
     }
 
     @Test(expectedExceptions = IdentityRecoveryServerException.class)
@@ -884,6 +900,23 @@ public class UserSelfRegistrationManagerTest {
                 verificationPendingEmail);
         assertEquals(capturedClaims.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
                 verificationPendingEmail);
+
+        reset(userStoreManager);
+        // Case 2: Multiple email and mobile per user is disabled.
+        mockMultiAttributeEnabled(false);
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
+                metaProperties);
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+
+        Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
+        String emailAddressClaim =
+                capturedClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        assertEquals(emailAddressClaim, verificationPendingEmail);
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
     }
 
     @Test
