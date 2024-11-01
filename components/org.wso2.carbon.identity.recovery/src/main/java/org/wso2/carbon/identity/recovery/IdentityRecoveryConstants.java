@@ -637,6 +637,7 @@ public class IdentityRecoveryConstants {
                 "UseNumbersInOTP";
         public static final String SELF_REGISTRATION_OTP_LENGTH = "SelfRegistration.OTP.OTPLength";
         public static final String SEND_CONFIRMATION_NOTIFICATION = "SelfRegistration.SendConfirmationOnCreation";
+        public static final String SHOW_USERNAME_UNAVAILABILITY = "SelfRegistration.ShowUsernameUnavailability";
         public static final String SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE = "SelfRegistration.Notification" +
                 ".InternallyManage";
         public static final String SELF_REGISTRATION_RE_CAPTCHA = "SelfRegistration.ReCaptcha";
