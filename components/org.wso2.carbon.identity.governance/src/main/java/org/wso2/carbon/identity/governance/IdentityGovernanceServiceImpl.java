@@ -434,7 +434,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
             if(usernameRecoveryProperty) {
                 configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE,
-                        String.valueOf(usernameRecoveryEmailProperty || StringUtils.isBlank(usernameRecoveryProp)));
+                        String.valueOf(usernameRecoveryEmailProperty || StringUtils.isBlank(usernameRecoveryEmailProp)));
             } else if (StringUtils.isBlank(usernameRecoveryProp)) {
                 // Connector is not explicitly enabled or disabled. The connector state is derived from new and existing
                 // configurations.

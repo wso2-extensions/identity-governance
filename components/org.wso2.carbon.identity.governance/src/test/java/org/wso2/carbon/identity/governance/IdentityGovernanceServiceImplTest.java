@@ -169,6 +169,22 @@ public class IdentityGovernanceServiceImplTest {
                 false, false, false);
         Map<String, String> expected9 = getExpectedPropertyValues(true, true, true);
 
+        // Only username config true. Preconditions: all the configs false.
+        Map<String, String> usernameConfig10 = new HashMap<>();
+        usernameConfig10.put(USERNAME_RECOVERY_ENABLE, TRUE_STRING);
+
+        IdentityProviderProperty[] identityProviderProperties10 = getIdentityProviderProperties(
+                false, false, false);
+        Map<String, String> expected10 = getExpectedPropertyValues(true, true, false);
+
+        // Only username config false. Preconditions: all the configs true.
+        Map<String, String> usernameConfig11 = new HashMap<>();
+        usernameConfig11.put(USERNAME_RECOVERY_ENABLE, FALSE_STRING);
+
+        IdentityProviderProperty[] identityProviderProperties11 = getIdentityProviderProperties(
+                true, true, true);
+        Map<String, String> expected11 = getExpectedPropertyValues(false, false, false);
+
         return new Object[][]{
                 {usernameConfig1, identityProviderProperties1, expected1},
                 {usernameConfig2, identityProviderProperties2, expected2},
@@ -178,7 +194,9 @@ public class IdentityGovernanceServiceImplTest {
                 {usernameConfig6, identityProviderProperties6, expected6},
                 {usernameConfig7, identityProviderProperties7, expected7},
                 {usernameConfig8, identityProviderProperties8, expected8},
-                {usernameConfig9, identityProviderProperties9, expected9}
+                {usernameConfig9, identityProviderProperties9, expected9},
+                {usernameConfig10, identityProviderProperties10, expected10},
+                {usernameConfig11, identityProviderProperties11, expected11}
         };
 
     }

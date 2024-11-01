@@ -23,8 +23,9 @@
 
     <test name="identity-governance-tests" preserve-order="true" parallel="false">
         <classes>
-            <class name="org.wso2.carbon.identity.governance.listener.IdentityMgtEventListenerTest"></class>
-            <class name="org.wso2.carbon.identity.governance.listener.IdentityStoreEventListenerTest"></class>
+            <class name="org.wso2.carbon.identity.governance.IdentityGovernanceServiceImplTest"/>
+            <class name="org.wso2.carbon.identity.governance.listener.IdentityMgtEventListenerTest"/>
+            <class name="org.wso2.carbon.identity.governance.listener.IdentityStoreEventListenerTest"/>
             <class name="org.wso2.carbon.identity.governance.internal.service.impl.notification.DefaultNotificationChannelManagerTest"/>
         </classes>
     </test>
