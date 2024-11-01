@@ -457,7 +457,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                         String.valueOf(enableUsernameEmailRecovery));
                 configurationDetails.put(USERNAME_RECOVERY_SMS_ENABLE,
                         String.valueOf(enableUsernameSmsRecovery));
-                configurationDetails.put(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY,
+                configurationDetails.put(USERNAME_RECOVERY_ENABLE,
                         String.valueOf(enableUsernameEmailRecovery || enableUsernameSmsRecovery));
             } else {
                 configurationDetails.put(USERNAME_RECOVERY_EMAIL_ENABLE, FALSE_STRING);
