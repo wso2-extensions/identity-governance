@@ -122,30 +122,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             }
             claims.remove(IdentityRecoveryConstants.VERIFY_MOBILE_CLAIM);
             claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-
-            if (supportMultipleMobileNumbers) {
-                if (claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM) &&
-                        !claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM).isEmpty()) {
-                    String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
-                    List<String> exisitingAllNumbersList = Utils.getMultiValuedClaim(userStoreManager, user,
-                            IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-                    List<String> updatedAllNumbersList =
-                            claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)
-                                    ? getListOfMobileNumbersFromString(
-                                            claims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM))
-                                    : exisitingAllNumbersList;
-                    if (!updatedAllNumbersList.contains(mobileNumber)) {
-                        updatedAllNumbersList.add(mobileNumber);
-                        claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                                String.join(FrameworkUtils.getMultiAttributeSeparator(), updatedAllNumbersList));
-                    }
-                }
-            } else {
-                // Multiple mobile numbers per user support is disabled.
-                log.debug("Supporting multiple mobile numbers per user is disabled.");
-                claims.remove(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
-                claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
-            }
             return;
         }
 
@@ -329,6 +305,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         boolean supportMultipleMobileNumbers =
                 Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+
+        // Update multiple mobile numbers only if they’re in the claims map.
+        // This avoids issues with updating the primary mobile number due to user store limitations on multiple
+        // mobile numbers.
+        boolean shouldUpdateMultiMobilesRelatedClaims =
+                claims.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM) ||
+                        claims.containsKey(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
@@ -366,10 +349,12 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 updatedVerifiedNumbersList.removeIf(number -> !updatedAllNumbersList.contains(number));
             }
 
-            claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                    String.join(multiAttributeSeparator, updatedAllNumbersList));
-            claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                    String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+            if (shouldUpdateMultiMobilesRelatedClaims) {
+                claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                        String.join(multiAttributeSeparator, updatedAllNumbersList));
+                claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                        String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+            }
         } else {
             updatedAllNumbersList = new ArrayList<>();
             claims.remove(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
@@ -412,7 +397,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
             invalidatePendingMobileVerification(user, userStoreManager, claims);
 
-            if (supportMultipleMobileNumbers) {
+            if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims) {
                 if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
                     updatedVerifiedNumbersList.add(existingMobileNumber);
                     claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,

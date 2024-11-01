@@ -665,7 +665,6 @@ public class UserSelfRegistrationManagerTest {
 
         assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
         assertEquals(updatedPrimaryMobile, verificationPendingMobileNumber);
-        assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
 
         // Case 2: Multiple email and mobile per user is disabled.
         mockMultiAttributeEnabled(false);
@@ -749,7 +748,7 @@ public class UserSelfRegistrationManagerTest {
         String verificationPendingMobileNumber = "0700000000";
         User user = getUser();
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
         userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
 
         when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
@@ -801,12 +800,12 @@ public class UserSelfRegistrationManagerTest {
         verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
 
         Map<String, String> capturedClaims = claimsCaptor.getValue();
-        String updatedVerifiedEmailAddresses =
-                capturedClaims.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        String updatedEmailAddressClaim =
+                capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
         String verificationPendingEmailAddress =
                 capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
 
-        assertTrue(StringUtils.contains(updatedVerifiedEmailAddresses, verificationPendingEmail));
+        assertTrue(StringUtils.contains(updatedEmailAddressClaim, verificationPendingEmail));
         assertEquals(verificationPendingEmailAddress, StringUtils.EMPTY);
 
         // Case 2: Multiple email and mobile per user is disabled.
@@ -883,14 +882,11 @@ public class UserSelfRegistrationManagerTest {
         verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
 
         Map<String, String> capturedClaims = claimsCaptor.getValue();
-        String updatedVerifiedMobileNumbers =
-                capturedClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         String verificationPendingMobileNumberClaim =
                 capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
         String updatedMobileNumberClaimValue =
                 capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
-        assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
         assertEquals(verificationPendingMobileNumberClaim, StringUtils.EMPTY);
         assertEquals(updatedMobileNumberClaimValue, verificationPendingMobileNumber);
 
