@@ -416,6 +416,7 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
      * This method updates the username recovery property values based on the new configurations.
      *
      * @param configurationDetails    Updating configuration details of the resident identity provider.
+     * @param identityMgtProperties   Identity management properties of the resident identity provider.
      */
     private void updateUsernameRecoveryPropertyValues(Map<String, String> configurationDetails,
                                                       IdentityProviderProperty[] identityMgtProperties) {
