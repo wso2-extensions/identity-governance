@@ -1396,7 +1396,7 @@ public class UtilsTest {
         // Case 4: When user store domain is excluded for feature related claims.
         Map<String, String> claimProperties4 = new HashMap<>();
         claimProperties4.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
-        claimProperties4.put(Utils.EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME, USER_STORE_DOMAIN);
+        claimProperties4.put(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY, USER_STORE_DOMAIN);
         when(claimMetadataManagementService.getLocalClaims(TENANT_DOMAIN)).thenReturn(
                 returnMultiEmailAndMobileRelatedLocalClaims(claimProperties4));
 

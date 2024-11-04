@@ -111,7 +111,6 @@ public class Utils {
 
     private static final Log AUDIT_LOG = CarbonConstants.AUDIT_LOG;
     private static final Log log = LogFactory.getLog(Utils.class);
-    public static final String EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME = "ExcludedUserStoreDomains";
 
     //This is used to pass the arbitrary properties from self user manager to self user handler
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
@@ -1456,7 +1455,7 @@ public class Utils {
                                 Boolean.FALSE.toString()));
 
                 // Check if user store is not in excluded list.
-                String excludedUserStoreDomains = properties.get(EXCLUDED_USER_STORE_DOMAINS_CLAIM_PROPERTY_NAME);
+                String excludedUserStoreDomains = properties.get(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY);
                 boolean isNotExcluded = StringUtils.isBlank(excludedUserStoreDomains) ||
                         !Arrays.asList(excludedUserStoreDomains.toUpperCase().split(","))
                                 .contains(userStoreDomain.toUpperCase());
