@@ -49,6 +49,10 @@ import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHa
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -97,9 +101,11 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -111,6 +117,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -627,7 +634,7 @@ public class UserSelfRegistrationManagerTest {
 
     @Test
     public void testConfirmVerificationCodeMe()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
 
         // Case 1: Multiple email and mobile per user is enabled.
         String verificationPendingMobileNumber = "0700000000";
@@ -658,7 +665,6 @@ public class UserSelfRegistrationManagerTest {
 
         assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
         assertEquals(updatedPrimaryMobile, verificationPendingMobileNumber);
-        assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
 
         // Case 2: Multiple email and mobile per user is disabled.
         mockMultiAttributeEnabled(false);
@@ -691,7 +697,7 @@ public class UserSelfRegistrationManagerTest {
 
     @Test
     public void testConfirmVerificationCodeMeVerificationOnVerifiedListUpdate()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
 
         // Case 1: Recovery Scenario - MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.
         String verificationPendingMobileNumber = "0700000000";
@@ -705,8 +711,7 @@ public class UserSelfRegistrationManagerTest {
         when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
 
         mockMultiAttributeEnabled(true);
-        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, verificationPendingMobileNumber);
-        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, verificationPendingMobileNumber);
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, "");
 
         userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
 
@@ -720,29 +725,45 @@ public class UserSelfRegistrationManagerTest {
         assertEquals(updatedVerificationPendingMobile, StringUtils.EMPTY);
 
         reset(userStoreManager);
+        // Case 2: Multiple email and mobile per user is disabled.
+        mockMultiAttributeEnabled(false);
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
 
-        // Case 2: When pending mobile number claim value is null.
+        userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
+
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+        Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                StringUtils.EMPTY);
+        assertEquals(capturedClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM),
+                verificationPendingMobileNumber);
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+
+        reset(userStoreManager);
+        reset(userRecoveryDataStore);
+        // Case 3: When pending mobile number claim value is null.
         UserRecoveryData userRecoveryData2 = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData2.setRemainingSetIds(null);
         when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData2);
 
         userSelfRegistrationManager.confirmVerificationCodeMe(TEST_CODE, new HashMap<>());
 
-        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
-        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
-        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
-        assertFalse(claimsCaptor2.getValue().containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
+        ArgumentCaptor<Map<String, String>> claimsCaptor3 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor3.capture(), isNull());
+        assertFalse(claimsCaptor3.getValue().containsKey(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM));
+        assertFalse(claimsCaptor3.getValue().containsKey(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM));
     }
 
     @Test(expectedExceptions = IdentityRecoveryServerException.class)
     public void testConfirmVerificationCodeMeUserStoreException()
-            throws IdentityRecoveryException, UserStoreException {
+            throws IdentityRecoveryException, UserStoreException, ClaimMetadataException {
 
         // Case 3: Throws user store exception while getting user claim values.
         String verificationPendingMobileNumber = "0700000000";
         User user = getUser();
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
         userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
 
         when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
@@ -757,14 +778,15 @@ public class UserSelfRegistrationManagerTest {
     }
 
     @Test
-    public void testGetConfirmedSelfRegisteredUserVerifyEmail()
-            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
+    public void testGetConfirmedSelfRegisteredUserEmailVerificationOnUpdate()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException, ClaimMetadataException {
 
         String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
         String verificationPendingEmail = "pasindu@gmail.com";
         Map<String, String> metaProperties = new HashMap<>();
 
+        // Case 1: Multiple email and mobile per user is enabled - EMAIL_VERIFICATION_ON_UPDATE.
         User user = getUser();
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_EMAIL);
@@ -794,14 +816,17 @@ public class UserSelfRegistrationManagerTest {
         verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
 
         Map<String, String> capturedClaims = claimsCaptor.getValue();
-        String updatedVerifiedEmailAddresses =
-                capturedClaims.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        String updatedEmailAddressClaim =
+                capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
         String verificationPendingEmailAddress =
                 capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM);
 
-        assertTrue(StringUtils.contains(updatedVerifiedEmailAddresses, verificationPendingEmail));
+        assertTrue(StringUtils.contains(updatedEmailAddressClaim, verificationPendingEmail));
         assertEquals(verificationPendingEmailAddress, StringUtils.EMPTY);
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
 
+        reset(userStoreManager);
         // Case 2: Multiple email and mobile per user is disabled.
         mockMultiAttributeEnabled(false);
 
@@ -809,12 +834,14 @@ public class UserSelfRegistrationManagerTest {
                 metaProperties);
 
         ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
-        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
 
         Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
         String emailAddressClaim =
                 capturedClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
         assertEquals(emailAddressClaim, verificationPendingEmail);
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
 
         // Case 3 : Throws user store exception while getting user store manager.
         when(userRealm.getUserStoreManager()).thenThrow(new org.wso2.carbon.user.core.UserStoreException());
@@ -827,9 +854,73 @@ public class UserSelfRegistrationManagerTest {
         }
     }
 
+    @Test
+    public void testGetConfirmedSelfRegisteredUserEmailVerificationOnVerifiedListUpdate()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException, ClaimMetadataException {
+
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
+        String verificationPendingEmail = "pasindu@gmail.com";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        // Case 1: Multiple email and mobile per user is enabled - EMAIL_VERIFICATION_ON_UPDATE.
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_EMAIL);
+        // Setting verification pending email claim value.
+        userRecoveryData.setRemainingSetIds(verificationPendingEmail);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockMultiAttributeEnabled(true);
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM, StringUtils.EMPTY);
+        mockGetUserClaimValue(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.EMPTY);
+
+        org.wso2.carbon.identity.application.common.model.Property property =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
+                metaProperties);
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM));
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), StringUtils.EMPTY);
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM),
+                verificationPendingEmail);
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM),
+                verificationPendingEmail);
+
+        reset(userStoreManager);
+        // Case 2: Multiple email and mobile per user is disabled.
+        mockMultiAttributeEnabled(false);
+
+        userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType, verifiedChannelClaim,
+                metaProperties);
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor2 = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager).setUserClaimValues(anyString(), claimsCaptor2.capture(), isNull());
+
+        Map<String, String> capturedClaims2 = claimsCaptor2.getValue();
+        String emailAddressClaim =
+                capturedClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+        assertEquals(emailAddressClaim, verificationPendingEmail);
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        assertFalse(capturedClaims2.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
+    }
 
     @Test
-    public void testGetConfirmedSelfRegisteredUserVerifyMobile()
+    public void testGetConfirmedSelfRegisteredUserMobileVerificationOnUpdate()
             throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
 
         String verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
@@ -859,7 +950,8 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -875,21 +967,21 @@ public class UserSelfRegistrationManagerTest {
         verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
 
         Map<String, String> capturedClaims = claimsCaptor.getValue();
-        String updatedVerifiedMobileNumbers =
-                capturedClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
         String verificationPendingMobileNumberClaim =
                 capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM);
         String updatedMobileNumberClaimValue =
                 capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
-        assertTrue(StringUtils.contains(updatedVerifiedMobileNumbers, verificationPendingMobileNumber));
         assertEquals(verificationPendingMobileNumberClaim, StringUtils.EMPTY);
         assertEquals(updatedMobileNumberClaimValue, verificationPendingMobileNumber);
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
 
         // Case 2: External Verified Channel type.
         verifiedChannelType = NotificationChannels.EXTERNAL_CHANNEL.getChannelType();
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -911,7 +1003,8 @@ public class UserSelfRegistrationManagerTest {
 
         // Case 3: Throws user store exception while getting user claim values.
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -935,7 +1028,8 @@ public class UserSelfRegistrationManagerTest {
         verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
         verifiedChannelClaim = "http://wso2.org/claims/invalid";
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
-            mockedUtils.when(Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(true);
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
             mockedUtils.when(() -> Utils.getConnectorConfig(
                             eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
                             anyString()))
@@ -951,8 +1045,66 @@ public class UserSelfRegistrationManagerTest {
     }
 
     @Test
-    public void testGetConfirmedSelfRegisteredUserConfirmSignUp()
+    public void testGetConfirmedSelfRegisteredUserMobileVerificationOnVerifiedListUpdate()
             throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException {
+
+        String verifiedChannelType = NotificationChannels.SMS_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/mobile";
+        String verificationPendingMobileNumber = "077888888";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        // Setting verification pending email claim value.
+        userRecoveryData.setRemainingSetIds(verificationPendingMobileNumber);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getUsername()).thenReturn(TEST_USER_NAME);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        mockGetUserClaimValue(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM, StringUtils.EMPTY);
+        mockGetUserClaimValue(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM, StringUtils.EMPTY);
+
+        org.wso2.carbon.identity.application.common.model.Property property =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+        when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                    .thenReturn(true);
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                            eq(IdentityRecoveryConstants.ConnectorConfig.ENABLE_MOBILE_VERIFICATION_BY_PRIVILEGED_USER),
+                            anyString()))
+                    .thenReturn("true");
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(IdentityRecoveryConstants.ConnectorConfig
+                            .SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
+                    anyString())).thenReturn("true");
+            userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE, verifiedChannelType,
+                    verifiedChannelClaim, metaProperties);
+        }
+
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager, atLeastOnce()).setUserClaimValues(anyString(), claimsCaptor.capture(), isNull());
+
+        Map<String, String> capturedClaims = claimsCaptor.getValue();
+
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                StringUtils.EMPTY);
+        assertFalse(capturedClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM));
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM),
+                verificationPendingMobileNumber);
+        assertEquals(capturedClaims.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                verificationPendingMobileNumber);
+    }
+
+    @Test
+    public void testGetConfirmedSelfRegisteredUserConfirmSignUp()
+            throws IdentityRecoveryException, UserStoreException, IdentityGovernanceException, ClaimMetadataException {
 
         String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
@@ -1562,11 +1714,37 @@ public class UserSelfRegistrationManagerTest {
         return user;
     }
 
-    private void mockMultiAttributeEnabled(Boolean isEnabled) {
+    private void mockMultiAttributeEnabled(Boolean isEnabled) throws ClaimMetadataException {
 
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                 eq(IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER)))
                 .thenReturn(isEnabled.toString());
+        if (!isEnabled) return;
+        // Mock ClaimMetadataManagementService.
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(identityRecoveryServiceDataHolder.getClaimMetadataManagementService())
+                .thenReturn(claimMetadataManagementService);
+
+        List<LocalClaim> localClaims = new ArrayList<>();
+        Map<String, String> claimProperties = new HashMap<>();
+        claimProperties.put(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY, Boolean.TRUE.toString());
+
+        LocalClaim mobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM);
+        mobileNumbersClaim.setClaimProperties(claimProperties);
+        LocalClaim verifiedMobileNumbersClaim = new LocalClaim(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
+        verifiedMobileNumbersClaim.setClaimProperties(claimProperties);
+        LocalClaim emailAddressesClaim = new LocalClaim(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+        emailAddressesClaim.setClaimProperties(claimProperties);
+        LocalClaim verifiedEmailAddressesClaim =
+                new LocalClaim(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+        verifiedEmailAddressesClaim.setClaimProperties(claimProperties);
+
+        localClaims.add(verifiedMobileNumbersClaim);
+        localClaims.add(mobileNumbersClaim);
+        localClaims.add(emailAddressesClaim);
+        localClaims.add(verifiedEmailAddressesClaim);
+
+        doReturn(localClaims).when(claimMetadataManagementService).getLocalClaims(TEST_TENANT_DOMAIN_NAME);
     }
 
     private void mockGetUserClaimValue(String claimUri, String claimValue) throws UserStoreException {

@@ -36,6 +36,9 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureRe
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -1393,14 +1396,72 @@ public class Utils {
     }
 
     /**
-     * Check whether the supporting multiple email addresses and mobile numbers per user is enabled.
+     * Check whether the supporting multiple email addresses and mobile numbers per user feature is enabled.
      *
+     * @param tenantDomain   Tenant domain.
+     * @param userStoreDomain User store domain.
      * @return True if the config is set to true, false otherwise.
      */
-    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled() {
+    public static boolean isMultiEmailsAndMobileNumbersPerUserEnabled(String tenantDomain, String userStoreDomain) {
 
-        return Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER));
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SUPPORT_MULTI_EMAILS_AND_MOBILE_NUMBERS_PER_USER))) {
+            return false;
+        }
+
+        if (StringUtils.isBlank(tenantDomain) || StringUtils.isBlank(userStoreDomain)) {
+            return false;
+        }
+
+        try {
+            List<LocalClaim> localClaims =
+                    IdentityRecoveryServiceDataHolder.getInstance().getClaimMetadataManagementService()
+                            .getLocalClaims(tenantDomain);
+
+            List<String> requiredClaims = Arrays.asList(
+                    IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                    IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                    IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
+
+            // Check if all required claims are valid for the user store.
+            return requiredClaims.stream().allMatch(claimUri ->
+                            isClaimSupportedForUserStore(localClaims, claimUri, userStoreDomain));
+        } catch (ClaimMetadataException e) {
+            log.error("Error while retrieving multiple emails and mobiles config.", e);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a claim is supported and not excluded for a specific user store.
+     *
+     * @param localClaims     List of local claims.
+     * @param claimUri        URI of the claim to check.
+     * @param userStoreDomain User store domain to validate against.
+     * @return True if claim is supported and not excluded.
+     */
+    private static boolean isClaimSupportedForUserStore(List<LocalClaim> localClaims, String claimUri,
+                                                        String userStoreDomain) {
+
+        return localClaims.stream()
+            .filter(claim -> claimUri.equals(claim.getClaimURI()))
+            .anyMatch(claim -> {
+                Map<String, String> properties = claim.getClaimProperties();
+
+                // Check if claim is supported by default.
+                boolean isSupported = Boolean.parseBoolean(
+                        properties.getOrDefault(ClaimConstants.SUPPORTED_BY_DEFAULT_PROPERTY,
+                                Boolean.FALSE.toString()));
+
+                // Check if user store is not in excluded list.
+                String excludedUserStoreDomains = properties.get(ClaimConstants.EXCLUDED_USER_STORES_PROPERTY);
+                boolean isNotExcluded = StringUtils.isBlank(excludedUserStoreDomains) ||
+                        !Arrays.asList(excludedUserStoreDomains.toUpperCase().split(","))
+                                .contains(userStoreDomain.toUpperCase());
+
+                return isSupported && isNotExcluded;
+            });
     }
 
     /**

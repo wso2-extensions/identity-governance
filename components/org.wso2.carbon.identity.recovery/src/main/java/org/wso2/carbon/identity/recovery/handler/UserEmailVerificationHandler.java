@@ -99,7 +99,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             claims = new HashMap<>();
         }
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleEmails =
+                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
 
         boolean enable = false;
 
@@ -131,30 +132,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     }
                     invalidatePendingEmailVerification(user, userStoreManager, claims);
                 }
-
-                if (supportMultipleEmails) {
-                    // Drop the verified email addresses claim as verification on update is not enabled.
-                    claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
-
-                    if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM) &&
-                            !claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM).isEmpty()) {
-
-                        String email = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
-                        List<String> existingAllEmailAddresses = Utils.getMultiValuedClaim(userStoreManager, user,
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
-
-                        List<String> updatedAllEmailAddresses = claims.containsKey(
-                                IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM)
-                                ? getListOfEmailAddressesFromString(
-                                        claims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM))
-                                : existingAllEmailAddresses;
-                        if (!updatedAllEmailAddresses.contains(email)) {
-                            updatedAllEmailAddresses.add(email);
-                            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                                    String.join(FrameworkUtils.getMultiAttributeSeparator(), updatedAllEmailAddresses));
-                        }
-                    }
-                }
+                claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
             }
         }
@@ -568,7 +546,15 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.unsetThreadLocalToSkipSendingEmailVerificationOnUpdate();
         }
 
-        boolean supportMultipleEmails = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled();
+        boolean supportMultipleEmails =
+                Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(user.getTenantDomain(), user.getUserStoreDomain());
+        // Update multiple email address related claims only if they’re in the claims map.
+        // This avoids issues with updating the primary email address due to user store limitations on multiple
+        // email addresses.
+        boolean shouldUpdateMultiMobilesRelatedClaims =
+                claims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM) ||
+                        claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM);
+
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
@@ -611,10 +597,12 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             final List<String> tempUpdatedAllEmailAddresses = new ArrayList<>(updatedAllEmailAddresses);
             updatedVerifiedEmailAddresses.removeIf(number -> !tempUpdatedAllEmailAddresses.contains(number));
 
-            claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                    StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-            claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
-                    StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+            if (shouldUpdateMultiMobilesRelatedClaims) {
+                claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
+                        StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
+                claims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM,
+                        StringUtils.join(updatedAllEmailAddresses, multiAttributeSeparator));
+            }
         } else {
             /*
             email addresses and verified email addresses should not be updated when support for multiple email
@@ -655,7 +643,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
             invalidatePendingEmailVerification(user, userStoreManager, claims);
 
-            if (supportMultipleEmails) {
+            if (supportMultipleEmails && shouldUpdateMultiMobilesRelatedClaims) {
                 if (!updatedVerifiedEmailAddresses.contains(existingEmail)) {
                     updatedVerifiedEmailAddresses.add(existingEmail);
                     claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,

@@ -218,8 +218,9 @@ public class UserEmailVerificationHandlerTest {
 
         userEmailVerificationHandler.handleEvent(event);
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
-        Assert.assertTrue(StringUtils.contains(
-                userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM), NEW_EMAIL));
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), NEW_EMAIL);
+        // Multiple email addresses related claims should only be updated when they are present in the request.
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
 
         // Case 2 : Send email addresses claim with event.
         String emailsClaim = String.format("%s,%s", EXISTING_EMAIL_1, EXISTING_EMAIL_2);
@@ -231,8 +232,8 @@ public class UserEmailVerificationHandlerTest {
 
         userEmailVerificationHandler.handleEvent(event2);
         Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
-        Assert.assertTrue(StringUtils.contains(
-                userClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM), NEW_EMAIL));
+        Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM), NEW_EMAIL);
+        Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM), emailsClaim);
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Disabled")
@@ -306,7 +307,6 @@ public class UserEmailVerificationHandlerTest {
 
         /*
          Try to change the primary email, new Email is not in the existing verified email address list.
-         Expected: IdentityEventClientException should be thrown.
          */
         Event event = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
                 null, null, NEW_EMAIL);
@@ -322,6 +322,8 @@ public class UserEmailVerificationHandlerTest {
         userEmailVerificationHandler.handleEvent(event);
         Map<String, String> userClaims = getUserClaimsFromEvent(event);
         Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_PENDING_VALUE_CLAIM), NEW_EMAIL);
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+        Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Change primary email which is already " +
@@ -347,6 +349,9 @@ public class UserEmailVerificationHandlerTest {
             mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(
                     eq(IdentityRecoveryConstants.SkipEmailVerificationOnUpdateStates
                             .SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString())));
+            Map<String, String> userClaims = getUserClaimsFromEvent(event);
+            Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM));
+            Assert.assertFalse(userClaims.containsKey(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM));
     }
 
     @Test(description = "Verification - Enabled, Multi attribute - Enabled, Update verified list with new email")
@@ -762,8 +767,8 @@ public class UserEmailVerificationHandlerTest {
     private void mockUtilMethods(boolean emailVerificationEnabled, boolean multiAttributeEnabled,
                                  boolean userVerifyClaimEnabled, boolean notificationOnEmailUpdate) {
 
-        mockedUtils.when(
-                Utils::isMultiEmailsAndMobileNumbersPerUserEnabled).thenReturn(multiAttributeEnabled);
+        mockedUtils.when(() -> Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(anyString(), anyString()))
+                .thenReturn(multiAttributeEnabled);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(userVerifyClaimEnabled);
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION_ON_UPDATE,
                 emailVerificationEnabled);
