@@ -175,7 +175,7 @@ public class IdentityGovernanceServiceImplTest {
 
         IdentityProviderProperty[] identityProviderProperties10 = getIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected10 = getExpectedPropertyValues(true, true, false);
+        Map<String, String> expected10 = getExpectedPropertyValues(true, true, true);
 
         // Only username config false. Preconditions: all the configs true.
         Map<String, String> usernameConfig11 = new HashMap<>();
