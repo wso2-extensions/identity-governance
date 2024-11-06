@@ -28,7 +28,9 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.dto.UsernameRecoverDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -45,7 +47,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -399,6 +403,43 @@ public class UsernameRecoveryManagerImplTest {
                 .thenReturn(new IdentityRecoveryClientException(null));
         RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
         assertEquals(result.getUsername(), "testUser");
+    }
+
+    /**
+     * Test to initiate recovery with useLegacyAPI false.
+     *
+     * @throws IdentityRecoveryException if an error occurs during initiation.
+     */
+    @Test
+    public void testInitiateRecoveryWithUseLegacyAPIFalse() throws IdentityRecoveryException {
+
+        mockIdentityEventService();
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
+        recoveryChannelInfoDTO.setUsername("testUser");
+
+        Map<String, String> properties = new HashMap<>();
+        when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
+
+        // Case 1: When Recovery.Notification.Username.NonUniqueUsername is enabled.
+        when(IdentityUtil.getProperty(
+                eq(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))).thenReturn(TRUE);
+
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
+        when(mockUserAccountRecoveryManager.retrieveUsersRecoveryInformationForUsername(eq(null), eq(TENANT_DOMAIN),
+                any())).thenReturn(recoveryChannelInfoDTO);
+        when(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, properties)).thenReturn(true);
+        RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
+        assertEquals(result.getRecoveryChannelInfoDTO().getUsername(), "testUser");
+
+        // Case 2: When Recovery.Notification.Username.NonUniqueUsername is disabled.
+        when(IdentityUtil.getProperty(
+                eq(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))).thenReturn(FALSE);
+        when(mockUserAccountRecoveryManager.retrieveUserRecoveryInformation(eq(null), eq(TENANT_DOMAIN),
+                eq(RecoveryScenarios.USERNAME_RECOVERY),
+                any())).thenReturn(recoveryChannelInfoDTO);
+        result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
+        assertEquals(result.getRecoveryChannelInfoDTO().getUsername(), "testUser");
     }
 
     /**
