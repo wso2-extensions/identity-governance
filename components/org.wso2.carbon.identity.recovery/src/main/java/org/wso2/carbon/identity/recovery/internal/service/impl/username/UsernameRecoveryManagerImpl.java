@@ -272,9 +272,15 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
             // If notifications are externally managed, username needs to be sent with the request.
             // Build username for external notification.
-            String username =
-                    String.format(qualifiedUsernameRegexPattern, user.getUserName(), user.getTenantDomain());
-            usernameRecoverDTO.setUsername(username);
+            StringBuilder usernameCombined = new StringBuilder();
+            String[] usernames = user.getUserName().split(",");
+            for (String username : usernames) {
+                if(usernameCombined.length() > 0) {
+                    usernameCombined.append(",");
+                }
+                usernameCombined.append(String.format(qualifiedUsernameRegexPattern, username, user.getTenantDomain()));
+            }
+            usernameRecoverDTO.setUsername(usernameCombined.toString());
         } else {
             usernameRecoverDTO.setCode(
                     IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_USERNAME_INTERNALLY_NOTIFIED.getCode());
