@@ -134,9 +134,18 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         Map<String, String> metaProperties = new HashMap<>();
         metaProperties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
                 Boolean.toString(manageNotificationsInternally));
-        recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
-                .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
-                        metaProperties));
+
+        boolean nonUniqueUsernameEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME));
+        if (nonUniqueUsernameEnabled) {
+            recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
+                    .retrieveUsersRecoveryInformationForUsername(claims, tenantDomain, metaProperties));
+        } else {
+            recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
+                    .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
+                            metaProperties));
+        }
+
         return recoveryInformationDTO;
     }
 
@@ -313,27 +322,31 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                                      Map<String, String> metaProperties)
             throws IdentityRecoveryException {
 
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-        if (metaProperties != null) {
-            for (String key : metaProperties.keySet()) {
-                String value = metaProperties.get(key);
-                if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(value)) {
-                    properties.put(key, value);
+        String combinedUsernames = user.getUserName();
+        String[] usernames = combinedUsernames.split(",");
+        for (String username : usernames) {
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
+            properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+            properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+            if (metaProperties != null) {
+                for (String key : metaProperties.keySet()) {
+                    String value = metaProperties.get(key);
+                    if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(value)) {
+                        properties.put(key, value);
+                    }
                 }
             }
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
+            Event identityMgtEvent = new Event(eventName, properties);
+            try {
+                IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            } catch (IdentityEventException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                        user.getUserName(), e);
+            }
         }
     }
 
