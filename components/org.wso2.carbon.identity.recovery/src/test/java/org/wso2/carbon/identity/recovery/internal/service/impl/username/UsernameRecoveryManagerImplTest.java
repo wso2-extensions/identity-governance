@@ -259,13 +259,14 @@ public class UsernameRecoveryManagerImplTest {
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("EXTERNAL,EXTERNAL");
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         User mockUser = new User();
-        mockUser.setUserName("KD123");
+        mockUser.setUserName("user1,user2");
         mockUser.setTenantDomain(TENANT_DOMAIN);
         when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
         when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null))
                 .thenReturn(new IdentityRecoveryClientException(null));
         UsernameRecoverDTO code = usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
         assertEquals(code.getCode(), "UNR-02002");
+        assertEquals(code.getUsername(), String.format("user1@%s,user2@%s", TENANT_DOMAIN, TENANT_DOMAIN));
     }
 
     /**
