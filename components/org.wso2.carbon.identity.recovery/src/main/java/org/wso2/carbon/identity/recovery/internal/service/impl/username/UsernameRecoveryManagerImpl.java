@@ -86,15 +86,9 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
         validateTenantDomain(tenantDomain);
-        boolean isNotificationBasedRecoveryEnabled = isNotificationBasedRecoveryEnabled(tenantDomain);
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
-        recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
-
-        if (!isNotificationBasedRecoveryEnabled) {
-            return recoveryInformationDTO;
-        }
 
         boolean useLegacyAPIApproach = useLegacyAPIApproach(properties);
         boolean manageNotificationsInternally = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
@@ -172,7 +166,6 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         recoveryInformationDTO.setRecoveryFlowId(recoveryFlowId);
         // Do not add recovery channel information if Notification based recovery is not enabled.
         recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
-        recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }
 
@@ -528,22 +521,6 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
             return isSMSBasedRecoveryEnabled(tenantDomain);
         }
         return false;
-    }
-
-    private boolean isNotificationBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
-
-        try {
-            return Boolean.parseBoolean(
-                    Utils.getRecoveryConfigs(
-                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
-                            tenantDomain));
-        } catch (IdentityRecoveryServerException e) {
-            // Prepend scenario to the thrown exception.
-            String errorCode = Utils
-                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
-                            e.getErrorCode());
-            throw Utils.handleServerException(errorCode, e.getMessage(), null);
-        }
     }
 
     private boolean isEmailBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
