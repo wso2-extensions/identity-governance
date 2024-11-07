@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
+import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.dto.UsernameRecoverDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -55,6 +57,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
@@ -83,9 +86,15 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                                            Map<String, String> properties) throws IdentityRecoveryException {
 
         validateTenantDomain(tenantDomain);
+        boolean isNotificationBasedRecoveryEnabled = isNotificationBasedRecoveryEnabled(tenantDomain);
         validateConfigurations(tenantDomain);
         UserAccountRecoveryManager userAccountRecoveryManager = UserAccountRecoveryManager.getInstance();
         RecoveryInformationDTO recoveryInformationDTO = new RecoveryInformationDTO();
+        recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
+
+        if (!isNotificationBasedRecoveryEnabled) {
+            return recoveryInformationDTO;
+        }
 
         boolean useLegacyAPIApproach = useLegacyAPIApproach(properties);
         boolean manageNotificationsInternally = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
@@ -137,15 +146,33 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
         boolean nonUniqueUsernameEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME));
+
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO;
         if (nonUniqueUsernameEnabled) {
-            recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
-                    .retrieveUsersRecoveryInformationForUsername(claims, tenantDomain, metaProperties));
+            recoveryChannelInfoDTO = userAccountRecoveryManager
+                    .retrieveUsersRecoveryInformationForUsername(claims, tenantDomain, metaProperties);
         } else {
-            recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
+            recoveryChannelInfoDTO = userAccountRecoveryManager
                     .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
-                            metaProperties));
+                            metaProperties);
         }
 
+        // Filtering the notification channel list.
+        List<NotificationChannelDTO> enabledNotificationChannelDTOs = new ArrayList<>();
+        for (NotificationChannelDTO notificationChannelDTO : recoveryChannelInfoDTO.getNotificationChannelDTOs()) {
+            if (isRecoveryChannelEnabled(notificationChannelDTO.getType(), tenantDomain)) {
+                enabledNotificationChannelDTOs.add(notificationChannelDTO);
+            }
+        }
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(
+                enabledNotificationChannelDTOs.toArray(new NotificationChannelDTO[0]));
+        String username = recoveryChannelInfoDTO.getUsername();
+        String recoveryFlowId = recoveryChannelInfoDTO.getRecoveryFlowId();
+        recoveryInformationDTO.setUsername(username);
+        recoveryInformationDTO.setRecoveryFlowId(recoveryFlowId);
+        // Do not add recovery channel information if Notification based recovery is not enabled.
+        recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
+        recoveryInformationDTO.setNotificationBasedRecoveryEnabled(isNotificationBasedRecoveryEnabled);
         return recoveryInformationDTO;
     }
 
@@ -328,6 +355,11 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                                      Map<String, String> metaProperties)
             throws IdentityRecoveryException {
 
+        if (!isRecoveryChannelEnabled(notificationChannel, user.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null);
+        }
+
         String combinedUsernames = user.getUserName();
         String[] usernames = combinedUsernames.split(",");
         for (String username : usernames) {
@@ -485,5 +517,64 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
         Utils.createAuditMessage(action, target, dataObject, result);
+    }
+
+    private boolean isRecoveryChannelEnabled(String notificationChannelType, String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isEmailBasedRecoveryEnabled(tenantDomain);
+        } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isSMSBasedRecoveryEnabled(tenantDomain);
+        }
+        return false;
+    }
+
+    private boolean isNotificationBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private boolean isEmailBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private boolean isSMSBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
     }
 }
