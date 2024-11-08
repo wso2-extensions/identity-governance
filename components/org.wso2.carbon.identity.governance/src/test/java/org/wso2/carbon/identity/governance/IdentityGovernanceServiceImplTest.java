@@ -36,7 +36,6 @@ import org.wso2.carbon.idp.mgt.IdpManager;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,7 +72,7 @@ public class IdentityGovernanceServiceImplTest {
         identityMgtServiceDataHolderMockedStatic.when(IdentityMgtServiceDataHolder::
                 getInstance).thenReturn(identityMgtServiceDataHolder);
         when(identityMgtServiceDataHolder.getIdpManager()).thenReturn(idpManager);
-        when(idpManager.getResidentIdP(eq(TENANT_DOMAIN))).thenReturn(identityProvider);
+        when(idpManager.getResidentIdP(TENANT_DOMAIN)).thenReturn(identityProvider);
 
         FederatedAuthenticatorConfig[] authenticatorConfigs = new FederatedAuthenticatorConfig[0];
         when(identityProvider.getFederatedAuthenticatorConfigs()).thenReturn(authenticatorConfigs);
