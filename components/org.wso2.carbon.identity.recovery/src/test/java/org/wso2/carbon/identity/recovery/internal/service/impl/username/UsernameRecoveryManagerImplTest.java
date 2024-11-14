@@ -25,10 +25,14 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
+import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.dto.UsernameRecoverDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -42,15 +46,19 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Test class for UsernameRecoveryManagerImpl.
@@ -152,9 +160,10 @@ public class UsernameRecoveryManagerImplTest {
      */
     @DataProvider
     public Object[][] channelIDProvider() {
-        return new Object[][] {
-                { null },
-                { "0" }
+
+        return new Object[][]{
+                {null},
+                {"0"}
         };
     }
 
@@ -188,7 +197,8 @@ public class UsernameRecoveryManagerImplTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
@@ -207,7 +217,8 @@ public class UsernameRecoveryManagerImplTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRecoveryFlowId()).thenReturn("FlowID");
@@ -227,7 +238,8 @@ public class UsernameRecoveryManagerImplTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("123");
@@ -249,19 +261,21 @@ public class UsernameRecoveryManagerImplTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("EXTERNAL,EXTERNAL");
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         User mockUser = new User();
-        mockUser.setUserName("KD123");
+        mockUser.setUserName("user1,user2");
         mockUser.setTenantDomain(TENANT_DOMAIN);
         when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
         when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null))
                 .thenReturn(new IdentityRecoveryClientException(null));
         UsernameRecoverDTO code = usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
         assertEquals(code.getCode(), "UNR-02002");
+        assertEquals(code.getUsername(), String.format("user1@%s,user2@%s", TENANT_DOMAIN, TENANT_DOMAIN));
     }
 
     /**
@@ -277,7 +291,8 @@ public class UsernameRecoveryManagerImplTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("SMS,SMS");
@@ -289,7 +304,8 @@ public class UsernameRecoveryManagerImplTest {
         when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
         UsernameRecoverDTO result = usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
         assertEquals(result.getCode(), "UNR-02001");
-        assertEquals(result.getMessage(), "Username recovery information sent via user preferred notification channel.");
+        assertEquals(result.getMessage(),
+                "Username recovery information sent via user preferred notification channel.");
     }
 
     /**
@@ -307,7 +323,8 @@ public class UsernameRecoveryManagerImplTest {
         properties.put("useLegacyAPI", TRUE);
         properties.put(IdentityRecoveryConstants.CALLBACK, callbackURL);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("SMS,SMS");
@@ -338,13 +355,15 @@ public class UsernameRecoveryManagerImplTest {
         properties.put("useLegacyAPI", TRUE);
         properties.put(IdentityRecoveryConstants.CALLBACK, callbackURL);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("SMS,SMS");
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         when(Utils.resolveEventName(anyString())).thenReturn("TRIGGER_SMS_NOTIFICATION_LOCAL");
-        mockURLDecoder.when(() -> URLDecoder.decode(anyString(), anyString())).thenThrow(new UnsupportedEncodingException());
+        mockURLDecoder.when(() -> URLDecoder.decode(anyString(), anyString()))
+                .thenThrow(new UnsupportedEncodingException());
         usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
     }
 
@@ -366,7 +385,8 @@ public class UsernameRecoveryManagerImplTest {
         properties.put("useLegacyAPI", TRUE);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserListByClaims(null, TENANT_DOMAIN)).thenReturn(userList);
         when(IdentityUtil.getProperty(anyString())).thenReturn(TRUE);
         when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null))
@@ -391,7 +411,8 @@ public class UsernameRecoveryManagerImplTest {
         properties.put("useLegacyAPI", TRUE);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
-        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance).thenReturn(mockUserAccountRecoveryManager);
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserListByClaims(null, TENANT_DOMAIN)).thenReturn(userList);
         when(IdentityUtil.getProperty(anyString())).thenReturn(TRUE);
         when(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, properties)).thenReturn(true);
@@ -399,6 +420,71 @@ public class UsernameRecoveryManagerImplTest {
                 .thenReturn(new IdentityRecoveryClientException(null));
         RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
         assertEquals(result.getUsername(), "testUser");
+    }
+
+    /**
+     * Test to initiate recovery with useLegacyAPI false.
+     *
+     * @throws IdentityRecoveryException if an error occurs during initiation.
+     */
+    @Test
+    public void testInitiateRecoveryWithUseLegacyAPIFalse() throws IdentityRecoveryException {
+
+        String TEST_USER = "testUser";
+        mockIdentityEventService();
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
+        recoveryChannelInfoDTO.setUsername("testUser");
+        List<NotificationChannelDTO> notificationChannelDTOList = new ArrayList<>();
+
+        NotificationChannelDTO notificationChannelDTO1 = new NotificationChannelDTO();
+        notificationChannelDTO1.setId(1);
+        notificationChannelDTO1.setType(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+        NotificationChannelDTO notificationChannelDTO2 = new NotificationChannelDTO();
+        notificationChannelDTO2.setId(2);
+        notificationChannelDTO2.setType(NotificationChannels.SMS_CHANNEL.getChannelType());
+
+        notificationChannelDTOList.add(notificationChannelDTO1);
+        notificationChannelDTOList.add(notificationChannelDTO2);
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(
+                notificationChannelDTOList.toArray(new NotificationChannelDTO[0]));
+
+        Map<String, String> properties = new HashMap<>();
+        when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
+
+        // Case 1: When Recovery.Notification.Username.NonUniqueUsername is enabled.
+        when(IdentityUtil.getProperty(
+                eq(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))).thenReturn(TRUE);
+
+        mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(mockUserAccountRecoveryManager);
+        when(mockUserAccountRecoveryManager.retrieveUsersRecoveryInformationForUsername(eq(null), eq(TENANT_DOMAIN),
+                any())).thenReturn(recoveryChannelInfoDTO);
+        when(Utils.isNotificationsInternallyManaged(TENANT_DOMAIN, properties)).thenReturn(true);
+        RecoveryInformationDTO result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
+        assertEquals(result.getRecoveryChannelInfoDTO().getUsername(), TEST_USER);
+        assertEquals(result.getRecoveryChannelInfoDTO().getNotificationChannelDTOs().length, 2);
+
+        // Case 2: When Recovery.Notification.Username.NonUniqueUsername is disabled.
+        when(IdentityUtil.getProperty(
+                eq(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME))).thenReturn(FALSE);
+        when(mockUserAccountRecoveryManager.retrieveUserRecoveryInformation(eq(null), eq(TENANT_DOMAIN),
+                eq(RecoveryScenarios.USERNAME_RECOVERY),
+                any())).thenReturn(recoveryChannelInfoDTO);
+        result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
+        assertEquals(result.getRecoveryChannelInfoDTO().getUsername(), TEST_USER);
+        assertEquals(result.getRecoveryChannelInfoDTO().getNotificationChannelDTOs().length, 2);
+
+        // Case 3: Disable the sms channel.
+        when(Utils.getRecoveryConfigs(eq(IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE),
+                eq(TENANT_DOMAIN)))
+                .thenReturn(FALSE);
+        result = usernameRecoveryManager.initiate(null, TENANT_DOMAIN, properties);
+        assertEquals(result.getRecoveryChannelInfoDTO().getUsername(), TEST_USER);
+        assertEquals(result.getRecoveryChannelInfoDTO().getNotificationChannelDTOs().length, 1);
+        assertEquals(result.getRecoveryChannelInfoDTO().getNotificationChannelDTOs()[0].getType(),
+                NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
     }
 
     /**

@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
+import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
 import org.wso2.carbon.identity.recovery.dto.UsernameRecoverDTO;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -55,6 +57,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
@@ -134,9 +137,35 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
         Map<String, String> metaProperties = new HashMap<>();
         metaProperties.put(IdentityRecoveryConstants.MANAGE_NOTIFICATIONS_INTERNALLY_PROPERTY_KEY,
                 Boolean.toString(manageNotificationsInternally));
-        recoveryInformationDTO.setRecoveryChannelInfoDTO(userAccountRecoveryManager
-                .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
-                        metaProperties));
+
+        boolean nonUniqueUsernameEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_NON_UNIQUE_USERNAME));
+
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO;
+        if (nonUniqueUsernameEnabled) {
+            recoveryChannelInfoDTO = userAccountRecoveryManager
+                    .retrieveUsersRecoveryInformationForUsername(claims, tenantDomain, metaProperties);
+        } else {
+            recoveryChannelInfoDTO = userAccountRecoveryManager
+                    .retrieveUserRecoveryInformation(claims, tenantDomain, RecoveryScenarios.USERNAME_RECOVERY,
+                            metaProperties);
+        }
+
+        // Filtering the notification channel list.
+        List<NotificationChannelDTO> enabledNotificationChannelDTOs = new ArrayList<>();
+        for (NotificationChannelDTO notificationChannelDTO : recoveryChannelInfoDTO.getNotificationChannelDTOs()) {
+            if (isRecoveryChannelEnabled(notificationChannelDTO.getType(), tenantDomain)) {
+                enabledNotificationChannelDTOs.add(notificationChannelDTO);
+            }
+        }
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(
+                enabledNotificationChannelDTOs.toArray(new NotificationChannelDTO[0]));
+        String username = recoveryChannelInfoDTO.getUsername();
+        String recoveryFlowId = recoveryChannelInfoDTO.getRecoveryFlowId();
+        recoveryInformationDTO.setUsername(username);
+        recoveryInformationDTO.setRecoveryFlowId(recoveryFlowId);
+        // Do not add recovery channel information if Notification based recovery is not enabled.
+        recoveryInformationDTO.setRecoveryChannelInfoDTO(recoveryChannelInfoDTO);
         return recoveryInformationDTO;
     }
 
@@ -263,9 +292,15 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
             // If notifications are externally managed, username needs to be sent with the request.
             // Build username for external notification.
-            String username =
-                    String.format(qualifiedUsernameRegexPattern, user.getUserName(), user.getTenantDomain());
-            usernameRecoverDTO.setUsername(username);
+            StringBuilder usernameCombined = new StringBuilder();
+            String[] usernames = user.getUserName().split(",");
+            for (String username : usernames) {
+                if(usernameCombined.length() > 0) {
+                    usernameCombined.append(",");
+                }
+                usernameCombined.append(String.format(qualifiedUsernameRegexPattern, username, user.getTenantDomain()));
+            }
+            usernameRecoverDTO.setUsername(usernameCombined.toString());
         } else {
             usernameRecoverDTO.setCode(
                     IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_USERNAME_INTERNALLY_NOTIFIED.getCode());
@@ -313,27 +348,36 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
                                      Map<String, String> metaProperties)
             throws IdentityRecoveryException {
 
-        HashMap<String, Object> properties = new HashMap<>();
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-        if (metaProperties != null) {
-            for (String key : metaProperties.keySet()) {
-                String value = metaProperties.get(key);
-                if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(value)) {
-                    properties.put(key, value);
+        if (!isRecoveryChannelEnabled(notificationChannel, user.getTenantDomain())) {
+            throw Utils.handleClientException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null);
+        }
+
+        String combinedUsernames = user.getUserName();
+        String[] usernames = combinedUsernames.split(",");
+        for (String username : usernames) {
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
+            properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+            properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+            if (metaProperties != null) {
+                for (String key : metaProperties.keySet()) {
+                    String value = metaProperties.get(key);
+                    if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(value)) {
+                        properties.put(key, value);
+                    }
                 }
             }
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
+                    IdentityRecoveryConstants.NOTIFICATION_ACCOUNT_ID_RECOVERY);
+            Event identityMgtEvent = new Event(eventName, properties);
+            try {
+                IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+            } catch (IdentityEventException e) {
+                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                        user.getUserName(), e);
+            }
         }
     }
 
@@ -466,5 +510,48 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
             dataObject.put(AuditConstants.ERROR_MESSAGE_KEY, errorMsg);
         }
         Utils.createAuditMessage(action, target, dataObject, result);
+    }
+
+    private boolean isRecoveryChannelEnabled(String notificationChannelType, String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isEmailBasedRecoveryEnabled(tenantDomain);
+        } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
+            return isSMSBasedRecoveryEnabled(tenantDomain);
+        }
+        return false;
+    }
+
+    private boolean isEmailBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
+    private boolean isSMSBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.USER_NAME_RECOVERY,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
     }
 }
