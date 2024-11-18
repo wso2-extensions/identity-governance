@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -29,6 +30,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.mgt.constants.PasswordPolicyStatusCodes;
 import org.wso2.carbon.identity.mgt.policy.PolicyRegistry;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.mgt.policy.password.DefaultPasswordLengthPolicy;
@@ -165,6 +167,10 @@ public class PasswordPolicyValidationHandler extends AbstractEventHandler implem
         try {
             policyRegistry.enforcePasswordPolicies(credentials.toString(), userName);
         } catch (PolicyViolationException e) {
+            if (PasswordPolicyStatusCodes.ERROR_CODE_PASSWORD_POLICY_VIOLATION
+                    .equals(e.getErrorCode())) {
+                throw IdentityException.error(IdentityEventException.class, e.getErrorCode(), e.getMessage(), e);
+            }
             throw Utils.handleEventException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_CODE_VALIDATING_PASSWORD_POLICY, e.getMessage(), e);
         }
