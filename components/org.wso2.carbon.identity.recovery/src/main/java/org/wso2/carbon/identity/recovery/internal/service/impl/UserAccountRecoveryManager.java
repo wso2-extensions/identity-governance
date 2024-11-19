@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -106,6 +107,107 @@ public class UserAccountRecoveryManager {
     public static UserAccountRecoveryManager getInstance() {
 
         return instance;
+    }
+
+    /**
+     * Initiate the username recovery flow for the user with matching claims when non-unique user config enabled.
+     *
+     * @param claims           User claims
+     * @param tenantDomain     Tenant domain
+     * @param properties       Meta properties
+     * @return RecoveryChannelInfoDTO object.
+     */
+    public RecoveryChannelInfoDTO retrieveUsersRecoveryInformationForUsername(Map<String, String> claims,
+                                                                              String tenantDomain,
+                                                                              Map<String, String> properties)
+            throws IdentityRecoveryException {
+
+        RecoveryScenarios recoveryScenario = RecoveryScenarios.USERNAME_RECOVERY;
+        // Retrieve the user who matches the given set of claims.
+        ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = getUserListByClaims(claims, tenantDomain);
+
+        if (!resultedUserList.isEmpty()) {
+            StringBuilder usernameCombined = new StringBuilder();
+            // Get the notification management mechanism.
+            List<NotificationChannel> notificationChannels;
+            boolean isNotificationsInternallyManaged = Utils.isNotificationsInternallyManaged(tenantDomain, properties);
+            String recoveryFlowId = null;
+            String recoveryCode = null;
+            String notificationChannelList = null;
+            String username = null;
+            NotificationChannelDTO[] notificationChannelDTOS = null;
+
+            for (org.wso2.carbon.user.core.common.User resultedUser : resultedUserList) {
+                username = resultedUser.getUsername();
+                User user = Utils.buildUser(username, tenantDomain);
+
+                try {
+                    // If the account is locked or disabled, do not let the user, recover the account.
+                    checkAccountLockedStatus(user);
+
+                } catch (IdentityException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(username + " is locked.");
+                    }
+                    continue;
+                }
+
+                /* If the notification is internally managed, then notification channels available for the user needs to
+                be retrieved. If external notifications are enabled, external channel list should be returned.*/
+                if (isNotificationsInternallyManaged) {
+                    notificationChannels = getInternalNotificationChannelList(username, tenantDomain,
+                            recoveryScenario);
+                } else {
+                    notificationChannels = getExternalNotificationChannelList();
+                }
+
+                // Validate whether the user account is eligible for account recovery.
+                checkUserValidityForAccountRecovery(user, recoveryScenario, notificationChannels, properties);
+                // This flow will be initiated only if the user has any verified channels.
+                notificationChannelDTOS = getNotificationChannelsResponseDTOList(
+                        tenantDomain, notificationChannels);
+                UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+                // Get the existing RESEND_CONFIRMATION_CODE details if there is any.
+                UserRecoveryData recoveryDataDO = userRecoveryDataStore.loadWithoutCodeExpiryValidation(
+                        user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
+
+                notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
+                recoveryCode = UUID.randomUUID().toString();
+                recoveryFlowId = UUID.randomUUID().toString();
+
+                if (Utils.reIssueExistingConfirmationCode(recoveryDataDO,
+                        NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
+                /* Update the existing RESEND_CONFIRMATION_CODE details with new code details without changing the
+                   time created of the RESEND_CONFIRMATION_CODE. */
+                    userRecoveryDataStore.invalidateWithoutChangeTimeCreated(recoveryDataDO.getSecret(), recoveryCode,
+                            RecoverySteps.SEND_RECOVERY_INFORMATION, notificationChannelList);
+                } else {
+                    if (usernameCombined.length() > 0) {
+                        usernameCombined.append(",");
+                    }
+                    usernameCombined.append(username);
+                }
+            }
+            if (StringUtils.isBlank(usernameCombined.toString())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No valid user found for the given claims");
+                }
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND,
+                        null);
+            }
+            addRecoveryDataObject(usernameCombined.toString(), tenantDomain, recoveryFlowId, recoveryCode,
+                    recoveryScenario,
+                    notificationChannelList);
+
+            return buildUserRecoveryInformationResponseDTO(username, recoveryFlowId, recoveryCode,
+                    notificationChannelDTOS);
+
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("No valid user found for the given claims");
+            }
+            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null);
+        }
     }
 
     /**

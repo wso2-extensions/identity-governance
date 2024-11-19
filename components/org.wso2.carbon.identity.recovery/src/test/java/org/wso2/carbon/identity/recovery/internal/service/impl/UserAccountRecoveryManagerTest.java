@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Spy;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
@@ -65,11 +66,14 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -88,8 +92,13 @@ import static org.testng.Assert.assertTrue;
  */
 public class UserAccountRecoveryManagerTest {
 
+    private static final String TENANT_DOMAIN = "carbon.super";
+
     @InjectMocks
     private UserAccountRecoveryManager userAccountRecoveryManager;
+
+    @Spy
+    private UserAccountRecoveryManager userAccountRecoveryManagerSpy;
 
     @Mock
     private IdentityRecoveryServiceDataHolder identityRecoveryServiceDataHolder;
@@ -173,6 +182,80 @@ public class UserAccountRecoveryManagerTest {
         testGetUserWithNotificationsExternallyManaged();
         // Test notifications internally managed.
         testGetUserWithNotificationsInternallyManaged();
+    }
+
+    /**
+     * Test retrieve user recovery information for username recovery.
+     *
+     * @throws Exception Error while getting user recovery information
+     */
+    @Test
+    public void testRetrieveUsersRecoveryInformationForUsername() throws Exception {
+
+        ArrayList<org.wso2.carbon.user.core.common.User> userList = new ArrayList<>();
+        userList.add(new org.wso2.carbon.user.core.common.User(UUID.randomUUID().toString(), "user1", "user1"));
+        userList.add(new org.wso2.carbon.user.core.common.User(UUID.randomUUID().toString(), "user2", "user2"));
+
+        doReturn(userList).when(userAccountRecoveryManagerSpy).getUserListByClaims(any(), any());
+
+        mockBuildUser();
+        mockRecoveryConfigs(true);
+        mockUserstoreManager();
+        mockJDBCRecoveryDataStore();
+        mockClaimMetadataManagementService();
+
+        when(abstractUserStoreManager
+                .getUserClaimValues(anyString(), any(String[].class), eq(null))).thenReturn(userClaims);
+        when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService())
+                .thenReturn(identityEventService);
+        doNothing().when(identityEventService).handleEvent(any());
+
+        RecoveryChannelInfoDTO result = userAccountRecoveryManagerSpy.retrieveUsersRecoveryInformationForUsername(null,
+                TENANT_DOMAIN, null);
+
+        assertEquals(result.getNotificationChannelDTOs().length, 2);
+        assertEquals(result.getUsername(), "user2");
+    }
+
+    /**
+     * Test throw no user found error in retrieve user recovery information for username recovery.
+     *
+     * @throws IdentityRecoveryException Exception Error while getting user recovery information
+     */
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void testThrowNoUserFoundRetrieveUserRecoveryInformationForUsername() throws IdentityRecoveryException {
+
+        ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+        doReturn(resultedUserList).when(userAccountRecoveryManagerSpy).getUserListByClaims(any(), any());
+        when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null)).
+                thenReturn(new IdentityRecoveryClientException(
+                        null, null, null));
+        userAccountRecoveryManagerSpy.retrieveUsersRecoveryInformationForUsername(null, TENANT_DOMAIN, null);
+    }
+
+    /**
+     * Test throw no user found error when combined usernames become empty in retrieving user recovery information for
+     * username recovery.
+     *
+     * @throws IdentityRecoveryException Exception Error while getting user recovery information
+     */
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void testThrowNoUserFoundEmptyUsernamesRetrieveUserRecoveryInformationForUsername()
+            throws IdentityRecoveryException {
+
+        mockBuildUser();
+        ArrayList<org.wso2.carbon.user.core.common.User> resultedUserList = new ArrayList<>();
+        resultedUserList.add(new org.wso2.carbon.user.core.common.User(UUID.randomUUID().toString(), "user1", "user1"));
+        doReturn(resultedUserList).when(userAccountRecoveryManagerSpy).getUserListByClaims(any(), any());
+
+        when(Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_USER_FOUND, null)).
+                thenReturn(new IdentityRecoveryClientException(
+                        null, null, null));
+        when(Utils.handleClientException(nullable(String.class), anyString(), anyString())).
+                thenReturn(new IdentityRecoveryClientException(
+                        null, null, null));
+        mockedUtils.when(() -> Utils.isAccountDisabled(any(User.class))).thenReturn(true);
+        userAccountRecoveryManagerSpy.retrieveUsersRecoveryInformationForUsername(null, TENANT_DOMAIN, null);
     }
 
     /**
