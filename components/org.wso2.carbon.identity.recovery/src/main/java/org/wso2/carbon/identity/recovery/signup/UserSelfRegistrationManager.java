@@ -1642,6 +1642,10 @@ public class UserSelfRegistrationManager {
 
         String regularExpression = realmConfig
                 .getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX);
+        if (regularExpression == null && !realmConfig.isPrimary()) {
+            regularExpression = realmConfig.getUserStoreProperty(
+                    UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG);
+        }
 
         if (MultitenantUtils.isEmailUserName()) {
             regularExpression = realmConfig
