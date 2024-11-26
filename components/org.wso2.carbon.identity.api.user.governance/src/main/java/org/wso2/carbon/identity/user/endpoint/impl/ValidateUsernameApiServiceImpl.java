@@ -155,7 +155,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         /*
          * If the user domain is not specified in the username and the realm property is specified in the request,
          * the realm property will be used. This will resolve the user domain for secondary user stores.
-         * Otherwise, the user domain will be primary user store.
+         * Otherwise, user domain will be primary user store.
          */
         if (StringUtils.isNotEmpty(realm)) {
             userDomain = realm;
