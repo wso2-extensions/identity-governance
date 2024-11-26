@@ -236,7 +236,9 @@ public class UserSelfRegistrationManagerTest {
     private final String TEST_TENANT_DOMAIN_NAME = "carbon.super";
     private final int TEST_TENANT_ID = 12;
     private final String TEST_USERSTORE_DOMAIN = "PRIMARY";
+    private final String TEST_SECONDARY_USERSTORE_DOMAIN = "SECONDARY";
     private final String TEST_USER_NAME = "dummyUser";
+    private final String TEST_INVALID_USER_NAME = "IS";
     private final String TEST_CLAIM_URI = "ttp://wso2.org/claims/emailaddress";
     private final String TEST_CLAIM_VALUE = "dummyuser@wso2.com";
     private final String TEST_MOBILE_CLAIM_VALUE = "0775553443";
@@ -1429,6 +1431,7 @@ public class UserSelfRegistrationManagerTest {
         mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(anyString())).thenReturn(TEST_USER_NAME);
         mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName(anyString()))
                 .thenReturn(TEST_USERSTORE_DOMAIN);
+        when(realmConfiguration.isPrimary()).thenReturn(true);
         when(realmConfiguration.getTenantId()).thenReturn(TEST_TENANT_ID);
         mockedIdentityUtil.when(() -> IdentityTenantUtil.getTenantDomain(TEST_TENANT_ID))
                 .thenReturn(TEST_TENANT_DOMAIN_NAME);
@@ -1439,9 +1442,15 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(Constants.INPUT_VALIDATION_USERNAME_ENABLED_CONFIG))
                 .thenReturn("false");
         when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX))
+                .thenReturn(null);
+        boolean isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        assertTrue(isMatchUsernameRegex);
+
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX))
                 .thenReturn("^[\\S]{5,30}$");
 
-        boolean isMatchUsernameRegex =
+        isMatchUsernameRegex =
                 userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
         assertTrue(isMatchUsernameRegex);
 
@@ -1484,6 +1493,62 @@ public class UserSelfRegistrationManagerTest {
         } catch (Exception e) {
             assertTrue(e instanceof IdentityRecoveryException);
         }
+    }
+
+    @Test
+    public void testIsMatchUserNameRegexForSecondaryUserStore()
+            throws IdentityRecoveryException, InputValidationMgtException,
+            UserStoreException {
+
+        mockedMultiTenantUtils.when(() -> MultitenantUtils
+                .getTenantAwareUsername(eq(TEST_USER_NAME))).thenReturn(TEST_USER_NAME);
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(eq(TEST_USER_NAME))).thenReturn(TEST_USER_NAME);
+        mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName(anyString()))
+                .thenReturn(TEST_SECONDARY_USERSTORE_DOMAIN);
+        when(realmConfiguration.getTenantId()).thenReturn(TEST_TENANT_ID);
+        mockedIdentityUtil.when(() -> IdentityTenantUtil.getTenantDomain(TEST_TENANT_ID))
+                .thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        when(inputValidationManagementService.getInputValidationConfiguration(anyString()))
+                .thenReturn(Arrays.asList(validationConfiguration));
+        when(validationConfiguration.getField()).thenReturn("username");
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(Constants.INPUT_VALIDATION_USERNAME_ENABLED_CONFIG))
+                .thenReturn("false");
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX))
+                .thenReturn(null);
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG))
+                .thenReturn("^[\\S]{5,30}$");
+
+        // regex read from fallback key
+        boolean isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        assertTrue(isMatchUsernameRegex);
+
+        mockedMultiTenantUtils.when(() -> MultitenantUtils
+                .getTenantAwareUsername(eq(TEST_INVALID_USER_NAME))).thenReturn(TEST_INVALID_USER_NAME);
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(eq(TEST_INVALID_USER_NAME)))
+                .thenReturn(TEST_INVALID_USER_NAME);
+        isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_INVALID_USER_NAME);
+        assertFalse(isMatchUsernameRegex);
+
+        // regex read main key
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG_EX))
+                .thenReturn("^[\\S]{5,30}$");
+        when(realmConfiguration.getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_USER_NAME_JAVA_REG))
+                .thenReturn(null);
+        isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_USER_NAME);
+        assertTrue(isMatchUsernameRegex);
+
+        mockedMultiTenantUtils.when(() -> MultitenantUtils
+                .getTenantAwareUsername(eq(TEST_INVALID_USER_NAME))).thenReturn(TEST_INVALID_USER_NAME);
+        mockedUserCoreUtil.when(() -> UserCoreUtil.removeDomainFromName(eq(TEST_INVALID_USER_NAME)))
+                .thenReturn(TEST_INVALID_USER_NAME);
+        isMatchUsernameRegex =
+                userSelfRegistrationManager.isMatchUserNameRegex(TEST_TENANT_DOMAIN_NAME, TEST_INVALID_USER_NAME);
+        assertFalse(isMatchUsernameRegex);
+
     }
 
     @Test
