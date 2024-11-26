@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018-2024, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.wso2.carbon.identity.user.endpoint.impl;
 
 import org.apache.commons.lang.StringUtils;
@@ -33,6 +32,7 @@ import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.Optional;
+
 import javax.ws.rs.core.Response;
 
 import static org.wso2.carbon.identity.user.rename.core.constants.UsernameUpdateServiceConstants.Error.ERROR_UNEXPECTED;
@@ -51,7 +51,6 @@ public class UpdateUsernameApiServiceImpl extends UpdateUsernameApiService {
     public Response updateUsernamePut(UsernameUpdateRequestDTO user) {
 
         try {
-
             UserDTO userDTO = new UserDTO();
             userDTO.setExistingUsername(user.getExistingUsername());
             userDTO.setNewUsername(user.getNewUsername());
