@@ -23,12 +23,12 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.10.11-SNAPSHOT</version>
+        <version>1.11.20-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
 
     <artifactId>org.wso2.carbon.identity.api.user.governance</artifactId>
-    <version>1.10.11-SNAPSHOT</version>
+    <version>1.11.20-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>WSO2 Carbon -  User Rest Governance API</name>
     <description>WSO2 Carbon - User Rest Governance API</description>
@@ -289,6 +289,11 @@
             <groupId>org.wso2.carbon.identity.governance</groupId>
             <artifactId>org.wso2.carbon.identity.user.export.core</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
         </dependency>
     </dependencies>
 </project>

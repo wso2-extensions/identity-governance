@@ -121,7 +121,7 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 logDebug(String.format("%s is an invalid user name. Hence returning code %s: ",
                         username, SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID));
                 errorDTO.setCode(SelfRegistrationStatusCodes.CODE_USER_NAME_INVALID);
-                errorDTO.setMessage(getRegexViolationErrorMsg(user, tenantDomain));
+                errorDTO.setMessage(getRegexViolationErrorMsg(user, tenantDomain, realm));
                 errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             } else if (StringUtils.isNotEmpty(realm) && !userSelfRegistrationManager.
@@ -148,10 +148,18 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
         }
     }
 
-    private String getRegexViolationErrorMsg(UsernameValidationRequestDTO user, String tenantDomain)
+    private String getRegexViolationErrorMsg(UsernameValidationRequestDTO user, String tenantDomain, String realm)
             throws UserStoreException {
 
         String userDomain = IdentityUtil.extractDomainFromName(user.getUsername());
+        /*
+         * If the user domain is not specified in the username and the realm property is specified in the request,
+         * the realm property will be used. This will resolve the user domain for secondary user stores.
+         * Otherwise, the user domain will be primary user store.
+         */
+        if (StringUtils.isNotEmpty(realm)) {
+            userDomain = realm;
+        }
         UserRealm userRealm = getUserRealm(tenantDomain);
         RealmConfiguration realmConfiguration = userRealm.getUserStoreManager().getSecondaryUserStoreManager
                 (userDomain).getRealmConfiguration();
