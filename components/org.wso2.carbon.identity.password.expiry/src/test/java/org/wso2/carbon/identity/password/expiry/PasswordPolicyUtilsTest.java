@@ -112,6 +112,7 @@ public class PasswordPolicyUtilsTest {
     private final String tenantAwareUsername = "tom@gmail.com";
     private final String userId = "testUserId";
     private static final long TIME_TOLERANCE_MS = 2000;
+    private static final int DEFAULT_EXPIRY_DAYS = 30;
 
     private static final Map<String, String> ROLE_MAP = new HashMap<>();
     static {
@@ -411,6 +412,70 @@ public class PasswordPolicyUtilsTest {
     }
 
     @Test
+    public void testGetUserPasswordExpiryTime()
+            throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
+
+        // Case 1: Password expiry disabled.
+        mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.FALSE);
+        Long expiryTime =
+                PasswordPolicyUtils.getUserPasswordExpiryTime(
+                        tenantDomain, tenantAwareUsername, null, null);
+        Assert.assertNull(expiryTime);
+
+        // Case 2: Password expiry enabled, but no rules.
+        mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.TRUE);
+        when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(3);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(userRealm.getClaimManager()).thenReturn(claimManager);
+        when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
+        when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
+
+        // Mock last password update time to 20 days.
+        Long updateTime = System.currentTimeMillis() - getDaysTimeInMillis(20);
+        mockLastPasswordUpdateTime(updateTime, abstractUserStoreManager);
+
+        // Mock empty password expiry rules.
+        ConnectorConfig connectorConfig = new ConnectorConfig();
+        connectorConfig.setProperties( new Property[0]);
+        when(identityGovernanceService.getConnectorWithConfigs(tenantDomain,
+                PasswordPolicyConstants.CONNECTOR_CONFIG_NAME)).thenReturn(connectorConfig);
+
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS},
+                tenantDomain)).thenReturn(getPasswordExpiryInDaysProperty());
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
+                tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.FALSE));
+
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
+                tenantDomain, tenantAwareUsername, null, null);
+
+        long expectedExpiryTime = updateTime + getDaysTimeInMillis(DEFAULT_EXPIRY_DAYS);
+        Assert.assertTrue(Math.abs(expiryTime - expectedExpiryTime) <= TIME_TOLERANCE_MS);
+
+        // Case 3: Password expiry enabled, no applicable rules, skipIfNoApplicableRules enabled.
+        when(identityGovernanceService.getConfiguration(
+                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
+                tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.TRUE));
+
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
+                tenantDomain, tenantAwareUsername, null, null);
+        Assert.assertNull(expiryTime);
+
+        // Case 4: UserStoreException.
+        when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenThrow(
+                new org.wso2.carbon.user.core.UserStoreException());
+        try {
+            PasswordPolicyUtils.getUserPasswordExpiryTime(
+                    tenantDomain, tenantAwareUsername, null, null);
+            Assert.fail("Expected PostAuthenticationFailedException was not thrown");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof PostAuthenticationFailedException);
+        }
+    }
+
+    @Test
     public void testGetPasswordResetPageUrl() throws Exception {
 
         // Mocking ServiceURLBuilder
@@ -512,7 +577,7 @@ public class PasswordPolicyUtilsTest {
 
         Property property1 = new Property();
         property1.setName(PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS);
-        property1.setValue(String.valueOf(30));
+        property1.setValue(String.valueOf(DEFAULT_EXPIRY_DAYS));
         Property[] properties = new Property[1];
         properties[0] = property1;
         return properties;
