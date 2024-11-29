@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -394,20 +395,20 @@ public class PasswordPolicyUtilsTest {
         List<String> groupIds = Arrays.stream(groups).map(GROUP_MAP::get).collect(Collectors.toList());
 
         long testStartTime = System.currentTimeMillis();
-        Long expiryTime =
+        Optional<Long> expiryTime =
                 PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername, groupIds, roleIds);
         long testEndTime = System.currentTimeMillis();
 
         if (expiryDays == null) {
-            Assert.assertNull(expiryTime, description);
+            Assert.assertFalse(expiryTime.isPresent(), description);
         } else if (expiryDays == 0) {
             Assert.assertNotNull(expiryTime);
-            Assert.assertTrue(expiryTime >= testStartTime && expiryTime <= testEndTime);
+            Assert.assertTrue(expiryTime.get() >= testStartTime && expiryTime.get() <= testEndTime);
         } else {
             Assert.assertNotNull(expiryTime);
             Assert.assertNotNull(updateTime);
             long expectedExpiryTime = updateTime + getDaysTimeInMillis(expiryDays);
-            Assert.assertTrue(Math.abs(expiryTime - expectedExpiryTime) <= TIME_TOLERANCE_MS);
+            Assert.assertTrue(Math.abs(expiryTime.get() - expectedExpiryTime) <= TIME_TOLERANCE_MS);
         }
     }
 
@@ -417,10 +418,10 @@ public class PasswordPolicyUtilsTest {
 
         // Case 1: Password expiry disabled.
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.FALSE);
-        Long expiryTime =
+        Optional<Long> expiryTime =
                 PasswordPolicyUtils.getUserPasswordExpiryTime(
                         tenantDomain, tenantAwareUsername, null, null);
-        Assert.assertNull(expiryTime);
+        Assert.assertFalse(expiryTime.isPresent());
 
         // Case 2: Password expiry enabled, but no rules.
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.TRUE);
@@ -452,7 +453,7 @@ public class PasswordPolicyUtilsTest {
                 tenantDomain, tenantAwareUsername, null, null);
 
         long expectedExpiryTime = updateTime + getDaysTimeInMillis(DEFAULT_EXPIRY_DAYS);
-        Assert.assertTrue(Math.abs(expiryTime - expectedExpiryTime) <= TIME_TOLERANCE_MS);
+        Assert.assertTrue(Math.abs(expiryTime.get() - expectedExpiryTime) <= TIME_TOLERANCE_MS);
 
         // Case 3: Password expiry enabled, no applicable rules, skipIfNoApplicableRules enabled.
         when(identityGovernanceService.getConfiguration(
@@ -461,7 +462,7 @@ public class PasswordPolicyUtilsTest {
 
         expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
                 tenantDomain, tenantAwareUsername, null, null);
-        Assert.assertNull(expiryTime);
+        Assert.assertFalse(expiryTime.isPresent());
 
         // Case 4: UserStoreException.
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenThrow(

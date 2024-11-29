@@ -54,6 +54,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -179,11 +180,8 @@ public class PasswordPolicyUtils {
                         skipIfNoApplicableRules);
             }
 
-            // If the default behavior is to skip the password expiry, rules with skip logic are not necessary.
-            List<PasswordExpiryRule> filteredRules = passwordExpiryRules.stream()
-                    .filter(rule -> !skipIfNoApplicableRules ||
-                            !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
-                    .collect(Collectors.toList());
+            List<PasswordExpiryRule> filteredRules =
+                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
 
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> fetchedUserAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
@@ -305,16 +303,16 @@ public class PasswordPolicyUtils {
      * @param tenantAwareUsername  The tenant aware username.
      * @param groupIds             The group IDs of the user.
      * @param roleIds              The role IDs of the user.
-     * @return The password expiry time in milliseconds.
+     * @return Optional containing the password expiry time in milliseconds, or empty if not applicable.
      * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
      */
-    public static Long getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername,
-                                                   List<String> groupIds, List<String> roleIds)
+    public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername,
+                                                           List<String> groupIds, List<String> roleIds)
             throws PostAuthenticationFailedException {
 
         try {
             // If the password expiry is not enabled, password expiry time is not applicable.
-            if (!isPasswordExpiryEnabled(tenantDomain)) return null;
+            if (!isPasswordExpiryEnabled(tenantDomain)) return Optional.empty();
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);
@@ -324,7 +322,7 @@ public class PasswordPolicyUtils {
 
             // If last password update time is not available, it will be considered as expired.
             if (StringUtils.isBlank(lastPasswordUpdatedTime)) {
-                return System.currentTimeMillis();
+                return Optional.of(System.currentTimeMillis());
             }
 
             long lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
@@ -335,15 +333,13 @@ public class PasswordPolicyUtils {
 
             // If no rules are defined, use the default expiry time if "skipIfNoApplicableRules" is disabled.
             if (CollectionUtils.isEmpty(passwordExpiryRules)) {
-                if (skipIfNoApplicableRules) return null;
-                return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays);
+                if (skipIfNoApplicableRules) return Optional.empty();
+                return Optional.of(
+                        lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
             }
 
-            // If the default behavior is to skip the password expiry, rules with skip logic are not necessary.
-            List<PasswordExpiryRule> filteredRules = passwordExpiryRules.stream()
-                    .filter(rule -> !skipIfNoApplicableRules ||
-                            !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
-                    .collect(Collectors.toList());
+            List<PasswordExpiryRule> filteredRules =
+                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
 
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
@@ -358,21 +354,31 @@ public class PasswordPolicyUtils {
                 if (isRuleApplicable(rule, userAttributes, tenantDomain, userId, userStoreManager)) {
                     // Skip the rule if the operator is not equals.
                     if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
-                        return null;
+                        return Optional.empty();
                     }
                     int expiryDays =
                             rule.getExpiryDays() > 0 ? rule.getExpiryDays() : getPasswordExpiryInDays(tenantDomain);
-                    return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(expiryDays);
+                    return Optional.of(lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(expiryDays));
                 }
             }
 
-            if (skipIfNoApplicableRules) return null;
-            return lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays);
+            if (skipIfNoApplicableRules) return Optional.empty();
+            return Optional.of(
+                    lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
         }
+    }
+
+    private static List<PasswordExpiryRule> filterApplicableExpiryRules(List<PasswordExpiryRule> passwordExpiryRules,
+                                                                        boolean skipIfNoApplicableRules) {
+
+        // If the default behavior is to skip the password expiry, rules with skip logic are not required.
+        return passwordExpiryRules.stream().filter(
+                rule -> !skipIfNoApplicableRules || !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
+                .collect(Collectors.toList());
     }
 
     /**
