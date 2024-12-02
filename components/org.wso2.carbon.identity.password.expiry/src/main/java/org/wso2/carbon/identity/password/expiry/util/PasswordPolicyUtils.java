@@ -320,12 +320,11 @@ public class PasswordPolicyUtils {
             String lastPasswordUpdatedTime =
                     getLastPasswordUpdatedTime(tenantAwareUsername, userStoreManager, userRealm);
 
-            // If last password update time is not available, it will be considered as expired.
-            if (StringUtils.isBlank(lastPasswordUpdatedTime)) {
-                return Optional.of(System.currentTimeMillis());
+            long lastPasswordUpdatedTimeInMillis = 0L;
+            boolean isLastPasswordUpdatedTimeBlank = StringUtils.isBlank(lastPasswordUpdatedTime);
+            if (!isLastPasswordUpdatedTimeBlank) {
+                lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
             }
-
-            long lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
             int defaultPasswordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
             boolean skipIfNoApplicableRules = isSkipIfNoApplicableRulesEnabled(tenantDomain);
 
@@ -334,6 +333,10 @@ public class PasswordPolicyUtils {
             // If no rules are defined, use the default expiry time if "skipIfNoApplicableRules" is disabled.
             if (CollectionUtils.isEmpty(passwordExpiryRules)) {
                 if (skipIfNoApplicableRules) return Optional.empty();
+                // If lastPasswordUpdatedTime is blank, set expiry time to now.
+                if (isLastPasswordUpdatedTimeBlank) {
+                    return Optional.of(System.currentTimeMillis());
+                }
                 return Optional.of(
                         lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
             }
@@ -356,6 +359,9 @@ public class PasswordPolicyUtils {
                     if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
                         return Optional.empty();
                     }
+                    if (isLastPasswordUpdatedTimeBlank) {
+                        return Optional.of(System.currentTimeMillis());
+                    }
                     int expiryDays =
                             rule.getExpiryDays() > 0 ? rule.getExpiryDays() : getPasswordExpiryInDays(tenantDomain);
                     return Optional.of(lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(expiryDays));
@@ -363,6 +369,9 @@ public class PasswordPolicyUtils {
             }
 
             if (skipIfNoApplicableRules) return Optional.empty();
+            if (isLastPasswordUpdatedTimeBlank) {
+                return Optional.of(System.currentTimeMillis());
+            }
             return Optional.of(
                     lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
         } catch (UserStoreException e) {

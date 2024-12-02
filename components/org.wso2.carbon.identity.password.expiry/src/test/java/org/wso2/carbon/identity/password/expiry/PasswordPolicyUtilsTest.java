@@ -402,10 +402,10 @@ public class PasswordPolicyUtilsTest {
         if (expiryDays == null) {
             Assert.assertFalse(expiryTime.isPresent(), description);
         } else if (expiryDays == 0) {
-            Assert.assertNotNull(expiryTime);
+            Assert.assertTrue(expiryTime.isPresent());
             Assert.assertTrue(expiryTime.get() >= testStartTime && expiryTime.get() <= testEndTime);
         } else {
-            Assert.assertNotNull(expiryTime);
+            Assert.assertTrue(expiryTime.isPresent());
             Assert.assertNotNull(updateTime);
             long expectedExpiryTime = updateTime + getDaysTimeInMillis(expiryDays);
             Assert.assertTrue(Math.abs(expiryTime.get() - expectedExpiryTime) <= TIME_TOLERANCE_MS);
