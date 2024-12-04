@@ -341,18 +341,17 @@ public class PasswordPolicyUtils {
                         lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
             }
 
-            List<PasswordExpiryRule> filteredRules =
-                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
-
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
-            if (groupIds != null) {
+            if (CollectionUtils.isNotEmpty(groupIds)) {
                 userAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, new HashSet<>(groupIds));
             }
-            if (roleIds != null) {
+            if (CollectionUtils.isNotEmpty(roleIds)) {
                 userAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, new HashSet<>(roleIds));
             }
 
+            List<PasswordExpiryRule> filteredRules =
+                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
             for (PasswordExpiryRule rule : filteredRules) {
                 if (isRuleApplicable(rule, userAttributes, tenantDomain, userId, userStoreManager)) {
                     // Skip the rule if the operator is not equals.
