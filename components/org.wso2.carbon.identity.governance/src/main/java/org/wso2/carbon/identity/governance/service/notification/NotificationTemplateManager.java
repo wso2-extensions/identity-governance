@@ -132,6 +132,37 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * Retrieves all notification templates for a given notification channel and tenant domain.
+     * <p>
+     * This method fetches notification templates based on the specified notification channel
+     * (e.g., email, SMS) and tenant domain. The behavior of template retrieval depends on the
+     * {@code resolve} parameter:
+     * <ul>
+     *     <li><b>Resolved templates (resolve = true):</b> Retrieves templates resolved through the
+     *     ancestor organization hierarchy, returning templates that are applicable across the tenant's
+     *     organizational structure.</li>
+     *     <li><b>Current organization's templates (resolve = false):</b> Retrieves templates strictly defined
+     *     within the current organization, without considering organizational hierarchy.</li>
+     * </ul>
+     *
+     * @param notificationChannel the type of notification channel for which templates are retrieved
+     *                            (e.g., "EMAIL", "SMS").
+     * @param tenantDomain        the tenant domain of the organization for which templates are retrieved.
+     * @param resolve             a flag to indicate whether to retrieve resolved templates
+     *                            ({@code true}) or templates specific to the current organization
+     *                            ({@code false}).
+     * @return a list of {@link NotificationTemplate} templates matching the specified criteria.
+     * @throws NotificationTemplateManagerException if an error occurs while retrieving the templates.
+     */
+    default List<NotificationTemplate> getAllNotificationTemplates(String notificationChannel, String tenantDomain,
+                                                                   boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        throw new UnsupportedOperationException(
+                "getAllNotificationTemplates method is not implemented in " + this.getClass());
+    }
+
+    /**
      * Get all notification templates of the given type.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
@@ -162,6 +193,42 @@ public interface NotificationTemplateManager {
             throws NotificationTemplateManagerException {
 
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    /**
+     * Retrieves notification templates of a specific type for a given notification channel and tenant domain.
+     * <p>
+     * This method fetches notification templates based on the specified notification channel
+     * (e.g., email, SMS), template display name, tenant domain, and application UUID. The behavior
+     * of template retrieval depends on the {@code resolve} parameter:
+     * <ul>
+     *     <li><b>Resolved templates (resolve = true):</b> Retrieves templates resolved through the
+     *     ancestor organization hierarchy, ensuring that templates applicable across the organizational
+     *     structure are returned.</li>
+     *     <li><b>Current org's or app's templates (resolve = false):</b> Retrieves templates specific to the
+     *     current organization or application, without considering the organization hierarchy.</li>
+     * </ul>
+     *
+     * @param notificationChannel the type of notification channel for which templates are retrieved
+     *                            (e.g., "EMAIL", "SMS").
+     * @param templateDisplayName the display name of the notification template type (e.g., "Welcome Email").
+     * @param tenantDomain        the tenant domain of the organization for which templates are retrieved.
+     * @param applicationUuid     the UUID of the application associated with the notification templates.
+     * @param resolve             a flag to indicate whether to retrieve resolved templates
+     *                            ({@code true}) or templates specific to the current organization or application
+     *                            ({@code false}).
+     *
+     * @return a list of {@link NotificationTemplate} templates matching the specified criteria.
+     *
+     * @throws NotificationTemplateManagerException if an error occurs while retrieving the templates.
+     */
+    default List<NotificationTemplate> getNotificationTemplatesOfType(String notificationChannel,
+                                                                      String templateDisplayName, String tenantDomain,
+                                                                      String applicationUuid, boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        throw new UnsupportedOperationException(
+                "getNotificationTemplatesOfType method is not implemented in " + this.getClass());
     }
 
     /**
@@ -197,6 +264,39 @@ public interface NotificationTemplateManager {
             throws NotificationTemplateManagerException {
 
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    /**
+     * Retrieves a specific notification template for a given notification channel, template type,
+     * locale, tenant domain, and application UUID.
+     * <p>
+     * This method fetches a notification template based on the specified criteria. The behavior
+     * depends on the {@code resolve} parameter:
+     * <ul>
+     *     <li><b>Resolved template (resolve = true):</b> Retrieves the template resolved through the
+     *     ancestor organization hierarchy.</li>
+     *     <li><b>Current org's or app's template  (resolve = false):</b> Retrieves the template specific to
+     *     the current organization or application only.</li>
+     * </ul>
+     *
+     * @param notificationChannel the notification channel (e.g., "EMAIL", "SMS").
+     * @param templateType        the type of the notification template (e.g., "Welcome Email").
+     * @param locale              the locale of the notification template (e.g., "en_US").
+     * @param tenantDomain        the tenant domain of the organization from which the template is retrieved.
+     * @param applicationUuid     the UUID of the application associated with the template.
+     * @param resolve             a flag indicating whether to retrieve resolved template
+     *                            ({@code true}) or template specific to the current organization or application
+     *                            ({@code false}).
+     * @return the {@link NotificationTemplate} template matching the specified criteria.
+     * @throws NotificationTemplateManagerException if an error occurs while retrieving the template
+     *                                              or if no template is found in the specified or default locale.
+     */
+    default NotificationTemplate getNotificationTemplate(String notificationChannel, String templateType, String locale,
+                                                         String tenantDomain, String applicationUuid, boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        throw new UnsupportedOperationException(
+                "getNotificationTemplate method is not implemented in " + this.getClass());
     }
 
     /**
