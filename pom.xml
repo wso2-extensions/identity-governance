@@ -45,7 +45,6 @@
     <modules>
         <module>components/org.wso2.carbon.identity.governance</module>
         <module>components/org.wso2.carbon.identity.recovery</module>
-        <module>components/org.wso2.carbon.identity.recovery.endpoint</module>
         <module>components/org.wso2.carbon.identity.api.user.recovery</module>
         <module>components/org.wso2.carbon.identity.captcha</module>
         <module>components/org.wso2.carbon.identity.password.history</module>
