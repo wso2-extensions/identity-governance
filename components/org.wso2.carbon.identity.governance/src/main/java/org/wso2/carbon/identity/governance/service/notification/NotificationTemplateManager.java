@@ -119,12 +119,15 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * @deprecated Use {@link #getAllNotificationTemplates(String, String, boolean)} instead.
+     * <p>
      * Get all available notification template types in the tenant for a given notification channel.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
      * @param tenantDomain        Tenant domain.
      * @throws NotificationTemplateManagerException If an error occurred while getting the notification template types.
      */
+    @Deprecated
     default List<NotificationTemplate> getAllNotificationTemplates(String notificationChannel, String tenantDomain)
             throws NotificationTemplateManagerException {
 
@@ -179,6 +182,8 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * @deprecated Use {@link #getNotificationTemplatesOfType(String, String, String, String, boolean)} instead.
+     * <p>
      * Get all notification templates of the given type.
      *
      * @param notificationChannel Notification channel (Eg: SMS, EMAIL).
@@ -188,6 +193,7 @@ public interface NotificationTemplateManager {
      * @return List of notification templates.
      * @throws NotificationTemplateManagerException If an error occurred while getting the notification templates.
      */
+    @Deprecated
     default List<NotificationTemplate> getNotificationTemplatesOfType(String notificationChannel,
                                               String templateDisplayName, String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
@@ -249,6 +255,8 @@ public interface NotificationTemplateManager {
     }
 
     /**
+     * @deprecated Use {@link #getNotificationTemplate(String, String, String, String, String, boolean)} instead.
+     * <p>
      * Return the notification template from the tenant registry which matches the given channel and template name.
      *
      * @param notificationChannel Notification Channel Name (Eg: SMS or EMAIL).
@@ -259,6 +267,7 @@ public interface NotificationTemplateManager {
      * @return Return {@link org.wso2.carbon.identity.governance.model.NotificationTemplate} object.
      * @throws NotificationTemplateManagerException If an error occurred while getting the notification template.
      */
+    @Deprecated
     default NotificationTemplate getNotificationTemplate(String notificationChannel, String templateType, String locale,
                                                          String tenantDomain, String applicationUuid)
             throws NotificationTemplateManagerException {
