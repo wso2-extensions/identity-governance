@@ -54,7 +54,6 @@
         <module>components/org.wso2.carbon.identity.user.export.core</module>
         <module>components/org.wso2.carbon.identity.piicontroller</module>
         <module>components/org.wso2.carbon.identity.user.rename.core</module>
-        <module>components/org.wso2.carbon.identity.user.endpoint</module>
         <module>components/org.wso2.carbon.identity.api.user.governance</module>
         <module>components/org.wso2.carbon.identity.tenant.resource.manager</module>
         <module>components/org.wso2.carbon.identity.multi.attribute.login</module>
@@ -64,7 +63,6 @@
         <module>components/org.wso2.carbon.identity.user.onboard.core.service</module>
 
         <module>features/org.wso2.carbon.identity.recovery.server.feature</module>
-        <module>features/org.wso2.carbon.identity.user.server.feature</module>
         <module>features/org.wso2.carbon.identity.governance.server.feature</module>
         <module>features/org.wso2.carbon.identity.captcha.server.feature</module>
         <module>features/org.wso2.carbon.identity.password.history.server.feature</module>
