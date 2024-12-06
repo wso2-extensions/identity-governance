@@ -1,11 +1,33 @@
+/*
+ * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wso2.carbon.identity.governance.listener;
 
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationTemplateManagerException;
 import org.wso2.carbon.identity.governance.model.NotificationTemplate;
 import org.wso2.carbon.identity.governance.service.notification.NotificationTemplateManager;
 
+/**
+ * Unit tests for NotificationTemplateManager.
+ */
 public class NotificationTemplateManagerTest {
 
     private NotificationTemplateManager notificationTemplateManager;
@@ -20,6 +42,15 @@ public class NotificationTemplateManagerTest {
     public void setUp() {
         notificationTemplateManager = new NotificationTemplateManager() {
             // No implementation needed, using default methods which throw UnsupportedOperationException
+        };
+    }
+
+    @DataProvider(name = "resolveDataProvider")
+    public Object[][] resolveDataProvider() {
+
+        return new Object[][]{
+                {true},
+                {false}
         };
     }
 
@@ -66,6 +97,13 @@ public class NotificationTemplateManagerTest {
         notificationTemplateManager.getAllNotificationTemplates(notificationChannel, tenantDomain);
     }
 
+    @Test(dataProvider = "resolveDataProvider", expectedExceptions = UnsupportedOperationException.class)
+    public void testGetAllNotificationTemplatesWithResolve(boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        notificationTemplateManager.getAllNotificationTemplates(notificationChannel, tenantDomain, resolve);
+    }
+
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testGetNotificationTemplatesOfType() throws NotificationTemplateManagerException {
 
@@ -80,6 +118,14 @@ public class NotificationTemplateManagerTest {
                 tenantDomain, applicationUuid);
     }
 
+    @Test(dataProvider = "resolveDataProvider", expectedExceptions = UnsupportedOperationException.class)
+    public void testGetNotificationTemplatesOfTypeWithApplicationIdWithResolve(boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        notificationTemplateManager.getNotificationTemplatesOfType(notificationChannel, displayName,
+                tenantDomain, applicationUuid, resolve);
+    }
+
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testGetNotificationTemplate() throws NotificationTemplateManagerException {
 
@@ -91,6 +137,14 @@ public class NotificationTemplateManagerTest {
 
         notificationTemplateManager.getNotificationTemplate(notificationChannel, displayName, locale, tenantDomain,
                 applicationUuid);
+    }
+
+    @Test(dataProvider = "resolveDataProvider", expectedExceptions = UnsupportedOperationException.class)
+    public void testGetNotificationTemplateWithApplicationIdWithResolve(boolean resolve)
+            throws NotificationTemplateManagerException {
+
+        notificationTemplateManager.getNotificationTemplate(notificationChannel, displayName, locale, tenantDomain,
+                applicationUuid, resolve);
     }
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
