@@ -28,6 +28,7 @@ public class PasswordPolicyConstants {
             "http://wso2.org/claims/identity/lastPasswordUpdateTime";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM_NON_IDENTITY =
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
+    public static final String PASSWORD_EXPIRY_TIME_CLAIM = "http://wso2.org/claims/identity/passwordExpiryTime";
     public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
     public static final String PASSWORD_CHANGE_EVENT_HANDLER_NAME = "enforcePasswordResetEventHandler";
     public static final String ENFORCE_PASSWORD_RESET_HANDLER = "EnforcePasswordResetHandler";

@@ -396,7 +396,7 @@ public class PasswordPolicyUtilsTest {
 
         long testStartTime = System.currentTimeMillis();
         Optional<Long> expiryTime =
-                PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername, groupIds, roleIds);
+                PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
         long testEndTime = System.currentTimeMillis();
 
         if (expiryDays == null) {
@@ -419,8 +419,7 @@ public class PasswordPolicyUtilsTest {
         // Case 1: Password expiry disabled.
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.FALSE);
         Optional<Long> expiryTime =
-                PasswordPolicyUtils.getUserPasswordExpiryTime(
-                        tenantDomain, tenantAwareUsername, null, null);
+                PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
         Assert.assertFalse(expiryTime.isPresent());
 
         // Case 2: Password expiry enabled, but no rules.
@@ -449,8 +448,7 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.FALSE));
 
-        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
-                tenantDomain, tenantAwareUsername, null, null);
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
 
         long expectedExpiryTime = updateTime + getDaysTimeInMillis(DEFAULT_EXPIRY_DAYS);
         Assert.assertTrue(Math.abs(expiryTime.get() - expectedExpiryTime) <= TIME_TOLERANCE_MS);
@@ -460,16 +458,14 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.TRUE));
 
-        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
-                tenantDomain, tenantAwareUsername, null, null);
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
         Assert.assertFalse(expiryTime.isPresent());
 
         // Case 4: UserStoreException.
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenThrow(
                 new org.wso2.carbon.user.core.UserStoreException());
         try {
-            PasswordPolicyUtils.getUserPasswordExpiryTime(
-                    tenantDomain, tenantAwareUsername, null, null);
+            PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
             Assert.fail("Expected PostAuthenticationFailedException was not thrown");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof PostAuthenticationFailedException);

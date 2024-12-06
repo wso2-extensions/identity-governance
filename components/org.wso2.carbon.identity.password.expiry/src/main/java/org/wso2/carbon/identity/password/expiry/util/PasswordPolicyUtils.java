@@ -301,13 +301,10 @@ public class PasswordPolicyUtils {
      *
      * @param tenantDomain         The tenant domain.
      * @param tenantAwareUsername  The tenant aware username.
-     * @param groupIds             The group IDs of the user.
-     * @param roleIds              The role IDs of the user.
      * @return Optional containing the password expiry time in milliseconds, or empty if not applicable.
      * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
      */
-    public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername,
-                                                           List<String> groupIds, List<String> roleIds)
+    public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername)
             throws PostAuthenticationFailedException {
 
         try {
@@ -343,12 +340,6 @@ public class PasswordPolicyUtils {
 
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
-            if (CollectionUtils.isNotEmpty(groupIds)) {
-                userAttributes.put(PasswordExpiryRuleAttributeEnum.GROUPS, new HashSet<>(groupIds));
-            }
-            if (CollectionUtils.isNotEmpty(roleIds)) {
-                userAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, new HashSet<>(roleIds));
-            }
 
             List<PasswordExpiryRule> filteredRules =
                     filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
