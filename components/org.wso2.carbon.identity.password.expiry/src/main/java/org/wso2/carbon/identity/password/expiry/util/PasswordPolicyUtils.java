@@ -307,9 +307,46 @@ public class PasswordPolicyUtils {
     public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername)
             throws PostAuthenticationFailedException {
 
+        return getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername, null,
+                null, null, null);
+    }
+
+    /**
+     * This method returns password expiry time for the given user.
+     *
+     * @param tenantDomain                     The tenant domain.
+     * @param tenantAwareUsername              The tenant aware username.
+     * @param isPasswordExpiryEnabled          Whether password expiry is enabled.
+     * @param isSkipIfNoApplicableRulesEnabled Whether skip if no applicable rules config is enabled.
+     * @param passwordExpiryRules              Password expiry rules.
+     * @param defaultPasswordExpiryInDays      Default password expiry in days.
+     * @return Optional containing the password expiry time in milliseconds, or empty if not applicable.
+     * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
+     */
+    public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain,
+                                                           String tenantAwareUsername,
+                                                           Boolean isPasswordExpiryEnabled,
+                                                           Boolean isSkipIfNoApplicableRulesEnabled,
+                                                           List<PasswordExpiryRule> passwordExpiryRules,
+                                                           Integer defaultPasswordExpiryInDays)
+        throws PostAuthenticationFailedException {
+
         try {
+            if (isPasswordExpiryEnabled == null) {
+                isPasswordExpiryEnabled = isPasswordExpiryEnabled(tenantDomain);
+            }
             // If the password expiry is not enabled, password expiry time is not applicable.
-            if (!isPasswordExpiryEnabled(tenantDomain)) return Optional.empty();
+            if (!isPasswordExpiryEnabled) return Optional.empty();
+
+            if (isSkipIfNoApplicableRulesEnabled == null) {
+                isSkipIfNoApplicableRulesEnabled = isSkipIfNoApplicableRulesEnabled(tenantDomain);
+            }
+            if (defaultPasswordExpiryInDays == null) {
+                defaultPasswordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
+            }
+            if (passwordExpiryRules == null) {
+                passwordExpiryRules = getPasswordExpiryRules(tenantDomain);
+            }
 
             UserRealm userRealm = getUserRealm(tenantDomain);
             UserStoreManager userStoreManager = getUserStoreManager(userRealm);
@@ -322,14 +359,10 @@ public class PasswordPolicyUtils {
             if (!isLastPasswordUpdatedTimeBlank) {
                 lastPasswordUpdatedTimeInMillis = getLastPasswordUpdatedTimeInMillis(lastPasswordUpdatedTime);
             }
-            int defaultPasswordExpiryInDays = getPasswordExpiryInDays(tenantDomain);
-            boolean skipIfNoApplicableRules = isSkipIfNoApplicableRulesEnabled(tenantDomain);
-
-            List<PasswordExpiryRule> passwordExpiryRules = getPasswordExpiryRules(tenantDomain);
 
             // If no rules are defined, use the default expiry time if "skipIfNoApplicableRules" is disabled.
             if (CollectionUtils.isEmpty(passwordExpiryRules)) {
-                if (skipIfNoApplicableRules) return Optional.empty();
+                if (isSkipIfNoApplicableRulesEnabled) return Optional.empty();
                 // If lastPasswordUpdatedTime is blank, set expiry time to now.
                 if (isLastPasswordUpdatedTimeBlank) {
                     return Optional.of(System.currentTimeMillis());
@@ -342,7 +375,7 @@ public class PasswordPolicyUtils {
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
 
             List<PasswordExpiryRule> filteredRules =
-                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
+                    filterApplicableExpiryRules(passwordExpiryRules, isSkipIfNoApplicableRulesEnabled);
             for (PasswordExpiryRule rule : filteredRules) {
                 if (isRuleApplicable(rule, userAttributes, tenantDomain, userId, userStoreManager)) {
                     // Skip the rule if the operator is not equals.
@@ -358,7 +391,7 @@ public class PasswordPolicyUtils {
                 }
             }
 
-            if (skipIfNoApplicableRules) return Optional.empty();
+            if (isSkipIfNoApplicableRulesEnabled) return Optional.empty();
             if (isLastPasswordUpdatedTimeBlank) {
                 return Optional.of(System.currentTimeMillis());
             }

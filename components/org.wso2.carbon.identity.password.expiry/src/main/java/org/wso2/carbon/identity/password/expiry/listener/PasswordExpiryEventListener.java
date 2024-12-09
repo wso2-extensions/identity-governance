@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.P
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -32,6 +33,7 @@ import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -64,9 +66,8 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
             log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
         }
 
-        String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-
         try {
+            String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
             Optional<Long> passwordExpiryTime =
                     PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, username);
             passwordExpiryTime.ifPresent(expiryTime -> claimMap.put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM,
@@ -89,15 +90,23 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
         }
 
         try {
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) return true;
+
+            boolean isSkipIfNoApplicableRulesEnabled =
+                    PasswordPolicyUtils.isSkipIfNoApplicableRulesEnabled(tenantDomain);
+            int defaultPasswordExpiryInDays = PasswordPolicyUtils.getPasswordExpiryInDays(tenantDomain);
+            List<PasswordExpiryRule> passwordExpiryRules = PasswordPolicyUtils.getPasswordExpiryRules(tenantDomain);
+
             for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
                 String username = userClaimSearchEntry.getUserName();
-                String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 
                 if (userClaimSearchEntry.getClaims() == null) {
                     userClaimSearchEntry.setClaims(new HashMap<String, String>());
                 }
-                Optional<Long> passwordExpiryTime =
-                        PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, username);
+                Optional<Long> passwordExpiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
+                        tenantDomain, username, true, isSkipIfNoApplicableRulesEnabled,
+                        passwordExpiryRules, defaultPasswordExpiryInDays);
                 passwordExpiryTime.ifPresent(expiryTime -> userClaimSearchEntry.getClaims()
                         .put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM, String.valueOf(expiryTime)));
             }
