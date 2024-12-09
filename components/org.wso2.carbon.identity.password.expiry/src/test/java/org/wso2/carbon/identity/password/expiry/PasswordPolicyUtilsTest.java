@@ -288,17 +288,17 @@ public class PasswordPolicyUtilsTest {
     public Object[][] passwordExpiryTestCases() {
         return new Object[][] {
             // {daysAgo, roles, groups, skipIfNoApplicableRules, expectedExpired, description}.
-            {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager")}, new String[]{}, false, false,
+            {55, new String[]{"employee", "manager"}, new String[]{}, false, false,
                     "Not expired: 3rd rule (60) applies"},
-            {55, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("manager"), ROLE_MAP.get("contractor")},
+            {55, new String[]{"employee", "manager", "contractor"},
                     new String[]{}, false, true, "Expired: 2nd rule (40) applies"},
-            {35, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")}, new String[]{}, false, false,
+            {35, new String[]{"employee", "contractor"}, new String[]{}, false, false,
                     "Not expired: 2nd rule (40) applies"},
-            {35, new String[]{ROLE_MAP.get("employee"), ROLE_MAP.get("contractor")}, new String[]{"admin"}, false,
+            {35, new String[]{"employee", "contractor"}, new String[]{"admin"}, false,
                     false, "Not expired: 1st rule (skip) applies."},
-            {35, new String[]{ROLE_MAP.get("employee")}, new String[]{}, false, true,
+            {35, new String[]{"employee"}, new String[]{}, false, true,
                     "Expired: Default expiry policy applies."},
-            {35, new String[]{ROLE_MAP.get("employee")}, new String[]{}, true, false,
+            {35, new String[]{"employee"}, new String[]{}, true, false,
                     "Not expired: Default expiry policy applies - skip if no rules applicable."},
         };
     }
@@ -319,13 +319,7 @@ public class PasswordPolicyUtilsTest {
 
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.TRUE);
 
-        List<Group> userGroups = new ArrayList<>();
-        Arrays.stream(groups).forEach(groupName -> {
-            Group groupObj = new Group();
-            groupObj.setGroupID(GROUP_MAP.get(groupName));
-            userGroups.add(groupObj);
-        });
-        when(abstractUserStoreManager.getGroupListOfUser(userId, null, null)).thenReturn(userGroups);
+        when(abstractUserStoreManager.getGroupListOfUser(userId, null, null)).thenReturn(getGroups(groups));
 
         // Mock last password update time.
         Long updateTime = getUpdateTime(daysAgo);
@@ -363,7 +357,8 @@ public class PasswordPolicyUtilsTest {
     @Test(dataProvider = "passwordExpiryTimeTestCases")
     public void testGetUserPasswordExpiryTime(Integer daysAgo, String[] roles, String[] groups, Integer expiryDays,
                                               String description)
-        throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
+            throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException,
+            IdentityRoleManagementException {
 
         when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(3);
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
@@ -391,8 +386,12 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.FALSE));
 
-        List<String> roleIds = Arrays.stream(roles).map(ROLE_MAP::get).collect(Collectors.toList());
-        List<String> groupIds = Arrays.stream(groups).map(GROUP_MAP::get).collect(Collectors.toList());
+        // Mock user roles.
+        when(roleManagementService.getRoleListOfUser(userId, tenantDomain)).thenReturn(getRoles(roles));
+
+        // Mock user groups.
+        when(abstractUserStoreManager.getGroupListOfUser(userId, null, null))
+                .thenReturn(getGroups(groups));
 
         long testStartTime = System.currentTimeMillis();
         Optional<Long> expiryTime =
@@ -417,9 +416,9 @@ public class PasswordPolicyUtilsTest {
             throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
 
         // Case 1: Password expiry disabled.
-        mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.FALSE);
-        Optional<Long> expiryTime =
-                PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
+        Optional<Long> expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
+                tenantDomain, tenantAwareUsername, false, null,
+                null, null);
         Assert.assertFalse(expiryTime.isPresent());
 
         // Case 2: Password expiry enabled, but no rules.
@@ -435,20 +434,9 @@ public class PasswordPolicyUtilsTest {
         Long updateTime = System.currentTimeMillis() - getDaysTimeInMillis(20);
         mockLastPasswordUpdateTime(updateTime, abstractUserStoreManager);
 
-        // Mock empty password expiry rules.
-        ConnectorConfig connectorConfig = new ConnectorConfig();
-        connectorConfig.setProperties( new Property[0]);
-        when(identityGovernanceService.getConnectorWithConfigs(tenantDomain,
-                PasswordPolicyConstants.CONNECTOR_CONFIG_NAME)).thenReturn(connectorConfig);
-
-        when(identityGovernanceService.getConfiguration(
-                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_PASSWORD_EXPIRY_IN_DAYS},
-                tenantDomain)).thenReturn(getPasswordExpiryInDaysProperty());
-        when(identityGovernanceService.getConfiguration(
-                new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
-                tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.FALSE));
-
-        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
+                tenantDomain, tenantAwareUsername, true, false,
+                Collections.emptyList(), DEFAULT_EXPIRY_DAYS);
 
         long expectedExpiryTime = updateTime + getDaysTimeInMillis(DEFAULT_EXPIRY_DAYS);
         Assert.assertTrue(Math.abs(expiryTime.get() - expectedExpiryTime) <= TIME_TOLERANCE_MS);
@@ -458,14 +446,18 @@ public class PasswordPolicyUtilsTest {
                 new String[]{PasswordPolicyConstants.CONNECTOR_CONFIG_SKIP_IF_NO_APPLICABLE_RULES},
                 tenantDomain)).thenReturn(getSkipIfNoRulesApplicableProperty(PasswordPolicyConstants.TRUE));
 
-        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
+        expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername,
+                true, true, Collections.emptyList(),
+                DEFAULT_EXPIRY_DAYS);
         Assert.assertFalse(expiryTime.isPresent());
 
         // Case 4: UserStoreException.
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenThrow(
                 new org.wso2.carbon.user.core.UserStoreException());
         try {
-            PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername);
+            PasswordPolicyUtils.getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername,
+                    true, true, Collections.emptyList(),
+                    DEFAULT_EXPIRY_DAYS);
             Assert.fail("Expected PostAuthenticationFailedException was not thrown");
         } catch (Exception e) {
             Assert.assertTrue(e instanceof PostAuthenticationFailedException);
@@ -538,15 +530,26 @@ public class PasswordPolicyUtilsTest {
         return daysAgo != null ? System.currentTimeMillis() - getDaysTimeInMillis(daysAgo) : null;
     }
 
-    private List<RoleBasicInfo> getRoles(String[] roleIds) {
+    private List<RoleBasicInfo> getRoles(String[] roleNames) {
 
         List<RoleBasicInfo> userRoles = new ArrayList<>();
-        for (String roleId : roleIds) {
+        for (String roleId : roleNames) {
             RoleBasicInfo roleInfo = new RoleBasicInfo();
-            roleInfo.setId(roleId);
+            roleInfo.setId(ROLE_MAP.get(roleId));
             userRoles.add(roleInfo);
         }
         return userRoles;
+    }
+
+    private static List<Group> getGroups(String[] groupNames) {
+
+        List<Group> userGroups = new ArrayList<>();
+        Arrays.stream(groupNames).forEach(groupName -> {
+            Group groupObj = new Group();
+            groupObj.setGroupID(GROUP_MAP.get(groupName));
+            userGroups.add(groupObj);
+        });
+        return userGroups;
     }
 
     private Property[] getPasswordExpiryRulesProperties() {
