@@ -180,7 +180,7 @@ public class AccountValidatorThread implements Runnable {
      */
     private boolean isClusterModeEnabled() {
 
-        String clusterModeEnabledValue = IdentityUtil.getProperty(NotificationConstants.RUN_TASK_IN_CLUSTER_MODE);
+        String clusterModeEnabledValue = IdentityUtil.getProperty(NotificationConstants.EXECUTE_TASK_IN_SINGLE_NODE);
         return StringUtils.isNotBlank(clusterModeEnabledValue) ? Boolean.parseBoolean(clusterModeEnabledValue) : false;
     }
 
