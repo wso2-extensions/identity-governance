@@ -164,6 +164,7 @@ public class NotificationTaskServiceComponent {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetClusteringAgent")
     protected void setClusteringAgent(ConfigurationContextService configurationContextService) {
+
         NotificationTaskDataHolder.getInstance().setClusteringAgent(
                 configurationContextService.getServerConfigContext().getAxisConfiguration().getClusteringAgent());
     }
