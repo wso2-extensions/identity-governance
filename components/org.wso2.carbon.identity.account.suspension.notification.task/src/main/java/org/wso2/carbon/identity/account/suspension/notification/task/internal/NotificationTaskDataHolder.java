@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.account.suspension.notification.task.internal;
 
+import org.apache.axis2.clustering.ClusteringAgent;
 import org.osgi.framework.BundleContext;
 import org.wso2.carbon.identity.account.suspension.notification.task.NotificationReceiversRetrievalFactory;
 import org.wso2.carbon.identity.account.suspension.notification.task.util.NotificationConstants;
@@ -43,6 +44,7 @@ public class NotificationTaskDataHolder {
     private String notificationTriggerTime;
     private String schedulerDelay;
     private String notificationSendingThreadPoolSize = "1";
+    private ClusteringAgent clusteringAgent;
 
     public int getNotificationSendingThreadPoolSize() {
         return Integer.parseInt(notificationSendingThreadPoolSize);
@@ -111,5 +113,15 @@ public class NotificationTaskDataHolder {
 
     public RealmService getRealmService() {
         return realmService;
+    }
+
+    public ClusteringAgent getClusteringAgent() {
+
+        return clusteringAgent;
+    }
+
+    public void setClusteringAgent(ClusteringAgent clusteringAgent) {
+
+        this.clusteringAgent = clusteringAgent;
     }
 }
