@@ -36,6 +36,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.utils.ConfigurationContextService;
 
 /**
  * Notification scheduler. Check for users who requires a notification for relogin
@@ -155,6 +156,21 @@ public class NotificationTaskServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("RealmService is unset in the Application Authentication Framework bundle");
         }
+    }
+
+    @Reference(
+            name = "config.context.service",
+            cardinality = ReferenceCardinality.OPTIONAL,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClusteringAgent")
+    protected void setClusteringAgent(ConfigurationContextService configurationContextService) {
+
+        NotificationTaskDataHolder.getInstance().setClusteringAgent(
+                configurationContextService.getServerConfigContext().getAxisConfiguration().getClusteringAgent());
+    }
+
+    protected void unsetClusteringAgent(ConfigurationContextService configurationContextService) {
+        NotificationTaskDataHolder.getInstance().setClusteringAgent(null);
     }
 }
 

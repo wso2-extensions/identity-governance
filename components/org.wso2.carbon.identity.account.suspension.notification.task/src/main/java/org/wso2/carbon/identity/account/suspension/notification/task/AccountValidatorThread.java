@@ -18,6 +18,7 @@
 package org.wso2.carbon.identity.account.suspension.notification.task;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -86,6 +87,11 @@ public class AccountValidatorThread implements Runnable {
 
         if (log.isDebugEnabled()) {
             log.debug("Handling idle account suspension task for tenant: " + tenantDomain);
+        }
+
+        // Run the task only from master node in cluster setup.
+        if (isMasterNodeExclusiveExecutionEnabled() && !isHazelcastMasterNode()) {
+            return;
         }
 
         Property[] identityProperties;
@@ -165,6 +171,27 @@ public class AccountValidatorThread implements Runnable {
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
+    }
+
+    /**
+     * Check whether suspension task configured to run only in master node or not.
+     *
+     * @return true or false based on the deployment config.
+     */
+    private boolean isMasterNodeExclusiveExecutionEnabled() {
+
+        String clusterModeEnabledValue = IdentityUtil.getProperty(NotificationConstants.EXECUTE_TASK_IN_MASTER_NODE);
+        return StringUtils.isNotBlank(clusterModeEnabledValue) ? Boolean.parseBoolean(clusterModeEnabledValue) : false;
+    }
+
+    /**
+     * Check whether current node is master node in the Hazelcast cluster.
+     *
+     * @return true or false based on the Hazelcast cluster.
+     */
+    private boolean isHazelcastMasterNode() {
+
+        return NotificationTaskDataHolder.getInstance().getClusteringAgent().isCoordinator();
     }
 
     /**
