@@ -90,7 +90,7 @@ public class AccountValidatorThread implements Runnable {
         }
 
         // Run the task only from master node in cluster setup.
-        if (isClusterModeEnabled() && !isHazelcastMasterNode()) {
+        if (isMasterNodeExclusiveExecutionEnabled() && !isHazelcastMasterNode()) {
             return;
         }
 
@@ -174,13 +174,13 @@ public class AccountValidatorThread implements Runnable {
     }
 
     /**
-     * Check whether suspension task runs in cluster or not.
+     * Check whether suspension task configured to run only in master node or not.
      *
      * @return true or false based on the deployment config.
      */
-    private boolean isClusterModeEnabled() {
+    private boolean isMasterNodeExclusiveExecutionEnabled() {
 
-        String clusterModeEnabledValue = IdentityUtil.getProperty(NotificationConstants.EXECUTE_TASK_IN_SINGLE_NODE);
+        String clusterModeEnabledValue = IdentityUtil.getProperty(NotificationConstants.EXECUTE_TASK_IN_MASTER_NODE);
         return StringUtils.isNotBlank(clusterModeEnabledValue) ? Boolean.parseBoolean(clusterModeEnabledValue) : false;
     }
 
