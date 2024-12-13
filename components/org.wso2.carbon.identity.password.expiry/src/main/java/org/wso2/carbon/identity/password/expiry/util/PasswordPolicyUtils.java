@@ -407,10 +407,12 @@ public class PasswordPolicyUtils {
     private static List<PasswordExpiryRule> filterApplicableExpiryRules(List<PasswordExpiryRule> passwordExpiryRules,
                                                                         boolean skipIfNoApplicableRules) {
 
+        if (!skipIfNoApplicableRules) {
+            return passwordExpiryRules;
+        }
         // If the default behavior is to skip the password expiry, rules with skip logic are not required.
         return passwordExpiryRules.stream().filter(
-                rule -> !skipIfNoApplicableRules || !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator()))
-                .collect(Collectors.toList());
+                rule -> !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())).collect(Collectors.toList());
     }
 
     /**
