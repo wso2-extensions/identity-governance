@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.P
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.wso2.carbon.identity.password.expiry.exceptions.ExpiredPasswordIdentificationException;
 import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -51,7 +52,7 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
         if (orderId != IdentityCoreConstants.EVENT_LISTENER_ORDER_ID) {
             return orderId;
         }
-        return 99; // TODO: Check the order ID.
+        return 102;
     }
 
     @Override
@@ -62,9 +63,7 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
         if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM)) {
             return true;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
-        }
+        log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
 
         try {
             String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -72,7 +71,7 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
                     PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, username);
             passwordExpiryTime.ifPresent(expiryTime -> claimMap.put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM,
                     String.valueOf(expiryTime)));
-        } catch (PostAuthenticationFailedException e) {
+        } catch (ExpiredPasswordIdentificationException e) {
             throw new UserStoreException("Error while retrieving password expiry time.", e);
         }
         return true;
@@ -85,9 +84,7 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
         if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM)) {
             return true;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener.");
-        }
+        log.debug("Method doPostGetUsersClaimValues getting executed in the PasswordExpiryEventListener.");
 
         try {
             String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
@@ -110,7 +107,7 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
                 passwordExpiryTime.ifPresent(expiryTime -> userClaimSearchEntry.getClaims()
                         .put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM, String.valueOf(expiryTime)));
             }
-        } catch (PostAuthenticationFailedException e) {
+        } catch (PostAuthenticationFailedException | ExpiredPasswordIdentificationException e) {
             throw new UserStoreException("Error while retrieving password expiry time.", e);
         }
         return true;

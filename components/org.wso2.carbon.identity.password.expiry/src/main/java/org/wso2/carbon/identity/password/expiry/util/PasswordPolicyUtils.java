@@ -48,10 +48,10 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.user.core.common.Group;
+import org.wso2.carbon.identity.password.expiry.exceptions.ExpiredPasswordIdentificationException;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -302,10 +302,10 @@ public class PasswordPolicyUtils {
      * @param tenantDomain         The tenant domain.
      * @param tenantAwareUsername  The tenant aware username.
      * @return Optional containing the password expiry time in milliseconds, or empty if not applicable.
-     * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
+     * @throws ExpiredPasswordIdentificationException If an error occurred while getting the password expiry time.
      */
     public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain, String tenantAwareUsername)
-            throws PostAuthenticationFailedException {
+            throws ExpiredPasswordIdentificationException {
 
         return getUserPasswordExpiryTime(tenantDomain, tenantAwareUsername, null,
                 null, null, null);
@@ -321,7 +321,7 @@ public class PasswordPolicyUtils {
      * @param passwordExpiryRules              Password expiry rules.
      * @param defaultPasswordExpiryInDays      Default password expiry in days.
      * @return Optional containing the password expiry time in milliseconds, or empty if not applicable.
-     * @throws PostAuthenticationFailedException If an error occurred while getting the password expiry time.
+     * @throws ExpiredPasswordIdentificationException If an error occurred while getting the password expiry time.
      */
     public static Optional<Long> getUserPasswordExpiryTime(String tenantDomain,
                                                            String tenantAwareUsername,
@@ -329,7 +329,7 @@ public class PasswordPolicyUtils {
                                                            Boolean isSkipIfNoApplicableRulesEnabled,
                                                            List<PasswordExpiryRule> passwordExpiryRules,
                                                            Integer defaultPasswordExpiryInDays)
-        throws PostAuthenticationFailedException {
+        throws ExpiredPasswordIdentificationException {
 
         try {
             if (isPasswordExpiryEnabled == null) {
@@ -397,8 +397,8 @@ public class PasswordPolicyUtils {
             }
             return Optional.of(
                     lastPasswordUpdatedTimeInMillis + getDaysTimeInMillis(defaultPasswordExpiryInDays));
-        } catch (UserStoreException e) {
-            throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
+        } catch (UserStoreException | PostAuthenticationFailedException e) {
+            throw new ExpiredPasswordIdentificationException(PasswordPolicyConstants.ErrorMessages.
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
         }

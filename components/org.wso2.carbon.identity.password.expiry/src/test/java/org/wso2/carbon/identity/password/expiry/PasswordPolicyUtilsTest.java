@@ -24,6 +24,7 @@ import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.wso2.carbon.identity.password.expiry.exceptions.ExpiredPasswordIdentificationException;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
 import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRuleAttributeEnum;
 import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
@@ -357,7 +358,7 @@ public class PasswordPolicyUtilsTest {
     @Test(dataProvider = "passwordExpiryTimeTestCases")
     public void testGetUserPasswordExpiryTime(Integer daysAgo, String[] roles, String[] groups, Integer expiryDays,
                                               String description)
-            throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException,
+            throws IdentityGovernanceException, UserStoreException, ExpiredPasswordIdentificationException,
             IdentityRoleManagementException {
 
         when(IdentityTenantUtil.getTenantId(anyString())).thenReturn(3);
@@ -413,7 +414,7 @@ public class PasswordPolicyUtilsTest {
 
     @Test
     public void testGetUserPasswordExpiryTime()
-            throws IdentityGovernanceException, UserStoreException, PostAuthenticationFailedException {
+            throws IdentityGovernanceException, UserStoreException, ExpiredPasswordIdentificationException {
 
         // Case 1: Password expiry disabled.
         Optional<Long> expiryTime = PasswordPolicyUtils.getUserPasswordExpiryTime(
@@ -460,7 +461,7 @@ public class PasswordPolicyUtilsTest {
                     DEFAULT_EXPIRY_DAYS);
             Assert.fail("Expected PostAuthenticationFailedException was not thrown");
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof PostAuthenticationFailedException);
+            Assert.assertTrue(e instanceof ExpiredPasswordIdentificationException);
         }
     }
 

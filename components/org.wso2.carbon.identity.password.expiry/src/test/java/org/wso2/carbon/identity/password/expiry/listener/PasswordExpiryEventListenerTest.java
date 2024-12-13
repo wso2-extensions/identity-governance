@@ -19,8 +19,8 @@
 package org.wso2.carbon.identity.password.expiry.listener;
 
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.authentication.framework.exception.PostAuthenticationFailedException;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
+import org.wso2.carbon.identity.password.expiry.exceptions.ExpiredPasswordIdentificationException;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -92,7 +92,7 @@ public class PasswordExpiryEventListenerTest {
     @Test
     public void testGetExecutionOrderId() {
 
-        Assert.assertEquals(passwordExpiryEventListener.getExecutionOrderId(), 99); // TODO: Change the order id accordingly.
+        Assert.assertEquals(passwordExpiryEventListener.getExecutionOrderId(), 102);
     }
 
     @Test
@@ -115,7 +115,7 @@ public class PasswordExpiryEventListenerTest {
         // Case 2: PostAuthenticationFailedException is thrown.
         mockedPasswordPolicyUtils.when(() ->
                 PasswordPolicyUtils.getUserPasswordExpiryTime(eq(TENANT_DOMAIN), eq(username)))
-                .thenThrow(new PostAuthenticationFailedException("test-error", "test-error"));
+                .thenThrow(new ExpiredPasswordIdentificationException("test-error", "test-error"));
         try {
             passwordExpiryEventListener.doPostGetUserClaimValues(username, claims, profileName, claimMap, userStoreManager);
         } catch (Exception e) {
@@ -170,7 +170,7 @@ public class PasswordExpiryEventListenerTest {
         // Case 2: PostAuthenticationFailedException is thrown.
         mockedPasswordPolicyUtils.when(() -> PasswordPolicyUtils.getUserPasswordExpiryTime(
                 eq(TENANT_DOMAIN), anyString(), eq(true), eq(false), any(), eq(30)))
-                .thenThrow(new PostAuthenticationFailedException("test-error", "test-error"));
+                .thenThrow(new ExpiredPasswordIdentificationException("test-error", "test-error"));
         try {
             passwordExpiryEventListener.doPostGetUsersClaimValues(userNames, claims,
                     profileName, userClaimSearchEntries);
