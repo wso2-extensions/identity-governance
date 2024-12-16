@@ -155,13 +155,6 @@ public class PasswordResetEnforcerHandlerTest {
         when(authenticationContext.getCurrentAuthenticatedIdPs()).thenReturn(idPs);
         idPs.put(AUTHENTICATOR_TYPE, authenticatedIdPData);
 
-        // Case 1 : Password expiry is not enabled.
-        when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(false);
-        PostAuthnHandlerFlowStatus flowStatus1 = enforcePasswordResetAuthenticationHandler.handle(httpServletRequest,
-                httpServletResponse, authenticationContext);
-        Assert.assertEquals(flowStatus1, PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED);
-
-        // Case 2 : Password expiry is enabled.
         List<AuthenticatorConfig> authenticators = getAuthenticatorConfigs();
         when(PasswordPolicyUtils.isPasswordExpiryEnabled(anyString())).thenReturn(true);
         when(PasswordPolicyUtils.isPasswordExpired(anyString(), anyString())).thenReturn(true);
@@ -186,12 +179,6 @@ public class PasswordResetEnforcerHandlerTest {
                 httpServletResponse, authenticationContext);
         Assert.assertEquals(flowStatus, PostAuthnHandlerFlowStatus.INCOMPLETE);
         verify(httpServletResponse).sendRedirect(captor.capture());
-
-        // Case 3 : Password expiry is enabled and password is not expired.
-        when(PasswordPolicyUtils.isPasswordExpired(anyString(), anyString())).thenReturn(false);
-        PostAuthnHandlerFlowStatus flowStatus2 = enforcePasswordResetAuthenticationHandler.handle(httpServletRequest,
-                httpServletResponse, authenticationContext);
-        Assert.assertEquals(flowStatus2, PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED);
     }
 
     private static List<AuthenticatorConfig> getAuthenticatorConfigs() {

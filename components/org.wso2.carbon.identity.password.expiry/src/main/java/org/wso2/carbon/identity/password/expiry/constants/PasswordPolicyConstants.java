@@ -28,7 +28,6 @@ public class PasswordPolicyConstants {
             "http://wso2.org/claims/identity/lastPasswordUpdateTime";
     public static final String LAST_CREDENTIAL_UPDATE_TIMESTAMP_CLAIM_NON_IDENTITY =
             "http://wso2.org/claims/lastPasswordChangedTimestamp";
-    public static final String PASSWORD_EXPIRY_TIME_CLAIM = "http://wso2.org/claims/identity/passwordExpiryTime";
     public static final String PASSWORD_RESET_PAGE = "/accountrecoveryendpoint/password-recovery-confirm.jsp";
     public static final String PASSWORD_CHANGE_EVENT_HANDLER_NAME = "enforcePasswordResetEventHandler";
     public static final String ENFORCE_PASSWORD_RESET_HANDLER = "EnforcePasswordResetHandler";
@@ -58,7 +57,6 @@ public class PasswordPolicyConstants {
     public static final String AUTHENTICATION_STATUS = "authenticationStatus";
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
     public static final String FALSE = "false";
-    public static final String TRUE = "true";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
     public static final String PASSWORD_EXPIRED_QUERY_PARAMS = "&passwordExpired=true";
     public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
