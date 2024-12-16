@@ -464,7 +464,7 @@ public class PasswordPolicyUtils {
             List<Group> userGroups =
                     ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(userId,
                             null, null);
-            return userGroups.stream().map(Group::getGroupID).filter(Objects::nonNull) .collect(Collectors.toSet());
+            return userGroups.stream().map(Group::getGroupID).filter(Objects::nonNull).collect(Collectors.toSet());
         } catch (UserStoreException e) {
                 throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                         ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
