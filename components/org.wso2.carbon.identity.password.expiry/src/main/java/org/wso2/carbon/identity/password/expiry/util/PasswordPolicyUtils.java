@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -463,7 +464,7 @@ public class PasswordPolicyUtils {
             List<Group> userGroups =
                     ((AbstractUserStoreManager) userStoreManager).getGroupListOfUser(userId,
                             null, null);
-            return userGroups.stream().map(Group::getGroupID).collect(Collectors.toSet());
+            return userGroups.stream().map(Group::getGroupID).filter(Objects::nonNull).collect(Collectors.toSet());
         } catch (UserStoreException e) {
                 throw new PostAuthenticationFailedException(PasswordPolicyConstants.ErrorMessages.
                         ERROR_WHILE_RETRIEVING_USER_GROUPS.getCode(),
