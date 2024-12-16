@@ -35,10 +35,8 @@ import org.wso2.carbon.identity.application.authentication.framework.handler.req
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
-import org.wso2.carbon.identity.password.expiry.listener.PasswordExpiryEventListener;
 import org.wso2.carbon.identity.password.expiry.services.ExpiredPasswordIdentificationService;
 import org.wso2.carbon.identity.password.expiry.services.impl.ExpiredPasswordIdentificationServiceImpl;
-import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.identity.role.v2.mgt.core.RoleManagementService;
 
@@ -58,10 +56,6 @@ public class EnforcePasswordResetComponent {
     protected void activate(ComponentContext context) {
 
         try {
-            // Register the listener to capture user operations.
-            PasswordExpiryEventListener listener = new PasswordExpiryEventListener();
-            context.getBundleContext().registerService(UserOperationEventListener.class, listener, null);
-
             EnforcePasswordResetAuthenticationHandler enforcePasswordResetAuthenticationHandler =
                     new EnforcePasswordResetAuthenticationHandler();
             BundleContext bundleContext = context.getBundleContext();
