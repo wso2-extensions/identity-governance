@@ -936,7 +936,7 @@ public class NotificationPasswordRecoveryManager {
         Enum<RecoveryScenarios> recoveryScenario = userRecoveryData.getRecoveryScenario();
         // If notifications are internally managed we try to set the verified claims since this is an opportunity
         // to verify a user channel.
-        if (isNotificationInternallyManaged) {
+        if (isNotificationInternallyManaged && !isNotificationLessRecoveryMethod(recoveryScenario)) {
             if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds())) {
                 userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(userRecoveryData.getRemainingSetIds())) {
@@ -976,6 +976,20 @@ public class NotificationPasswordRecoveryManager {
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
         }
         return userClaims;
+    }
+
+    /**
+     * Check whether the recovery scenario is notification based.
+     * A set of recovery scenarios such as question based password recovery, and
+     * password reset on password expiry does not require sending notifications to the user.
+     *
+     * @param recoveryScenario Recovery scenario
+     * @return True if the recovery scenario does not require sending notifications
+     */
+    private boolean isNotificationLessRecoveryMethod(Enum recoveryScenario) {
+
+        return RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario) ||
+                RecoveryScenarios.PASSWORD_EXPIRY.equals(recoveryScenario);
     }
 
     /**
