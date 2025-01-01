@@ -30,11 +30,14 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.UsernameValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.ArrayList;
@@ -92,6 +95,31 @@ public class ValidateUsernameApiServiceImplTest {
                 "Expected error code is not received.");
     }
 
+    @Test(description = "Test that the error message is fetched from the secondary user store.")
+    public void testRegexViolationErrorMsgFromSecondaryUserStore() throws Exception {
+
+        mockedIdentityUtil.when(() -> IdentityUtil.extractDomainFromName("invalidUsername")).thenReturn("SECONDARY");
+
+        RealmService mockedRealmService = setupRealmServiceMocks();
+        org.wso2.carbon.user.core.UserStoreManager mockedPrimaryUserStoreManager = setupPrimaryUserStoreManager(mockedRealmService);
+        setupSecondaryUserStoreManager(mockedPrimaryUserStoreManager);
+
+        injectMockedRealmService(mockedRealmService);
+
+        UsernameValidationRequestDTO usernameValidationRequestDTO = createRequestDTO("invalidUsername", "SECONDARY");
+
+        mockSelfRegistrationEnabled(true);
+        mockRegexValidationFailure("SECONDARY/invalidUsername");
+
+        Response response = validateUsernameApiService.validateUsernamePost(usernameValidationRequestDTO);
+
+        Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode(), "Unexpected response status.");
+
+        ErrorDTO errorDTO = (ErrorDTO) response.getEntity();
+        Assert.assertEquals(errorDTO.getMessage(), "Secondary user store regex violation message",
+                "Unexpected error message. Expected secondary user store message.");
+    }
+
     @BeforeMethod
     private void init() throws IdentityRecoveryException {
 
@@ -113,5 +141,85 @@ public class ValidateUsernameApiServiceImplTest {
 
         mockedUtils.close();
         mockedIdentityUtil.close();
+    }
+
+    private RealmService setupRealmServiceMocks() throws Exception {
+
+        RealmService mockedRealmService = Mockito.mock(RealmService.class);
+        org.wso2.carbon.user.core.tenant.TenantManager mockedTenantManager =
+                Mockito.mock(org.wso2.carbon.user.core.tenant.TenantManager.class);
+        org.wso2.carbon.user.core.UserRealm mockedUserRealm =
+                Mockito.mock(org.wso2.carbon.user.core.UserRealm.class);
+
+        Mockito.when(mockedRealmService.getTenantManager()).thenReturn(mockedTenantManager);
+        Mockito.when(mockedTenantManager.getTenantId(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)).thenReturn(1);
+        Mockito.when(mockedRealmService.getTenantUserRealm(1)).thenReturn(mockedUserRealm);
+
+        return mockedRealmService;
+    }
+
+    private org.wso2.carbon.user.core.UserStoreManager setupPrimaryUserStoreManager(RealmService mockedRealmService)
+            throws Exception {
+
+        org.wso2.carbon.user.core.UserRealm mockedUserRealm =
+                (org.wso2.carbon.user.core.UserRealm) mockedRealmService.getTenantUserRealm(1);
+        org.wso2.carbon.user.core.UserStoreManager mockedPrimaryUserStoreManager =
+                Mockito.mock(org.wso2.carbon.user.core.UserStoreManager.class);
+        RealmConfiguration primaryRealmConfiguration = Mockito.mock(RealmConfiguration.class);
+
+        Mockito.when(mockedUserRealm.getUserStoreManager()).thenReturn(mockedPrimaryUserStoreManager);
+        Mockito.when(mockedPrimaryUserStoreManager.getRealmConfiguration()).thenReturn(primaryRealmConfiguration);
+        Mockito.when(primaryRealmConfiguration.getUserStoreProperty("UsernameJavaRegExViolationErrorMsg"))
+                .thenReturn("Primary user store regex violation message");
+
+        return mockedPrimaryUserStoreManager;
+    }
+
+    private void setupSecondaryUserStoreManager(org.wso2.carbon.user.core.UserStoreManager
+                                                        mockedPrimaryUserStoreManager) {
+
+        org.wso2.carbon.user.core.UserStoreManager mockedSecondaryUserStoreManager =
+                Mockito.mock(org.wso2.carbon.user.core.UserStoreManager.class);
+        RealmConfiguration secondaryRealmConfiguration = Mockito.mock(RealmConfiguration.class);
+
+        Mockito.when(mockedPrimaryUserStoreManager.getSecondaryUserStoreManager("SECONDARY"))
+                .thenReturn(mockedSecondaryUserStoreManager);
+        Mockito.when(mockedSecondaryUserStoreManager.getRealmConfiguration()).thenReturn(secondaryRealmConfiguration);
+        Mockito.when(secondaryRealmConfiguration.getUserStoreProperty("UsernameJavaRegExViolationErrorMsg"))
+                .thenReturn("Secondary user store regex violation message");
+    }
+
+    private void injectMockedRealmService(RealmService mockedRealmService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(mockedRealmService);
+    }
+
+    private UsernameValidationRequestDTO createRequestDTO(String username, String realm) {
+
+        UsernameValidationRequestDTO requestDTO = new UsernameValidationRequestDTO();
+        requestDTO.setUsername(username);
+
+        PropertyDTO realmProperty = new PropertyDTO();
+        realmProperty.setKey("realm");
+        realmProperty.setValue(realm);
+
+        List<PropertyDTO> propertyDTOList = new ArrayList<>();
+        propertyDTOList.add(realmProperty);
+
+        requestDTO.setProperties(propertyDTOList);
+
+        return requestDTO;
+    }
+
+    private void mockSelfRegistrationEnabled(boolean isEnabled) throws IdentityRecoveryException {
+
+        Mockito.doReturn(isEnabled).when(userSelfRegistrationManager)
+                .isSelfRegistrationEnabled(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+    }
+
+    private void mockRegexValidationFailure(String usernameWithDomain) throws IdentityRecoveryException {
+
+        Mockito.doReturn(false).when(userSelfRegistrationManager)
+                .isMatchUserNameRegex(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, usernameWithDomain);
     }
 }
