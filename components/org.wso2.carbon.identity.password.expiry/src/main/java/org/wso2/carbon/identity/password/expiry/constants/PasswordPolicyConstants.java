@@ -57,6 +57,7 @@ public class PasswordPolicyConstants {
     public static final String PASSWORD_GRANT_POST_AUTHENTICATION_EVENT = "PASSWORD_GRANT_POST_AUTHENTICATION";
     public static final String AUTHENTICATION_STATUS = "authenticationStatus";
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
+    public static final String PASSWORD_RESET_ENFORCER_AUTHENTICATOR = "password-reset-enforcer";
     public static final String FALSE = "false";
     public static final String TRUE = "true";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
