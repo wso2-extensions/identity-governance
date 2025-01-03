@@ -23,6 +23,7 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants;
 import org.wso2.carbon.identity.password.expiry.exceptions.ExpiredPasswordIdentificationException;
 import org.wso2.carbon.identity.password.expiry.internal.EnforcePasswordResetComponentDataHolder;
@@ -95,6 +96,9 @@ public class PasswordPolicyUtilsTest {
     private ClaimManager claimManager;
 
     @Mock
+    private IdentityDataStoreService identityDataStoreService;
+
+    @Mock
     private org.wso2.carbon.user.core.UserRealm userRealm;
     private MockedStatic<IdentityTenantUtil> mockedStaticIdentityTenantUtil;
 
@@ -150,6 +154,7 @@ public class PasswordPolicyUtilsTest {
         EnforcePasswordResetComponentDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
         EnforcePasswordResetComponentDataHolder.getInstance().setRealmService(realmService);
         EnforcePasswordResetComponentDataHolder.getInstance().setRoleManagementService(roleManagementService);
+        EnforcePasswordResetComponentDataHolder.getInstance().setIdentityDataStoreService(identityDataStoreService);
     }
 
     @Test
@@ -263,6 +268,7 @@ public class PasswordPolicyUtilsTest {
         when(userRealm.getClaimManager()).thenReturn(claimManager);
         when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
+        when(identityDataStoreService.isUserStoreBasedIdentityDataStore()).thenReturn(false);
 
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.TRUE);
 
@@ -317,6 +323,7 @@ public class PasswordPolicyUtilsTest {
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
         when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
         when(roleManagementService.getRoleListOfUser(userId, tenantDomain)).thenReturn(getRoles(roles));
+        when(identityDataStoreService.isUserStoreBasedIdentityDataStore()).thenReturn(false);
 
         mockPasswordExpiryEnabled(identityGovernanceService, PasswordPolicyConstants.TRUE);
 
@@ -367,6 +374,7 @@ public class PasswordPolicyUtilsTest {
         when(userRealm.getClaimManager()).thenReturn(claimManager);
         when(abstractUserStoreManager.getUserIDFromUserName(tenantAwareUsername)).thenReturn(userId);
         when(UserCoreUtil.addDomainToName(any(), any())).thenReturn(tenantAwareUsername);
+        when(identityDataStoreService.isUserStoreBasedIdentityDataStore()).thenReturn(false);
 
         // Mock last password update time.
         Long updateTime = daysAgo != null ? System.currentTimeMillis() - getDaysTimeInMillis(daysAgo) : null;

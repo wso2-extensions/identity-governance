@@ -66,6 +66,10 @@ public class PasswordPolicyConstants {
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
 
+    // Time conversion constants.
+    public static final long WINDOWS_EPOCH_DIFF = 11644473600000L;
+    public static final long HUNDREDS_OF_NANOSECONDS = 10000L;
+
     public enum ErrorMessages {
         ERROR_WHILE_GETTING_USER_STORE_DOMAIN("80001",
                 "Error occurred while getting the user store domain."),
