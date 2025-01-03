@@ -57,6 +57,7 @@ public class PasswordPolicyConstants {
     public static final String PASSWORD_GRANT_POST_AUTHENTICATION_EVENT = "PASSWORD_GRANT_POST_AUTHENTICATION";
     public static final String AUTHENTICATION_STATUS = "authenticationStatus";
     public static final String BASIC_AUTHENTICATOR = "BasicAuthenticator";
+    public static final String PASSWORD_RESET_ENFORCER_AUTHENTICATOR = "password-reset-enforcer";
     public static final String FALSE = "false";
     public static final String TRUE = "true";
     public static final String CONFIRMATION_QUERY_PARAM = "&confirmation=";
@@ -64,6 +65,10 @@ public class PasswordPolicyConstants {
     public static final String PASSWORD_EXPIRED_MSG_QUERY_PARAM = "&passwordExpiredMsg=";
     public static final String PASSWORD_EXPIRY_RULES_PREFIX = "passwordExpiry.rule";
     public static final Integer MAX_PASSWORD_EXPIRY_RULE_VALUES = 5;
+
+    // Time conversion constants.
+    public static final long WINDOWS_EPOCH_DIFF = 11644473600000L;
+    public static final long HUNDREDS_OF_NANOSECONDS = 10000L;
 
     public enum ErrorMessages {
         ERROR_WHILE_GETTING_USER_STORE_DOMAIN("80001",

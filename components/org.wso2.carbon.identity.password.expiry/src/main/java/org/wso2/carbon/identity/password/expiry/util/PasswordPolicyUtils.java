@@ -44,6 +44,8 @@ import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.jdbc.UniqueIDJDBCUserStoreManager;
+import org.wso2.carbon.user.core.ldap.UniqueIDActiveDirectoryUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -60,7 +62,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.CONNECTOR_CONFIG_NAME;
+import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.HUNDREDS_OF_NANOSECONDS;
 import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.PASSWORD_RESET_PAGE;
+import static org.wso2.carbon.identity.password.expiry.constants.PasswordPolicyConstants.WINDOWS_EPOCH_DIFF;
 
 /**
  * Utilities for password change enforcing.
@@ -609,6 +613,11 @@ public class PasswordPolicyUtils {
                             getLastPasswordUpdateTime(userStoreManager, claimURI, tenantAwareUsername);
                 }
             }
+            // Check if the Identity datastore is set to Active Directory and do the conversion accordingly.
+            if (!lastPasswordUpdatedTime.isEmpty() &&
+                    isUserStoreBasedIdentityDataStore() && isActiveDirectoryUserStore(userStoreManager)) {
+                lastPasswordUpdatedTime = convertWindowsFileTimeToUnixTime(lastPasswordUpdatedTime);
+            }
         } catch (UserStoreException e) {
             throw new PostAuthenticationFailedException(
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_CLAIM_MAPPINGS.getCode(),
@@ -710,5 +719,58 @@ public class PasswordPolicyUtils {
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_BUILDING_PASSWORD_RESET_PAGE_URL.getMessage());
         }
+    }
+
+    /**
+     * Check whether the user store is based on identity data store.
+     *
+     * @return true if the user store is based on identity data store.
+     */
+    public static boolean isUserStoreBasedIdentityDataStore() {
+
+        return EnforcePasswordResetComponentDataHolder.getInstance().getIdentityDataStoreService()
+                .isUserStoreBasedIdentityDataStore();
+    }
+
+    /**
+     * Check whether the user store is based on Active Directory.
+     *
+     * @param userStoreManager The user store manager.
+     * @return true if the user store is based on Active Directory.
+     */
+    public static boolean isActiveDirectoryUserStore(UserStoreManager userStoreManager) {
+
+        return userStoreManager instanceof UniqueIDJDBCUserStoreManager
+                && userStoreManager.getSecondaryUserStoreManager() instanceof UniqueIDActiveDirectoryUserStoreManager;
+    }
+
+    /**
+     * Converts a Windows FileTime string to Unix time in milliseconds.
+     *
+     * Windows FileTime is a 64-bit value representing the number of 100-nanosecond
+     * intervals since January 1, 1601 (UTC).
+     *
+     * The conversion to Unix time (milliseconds since January 1, 1970, UTC) involves two steps:
+     *
+     * 1. Convert the Windows FileTime value from 100-nanosecond intervals to milliseconds:
+     *    - This is done by dividing the FileTime value by 10,000 (HUNDREDS_OF_NANOSECONDS).
+     *    - This converts the FileTime value from 100-nanosecond intervals to milliseconds.
+     *
+     * 2. Adjust for the difference in epoch start dates between Windows and Unix:
+     *    - Windows epoch starts on January 1, 1601, while Unix epoch starts on January 1, 1970.
+     *    - The difference between these two epochs is 11644473600000 milliseconds (WINDOWS_EPOCH_DIFF).
+     *    - Subtracting this value aligns the converted milliseconds with the Unix epoch.
+     *
+     * The resulting value represents the number of milliseconds since the Unix epoch,
+     * which is returned as a string.
+     *
+     * @param windowsFileTime A string representing the Windows FileTime to be converted.
+     * @return A string representing the Unix time in milliseconds.
+     */
+    public static String convertWindowsFileTimeToUnixTime(String windowsFileTime) {
+
+        long fileTime = Long.parseLong(windowsFileTime);
+        long millisSinceEpoch = (fileTime / HUNDREDS_OF_NANOSECONDS) - WINDOWS_EPOCH_DIFF;
+        return String.valueOf(millisSinceEpoch);
     }
 }
