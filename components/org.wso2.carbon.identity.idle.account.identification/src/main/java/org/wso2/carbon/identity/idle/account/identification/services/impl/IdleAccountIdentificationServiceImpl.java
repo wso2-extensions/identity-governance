@@ -93,6 +93,51 @@ public class IdleAccountIdentificationServiceImpl implements IdleAccountIdentifi
     }
 
     /**
+     * Retrieve inactive users if the account is disabled or non-disabled depending on the value for isDisabled.
+     *
+     * @param inactiveAfter Inactive after date.
+     * @param excludeBefore Exclude before date.
+     * @param tenantDomain  Tenant domain.
+     * @param isDisabled    isDisabled.
+     * @return List of inactive users.
+     * @throws IdleAccountIdentificationException Idle account identification exception.
+     */
+    public List<InactiveUserModel> filterInactiveUsersIfDisabled(LocalDateTime inactiveAfter,
+                                                                 LocalDateTime excludeBefore, String tenantDomain,
+                                                                 boolean isDisabled)
+            throws IdleAccountIdentificationException {
+
+        List<InactiveUserModel> inactiveUsers = new ArrayList<>();
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        String lastLoginTime = Long.toString(inactiveAfter.toEpochSecond(ZoneOffset.UTC));
+        List<String> usernames;
+        try {
+            if (excludeBefore == null) {
+                usernames = IdleAccountIdentificationDataHolder.getInstance().getIdentityDataStoreService()
+                        .getUserNamesLessThanClaimWithNestedClaim(
+                                IdleAccIdentificationConstants.LAST_LOGIN_TIME_CLAIM, lastLoginTime,
+                                IdleAccIdentificationConstants.ACCOUNT_STATE_CLAIM_URI,
+                                IdleAccIdentificationConstants.ACCOUNT_STATE_DISABLED, tenantId, isDisabled);
+            } else {
+                String excludeDateEpoch = Long.toString(excludeBefore.toEpochSecond(ZoneOffset.UTC));
+                usernames = IdleAccountIdentificationDataHolder.getInstance().getIdentityDataStoreService()
+                        .getUserNamesBetweenGivenClaimsWithNestedClaim(
+                                IdleAccIdentificationConstants.LAST_LOGIN_TIME_CLAIM, excludeDateEpoch, lastLoginTime,
+                                IdleAccIdentificationConstants.ACCOUNT_STATE_CLAIM_URI,
+                                IdleAccIdentificationConstants.ACCOUNT_STATE_DISABLED, tenantId, isDisabled);
+            }
+            if (!usernames.isEmpty()) {
+                inactiveUsers = buildInactiveUsers(usernames);
+            }
+        } catch (IdentityException e) {
+            IdleAccIdentificationConstants.ErrorMessages errorEnum =
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB;
+            throw new IdleAccountIdentificationServerException(errorEnum.getCode(), errorEnum.getMessage());
+        }
+        return inactiveUsers;
+    }
+
+    /**
      * Build a list of inactive users.
      *
      * @param usernames        list of usernames.
