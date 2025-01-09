@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 
 import java.util.Arrays;
@@ -73,8 +74,11 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
 
         try {
             String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            String domainQualifiedUserName =
+                    ((AbstractUserStoreManager) userStoreManager).getUser(
+                            null, username).getDomainQualifiedUsername();
             Optional<Long> passwordExpiryTime =
-                    PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, username);
+                    PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, domainQualifiedUserName);
             passwordExpiryTime.ifPresent(expiryTime -> claimMap.put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM,
                     String.valueOf(expiryTime)));
         } catch (ExpiredPasswordIdentificationException e) {
