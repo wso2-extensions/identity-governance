@@ -265,8 +265,8 @@ public class PasswordPolicyUtils {
                     List<String> roleIdsOfGroups = getRoleIdsOfGroups(new ArrayList<>(userGroupIds), tenantDomain);
 
                     List<RoleBasicInfo> userRoles = getUserRoles(tenantDomain, userId);
-                    Set<String> userRoleIds =
-                            userRoles.stream().map(RoleBasicInfo::getId).collect(Collectors.toSet());
+                    Set<String> userRoleIds = userRoles.stream().map(RoleBasicInfo::getId).filter(Objects::nonNull)
+                                    .collect(Collectors.toSet());
                     userRoleIds.addAll(roleIdsOfGroups);
                     fetchedUserAttributes.put(PasswordExpiryRuleAttributeEnum.ROLES, userRoleIds);
                     break;

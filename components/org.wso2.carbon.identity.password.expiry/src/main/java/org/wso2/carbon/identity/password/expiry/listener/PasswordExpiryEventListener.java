@@ -75,8 +75,8 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
         try {
             String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
             String domainQualifiedUserName =
-                    ((AbstractUserStoreManager) userStoreManager).getUser(
-                            null, username).getDomainQualifiedUsername();
+                    ((AbstractUserStoreManager) userStoreManager).getUser(null, username)
+                            .getDomainQualifiedUsername();
             Optional<Long> passwordExpiryTime =
                     PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, domainQualifiedUserName);
             passwordExpiryTime.ifPresent(expiryTime -> claimMap.put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM,
