@@ -60,7 +60,13 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
                                                   Map<String, String> claimMap, UserStoreManager userStoreManager)
             throws UserStoreException {
 
-        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM)) {
+        /*
+         * The passwordExpiryTime is a dynamically calculated value. It is only computed and added to the claims map
+         * if explicitly requested by the user via the claims list. This computation is also skipped during the
+         * authentication flow to avoid unnecessary processing.
+         */
+        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM) ||
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername() == null) {
             return true;
         }
         log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
