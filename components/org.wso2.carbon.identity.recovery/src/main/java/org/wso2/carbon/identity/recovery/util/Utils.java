@@ -1066,11 +1066,13 @@ public class Utils {
      */
     public static User buildUser(String username, String tenantDomain) {
 
-        String[] parts = username.split(",");
+        /* The User Account Recovery process can identify multiple users that match the specified conditions.
+            In such cases, the usernames are represented as a comma-separated list. */
+        String[] usernameSegments = username.split(",");
         User user = new User();
         user.setTenantDomain(tenantDomain);
 
-        for (String part : parts) {
+        for (String part : usernameSegments) {
             String domainFreeName = UserCoreUtil.removeDomainFromName(part);
             if (user.getUserName() != null) {
                 user.setUserName(user.getUserName() + "," + domainFreeName);
