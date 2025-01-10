@@ -355,11 +355,14 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
         String combinedUsernames = user.getUserName();
         String[] usernames = combinedUsernames.split(",");
+        int userIndex = 0;
         for (String username : usernames) {
+            String userStoreDomain = user.getUserStoreDomain().split(",")[userIndex];
+            userIndex++;
             HashMap<String, Object> properties = new HashMap<>();
             properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
             properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
             properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
             if (metaProperties != null) {
                 for (String key : metaProperties.keySet()) {

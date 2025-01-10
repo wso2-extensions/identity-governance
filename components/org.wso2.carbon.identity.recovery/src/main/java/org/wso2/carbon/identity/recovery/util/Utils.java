@@ -1066,10 +1066,25 @@ public class Utils {
      */
     public static User buildUser(String username, String tenantDomain) {
 
+        String[] parts = username.split(",");
         User user = new User();
-        user.setUserName(UserCoreUtil.removeDomainFromName(username));
         user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
+
+        for (String part : parts) {
+            String domainFreeName = UserCoreUtil.removeDomainFromName(part);
+            if (user.getUserName() != null) {
+                user.setUserName(user.getUserName() + "," + domainFreeName);
+            } else {
+                user.setUserName(domainFreeName);
+            }
+
+            String userStoreDomain = IdentityUtil.extractDomainFromName(part);
+            if (user.getUserStoreDomain() != null) {
+                user.setUserStoreDomain(user.getUserStoreDomain() + "," + userStoreDomain);
+            } else {
+                user.setUserStoreDomain(userStoreDomain);
+            }
+        }
         return user;
     }
 
