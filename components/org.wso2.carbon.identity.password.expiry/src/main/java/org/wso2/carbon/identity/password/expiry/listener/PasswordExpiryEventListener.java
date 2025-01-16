@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.password.expiry.models.PasswordExpiryRule;
 import org.wso2.carbon.identity.password.expiry.util.PasswordPolicyUtils;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 
 import java.util.Arrays;
@@ -60,15 +61,24 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
                                                   Map<String, String> claimMap, UserStoreManager userStoreManager)
             throws UserStoreException {
 
-        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM)) {
+        /*
+         * The passwordExpiryTime is a dynamically calculated value. It is only computed and added to the claims map
+         * if explicitly requested by the user via the claims list. This computation is also skipped during the
+         * authentication flow to avoid unnecessary processing.
+         */
+        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM) ||
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername() == null) {
             return true;
         }
         log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
 
         try {
             String userTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            String domainQualifiedUserName =
+                    ((AbstractUserStoreManager) userStoreManager).getUser(null, username)
+                            .getDomainQualifiedUsername();
             Optional<Long> passwordExpiryTime =
-                    PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, username);
+                    PasswordPolicyUtils.getUserPasswordExpiryTime(userTenantDomain, domainQualifiedUserName);
             passwordExpiryTime.ifPresent(expiryTime -> claimMap.put(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM,
                     String.valueOf(expiryTime)));
         } catch (ExpiredPasswordIdentificationException e) {

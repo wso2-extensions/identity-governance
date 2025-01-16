@@ -32,7 +32,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.user.core.UserStoreException;
-import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.User;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 
 import java.util.Collections;
@@ -58,13 +59,15 @@ public class PasswordExpiryEventListenerTest {
     @Mock
     PrivilegedCarbonContext privilegedCarbonContext;
     @Mock
-    UserStoreManager userStoreManager;
+    AbstractUserStoreManager userStoreManager;
+    @Mock
+    User user;
 
     private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
     private MockedStatic<PasswordPolicyUtils> mockedPasswordPolicyUtils;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws UserStoreException {
 
         MockitoAnnotations.openMocks(this);
         passwordExpiryEventListener = new PasswordExpiryEventListener();
@@ -73,6 +76,9 @@ public class PasswordExpiryEventListenerTest {
                 .thenReturn(privilegedCarbonContext);
 
         when(privilegedCarbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+        when(privilegedCarbonContext.getUsername()).thenReturn("USERNAME");
+
+        when(userStoreManager.getUser(any(), anyString())).thenReturn(user);
     }
 
     @BeforeClass
@@ -103,6 +109,8 @@ public class PasswordExpiryEventListenerTest {
         Map<String, String> claimMap = new HashMap<>();
         String profileName = "default";
 
+        when(user.getDomainQualifiedUsername()).thenReturn(username);
+
         // Case 1: When claims contains PASSWORD_EXPIRY_TIME_CLAIM.
         claims = new String[]{PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM};
 
@@ -131,6 +139,23 @@ public class PasswordExpiryEventListenerTest {
         Map<String, String> claimMap = new HashMap<>();
         String profileName = "default";
         claims = new String[]{"claim1", "claim2"};
+
+        when(user.getDomainQualifiedUsername()).thenReturn(username);
+
+        passwordExpiryEventListener.doPostGetUserClaimValues(username, claims, profileName, claimMap, userStoreManager);
+        Assert.assertFalse(claimMap.containsKey(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM));
+    }
+
+    @Test
+    public void testDoPostGetUserClaimValuesInAuthenticationFlow() throws UserStoreException {
+
+        String username = "testUser";
+        String[] claims;
+        Map<String, String> claimMap = new HashMap<>();
+        String profileName = "default";
+        claims = new String[]{"claim1", "claim2"};
+
+        when(privilegedCarbonContext.getUsername()).thenReturn(null);
 
         passwordExpiryEventListener.doPostGetUserClaimValues(username, claims, profileName, claimMap, userStoreManager);
         Assert.assertFalse(claimMap.containsKey(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM));
