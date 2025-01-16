@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020, WSO2 LLC. (http://www.wso2.org)
+ * Copyright (c) 2020-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.internal.service.impl.username;
 
 import org.apache.commons.collections.MapUtils;
@@ -355,11 +356,23 @@ public class UsernameRecoveryManagerImpl implements UsernameRecoveryManager {
 
         String combinedUsernames = user.getUserName();
         String[] usernames = combinedUsernames.split(",");
+        String[] userStoreDomains = null;
+        if (user.getUserStoreDomain() != null) {
+            userStoreDomains = user.getUserStoreDomain().split(",");
+        }
+
+        int userIndex = 0;
         for (String username : usernames) {
             HashMap<String, Object> properties = new HashMap<>();
             properties.put(IdentityEventConstants.EventProperty.USER_NAME, username);
             properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+
+            String userStoreDomain = user.getUserStoreDomain();
+            if (userStoreDomains != null && userStoreDomains.length > userIndex) {
+                userStoreDomain = userStoreDomains[userIndex];
+            }
+            userIndex++;
+            properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, userStoreDomain);
             properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
             if (metaProperties != null) {
                 for (String key : metaProperties.keySet()) {

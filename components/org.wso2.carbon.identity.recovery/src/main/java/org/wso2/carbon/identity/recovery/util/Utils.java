@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -1066,10 +1066,27 @@ public class Utils {
      */
     public static User buildUser(String username, String tenantDomain) {
 
+        /* The User Account Recovery process can identify multiple users that match the specified conditions.
+            In such cases, the usernames are represented as a comma-separated list. */
+        String[] usernameSegments = username.split(",");
         User user = new User();
-        user.setUserName(UserCoreUtil.removeDomainFromName(username));
         user.setTenantDomain(tenantDomain);
-        user.setUserStoreDomain(IdentityUtil.extractDomainFromName(username));
+
+        for (String part : usernameSegments) {
+            String domainFreeName = UserCoreUtil.removeDomainFromName(part);
+            if (user.getUserName() != null) {
+                user.setUserName(user.getUserName() + "," + domainFreeName);
+            } else {
+                user.setUserName(domainFreeName);
+            }
+
+            String userStoreDomain = IdentityUtil.extractDomainFromName(part);
+            if (user.getUserStoreDomain() != null) {
+                user.setUserStoreDomain(user.getUserStoreDomain() + "," + userStoreDomain);
+            } else {
+                user.setUserStoreDomain(userStoreDomain);
+            }
+        }
         return user;
     }
 

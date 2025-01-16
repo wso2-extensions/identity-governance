@@ -138,7 +138,7 @@ public class UserAccountRecoveryManager {
             NotificationChannelDTO[] notificationChannelDTOS = null;
 
             for (org.wso2.carbon.user.core.common.User resultedUser : resultedUserList) {
-                username = resultedUser.getUsername();
+                username = resultedUser.getDomainQualifiedUsername();
                 User user = Utils.buildUser(username, tenantDomain);
 
                 try {
