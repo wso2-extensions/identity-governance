@@ -172,8 +172,13 @@ public class UserAccountRecoveryManager {
                         user, recoveryScenario, RecoverySteps.RESEND_CONFIRMATION_CODE);
 
                 notificationChannelList = getNotificationChannelListForRecovery(notificationChannels);
-                recoveryCode = UUID.randomUUID().toString();
                 recoveryFlowId = UUID.randomUUID().toString();
+                // Skip recovery code generation for question based recovery as it is not required.
+                if (StringUtils.equals(QUESTION_BASED_PWD_RECOVERY.name(), recoveryScenario.name())) {
+                    return buildUserRecoveryInformationResponseDTO(username, recoveryFlowId, null,
+                            notificationChannelDTOS);
+                }
+                recoveryCode = UUID.randomUUID().toString();
 
                 if (Utils.reIssueExistingConfirmationCode(recoveryDataDO,
                         NotificationChannels.EMAIL_CHANNEL.getChannelType())) {
