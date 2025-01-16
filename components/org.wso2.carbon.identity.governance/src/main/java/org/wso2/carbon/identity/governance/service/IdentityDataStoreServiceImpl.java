@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -177,6 +177,31 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                                                                int tenantId) throws IdentityException {
 
         return identityDataStore.getUserNamesBetweenProvidedClaimValues(claimURI, startValue, endValue, tenantId);
+    }
+
+    @Override
+    public List<String> getUserNamesLessThanClaimWithNestedClaim(String claimURI,
+                                                                 String claimValue,
+                                                                 String nestedClaimURI,
+                                                                 String nestedClaimValue,
+                                                                 int tenantId,
+                                                                 boolean isIncluded)
+            throws IdentityException {
+
+        return identityDataStore.getUserNamesLessThanClaimWithNestedClaim(claimURI, claimValue,
+                nestedClaimURI, nestedClaimValue, tenantId, isIncluded);
+    }
+
+    @Override
+    public List<String> getUserNamesBetweenGivenClaimsWithNestedClaim(String claimURI, String startValue,
+                                                                    String endValue,
+                                                                    String nestedClaimURI,
+                                                                    String nestedClaimValue, int tenantId,
+                                                                    boolean isIncluded)
+            throws IdentityException {
+
+        return identityDataStore.getUserNamesBetweenGivenClaimsWithNestedClaim(claimURI, startValue,
+                endValue, nestedClaimURI, nestedClaimValue, tenantId, isIncluded);
     }
 
     @Override

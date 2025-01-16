@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance.store;
@@ -463,6 +465,82 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         }
     }
 
+    @Override
+    public List<String> getUserNamesLessThanClaimWithNestedClaim(String claimURI, String claimValue,
+                                                                 String nestedClaimURI,
+                                                                 String nestedClaimValue, int tenantId,
+                                                                 boolean isIncluded)
+            throws IdentityException {
+
+        String sqlStmt = SQLQuery.FILTER_USERS_BY_DATA_KEY_LESS_THAN_DATA_VALUE;
+        String subSqlStmt = SQLQuery.LIST_USERS_FROM_CLAIM;
+        if (isIncluded) {
+            sqlStmt = sqlStmt + " AND USER_NAME IN (" + subSqlStmt + ")";
+        } else {
+            sqlStmt = sqlStmt + " AND USER_NAME NOT IN (" + subSqlStmt + ")";
+        }
+
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
+                prepStmt.setString(1, claimURI);
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, claimValue);
+                prepStmt.setString(4, nestedClaimURI);
+                prepStmt.setString(5, nestedClaimValue);
+                prepStmt.setInt(6, tenantId);
+                prepStmt.setString(7, "%");
+                try (ResultSet resultSet = prepStmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        String username = resultSet.getString(1);
+                        userNames.add(username);
+                    }
+                }
+                return userNames;
+            }
+        } catch (SQLException e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+    }
+
+    @Override
+    public List<String> getUserNamesBetweenGivenClaimsWithNestedClaim(String claimURI, String startValue,
+                                                                    String endValue,
+                                                                    String nestedClaimURI,
+                                                                    String nestedClaimValue, int tenantId,
+                                                                    boolean isIncluded)
+            throws IdentityException {
+
+        String sqlStmt = SQLQuery.FILTER_USERS_BY_DATA_KEY_LESS_THAN_AND_GREATER_THAN_DATA_VALUES;
+        String subSqlStmt = SQLQuery.LIST_USERS_FROM_CLAIM;
+        if (isIncluded) {
+            sqlStmt = sqlStmt + " AND USER_NAME IN (" + subSqlStmt + ")";
+        } else {
+            sqlStmt = sqlStmt + " AND USER_NAME NOT IN (" + subSqlStmt + ")";
+        }
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+            try (PreparedStatement prepStmt = connection.prepareStatement(sqlStmt)) {
+                prepStmt.setString(1, claimURI);
+                prepStmt.setInt(2, tenantId);
+                prepStmt.setString(3, endValue);
+                prepStmt.setString(4, startValue);
+                prepStmt.setString(5, nestedClaimURI);
+                prepStmt.setString(6, nestedClaimValue);
+                prepStmt.setInt(7, tenantId);
+                prepStmt.setString(8, "%");
+                try (ResultSet resultSet = prepStmt.executeQuery()) {
+                    while (resultSet.next()) {
+                        String username = resultSet.getString(1);
+                        userNames.add(username);
+                    }
+                }
+                return userNames;
+            }
+        } catch (SQLException e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+    }
 
     private void populatePrepareStatement(SqlBuilder sqlBuilder, PreparedStatement prepStmt, int startIndex,
                                           int endIndex) throws SQLException {

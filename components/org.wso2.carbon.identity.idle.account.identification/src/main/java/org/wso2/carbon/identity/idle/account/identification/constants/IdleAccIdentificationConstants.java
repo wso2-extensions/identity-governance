@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -26,6 +26,8 @@ public class IdleAccIdentificationConstants {
     public static final String IDLE_ACC_IDENTIFICATION_SERVICE_ERROR_PREFIX = "IDLE_ACC-";
 
     public static final String LAST_LOGIN_TIME_CLAIM = "http://wso2.org/claims/identity/lastLogonTime";
+    public static final String ACCOUNT_STATE_CLAIM_URI = "http://wso2.org/claims/identity/accountState";
+    public static final String ACCOUNT_STATE_DISABLED = "DISABLED";
 
     /**
      * Class containing SQL queries.

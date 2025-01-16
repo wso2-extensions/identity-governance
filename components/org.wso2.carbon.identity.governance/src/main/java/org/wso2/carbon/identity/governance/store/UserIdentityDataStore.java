@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance.store;
@@ -157,6 +159,58 @@ public abstract class UserIdentityDataStore {
      */
     public List<String> getUserNamesBetweenProvidedClaimValues(String claimURI, String startValue, String endValue,
                                                                int tenantId) throws IdentityException {
+
+        // Return an immutable empty list if subclasses do not have any overrides.
+        return Collections.emptyList();
+    }
+
+    /**
+     * Get the list of usernames who have the claim value less than the provided claim value for a given claim URI
+     * and include or exclude the users with the boolean isIncluded
+     * based on the nested claim value for a given nested claim URI.
+     *
+     * @param claimURI         Claim URI.
+     * @param claimValue       Claim value.
+     * @param nestedClaimURI   Nested claim URI.
+     * @param nestedClaimValue Nested claim value.
+     * @param tenantId         Tenant ID.
+     * @param isIncluded       Include or exclude the users based on the nested claim.
+     * @return List of usernames.
+     * @throws IdentityException Identity exception.
+     */
+    public List<String> getUserNamesLessThanClaimWithNestedClaim(String claimURI,
+                                                                 String claimValue,
+                                                                 String nestedClaimURI,
+                                                                 String nestedClaimValue,
+                                                                 int tenantId,
+                                                                 boolean isIncluded) throws IdentityException {
+
+        // Return an immutable empty list if subclasses do not have any overrides.
+        return Collections.emptyList();
+    }
+
+    /**
+     * Get the list of usernames who have the claim value between the provided claim values for a given claim URI
+     * and include or exclude the users with the boolean isIncluded
+     * based on the nested claim value for a given nested claim URI.
+     *
+     * @param claimURI         Claim URI.
+     * @param startValue       Start value.
+     * @param endValue         End value.
+     * @param nestedClaimURI   Nested claim URI.
+     * @param nestedClaimValue Nested claim value.
+     * @param tenantId         Tenant ID.
+     * @param isIncluded       Include or exclude the users based on the nested claim.
+     * @return List of usernames.
+     * @throws IdentityException Identity exception.
+     */
+    public List<String> getUserNamesBetweenGivenClaimsWithNestedClaim(String claimURI,
+                                                                    String startValue,
+                                                                    String endValue,
+                                                                    String nestedClaimURI,
+                                                                    String nestedClaimValue,
+                                                                    int tenantId,
+                                                                    boolean isIncluded) throws IdentityException {
 
         // Return an immutable empty list if subclasses do not have any overrides.
         return Collections.emptyList();

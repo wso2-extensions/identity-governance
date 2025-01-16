@@ -157,4 +157,29 @@ public class IdleAccountIdentificationServiceImplTest {
 
         assertEquals(inactiveUsers.size(), expected);
     }
+
+    @DataProvider
+    public Object[][] getDatesAndFilter() {
+
+        return new Object[][]{
+                {LocalDate.parse("2023-01-31").atStartOfDay(), null, true, 3},
+                {LocalDate.parse("2023-01-31").atStartOfDay(), null, false, 2},
+                {LocalDate.parse("2023-01-31").atStartOfDay(), LocalDate.parse("2023-01-15").atStartOfDay(), true, 2},
+                {LocalDate.parse("2023-01-31").atStartOfDay(), LocalDate.parse("2023-01-15").atStartOfDay(), false, 1}
+        };
+    }
+
+    @Test(dataProvider = "getDatesAndFilter")
+    public void testFilterInactiveUsersIfDisabled(LocalDateTime inactiveAfter, LocalDateTime excludeBefore,
+                                                  boolean isDisabled, int expected) throws Exception {
+
+        IdleAccountIdentificationServiceImpl idleAccountIdentificationService =
+                spy(IdleAccountIdentificationServiceImpl.class);
+        doReturn(SAMPLE_USER_ID).when(idleAccountIdentificationService).fetchUserId(anyString());
+
+        List<InactiveUserModel> inactiveUsers = idleAccountIdentificationService.
+                filterInactiveUsersIfDisabled(inactiveAfter, excludeBefore, TENANT_DOMAIN, isDisabled);
+
+        assertEquals(inactiveUsers.size(), expected);
+    }
 }
