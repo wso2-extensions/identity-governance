@@ -85,6 +85,17 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
                 authenticationContext.getCurrentAuthenticatedIdPs().get(PasswordPolicyConstants.AUTHENTICATOR_TYPE)
                         .getAuthenticators();
 
+        /*
+            Skip the Password Reset Authenticator Handler when the Password Reset Enforcer Authenticator is in the
+            authenticators list, as password expiration is already checked by the Password Reset Enforcer Authenticator.
+         */
+        boolean isPostAuthenticationHandlerSkipped = authenticators.stream()
+                .anyMatch(authenticator -> PasswordPolicyConstants.PASSWORD_RESET_ENFORCER_AUTHENTICATOR
+                        .equals(authenticator.getName()));
+        if (isPostAuthenticationHandlerSkipped) {
+            return PostAuthnHandlerFlowStatus.SUCCESS_COMPLETED;
+        }
+
         for (AuthenticatorConfig authenticator : authenticators) {
             if (PasswordPolicyConstants.BASIC_AUTHENTICATOR.equals(authenticator.getName())) {
                 if (!authenticatedUser.isFederatedUser()) {
