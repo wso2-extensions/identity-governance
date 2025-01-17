@@ -43,6 +43,7 @@ import org.wso2.carbon.consent.mgt.core.model.ReceiptInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerClientException;
@@ -238,6 +239,7 @@ public class UserSelfRegistrationManagerTest {
     private final String TEST_USERSTORE_DOMAIN = "PRIMARY";
     private final String TEST_SECONDARY_USERSTORE_DOMAIN = "SECONDARY";
     private final String TEST_USER_NAME = "dummyUser";
+    private final String TEST_USER_ID = "dummyUserId";
     private final String TEST_INVALID_USER_NAME = "IS";
     private final String TEST_CLAIM_URI = "ttp://wso2.org/claims/emailaddress";
     private final String TEST_CLAIM_VALUE = "dummyuser@wso2.com";
@@ -1149,7 +1151,11 @@ public class UserSelfRegistrationManagerTest {
 
         User user = getUser();
         mockConfigurations("true", "true");
-        when(userStoreManager.isExistingRole(eq(IdentityRecoveryConstants.SELF_SIGNUP_ROLE))).thenReturn(true);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(userStoreManager);
+        when(abstractUserStoreManager.isExistingRole(eq(IdentityRecoveryConstants.SELF_SIGNUP_ROLE))).thenReturn(true);
+        when(abstractUserStoreManager.addUserWithID(anyString(), anyString(), any(), any(), isNull()))
+            .thenReturn(getRegisteredUser());
         when(privilegedCarbonContext.getOSGiService(any(), isNull())).thenReturn(notificationChannelManager);
         when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
                 .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
@@ -1161,7 +1167,9 @@ public class UserSelfRegistrationManagerTest {
 
         User registeredUser = notificationResponseBean.getUser();
         assertEquals(user.getUserName(), registeredUser.getUserName());
-        verify(userStoreManager).addUser(anyString(), anyString(), any(), any(), isNull());
+        assertTrue(registeredUser instanceof ResolvedUser);
+        assertEquals(((ResolvedUser) registeredUser).getUserId(), TEST_USER_ID);
+        verify(abstractUserStoreManager).addUserWithID(anyString(), anyString(), any(), any(), isNull());
         verify(consentManger).addConsent(any());
         verify(identityEventService, atLeastOnce()).handleEvent(any());
     }
@@ -1172,6 +1180,10 @@ public class UserSelfRegistrationManagerTest {
         User user = new User();
         user.setUserName(TEST_USER_NAME);
         Property property = new Property(IdentityRecoveryConstants.Consent.CONSENT, consentData);
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(userStoreManager);
+        when(abstractUserStoreManager.addUserWithID(anyString(), anyString(), any(), any(), isNull()))
+                .thenReturn(getRegisteredUser());
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
@@ -1192,7 +1204,10 @@ public class UserSelfRegistrationManagerTest {
             assertEquals(IdentityRecoveryConstants.SuccessEvents
                             .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_EXTERNAL_VERIFICATION.getCode(),
                     notificationResponseBean.getCode());
-            verify(userStoreManager).addUser(anyString(), anyString(), any(), any(), isNull());
+            User registeredUser = notificationResponseBean.getUser();
+            verify(abstractUserStoreManager).addUserWithID(anyString(), anyString(), any(), any(), isNull());
+            assertTrue(registeredUser instanceof ResolvedUser);
+        assertEquals(((ResolvedUser) registeredUser).getUserId(), TEST_USER_ID);
             verify(consentManger).addConsent(any());
             verify(identityEventService, atLeastOnce()).handleEvent(any());
         }
@@ -1210,6 +1225,10 @@ public class UserSelfRegistrationManagerTest {
                 .thenReturn("false");
         when(consentUtilityService.filterPIIsFromReceipt(any(), any())).thenReturn(
                 new HashSet<>(Arrays.asList(emailVerifiedClaimURI)));
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(userStoreManager);
+        when(abstractUserStoreManager.addUserWithID(anyString(), anyString(), any(), any(), isNull()))
+                .thenReturn(getRegisteredUser());
 
         try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
             mockedUtils.when(() -> Utils.getSignUpConfigs(eq(ACCOUNT_LOCK_ON_CREATION), anyString()))
@@ -1235,7 +1254,10 @@ public class UserSelfRegistrationManagerTest {
             assertEquals(IdentityRecoveryConstants.SuccessEvents
                             .SUCCESS_STATUS_CODE_SUCCESSFUL_USER_CREATION_WITH_VERIFIED_CHANNEL.getCode(),
                     notificationResponseBean.getCode());
-            verify(userStoreManager).addUser(anyString(), anyString(), any(), any(), isNull());
+            User registeredUser = notificationResponseBean.getUser();
+            verify(abstractUserStoreManager).addUserWithID(anyString(), anyString(), any(), any(), isNull());
+            assertTrue(registeredUser instanceof ResolvedUser);
+            assertEquals(((ResolvedUser) registeredUser).getUserId(), TEST_USER_ID);
             verify(consentManger).addConsent(any());
             verify(identityEventService, atLeastOnce()).handleEvent(any());
         }
@@ -1776,6 +1798,16 @@ public class UserSelfRegistrationManagerTest {
         user.setUserName(TEST_USER_NAME);
         user.setUserStoreDomain(TEST_USERSTORE_DOMAIN);
         user.setTenantDomain(TEST_TENANT_DOMAIN_NAME);
+        return user;
+    }
+
+    private org.wso2.carbon.user.core.common.User getRegisteredUser() {
+
+        org.wso2.carbon.user.core.common.User user = new org.wso2.carbon.user.core.common.User();
+        user.setUsername(TEST_USER_NAME);
+        user.setUserStoreDomain(TEST_USERSTORE_DOMAIN);
+        user.setTenantDomain(TEST_TENANT_DOMAIN_NAME);
+        user.setUserID(TEST_USER_ID);
         return user;
     }
 
