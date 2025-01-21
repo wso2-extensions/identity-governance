@@ -499,6 +499,10 @@ definitions:
         type: string
         example: "EMAIL"
         description: Account confirmation notification sent channel.
+      userId:
+        type: string
+        example: "USER-ID"
+        description: User Id.
 
   #-----------------------------------------------------
   # The SelfRegistrationUser  Object

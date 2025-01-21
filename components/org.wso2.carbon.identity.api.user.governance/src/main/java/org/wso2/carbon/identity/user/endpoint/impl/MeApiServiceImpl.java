@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -224,6 +225,15 @@ public class MeApiServiceImpl extends MeApiService {
         successDTO.setCode(notificationResponseBean.getCode());
         successDTO.setMessage(notificationResponseBean.getMessage());
         successDTO.setNotificationChannel(notificationResponseBean.getNotificationChannel());
+
+        // Add userId in response to support external system integration and data residency requirements.
+        if (notificationResponseBean.getUser() instanceof ResolvedUser) {
+            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+            if (userId != null) {
+                successDTO.setUserId(userId);
+            }
+        }
+        
         return successDTO;
     }
 
@@ -242,6 +252,15 @@ public class MeApiServiceImpl extends MeApiService {
         successDTO.setMessage(notificationResponseBean.getMessage());
         successDTO.setNotificationChannel(notificationResponseBean.getNotificationChannel());
         successDTO.setConfirmationCode(notificationResponseBean.getRecoveryId());
+
+        // Add userId in response to support external system integration and data residency requirements.
+        if (notificationResponseBean.getUser() instanceof ResolvedUser) {
+            String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+            if (userId != null) {
+                successDTO.setUserId(userId);
+            }
+        }
+        
         return successDTO;
     }
 

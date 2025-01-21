@@ -15,12 +15,11 @@
  */
 package org.wso2.carbon.identity.user.endpoint.dto;
 
-import io.swagger.annotations.*;
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 @ApiModel(description = "")
 public class SuccessfulUserCreationDTO {
@@ -33,6 +32,9 @@ public class SuccessfulUserCreationDTO {
 
     @Valid 
     private String notificationChannel = null;
+
+    @Valid 
+    private String userId = null;
 
     /**
     * Status code of the operation.
@@ -70,6 +72,18 @@ public class SuccessfulUserCreationDTO {
         this.notificationChannel = notificationChannel;
     }
 
+    /**
+    * User Id.
+    **/
+    @ApiModelProperty(value = "User Id.")
+    @JsonProperty("userId")
+    public String getUserId() {
+        return userId;
+    }
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
     @Override
     public String toString() {
 
@@ -79,6 +93,7 @@ public class SuccessfulUserCreationDTO {
         sb.append("    code: ").append(code).append("\n");
         sb.append("    message: ").append(message).append("\n");
         sb.append("    notificationChannel: ").append(notificationChannel).append("\n");
+        sb.append("    userId: ").append(userId).append("\n");
         
         sb.append("}\n");
         return sb.toString();

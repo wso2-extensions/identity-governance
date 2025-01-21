@@ -36,6 +36,7 @@ import org.wso2.carbon.consent.mgt.core.model.ReceiptServiceInput;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.auth.attribute.handler.exception.AuthAttributeHandlerException;
@@ -181,6 +182,7 @@ public class UserSelfRegistrationManager {
             log.info("registerUser :User store domain is not in the request. set to default for user : " + user.getUserName());
         }
 
+        ResolvedUser resolvedUser = new ResolvedUser(user);
         boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
 
@@ -237,9 +239,10 @@ public class UserSelfRegistrationManager {
                         .isNotEmpty(preferredChannel)) {
                     claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
                 }
-                userStoreManager
-                        .addUser(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()), password,
-                                userRoles, claimsMap, null);
+                org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
+                        .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                                password, userRoles, claimsMap, null);
+                resolvedUser.setUserId(registeredUser.getUserID());
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {
@@ -256,7 +259,7 @@ public class UserSelfRegistrationManager {
             addUserConsent(consent, tenantDomain);
 
             // Build the notification response.
-            notificationResponseBean = buildNotificationResponseBean(user, preferredChannel, claimsMap);
+            notificationResponseBean = buildNotificationResponseBean(resolvedUser, preferredChannel, claimsMap);
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
