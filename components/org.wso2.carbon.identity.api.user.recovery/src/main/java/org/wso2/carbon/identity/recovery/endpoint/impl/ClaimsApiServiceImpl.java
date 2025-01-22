@@ -74,7 +74,6 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
         } catch (Throwable throwable) {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, IdentityRecoveryConstants
                     .ErrorMessages.ERROR_CODE_UNEXPECTED.getCode(), LOG, throwable);
-
         }
         return Response.ok(claimDTOs).build();
     }
