@@ -18,6 +18,7 @@
  */
 package org.wso2.carbon.identity.recovery.bean;
 
+import org.wso2.carbon.identity.application.common.model.ResolvedUser;
 import org.wso2.carbon.identity.application.common.model.User;
 
 import java.io.Serializable;
@@ -30,7 +31,9 @@ public class NotificationResponseBean implements Serializable {
     private static final long serialVersionUID = -2913500114444797062L;
 
     /**
-     * User identifier according to the user store
+     * User identifier according to the user store.
+     * This can be an instance of {@link User} or its subclass {@link ResolvedUser}
+     * if the user ID has been resolved.
      */
     private User user;
 
