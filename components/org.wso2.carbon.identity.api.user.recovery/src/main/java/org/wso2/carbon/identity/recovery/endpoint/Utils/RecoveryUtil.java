@@ -1,5 +1,24 @@
+/*
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,6 +33,9 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
@@ -72,6 +94,12 @@ public class RecoveryUtil {
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(UserSelfRegistrationManager.class, null);
+    }
+
+    public static ClaimMetadataManagementService getClaimMetadataManagementService() {
+
+        return (ClaimMetadataManagementService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getOSGiService(ClaimMetadataManagementService.class, null);
     }
 
     /**
@@ -198,6 +226,36 @@ public class RecoveryUtil {
         claimDTO.setRequired(claim.isRequired());
         claimDTO.setDisplayName(claim.getDisplayTag());
         claimDTO.setValidationRegex(claim.getRegEx());
+        return claimDTO;
+    }
+
+    public static ClaimDTO[] getClaimDTOs(List<LocalClaim> claims) {
+
+        if (claims == null) {
+            return new ClaimDTO[0];
+        }
+
+        ClaimDTO[] claimDTOs = new ClaimDTO[claims.size()];
+        for (int i = 0; i < claims.size(); i++) {
+            claimDTOs[i] = getClaimDTO(claims.get(i));
+        }
+        return claimDTOs;
+    }
+
+    public static ClaimDTO getClaimDTO(LocalClaim claim) {
+
+        ClaimDTO claimDTO = new ClaimDTO();
+        claimDTO.setUri(claim.getClaimURI());
+        claimDTO.setDialect(claim.getClaimDialectURI());
+
+        Map<String, String> claimProperties = claim.getClaimProperties();
+        if (MapUtils.isNotEmpty(claimProperties)) {
+            claimDTO.setDescription(claimProperties.get(ClaimConstants.DESCRIPTION_PROPERTY));
+            claimDTO.setDisplayName(claimProperties.get(ClaimConstants.DISPLAY_NAME_PROPERTY));
+            claimDTO.setRequired(Boolean.parseBoolean(claimProperties.get(ClaimConstants.REQUIRED_PROPERTY)));
+            claimDTO.setReadOnly(Boolean.parseBoolean(claimProperties.get(ClaimConstants.READ_ONLY_PROPERTY)));
+            claimDTO.setValidationRegex(claimProperties.get(ClaimConstants.REGULAR_EXPRESSION_PROPERTY));
+        }
         return claimDTO;
     }
 

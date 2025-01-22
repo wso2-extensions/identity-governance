@@ -270,6 +270,11 @@ paths:
           required: false
           type: string
 
+        - name: profile-name
+          in: query
+          description: profile name`
+          required: false
+          type: string
 
       responses:
         200:
