@@ -31,6 +31,8 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.core.context.model.Flow;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -57,9 +59,11 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.service.constant.UserActionError;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -634,6 +638,7 @@ public class NotificationPasswordRecoveryManager {
         } catch (IdentityRecoveryException e) {
             userRecoveryData = userRecoveryDataStore.load(code);
         }
+        updateIdentityContext(userRecoveryData);
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
@@ -727,6 +732,7 @@ public class NotificationPasswordRecoveryManager {
         try {
             userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
                     RecoverySteps.UPDATE_PASSWORD);
+            updateIdentityContext(userRecoveryData);
             validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
             publishEvent(userRecoveryData.getUser(), null, null, password, properties,
                     IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
@@ -1026,10 +1032,15 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                         cause.getMessage(), e);
             }
+
+            if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
+                    .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_INVALID_PASSWORD, cause.getMessage(), cause);
+            }
             cause = cause.getCause();
         }
         Utils.checkPasswordPatternViolation(e, user);
-
     }
 
     /**
@@ -1349,5 +1360,41 @@ public class NotificationPasswordRecoveryManager {
         Property[] newProperties = Arrays.copyOf(properties, properties.length + 1);
         newProperties[properties.length] = new Property(IdentityRecoveryConstants.SEND_TO, mobile);
         return newProperties;
+    }
+
+    /**
+     * Updates the identity context for the current thread based on the provided user recovery data.\
+     *
+     * @param userRecoveryData User and recovery scenario information.
+     */
+    private void updateIdentityContext(UserRecoveryData userRecoveryData) {
+
+        RecoveryScenarios recoveryScenario = (RecoveryScenarios) userRecoveryData.getRecoveryScenario();
+        Flow flow;
+        switch (recoveryScenario) {
+            case NOTIFICATION_BASED_PW_RECOVERY:
+                flow = new Flow.Builder()
+                        .name(Flow.Name.PASSWORD_RESET)
+                        .initiatingPersona(Flow.InitiatingPersona.USER)
+                        .build();
+                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                break;
+            case ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK:
+                flow = new Flow.Builder()
+                        .name(Flow.Name.PASSWORD_RESET)
+                        .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                        .build();
+                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                break;
+            case ASK_PASSWORD:
+                flow = new Flow.Builder()
+                        .name(Flow.Name.USER_REGISTRATION_INVITE_WITH_PASSWORD)
+                        .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                        .build();
+                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                break;
+            default:
+                break;
+        }
     }
 }
