@@ -59,9 +59,11 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.service.constant.UserActionError;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -1030,10 +1032,15 @@ public class NotificationPasswordRecoveryManager {
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                         cause.getMessage(), e);
             }
+
+            if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
+                    .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
+                        .ERROR_CODE_INVALID_PASSWORD, cause.getMessage(), cause);
+            }
             cause = cause.getCause();
         }
         Utils.checkPasswordPatternViolation(e, user);
-
     }
 
     /**
