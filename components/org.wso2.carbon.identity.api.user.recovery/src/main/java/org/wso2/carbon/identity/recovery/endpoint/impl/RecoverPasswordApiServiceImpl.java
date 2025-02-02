@@ -57,7 +57,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                 if (resolvedUserResult != null && ResolvedUserResult.UserResolvedStatus.SUCCESS.
                         equals(resolvedUserResult.getResolvedStatus())) {
                     User resolvedUser = new User();
-                    resolvedUser.setUserName(resolvedUserResult.getUser().getUsername());
+                    resolvedUser.setUserName(resolvedUserResult.getUser().getPreferredUsername());
                     if (StringUtils.isBlank(user.getRealm())) {
                         resolvedUser.setUserStoreDomain(resolvedUserResult.getUser().getUserStoreDomain());
                     } else {
