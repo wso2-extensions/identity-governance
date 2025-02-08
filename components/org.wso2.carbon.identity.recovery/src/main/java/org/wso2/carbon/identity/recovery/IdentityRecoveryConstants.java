@@ -88,6 +88,7 @@ public class IdentityRecoveryConstants {
     public static final String ACCOUNT_DISABLED_CLAIM = "http://wso2.org/claims/identity/accountDisabled";
     public static final String USER_SOURCE_ID_CLAIM_URI = "http://wso2.org/claims/identity/userSourceId";
     public static final String LOCAL_CREDENTIAL_EXISTS_CLAIM_URI = "http://wso2.org/claims/identity/localCredentialExists";
+    public static final String MANAGED_ORG_CLAIM_URI = "http://wso2.org/claims/identity/managedOrg";
     public static final String LITE_USER_CLAIM = "http://wso2.org/claims/identity/isLiteUser";
     public static final String FAILED_LOGIN_LOCKOUT_COUNT_CLAIM =
             "http://wso2.org/claims/identity/failedLoginLockoutCount";
