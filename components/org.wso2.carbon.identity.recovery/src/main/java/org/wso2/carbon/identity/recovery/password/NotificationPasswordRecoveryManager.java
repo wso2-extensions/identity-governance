@@ -44,6 +44,8 @@ import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.identity.recovery.AuditConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -356,8 +358,7 @@ public class NotificationPasswordRecoveryManager {
     private boolean isLocalCredentialAvailable(User user) throws IdentityRecoveryServerException {
 
         try {
-            String[] requiredClaims = new String[] {IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI,
-                    IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI};
+            String[] requiredClaims = getClaimsToBeQueriedForUser(user);
             int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance().getRealmService().
                     getTenantUserRealm(tenantId).getUserStoreManager();
@@ -365,14 +366,20 @@ public class NotificationPasswordRecoveryManager {
                     .addDomainToName(user.getUserName(), user.getUserStoreDomain());
             Map<String, String> claimValues =
                     userStoreManager.getUserClaimValues(domainQualifiedUsername, requiredClaims, null);
-            if (MapUtils.isNotEmpty(claimValues)) {
-                String userSourceId = claimValues.get(IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI);
-                String localCredentialExists = claimValues.get(
-                        IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI);
-                if (StringUtils.isNotEmpty(userSourceId)) {
-                    if (localCredentialExists != null && !Boolean.parseBoolean(localCredentialExists)) {
-                        return false;
-                    }
+            if (MapUtils.isEmpty(claimValues)) {
+                return true;
+            }
+            String managedOrgId = claimValues.get(IdentityRecoveryConstants.MANAGED_ORG_CLAIM_URI);
+            String userSourceId = claimValues.get(IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI);
+            String localCredentialExists = claimValues.get(
+                    IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI);
+            if (StringUtils.isNotBlank(managedOrgId)) {
+                // If the user is managed by a different organization, the user is considered as a shared user.
+                return false;
+            }
+            if (StringUtils.isNotEmpty(userSourceId)) {
+                if (localCredentialExists != null && !Boolean.parseBoolean(localCredentialExists)) {
+                    return false;
                 }
             }
         } catch (UserStoreException e) {
@@ -382,6 +389,26 @@ public class NotificationPasswordRecoveryManager {
             }
         }
         return true;
+    }
+
+    private String[] getClaimsToBeQueriedForUser(User user) throws IdentityRecoveryServerException {
+
+        try {
+            boolean isOrganization = OrganizationManagementUtil.isOrganization(user.getTenantDomain());
+            if (isOrganization) {
+                return new String[]{
+                        IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI,
+                        IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI,
+                        IdentityRecoveryConstants.MANAGED_ORG_CLAIM_URI
+                };
+            }
+            return new String[]{
+                    IdentityRecoveryConstants.USER_SOURCE_ID_CLAIM_URI,
+                    IdentityRecoveryConstants.LOCAL_CREDENTIAL_EXISTS_CLAIM_URI
+            };
+        } catch (OrganizationManagementException e) {
+            throw new IdentityRecoveryServerException("Error occurred while resolving organization.", e);
+        }
     }
 
     /**
