@@ -105,9 +105,9 @@ public class ResetLinkGenerator {
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
         userRecoveryDataStore.invalidate(user);
         String secretKey = Utils.generateSecretKey(notificationChannel, user.getTenantDomain(),
-                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name());
+                RecoveryScenarios.ADMIN_INVITE_SET_PASSWORD_OFFLINE.name());
         UserRecoveryData recoveryDataDO = new UserRecoveryData(user, secretKey,
-                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, RecoverySteps.UPDATE_PASSWORD);
+                RecoveryScenarios.ADMIN_INVITE_SET_PASSWORD_OFFLINE, RecoverySteps.UPDATE_PASSWORD);
 
         // Store the notified channel in the recovery object for future reference.
         recoveryDataDO.setRemainingSetIds(notificationChannel);
