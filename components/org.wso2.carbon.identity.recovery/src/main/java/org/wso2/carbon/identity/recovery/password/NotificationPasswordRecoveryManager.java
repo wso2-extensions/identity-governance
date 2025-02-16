@@ -1414,6 +1414,7 @@ public class NotificationPasswordRecoveryManager {
                 IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
                 break;
             case ASK_PASSWORD:
+            case ADMIN_INVITE_SET_PASSWORD_OFFLINE:
                 flow = new Flow.Builder()
                         .name(Flow.Name.USER_REGISTRATION_INVITE_WITH_PASSWORD)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
