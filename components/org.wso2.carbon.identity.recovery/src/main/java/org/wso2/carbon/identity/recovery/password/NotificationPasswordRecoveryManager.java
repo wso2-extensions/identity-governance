@@ -79,7 +79,6 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
-import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -1063,7 +1062,7 @@ public class NotificationPasswordRecoveryManager {
             if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
                     .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_INVALID_PASSWORD, cause.getMessage(), cause);
+                        .ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, cause.getMessage(), cause);
             }
             cause = cause.getCause();
         }
