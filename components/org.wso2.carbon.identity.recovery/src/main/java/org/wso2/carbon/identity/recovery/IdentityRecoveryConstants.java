@@ -330,7 +330,7 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_NO_HASHING_ALGO_FOR_CODE("20065", "Error while hashing the code."),
         ERROR_CODE_MULTIPLE_CLAIMS_WITH_MULTI_ATTRIBUTE_URI("20066", "Multiple claims not allowed " +
                 "when user identifier claim is used."),
-        ERROR_CODE_INVALID_PASSWORD("20067", "Error while validating the password. %s"),
+        ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE("20067", "%s"),
 
         ERROR_CODE_ERROR_RETRIVING_CLAIM("18004", "Error when retrieving the locale claim of user '%s' of '%s' domain."),
         ERROR_CODE_RECOVERY_DATA_NOT_FOUND_FOR_USER("18005", "Recovery data not found."),
