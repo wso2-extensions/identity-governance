@@ -741,12 +741,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
                 if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
                     initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
-                    // Trigger alert to existing email.
-                    if (!Utils.getThreadLocalIsOnlyVerifiedEmailAddressesUpdated()) {
-                        sendNotificationToExistingEmailOnEmailUpdate(
-                                user, userStoreManager, pendingVerificationEmailClaimValue,
-                                IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE);
-                    }
                 }
             }
         } finally {
