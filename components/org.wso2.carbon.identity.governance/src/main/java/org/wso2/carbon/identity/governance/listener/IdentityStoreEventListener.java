@@ -299,6 +299,16 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             claimMap = new HashMap<>();
         }
 
+        if (!isHybridDataStoreEnable) {
+            /*
+            If hybrid data store is disabled, we need to use the identity claim value only from the identity data store.
+            Hence, we need to remove the identity claim values from the claimMap to avoid use of values from user store
+            for identity claims.
+             */
+            claimMap.entrySet().removeIf(
+                    entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
+        }
+
         // check if there are identity claims
         boolean containsIdentityClaims = false;
         for (String claim : claims) {
