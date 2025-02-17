@@ -134,6 +134,14 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 }
                 claims.remove(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM);
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
+            } else {
+                if (claims.containsKey(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM)) {
+                    if (IdentityEventConstants.Event.PRE_SET_USER_CLAIMS.equals(eventName)) {
+                        sendNotificationToExistingEmailOnEmailUpdate(
+                                user, userStoreManager, claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM),
+                                IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE);
+                    }
+                }
             }
         }
 
@@ -733,10 +741,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
 
                 if (StringUtils.isNotBlank(pendingVerificationEmailClaimValue)) {
                     initNotificationForEmailVerificationOnUpdate(pendingVerificationEmailClaimValue, user);
-                    // Trigger alert to existing email.
-                    sendNotificationToExistingEmailOnEmailUpdate(
-                            user, userStoreManager, pendingVerificationEmailClaimValue,
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_NOTIFY_EMAIL_ON_UPDATE);
                 }
             }
         } finally {
