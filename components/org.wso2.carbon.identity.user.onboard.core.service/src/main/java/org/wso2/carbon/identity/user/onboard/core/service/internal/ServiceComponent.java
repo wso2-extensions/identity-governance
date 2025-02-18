@@ -44,7 +44,7 @@ public class ServiceComponent {
         try {
             componentContext.getBundleContext().registerService(UserOnboardCoreService.class.getName(),
                     new UserOnboardCoreServiceImpl(), null);
-            LOG.info("User onboard api core service component activated successfully.");
+            LOG.debug("User onboard api core service component activated successfully.");
         } catch (Throwable throwable) {
             LOG.error("Failed to activate the User onboard api core service component.", throwable);
         }
