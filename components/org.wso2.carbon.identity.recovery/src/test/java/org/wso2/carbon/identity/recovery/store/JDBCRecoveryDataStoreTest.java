@@ -182,6 +182,7 @@ public class JDBCRecoveryDataStoreTest {
                 { RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.VALIDATE_CHALLENGE_QUESTION },
                 { RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP, RecoverySteps.UPDATE_PASSWORD },
                 { RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.ADMIN_INVITE_SET_PASSWORD_OFFLINE, RecoverySteps.UPDATE_PASSWORD }
         };
     }
 

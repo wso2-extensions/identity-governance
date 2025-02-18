@@ -36,7 +36,8 @@ public enum RecoveryScenarios {
     MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
     LITE_SIGN_UP,
     TENANT_ADMIN_ASK_PASSWORD,
-    PASSWORD_EXPIRY;
+    PASSWORD_EXPIRY,
+    ADMIN_INVITE_SET_PASSWORD_OFFLINE;
 
     /**
      * Get recovery scenario which matches the given scenario name.
@@ -52,7 +53,7 @@ public enum RecoveryScenarios {
                 ASK_PASSWORD, ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK, ADMIN_FORCED_PASSWORD_RESET_VIA_OTP,
                 LITE_SIGN_UP, TENANT_ADMIN_ASK_PASSWORD, EMAIL_VERIFICATION_ON_UPDATE, MOBILE_VERIFICATION_ON_UPDATE,
                 PASSWORD_EXPIRY, EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
-                MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE, ADMIN_INVITE_SET_PASSWORD_OFFLINE
         };
         if (StringUtils.isNotEmpty(scenarioName)) {
             for (RecoveryScenarios scenario : scenarios) {
