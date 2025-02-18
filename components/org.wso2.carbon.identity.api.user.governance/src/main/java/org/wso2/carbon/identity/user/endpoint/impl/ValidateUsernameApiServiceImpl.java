@@ -111,7 +111,8 @@ public class ValidateUsernameApiServiceImpl extends ValidateUsernameApiService {
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_SELF_REGISTRATION_DISABLED);
                 errorDTO.setRef(Utils.getCorrelation());
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
-            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(username, tenantDomain)) {
+            } else if (userSelfRegistrationManager.isUsernameAlreadyTaken(
+                    MultitenantUtils.getTenantAwareUsername(username), tenantDomain)) {
                 logDebug(String.format("username : %s is an already taken. Hence returning code %s: ",
                         username, SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS));
                 errorDTO.setCode(SelfRegistrationStatusCodes.ERROR_CODE_USER_ALREADY_EXISTS);
