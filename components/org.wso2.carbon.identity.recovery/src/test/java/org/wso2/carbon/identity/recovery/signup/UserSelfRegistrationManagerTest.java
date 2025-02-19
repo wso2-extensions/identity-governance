@@ -1,18 +1,18 @@
 
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -72,6 +72,7 @@ import org.wso2.carbon.identity.input.validation.mgt.model.ValidationConfigurati
 import org.wso2.carbon.identity.input.validation.mgt.model.Validator;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.input.validation.mgt.utils.Constants;
+import org.wso2.carbon.identity.mgt.policy.PolicyViolationException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -91,6 +92,7 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.config.RealmConfiguration;
 import org.wso2.carbon.user.core.tenant.TenantManager;
@@ -132,6 +134,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.fail;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
+import static org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes.ERROR_CODE_DUPLICATE_CLAIM_VALUE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE;
@@ -1172,6 +1175,28 @@ public class UserSelfRegistrationManagerTest {
         verify(abstractUserStoreManager).addUserWithID(anyString(), anyString(), any(), any(), isNull());
         verify(consentManger).addConsent(any());
         verify(identityEventService, atLeastOnce()).handleEvent(any());
+    }
+
+    @Test
+    public void testRegisterUserWithDuplicateClaims() throws Exception {
+
+        User user = getUser();
+        mockConfigurations("true", "true");
+        when(userRealm.getUserStoreManager()).thenReturn(abstractUserStoreManager);
+        when(abstractUserStoreManager.getSecondaryUserStoreManager(anyString())).thenReturn(userStoreManager);
+        when(abstractUserStoreManager.isExistingRole(eq(IdentityRecoveryConstants.SELF_SIGNUP_ROLE))).thenReturn(true);
+        when(abstractUserStoreManager.addUserWithID(anyString(), anyString(), any(), any(), isNull()))
+                .thenThrow(new UserStoreClientException("errorMessage",
+                        new PolicyViolationException(ERROR_CODE_DUPLICATE_CLAIM_VALUE, "errorMessage")));
+        when(privilegedCarbonContext.getOSGiService(any(), isNull())).thenReturn(notificationChannelManager);
+        when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
+                .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+        try {
+            userSelfRegistrationManager.registerUser(user, "test-pwd", new Claim[0], new Property[0]);
+        } catch (IdentityRecoveryClientException e) {
+            assertEquals(e.getErrorCode(), ERROR_CODE_DUPLICATE_CLAIM_VALUE);
+        }
     }
 
     @Test
