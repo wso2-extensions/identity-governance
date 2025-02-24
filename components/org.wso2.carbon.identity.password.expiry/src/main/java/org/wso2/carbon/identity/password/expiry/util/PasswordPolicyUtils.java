@@ -185,13 +185,10 @@ public class PasswordPolicyUtils {
                         skipIfNoApplicableRules);
             }
 
-            List<PasswordExpiryRule> filteredRules =
-                    filterApplicableExpiryRules(passwordExpiryRules, skipIfNoApplicableRules);
-
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> fetchedUserAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
 
-            for (PasswordExpiryRule rule : filteredRules) {
+            for (PasswordExpiryRule rule : passwordExpiryRules) {
                 if (isRuleApplicable(rule, fetchedUserAttributes, tenantDomain, userId, userStoreManager)) {
                     // Skip the rule if the operator is not equals.
                     if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
@@ -379,9 +376,7 @@ public class PasswordPolicyUtils {
             Map<PasswordExpiryRuleAttributeEnum, Set<String>> userAttributes =
                     new EnumMap<>(PasswordExpiryRuleAttributeEnum.class);
 
-            List<PasswordExpiryRule> filteredRules =
-                    filterApplicableExpiryRules(passwordExpiryRules, isSkipIfNoApplicableRulesEnabled);
-            for (PasswordExpiryRule rule : filteredRules) {
+            for (PasswordExpiryRule rule : passwordExpiryRules) {
                 if (isRuleApplicable(rule, userAttributes, tenantDomain, userId, userStoreManager)) {
                     // Skip the rule if the operator is not equals.
                     if (PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())) {
@@ -407,17 +402,6 @@ public class PasswordPolicyUtils {
                     ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getCode(),
                     PasswordPolicyConstants.ErrorMessages.ERROR_WHILE_GETTING_USER_STORE_DOMAIN.getMessage());
         }
-    }
-
-    private static List<PasswordExpiryRule> filterApplicableExpiryRules(List<PasswordExpiryRule> passwordExpiryRules,
-                                                                        boolean skipIfNoApplicableRules) {
-
-        if (!skipIfNoApplicableRules) {
-            return passwordExpiryRules;
-        }
-        // If the default behavior is to skip the password expiry, rules with skip logic are not required.
-        return passwordExpiryRules.stream().filter(
-                rule -> !PasswordExpiryRuleOperatorEnum.NE.equals(rule.getOperator())).collect(Collectors.toList());
     }
 
     /**
