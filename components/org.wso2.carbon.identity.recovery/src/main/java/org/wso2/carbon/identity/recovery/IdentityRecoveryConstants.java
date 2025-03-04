@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -653,6 +653,7 @@ public class IdentityRecoveryConstants {
                 ".NotifyAccountConfirmation";
         public static final String RESEND_CONFIRMATION_RECAPTCHA_ENABLE =
                 "SelfRegistration.ResendConfirmationReCaptcha";
+        public static final String ENABLE_DYNAMIC_REGISTRATION_PORTAL = "SelfRegistration.EnableDynamicPortal";
 
         public static final String ENABLE_LITE_SIGN_UP = "LiteRegistration.Enable";
         public static final String LITE_ACCOUNT_LOCK_ON_CREATION = "LiteRegistration.LockOnCreation"; //if passwordless

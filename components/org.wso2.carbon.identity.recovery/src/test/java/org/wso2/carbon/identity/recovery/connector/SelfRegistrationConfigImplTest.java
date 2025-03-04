@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
@@ -155,6 +156,8 @@ public class SelfRegistrationConfigImplTest {
                 "Enable Auto Login After Account Confirmation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                "Enable dynamic registration portal");
         Map<String, String> nameMapping = selfRegistrationConfigImpl.getPropertyNameMapping();
 
         assertEquals(nameMapping, nameMappingExpected, "Maps are not equal");
@@ -211,6 +214,9 @@ public class SelfRegistrationConfigImplTest {
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie. The public key has to be imported to the keystore. ");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                "Enable and allow users to register to the system using the dynamic registration portal.");
+
         Map<String, String> descriptionMapping = selfRegistrationConfigImpl.getPropertyDescriptionMapping();
 
         assertEquals(descriptionMapping, descriptionMappingExpected, "Maps are not equal");
@@ -244,6 +250,8 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
+
         String[] propertiesArrayExpected = propertiesExpected.toArray(new String[0]);
 
         String[] properties = selfRegistrationConfigImpl.getPropertyNames();
@@ -270,6 +278,7 @@ public class SelfRegistrationConfigImplTest {
         String testVerificationCodeExpiryTime = "1440";
         String testVerificationSMSOTPExpiryTime = "1";
         String testVerificationSMSOTPRegex = "[a-zA-Z0-9]{6}";
+        String testEnableDynamicRegistrationPortal = "false";
         String selfRegistrationCallbackRegex = IdentityRecoveryConstants.DEFAULT_CALLBACK_REGEX;
         String enableSelfSignUpConfirmationNotification = "false";
         String enableResendConfirmationRecaptcha = "false";
@@ -333,6 +342,9 @@ public class SelfRegistrationConfigImplTest {
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME))
                 .thenReturn(enableSelfRegistrationAutoLoginAlias);
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL))
+                .thenReturn(testEnableDynamicRegistrationPortal);
 
         Map<String, String> propertiesExpected = new HashMap<>();
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, testEnableSelfSignUp);
@@ -372,6 +384,9 @@ public class SelfRegistrationConfigImplTest {
                 enableSelfRegistrationAutoLogin);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 enableSelfRegistrationAutoLoginAlias);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                testEnableDynamicRegistrationPortal);
+
         try {
             propertiesExpected.put(LIST_PURPOSE_PROPERTY_KEY, CONSENT_LIST_URL + "&callback=" + (URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name())));
@@ -468,6 +483,8 @@ public class SelfRegistrationConfigImplTest {
 
         metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         Map<String, Property> metaData = selfRegistrationConfigImpl.getMetaData();
         assertEquals(metaData, metaDataExpected, "Maps are not equal");
