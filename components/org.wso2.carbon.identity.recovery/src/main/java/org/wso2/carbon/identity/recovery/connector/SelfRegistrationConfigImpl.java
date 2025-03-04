@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations und
  */
+
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.apache.commons.lang.StringUtils;
@@ -121,6 +122,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Enable Auto Login After Account Confirmation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                "Enable dynamic registration portal");
+
         return nameMapping;
     }
 
@@ -173,6 +177,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "User will be logged in automatically after completing the Account Confirmation ");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 "Alias of the key used to sign to cookie. The public key has to be imported to the keystore. ");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                "Enable and allow users to register to the system using the dynamic registration portal.");
+
         return descriptionMapping;
     }
 
@@ -201,6 +208,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.RESEND_CONFIRMATION_RECAPTCHA_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
+
         return properties.toArray(new String[0]);
     }
 
@@ -226,6 +235,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableResendConfirmationRecaptcha = "false";
         String enableSelfRegistrationAutoLogin = "false";
         String selfRegistrationAutoLoginAlias = "wso2carbon";
+        String enableDynamicRegistrationPortal = "false";
 
         String selfSignUpProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
@@ -265,6 +275,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN);
         String selfRegistrationAutoLoginAliasProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME);
+        String enableDynamicRegistrationPortalProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
 
         if (StringUtils.isNotEmpty(selfSignUpProperty)) {
             enableSelfSignUp = selfSignUpProperty;
@@ -323,6 +335,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(selfRegistrationAutoLoginAliasProperty)) {
             selfRegistrationAutoLoginAlias = selfRegistrationAutoLoginAliasProperty;
         }
+        if (StringUtils.isNotEmpty(enableDynamicRegistrationPortalProperty)) {
+            enableDynamicRegistrationPortal = enableDynamicRegistrationPortalProperty;
+        }
 
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, enableSelfSignUp);
@@ -359,6 +374,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 enableSelfRegistrationAutoLogin);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_AUTO_LOGIN_ALIAS_NAME,
                 selfRegistrationAutoLoginAlias);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                enableDynamicRegistrationPortal);
+
         try {
             defaultProperties.put(LIST_PURPOSE_PROPERTY_KEY, consentListURL + "&callback=" + URLEncoder.encode
                     (CALLBACK_URL, StandardCharsets.UTF_8.name()));
@@ -446,6 +464,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX,
                 getPropertyObject(IdentityMgtConstants.DataTypes.STRING.getValue()));
+
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         return meta;
     }
