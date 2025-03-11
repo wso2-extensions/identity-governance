@@ -265,7 +265,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX);
-        String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
+        String selfRegistrationCallbackRegexProperty = IdentityUtil.getPropertyWithoutStandardPort(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX);
         String selfSignUpConfirmationNotificationProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION);
