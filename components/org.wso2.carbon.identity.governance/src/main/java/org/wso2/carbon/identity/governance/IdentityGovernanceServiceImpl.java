@@ -55,6 +55,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
     private static final String RECOVERY_NOTIFICATION_PASSWORD_PROPERTY = "Recovery.Notification.Password.Enable";
     private static final String EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY
             = "Recovery.Notification.Password.emailLink.Enable";
+    private static final String EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY =
+            "Recovery.Notification.Password.OTP.SendOTPInEmail";
     private static final String SMS_OTP_PASSWORD_RECOVERY_PROPERTY = "Recovery.Notification.Password.smsOtp.Enable";
     private static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
     private  static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
@@ -365,18 +367,26 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
 
         if (configurationDetails.containsKey(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY) ||
                 configurationDetails.containsKey(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY) ||
+                configurationDetails.containsKey(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY) ||
                 configurationDetails.containsKey(SMS_OTP_PASSWORD_RECOVERY_PROPERTY)) {
             // Perform process only if notification based password recovery connector or options are updated.
             String recNotPwProp = configurationDetails.get(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY);
             String emailLinkPwRecProp = configurationDetails.get(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY);
+            String emailOtpPwRecProp = configurationDetails.get(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY);
             String smsOtpPwRecProp = configurationDetails.get(SMS_OTP_PASSWORD_RECOVERY_PROPERTY);
+
             boolean recoveryNotificationPasswordProperty = Boolean.parseBoolean(recNotPwProp);
             boolean smsOtpPasswordRecoveryProperty = Boolean.parseBoolean(smsOtpPwRecProp);
             boolean emailLinkPasswordRecoveryProperty = Boolean.parseBoolean(emailLinkPwRecProp);
+            boolean emailOtpPasswordRecoveryProperty = Boolean.parseBoolean(emailOtpPwRecProp);
+
             if (recoveryNotificationPasswordProperty) {
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(emailLinkPasswordRecoveryProperty ||
                                 StringUtils.isBlank(emailLinkPwRecProp)));
+                configurationDetails.put(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(emailOtpPasswordRecoveryProperty ||
+                                StringUtils.isBlank(emailOtpPwRecProp)));
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(smsOtpPasswordRecoveryProperty ||
                                 StringUtils.isBlank(smsOtpPwRecProp)));
@@ -384,29 +394,42 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                 // Connector is not explicitly enabled or disabled. The connector state is derived from new and existing
                 // configurations.
                 boolean isEmailLinkCurrentlyEnabled = false;
+                boolean isEmailOtpCurrentlyEnabled = false;
                 boolean isSmsOtpCurrentlyEnabled = false;
+
                 for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
                     if (EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY.equals(identityMgtProperty.getName())) {
                         isEmailLinkCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
+                    } else if (EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY.equals(identityMgtProperty.getName())) {
+                        isEmailOtpCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
                     } else if (SMS_OTP_PASSWORD_RECOVERY_PROPERTY.equals(identityMgtProperty.getName())) {
                         isSmsOtpCurrentlyEnabled = Boolean.parseBoolean(identityMgtProperty.getValue());
                     }
                 }
+
                 boolean enableEmailLinkPasswordRecovery = emailLinkPasswordRecoveryProperty ||
                         ( StringUtils.isBlank(emailLinkPwRecProp) &&
                                 isEmailLinkCurrentlyEnabled );
+                boolean enableEmailOtpPasswordRecovery = emailOtpPasswordRecoveryProperty ||
+                        ( StringUtils.isBlank(emailOtpPwRecProp) &&
+                                isEmailOtpCurrentlyEnabled);
                 boolean enableSmsOtpPasswordRecovery = smsOtpPasswordRecoveryProperty ||
                         ( StringUtils.isBlank(smsOtpPwRecProp) &&
                                 isSmsOtpCurrentlyEnabled );
+
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(enableEmailLinkPasswordRecovery));
+                configurationDetails.put(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY,
+                        String.valueOf(enableEmailOtpPasswordRecovery));
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(enableSmsOtpPasswordRecovery));
                 configurationDetails.put(RECOVERY_NOTIFICATION_PASSWORD_PROPERTY,
-                        String.valueOf(enableEmailLinkPasswordRecovery || enableSmsOtpPasswordRecovery));
+                        String.valueOf(enableEmailLinkPasswordRecovery || enableEmailOtpPasswordRecovery ||
+                                enableSmsOtpPasswordRecovery));
             } else {
                 // This is the scenario where the RECOVERY_NOTIFICATION_PASSWORD_PROPERTY is being disabled.
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
+                configurationDetails.put(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY, FALSE_STRING);
             }
         }
