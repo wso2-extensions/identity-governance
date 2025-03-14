@@ -50,6 +50,12 @@ public class IdentityGovernanceServiceImplTest {
     private static final String USERNAME_RECOVERY_ENABLE = "Recovery.Notification.Username.Enable";
     private static final String USERNAME_RECOVERY_EMAIL_ENABLE = "Recovery.Notification.Username.Email.Enable";
     private static final String USERNAME_RECOVERY_SMS_ENABLE = "Recovery.Notification.Username.SMS.Enable";
+    private static final String PASSWORD_RECOVERY_ENABLE = "Recovery.Notification.Password.Enable";
+    private static final String PASSWORD_RECOVERY_EMAIL_LINK_ENABLE
+            = "Recovery.Notification.Password.emailLink.Enable";
+    private static final String PASSWORD_RECOVERY_EMAIL_OTP_ENABLE =
+            "Recovery.Notification.Password.OTP.SendOTPInEmail";
+    private static final String PASSWORD_RECOVERY_SMS_OTP_ENABLE = "Recovery.Notification.Password.smsOtp.Enable";
 
     @Mock
     IdentityMgtServiceDataHolder identityMgtServiceDataHolder;
@@ -115,92 +121,148 @@ public class IdentityGovernanceServiceImplTest {
         Map<String, String> usernameConfig1 = new HashMap<>();
         usernameConfig1.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties1 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties1 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected1 = getExpectedPropertyValues(true, true, false);
+        Map<String, String> expected1 = getUsernameRecoveryExpectedPropertyValues(true, true, false);
 
         // Only sms config is true. Preconditions: all the configs false.
         Map<String, String> usernameConfig2 = new HashMap<>();
         usernameConfig2.put(USERNAME_RECOVERY_SMS_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties2 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties2 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected2 = getExpectedPropertyValues(true, false, true);
+        Map<String, String> expected2 = getUsernameRecoveryExpectedPropertyValues(true, false, true);
 
         // Only sms is false. Preconditions: sms and username is true.
         Map<String, String> usernameConfig3 = new HashMap<>();
         usernameConfig3.put(USERNAME_RECOVERY_SMS_ENABLE, FALSE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties3 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties3 = getUsernameRecoveryIdentityProviderProperties(
                 true, false, true);
-        Map<String, String> expected3 = getExpectedPropertyValues(false, false, false);
+        Map<String, String> expected3 = getUsernameRecoveryExpectedPropertyValues(false, false, false);
 
         // Only email is false. Preconditions: email and username is true.
         Map<String, String> usernameConfig4 = new HashMap<>();
         usernameConfig4.put(USERNAME_RECOVERY_EMAIL_ENABLE, FALSE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties4 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties4 = getUsernameRecoveryIdentityProviderProperties(
                 true, true, false);
-        Map<String, String> expected4 = getExpectedPropertyValues(false, false, false);
+        Map<String, String> expected4 = getUsernameRecoveryExpectedPropertyValues(false, false, false);
 
         // Only email is true. Preconditions: sms and username is true.
         Map<String, String> usernameConfig5 = new HashMap<>();
         usernameConfig5.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties5 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties5 = getUsernameRecoveryIdentityProviderProperties(
                 true, false, true);
-        Map<String, String> expected5 = getExpectedPropertyValues(true, true, true);
+        Map<String, String> expected5 = getUsernameRecoveryExpectedPropertyValues(true, true, true);
 
         // Only sms is true. Preconditions: email and username is true.
         Map<String, String> usernameConfig6 = new HashMap<>();
         usernameConfig6.put(USERNAME_RECOVERY_SMS_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties6 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties6 = getUsernameRecoveryIdentityProviderProperties(
                 true, true, false);
-        Map<String, String> expected6 = getExpectedPropertyValues(true, true, true);
+        Map<String, String> expected6 = getUsernameRecoveryExpectedPropertyValues(true, true, true);
 
         // Sms config true and email config false. Preconditions: all the configs false.
         Map<String, String> usernameConfig7 = new HashMap<>();
         usernameConfig7.put(USERNAME_RECOVERY_SMS_ENABLE, TRUE_STRING);
         usernameConfig7.put(USERNAME_RECOVERY_EMAIL_ENABLE, FALSE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties7 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties7 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected7 = getExpectedPropertyValues(true, false, true);
+        Map<String, String> expected7 = getUsernameRecoveryExpectedPropertyValues(true, false, true);
 
         // Email config true and sms config false. Preconditions: all the configs false.
         Map<String, String> usernameConfig8 = new HashMap<>();
         usernameConfig8.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
         usernameConfig8.put(USERNAME_RECOVERY_SMS_ENABLE, FALSE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties8 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties8 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected8 = getExpectedPropertyValues(true, true, false);
+        Map<String, String> expected8 = getUsernameRecoveryExpectedPropertyValues(true, true, false);
 
         // Sms config true and email config true. Preconditions: all the configs false.
         Map<String, String> usernameConfig9 = new HashMap<>();
         usernameConfig9.put(USERNAME_RECOVERY_SMS_ENABLE, TRUE_STRING);
         usernameConfig9.put(USERNAME_RECOVERY_EMAIL_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties9 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties9 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected9 = getExpectedPropertyValues(true, true, true);
+        Map<String, String> expected9 = getUsernameRecoveryExpectedPropertyValues(true, true, true);
 
         // Only username config true. Preconditions: all the configs false.
         Map<String, String> usernameConfig10 = new HashMap<>();
         usernameConfig10.put(USERNAME_RECOVERY_ENABLE, TRUE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties10 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties10 = getUsernameRecoveryIdentityProviderProperties(
                 false, false, false);
-        Map<String, String> expected10 = getExpectedPropertyValues(true, true, true);
+        Map<String, String> expected10 = getUsernameRecoveryExpectedPropertyValues(true, true, true);
 
         // Only username config false. Preconditions: all the configs true.
         Map<String, String> usernameConfig11 = new HashMap<>();
         usernameConfig11.put(USERNAME_RECOVERY_ENABLE, FALSE_STRING);
 
-        IdentityProviderProperty[] identityProviderProperties11 = getIdentityProviderProperties(
+        IdentityProviderProperty[] identityProviderProperties11 = getUsernameRecoveryIdentityProviderProperties(
                 true, true, true);
-        Map<String, String> expected11 = getExpectedPropertyValues(false, false, false);
+        Map<String, String> expected11 = getUsernameRecoveryExpectedPropertyValues(false, false, false);
+
+        // Only email link is true. Preconditions: all configs are false.
+        Map<String, String> passwordConfig1 = getPasswordRecoveryConfigs(null, true, null, null);
+        IdentityProviderProperty[] passwordIdentityProps1 = getPasswordRecoveryIdentityProviderProperties(false,
+                false, false, false);
+        Map<String, String> passwordExpected1 = getPasswordRecoveryExpectedPropertyValues(true, true, false, false);
+
+        // Only email otp is true. Precondition: all configs are false.
+        Map<String, String> passwordConfig2 = getPasswordRecoveryConfigs(null, null, true, null);
+        IdentityProviderProperty[] passwordIdentityProps2 = getPasswordRecoveryIdentityProviderProperties(false,
+                false, false, false);
+        Map<String, String> passwordExpected2 = getPasswordRecoveryExpectedPropertyValues(true, false, true, false);
+
+        // Only sms otp is true. Precondition: all configs are false.
+        Map<String, String> passwordConfig3 = getPasswordRecoveryConfigs(null, null, null, true);
+        IdentityProviderProperty[] passwordIdentityProps3 = getPasswordRecoveryIdentityProviderProperties(false,
+                false, false, false);
+        Map<String, String> passwordExpected3 = getPasswordRecoveryExpectedPropertyValues(true, false, false, true);
+
+        // Only email link is false. Precondition: password recovery and email link is true.
+        Map<String, String> passwordConfigs4 = getPasswordRecoveryConfigs(null, false, null, null);
+        IdentityProviderProperty[] passwordIdentityProps4 = getPasswordRecoveryIdentityProviderProperties(true, true,
+                false, false);
+        Map<String, String> passwordExpected4 = getPasswordRecoveryExpectedPropertyValues(false, false, false, false);
+
+        // Only email otp is false. Precondition: password recovery and email otp is true.
+        Map<String, String> passwordConfigs5 = getPasswordRecoveryConfigs(null, null, false, null);
+        IdentityProviderProperty[] passwordIdentityProps5 = getPasswordRecoveryIdentityProviderProperties(true, false
+                , true, false);
+        Map<String, String> passwordExpected5 = getPasswordRecoveryExpectedPropertyValues(false, false, false, false);
+
+        // Only sms otp is false. Precondition: password recovery and sms otp is true.
+        Map<String, String> passwordConfigs6 = getPasswordRecoveryConfigs(null, null, null, false);
+        IdentityProviderProperty[] passwordIdentityProps6 = getPasswordRecoveryIdentityProviderProperties(true, false
+                , false, true);
+        Map<String, String> passwordExpected6 = getPasswordRecoveryExpectedPropertyValues(false, false, false, false);
+
+        // Only enabling the password recovery config. Precondition: all configs are false.
+        Map<String, String> passwordConfigs7 = getPasswordRecoveryConfigs(true, null, null, null);
+        IdentityProviderProperty[] passwordIdentityProps7 = getPasswordRecoveryIdentityProviderProperties(false, false
+                , false, false);
+        Map<String, String> passwordExpected7 = getPasswordRecoveryExpectedPropertyValues(true, true, true, true);
+
+        // Disabling the password recovery config. Precondition: email link and sms otp are true.
+        Map<String, String> passwordConfigs8 = getPasswordRecoveryConfigs(false, null, null, null);
+        IdentityProviderProperty[] passwordIdentityProps8 = getPasswordRecoveryIdentityProviderProperties(true, true
+                , true, true);
+        Map<String, String> passwordExpected8 = getPasswordRecoveryExpectedPropertyValues(false, false, false, false);
+
+        // Setting all to true. Precondition: all configs are false.
+        Map<String, String> passwordConfigs9 = getPasswordRecoveryConfigs(true, true, true, true);
+        IdentityProviderProperty[] passwordIdentityProps9 = getPasswordRecoveryIdentityProviderProperties(false, false
+                , false, false);
+        Map<String, String> passwordExpected9 = getPasswordRecoveryExpectedPropertyValues(true, true, true, true);
+
+
 
         return new Object[][]{
                 {usernameConfig1, identityProviderProperties1, expected1},
@@ -213,14 +275,23 @@ public class IdentityGovernanceServiceImplTest {
                 {usernameConfig8, identityProviderProperties8, expected8},
                 {usernameConfig9, identityProviderProperties9, expected9},
                 {usernameConfig10, identityProviderProperties10, expected10},
-                {usernameConfig11, identityProviderProperties11, expected11}
+                {usernameConfig11, identityProviderProperties11, expected11},
+                {passwordConfig1, passwordIdentityProps1, passwordExpected1},
+                {passwordConfig2, passwordIdentityProps2, passwordExpected2},
+                {passwordConfig3, passwordIdentityProps3, passwordExpected3},
+                {passwordConfigs4, passwordIdentityProps4, passwordExpected4},
+                {passwordConfigs5, passwordIdentityProps5, passwordExpected5},
+                {passwordConfigs6, passwordIdentityProps6, passwordExpected6},
+                {passwordConfigs7, passwordIdentityProps7, passwordExpected7},
+                {passwordConfigs8, passwordIdentityProps8, passwordExpected8},
+                {passwordConfigs9, passwordIdentityProps9, passwordExpected9}
         };
 
     }
 
-    private IdentityProviderProperty[] getIdentityProviderProperties(boolean usernameEnable,
-                                                                     boolean usernameEmailEnable,
-                                                                     boolean usernameSmsEnable) {
+    private IdentityProviderProperty[] getUsernameRecoveryIdentityProviderProperties(boolean usernameEnable,
+                                                                                     boolean usernameEmailEnable,
+                                                                                     boolean usernameSmsEnable) {
 
         IdentityProviderProperty identityProviderProperty1 = new IdentityProviderProperty();
         identityProviderProperty1.setName(USERNAME_RECOVERY_ENABLE);
@@ -241,14 +312,89 @@ public class IdentityGovernanceServiceImplTest {
         };
     }
 
-    private HashMap<String, String> getExpectedPropertyValues(boolean usernameEnable,
-                                                              boolean usernameEmailEnable,
-                                                              boolean usernameSmsEnable) {
+    private HashMap<String, String> getPasswordRecoveryConfigs(
+            Boolean passwordRecoveryEnable,
+            Boolean passwordRecoveryEmailLinkEnable,
+            Boolean passwordRecoveryEmailOtpEnable,
+            Boolean passwordRecoverySmsOtpEnable) {
+
+        HashMap<String, String> configs = new HashMap<>();
+
+        if (passwordRecoveryEnable != null) {
+            configs.put(PASSWORD_RECOVERY_ENABLE, passwordRecoveryEnable ? TRUE_STRING : FALSE_STRING);
+        }
+
+        if (passwordRecoveryEmailLinkEnable != null) {
+            configs.put(PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, passwordRecoveryEmailLinkEnable ? TRUE_STRING :
+                    FALSE_STRING);
+        }
+
+        if (passwordRecoveryEmailOtpEnable != null) {
+            configs.put(PASSWORD_RECOVERY_EMAIL_OTP_ENABLE, passwordRecoveryEmailOtpEnable ? TRUE_STRING :
+                    FALSE_STRING);
+        }
+
+        if (passwordRecoverySmsOtpEnable != null) {
+            configs.put(PASSWORD_RECOVERY_SMS_OTP_ENABLE, passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
+        }
+
+        return configs;
+    }
+
+
+    private IdentityProviderProperty[] getPasswordRecoveryIdentityProviderProperties(
+            boolean passwordRecoveryEnable,
+            boolean passwordRecoveryEmailLinkEnable,
+            boolean passwordRecoveryEmailOtpEnable,
+            boolean passwordRecoverySmsOtpEnable) {
+
+        IdentityProviderProperty identityProviderProperty1 = new IdentityProviderProperty();
+        identityProviderProperty1.setName(PASSWORD_RECOVERY_ENABLE);
+        identityProviderProperty1.setValue(passwordRecoveryEnable ? TRUE_STRING : FALSE_STRING);
+
+        IdentityProviderProperty identityProviderProperty2 = new IdentityProviderProperty();
+        identityProviderProperty2.setName(PASSWORD_RECOVERY_EMAIL_LINK_ENABLE);
+        identityProviderProperty2.setValue(passwordRecoveryEmailLinkEnable ? TRUE_STRING : FALSE_STRING);
+
+        IdentityProviderProperty identityProviderProperty3 = new IdentityProviderProperty();
+        identityProviderProperty3.setName(PASSWORD_RECOVERY_EMAIL_OTP_ENABLE);
+        identityProviderProperty3.setValue(passwordRecoveryEmailOtpEnable ? TRUE_STRING : FALSE_STRING);
+
+        IdentityProviderProperty identityProviderProperty4 = new IdentityProviderProperty();
+        identityProviderProperty4.setName(PASSWORD_RECOVERY_SMS_OTP_ENABLE);
+        identityProviderProperty4.setValue(passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
+
+        return new  IdentityProviderProperty[] {
+                identityProviderProperty1,
+                identityProviderProperty2,
+                identityProviderProperty3,
+                identityProviderProperty4
+        };
+    }
+
+
+    private HashMap<String, String> getUsernameRecoveryExpectedPropertyValues(boolean usernameEnable,
+                                                                              boolean usernameEmailEnable,
+                                                                              boolean usernameSmsEnable) {
 
         HashMap<String, String> expected = new HashMap<>();
         expected.put(USERNAME_RECOVERY_ENABLE, usernameEnable ? TRUE_STRING : FALSE_STRING);
         expected.put(USERNAME_RECOVERY_EMAIL_ENABLE, usernameEmailEnable ? TRUE_STRING : FALSE_STRING);
         expected.put(USERNAME_RECOVERY_SMS_ENABLE, usernameSmsEnable ? TRUE_STRING : FALSE_STRING);
+
+        return expected;
+    }
+
+    private HashMap<String, String> getPasswordRecoveryExpectedPropertyValues(boolean passwordRecoveryEnable,
+                                                                              boolean passwordRecoveryEmailLinkEnable,
+                                                                              boolean passwordRecoveryEmailOtpEnable,
+                                                                              boolean passwordRecoverySmsOtpEnable) {
+        HashMap<String, String> expected =  new HashMap<>();
+        expected.put(PASSWORD_RECOVERY_ENABLE, passwordRecoveryEnable ? TRUE_STRING : FALSE_STRING);
+        expected.put(PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, passwordRecoveryEmailLinkEnable ? TRUE_STRING : FALSE_STRING);
+        expected.put(PASSWORD_RECOVERY_EMAIL_OTP_ENABLE, passwordRecoveryEmailOtpEnable ? TRUE_STRING : FALSE_STRING);
+        expected.put(PASSWORD_RECOVERY_SMS_OTP_ENABLE, passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
+
 
         return expected;
     }
