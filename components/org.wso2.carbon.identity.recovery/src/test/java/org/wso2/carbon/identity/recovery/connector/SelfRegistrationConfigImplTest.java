@@ -327,7 +327,7 @@ public class SelfRegistrationConfigImplTest {
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SMS_OTP_REGEX))
                 .thenReturn(testVerificationSMSOTPRegex);
-        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+        mockedIdentityUtil.when(() -> IdentityUtil.getPropertyWithoutStandardPort(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX))
                 .thenReturn(selfRegistrationCallbackRegex);
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
