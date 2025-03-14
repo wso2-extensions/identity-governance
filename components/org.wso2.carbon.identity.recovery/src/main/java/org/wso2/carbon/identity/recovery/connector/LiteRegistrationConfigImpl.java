@@ -225,7 +225,7 @@ public class LiteRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMSOTP_VERIFICATION_CODE_EXPIRY_TIME);
         String verificationSMSOTPRegexProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_SMS_OTP_REGEX);
-        String selfRegistrationCallbackRegexProperty = IdentityUtil.getProperty(
+        String selfRegistrationCallbackRegexProperty = IdentityUtil.getPropertyWithoutStandardPort(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_CALLBACK_REGEX);
         String selfRegistrationResendVerificationOnUserExistenceProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE);

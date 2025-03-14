@@ -352,6 +352,8 @@ public class RecoveryConfigImplTest {
         String testPropertyValue = "testValue";
         try(MockedStatic<IdentityUtil> identityUtilMockedStatic = Mockito.mockStatic(IdentityUtil.class)) {
             identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(property)).thenReturn(testPropertyValue);
+            identityUtilMockedStatic.when(() ->
+                    IdentityUtil.getPropertyWithoutStandardPort(property)).thenReturn(testPropertyValue);
 
             Properties properties = recoveryConfigImpl.getDefaultPropertyValues(tenantDomain);
             assertEquals(testPropertyValue, properties.getProperty(property));

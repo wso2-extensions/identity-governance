@@ -303,7 +303,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
         String userNameRecoveryReCaptcha = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.
                 USERNAME_RECOVERY_RECAPTCHA_ENABLE);
-        String recoveryCallbackRegexProperty = IdentityUtil.getProperty(
+        String recoveryCallbackRegexProperty = IdentityUtil.getPropertyWithoutStandardPort(
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         String adminPasswordResetAutoLoginProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
