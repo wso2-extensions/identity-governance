@@ -262,8 +262,6 @@ public class IdentityGovernanceServiceImplTest {
                 , false, false);
         Map<String, String> passwordExpected9 = getPasswordRecoveryExpectedPropertyValues(true, true, true, true);
 
-
-
         return new Object[][]{
                 {usernameConfig1, identityProviderProperties1, expected1},
                 {usernameConfig2, identityProviderProperties2, expected2},
@@ -341,7 +339,6 @@ public class IdentityGovernanceServiceImplTest {
         return configs;
     }
 
-
     private IdentityProviderProperty[] getPasswordRecoveryIdentityProviderProperties(
             boolean passwordRecoveryEnable,
             boolean passwordRecoveryEmailLinkEnable,
@@ -364,7 +361,7 @@ public class IdentityGovernanceServiceImplTest {
         identityProviderProperty4.setName(PASSWORD_RECOVERY_SMS_OTP_ENABLE);
         identityProviderProperty4.setValue(passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
 
-        return new  IdentityProviderProperty[] {
+        return new IdentityProviderProperty[]{
                 identityProviderProperty1,
                 identityProviderProperty2,
                 identityProviderProperty3,
@@ -389,12 +386,12 @@ public class IdentityGovernanceServiceImplTest {
                                                                               boolean passwordRecoveryEmailLinkEnable,
                                                                               boolean passwordRecoveryEmailOtpEnable,
                                                                               boolean passwordRecoverySmsOtpEnable) {
-        HashMap<String, String> expected =  new HashMap<>();
+
+        HashMap<String, String> expected = new HashMap<>();
         expected.put(PASSWORD_RECOVERY_ENABLE, passwordRecoveryEnable ? TRUE_STRING : FALSE_STRING);
         expected.put(PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, passwordRecoveryEmailLinkEnable ? TRUE_STRING : FALSE_STRING);
         expected.put(PASSWORD_RECOVERY_EMAIL_OTP_ENABLE, passwordRecoveryEmailOtpEnable ? TRUE_STRING : FALSE_STRING);
         expected.put(PASSWORD_RECOVERY_SMS_OTP_ENABLE, passwordRecoverySmsOtpEnable ? TRUE_STRING : FALSE_STRING);
-
 
         return expected;
     }
