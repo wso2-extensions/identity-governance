@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.captcha.internal;
 
+import org.wso2.carbon.http.client.service.HttpClientService;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
@@ -78,6 +79,8 @@ public class CaptchaDataHolder {
     private boolean forcefullyEnabledRecaptchaForAllTenants;
 
     private List<String> reCaptchaBypassedApiEndpoints = new ArrayList<>();
+
+    private HttpClientService httpClientService;
 
     private CaptchaDataHolder() {
 
@@ -279,5 +282,15 @@ public class CaptchaDataHolder {
     public void setReCaptchaBypassedApiEndpoints(List<String> reCaptchaBypassedApiEndpoints) {
 
         this.reCaptchaBypassedApiEndpoints = reCaptchaBypassedApiEndpoints;
+    }
+
+    public HttpClientService getHttpClientService() {
+
+        return httpClientService;
+    }
+
+    public void setHttpClientService(HttpClientService httpClientService) {
+
+        this.httpClientService = httpClientService;
     }
 }
