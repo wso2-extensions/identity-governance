@@ -721,6 +721,22 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         }
     }
 
+    private boolean isEmailOtpBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            return Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                            tenantDomain));
+        } catch (IdentityRecoveryServerException e) {
+            // Prepend scenario to the thrown exception.
+            String errorCode = Utils
+                    .prependOperationScenarioToErrorCode(IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO,
+                            e.getErrorCode());
+            throw Utils.handleServerException(errorCode, e.getMessage(), null);
+        }
+    }
+
     private boolean isSMSOTPBasedRecoveryEnabled(String tenantDomain) throws IdentityRecoveryServerException {
 
         try {
@@ -944,7 +960,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             throws IdentityRecoveryServerException {
 
         if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannelType)) {
-            return isEmailLinkBasedRecoveryEnabled(tenantDomain);
+            return isEmailLinkBasedRecoveryEnabled(tenantDomain) || isEmailOtpBasedRecoveryEnabled(tenantDomain);
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannelType)) {
             return isSMSOTPBasedRecoveryEnabled(tenantDomain);
         }
