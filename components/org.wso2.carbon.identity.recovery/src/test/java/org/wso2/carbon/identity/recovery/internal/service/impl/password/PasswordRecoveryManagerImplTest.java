@@ -26,6 +26,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
@@ -35,16 +36,19 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.util.HashMap;
 
-
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 public class PasswordRecoveryManagerImplTest {
 
     // Constants.
     private static final String TRUE_STRING = "true";
+    private static final String FALSE_STRING = "false";
     private static final String USERNAME = "testUsername";
     private static final String FLOW_ID = "12fesfhb43-3243nsdsdvb-3143";
     private static final String RECOVERY_CODE = "asdkjaskjb0sdbkbjbsdb";
@@ -52,8 +56,10 @@ public class PasswordRecoveryManagerImplTest {
     private static final String SMS = "SMS";
     private static final String TEST_EMAIL = "test@gmail.com";
     private static final String TEST_MOBILE = "+9471736746";
+
     @Mock
     UserAccountRecoveryManager userAccountRecoveryManager;
+
     private MockedStatic<Utils> utilsMockedStatic;
     private MockedStatic<UserAccountRecoveryManager> userAccountRecoveryManagerMockedStatic;
 
@@ -179,5 +185,50 @@ public class PasswordRecoveryManagerImplTest {
             assertEquals(expectedChannels[i].getValue(), actualChannels[i].getValue(), "Mismatch at index " + i);
         }
     }
+    @Test
+    public void testEmailOtpRecoveryConfigError() throws IdentityRecoveryException {
 
+        HashMap<String, String> claims = new HashMap<>();
+        String tenantDomain = "carbon.super";
+        HashMap<String, String> properties = new HashMap<>();
+        PasswordRecoveryManagerImpl passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY, tenantDomain))
+                .thenReturn(TRUE_STRING);
+
+        userAccountRecoveryManagerMockedStatic.when(UserAccountRecoveryManager::getInstance)
+                .thenReturn(userAccountRecoveryManager);
+
+        NotificationChannelDTO notificationChannelDTOEmail = new NotificationChannelDTO();
+        notificationChannelDTOEmail.setId(1);
+        notificationChannelDTOEmail.setType(EMAIL);
+        notificationChannelDTOEmail.setValue(TEST_EMAIL);
+
+        RecoveryChannelInfoDTO recoveryChannelInfoDTO = new RecoveryChannelInfoDTO();
+        recoveryChannelInfoDTO.setNotificationChannelDTOs(new NotificationChannelDTO[]{
+                notificationChannelDTOEmail
+        });
+
+        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, tenantDomain,
+                RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, properties))
+                .thenReturn(recoveryChannelInfoDTO);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, tenantDomain))
+                .thenReturn(FALSE_STRING);
+
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, tenantDomain))
+                .thenThrow(new IdentityRecoveryServerException("test error"));
+
+        utilsMockedStatic.when(() -> Utils.prependOperationScenarioToErrorCode(anyString(), anyString())).thenReturn(
+                "11343");
+
+        utilsMockedStatic.when(() -> Utils.handleServerException(anyString(), anyString(), nullable(String.class))).
+                thenReturn(new IdentityRecoveryServerException("test error."));
+
+        assertThrows(IdentityRecoveryServerException.class,
+                () -> passwordRecoveryManager.initiate(claims, tenantDomain, properties));
+    }
 }
