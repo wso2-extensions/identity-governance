@@ -185,6 +185,7 @@ public class PasswordRecoveryManagerImplTest {
             assertEquals(expectedChannels[i].getValue(), actualChannels[i].getValue(), "Mismatch at index " + i);
         }
     }
+
     @Test
     public void testEmailOtpRecoveryConfigError() throws IdentityRecoveryException {
 
