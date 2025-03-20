@@ -180,9 +180,9 @@ public class PasswordRecoveryManagerImplTest {
                 expectedRecoveryChannelInfo.getNotificationChannelDTOs().length, "Array lengths do not match");
 
         for (int i = 0; i < expectedRecoveryChannelInfo.getNotificationChannelDTOs().length; i++) {
-            assertEquals(expectedChannels[i].getId(), actualChannels[i].getId(), "Mismatch at index " + i);
-            assertEquals(expectedChannels[i].getType(), actualChannels[i].getType(), "Mismatch at index " + i);
-            assertEquals(expectedChannels[i].getValue(), actualChannels[i].getValue(), "Mismatch at index " + i);
+            assertEquals(expectedChannels[i].getId(), actualChannels[i].getId(), "Mismatch at channel id: " + i);
+            assertEquals(expectedChannels[i].getType(), actualChannels[i].getType(), "Mismatch at channel id: " + i);
+            assertEquals(expectedChannels[i].getValue(), actualChannels[i].getValue(), "Mismatch at channel id:" + i);
         }
     }
 
