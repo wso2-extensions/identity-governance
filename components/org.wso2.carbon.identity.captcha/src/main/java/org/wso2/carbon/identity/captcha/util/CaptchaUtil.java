@@ -294,12 +294,12 @@ public class CaptchaUtil {
 
         org.apache.hc.core5.http.HttpEntity entity;
 
-        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient = CaptchaDataHolder.getInstance().getHttpClientService().createClient()) {
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient = CaptchaDataHolder.getInstance().getHttpClientService().createSystemClient()) {
             entity = httpclient.execute(httpPost, HttpEntityContainer::getEntity);
             if (entity == null) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
             }
-        } catch (IOException | HttpClientException e) {
+        } catch (IOException e) {
             throw new CaptchaServerException("Unable to get the verification response.", e);
         }
 
