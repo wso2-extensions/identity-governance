@@ -54,6 +54,14 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
         </dependency>
@@ -80,6 +88,10 @@
         <dependency>
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.http.client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -170,6 +182,8 @@
                             org.apache.http.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
                             org.apache.http.impl.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
                             org.apache.http.message.*;version="${httpcore.osgi.version.range}",
+                            org.apache.hc.client5.http.*;version="${httpclient5.osgi.version.range}",
+                            org.apache.hc.core5.*;version="${httpcore5.osgi.version.range}",
 
                             javax.servlet.*; version="${imp.pkg.version.javax.servlet}",
 
@@ -204,6 +218,7 @@
                             org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.http.client.*; version="${carbon.kernel.package.import.version.range}",
                         </Import-Package>
                     </instructions>
                 </configuration>
