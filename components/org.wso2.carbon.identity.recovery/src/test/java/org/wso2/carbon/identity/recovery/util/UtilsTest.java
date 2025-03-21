@@ -35,7 +35,6 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureRe
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
-import org.wso2.carbon.identity.claim.metadata.mgt.model.AttributeMapping;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
 import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -145,6 +144,12 @@ public class UtilsTest {
     private static final int TENANT_ID = 123;
     private static final String USER_NAME = "testUser";
     private static final String USER_STORE_DOMAIN = "TEST";
+    private static final String TRUE_STRING = "TRUE";
+    private static final String FALSE_STRING = "FALSE";
+    private static final String PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL =
+            "Recovery.Notification.Password.OTP.SendOTPInEmail";
+    private static final String PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE =
+            "Recovery.Notification.Password.OTP.SendOnlyOTPAsConfirmationCode";
 
     @BeforeClass
     public static void beforeClass() {
@@ -959,6 +964,56 @@ public class UtilsTest {
         mockedStaticIdentityUtil.when(() -> IdentityUtil.getProperty(
                 UserFunctionalityMgtConstants.ENABLE_PER_USER_FUNCTIONALITY_LOCKING)).thenReturn("true");
         assertTrue(Utils.isPerUserFunctionalityLockingEnabled());
+    }
+
+    @Test
+    public void testIsPasswordRecoveryEmailOtpEnabled()
+            throws IdentityRecoveryServerException, IdentityGovernanceException {
+
+        Property property = new Property();
+        property.setName(PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
+        property.setValue(TRUE_STRING);
+        Property[] properties = new Property[]{property};
+
+        when(identityGovernanceService.
+                getConfiguration(new String[]{PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL}, TENANT_DOMAIN)).
+                thenReturn(properties);
+
+        assertTrue(Utils.isPasswordRecoveryEmailOtpEnabled(TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testSkipConcatForOTPBasedEmailRecovery() throws IdentityGovernanceException {
+
+        // case 1: False in server config.
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.
+                        getProperty(PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE)).
+                thenReturn(FALSE_STRING);
+        assertFalse(Utils.skipConcatForOTPBasedEmailRecovery(TENANT_DOMAIN));
+
+        // case 2: True in server config but email OTP is disabled.
+        mockedStaticIdentityUtil.when(() -> IdentityUtil.
+                        getProperty(PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE)).
+                thenReturn(TRUE_STRING);
+        Property property = new Property();
+        property.setName(PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
+        property.setValue(FALSE_STRING);
+        Property[] properties = new Property[]{property};
+
+        when(identityGovernanceService.
+                getConfiguration(new String[]{PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL}, TENANT_DOMAIN)).
+                thenReturn(properties);
+
+        assertFalse(Utils.skipConcatForOTPBasedEmailRecovery(TENANT_DOMAIN));
+
+        // Case 3: True in server config and email OTP is enabled.
+        property.setValue(TRUE_STRING);
+        properties = new Property[]{property};
+
+        when(identityGovernanceService.
+                getConfiguration(new String[]{PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL}, TENANT_DOMAIN)).
+                thenReturn(properties);
+        assertTrue(Utils.skipConcatForOTPBasedEmailRecovery(TENANT_DOMAIN));
     }
 
     @Test

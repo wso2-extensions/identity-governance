@@ -28,17 +28,24 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
+import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.dto.NotificationChannelDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryChannelInfoDTO;
 import org.wso2.carbon.identity.recovery.dto.RecoveryInformationDTO;
+import org.wso2.carbon.identity.recovery.dto.ResendConfirmationDTO;
 import org.wso2.carbon.identity.recovery.internal.service.impl.UserAccountRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.util.HashMap;
+import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertEquals;
@@ -56,12 +63,17 @@ public class PasswordRecoveryManagerImplTest {
     private static final String SMS = "SMS";
     private static final String TEST_EMAIL = "test@gmail.com";
     private static final String TEST_MOBILE = "+9471736746";
+    private static final String TENANT_DOMAIN = "carbon.super";
 
     @Mock
     UserAccountRecoveryManager userAccountRecoveryManager;
 
+    @Mock
+    ResendConfirmationManager resendConfirmationManager;
+
     private MockedStatic<Utils> utilsMockedStatic;
     private MockedStatic<UserAccountRecoveryManager> userAccountRecoveryManagerMockedStatic;
+    private MockedStatic<ResendConfirmationManager> resendConfirmationManagerMockedStatic;
 
     @BeforeMethod
     public void init() {
@@ -69,6 +81,9 @@ public class PasswordRecoveryManagerImplTest {
         openMocks(this);
         utilsMockedStatic = mockStatic(Utils.class);
         userAccountRecoveryManagerMockedStatic = mockStatic(UserAccountRecoveryManager.class);
+        resendConfirmationManagerMockedStatic = mockStatic(ResendConfirmationManager.class);
+        resendConfirmationManagerMockedStatic.when(ResendConfirmationManager::getInstance).
+                thenReturn(resendConfirmationManager);
     }
 
     @AfterMethod
@@ -76,6 +91,7 @@ public class PasswordRecoveryManagerImplTest {
 
         utilsMockedStatic.close();
         userAccountRecoveryManagerMockedStatic.close();
+        resendConfirmationManagerMockedStatic.close();
     }
 
     @DataProvider(name = "generateInitiateData")
@@ -133,24 +149,24 @@ public class PasswordRecoveryManagerImplTest {
                              RecoveryChannelInfoDTO expectedRecoveryChannelInfo) throws IdentityRecoveryException {
 
         HashMap<String, String> claims = new HashMap<>();
-        String tenantDomain = "carbon.super";
+
         HashMap<String, String> properties = new HashMap<>();
 
         if (isEmailLinkEnabled) {
             utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
-                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, tenantDomain))
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_EMAIL_LINK_ENABLE, TENANT_DOMAIN))
                     .thenReturn(TRUE_STRING);
         }
 
         if (isEmailOtpEnabled) {
             utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
-                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, tenantDomain))
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, TENANT_DOMAIN))
                     .thenReturn(TRUE_STRING);
         }
 
         if (isSmsOtpEnabled) {
             utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(
-                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, tenantDomain))
+                            IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SMS_OTP_ENABLE, TENANT_DOMAIN))
                     .thenReturn(TRUE_STRING);
         }
 
@@ -158,16 +174,16 @@ public class PasswordRecoveryManagerImplTest {
 
         utilsMockedStatic.when(
                 () -> Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY,
-                        tenantDomain)).thenReturn(TRUE_STRING);
+                        TENANT_DOMAIN)).thenReturn(TRUE_STRING);
 
         userAccountRecoveryManagerMockedStatic.when(UserAccountRecoveryManager::getInstance)
                 .thenReturn(userAccountRecoveryManager);
 
-        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, tenantDomain,
+        when(userAccountRecoveryManager.retrieveUserRecoveryInformation(claims, TENANT_DOMAIN,
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY, properties)).thenReturn(recoveryChannelInfoDTO);
 
         RecoveryInformationDTO recoveryInformationDTO =
-                passwordRecoveryManager.initiate(claims, tenantDomain, properties);
+                passwordRecoveryManager.initiate(claims, TENANT_DOMAIN, properties);
 
         assertEquals(recoveryInformationDTO.getUsername(), expectedRecoveryChannelInfo.getUsername());
         assertEquals(recoveryInformationDTO.getRecoveryFlowId(), expectedRecoveryChannelInfo.getRecoveryFlowId());
@@ -231,5 +247,35 @@ public class PasswordRecoveryManagerImplTest {
 
         assertThrows(IdentityRecoveryServerException.class,
                 () -> passwordRecoveryManager.initiate(claims, tenantDomain, properties));
+    }
+
+    @Test
+    public void testResend() throws IdentityRecoveryException {
+
+        String resendCode = "test-resend-code";
+        Map<String, String> properties = new HashMap<>();
+        String resendPasswordResetTemplateName = "resendPasswordReset";
+        String resendPasswordResetOTPTemplateName = "resendpasswordresetotp";
+
+        ResendConfirmationDTO resendConfirmationDTO = new ResendConfirmationDTO();
+
+        PasswordRecoveryManagerImpl passwordRecoveryManager = new PasswordRecoveryManagerImpl();
+        when(resendConfirmationManager.resendConfirmation(anyString(), anyString(), anyString(), anyString(),
+                anyString(), any())).thenReturn(resendConfirmationDTO);
+
+        // Case 1: Email OTP password reset is disabled.
+        passwordRecoveryManager.resend(TENANT_DOMAIN, resendCode, properties);
+
+        verify(resendConfirmationManager).resendConfirmation(eq(TENANT_DOMAIN), eq(resendCode),
+                eq(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name()), eq(RecoverySteps.UPDATE_PASSWORD.name()),
+                eq(resendPasswordResetTemplateName), any());
+
+        // Case 2: Email OTP password reset is enabled.
+        utilsMockedStatic.when(() -> Utils.isPasswordRecoveryEmailOtpEnabled(TENANT_DOMAIN)).thenReturn(true);
+
+        passwordRecoveryManager.resend(TENANT_DOMAIN, resendCode, properties);
+        verify(resendConfirmationManager).resendConfirmation(eq(TENANT_DOMAIN), eq(resendCode),
+                eq(RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name()), eq(RecoverySteps.UPDATE_PASSWORD.name()),
+                eq(resendPasswordResetOTPTemplateName), any());
     }
 }
