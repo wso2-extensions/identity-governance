@@ -24,7 +24,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -35,7 +34,6 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
-import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -220,8 +218,7 @@ public class NotificationPasswordRecoveryManagerTest {
         utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(NOTIFICATION_BASED_PW_RECOVERY, TENANT_DOMAIN)).
                 thenReturn(TRUE_STRING);
         if (isEMailOtpEnabled) {
-            utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
-                    TENANT_DOMAIN)).thenReturn(TRUE_STRING);
+            utilsMockedStatic.when(() -> Utils.isPasswordRecoveryEmailOtpEnabled(TENANT_DOMAIN)).thenReturn(true);
         }
 
         organizationManagementUtilMockedStatic.when(() -> OrganizationManagementUtil.isOrganization(TENANT_DOMAIN)).
