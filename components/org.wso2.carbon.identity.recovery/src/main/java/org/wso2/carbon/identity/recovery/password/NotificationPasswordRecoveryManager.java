@@ -211,12 +211,9 @@ public class NotificationPasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
             // Manage notifications by the identity server.
-            boolean isEmailOtpEnabled = Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                    IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
-                    user.getTenantDomain()));
-
             String templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET;
-            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel) && isEmailOtpEnabled) {
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel) &&
+                    Utils.isPasswordRecoveryEmailOtpEnabled(user.getTenantDomain())) {
                 templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_EMAIL_OTP;
             }
             triggerNotification(user, notificationChannel, templateName, secretKey, eventName, properties,

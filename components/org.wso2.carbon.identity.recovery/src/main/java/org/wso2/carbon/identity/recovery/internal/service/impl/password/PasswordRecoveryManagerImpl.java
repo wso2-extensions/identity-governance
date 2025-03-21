@@ -401,9 +401,14 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         Property[] metaProperties = buildPropertyList(null, properties);
         ResendConfirmationManager resendConfirmationManager = ResendConfirmationManager.getInstance();
         try {
+
+            String emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_PASSWORD_RESET;
+            if (Utils.isPasswordRecoveryEmailOtpEnabled(tenantDomain)) {
+                emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_PASSWORD_RESET_EMAIL_OTP;
+            }
             return resendConfirmationManager.resendConfirmation(tenantDomain, resendCode,
                     RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.name(), RecoverySteps.UPDATE_PASSWORD.name(),
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_PASSWORD_RESET, metaProperties);
+                    emailTemplate, metaProperties);
         } catch (IdentityRecoveryException e) {
             e.setErrorCode(Utils.prependOperationScenarioToErrorCode(e.getErrorCode(),
                     IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO));
