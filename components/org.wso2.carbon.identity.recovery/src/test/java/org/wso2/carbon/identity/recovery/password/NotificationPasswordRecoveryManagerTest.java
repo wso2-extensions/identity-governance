@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.password;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -28,20 +29,38 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.identity.event.event.Event;
 
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL;
 
 public class NotificationPasswordRecoveryManagerTest {
@@ -50,6 +69,16 @@ public class NotificationPasswordRecoveryManagerTest {
     private static final String OTP = "PnRuLm";
     private static final String FLOW_CONFIRMATION_CODE = "4273129d-344a-423c-a889-e5d36ea9d960";
     private static final String TENANT_DOMAIN = "carbon.super";
+    public static final String VERIFIED_USER_PROPERTY_KEY = "verifiedUser";
+    public static final String PASSWORD_RESET_EMAIL_TEMPLATE_NAME = "passwordreset";
+    public static final String PASSWORD_RESET_EMAIL_OTP_TEMPLATE_NAME = "passwordresetotp";
+    // Event properties constants.
+    public static final String TEMPLATE_TYPE_KEY = "TEMPLATE_TYPE";
+    public static final String USER_STORE_DOMAIN_KEY = "userstore-domain";
+    public static final String TENANT_DOMAIN_KEY = "tenant-domain";
+    private static final String USER_STORE_DOMAIN = "PRIMARY";
+    private static final String TRUE_STRING = "true";
+    private static final int TENANT_ID = 1234;
 
     @Mock
     private IdentityGovernanceService identityGovernanceService;
@@ -57,11 +86,34 @@ public class NotificationPasswordRecoveryManagerTest {
     @Mock
     UserRecoveryDataStore userRecoveryDataStore;
 
+    @Mock
+    IdentityEventService identityEventService;
+
+    @Mock
+    RealmService realmService;
+
+    @Mock
+    UserRealm userRealm;
+
+    @Mock
+    UserStoreManager userStoreManager;
+
+    private MockedStatic<IdentityTenantUtil> identityTenantUtilMockedStatic;
+
+    private MockedStatic<Utils> utilsMockedStatic;
+
+    private MockedStatic<OrganizationManagementUtil> organizationManagementUtilMockedStatic;
+
+    private MockedStatic<JDBCRecoveryDataStore> jdbcRecoveryDataStoreMockedStatic;
+
     @BeforeMethod
     public void setUp() {
 
         MockitoAnnotations.openMocks(this);
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityGovernanceService(identityGovernanceService);
+        IdentityRecoveryServiceDataHolder.getInstance().setIdentityEventService(identityEventService);
+        IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
+
     }
 
     @DataProvider(name = "generateNewConfirmationCodeForOTPFlowData")
@@ -120,6 +172,86 @@ public class NotificationPasswordRecoveryManagerTest {
 
             assertEquals(recoveryData.getSecret(), confirmationCode);
         }
+
+    }
+
+    @DataProvider(name = "generateRecoveryNotificationEmailTemplateConfigs")
+    public Object[][] generateRecoveryNotificationEmailTemplateConfigs() {
+
+        return new Object[][]{
+                {true, PASSWORD_RESET_EMAIL_OTP_TEMPLATE_NAME},
+                {false, PASSWORD_RESET_EMAIL_TEMPLATE_NAME}
+        };
+    }
+
+    @Test(dataProvider = "generateRecoveryNotificationEmailTemplateConfigs")
+    public void testSendRecoveryNotificationEmailTemplate(boolean isEMailOtpEnabled, String expectedTemplate)
+            throws IdentityRecoveryException, IdentityEventException, UserStoreException {
+
+        // Creating the static mocks.
+        identityTenantUtilMockedStatic = mockStatic(IdentityTenantUtil.class);
+        utilsMockedStatic = mockStatic(Utils.class);
+        organizationManagementUtilMockedStatic = mockStatic(OrganizationManagementUtil.class);
+        jdbcRecoveryDataStoreMockedStatic = mockStatic(JDBCRecoveryDataStore.class);
+
+        User user = new User();
+        user.setTenantDomain(TENANT_DOMAIN);
+        user.setUserStoreDomain(USER_STORE_DOMAIN);
+
+        org.wso2.carbon.identity.recovery.model.Property property1 =
+                new org.wso2.carbon.identity.recovery.model.Property();
+        property1.setKey(PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL);
+        property1.setValue(TRUE_STRING);
+
+        org.wso2.carbon.identity.recovery.model.Property property2 =
+                new org.wso2.carbon.identity.recovery.model.Property();
+        property2.setKey(VERIFIED_USER_PROPERTY_KEY);
+        property2.setValue(TRUE_STRING);
+
+        org.wso2.carbon.identity.recovery.model.Property[] properties =
+                new org.wso2.carbon.identity.recovery.model.Property[2];
+        properties[0] = property1;
+        properties[1] = property2;
+
+        doNothing().when(identityEventService).handleEvent(any());
+        identityTenantUtilMockedStatic.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+        utilsMockedStatic.when(() -> Utils.getRecoveryConfigs(NOTIFICATION_BASED_PW_RECOVERY, TENANT_DOMAIN)).
+                thenReturn(TRUE_STRING);
+        if (isEMailOtpEnabled) {
+            utilsMockedStatic.when(() -> Utils.isPasswordRecoveryEmailOtpEnabled(TENANT_DOMAIN)).thenReturn(true);
+        }
+
+        organizationManagementUtilMockedStatic.when(() -> OrganizationManagementUtil.isOrganization(TENANT_DOMAIN)).
+                thenReturn(false);
+
+        when(realmService.getTenantUserRealm(TENANT_ID)).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+
+        jdbcRecoveryDataStoreMockedStatic.when(JDBCRecoveryDataStore::getInstance).thenReturn(userRecoveryDataStore);
+
+        NotificationPasswordRecoveryManager notificationPasswordRecoveryManager =
+                NotificationPasswordRecoveryManager.getInstance();
+
+        notificationPasswordRecoveryManager.sendRecoveryNotification(user,
+                null, true, properties);
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService, times(3)).handleEvent(eventCaptor.capture());
+
+        List<Event> capturedEvents = eventCaptor.getAllValues();
+
+        Event recoveryEvent = capturedEvents.get(1);
+        Map<String, Object> eventProperties = recoveryEvent.getEventProperties();
+
+        assertEquals(eventProperties.get(TEMPLATE_TYPE_KEY), expectedTemplate);
+        assertEquals(eventProperties.get(USER_STORE_DOMAIN_KEY), USER_STORE_DOMAIN);
+        assertEquals(eventProperties.get(TENANT_DOMAIN_KEY), TENANT_DOMAIN);
+
+        // Tear down the static mocks.
+        identityTenantUtilMockedStatic.close();
+        utilsMockedStatic.close();
+        organizationManagementUtilMockedStatic.close();
+        jdbcRecoveryDataStoreMockedStatic.close();
 
     }
 }

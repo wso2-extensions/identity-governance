@@ -1102,6 +1102,42 @@ public class Utils {
     }
 
     /**
+     * Checks whether the password recovery email OTP is enabled.
+     *
+     * @param tenantDomain tenant Domain
+     * @return true if the config is set to true for given tenant domain, false otherwise.
+     * @throws IdentityRecoveryServerException
+     */
+    public static boolean isPasswordRecoveryEmailOtpEnabled(String tenantDomain)
+            throws IdentityRecoveryServerException {
+
+        return Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL,
+                tenantDomain));
+    }
+
+    /**
+     * Skip concatenation of recovery flow id with the secret key for OTP based email recovery.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return True if the concatenation should be skipped.
+     */
+    public static boolean skipConcatForOTPBasedEmailRecovery(String tenantDomain) {
+
+        boolean isSendOtpAsEmailConfirmationCodeEnabled = Boolean.parseBoolean(IdentityUtil.getProperty
+                (IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_ONLY_OTP_AS_CONFIRMATION_CODE));
+        if (isSendOtpAsEmailConfirmationCodeEnabled) {
+            try {
+                return Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL, tenantDomain));
+            } catch (IdentityRecoveryException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Checks whether detailed error messages are enabled.
      *
      * @return true if the config is set to true, false otherwise.

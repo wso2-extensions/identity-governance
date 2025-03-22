@@ -180,8 +180,11 @@ public class ResendConfirmationManager {
         } else {
             userRecoveryDataStore.invalidate(user);
             confirmationCode = getSecretKey(notificationChannel, recoveryScenario, user.getTenantDomain());
-            confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
-                    confirmationCode);
+            if (!Utils.skipConcatForOTPBasedEmailRecovery(tenantDomain)) {
+                confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
+                        confirmationCode);
+            }
+
             try {
                 hashedConfirmationCode = Utils.hashCode(confirmationCode);
             } catch (NoSuchAlgorithmException e) {
