@@ -248,7 +248,7 @@ public class IdentityGovernanceServiceImplTest {
         Map<String, String> passwordConfigs7 = getPasswordRecoveryConfigs(true, null, null, null);
         IdentityProviderProperty[] passwordIdentityProps7 = getPasswordRecoveryIdentityProviderProperties(false, false
                 , false, false);
-        Map<String, String> passwordExpected7 = getPasswordRecoveryExpectedPropertyValues(true, true, true, true);
+        Map<String, String> passwordExpected7 = getPasswordRecoveryExpectedPropertyValues(true, true, false, true);
 
         // Disabling the password recovery config. Precondition: email link and sms otp are true.
         Map<String, String> passwordConfigs8 = getPasswordRecoveryConfigs(false, null, null, null);

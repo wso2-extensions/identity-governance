@@ -381,12 +381,13 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             boolean emailOtpPasswordRecoveryProperty = Boolean.parseBoolean(emailOtpForPasswordRecoveryProp);
 
             if (recoveryNotificationPasswordProperty) {
+                // Connector is enabled and if channels are not explicitly enabled/disabled, email link and sms otp
+                // will be enabled in default.
                 configurationDetails.put(EMAIL_LINK_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(emailLinkPasswordRecoveryProperty ||
                                 StringUtils.isBlank(emailLinkForPasswordRecoveryProp)));
                 configurationDetails.put(EMAIL_OTP_PASSWORD_RECOVERY_PROPERTY,
-                        String.valueOf(emailOtpPasswordRecoveryProperty ||
-                                StringUtils.isBlank(emailOtpForPasswordRecoveryProp)));
+                        String.valueOf(emailOtpPasswordRecoveryProperty));
                 configurationDetails.put(SMS_OTP_PASSWORD_RECOVERY_PROPERTY,
                         String.valueOf(smsOtpPasswordRecoveryProperty ||
                                 StringUtils.isBlank(smsOtpForPasswordRecoveryProp)));
