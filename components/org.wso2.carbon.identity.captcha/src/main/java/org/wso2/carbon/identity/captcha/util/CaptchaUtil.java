@@ -276,8 +276,6 @@ public class CaptchaUtil {
 
     public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
 
-//        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
-
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
         org.apache.hc.client5.http.classic.methods.HttpPost httpPost;
@@ -294,7 +292,8 @@ public class CaptchaUtil {
 
         org.apache.hc.core5.http.HttpEntity entity;
 
-        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient = CaptchaDataHolder.getInstance().getHttpClientService().createSystemClient()) {
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient = CaptchaDataHolder.getInstance()
+                .getHttpClientService().createClientWithSystemProperties()) {
             entity = httpclient.execute(httpPost, HttpEntityContainer::getEntity);
             if (entity == null) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
