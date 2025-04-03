@@ -48,7 +48,8 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
-    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
@@ -78,6 +79,7 @@ public class IdentityRecoveryConstants {
     public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CAMPAIGN = "campaign";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
     public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
