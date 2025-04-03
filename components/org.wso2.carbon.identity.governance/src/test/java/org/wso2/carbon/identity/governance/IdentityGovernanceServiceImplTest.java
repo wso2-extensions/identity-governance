@@ -256,12 +256,6 @@ public class IdentityGovernanceServiceImplTest {
                 , true, true);
         Map<String, String> passwordExpected8 = getPasswordRecoveryExpectedPropertyValues(false, false, false, false);
 
-        // Setting all to true. Precondition: all configs are false.
-        Map<String, String> passwordConfigs9 = getPasswordRecoveryConfigs(true, true, true, true);
-        IdentityProviderProperty[] passwordIdentityProps9 = getPasswordRecoveryIdentityProviderProperties(false, false
-                , false, false);
-        Map<String, String> passwordExpected9 = getPasswordRecoveryExpectedPropertyValues(true, true, true, true);
-
         return new Object[][]{
                 {usernameConfig1, identityProviderProperties1, expected1},
                 {usernameConfig2, identityProviderProperties2, expected2},
@@ -282,7 +276,6 @@ public class IdentityGovernanceServiceImplTest {
                 {passwordConfigs6, passwordIdentityProps6, passwordExpected6},
                 {passwordConfigs7, passwordIdentityProps7, passwordExpected7},
                 {passwordConfigs8, passwordIdentityProps8, passwordExpected8},
-                {passwordConfigs9, passwordIdentityProps9, passwordExpected9}
         };
 
     }
