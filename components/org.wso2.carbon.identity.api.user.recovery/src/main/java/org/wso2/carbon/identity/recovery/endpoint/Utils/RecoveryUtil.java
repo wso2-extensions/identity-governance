@@ -145,6 +145,25 @@ public class RecoveryUtil {
 
 
     /**
+     * Handles a bad request by throwing a {@link BadRequestException} with the specified error details.
+     * If the {@code description} is blank, it delegates handling to {@link #handleBadRequest(String, String)}.
+     * Otherwise, it constructs an {@link ErrorDTO} and throws a {@link BadRequestException}.
+     *
+     * @param message     A brief message describing the error.
+     * @param description A detailed description of the error. If blank, the method delegates to another handler.
+     * @param code        The functional error code associated with the bad request.
+     * @throws BadRequestException Always thrown with the generated {@link ErrorDTO}.
+     */
+    public static void handleBadRequest(String message, String description, String code) throws BadRequestException {
+
+        if (StringUtils.isBlank(description)) {
+            handleBadRequest(message, code);
+        }
+        ErrorDTO errorDTO = getErrorDTO(message, code, description);
+        throw new BadRequestException(errorDTO);
+    }
+
+    /**
      * Logs the error, builds a BadRequestException with specified details and throws it
      *
      * @param msg  error message

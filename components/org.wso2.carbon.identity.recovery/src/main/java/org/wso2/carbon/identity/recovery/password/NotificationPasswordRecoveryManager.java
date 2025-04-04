@@ -66,7 +66,6 @@ import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionCli
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -1064,15 +1063,14 @@ public class NotificationPasswordRecoveryManager {
                         cause.getMessage(), e);
             }
 
-            if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
-                    .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+            if (cause instanceof UserActionExecutionClientException &&
+                    ((UserActionExecutionClientException) cause).getErrorCode()
+                            .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
 
-                String description = cause.getMessage();
-                if (cause instanceof UserActionExecutionClientException) {
-                    description = ((UserActionExecutionClientException) cause).getDescription();
-                }
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, description, cause);
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE,
+                        ((UserActionExecutionClientException) cause).getDescription(),
+                        ((UserActionExecutionClientException) cause).getError(), cause);
             }
             cause = cause.getCause();
         }
