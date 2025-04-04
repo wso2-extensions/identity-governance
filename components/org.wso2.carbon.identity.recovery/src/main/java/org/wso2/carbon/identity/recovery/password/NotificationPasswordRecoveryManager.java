@@ -62,6 +62,7 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -1065,8 +1066,13 @@ public class NotificationPasswordRecoveryManager {
 
             if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
                     .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+
+                String description = cause.getMessage();
+                if (cause instanceof UserActionExecutionClientException) {
+                    description = ((UserActionExecutionClientException) cause).getDescription();
+                }
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, cause.getMessage(), cause);
+                        .ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, description, cause);
             }
             cause = cause.getCause();
         }
