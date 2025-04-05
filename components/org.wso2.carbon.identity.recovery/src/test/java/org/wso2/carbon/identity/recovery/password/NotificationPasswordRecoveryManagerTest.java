@@ -293,8 +293,8 @@ public class NotificationPasswordRecoveryManagerTest {
             when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
             doThrow(buildUserStoreException()).when(userStoreManager).updateCredentialByAdmin(anyString(), anyString());
 
-            Method method = NotificationPasswordRecoveryManager.class.getDeclaredMethod(
-                    "updateNewPassword", User.class, String.class, String.class, UserRecoveryData.class, boolean.class);
+            Method method = NotificationPasswordRecoveryManager.class.getDeclaredMethod("updateNewPassword", User.class,
+                    String.class, String.class, UserRecoveryData.class, boolean.class);
             method.setAccessible(true);
 
             try {

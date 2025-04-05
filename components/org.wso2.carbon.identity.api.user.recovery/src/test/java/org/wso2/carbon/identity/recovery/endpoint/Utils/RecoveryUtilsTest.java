@@ -63,15 +63,16 @@ public class RecoveryUtilsTest {
     }
 
     @Test(description = "Test the password reset API error format.")
-    public void testHandleClientExceptionWithData() {
+    public void testHandleClientExceptionWithDescription() {
 
-        String data = "Invalid password format";
+        String description = "Invalid password format";
         String message = "invalid_value";
-        Throwable cause = new Throwable("Invalid password format");
+        Throwable cause = new Throwable(description);
 
         IdentityRecoveryClientException exception;
         try {
-            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, data, message, cause);
+            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, description, message,
+                    cause);
         } catch (IdentityRecoveryClientException e) {
             throw new RuntimeException(e);
         }
@@ -79,20 +80,20 @@ public class RecoveryUtilsTest {
         assertNotNull(exception);
         assertEquals(exception.getErrorCode(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode());
         assertEquals(exception.getMessage(), message);
-        assertEquals(exception.getDescription(), data);
+        assertEquals(exception.getDescription(), description);
         assertEquals(cause, exception.getCause());
     }
 
     @Test
-    public void testHandleClientExceptionWithoutData() {
+    public void testHandleClientExceptionWithoutDescription() {
 
-        String data = null;
         String message = "Test message";
         Throwable cause = new Throwable("Cause of the error");
 
         IdentityRecoveryClientException exception;
         try {
-            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, data, message, cause);
+            exception =
+                    Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, null, message, cause);
         } catch (IdentityRecoveryClientException e) {
             throw new RuntimeException(e);
         }
@@ -103,5 +104,4 @@ public class RecoveryUtilsTest {
         assertEquals(exception.getDescription(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getMessage());
         assertEquals(cause, exception.getCause());
     }
-
 }
