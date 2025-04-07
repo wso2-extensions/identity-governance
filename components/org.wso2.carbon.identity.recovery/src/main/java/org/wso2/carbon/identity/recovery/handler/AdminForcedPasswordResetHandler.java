@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -72,9 +73,11 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             throws IdentityEventException {
 
         User user = getUser(eventProperties, userStoreManager);
+        String maskedUsername = Utils.maskIfRequired(user.getUserName());
+
         if (log.isDebugEnabled()) {
             log.debug("PostUpdateCredentialsByAdmin - AdminForcedPasswordResetHandler for user : "
-                    + user.toString());
+                    + maskedUsername);
         }
 
         UserRecoveryData userRecoveryData = getRecoveryData(user);
@@ -82,10 +85,65 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             invalidateRecoveryData(user);
             if (log.isDebugEnabled()) {
                 log.debug("PostUpdateCredentialsByAdmin - invalidate Recovery Data for user : "
-                        + user.toString());
+                        + maskedUsername);
             }
         }
 
+        handleAccountUnlockOnAdminPasswordReset(user, userStoreManager);
+    }
+
+    /**
+     * Unlocks the user account if it was locked due to pending password update scenarios such as
+     * - PENDING_ASK_PASSWORD
+     * - PENDING_ADMIN_FORCED_USER_PASSWORD_RESET
+     * triggered by an administrator's password update.
+     *
+     * @param user             User object
+     * @param userStoreManager UserStoreManager instance
+     * @throws IdentityEventException If an error occurs while handling account unlock
+     */
+    private void handleAccountUnlockOnAdminPasswordReset(User user, UserStoreManager userStoreManager)
+            throws IdentityEventException {
+
+        try {
+            // Retrieve the locked reason claim.
+            Map<String, String> currentClaims = userStoreManager.getUserClaimValues(
+                    user.getUserName(),
+                    new String[]{IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM},
+                    null
+            );
+            String lockedReason = currentClaims.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
+
+            // Unlock the account if it was locked due to pending password update scenarios.
+            if (isUnlockRequired(lockedReason)) {
+                Map<String, String> claimMap = new HashMap<>();
+                if (Utils.isAccountStateClaimExisting(user.getTenantDomain())) {
+                    claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+                }
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+
+                // Update the claims to unlock the account.
+                userStoreManager.setUserClaimValues(user.getUserName(), claimMap, null);
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Account unlocked for user: %s after admin password update.",
+                            Utils.maskIfRequired(user.getUserName())));
+                }
+            }
+        } catch (UserStoreException e) {
+            throw new IdentityEventException(
+                    String.format("Error while handling account unlock on admin password update for user: %s",
+                            Utils.maskIfRequired(user.getUserName())), e);
+        }
+    }
+
+    private boolean isUnlockRequired(String lockedReason) {
+
+        return IdentityMgtConstants.LockedReason.PENDING_ASK_PASSWORD.toString().equals(lockedReason)
+                || IdentityMgtConstants.LockedReason.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET.toString()
+                .equals(lockedReason);
     }
 
     protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
