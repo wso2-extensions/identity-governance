@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.password.expiry.listener;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -61,13 +63,18 @@ public class PasswordExpiryEventListener extends AbstractIdentityUserOperationEv
                                                   Map<String, String> claimMap, UserStoreManager userStoreManager)
             throws UserStoreException {
 
+        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM)) {
+            return true;
+        }
         /*
-         * The passwordExpiryTime is a dynamically calculated value. It is only computed and added to the claims map
-         * if explicitly requested by the user via the claims list. This computation is also skipped during the
-         * authentication flow to avoid unnecessary processing.
+         * Dynamically computes and returns the password expiry time only when explicitly requested via the claims list.
+         * Under normal circumstances during authentication, this computation is skipped to avoid unnecessary
+         * processing. However, if the user explicitly requests only the password expiry time claim then the
+         * password expiry time is computed and included in the claim map.
          */
-        if (!isEnable() || !Arrays.asList(claims).contains(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM) ||
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername() == null) {
+        if (PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername() == null &&
+                (ArrayUtils.isEmpty(claims) || claims.length != 1 ||
+                        !StringUtils.equals(claims[0], PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM))) {
             return true;
         }
         log.debug("post get user claim values with id is called in PasswordExpiryEventListener");
