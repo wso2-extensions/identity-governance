@@ -73,7 +73,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             IdentityProviderProperty[] identityMgtProperties = residentIdp.getIdpProperties();
             List<IdentityProviderProperty> newProperties = new ArrayList<>();
             updateEmailOTPNumericPropertyValue(configurationDetails);
-            IdPManagementUtil.validatePasswordRecoveryPropertyValues(configurationDetails);
+            IdPManagementUtil.
+                    validatePasswordRecoveryWithCurrentAndPreviousConfigs(configurationDetails, identityMgtProperties);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             updateUsernameRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
