@@ -270,7 +270,7 @@ public class NotificationPasswordRecoveryManagerTest {
     }
 
     @Test
-    public void testUpdateNewPasswordCheckPasswordValidityIsTriggered() throws Exception {
+    public void testExceptionThrownAtPreUpdatePasswordValidationFailure() throws Exception {
 
         NotificationPasswordRecoveryManager manager = NotificationPasswordRecoveryManager.getInstance();
 
