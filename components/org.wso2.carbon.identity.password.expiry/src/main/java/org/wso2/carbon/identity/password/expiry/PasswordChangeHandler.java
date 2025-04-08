@@ -55,17 +55,16 @@ public class PasswordChangeHandler extends AbstractEventHandler {
         String tenantDomain = (String) event.getEventProperties()
                 .get(IdentityEventConstants.EventProperty.TENANT_DOMAIN);
 
-        try {
-            if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
-                return;
-            }
-        } catch (PostAuthenticationFailedException e) {
-            throw new IdentityEventException(e.getMessage(), e);
-        }
-
         //password grant handler - password expiry validation
         if (PasswordPolicyConstants.PASSWORD_GRANT_POST_AUTHENTICATION_EVENT.equals(eventName)) {
-            handlePasswordExpiryInPasswordGrantType(event, username, tenantDomain);
+            try {
+                if (!PasswordPolicyUtils.isPasswordExpiryEnabled(tenantDomain)) {
+                    return;
+                }
+                handlePasswordExpiryInPasswordGrantType(event, username, tenantDomain);
+            } catch (PostAuthenticationFailedException e) {
+                throw new IdentityEventException("Error during password expiry processing: " + e.getMessage(), e);
+            }
             return;
         }
 
