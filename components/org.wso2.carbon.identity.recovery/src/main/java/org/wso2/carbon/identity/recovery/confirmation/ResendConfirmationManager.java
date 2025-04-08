@@ -493,7 +493,7 @@ public class ResendConfirmationManager {
         String storedNotificationChannel = StringUtils.EMPTY;
         if (userRecoveryData == null &&
                 RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
-                Utils.isUserInPendingAskPasswordState(user)) {
+                isUserInPendingAskPasswordState(user)) {
                 storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         } else if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             // Validate the previous confirmation code with the data retrieved by the user recovery information.
@@ -766,5 +766,21 @@ public class ResendConfirmationManager {
                     identityRecoveryClientException.getMessage());
         }
 
+    }
+
+    /**
+     * Determines if a user's account is in a state where they need to set a password
+     * through the ask password flow.
+     *
+     * @param user User object containing user information
+     * @return true if the user is in pending ask password state, false otherwise
+     */
+    private boolean isUserInPendingAskPasswordState(User user) {
+
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
     }
 }

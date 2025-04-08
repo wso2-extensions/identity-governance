@@ -1909,42 +1909,6 @@ public class Utils {
     }
 
     /**
-     * Retrieve values of multiple claims for a given user from the user store.
-     *
-     * @param user   User object containing user information.
-     * @param claims Array of claim URIs to retrieve for the user.
-     * @return Map of claim URIs to their corresponding values.
-     * @throws IdentityRecoveryServerException If an error occurs while retrieving the claim values.
-     */
-    public static Map<String, String> getUserClaimValues(User user, String[] claims)
-            throws IdentityRecoveryServerException {
-
-        String userStoreDomain = user.getUserStoreDomain();
-        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-        try {
-            org.wso2.carbon.user.api.UserRealm userRealm =
-                    realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
-            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
-
-            if (userStoreManager == null) {
-                throw new IdentityRecoveryServerException(String.format("userStoreManager is null for user: " +
-                        "%s in tenant domain : %s", maskIfRequired(user.getUserName()), user.getTenantDomain()));
-            }
-            if (StringUtils.isNotBlank(userStoreDomain) && !PRIMARY_DEFAULT_DOMAIN_NAME.equals(userStoreDomain)) {
-                userStoreManager =
-                        ((AbstractUserStoreManager) userStoreManager).getSecondaryUserStoreManager(userStoreDomain);
-            }
-
-            return userStoreManager.getUserClaimValues(user.getUserName(), claims, null);
-
-        } catch (UserStoreException e) {
-            String error = String.format("Error occurred while retrieving claim values for user: " +
-                    "%s in tenant domain : %s", maskIfRequired(user.getUserName()), user.getTenantDomain());
-            throw new IdentityRecoveryServerException(error, e);
-        }
-    }
-
-    /**
      * Retrieves the existing multi-valued claims for a given claim URI.
      *
      * @param userStoreManager User store manager.
@@ -1968,26 +1932,5 @@ public class Utils {
             throw new IdentityEventException("Error retrieving claim " + claimURI +
                     " for user: " + user.toFullQualifiedUsername(), e);
         }
-    }
-
-    /**
-     * Determines if a user's account is in a state where they need to set a password
-     * through the ask password flow.
-     *
-     * @param user User object containing user information
-     * @return true if the user is in pending ask password state, false otherwise
-     */
-    public static boolean isUserInPendingAskPasswordState(User user) throws IdentityRecoveryServerException {
-
-        String accountState = null;
-        Map<String, String> claimValueMap =
-                getUserClaimValues(user, new String[]{IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI});
-        if (claimValueMap != null && claimValueMap.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI)) {
-            accountState = claimValueMap.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI);
-        }
-        if (StringUtils.isBlank(accountState)) {
-            return false;
-        }
-        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
     }
 }
