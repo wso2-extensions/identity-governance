@@ -90,9 +90,9 @@ public class NotificationPasswordRecoveryManagerTest {
     private static final String TRUE_STRING = "true";
     private static final int TENANT_ID = 1234;
 
-    public static final String PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED = "USER-ACTION-PRE-UPDATE-PASSWORD-60001";
-    public static final String EXTENSION_ERROR_MESSAGE = "invalid_password";
-    public static final String EXTENSION_ERROR_DESCRIPTION = "Invalid password format";
+    private static final String PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED = "USER-ACTION-PRE-UPDATE-PASSWORD-60001";
+    private static final String EXTENSION_ERROR_MESSAGE = "invalid_password";
+    private static final String EXTENSION_ERROR_DESCRIPTION = "Invalid password format";
 
     @Mock
     private IdentityGovernanceService identityGovernanceService;
@@ -270,7 +270,7 @@ public class NotificationPasswordRecoveryManagerTest {
     }
 
     @Test
-    public void testUpdateNewPassword_checkPasswordValidityIsTriggered() throws Exception {
+    public void testUpdateNewPasswordCheckPasswordValidityIsTriggered() throws Exception {
 
         NotificationPasswordRecoveryManager manager = NotificationPasswordRecoveryManager.getInstance();
 
@@ -291,7 +291,8 @@ public class NotificationPasswordRecoveryManagerTest {
             IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
 
             when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
-            doThrow(buildUserStoreException()).when(userStoreManager).updateCredentialByAdmin(anyString(), anyString());
+            doThrow(buildExceptionForPreUpdatePasswordActionFailure()).when(userStoreManager)
+                    .updateCredentialByAdmin(anyString(), anyString());
 
             Method method = NotificationPasswordRecoveryManager.class.getDeclaredMethod("updateNewPassword", User.class,
                     String.class, String.class, UserRecoveryData.class, boolean.class);
@@ -315,7 +316,7 @@ public class NotificationPasswordRecoveryManagerTest {
         }
     }
 
-    private UserStoreException buildUserStoreException() {
+    private UserStoreException buildExceptionForPreUpdatePasswordActionFailure() {
 
         UserActionExecutionClientException userActionExecutionClientException =
                 new UserActionExecutionClientException(PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED,
