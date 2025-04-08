@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,8 @@ import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -53,10 +55,16 @@ import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
 import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Utils {
 
@@ -535,5 +543,67 @@ public class Utils {
             errorMsg = String.format("correlationID: %s | " + errorMsg, error.getRef());
         }
         log.error(errorMsg, cause);
+    }
+
+    /**
+     * Mask the given value if it is required.
+     *
+     * @param value Value to be masked.
+     * @return Masked/unmasked value.
+     */
+    public static String maskIfRequired(String value) {
+
+        return LoggerUtils.isLogMaskingEnable ? LoggerUtils.getMaskedContent(value) : value;
+    }
+
+    /**
+     * Retrieves the claim value for a user from the user store.
+     *
+     * @param user     User object containing user information
+     * @param claimURI The URI of the claim to retrieve
+     * @param log      Log instance for logging errors
+     * @return The claim value, or an empty string if the claim is not found or an error occurs
+     */
+    public static String getUserClaim(UserDTO user, String claimURI, Log log) {
+
+        try {
+            String username = user.getUsername();
+            String tenantDomain = user.getTenantDomain();
+            String userStoreDomain = user.getRealm();
+
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            UserStoreManager userStoreManager = getUserStoreManager(tenantId);
+            String domainQualifiedUsername = UserCoreUtil.addDomainToName(username, userStoreDomain);
+
+            // Retrieve claim value.
+            String[] claimURIs = new String[]{claimURI};
+            Map<String, String> claimValueMap =
+                    userStoreManager.getUserClaimValues(domainQualifiedUsername, claimURIs, null);
+            if (claimValueMap != null && claimValueMap.containsKey(claimURI)) {
+                return claimValueMap.get(claimURI);
+            }
+
+            return StringUtils.EMPTY;
+        } catch (UserStoreException | UserExportException e) {
+            log.error(String.format("Error while retrieving claim '%s' for user: %s",
+                    claimURI, maskIfRequired(user.getUsername())), e);
+
+            return StringUtils.EMPTY;
+        }
+    }
+
+    /**
+     * Get the user store manager for the given tenant.
+     *
+     * @param tenantId The tenant ID.
+     * @return UserStoreManager instance.
+     * @throws UserStoreException  If an error occurs while getting the user store manager.
+     * @throws UserExportException If an error occurs while exporting the user.
+     */
+    private static UserStoreManager getUserStoreManager(int tenantId) throws UserExportException, UserStoreException {
+
+        RealmService realmService = Utils.getRealmService();
+        UserRealm tenantUserRealm = realmService.getTenantUserRealm(tenantId);
+        return (AbstractUserStoreManager) tenantUserRealm.getUserStoreManager();
     }
 }
