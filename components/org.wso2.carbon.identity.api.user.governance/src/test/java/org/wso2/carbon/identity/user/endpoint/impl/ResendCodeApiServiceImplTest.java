@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
@@ -48,6 +49,8 @@ import javax.ws.rs.core.Response;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -80,6 +83,7 @@ public class ResendCodeApiServiceImplTest {
 
     private final String TEST_USERNAME = "testUser";
     private final String TEST_TENANT_DOMAIN = "testTenantDomain";
+    private final String TEST_USER_STORE_DOMAIN = "testUserStoreDomain";
     private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
 
     @BeforeMethod
@@ -142,6 +146,70 @@ public class ResendCodeApiServiceImplTest {
                 Utils.getUser(resendCodeRequestDTO().getUser()),
                 Utils.getProperties(resendCodeRequestDTO().getProperties()))).thenThrow(new IdentityRecoveryClientException("Recovery Exception"));
         assertEquals(resendCodeApiService.resendCodePost(resendCodeRequestDTO()).getStatus(), 400);
+    }
+
+    @Test (description = "Test resendCodePost when recovery scenario is ask password, user in pending ask password " +
+            "state and no userRecoveryData exists.")
+    public void testResendCodePostForAskPasswordRecoveryWithoutUserRecoveryDataAndPendingAskPassword()
+            throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.ASK_PASSWORD.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getUserClaim(any(UserDTO.class), anyString(), any()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+        mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+        when(resendConfirmationManager.resendConfirmationCode(
+                any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(new NotificationResponseBean(createUser()));
+        
+        // Call the method to test
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+        
+        // Verify the response
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 201);
+        
+        // Verify the ResendConfirmationManager was called with correct parameters
+        verify(resendConfirmationManager).resendConfirmationCode(
+                any(),
+                eq(RecoveryScenarios.ASK_PASSWORD.toString()),
+                eq(RecoverySteps.UPDATE_PASSWORD.toString()),
+                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD),
+                any());
+    }
+
+    @Test (description = "Test resendCodePost when recovery scenario is ask password, user not in pending " +
+            "ask password state and no userRecoveryData exists.")
+    public void testResendCodePostForAskPasswordRecoveryWithoutUserRecoveryDataAndNoPendingAskPassword()
+            throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.ASK_PASSWORD.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
+        mockedUtils.when(() -> Utils.getUserClaim(any(UserDTO.class), anyString(), any()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+        mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+        when(resendConfirmationManager.resendConfirmationCode(
+                any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(null);
+
+        // Call the method to test
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+
+        // Verify the response
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 400);
+
+        // Verify the ResendConfirmationManager was never called
+        verify(resendConfirmationManager, Mockito.never()).resendConfirmationCode(
+                any(),
+                anyString(),
+                anyString(),
+                anyString(),
+                any());
     }
 
     private ResendCodeRequestDTO resendCodeRequestDTO() {
@@ -324,5 +392,14 @@ public class ResendCodeApiServiceImplTest {
         properties.add(propertyDTO);
         requestDTO.setProperties(properties);
         return requestDTO;
+    }
+
+    private User createUser() {
+        
+        User user = new User();
+        user.setUserName(TEST_USERNAME);
+        user.setTenantDomain(TEST_TENANT_DOMAIN);
+        user.setUserStoreDomain(TEST_USER_STORE_DOMAIN);
+        return user;
     }
 }
