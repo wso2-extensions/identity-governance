@@ -23,22 +23,38 @@ package org.wso2.carbon.identity.recovery;
  */
 public class IdentityRecoveryClientException extends IdentityRecoveryException {
 
+    String description;
+
     private static final long serialVersionUID = -8248805950312129249L;
 
-    public IdentityRecoveryClientException(String errorDescription) {
-        super(errorDescription);
+    public IdentityRecoveryClientException(String message) {
+
+        super(message);
     }
 
-    public IdentityRecoveryClientException(String errorDescription, Throwable cause) {
-        super(errorDescription, cause);
+    public IdentityRecoveryClientException(String message, Throwable cause) {
+
+        super(message, cause);
     }
 
     public IdentityRecoveryClientException(String errorCode, String message) {
+
         super(errorCode, message);
     }
 
     public IdentityRecoveryClientException(String errorCode, String message, Throwable throwable) {
+
         super(errorCode, message, throwable);
     }
 
+    public IdentityRecoveryClientException(String errorCode, String message, String description, Throwable throwable) {
+
+        super(errorCode, message, throwable);
+        this.description = description;
+    }
+
+    public String getDescription() {
+
+        return description;
+    }
 }

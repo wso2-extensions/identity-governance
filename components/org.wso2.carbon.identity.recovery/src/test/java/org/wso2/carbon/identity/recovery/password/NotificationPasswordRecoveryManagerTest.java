@@ -35,6 +35,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
@@ -43,23 +44,32 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.identity.event.event.Event;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.PrivilegedActionException;
 import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_BASED_PW_RECOVERY;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.PASSWORD_RECOVERY_SEND_OTP_IN_EMAIL;
 
@@ -79,6 +89,10 @@ public class NotificationPasswordRecoveryManagerTest {
     private static final String USER_STORE_DOMAIN = "PRIMARY";
     private static final String TRUE_STRING = "true";
     private static final int TENANT_ID = 1234;
+
+    private static final String PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED = "USER-ACTION-PRE-UPDATE-PASSWORD-60001";
+    private static final String EXTENSION_ERROR_MESSAGE = "invalid_password";
+    private static final String EXTENSION_ERROR_DESCRIPTION = "Invalid password format";
 
     @Mock
     private IdentityGovernanceService identityGovernanceService;
@@ -253,5 +267,63 @@ public class NotificationPasswordRecoveryManagerTest {
         organizationManagementUtilMockedStatic.close();
         jdbcRecoveryDataStoreMockedStatic.close();
 
+    }
+
+    @Test
+    public void testExceptionThrownAtPreUpdatePasswordValidationFailure() throws Exception {
+
+        NotificationPasswordRecoveryManager manager = NotificationPasswordRecoveryManager.getInstance();
+
+        User user = new User();
+        user.setTenantDomain("carbon.super");
+
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getUser()).thenReturn(user);
+
+        try (MockedStatic<IdentityTenantUtil> tenantUtilMock = mockStatic(IdentityTenantUtil.class)) {
+            tenantUtilMock.when(() -> IdentityTenantUtil.getTenantId("carbon.super")).thenReturn(-1234);
+
+            RealmService realmService = mock(RealmService.class);
+            UserRealm userRealm = mock(UserRealm.class);
+            UserStoreManager userStoreManager = mock(UserStoreManager.class);
+
+            when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
+            IdentityRecoveryServiceDataHolder.getInstance().setRealmService(realmService);
+
+            when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+            doThrow(buildExceptionForPreUpdatePasswordActionFailure()).when(userStoreManager)
+                    .updateCredentialByAdmin(anyString(), anyString());
+
+            Method method = NotificationPasswordRecoveryManager.class.getDeclaredMethod("updateNewPassword", User.class,
+                    String.class, String.class, UserRecoveryData.class, boolean.class);
+            method.setAccessible(true);
+
+            try {
+                method.invoke(manager, user, "Password@123!", "user1", recoveryData, false);
+                fail("Expected an IdentityRecoveryClientException was not thrown");
+            } catch (InvocationTargetException ex) {
+                Throwable actual = ex.getCause();
+
+                assertTrue(actual instanceof IdentityRecoveryClientException);
+                IdentityRecoveryClientException identityRecoveryClientException =
+                        (IdentityRecoveryClientException) actual;
+
+                assertEquals(identityRecoveryClientException.getErrorCode(),
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode());
+                assertEquals(identityRecoveryClientException.getMessage(), EXTENSION_ERROR_MESSAGE);
+                assertEquals(identityRecoveryClientException.getDescription(), EXTENSION_ERROR_DESCRIPTION);
+            }
+        }
+    }
+
+    private UserStoreException buildExceptionForPreUpdatePasswordActionFailure() {
+
+        UserActionExecutionClientException userActionExecutionClientException =
+                new UserActionExecutionClientException(PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED,
+                        EXTENSION_ERROR_MESSAGE, EXTENSION_ERROR_DESCRIPTION);
+        InvocationTargetException invocationTargetException =
+                new InvocationTargetException(userActionExecutionClientException);
+        PrivilegedActionException privilegedActionException = new PrivilegedActionException(invocationTargetException);
+        return new UserStoreClientException(privilegedActionException);
     }
 }
