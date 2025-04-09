@@ -308,8 +308,9 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
      * @return true if the user is in pending ask password state, false otherwise.
      */
     private boolean isUserInPendingAskPasswordState(UserDTO user) {
-        
-        String accountState = getUserClaim(user, IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, LOG);
+
+        String domainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+        String accountState = Utils.getAccountState(domainQualifiedUsername, user.getTenantDomain());
         if (StringUtils.isBlank(accountState)) {
             return false;
         }

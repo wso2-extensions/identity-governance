@@ -127,41 +127,37 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
             // Prepare a map for claim updates.
             Map<String, String> claimMap = new HashMap<>();
-            boolean updateNeeded = false;
 
             if (isAccountLocked) {
                 // Scenario 1:
                 // If the account is locked and the locked reason is valid and qualifies for unlocking criteria
                 // (pending password update), proceed with unlocking.
-                if (!StringUtils.isBlank(lockedReason) && isUnlockRequired(lockedReason)) {
-                    claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
-                    claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
-                    updateNeeded = true;
-                    if (Utils.isAccountStateClaimExisting(user.getTenantDomain())) {
-                        claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
-                    }
+                if (!isAccountUnlockRequiredAfterAdminPasswordReset(lockedReason)) {
+                    return;
+                }
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+                if (Utils.isAccountStateClaimExisting(user.getTenantDomain())) {
+                    claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                            IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
                 }
             } else {
                 // Scenario 2:
                 // If the account is not locked but its state indicates that it is awaiting the user to set
                 // a new password (i.e., the Ask Password flow), update the account state to 'unlocked'.
-                if (!StringUtils.isBlank(accountState) &&
-                        accountState.equals(IdentityRecoveryConstants.PENDING_ASK_PASSWORD)) {
-                        claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
-                        claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                                IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
-                        updateNeeded = true;
+                if (!IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState)) {
+                    return;
                 }
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
+                claimMap.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                        IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
             }
 
-            // If an update is necessary, update the user's claims to unlock the account.
-            if (updateNeeded) {
-                userStoreManager.setUserClaimValues(user.getUserName(), claimMap, null);
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Account unlocked for user: %s after admin password update.",
-                            Utils.maskIfRequired(user.getUserName())));
-                }
+            // Update the user's claims to unlock the account and set the appropriate state.
+            userStoreManager.setUserClaimValues(user.getUserName(), claimMap, null);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Account unlocked for user: %s after admin password update.",
+                        Utils.maskIfRequired(user.getUserName())));
             }
         } catch (UserStoreException e) {
             throw new IdentityEventException(
@@ -170,7 +166,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         }
     }
 
-    private boolean isUnlockRequired(String lockedReason) {
+    private boolean isAccountUnlockRequiredAfterAdminPasswordReset(String lockedReason) {
 
         return IdentityMgtConstants.LockedReason.PENDING_ASK_PASSWORD.toString().equals(lockedReason)
                 || IdentityMgtConstants.LockedReason.PENDING_ADMIN_FORCED_USER_PASSWORD_RESET.toString()

@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.user.endpoint.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -65,13 +66,14 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Utils {
+
+    private static final Log LOG = LogFactory.getLog(Utils.class);
 
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
@@ -564,35 +566,43 @@ public class Utils {
     /**
      * Retrieves the claim value for a user from the user store.
      *
-     * @param user     User object containing user information
-     * @param claimURI The URI of the claim to retrieve
-     * @param log      Log instance for logging errors
-     * @return The claim value, or an empty string if the claim is not found or an error occurs
+     * @param username     The domain qualified username of the user.
+     * @param claimURI     The claim URI to retrieve.
+     * @param tenantDomain The tenant domain of the user.
+     * @return The claim value.
+     * @throws UserExportException If an error occurs while retrieving the user store manager.
+     * @throws UserStoreException  If an error occurs while retrieving the claim value.
      */
-    public static String getUserClaim(UserDTO user, String claimURI, Log log) {
+    public static String getUserClaim(String username, String claimURI, String tenantDomain)
+            throws UserExportException, UserStoreException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        UserStoreManager userStoreManager = getUserStoreManager(tenantId);
+
+        // Retrieve claim value.
+        String[] claimURIs = new String[]{claimURI};
+        Map<String, String> claimValueMap =
+                userStoreManager.getUserClaimValues(username, claimURIs, null);
+        if (claimValueMap != null && claimValueMap.containsKey(claimURI)) {
+            return claimValueMap.get(claimURI);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * Retrieves the account state of a user.
+     *
+     * @param username     The domain qualified username of the user.
+     * @param tenantDomain The tenant domain of the user.
+     * @return The account state.
+     */
+    public static String getAccountState(String username, String tenantDomain) {
 
         try {
-            String username = user.getUsername();
-            String tenantDomain = user.getTenantDomain();
-            String userStoreDomain = user.getRealm();
-
-            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-            UserStoreManager userStoreManager = getUserStoreManager(tenantId);
-            String domainQualifiedUsername = UserCoreUtil.addDomainToName(username, userStoreDomain);
-
-            // Retrieve claim value.
-            String[] claimURIs = new String[]{claimURI};
-            Map<String, String> claimValueMap =
-                    userStoreManager.getUserClaimValues(domainQualifiedUsername, claimURIs, null);
-            if (claimValueMap != null && claimValueMap.containsKey(claimURI)) {
-                return claimValueMap.get(claimURI);
-            }
-
-            return StringUtils.EMPTY;
+            return getUserClaim(username, IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, tenantDomain);
         } catch (UserStoreException | UserExportException e) {
-            log.error(String.format("Error while retrieving claim '%s' for user: %s",
-                    claimURI, maskIfRequired(user.getUsername())), e);
-
+            LOG.error(String.format("Error while retrieving claim '%s' for user: %s",
+                    IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, maskIfRequired(username)), e);
             return StringUtils.EMPTY;
         }
     }
@@ -607,7 +617,7 @@ public class Utils {
      */
     private static UserStoreManager getUserStoreManager(int tenantId) throws UserExportException, UserStoreException {
 
-        RealmService realmService = Utils.getRealmService();
+        RealmService realmService = getRealmService();
         UserRealm tenantUserRealm = realmService.getTenantUserRealm(tenantId);
         return (AbstractUserStoreManager) tenantUserRealm.getUserStoreManager();
     }

@@ -156,7 +156,7 @@ public class ResendCodeApiServiceImplTest {
         ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.ASK_PASSWORD.name());
 
         mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
-        mockedUtils.when(() -> Utils.getUserClaim(any(UserDTO.class), anyString(), any()))
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
                 .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
         mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
 
@@ -188,7 +188,7 @@ public class ResendCodeApiServiceImplTest {
         ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.ASK_PASSWORD.name());
 
         mockedUtils.when(() -> Utils.getUserRecoveryData(any(), anyString())).thenReturn(null);
-        mockedUtils.when(() -> Utils.getUserClaim(any(UserDTO.class), anyString(), any()))
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
                 .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
         mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
 
