@@ -1313,11 +1313,18 @@ public class UserSelfRegistrationManager {
                     user.getUserName());
         }
 
+        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
+        String templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
+        if (isSelfRegistrationSendOTPInEmailEnabled) {
+            templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+        }
+
         ResendConfirmationManager resendConfirmationManager = ResendConfirmationManager.getInstance();
         NotificationResponseBean notificationResponseBean =
                 resendConfirmationManager.resendConfirmationCode(user, RecoveryScenarios.SELF_SIGN_UP.toString()
                         , RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, properties);
+                        templateName, properties);
         notificationResponseBean.setCode(
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
         notificationResponseBean.setMessage(

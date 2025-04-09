@@ -19,7 +19,9 @@ package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,6 +33,8 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE;
 
 /**
  * Unit tests for RecoveryUtils.java
@@ -56,5 +60,49 @@ public class RecoveryUtilsTest {
         Properties properties = RecoveryUtil.getValidatedCaptchaConfigs();
         assertEquals(properties, sampleProperties);
         assertEquals(properties.size(), sampleProperties.size());
+    }
+
+    @Test(description = "Test the password reset API error format.")
+    public void testHandleClientExceptionWithDescription() {
+
+        String description = "Invalid password format";
+        String message = "invalid_value";
+        Throwable cause = new Throwable(description);
+
+        IdentityRecoveryClientException exception;
+        try {
+            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(), message,
+                    description, cause);
+        } catch (IdentityRecoveryClientException e) {
+            throw new RuntimeException(e);
+        }
+
+        assertNotNull(exception);
+        assertEquals(exception.getErrorCode(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode());
+        assertEquals(exception.getMessage(), message);
+        assertEquals(exception.getDescription(), description);
+        assertEquals(cause, exception.getCause());
+    }
+
+    @Test
+    public void testHandleClientExceptionWithoutDescription() {
+
+        String message = "Test message";
+        Throwable cause = new Throwable("Cause of the error");
+
+        IdentityRecoveryClientException exception;
+        try {
+            exception =
+                    Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(), message, null,
+                            cause);
+        } catch (IdentityRecoveryClientException e) {
+            throw new RuntimeException(e);
+        }
+
+        assertNotNull(exception);
+        assertEquals(exception.getErrorCode(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode());
+        assertEquals(exception.getMessage(), message);
+        assertEquals(exception.getDescription(), null);
+        assertEquals(cause, exception.getCause());
     }
 }

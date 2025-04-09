@@ -359,10 +359,14 @@ public class ResendCodeApiServiceImplTest {
 
         ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(scenario.name());
         User user = new User();
+        user.setTenantDomain(TEST_TENANT_DOMAIN);
         UserRecoveryData recoveryData = new UserRecoveryData(user, "test-secret",
                 userRecoveryDataScenario, userRecoveryDataStep);
         when(Utils.getUserRecoveryData(any(), anyString())).thenReturn(recoveryData);
         when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
 
         NotificationResponseBean expectedResponse = new NotificationResponseBean(user);
         expectedResponse.setKey("test-key");

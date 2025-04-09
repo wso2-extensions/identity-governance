@@ -9,11 +9,14 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.endpoint.Constants;
 import org.wso2.carbon.identity.recovery.endpoint.SetPasswordApiService;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ResetPasswordRequestDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.RetryErrorDTO;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil.getCorrelation;
 
 public class SetPasswordApiServiceImpl extends SetPasswordApiService {
 
@@ -42,6 +45,14 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
                 errorDTO.setDescription(e.getMessage());
                 errorDTO.setKey(resetPasswordRequest.getKey());
                 return Response.status(Response.Status.PRECONDITION_FAILED).entity(errorDTO).build();
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode()
+                    .equals(e.getErrorCode())) {
+                ErrorDTO errorDTO = new ErrorDTO();
+                errorDTO.setCode(e.getErrorCode());
+                errorDTO.setMessage(e.getMessage());
+                errorDTO.setDescription(e.getDescription());
+                errorDTO.setRef(getCorrelation());
+                return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             }
 
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
