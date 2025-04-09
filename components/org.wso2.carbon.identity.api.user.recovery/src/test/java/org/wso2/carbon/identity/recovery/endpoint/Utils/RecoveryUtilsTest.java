@@ -71,8 +71,8 @@ public class RecoveryUtilsTest {
 
         IdentityRecoveryClientException exception;
         try {
-            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, description, message,
-                    cause);
+            exception = Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(), message,
+                    description, cause);
         } catch (IdentityRecoveryClientException e) {
             throw new RuntimeException(e);
         }
@@ -93,7 +93,8 @@ public class RecoveryUtilsTest {
         IdentityRecoveryClientException exception;
         try {
             exception =
-                    Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, null, message, cause);
+                    Utils.handleClientException(ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(), message, null,
+                            cause);
         } catch (IdentityRecoveryClientException e) {
             throw new RuntimeException(e);
         }
@@ -101,7 +102,7 @@ public class RecoveryUtilsTest {
         assertNotNull(exception);
         assertEquals(exception.getErrorCode(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode());
         assertEquals(exception.getMessage(), message);
-        assertEquals(exception.getDescription(), ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getMessage());
+        assertEquals(exception.getDescription(), null);
         assertEquals(cause, exception.getCause());
     }
 }

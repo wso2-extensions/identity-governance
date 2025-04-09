@@ -42,6 +42,14 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
                 errorDTO.setDescription(e.getMessage());
                 errorDTO.setKey(resetPasswordRequest.getKey());
                 return Response.status(Response.Status.PRECONDITION_FAILED).entity(errorDTO).build();
+            } else if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode()
+                    .equals(e.getErrorCode())) {
+                RetryErrorDTO errorDTO = new RetryErrorDTO();
+                errorDTO.setCode(e.getErrorCode());
+                errorDTO.setMessage(e.getMessage());
+                errorDTO.setDescription(e.getDescription());
+                errorDTO.setKey(resetPasswordRequest.getKey());
+                return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             }
 
             RecoveryUtil.handleBadRequest(e.getMessage(), e.getDescription(), e.getErrorCode());

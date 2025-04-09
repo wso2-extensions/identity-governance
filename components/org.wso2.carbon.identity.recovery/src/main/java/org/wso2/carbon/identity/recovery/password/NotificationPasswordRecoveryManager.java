@@ -1068,9 +1068,9 @@ public class NotificationPasswordRecoveryManager {
                             .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
 
                 throw Utils.handleClientException(
-                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE,
-                        ((UserActionExecutionClientException) cause).getDescription(),
-                        ((UserActionExecutionClientException) cause).getError(), cause);
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(),
+                        ((UserActionExecutionClientException) cause).getError(),
+                        ((UserActionExecutionClientException) cause).getDescription(), cause);
             }
             cause = cause.getCause();
         }
