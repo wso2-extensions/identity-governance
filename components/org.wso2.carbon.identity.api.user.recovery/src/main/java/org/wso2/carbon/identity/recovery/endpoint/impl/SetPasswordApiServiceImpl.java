@@ -52,7 +52,7 @@ public class SetPasswordApiServiceImpl extends SetPasswordApiService {
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).build();
             }
 
-            RecoveryUtil.handleBadRequest(e.getMessage(), e.getDescription(), e.getErrorCode());
+            RecoveryUtil.handleBadRequest(e.getMessage(), e.getErrorCode());
 
         } catch (IdentityRecoveryException e) {
             RecoveryUtil.handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);

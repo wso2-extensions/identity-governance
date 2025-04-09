@@ -46,7 +46,6 @@ import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
-import org.wso2.carbon.identity.recovery.endpoint.dto.LinkDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
@@ -70,12 +69,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 
 public class RecoveryUtil {
     private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
@@ -141,26 +138,6 @@ public class RecoveryUtil {
         ErrorDTO errorDTO = getErrorDTO(Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT, code,
                 Constants.STATUS_INTERNAL_SERVER_ERROR_DESCRIPTION_DEFAULT);
         return new InternalServerErrorException(errorDTO);
-    }
-
-
-    /**
-     * Handles a bad request by throwing a {@link BadRequestException} with the specified error details.
-     * If the {@code description} is blank, it delegates handling to {@link #handleBadRequest(String, String)}.
-     * Otherwise, it constructs an {@link ErrorDTO} and throws a {@link BadRequestException}.
-     *
-     * @param message     A brief message describing the error.
-     * @param description A detailed description of the error. If blank, the method delegates to another handler.
-     * @param code        The functional error code associated with the bad request.
-     * @throws BadRequestException Always thrown with the generated {@link ErrorDTO}.
-     */
-    public static void handleBadRequest(String message, String description, String code) throws BadRequestException {
-
-        if (StringUtils.isBlank(description)) {
-            handleBadRequest(message, code);
-        }
-        ErrorDTO errorDTO = getErrorDTO(message, code, description);
-        throw new BadRequestException(errorDTO);
     }
 
     /**
