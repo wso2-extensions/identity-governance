@@ -270,9 +270,14 @@ public class ResendConfirmationManager {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
+            }
+            if(isSelfRegistrationSendOTPInEmailEnabled) {
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             }
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
@@ -484,6 +489,7 @@ public class ResendConfirmationManager {
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean isSelfRegistrationScenario = RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -548,6 +554,14 @@ public class ResendConfirmationManager {
             }
 
             userRecoveryDataStore.store(recoveryDataDO);
+        }
+        if (isSelfRegistrationScenario){
+            boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                    user.getTenantDomain()));
+            if (isSelfRegistrationSendOTPInEmailEnabled) {
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+            }
         }
 
         if (notificationInternallyManage) {
