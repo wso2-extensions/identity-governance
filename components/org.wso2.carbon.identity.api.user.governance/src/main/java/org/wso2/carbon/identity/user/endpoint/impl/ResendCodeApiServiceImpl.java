@@ -152,8 +152,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             boolean isSelfRegistrationSendOTPInEmailEnabled;
             String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
             try {
-                isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(
-                        org.wso2.carbon.identity.recovery.util.Utils.getSignUpConfigs(
+                isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
                                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                                 resendCodeRequestDTO.getUser().getTenantDomain()));
                 if (isSelfRegistrationSendOTPInEmailEnabled) {

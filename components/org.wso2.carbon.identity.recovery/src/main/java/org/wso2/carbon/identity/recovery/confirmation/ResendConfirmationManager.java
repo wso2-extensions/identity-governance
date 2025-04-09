@@ -276,7 +276,7 @@ public class ResendConfirmationManager {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
             }
-            if(isSelfRegistrationSendOTPInEmailEnabled) {
+            if (isSelfRegistrationSendOTPInEmailEnabled) {
                 properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             }
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
