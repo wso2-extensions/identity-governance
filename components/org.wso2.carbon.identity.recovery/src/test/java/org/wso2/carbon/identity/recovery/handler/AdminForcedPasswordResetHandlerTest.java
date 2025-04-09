@@ -296,6 +296,88 @@ public class AdminForcedPasswordResetHandlerTest {
         verify(userRecoveryDataStore, never()).invalidate(any(User.class));
     }
 
+    @DataProvider(name = "askPasswordRecoveryDataProvider")
+    public Object[][] getAskPasswordRecoveryDataProvider() {
+
+        return new Object[][] {
+                {null},
+                {mockRecoveryData(RecoveryScenarios.ASK_PASSWORD)},    
+        };
+    }
+
+    @Test(description = "Test handleEvent() with POST_UPDATE_CREDENTIAL_BY_ADMIN event where the account is unlocked " +
+            "but its state indicates pending ask password",
+            dataProvider = "askPasswordRecoveryDataProvider")
+    public void testHandlePostUpdateCredentialByAdminWithPendingAskPasswordUnlockedAccount(
+            UserRecoveryData recoveryData) throws Exception {
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN);
+        mockUserClaims(claims, true);
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class))).thenReturn(recoveryData);
+
+        // Test the method.
+        adminForcedPasswordResetHandler.handleEvent(event);
+
+        // Verify claims were updated to unlock the account and clear the state.
+        ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(userStoreManager, times(1)).setUserClaimValues(eq(TEST_USERNAME),
+                claimsCaptor.capture(), eq(null));
+
+        Map<String, String> updatedClaims = claimsCaptor.getValue();
+
+        assertEquals(updatedClaims.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI),
+                    IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED, "Account state should be set to UNLOCKED");
+        assertEquals(updatedClaims.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM),
+                Boolean.FALSE.toString(), "Account locked claim should be set to false");
+        
+        if (recoveryData == null) {
+            // Verify that invalidation was not called.
+            verify(userRecoveryDataStore, never()).invalidate(any(User.class));
+        } else {
+            // Verify that invalidation was called.
+            verify(userRecoveryDataStore, times(1)).invalidate(any(User.class));
+        }
+    }
+
+    @DataProvider(name = "accountStateDataProvider")
+    public Object[][] getAccountStateDataProvider() {
+
+        return new Object[][] {
+                {"PENDING_SR"},
+                {"PENDING_LR"},
+                {"DISABLED"},
+                {"UNLOCKED"}
+        };
+    }
+
+    @Test(description = "Test handleEvent() with POST_UPDATE_CREDENTIAL_BY_ADMIN event where the account is unlocked " +
+            "and the account state is not pending ask password.",
+            dataProvider = "accountStateDataProvider")
+    public void testHandlePostUpdateCredentialByAdminWithUnlockedAccountAndOtherAccountStates(String accountState)
+            throws Exception {
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, accountState);
+
+        Event event = createEvent(IdentityEventConstants.Event.POST_UPDATE_CREDENTIAL_BY_ADMIN);
+        mockUserClaims(claims, true);
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(any(User.class))).thenReturn(null);
+
+        // Test the method.
+        adminForcedPasswordResetHandler.handleEvent(event);
+
+        // Verify claims were not updated since account is already unlocked.
+        verify(userStoreManager, never()).setUserClaimValues(eq(TEST_USERNAME), any(), any());
+        // Verify that invalidation was not called.
+        verify(userRecoveryDataStore, never()).invalidate(any(User.class));
+    }
+
     @Test(description = "Test handleEvent() with POST_UPDATE_CREDENTIAL_BY_ADMIN event when getUserClaimValues " +
             "throws exception",
             expectedExceptions = {IdentityEventException.class},
