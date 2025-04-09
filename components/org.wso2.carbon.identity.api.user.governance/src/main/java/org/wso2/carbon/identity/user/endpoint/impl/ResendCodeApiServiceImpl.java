@@ -148,9 +148,22 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         } else if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
-            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+
+            boolean isSelfRegistrationSendOTPInEmailEnabled;
+            String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
+            try {
+                isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                                resendCodeRequestDTO.getUser().getTenantDomain()));
+                if (isSelfRegistrationSendOTPInEmailEnabled) {
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+                }
+            } catch (IdentityRecoveryException e){
+                LOG.error("Error while getting self registration send OTP in email configuration", e);
+            }
+            notificationResponseBean =  setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, resendCodeRequestDTO);
+                    notificationType, resendCodeRequestDTO);
         } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.
                 equals(userRecoveryData.getRecoveryScenario()) &&

@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
@@ -291,10 +292,14 @@ public class ResendCodeApiServiceImplTest {
 
         ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(scenario.name());
         User user = new User();
+        user.setTenantDomain(TEST_TENANT_DOMAIN);
         UserRecoveryData recoveryData = new UserRecoveryData(user, "test-secret",
                 userRecoveryDataScenario, userRecoveryDataStep);
         when(Utils.getUserRecoveryData(any(), anyString())).thenReturn(recoveryData);
         when(Utils.getResendConfirmationManager()).thenReturn(resendConfirmationManager);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
 
         NotificationResponseBean expectedResponse = new NotificationResponseBean(user);
         expectedResponse.setKey("test-key");
