@@ -446,35 +446,6 @@ public class Utils {
      * If the provided data is not blank, it is formatted into the error message; otherwise,
      * the default error message is used.
      *
-     * @param error   The predefined error message from {@link IdentityRecoveryConstants.ErrorMessages}.
-     * @param data    Additional data to be included in the error message (can be {@code null} or blank).
-     * @param message A brief message describing the error.
-     * @param e       The underlying cause of the exception.
-     * @return An instance of {@link IdentityRecoveryClientException} with the provided details.
-     * @throws IdentityRecoveryClientException If an error occurs while instantiating the exception.
-     */
-    public static IdentityRecoveryClientException handleClientException(IdentityRecoveryConstants.ErrorMessages error,
-                                                                        String data,
-                                                                        String message,
-                                                                        Throwable e)
-            throws IdentityRecoveryClientException {
-
-        String errorDescription;
-        if (StringUtils.isNotBlank(data)) {
-            errorDescription = String.format(error.getMessage(), data);
-        } else {
-            errorDescription = error.getMessage();
-        }
-
-        return IdentityException.error(IdentityRecoveryClientException.class, error.getCode(), message, errorDescription, e);
-    }
-
-    /**
-     * Handles client exceptions by creating an instance of {@link IdentityRecoveryClientException}
-     * with the specified error details.
-     * If the provided data is not blank, it is formatted into the error message; otherwise,
-     * the default error message is used.
-     *
      * @param code        The predefined error code.
      * @param message     A brief message describing the error.
      * @param description A detailed description of the error.
