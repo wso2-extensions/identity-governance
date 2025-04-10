@@ -443,6 +443,13 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
             exception.setErrorCode(Utils.prependOperationScenarioToErrorCode(exception.getErrorCode(),
                     IdentityRecoveryConstants.PASSWORD_RECOVERY_SCENARIO));
         }
+
+        if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode()
+                .equals(exception.getErrorCode())) {
+            return Utils.handleClientException(exception.getErrorCode(), exception.getMessage(),
+                    exception.getDescription(), exception);
+        }
+
         return Utils.handleClientException(exception.getErrorCode(), exception.getMessage(), null);
     }
 
