@@ -106,6 +106,7 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
                 componentDTO.addConfig(CAPTCHA_KEY, CaptchaUtil.reCaptchaSiteKey());
                 componentDTO.addConfig(CAPTCHA_URL, CaptchaUtil.reCaptchaAPIURL());
                 context.setProperty(CAPTCHA_ENABLED, true);
+                step.getData().getAdditionalData().put(CAPTCHA_ENABLED, String.valueOf(true));
                 context.getCurrentStepInputs().forEach(
                         (key, value) -> value.add(CAPTCHA_RESPONSE)
                 );
