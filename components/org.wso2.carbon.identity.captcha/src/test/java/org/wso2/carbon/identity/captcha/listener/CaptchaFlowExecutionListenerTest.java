@@ -24,9 +24,11 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineClientException;
 import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineException;
+import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineServerException;
 import org.wso2.carbon.identity.user.registration.engine.model.RegistrationContext;
 import org.wso2.carbon.identity.user.registration.engine.model.RegistrationStep;
 import org.wso2.carbon.identity.user.registration.mgt.Constants;
@@ -113,6 +115,100 @@ public class CaptchaFlowExecutionListenerTest {
             Assert.assertTrue(registrationContext.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertTrue(registrationContext.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertTrue((boolean) registrationContext.getProperty(CAPTCHA_ENABLED));
+        }
+    }
+
+    @Test
+    public void testDoPostInitiateCaptchaDisabled() throws RegistrationEngineException {
+
+        RegistrationStep step = getRegistrationStep();
+        RegistrationContext context = getRegistrationContext();
+
+        try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
+            captchaUtil.when(CaptchaUtil::isReCaptchaEnabled).thenReturn(false);
+
+            captchaFlowExecutionListener.doPostInitiate(step, context);
+
+            Assert.assertFalse(step.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
+            Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
+            Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
+            Assert.assertNull(context.getProperty(CAPTCHA_ENABLED));
+        }
+    }
+
+    @Test
+    public void testDoPostInitiateNullComponents() throws RegistrationEngineException {
+
+        RegistrationStep step = new RegistrationStep.Builder()
+                .stepType(Constants.StepTypes.VIEW)
+                .flowId("flowId")
+                .data(new DataDTO.Builder().components(null).build())
+                .build();
+        RegistrationContext context = getRegistrationContext();
+
+        try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
+            captchaUtil.when(CaptchaUtil::isReCaptchaEnabled).thenReturn(true);
+
+            captchaFlowExecutionListener.doPostInitiate(step, context);
+
+            Assert.assertNull(context.getProperty(CAPTCHA_ENABLED));
+            Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
+            Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
+        }
+    }
+
+    @Test
+    public void testDoPostInitiateNonCaptchaComponent() throws RegistrationEngineException {
+
+        ComponentDTO nonCaptchaComponent = new ComponentDTO.Builder()
+                .id("input_1")
+                .type("TEXT_INPUT")
+                .variant("GENERIC")
+                .build();
+        RegistrationStep step = new RegistrationStep.Builder()
+                .stepType(Constants.StepTypes.VIEW)
+                .flowId("flowId")
+                .data(new DataDTO.Builder().components(Collections.singletonList(nonCaptchaComponent)).build())
+                .build();
+        RegistrationContext context = getRegistrationContext();
+
+        try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
+            captchaUtil.when(CaptchaUtil::isReCaptchaEnabled).thenReturn(true);
+
+            captchaFlowExecutionListener.doPostInitiate(step, context);
+
+            Assert.assertFalse(step.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
+            Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
+            Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
+            Assert.assertNull(context.getProperty(CAPTCHA_ENABLED));
+        }
+    }
+
+    @Test
+    public void testDoPreContinueCaptchaDisabled() throws RegistrationEngineException {
+
+        RegistrationContext context = getRegistrationContext();
+        context.setProperty(CAPTCHA_ENABLED, false);
+
+        captchaFlowExecutionListener.doPreContinue(context);
+
+        // No exception means success; make sure captcha remains disabled.
+        Assert.assertEquals(context.getProperty(CAPTCHA_ENABLED), false);
+    }
+
+    @Test(expectedExceptions = RegistrationEngineServerException.class)
+    public void testDoPreContinueCaptchaThrowsServerException() throws RegistrationEngineException {
+
+        RegistrationContext context = getRegistrationContext();
+        context.setProperty(CAPTCHA_ENABLED, true);
+        context.getUserInputData().put(CAPTCHA_RESPONSE, "someResponse");
+
+        try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
+            captchaUtil.when(() -> CaptchaUtil.isValidCaptcha(anyString()))
+                    .thenThrow(new CaptchaException("Internal error"));
+            captchaUtil.when(CaptchaUtil::isReCaptchaEnabled).thenReturn(true);
+
+            captchaFlowExecutionListener.doPreContinue(context);
         }
     }
 

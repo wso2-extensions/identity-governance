@@ -115,7 +115,6 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
                 return;
             }
         }
-        context.setProperty(CAPTCHA_ENABLED, false);
     }
 
     private void validateCaptcha(RegistrationContext registrationContext) throws RegistrationEngineException {
@@ -128,6 +127,7 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
             return;
         }
 
+        registrationContext.setProperty(CAPTCHA_ENABLED, false);
         String captchaResponse = userInputData.get(CAPTCHA_RESPONSE);
         if (captchaResponse == null || captchaResponse.isEmpty()) {
             throw getRegistrationEngineClientException();
