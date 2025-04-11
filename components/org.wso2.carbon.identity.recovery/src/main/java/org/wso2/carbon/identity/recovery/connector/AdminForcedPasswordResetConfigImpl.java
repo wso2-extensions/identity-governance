@@ -92,9 +92,9 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "User gets notified with a link to reset password");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
-                "User gets notified with a one time password to Email try with SSO login");
+                "User gets notified with a one-time password to Email try with SSO login");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
-                "User gets notified with a one time password to Mobile try with SSO login");
+                "User gets notified with a one-time password to Mobile try with SSO login");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "An OTP generated and stored in users claims");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,

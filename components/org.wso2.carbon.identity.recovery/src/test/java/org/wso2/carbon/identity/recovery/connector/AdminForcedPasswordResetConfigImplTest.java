@@ -1,20 +1,21 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.wso2.carbon.identity.recovery.connector;
 
 import org.testng.annotations.BeforeTest;
@@ -45,43 +46,45 @@ public class AdminForcedPasswordResetConfigImplTest {
     }
 
     @Test
-    public void testGetName() throws IdentityGovernanceException {
+    public void testGetName() {
 
         assertEquals(adminForcedPasswordResetConfigIml.getName(), "admin-forced-password-reset");
     }
 
     @Test
-    public void testGetFriendlyName() throws IdentityGovernanceException {
+    public void testGetFriendlyName() {
 
         assertEquals(adminForcedPasswordResetConfigIml.getFriendlyName(), "Password Reset");
     }
 
     @Test
-    public void testGetCategory() throws IdentityGovernanceException {
+    public void testGetCategory() {
 
         assertEquals(adminForcedPasswordResetConfigIml.getCategory(), "Account Management");
     }
 
     @Test
-    public void testGetSubCategory() throws IdentityGovernanceException {
+    public void testGetSubCategory() {
 
         assertEquals(adminForcedPasswordResetConfigIml.getSubCategory(), "DEFAULT");
     }
 
     @Test
-    public void testGetOrder() throws IdentityGovernanceException {
+    public void testGetOrder() {
 
         assertEquals(adminForcedPasswordResetConfigIml.getOrder(), 0);
     }
 
     @Test
-    public void testGetPropertyNameMapping() throws IdentityGovernanceException {
+    public void testGetPropertyNameMapping() {
 
         Map<String, String> nameMappingExpected = new HashMap<>();
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "Enable password reset via recovery e-mail");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
-                "Enable password reset via OTP");
+                "Enable password reset via Email OTP");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                "Enable password reset via SMS OTP");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "Enable password reset offline");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
@@ -92,13 +95,15 @@ public class AdminForcedPasswordResetConfigImplTest {
     }
 
     @Test
-    public void testGetPropertyDescriptionMapping() throws IdentityGovernanceException {
+    public void testGetPropertyDescriptionMapping() {
 
         Map<String, String> descriptionMappingExpected = new HashMap<>();
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "User gets notified with a link to reset password");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
-                "User gets notified with a one time password to try with SSO login");
+                "User gets notified with a one-time password to Email try with SSO login");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                "User gets notified with a one-time password to Mobile try with SSO login");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "An OTP generated and stored in users claims");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
@@ -109,11 +114,12 @@ public class AdminForcedPasswordResetConfigImplTest {
     }
 
     @Test
-    public void testGetPropertyNames() throws IdentityGovernanceException {
+    public void testGetPropertyNames() {
 
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME);
         String[] propertiesListExpected = propertiesExpected.toArray(new String[0]);
@@ -129,7 +135,8 @@ public class AdminForcedPasswordResetConfigImplTest {
     public void testGetDefaultPropertyValues() throws IdentityGovernanceException {
 
         String testEnableAdminPasswordResetWithRecoveryLink = "false";
-        String testEnableAdminPasswordResetWithOTP = "false";
+        String testEnableAdminPasswordResetWithEmailOTP = "false";
+        String testEnableAdminPasswordResetWithSMSOTP = "false";
         String testEnableAdminPasswordResetOffline = "false";
         String testAdminPasswordResetExpiryTime = "1440";
 
@@ -137,7 +144,9 @@ public class AdminForcedPasswordResetConfigImplTest {
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 testEnableAdminPasswordResetWithRecoveryLink);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
-                testEnableAdminPasswordResetWithOTP);
+                testEnableAdminPasswordResetWithEmailOTP);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                testEnableAdminPasswordResetWithSMSOTP);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 testEnableAdminPasswordResetOffline);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
