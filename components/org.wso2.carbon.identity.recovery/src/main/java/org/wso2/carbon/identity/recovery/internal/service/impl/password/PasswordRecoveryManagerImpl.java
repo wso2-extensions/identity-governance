@@ -425,6 +425,7 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
     private IdentityRecoveryClientException mapClientExceptionWithImprovedErrorCodes(
             IdentityRecoveryClientException exception) {
 
+        String originalErrorCode = exception.getErrorCode();
         if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getCode()
                 .equals(exception.getErrorCode())) {
             exception.setErrorCode(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_RECOVERY_CODE.getCode());
@@ -445,8 +446,8 @@ public class PasswordRecoveryManagerImpl implements PasswordRecoveryManager {
         }
 
         if (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode()
-                .equals(exception.getErrorCode())) {
-            return Utils.handleClientException(exception.getErrorCode(), exception.getMessage(),
+                .equals(originalErrorCode)) {
+            return Utils.handleClientException(originalErrorCode, exception.getMessage(),
                     exception.getDescription(), exception);
         }
 
