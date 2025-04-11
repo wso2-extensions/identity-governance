@@ -16,6 +16,7 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -27,10 +28,13 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
+import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -103,16 +107,20 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 user.getTenantDomain()));
 
-        boolean adminPasswordResetOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+        boolean adminPasswordResetEmailOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                user.getTenantDomain()));
+
+        boolean adminPasswordResetSMSOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
                 user.getTenantDomain()));
 
         boolean adminPasswordResetRecoveryLink = Boolean.parseBoolean(Utils.getConnectorConfig(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 user.getTenantDomain()));
 
-        boolean isAdminPasswordReset = adminPasswordResetOffline | adminPasswordResetOTP |
-                adminPasswordResetRecoveryLink;
+        boolean isAdminPasswordReset = adminPasswordResetOffline || adminPasswordResetEmailOTP ||
+                adminPasswordResetRecoveryLink || adminPasswordResetSMSOTP;
 
         if (isAdminPasswordReset && Boolean.valueOf(claims.get(IdentityRecoveryConstants
                 .ADMIN_FORCED_PASSWORD_RESET_CLAIM))) {
@@ -136,8 +144,13 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 setUserClaim(IdentityRecoveryConstants.OTP_PASSWORD_CLAIM, OTP, userStoreManager, user);
             }
 
-            if (adminPasswordResetOTP) {
+            if (adminPasswordResetEmailOTP) {
                 notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP;
+            }
+
+            if (adminPasswordResetSMSOTP) {
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP;
+                recoveryScenario = RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP;
             }
 
             if (adminPasswordResetRecoveryLink) {
@@ -150,17 +163,54 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
             setRecoveryData(user, recoveryScenario, RecoverySteps.UPDATE_PASSWORD, OTP);
             lockAccountOnAdminPasswordReset(user, claims);
 
-            if (adminPasswordResetOTP | adminPasswordResetRecoveryLink) {
+            if (adminPasswordResetEmailOTP || adminPasswordResetRecoveryLink || adminPasswordResetSMSOTP) {
                 try {
-                    triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties(),
-                            new UserRecoveryData(user, OTP, recoveryScenario, RecoverySteps.UPDATE_PASSWORD));
+                    if (adminPasswordResetSMSOTP) {
+                        String mobileNumber = userStoreManager.getUserClaimValue(user.getUserName(),
+                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, null);
+                        triggerSmsNotification(user, notificationType, OTP, mobileNumber);
+                    } else {
+                        triggerNotification(user, notificationType, OTP, Utils.getArbitraryProperties(),
+                                new UserRecoveryData(user, OTP, recoveryScenario, RecoverySteps.UPDATE_PASSWORD));
+                    }
                     Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_FORCE_PASSWORD_RESET_BY_ADMIN,
                             OTP);
                 } catch (IdentityRecoveryException e) {
                     throw new IdentityEventException("Error while sending  notification ", e);
+                } catch (UserStoreException e) {
+                    throw new IdentityEventException("Error while getting user claim value.", e);
                 }
             }
 
+        }
+    }
+
+    private void triggerSmsNotification(User user, String notificationType, String OTP, String mobileNumber)
+            throws IdentityRecoveryServerException {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Sending: " + notificationType + " notification to user: " + user.toFullQualifiedUsername());
+        }
+
+        String eventName = Utils.resolveEventName(NotificationChannels.SMS_CHANNEL.getChannelType());
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL,
+                NotificationChannels.SMS_CHANNEL.getChannelType());
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, notificationType);
+        properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, OTP);
+        if (StringUtils.isNotBlank(mobileNumber)) {
+            properties.put(IdentityRecoveryConstants.SEND_TO, mobileNumber);
+        }
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        try {
+            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+        } catch (IdentityEventException e) {
+            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
+                    user.toFullQualifiedUsername(), e);
         }
     }
 
@@ -191,7 +241,8 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
                 errorMsg = errorMsg + " needs to reset the password using the given link in email";
                 isForcedPasswordReset = true;
 
-            } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)) {
+            } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario) ||
+                    RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)) {
                 String credential = (String) eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
                 isForcedPasswordReset = true;
 

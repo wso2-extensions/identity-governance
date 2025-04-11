@@ -74,8 +74,10 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "Enable password reset via recovery e-mail");
-        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "Enable password reset via OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                "Enable password reset via Email OTP");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                "Enable password reset via SMS OTP");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "Enable password reset offline");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
@@ -89,8 +91,10 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         Map<String, String> descriptionMapping = new HashMap<>();
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 "User gets notified with a link to reset password");
-        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                "User gets notified with a one time password to try with SSO login");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                "User gets notified with a one time password to Email try with SSO login");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                "User gets notified with a one time password to Mobile try with SSO login");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 "An OTP generated and stored in users claims");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
@@ -103,7 +107,8 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
 
         List<String> properties = new ArrayList<>();
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
-        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME);
 
@@ -114,14 +119,17 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
     public Properties getDefaultPropertyValues(String tenantDomain) throws IdentityGovernanceException {
 
         String enableAdminPasswordResetWithRecoveryLink = "false";
-        String enableAdminPasswordResetWithOTP = "false";
+        String enableAdminPasswordResetWithEmailOTP = "false";
+        String enableAdminPasswordResetWithSMSOTP = "false";
         String enableAdminPasswordResetOffline = "false";
         String adminPasswordResetCodeExpiry = "1440";
 
         String adminPasswordRecoveryWithLinkProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK);
-        String adminPasswordResetWithOTPProperty = IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP);
+        String adminPasswordResetWithEmailOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP);
+        String adminPasswordResetWithSMSOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP);
         String adminPasswordResetOfflineProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE);
         String adminPasswordResetCodeExpiryProperty = IdentityUtil.getProperty(
@@ -130,8 +138,11 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         if (StringUtils.isNotEmpty(adminPasswordRecoveryWithLinkProperty)) {
             enableAdminPasswordResetWithRecoveryLink = adminPasswordRecoveryWithLinkProperty;
         }
-        if (StringUtils.isNotEmpty(adminPasswordResetWithOTPProperty)) {
-            enableAdminPasswordResetWithOTP = adminPasswordResetWithOTPProperty;
+        if (StringUtils.isNotEmpty(adminPasswordResetWithEmailOTPProperty)) {
+            enableAdminPasswordResetWithEmailOTP = adminPasswordResetWithEmailOTPProperty;
+        }
+        if (StringUtils.isNotEmpty(adminPasswordResetWithSMSOTPProperty)) {
+            enableAdminPasswordResetWithSMSOTP = adminPasswordResetWithSMSOTPProperty;
         }
         if (StringUtils.isNotEmpty(adminPasswordResetOfflineProperty)) {
             enableAdminPasswordResetOffline = adminPasswordResetOfflineProperty;
@@ -143,8 +154,10 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         Map<String, String> defaultProperties = new HashMap<>();
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 enableAdminPasswordResetWithRecoveryLink);
-        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
-                enableAdminPasswordResetWithOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                enableAdminPasswordResetWithEmailOTP);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                enableAdminPasswordResetWithSMSOTP);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 enableAdminPasswordResetOffline);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.ADMIN_PASSWORD_RESET_EXPIRY_TIME,
@@ -168,7 +181,9 @@ public class AdminForcedPasswordResetConfigImpl implements IdentityConnectorConf
         Map<String, Property> meta = new HashMap<>();
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
-        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP,
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
         meta.put(IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_OFFLINE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));

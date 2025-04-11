@@ -489,6 +489,8 @@ public class ResendConfirmationManager {
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
+                .ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -517,7 +519,7 @@ public class ResendConfirmationManager {
         if (emailVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
-        if (mobileVerificationOnUpdateScenario) {
+        if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
 
