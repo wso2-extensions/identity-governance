@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.confirmation;
 
+import org.apache.commons.lang.StringUtils;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -33,6 +34,7 @@ import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -53,7 +55,6 @@ import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.identity.event.event.Event;
 
 import java.util.Map;
 
@@ -488,6 +489,114 @@ public class ResendConfirmationManagerTest {
             assertTrue(e instanceof IdentityRecoveryClientException);
         }
 
+    }
+
+    @Test (description = "Test resend confirmation code for ASK_PASSWORD scenario when recovery data is missing " +
+            "and the user is in pending ask password state.")
+    public void testResendConfirmationCodeAskPasswordWhenNoRecoveryData() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String newCode = "new-code";
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+        mockUtilsErrors();
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.ASK_PASSWORD.toString(),
+                RecoverySteps.UPDATE_PASSWORD.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD, 
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.ASK_PASSWORD);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.UPDATE_PASSWORD);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify notification was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD);
+    }
+
+    @Test (description = "Test that confirmation code is not re-sent for ASK_PASSWORD scenario when recovery data " +
+            "is missing and the user is not in pending ask password state.")
+    public void testResendConfirmationCodeAskPasswordWhenNoRecoveryDataAndUserNotInPendingState() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
+        mockUtilsErrors();
+
+        // Call the method to test.
+        try {
+            resendConfirmationManager.resendConfirmationCode(
+                    user,
+                    RecoveryScenarios.ASK_PASSWORD.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD,
+                    properties);
+            fail("Expected IdentityRecoveryClientException was not thrown.");
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryClientException);
+        }
+    }
+
+    @Test (description = "Test that confirmation code is not re-sent for ASK_PASSWORD scenario when recovery data " +
+            "is missing and no account state claim is present.")
+    public void testResendConfirmationCodeAskPasswordWhenNoRecoveryDataAndNoAccountStateClaim() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(StringUtils.EMPTY);
+        mockUtilsErrors();
+
+        // Call the method to test.
+        try {
+            resendConfirmationManager.resendConfirmationCode(
+                    user,
+                    RecoveryScenarios.ASK_PASSWORD.toString(),
+                    RecoverySteps.UPDATE_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD,
+                    properties);
+            fail("Expected IdentityRecoveryClientException was not thrown.");
+        } catch (Exception e) {
+            assertTrue(e instanceof IdentityRecoveryClientException);
+        }
     }
 
     private static User getUser() {

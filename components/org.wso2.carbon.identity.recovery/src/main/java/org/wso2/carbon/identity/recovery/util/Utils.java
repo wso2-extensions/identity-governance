@@ -1892,6 +1892,7 @@ public class Utils {
 
     /**
      * Retrieve user claim of the user.
+     * Note : This method cannot be used to retrieve identity claim values of the user.
      *
      * @param user      User from whom the claim needs to be retrieved.
      * @param userClaim Claim URI of the user.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.user.endpoint.ResendCodeApiService;
 import org.wso2.carbon.identity.user.endpoint.dto.ErrorDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -44,7 +45,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.user.endpoint.util.Utils.getUserClaim;
 
 /**
  * This class contains the implementation of Resend Code API Service.
@@ -127,11 +131,24 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                                                               ResendCodeRequestDTO resendCodeRequestDTO) {
 
         UserRecoveryData userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
+        ResendConfirmationManager resendConfirmationManager;
+
         if (userRecoveryData == null) {
+            // If the recovery scenario is ASK_PASSWORD and the user's account state is pending ask password,
+            // reinitiate "Ask password" flow even though recovery data is absent.
+            if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)
+                    && isUserInPendingAskPasswordState(resendCodeRequestDTO.getUser())) {
+                resendConfirmationManager = Utils.getResendConfirmationManager();
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                        RecoveryScenarios.ASK_PASSWORD.toString(),
+                        RecoverySteps.UPDATE_PASSWORD.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD,
+                        resendCodeRequestDTO);
+            }
             return notificationResponseBean;
         }
 
-        ResendConfirmationManager resendConfirmationManager = Utils.getResendConfirmationManager();
+        resendConfirmationManager = Utils.getResendConfirmationManager();
         if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
@@ -283,4 +300,20 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         return tenantDomain;
     }
 
+    /**
+     * Determines if a user's account is in a state where they need to set a password
+     * through the ask password flow.
+     *
+     * @param user User object containing user information.
+     * @return true if the user is in pending ask password state, false otherwise.
+     */
+    private boolean isUserInPendingAskPasswordState(UserDTO user) {
+
+        String domainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+        String accountState = Utils.getAccountState(domainQualifiedUsername, user.getTenantDomain());
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
+    }
 }
