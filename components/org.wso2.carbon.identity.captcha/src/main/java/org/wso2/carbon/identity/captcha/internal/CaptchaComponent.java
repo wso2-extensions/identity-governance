@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
+import org.wso2.carbon.identity.captcha.listener.CaptchaFlowExecutionListener;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.EmailOTPCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.GenericAuthenticatorReCaptchaConnector;
@@ -38,6 +39,7 @@ import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
+import org.wso2.carbon.identity.user.registration.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -101,6 +103,8 @@ public class CaptchaComponent {
                     failedLoginAttemptValidator, null);
             context.getBundleContext().registerService(AbstractEventHandler.class.getName(), new
                     FailLoginAttemptValidationHandler(), null);
+            context.getBundleContext().registerService(FlowExecutionListener.class, new CaptchaFlowExecutionListener(),
+                    null);
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");
             }
