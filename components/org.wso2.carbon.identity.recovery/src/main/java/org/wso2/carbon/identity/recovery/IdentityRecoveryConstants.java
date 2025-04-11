@@ -48,6 +48,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP = "adminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
+            "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
@@ -727,7 +730,8 @@ public class IdentityRecoveryConstants {
                 "AskPassword.ExpiryTime";
 
         public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP = "Recovery.AdminPasswordReset.SMSOTP";
         public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK = "Recovery.AdminPasswordReset.RecoveryLink";
         public static final String ADMIN_PASSWORD_RESET_EXPIRY_TIME = "Recovery.AdminPasswordReset.ExpiryTime";
 
