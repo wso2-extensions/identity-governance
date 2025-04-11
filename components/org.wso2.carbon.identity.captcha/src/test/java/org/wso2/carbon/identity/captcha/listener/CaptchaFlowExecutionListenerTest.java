@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.user.registration.mgt.model.ComponentDTO;
 import org.wso2.carbon.identity.user.registration.mgt.model.DataDTO;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -233,6 +234,8 @@ public class CaptchaFlowExecutionListenerTest {
                 .stepType(Constants.StepTypes.VIEW)
                 .flowId("flowId")
                 .data(new DataDTO.Builder()
-                        .components(Collections.singletonList(componentDTO)).build()).build();
+                        .components(Collections.singletonList(componentDTO))
+                        .additionalData(new HashMap<>())
+                        .build()).build();
     }
 }
