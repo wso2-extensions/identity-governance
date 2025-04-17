@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2018-2025, WSO2 LLC. (http://www.wso2.com).
  *
@@ -1814,6 +1813,83 @@ public class UserSelfRegistrationManagerTest {
                     .when(userStoreManager)
                     .isExistingRole(anyString());
             userSelfRegistrationManager.registerUser(new User(), "", new Claim[]{}, null);
+        }
+    }
+
+    @DataProvider(name = "accountStateClaimTestData")
+    private Object[][] getAccountStateClaimTestData() {
+        return new Object[][]{
+                // isAccountStateClaimExists, expectedAccountStateClaim
+                {true, "UNLOCKED"},
+                {false, null}
+        };
+    }
+
+    @Test(description = "Verify that getConfirmedSelfRegisteredUser() sets the account state claim correctly upon " +
+            "successful account confirmation.", dataProvider = "accountStateClaimTestData")
+    public void testGetConfirmedSelfRegisteredUserAccountStateClaim(boolean isAccountStateClaimExists,
+                                                                    String expectedAccountStateClaim) throws Exception {
+
+        String verifiedChannelType = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        String verifiedChannelClaim = "http://wso2.org/claims/emailaddress";
+        Map<String, String> metaProperties = new HashMap<>();
+
+        User user = getUser();
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, TEST_RECOVERY_DATA_STORE_SECRET,
+                RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP);
+
+        when(userRecoveryDataStore.load(eq(TEST_CODE))).thenReturn(userRecoveryData);
+        when(userRecoveryDataStore.load(eq(TEST_CODE), anyBoolean())).thenReturn(userRecoveryData);
+        when(privilegedCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN_NAME);
+
+        try (MockedStatic<Utils> mockedUtils = mockStatic(Utils.class)) {
+            mockedUtils.when(() -> Utils.isAccountStateClaimExisting(anyString()))
+                    .thenReturn(isAccountStateClaimExists);
+            mockedUtils.when(() -> Utils.getSignUpConfigs(eq(NOTIFICATION_INTERNALLY_MANAGE), anyString()))
+                    .thenReturn("true");
+
+            if (isAccountStateClaimExists) {
+                Map<String, String> claims = new HashMap<>();
+                claims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, expectedAccountStateClaim);
+                when(userStoreManager.getUserClaimValues(anyString(), any(), anyString())).thenReturn(claims);
+            }
+
+            org.wso2.carbon.identity.application.common.model.Property property =
+                    new org.wso2.carbon.identity.application.common.model.Property();
+            org.wso2.carbon.identity.application.common.model.Property[] testProperties =
+                    new org.wso2.carbon.identity.application.common.model.Property[]{property};
+
+            when(identityGovernanceService.getConfiguration(any(), anyString())).thenReturn(testProperties);
+            when(privilegedCarbonContext.getOSGiService(eq(NotificationChannelManager.class), isNull()))
+                    .thenReturn(notificationChannelManager);
+            when(notificationChannelManager.resolveCommunicationChannel(anyString(), anyString(), anyString(), any()))
+                    .thenReturn(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+            User confirmedUser = userSelfRegistrationManager.getConfirmedSelfRegisteredUser(TEST_CODE,
+                    verifiedChannelType, verifiedChannelClaim, metaProperties);
+
+            assertEquals(confirmedUser.getUserName(), user.getUserName());
+
+            ArgumentCaptor<Map<String, String>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
+            verify(userStoreManager, atLeastOnce()).setUserClaimValues(
+                    anyString(),
+                    claimsCaptor.capture(),
+                    isNull()
+            );
+
+            // Get the captured claims and verify them
+            Map<String, String> updatedClaims = claimsCaptor.getValue();
+            if (isAccountStateClaimExists) {
+                assertEquals(updatedClaims.get(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI),
+                        expectedAccountStateClaim, "Account state should match expected value");
+            } else {
+                assertFalse(updatedClaims.containsKey(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI),
+                        "Account state claim should not be present when claim does not exist");
+            }
+            assertEquals(updatedClaims.get(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM),
+                    Boolean.FALSE.toString(), "Account locked claim should be set to false");
+            assertEquals(updatedClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM),
+                    Boolean.TRUE.toString(), "Email verified claim should be set to true");
         }
     }
 

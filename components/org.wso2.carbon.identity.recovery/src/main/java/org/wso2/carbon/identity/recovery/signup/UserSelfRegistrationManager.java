@@ -1131,6 +1131,15 @@ public class UserSelfRegistrationManager {
         // Need to unlock user account
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+        try {
+            if (Utils.isAccountStateClaimExisting(user.getTenantDomain())) {
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                        IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+            }
+        } catch (IdentityEventException e) {
+            log.error(String.format("Error while retrieving accountState claim from ClaimManager for the tenant : %s",
+                    user.getTenantDomain()), e);
+        }
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
