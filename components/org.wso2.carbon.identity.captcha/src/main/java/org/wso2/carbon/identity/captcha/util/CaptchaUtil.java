@@ -26,20 +26,18 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpEntityContainer;
-import org.apache.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.http.client.exception.HttpClientException;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig;
@@ -278,7 +276,7 @@ public class CaptchaUtil {
 
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
-        org.apache.hc.client5.http.classic.methods.HttpPost httpPost;
+        HttpPost httpPost;
 
         // If the reCaptcha type is defined and, it is enterprise, the enterprise process will be done. Otherwise,
         // the reCaptcha v2/v3 process will be done.
@@ -290,10 +288,9 @@ public class CaptchaUtil {
             httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
         }
 
-        org.apache.hc.core5.http.HttpEntity entity;
+        HttpEntity entity;
 
-        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient = CaptchaDataHolder.getInstance()
-                .getHttpClientService().createClientWithSystemProperties()) {
+        try (CloseableHttpClient httpclient = HttpClients.createSystem()) {
             entity = httpclient.execute(httpPost, HttpEntityContainer::getEntity);
             if (entity == null) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
@@ -313,42 +310,42 @@ public class CaptchaUtil {
         return true;
     }
 
-    private static org.apache.hc.client5.http.classic.methods.HttpPost createReCaptchaEnterpriseVerificationHttpPost(String reCaptchaResponse) {
+    private static HttpPost createReCaptchaEnterpriseVerificationHttpPost(String reCaptchaResponse) {
 
-        org.apache.hc.client5.http.classic.methods.HttpPost httpPost;
+        HttpPost httpPost;
         String recaptchaUrl = CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl();
         String projectID = CaptchaDataHolder.getInstance().getReCaptchaProjectID();
         String siteKey = CaptchaDataHolder.getInstance().getReCaptchaSiteKey();
         String apiKey = CaptchaDataHolder.getInstance().getReCaptchaAPIKey();
 
         String verifyUrl = recaptchaUrl + "/v1/projects/" + projectID + "/assessments?key=" + apiKey;
-        httpPost = new org.apache.hc.client5.http.classic.methods.HttpPost(verifyUrl);
+        httpPost = new HttpPost(verifyUrl);
 
         httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
         String json = String.format("{ \"event\": { \"token\": \"%s\", \"siteKey\": \"%s\" } }", reCaptchaResponse,
                 siteKey);
 
-        org.apache.hc.core5.http.io.entity.StringEntity entity = new org.apache.hc.core5.http.io.entity.StringEntity(json, StandardCharsets.UTF_8);
+        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
 
         httpPost.setEntity(entity);
 
         return httpPost;
     }
 
-    private static org.apache.hc.client5.http.classic.methods.HttpPost createReCaptchaVerificationHttpPost(String reCaptchaResponse) {
+    private static HttpPost createReCaptchaVerificationHttpPost(String reCaptchaResponse) {
 
-        org.apache.hc.client5.http.classic.methods.HttpPost httpPost;
-        httpPost = new org.apache.hc.client5.http.classic.methods.HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
-        List<org.apache.hc.core5.http.message.BasicNameValuePair> params = Arrays.asList(new org.apache.hc.core5.http.message.BasicNameValuePair("secret", CaptchaDataHolder
+        HttpPost httpPost;
+        httpPost = new HttpPost(CaptchaDataHolder.getInstance().getReCaptchaVerifyUrl());
+        List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", CaptchaDataHolder
                         .getInstance().getReCaptchaSecretKey()),
-                new org.apache.hc.core5.http.message.BasicNameValuePair("response", reCaptchaResponse));
-        httpPost.setEntity(new org.apache.hc.client5.http.entity.UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+                new BasicNameValuePair("response", reCaptchaResponse));
+        httpPost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
         return httpPost;
     }
 
-    private static void verifyReCaptchaEnterpriseResponse(org.apache.hc.core5.http.HttpEntity entity)
+    private static void verifyReCaptchaEnterpriseResponse(HttpEntity entity)
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
@@ -395,7 +392,7 @@ public class CaptchaUtil {
         }
     }
 
-    private static void verifyReCaptchaResponse(org.apache.hc.core5.http.HttpEntity entity)
+    private static void verifyReCaptchaResponse(HttpEntity entity)
             throws CaptchaServerException, CaptchaClientException {
 
         final double scoreThreshold = CaptchaDataHolder.getInstance().getReCaptchaScoreThreshold();
