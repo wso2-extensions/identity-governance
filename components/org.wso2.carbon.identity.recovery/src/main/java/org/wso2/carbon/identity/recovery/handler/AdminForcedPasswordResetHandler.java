@@ -178,6 +178,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
 
     protected void handleClaimUpdate(Map<String, Object> eventProperties, UserStoreManager userStoreManager) throws
             IdentityEventException {
+
         User user = getUser(eventProperties, userStoreManager);
 
         if (log.isDebugEnabled()) {
