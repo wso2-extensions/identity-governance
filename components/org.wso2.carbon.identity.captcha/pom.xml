@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.11.61-SNAPSHOT</version>
+        <version>1.11.65-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -96,6 +96,14 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.event</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.user.registration.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.user.registration.engine</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
@@ -203,6 +211,10 @@
                             org.wso2.securevault.*; version="${org.wso2.securevault.import.version.range}",
                             org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.user.registration.engine.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.user.registration.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                     </instructions>

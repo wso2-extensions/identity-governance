@@ -451,11 +451,9 @@ public class Utils {
      * @param description A detailed description of the error.
      * @param e           The underlying cause of the exception.
      * @return An instance of {@link IdentityRecoveryClientException} with the provided details.
-     * @throws IdentityRecoveryClientException If an error occurs while instantiating the exception.
      */
     public static IdentityRecoveryClientException handleClientException(String code, String message, String description,
-                                                                        Throwable e)
-            throws IdentityRecoveryClientException {
+                                                                        Throwable e) {
 
         return IdentityException.error(IdentityRecoveryClientException.class, code, message, description, e);
     }
@@ -1894,6 +1892,7 @@ public class Utils {
 
     /**
      * Retrieve user claim of the user.
+     * Note : This method cannot be used to retrieve identity claim values of the user.
      *
      * @param user      User from whom the claim needs to be retrieved.
      * @param userClaim Claim URI of the user.

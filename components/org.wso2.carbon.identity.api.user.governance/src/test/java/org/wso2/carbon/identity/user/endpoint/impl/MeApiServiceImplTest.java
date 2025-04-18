@@ -31,7 +31,9 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
@@ -57,10 +59,12 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
- * This class contains unit tests for MeApiServiceImpl.java
+ * This class contains unit tests for MeApiServiceImpl.java.
  */
 public class MeApiServiceImplTest {
 
@@ -222,6 +226,56 @@ public class MeApiServiceImplTest {
             assertEquals(meApiService.meResendCodePost(
                             meResendCodeRequestDTO(recoveryScenario.name())).getStatus(),
                     expectedStatusCode);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    @DataProvider(name = "selfSignUpResendDataProvider")
+    public Object[][] selfSignUpResendDataProvider() {
+        // isSelfRegistrationSendOTPInEmailEnabled, shouldThrowConfigException, expectedNotificationTemplate
+        return new Object[][]{
+                {"false", false, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM},
+                {"true", false, IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP},
+                {null, true, IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM}
+        };
+    }
+
+    @Test(description = "Test meResendCodePost for self-signup recovery scenario by verifying that the confirmation " +
+            "email link/code is correctly generated based on the OTP email configuration and that configuration " +
+            " exceptions are handled appropriately", dataProvider = "selfSignUpResendDataProvider")
+    public void testMeResendCodePostForSelfSignUp(String isSelfRegistrationSendOTPInEmailEnabled,
+                                                  boolean shouldThrowConfigException,
+                                                  String expectedNotificationTemplate)
+            throws IdentityRecoveryException {
+
+        try {
+            String carbonHome = Paths.get(System.getProperty("user.dir"), "src", "test", "resources").toString();
+            System.setProperty(CarbonBaseConstants.CARBON_HOME, carbonHome);
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(USERNAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
+
+            when(resendConfirmationManager.resendConfirmationCode(isNull(), anyString(), anyString(),
+                    eq(expectedNotificationTemplate), isNull())).thenReturn(notificationResponseBean);
+            mockedUtils.when(() -> Utils.getUserRecoveryData(any(ResendCodeRequestDTO.class), anyString()))
+                    .thenReturn(userRecoveryData);
+            mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+            if (shouldThrowConfigException) {
+                mockedUtils.when(() -> Utils.getSignUpConfigs(
+                        eq(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL),
+                        any())).thenThrow(new IdentityRecoveryServerException("Test Exception"));
+            } else {
+                mockedUtils.when(() -> Utils.getSignUpConfigs(
+                        eq(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL),
+                        any())).thenReturn(isSelfRegistrationSendOTPInEmailEnabled);
+            }
+            Mockito.when(userRecoveryData.getRecoveryScenario()).thenReturn(RecoveryScenarios.SELF_SIGN_UP);
+            Mockito.when(userRecoveryData.getRecoveryStep()).thenReturn(RecoverySteps.CONFIRM_SIGN_UP);
+
+            assertEquals(meApiService.meResendCodePost(
+                    meResendCodeRequestDTO(RecoveryScenarios.SELF_SIGN_UP.name())).getStatus(), 201);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
