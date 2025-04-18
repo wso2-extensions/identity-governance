@@ -153,6 +153,71 @@ public class AdminForcedPasswordResetHandlerTest {
         mockedIdentityTenantUtil.close();
     }
 
+    @Test(dataProvider = "claimUpdateDataProvider")
+    public void testHandleClaimUpdate(boolean isEmailOtpEnabled,
+                                      boolean isEmailLinkEnabled, boolean isSmsOtpEnabled,
+                                      String expectedTemplateName, String expectedRecoveryScenario)
+            throws IdentityEventException {
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, TEST_USER_STORE_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.ADMIN_FORCED_PASSWORD_RESET_CLAIM, "true");
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        if (isEmailOtpEnabled) {
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP,
+                    TEST_TENANT_DOMAIN)).thenReturn(String.valueOf(true));
+        }
+        if (isEmailLinkEnabled) {
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK,
+                    TEST_TENANT_DOMAIN)).thenReturn(String.valueOf(true));
+        }
+        if (isSmsOtpEnabled) {
+            mockedUtils.when(() -> Utils.getConnectorConfig(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP,
+                    TEST_TENANT_DOMAIN)).thenReturn(String.valueOf(true));
+        }
+        adminForcedPasswordResetHandler.handleClaimUpdate(eventProperties, userStoreManager);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService, times(1)).handleEvent(eventCaptor.capture());
+        Event event = eventCaptor.getValue();
+        if (!isSmsOtpEnabled) {
+            assertEquals(event.getEventName(), IdentityEventConstants.Event.TRIGGER_NOTIFICATION,
+                    "Event does not match.");
+        }
+
+        Map<String, Object> capturedEventProperties = event.getEventProperties();
+        assertEquals(capturedEventProperties.get("user-name"), TEST_USERNAME);
+        assertEquals(capturedEventProperties.get("tenant-domain"), TEST_TENANT_DOMAIN);
+        assertEquals(capturedEventProperties.get("userstore-domain"), TEST_USER_STORE_DOMAIN);
+
+        assertEquals(capturedEventProperties.get("TEMPLATE_TYPE"), expectedTemplateName);
+        if (!isSmsOtpEnabled) {
+            assertEquals(capturedEventProperties.get("RECOVERY_SCENARIO"), expectedRecoveryScenario);
+        }
+
+    }
+
+    @DataProvider
+    public Object[][] claimUpdateDataProvider() {
+
+        return new Object[][]{
+                // isEmailOtpEnabled, isEmailLinkEnabled, isSmsOtpEnabled, expectedTemplate,
+                // expectedRecoveryScenario
+                {true, false, false, IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString()},
+                {false, true, false, IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString()},
+                {false, false, true, IdentityRecoveryConstants.NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP,
+                        RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString()},
+        };
+    }
+
     @Test
     public void testGetNames() {
 
