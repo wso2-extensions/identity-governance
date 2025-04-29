@@ -22,12 +22,11 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -59,6 +58,7 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
@@ -462,25 +462,24 @@ public class RecoveryUtil {
      * @param properties        ReCaptcha properties
      * @return httpResponse
      */
-    public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
-                                                                  Properties properties) {
+    public static ClassicHttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
+                                                                                      Properties properties) {
 
-        HttpResponse response = null;
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
-        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
+
         HttpPost httppost = new HttpPost(reCaptchaVerifyUrl);
         List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", reCaptchaSecretKey),
                 new BasicNameValuePair("response", reCaptchaResponse.getToken()));
         httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
-        try {
-            response = httpclient.execute(httppost);
+        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithSystemProperties().build()) {
+            return httpclient.execute(httppost, response -> response);
         } catch (IOException e) {
             RecoveryUtil.handleBadRequest(String.format("Unable to get the verification response : %s", e.getMessage()),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-        return response;
+        return null;
     }
 
     /**
