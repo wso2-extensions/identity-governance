@@ -1971,7 +1971,7 @@ public class Utils {
             userClaimsMap = userStoreManager.getUserClaimValues(user.getUserName(), new String[]{claimURI}, null);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityEventException(String.format("Error while getting user claim: '%s' for user: %s",
-                    claimURI, user.getUserName()), e);
+                    claimURI, maskIfRequired(user.getUserName())), e);
         }
 
         if (MapUtils.isEmpty(userClaimsMap)) {

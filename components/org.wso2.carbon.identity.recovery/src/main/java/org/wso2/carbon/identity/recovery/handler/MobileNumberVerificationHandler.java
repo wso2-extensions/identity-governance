@@ -61,6 +61,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.wso2.carbon.identity.recovery.util.Utils.maskIfRequired;
+
 /**
  * This event handler is used to send a verification SMS when a claim update event to update the mobile number
  * is triggered.
@@ -101,7 +103,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claim)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Primary mobile claim removed for user '%s'. Removing " +
-                            "corresponding 'phoneVerified' claim.", user.getUserName()));
+                            "corresponding 'phoneVerified' claim.", maskIfRequired(user.getUserName())));
                 }
                 setUserClaim(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, StringUtils.EMPTY, userStoreManager,
                         user);
@@ -426,8 +428,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
                                     "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
-                                    "verification will not be triggered.", mobileNumber, username,
-                            user.getTenantDomain(), user.getUserStoreDomain()));
+                                    "verification will not be triggered.", maskIfRequired(mobileNumber),
+                            maskIfRequired(username), user.getTenantDomain(), user.getUserStoreDomain()));
                 }
                 Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
@@ -446,7 +448,8 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
                                 "number for user: %s in domain: %s and user store: %s. Yet the mobile number is not " +
                                 "verified. Hence an SMS OTP verification will be triggered.",
-                        mobileNumber, username, user.getTenantDomain(), user.getUserStoreDomain()));
+                        maskIfRequired(mobileNumber), maskIfRequired(username), user.getTenantDomain(),
+                        user.getUserStoreDomain()));
             }
             Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         }
@@ -697,7 +700,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         try {
             userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
         } catch (UserStoreException e) {
-            throw new IdentityEventException("Error while setting user claim value :" + user.getUserName(), e);
+            throw new IdentityEventException(
+                    String.format("Error while setting user claim value for user: %s",
+                            maskIfRequired(user.getUserName())), e);
         }
     }
 

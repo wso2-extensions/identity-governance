@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
         .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.util.Utils.maskIfRequired;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
 
@@ -103,7 +104,7 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             if (IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM.equals(claim)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Primary email address claim removed for user '%s'. Removing " +
-                            "corresponding 'emailVerified' claim.", user.getUserName()));
+                            "corresponding 'emailVerified' claim.", maskIfRequired(user.getUserName())));
                 }
                 setUserClaim(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, StringUtils.EMPTY, userStoreManager, user);
             }
@@ -647,8 +648,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (supportMultipleEmails && updatedVerifiedEmailAddresses.contains(emailAddress)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("The email address to be updated: %s is already verified and contains" +
-                        " in the verified email addresses list. Hence an email verification will not be " +
-                        "triggered.", emailAddress));
+                        " in the verified email addresses list for user: %s in domain %s. Hence an email " +
+                        "verification will not be triggered.", maskIfRequired(emailAddress),
+                        maskIfRequired(user.getUserName()), user.getTenantDomain()));
             }
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString());
@@ -676,7 +678,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("The email address to be updated: %s is same as the existing email " +
                             "address for user: %s in domain %s. Hence an email verification will not be " +
-                            "triggered.", emailAddress, user.getUserName(), user.getTenantDomain()));
+                            "triggered.", maskIfRequired(emailAddress), maskIfRequired(user.getUserName()),
+                            user.getTenantDomain()));
                 }
                 Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                         .SkipEmailVerificationOnUpdateStates.SKIP_ON_EXISTING_EMAIL.toString());
@@ -694,8 +697,8 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("The email address to be updated: %s is same as the existing email " +
                         "address for user: %s in domain %s. Yet the email is not verified. " +
-                        "Hence an email verification will be triggered.", emailAddress,
-                        user.getUserName(), user.getTenantDomain()));
+                        "Hence an email verification will be triggered.", maskIfRequired(emailAddress),
+                        maskIfRequired(user.getUserName()), user.getTenantDomain()));
             }
             Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         }
