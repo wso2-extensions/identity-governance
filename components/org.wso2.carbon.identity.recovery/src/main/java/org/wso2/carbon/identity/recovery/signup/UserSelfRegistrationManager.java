@@ -1220,6 +1220,18 @@ public class UserSelfRegistrationManager {
     }
 
     /**
+     * Check whether verification claim needs to be set based on the recovery scenario.
+     *
+     * @param recoveryScenario The recovery scenario to check.
+     * @return true if verification claim should be set, false otherwise.
+     */
+    private boolean shouldSetVerificationClaim(String recoveryScenario) {
+
+        return !(RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario));
+    }
+
+    /**
      * Set the email verified or mobile verified claim to TRUE according to the verified channel in the request.
      *
      * @param user                           User
@@ -1254,17 +1266,21 @@ public class UserSelfRegistrationManager {
                 }
                 // If no verification claims are sent, set the email verified claim to true.
                 // This is to support backward compatibility.
-                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                if (shouldSetVerificationClaim(recoveryScenario)) {
+                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                }
             }
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
                 String message = String
                         .format("Self sign-up via SMS channel detected. Updating %s value for user : %s in tenant "
-                                        + "domain : %s ", NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(),
+                                        + "domain : %s ", NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(),
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
-            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+            if (shouldSetVerificationClaim(recoveryScenario)) {
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
+            }
         } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
                 String message = String
@@ -1273,7 +1289,9 @@ public class UserSelfRegistrationManager {
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
-            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            if (shouldSetVerificationClaim(recoveryScenario)) {
+                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            }
         } else {
             if (log.isDebugEnabled()) {
                 String message = String.format("No notification channel detected for user : %s in tenant domain : %s "
@@ -1281,7 +1299,9 @@ public class UserSelfRegistrationManager {
                         user.getUserName(), user.getTenantDomain(), recoveryScenario);
                 log.debug(message);
             }
-            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            if (shouldSetVerificationClaim(recoveryScenario)) {
+                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
+            }
         }
     }
 

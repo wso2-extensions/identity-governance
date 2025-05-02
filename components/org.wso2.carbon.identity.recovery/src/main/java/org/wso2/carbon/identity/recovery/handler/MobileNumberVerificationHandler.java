@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2020-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -90,6 +90,25 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 (String) eventProperties.get(IdentityEventConstants.EventProperty.TENANT_DOMAIN),
                 userStoreManager.getRealmConfiguration().
                         getUserStoreProperty(UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME));
+
+        if (IdentityEventConstants.Event.PRE_DELETE_USER_CLAIM.equals(eventName)) {
+            /*
+             * The `mobile` claim stores the user's primary mobile number, while `phoneVerified` flags
+             * whether that mobile number has been verified. If the primary mobile number is deleted, its
+             * verification flag should be removed as well.
+             */
+            String claim = (String) eventProperties.get(IdentityEventConstants.EventProperty.CLAIM_URI);
+            if (IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM.equals(claim)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Primary mobile claim removed for user '%s'. Removing " +
+                            "corresponding 'phoneVerified' claim.", user.getUserName()));
+                }
+                setUserClaim(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, StringUtils.EMPTY, userStoreManager,
+                        user);
+            }
+            return;
+        }
+
         Map<String, String> claims = (Map<String, String>) eventProperties.get(IdentityEventConstants.EventProperty
                 .USER_CLAIMS);
         if (claims == null) {
@@ -382,34 +401,54 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
                     IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
                             .SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
+            claims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+
+            // If the existing primary mobile is not verified do not add it to the verified mobile numbers list.
+            if (shouldUpdateMultiMobilesRelatedClaims && !isPrimaryMobileVerified(userStoreManager, user)) {
+                updatedVerifiedNumbersList.remove(existingMobileNumber);
+                claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
+                        StringUtils.join(updatedVerifiedNumbersList, multiAttributeSeparator));
+            }
             invalidatePendingMobileVerification(user, userStoreManager, claims);
             return;
         }
 
         if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
-                                "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
-                                "verification will not be triggered.", mobileNumber, username,
-                        user.getTenantDomain(), user.getUserStoreDomain()));
-            }
-            Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
-                    .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
-            invalidatePendingMobileVerification(user, userStoreManager, claims);
 
-            if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims) {
-                if (!updatedVerifiedNumbersList.contains(existingMobileNumber)) {
-                    updatedVerifiedNumbersList.add(existingMobileNumber);
-                    claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                            String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+            if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims &&
+                    !updatedVerifiedNumbersList.contains(existingMobileNumber)) {
+                updatedVerifiedNumbersList.add(existingMobileNumber);
+                claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+            }
+
+            if (isPrimaryMobileVerified(userStoreManager, user)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
+                                    "number for user: %s in domain: %s and user store: %s. Hence an SMS OTP " +
+                                    "verification will not be triggered.", mobileNumber, username,
+                            user.getTenantDomain(), user.getUserStoreDomain()));
                 }
-                if (!updatedAllNumbersList.contains(existingMobileNumber)) {
+                Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
+                        .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_EXISTING_MOBILE_NUM.toString());
+                invalidatePendingMobileVerification(user, userStoreManager, claims);
+
+                if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims &&
+                        !updatedAllNumbersList.contains(existingMobileNumber)) {
                     updatedAllNumbersList.add(existingMobileNumber);
-                    claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
+                    claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
                             String.join(multiAttributeSeparator, updatedAllNumbersList));
                 }
+                return;
             }
-            return;
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("The mobile number to be updated: %s is same as the existing mobile " +
+                                "number for user: %s in domain: %s and user store: %s. Yet the mobile number is not " +
+                                "verified. Hence an SMS OTP verification will be triggered.",
+                        mobileNumber, username, user.getTenantDomain(), user.getUserStoreDomain()));
+            }
+            Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         }
         /*
         When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'
@@ -639,5 +678,41 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             log.error("Error while retrieving claim manager.", e);
         }
         return null;
+    }
+
+    /**
+     * Sets the user claim value.
+     *
+     * @param claimName        Claim URI.
+     * @param claimValue       Claim value to be set.
+     * @param userStoreManager User store manager.
+     * @param user             User.
+     * @throws IdentityEventException If an error occurs while setting the user claim value.
+     */
+    private void setUserClaim(String claimName, String claimValue, UserStoreManager userStoreManager, User user)
+            throws IdentityEventException {
+
+        HashMap<String, String> userClaims = new HashMap<>();
+        userClaims.put(claimName, claimValue);
+        try {
+            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error while setting user claim value :" + user.getUserName(), e);
+        }
+    }
+
+    /**
+     * Check if the user's primary mobile is verified by checking the phoneVerified claim value.
+     *
+     * @param userStoreManager User store manager.
+     * @param user             User.
+     * @return true if the primary mobile number is verified, false otherwise.
+     * @throws IdentityEventException if there is an error checking the claim value.
+     */
+    private boolean isPrimaryMobileVerified(UserStoreManager userStoreManager, User user)
+            throws IdentityEventException {
+
+        return Boolean.parseBoolean(
+                Utils.getUserClaim(userStoreManager, user, IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM));
     }
 }

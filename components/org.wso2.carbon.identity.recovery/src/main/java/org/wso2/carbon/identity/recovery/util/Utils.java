@@ -1951,4 +1951,39 @@ public class Utils {
                     " for user: " + user.toFullQualifiedUsername(), e);
         }
     }
+
+    /**
+     * Retrieve user claim of the user from the user store manager.
+     * Note : This method can be used to retrieve identity claim values of the user.
+     *
+     * @param userStoreManager The user store manager instance.
+     * @param user             The user object containing user details.
+     * @param claimURI         The URI of the claim to be retrieved.
+     * @return The claim value for the given claim URI. Returns null if no claim value is found.
+     * @throws IdentityEventException If an error occurs while retrieving the user claim value.
+     */
+    public static String getUserClaim(org.wso2.carbon.user.core.UserStoreManager userStoreManager, User user,
+                                      String claimURI) throws IdentityEventException {
+
+        Map<String, String> userClaimsMap;
+
+        try {
+            userClaimsMap = userStoreManager.getUserClaimValues(user.getUserName(), new String[]{claimURI}, null);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityEventException(String.format("Error while getting user claim: '%s' for user: %s",
+                    claimURI, user.getUserName()), e);
+        }
+
+        if (MapUtils.isEmpty(userClaimsMap)) {
+            return null;
+        }
+
+        for (Map.Entry<String, String> entry : userClaimsMap.entrySet()) {
+            String userClaimURI = entry.getKey();
+            if (userClaimURI.equals(claimURI)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
 }

@@ -119,6 +119,7 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String VERIFY_MOBILE_CLAIM = "http://wso2.org/claims/identity/verifyMobile";
+    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
