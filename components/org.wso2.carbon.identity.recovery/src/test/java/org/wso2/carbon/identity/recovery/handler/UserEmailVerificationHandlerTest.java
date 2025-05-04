@@ -776,8 +776,8 @@ public class UserEmailVerificationHandlerTest {
         };
     }
 
-    @Test(description = "Test handling of claim deletion events - verifies that ;emailVerified' claim is cleared when " +
-            "email claim is deleted, and no action for other claims.", dataProvider = "claimDeletionData")
+    @Test(description = "Test handling of claim deletion events - verifies that 'emailVerified' claim is cleared" +
+            "when email claim is deleted, and no action for other claims.", dataProvider = "claimDeletionData")
     public void testHandleEventPreDeleteUserClaim(String claimURI, boolean shouldCallSetUserClaimValues)
             throws IdentityEventException, UserStoreException {
 
@@ -799,6 +799,41 @@ public class UserEmailVerificationHandlerTest {
             // Verify that setUserClaimValues was not called for other claims.
             verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
         }
+    }
+
+    @DataProvider(name = "multiAttributeEnabledData")
+    public Object[][] multiAttributeEnabledData() {
+
+        return new Object[][]{
+                {false},
+                {true}
+        };
+    }
+
+    @Test(description = "Test handling of primary email deletion — primary email set to EMPTY should clear" +
+            "emailVerified claim", dataProvider = "multiAttributeEnabledData")
+    public void testHandleEventPreSetUserClaimsPrimaryEmailDeletionClearsVerification(boolean multiAttributeEnabled)
+            throws IdentityEventException {
+
+        mockUtilMethods(true, multiAttributeEnabled, false, false);
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM, StringUtils.EMPTY);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        Event event = new Event(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, eventProperties);
+
+        userEmailVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertTrue(userClaims.containsKey(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM),
+                "'emailVerified' claim not found in user claims map");
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM), StringUtils.EMPTY,
+                "'emailVerified' claim should be cleared (empty string) when primary email is set to empty string.");
     }
 
     private void mockExistingEmailAddressesList(List<String> existingEmails) {

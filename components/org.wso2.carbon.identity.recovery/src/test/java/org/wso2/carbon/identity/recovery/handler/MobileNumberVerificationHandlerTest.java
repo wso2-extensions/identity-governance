@@ -612,6 +612,41 @@ public class MobileNumberVerificationHandlerTest {
         }
     }
 
+    @DataProvider(name = "multiAttributeEnabledData")
+    public Object[][] multiAttributeEnabledData() {
+
+        return new Object[][]{
+                {false},
+                {true}
+        };
+    }
+
+    @Test(description = "Test handling of primary mobile deletion — primary mobile set to EMPTY should clear" +
+            "phoneVerified claim.", dataProvider = "multiAttributeEnabledData")
+    public void testHandleEventPreSetUserClaimsPrimaryMobileDeletionClearsVerification(boolean multiAttributeEnabled)
+            throws IdentityEventException {
+
+        mockUtilMethods(true, multiAttributeEnabled, false);
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, StringUtils.EMPTY);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        Event event = new Event(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, eventProperties);
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertTrue(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM),
+                "'phoneVerified' claim not found in user claims map.");
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM), StringUtils.EMPTY,
+                "'phoneVerified' claim should be cleared (empty string) when primary mobile is set to empty string.");
+    }
+
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
 
         when(userStoreManager.getUserClaimValue(anyString(),

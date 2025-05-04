@@ -582,6 +582,16 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
 
         String emailAddress = claims.get(IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+
+        /*
+         * If the `emailaddress` claim (the primary email) is emptied — indicating its removal — the`emailVerified`
+         * claim (which flags verification) should also be cleared so the user profile does not display a deleted
+         * email as verified.
+         */
+        if (StringUtils.EMPTY.equals(emailAddress)) {
+            claims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, StringUtils.EMPTY);
+        }
+
         List<String> updatedVerifiedEmailAddresses = new ArrayList<>();
         List<String> updatedAllEmailAddresses;
 

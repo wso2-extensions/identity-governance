@@ -337,6 +337,15 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
         String mobileNumber = claims.get(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
 
+        /*
+         * If the `mobile` claim (the primary number) is emptied — indicating its removal — the`phoneVerified` claim
+         * (which flags verification) should also be cleared so the user profile does not display a deleted number
+         * as verified.
+         */
+        if (StringUtils.EMPTY.equals(mobileNumber)) {
+            claims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, StringUtils.EMPTY);
+        }
+
         List<String> updatedVerifiedNumbersList = new ArrayList<>();
         List<String> updatedAllNumbersList;
 
@@ -418,10 +427,10 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
         if (StringUtils.equals(mobileNumber, existingMobileNumber)) {
 
             if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims &&
-                    !updatedVerifiedNumbersList.contains(existingMobileNumber)) {
-                updatedVerifiedNumbersList.add(existingMobileNumber);
+                    !updatedAllNumbersList.contains(existingMobileNumber)) {
+                updatedAllNumbersList.add(existingMobileNumber);
                 claims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
-                String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
+                        String.join(multiAttributeSeparator, updatedAllNumbersList));
             }
 
             if (isPrimaryMobileVerified(userStoreManager, user)) {
@@ -436,10 +445,10 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 invalidatePendingMobileVerification(user, userStoreManager, claims);
 
                 if (supportMultipleMobileNumbers && shouldUpdateMultiMobilesRelatedClaims &&
-                        !updatedAllNumbersList.contains(existingMobileNumber)) {
-                    updatedAllNumbersList.add(existingMobileNumber);
+                        !updatedVerifiedNumbersList.contains(existingMobileNumber)) {
+                    updatedVerifiedNumbersList.add(existingMobileNumber);
                     claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                            String.join(multiAttributeSeparator, updatedAllNumbersList));
+                            String.join(multiAttributeSeparator, updatedVerifiedNumbersList));
                 }
                 return;
             }
