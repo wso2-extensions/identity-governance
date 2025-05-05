@@ -621,6 +621,13 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 emailAddress = getVerificationPendingEmailAddress(existingVerifiedEmailAddresses,
                         updatedVerifiedEmailAddresses);
                 updatedVerifiedEmailAddresses.remove(emailAddress);
+            } else {
+                /*
+                 * When both primary email address and verified email addresses are provided, give the primary‑email
+                 * change the precedence; leave the updated verified‑emails list exactly as it exists in the
+                 * user store.
+                 */
+                updatedVerifiedEmailAddresses = existingVerifiedEmailAddresses;
             }
 
             /*
@@ -665,12 +672,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             Utils.setThreadLocalToSkipSendingEmailVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipEmailVerificationOnUpdateStates.SKIP_ON_ALREADY_VERIFIED_EMAIL_ADDRESSES.toString());
             claims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-            // If the existing primary email is not verified do not add it to the verified emails list.
-            if (shouldUpdateMultiMobilesRelatedClaims && !isPrimaryEmailVerified(userStoreManager, user)) {
-                updatedVerifiedEmailAddresses.remove(existingEmail);
-                claims.put(IdentityRecoveryConstants.VERIFIED_EMAIL_ADDRESSES_CLAIM,
-                        StringUtils.join(updatedVerifiedEmailAddresses, multiAttributeSeparator));
-            }
             invalidatePendingEmailVerification(user, userStoreManager, claims);
             return;
         }
@@ -710,7 +711,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         "Hence an email verification will be triggered.", maskIfRequired(emailAddress),
                         maskIfRequired(user.getUserName()), user.getTenantDomain()));
             }
-            Utils.unsetThreadLocalIsOnlyVerifiedEmailAddressesUpdated();
         }
 
         /*

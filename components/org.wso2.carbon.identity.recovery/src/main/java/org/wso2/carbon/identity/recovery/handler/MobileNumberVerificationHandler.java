@@ -369,6 +369,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 mobileNumber = getVerificationPendingMobileNumber(exisitingVerifiedNumbersList,
                         updatedVerifiedNumbersList);
                 updatedVerifiedNumbersList.remove(mobileNumber);
+            } else {
+                /*
+                 * When both primary mobile number and verified mobile numbers are provided, give the primary‑mobile
+                 * number change the precedence; leave the updated verified‑mobile numbers list exactly as it exists
+                 * in the user store.
+                 */
+                updatedVerifiedNumbersList = exisitingVerifiedNumbersList;
             }
 
             /*
@@ -413,13 +420,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                     IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
                             .SKIP_ON_ALREADY_VERIFIED_MOBILE_NUMBERS.toString());
             claims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
-
-            // If the existing primary mobile is not verified do not add it to the verified mobile numbers list.
-            if (shouldUpdateMultiMobilesRelatedClaims && !isPrimaryMobileVerified(userStoreManager, user)) {
-                updatedVerifiedNumbersList.remove(existingMobileNumber);
-                claims.put(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM,
-                        StringUtils.join(updatedVerifiedNumbersList, multiAttributeSeparator));
-            }
             invalidatePendingMobileVerification(user, userStoreManager, claims);
             return;
         }
@@ -460,7 +460,6 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                         maskIfRequired(mobileNumber), maskIfRequired(username), user.getTenantDomain(),
                         user.getUserStoreDomain()));
             }
-            Utils.unsetThreadLocalIsOnlyVerifiedMobileNumbersUpdated();
         }
         /*
         When 'UseVerifyClaim' is enabled, the verification should happen only if the 'verifyMobile'

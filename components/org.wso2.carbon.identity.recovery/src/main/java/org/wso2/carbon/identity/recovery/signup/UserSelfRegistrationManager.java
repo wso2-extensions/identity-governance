@@ -806,6 +806,13 @@ public class UserSelfRegistrationManager {
                             userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
                                     allEmails, multiAttributeSeparator)) ;
                         }
+
+                        // If the email being verified isn’t the primary email, do not set the “emailVerified” claim.
+                        String primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+                        if (!pendingEmailClaimValue.equals(primaryEmail)) {
+                            userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+                        }
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
                         throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
@@ -843,6 +850,13 @@ public class UserSelfRegistrationManager {
                             allMobileNumbersList.add(pendingMobileClaimValue);
                             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                                     String.join(multiAttributeSeparator, allMobileNumbersList));
+                        }
+
+                        // If the mobile being verified isn’t the primary mobile, do not set the “phoneVerified” claim.
+                        String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                        if (!pendingMobileClaimValue.equals(primaryMobile)) {
+                            userClaims.remove(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM);
                         }
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
@@ -1034,6 +1048,13 @@ public class UserSelfRegistrationManager {
                         userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                                 String.join(multiAttributeSeparator, allMobileNumbersList));
                     }
+
+                    // If the mobile being verified is the primary mobile, set the “phoneVerified” claim to true.
+                    String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                            IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                    if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    }
                 } catch (IdentityEventException e) {
                     log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
                     throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
@@ -1220,18 +1241,6 @@ public class UserSelfRegistrationManager {
     }
 
     /**
-     * Check whether verification claim needs to be set based on the recovery scenario.
-     *
-     * @param recoveryScenario The recovery scenario to check.
-     * @return true if verification claim should be set, false otherwise.
-     */
-    private boolean shouldSetVerificationClaim(String recoveryScenario) {
-
-        return !(RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario));
-    }
-
-    /**
      * Set the email verified or mobile verified claim to TRUE according to the verified channel in the request.
      *
      * @param user                           User
@@ -1266,9 +1275,7 @@ public class UserSelfRegistrationManager {
                 }
                 // If no verification claims are sent, set the email verified claim to true.
                 // This is to support backward compatibility.
-                if (shouldSetVerificationClaim(recoveryScenario)) {
-                    userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-                }
+                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
             }
         } else if (NotificationChannels.SMS_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
@@ -1278,9 +1285,7 @@ public class UserSelfRegistrationManager {
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
-            if (shouldSetVerificationClaim(recoveryScenario)) {
-                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
-            }
+            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
         } else if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equalsIgnoreCase(verificationChannel)) {
             if (log.isDebugEnabled()) {
                 String message = String
@@ -1289,9 +1294,7 @@ public class UserSelfRegistrationManager {
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
-            if (shouldSetVerificationClaim(recoveryScenario)) {
-                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-            }
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
         } else {
             if (log.isDebugEnabled()) {
                 String message = String.format("No notification channel detected for user : %s in tenant domain : %s "
@@ -1299,9 +1302,7 @@ public class UserSelfRegistrationManager {
                         user.getUserName(), user.getTenantDomain(), recoveryScenario);
                 log.debug(message);
             }
-            if (shouldSetVerificationClaim(recoveryScenario)) {
-                userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
-            }
+            userClaims.put(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM, Boolean.TRUE.toString());
         }
     }
 
