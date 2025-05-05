@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationMan
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
+import org.wso2.carbon.identity.user.registration.engine.UserRegistrationFlowService;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.user.core.listener.UserOperationEventListener;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -60,6 +61,7 @@ public class IdentityRecoveryServiceDataHolder {
     private AuthAttributeHandlerManager authAttributeHandlerManager;
     private FederatedAssociationManager federatedAssociationManager;
     private IdentityDataStoreService identityDataStoreService;
+    private UserRegistrationFlowService userRegistrationFlowService;
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -331,5 +333,15 @@ public class IdentityRecoveryServiceDataHolder {
     public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         this.identityDataStoreService = identityDataStoreService;
+    }
+
+    public UserRegistrationFlowService getUserRegistrationFlowService() {
+
+        return userRegistrationFlowService;
+    }
+
+    public void setUserRegistrationFlowService(UserRegistrationFlowService userRegistrationFlowService) {
+
+        this.userRegistrationFlowService = userRegistrationFlowService;
     }
 }
