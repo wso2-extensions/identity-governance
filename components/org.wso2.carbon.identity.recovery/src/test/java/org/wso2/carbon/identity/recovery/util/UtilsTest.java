@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2024-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -85,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static junit.framework.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -1464,6 +1465,49 @@ public class UtilsTest {
 
         isEnabled = Utils.isMultiEmailsAndMobileNumbersPerUserEnabled(TENANT_DOMAIN, USER_STORE_DOMAIN);
         assertFalse(isEnabled);
+    }
+
+    @Test(description = "Test getUserClaim() returns the stored claim value if it exists in the user store.")
+    public void testGetUserClaimReturnsValue() throws Exception {
+
+        User user = getUser();
+        String claimUri = "http://wso2.org/claims/emailaddress";
+        String claimValue = "john@example.com";
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(claimUri, claimValue);
+
+        when(userStoreManager.getUserClaimValues(eq(USER_NAME), eq(new String[]{claimUri}), any()))
+                .thenReturn(claims);
+
+        String result = Utils.getUserClaim(userStoreManager, user, claimUri);
+        assertEquals(result, claimValue);
+    }
+
+    @Test(description = "Test getUserClaim() returns null when the requested claim is absent from the user store.")
+    public void testGetUserClaimEmptyMapReturnsNull() throws Exception {
+
+        User user = getUser();
+        String claimUri = "http://wso2.org/claims/emailaddress";
+
+        when(userStoreManager.getUserClaimValues(eq(USER_NAME), eq(new String[]{claimUri}), any()))
+                .thenReturn(emptyMap());
+
+        String result = Utils.getUserClaim(userStoreManager, user, claimUri);
+        assertNull(result);
+    }
+
+    @Test(description = "Test getUserClaim() throws IdentityEventException when the user‑store lookup fails",
+            expectedExceptions = IdentityEventException.class)
+    public void testGetUserClaimUserStoreExceptionPropagates() throws Exception {
+
+        User user = getUser();
+        String claimUri = "http://wso2.org/claims/emailaddress";
+
+        when(userStoreManager.getUserClaimValues(anyString(), any(), any()))
+                .thenThrow(new org.wso2.carbon.user.core.UserStoreException("DB down"));
+
+        Utils.getUserClaim(userStoreManager, user, claimUri);
     }
 
     private static List<LocalClaim> returnMultiEmailAndMobileRelatedLocalClaims(Map<String, String> claimProperties) {
