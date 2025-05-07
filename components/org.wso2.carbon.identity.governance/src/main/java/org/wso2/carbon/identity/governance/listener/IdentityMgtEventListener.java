@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
+import org.wso2.carbon.identity.core.context.IdentityContext;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -613,6 +614,8 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
         properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
+        properties.put(IdentityEventConstants.EventProperty.INITIATOR_TYPE,
+                IdentityContext.getThreadLocalIdentityContext().getFlow().getInitiatingPersona().name());
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
