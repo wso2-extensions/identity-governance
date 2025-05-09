@@ -703,7 +703,7 @@
         <identity.data.publisher.authentication.version>5.3.27</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.10.25</carbon.kernel.version>
+        <carbon.kernel.version>4.10.47</carbon.kernel.version>
         <carbon.kernel.feature.version>4.9.0</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
@@ -722,7 +722,7 @@
         <carbon.consent.mgt.version>2.6.3</carbon.consent.mgt.version>
         <carbon.consent.mgt.version.range>[2.2.4, 3.0.0)</carbon.consent.mgt.version.range>
 
-        <carbon.multitenancy.version>4.11.0</carbon.multitenancy.version>
+        <carbon.multitenancy.version>4.11.36</carbon.multitenancy.version>
         <carbon.multitenancy.imp.pkg.version.range>[4.7.4, 5.0.0)</carbon.multitenancy.imp.pkg.version.range>
 
         <!--Carbon commons version-->
