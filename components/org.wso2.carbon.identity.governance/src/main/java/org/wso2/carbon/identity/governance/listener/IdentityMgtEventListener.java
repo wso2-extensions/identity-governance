@@ -1716,7 +1716,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
                 }
                 // This error code 40001 password policy could not be loaded.
                 if (StringUtils.equals(errorCode, "40001")) {
-                    throw new UserStoreException(e.getMessage(),errorCode,  e);
+                    throw new UserStoreException(e.getMessage(), errorCode, e);
                 }
                 if (e instanceof IdentityEventClientException) {
                     throw new UserStoreClientException(e.getMessage(), errorCode, e);
