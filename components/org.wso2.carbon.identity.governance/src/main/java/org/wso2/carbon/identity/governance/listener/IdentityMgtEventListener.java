@@ -614,8 +614,10 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.DELETED_USERS, deletedUsers);
         properties.put(IdentityEventConstants.EventProperty.NEW_USERS, newUsers);
-        properties.put(IdentityEventConstants.EventProperty.INITIATOR_TYPE,
-                IdentityContext.getThreadLocalIdentityContext().getFlow().getInitiatingPersona().name());
+        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
+            properties.put(IdentityEventConstants.EventProperty.INITIATOR_TYPE,
+                    IdentityContext.getThreadLocalIdentityContext().getFlow().getInitiatingPersona().name());
+        }
         handleEvent(null, userStoreManager, eventName, roleName, properties);
         return true;
     }
