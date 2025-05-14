@@ -65,6 +65,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
     private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
     private static final String USER_IDENTITY_CLAIMS_MAP = "UserIdentityClaimsMap";
+    private static final String TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
 
     /**
      * USER_EXIST_THREAD_LOCAL_PROPERTY is used to maintain the state of user existence
@@ -138,6 +139,16 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
+
+        /*
+         * Skip updating local user claims for token exchange grant type.
+         * Local user claim updates (such as failed attempt counts in AccountLockHandler) should be skipped to prevent
+         * unintended account state changes during token exchange operations.
+         */
+        if (StringUtils.equals((String) IdentityUtil.threadLocalProperties.get().get(IdentityCoreConstants.GRANT_TYPE),
+                TOKEN_EXCHANGE_GRANT_TYPE)) {
+            properties.put(IdentityEventConstants.EventProperty.SKIP_LOCAL_USER_CLAIM_UPDATE, true);
+        }
 
         handleEvent(userName, userStoreManager, eventName, properties);
 
