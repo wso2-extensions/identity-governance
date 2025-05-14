@@ -117,6 +117,23 @@ public abstract class UserIdentityDataStore {
     }
 
     /**
+     * Get the list of usernames who either do not have a value configured for the given claim URI
+     * or have a value that differs from the provided claim value.
+     *
+     * @param claimURI         Claim URI.
+     * @param claimValue       Claim value.
+     * @param userStoreManager UserStoreManager instance.
+     * @return List of usernames.
+     * @throws IdentityException Identity exception.
+     */
+    public List<String> getUserNamesByClaimURINotEqualValue(String claimURI, String claimValue,
+                                                            org.wso2.carbon.user.core.UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        return Collections.emptyList();
+    }
+
+    /**
      * Get the list of usernames who have the claim value less than the provided claim value for a given claim URI.
      *
      * @param claimURI              Claim URI.

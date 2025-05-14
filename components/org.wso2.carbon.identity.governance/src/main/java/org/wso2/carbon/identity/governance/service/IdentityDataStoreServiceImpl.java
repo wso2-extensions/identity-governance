@@ -159,6 +159,14 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     }
 
     @Override
+    public List<String> getUserNamesByClaimURINotEqualValue(String claimURI, String claimValue,
+                                                            UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        return identityDataStore.getUserNamesByClaimURINotEqualValue(claimURI, claimValue, userStoreManager);
+    }
+
+    @Override
     public List<String> getUserNamesLessThanProvidedClaimValue(String claimURI, String claimValue, int tenantId)
             throws IdentityException {
 

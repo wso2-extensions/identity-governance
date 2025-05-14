@@ -390,6 +390,41 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     @Override
+    public List<String> getUserNamesByClaimURINotEqualValue(String claimUri, String claimValue,
+                                                    org.wso2.carbon.user.core.UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        List<String> userNames = new ArrayList<>();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+             PreparedStatement preparedStatement = connection
+                     .prepareStatement(SQLQuery.FILTER_USERS_BY_DATA_KEY_NOT_EQUAL_DATA_VALUE)) {
+
+            int tenantId = userStoreManager.getTenantId();
+            String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+            String userNameWithDomain =
+                    UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME.equalsIgnoreCase(userStoreDomain) ?
+                            SQL_FILTER_STRING_ANY :
+                            userStoreDomain + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+
+            preparedStatement.setInt(1, tenantId);
+            preparedStatement.setString(2, userNameWithDomain);
+            preparedStatement.setInt(3, tenantId);
+            preparedStatement.setString(4, claimUri);
+            preparedStatement.setString(5, claimValue);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    userNames.add(resultSet.getString("USER_NAME"));
+                }
+            }
+            return userNames;
+        } catch (SQLException | UserStoreException e) {
+            throw new IdentityException(
+                    String.format("Error retrieving users for NE filter for claim URI: %s", claimUri), e);
+        }
+    }
+
+    @Override
     public List<String> getUserNamesLessThanProvidedClaimValue(String claimURI, String claimValue, int tenantId)
             throws IdentityException {
 
@@ -633,8 +668,30 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return sqlBuilder;
     }
 
-    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
-                                           String attributeValue) {
+    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, SqlBuilder header, String attributeName,
+                                           String operation, String attributeValue) {
+
+        if (ExpressionOperation.NE.toString().equals(operation)) {
+            /*
+             * When operation is NE (Not Equal), consider both users whose attribute value does not match the
+             * specified value and users who do not have the attribute configured.
+             */
+
+            // Build a subquery to identify users to exclude.
+            SqlBuilder usersToExcludeSqlBuilder = new SqlBuilder(new StringBuilder(header.getSql()));
+            addingWheres(header, usersToExcludeSqlBuilder);
+            usersToExcludeSqlBuilder.where("DATA_KEY = ?", attributeName);
+            usersToExcludeSqlBuilder.where("DATA_VALUE = ?", attributeValue);
+
+            // Retrieve the subquery SQL string and its ordered parameters.
+            String subQuerySqlString = usersToExcludeSqlBuilder.getQuery();
+            List<Object> subQueryParams = usersToExcludeSqlBuilder.getOrderedParameters();
+
+            // Append the NE condition query fragment to the main SqlBuilder.
+            String neConditionFragment = " AND USER_NAME NOT IN (" + subQuerySqlString + ") ";
+            sqlBuilder.appendParameterizedSqlFragment(neConditionFragment, subQueryParams);
+            return;
+        }
 
         sqlBuilder.where("DATA_KEY = ?", attributeName);
         if (ExpressionOperation.EQ.toString().equals(operation)) {
@@ -676,10 +733,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         if (hitFirstRound) {
             sqlBuilder.updateSql(" INTERSECT " + header.getSql());
             addingWheres(header, sqlBuilder);
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+            buildClaimWhereConditions(sqlBuilder, header, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         } else {
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+            buildClaimWhereConditions(sqlBuilder, header, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
     }
@@ -713,6 +770,12 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                 "SELECT DISTINCT USER_NAME " +
                 "FROM IDN_IDENTITY_USER_DATA " +
                 "WHERE DATA_KEY = ? AND DATA_VALUE LIKE ? AND TENANT_ID = ? AND USER_NAME LIKE ?";
+
+        static final String FILTER_USERS_BY_DATA_KEY_NOT_EQUAL_DATA_VALUE =
+                "SELECT DISTINCT USER_NAME FROM IDN_IDENTITY_USER_DATA WHERE TENANT_ID = ? AND USER_NAME LIKE ? " +
+                        "AND USER_NAME NOT IN " +
+                        "(SELECT USER_NAME FROM IDN_IDENTITY_USER_DATA WHERE " +
+                        "TENANT_ID = ? AND DATA_KEY = ? AND DATA_VALUE = ?)";
 
         public static final String FILTER_USERS_BY_DATA_KEY_LESS_THAN_DATA_VALUE =
                 "SELECT USER_NAME, DATA_VALUE FROM IDN_IDENTITY_USER_DATA WHERE " +
