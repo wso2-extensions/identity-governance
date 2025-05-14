@@ -142,13 +142,11 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
 
-        /*
-         * Skip updating local user claims for token exchange grant type.
-         * Local user claim updates (such as failed attempt counts in AccountLockHandler) should be skipped to prevent
-         * unintended account state changes during token exchange operations.
-         */
-        if (StringUtils.equals((String) IdentityUtil.threadLocalProperties.get().get(IdentityCoreConstants.GRANT_TYPE),
-                TOKEN_EXCHANGE_GRANT_TYPE)) {
+        // If the SKIP_LOCAL_USER_CLAIM_UPDATE property is set on the thread local properties,
+        // bypass local claim updates. This prevents handlers (e.g., AccountLockHandler) from altering account state
+        // during token-exchange flows.
+        if (Boolean.TRUE.equals((Boolean) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityCoreConstants.SKIP_LOCAL_USER_CLAIM_UPDATE))) {
             properties.put(IdentityEventConstants.EventProperty.SKIP_LOCAL_USER_CLAIM_UPDATE, true);
         }
 
