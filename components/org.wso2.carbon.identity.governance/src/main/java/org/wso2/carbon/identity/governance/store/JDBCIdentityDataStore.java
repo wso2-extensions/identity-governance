@@ -633,8 +633,30 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return sqlBuilder;
     }
 
-    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
-                                           String attributeValue) {
+    private void buildClaimWhereConditions(SqlBuilder sqlBuilder, SqlBuilder header, String attributeName,
+                                           String operation, String attributeValue) {
+
+        if (ExpressionOperation.NE.toString().equals(operation)) {
+            /*
+             * When operation is NE (Not Equal), consider both users whose attribute value does not match the
+             * specified value and users who do not have the attribute configured.
+             */
+
+            // Build a subquery to identify users to exclude.
+            SqlBuilder usersToExcludeSqlBuilder = new SqlBuilder(new StringBuilder(header.getSql()));
+            addingWheres(header, usersToExcludeSqlBuilder);
+            usersToExcludeSqlBuilder.where("DATA_KEY = ?", attributeName);
+            usersToExcludeSqlBuilder.where("DATA_VALUE = ?", attributeValue);
+
+            // Retrieve the subquery SQL string and its ordered parameters.
+            String subQuerySqlString = usersToExcludeSqlBuilder.getQuery();
+            List<Object> subQueryParams = usersToExcludeSqlBuilder.getOrderedParameters();
+
+            // Append the NE condition query fragment to the main SqlBuilder.
+            String neConditionFragment = " AND USER_NAME NOT IN (" + subQuerySqlString + ") ";
+            sqlBuilder.appendParameterizedSqlFragment(neConditionFragment, subQueryParams);
+            return;
+        }
 
         sqlBuilder.where("DATA_KEY = ?", attributeName);
         if (ExpressionOperation.EQ.toString().equals(operation)) {
@@ -676,10 +698,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         if (hitFirstRound) {
             sqlBuilder.updateSql(" INTERSECT " + header.getSql());
             addingWheres(header, sqlBuilder);
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+            buildClaimWhereConditions(sqlBuilder, header, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         } else {
-            buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
+            buildClaimWhereConditions(sqlBuilder, header, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
     }
