@@ -142,9 +142,9 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
 
-        // If the SKIP_LOCAL_USER_CLAIM_UPDATE property is set on the thread local properties,
-        // bypass local claim updates. This prevents handlers (e.g., AccountLockHandler) from altering account state
-        // during token-exchange flows.
+        // Skip local user claim updates when SKIP_LOCAL_USER_CLAIM_UPDATE is set.
+        // For example, during token-exchange flows this prevents AccountLockHandler
+        // from modifying failed-attempt counters or other account state.
         if (Boolean.TRUE.equals((Boolean) IdentityUtil.threadLocalProperties.get()
                 .get(IdentityCoreConstants.SKIP_LOCAL_USER_CLAIM_UPDATE))) {
             properties.put(IdentityEventConstants.EventProperty.SKIP_LOCAL_USER_CLAIM_UPDATE, true);
