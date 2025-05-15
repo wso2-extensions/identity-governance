@@ -476,10 +476,9 @@ public class RecoveryUtil {
         try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithSystemProperties().build()) {
             return httpclient.execute(httppost, response -> response);
         } catch (IOException e) {
-            RecoveryUtil.handleBadRequest(String.format("Unable to get the verification response : %s", e.getMessage()),
+            throw RecoveryUtil.buildBadRequestException(String.format("Unable to get the verification response : %s", e.getMessage()),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
-        return null;
     }
 
     /**
