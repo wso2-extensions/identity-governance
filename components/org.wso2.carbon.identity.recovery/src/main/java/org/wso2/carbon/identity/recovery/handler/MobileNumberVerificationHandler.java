@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.handler.InitConfig;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -188,7 +189,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             throws IdentityEventException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-
+        String otpTriggeredClaim = null;
         try {
             String secretKey = Utils.generateSecretKey(NotificationChannels.SMS_CHANNEL.getChannelType(),
                     String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), user.getTenantDomain(),
@@ -201,12 +202,14 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
                 recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
+                otpTriggeredClaim = IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM;
             } else {
                 userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
                 recoveryDataDO = new UserRecoveryData(user, secretKey,
                         RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
+                otpTriggeredClaim = IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM;
             }
 
             /* Mobile number is persisted in remaining set ids to maintain context information about the mobile number
@@ -214,6 +217,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
             userRecoveryDataStore.store(recoveryDataDO);
             triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
+            // Set the otp triggered claim to be used in the authentication flow.
+            IdentityUtil.threadLocalProperties.get().put(
+                    IdentityRecoveryConstants.OTP_VERIFICATION_TRIGGERED_CLAIM, otpTriggeredClaim);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification to user: " +
                     user.toFullQualifiedUsername() + " for mobile verification on update.", e);
