@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance.listener;
@@ -66,6 +68,7 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
     IdentityEventService eventMgtService = IdentityMgtServiceDataHolder.getInstance().getIdentityEventService();
     private static String RE_CAPTCHA_USER_DOMAIN = "user-domain-recaptcha";
     private static final String USER_IDENTITY_CLAIMS_MAP = "UserIdentityClaimsMap";
+    private static final String TOKEN_EXCHANGE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
 
     /**
      * USER_EXIST_THREAD_LOCAL_PROPERTY is used to maintain the state of user existence
@@ -139,6 +142,14 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
         String eventName = IdentityEventConstants.Event.POST_AUTHENTICATION;
         HashMap<String, Object> properties = new HashMap<>();
         properties.put(IdentityEventConstants.EventProperty.OPERATION_STATUS, authenticated);
+
+        // Skip local user claim updates when SKIP_LOCAL_USER_CLAIM_UPDATE is set.
+        // For example, during token-exchange flows this prevents AccountLockHandler
+        // from modifying failed-attempt counters or other account state.
+        if (Boolean.TRUE.equals((Boolean) IdentityUtil.threadLocalProperties.get()
+                .get(IdentityCoreConstants.SKIP_LOCAL_USER_CLAIM_UPDATE))) {
+            properties.put(IdentityEventConstants.EventProperty.SKIP_LOCAL_USER_CLAIM_UPDATE, true);
+        }
 
         handleEvent(userName, userStoreManager, eventName, properties);
 
