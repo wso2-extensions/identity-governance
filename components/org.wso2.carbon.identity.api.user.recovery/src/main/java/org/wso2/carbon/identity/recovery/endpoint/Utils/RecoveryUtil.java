@@ -362,7 +362,7 @@ public class RecoveryUtil {
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         } else if (!RecoveryUtil.isValidTenantDomain(tenantDomain)) {
-            RecoveryUtil.handleBadRequest(String.format("Invalid tenant domain : %s", tenantDomain),
+            throw RecoveryUtil.buildBadRequestException(String.format("Invalid tenant domain : %s", tenantDomain),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
         }
 
@@ -380,7 +380,7 @@ public class RecoveryUtil {
         } catch (IdentityGovernanceException e) {
             LOG.error(String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain)
                     , e);
-            RecoveryUtil.handleBadRequest(
+            throw RecoveryUtil.buildBadRequestException(
                     String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
@@ -409,7 +409,7 @@ public class RecoveryUtil {
             } catch (IOException e) {
                 LOG.error(String.format("Error while loading '%s' configuration file",
                         CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME), e);
-                RecoveryUtil.handleBadRequest(String.format("Error while loading '%s' configuration file",
+                throw RecoveryUtil.buildBadRequestException(String.format("Error while loading '%s' configuration file",
                         CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME),
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             }
@@ -431,25 +431,25 @@ public class RecoveryUtil {
         String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
 
         if (reCaptchaEnabled && StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY))) {
-            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
+            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL))) {
-            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
+            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (reCaptchaEnabled && StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY))) {
-            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
+            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL))) {
-            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
+            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         // Check if project id is available for reCaptcha Enterprise.
         if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType) &&
                 StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_PROJECT_ID))) {
-            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants
+            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants
                     .RE_CAPTCHA_PROJECT_ID), Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return properties;
@@ -473,7 +473,7 @@ public class RecoveryUtil {
                 new BasicNameValuePair("response", reCaptchaResponse.getToken()));
         httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
-        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithSystemProperties().build()) {
+        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
             return httpclient.execute(httppost, response -> response);
         } catch (IOException e) {
             throw RecoveryUtil.buildBadRequestException(String.format("Unable to get the verification response : %s", e.getMessage()),
