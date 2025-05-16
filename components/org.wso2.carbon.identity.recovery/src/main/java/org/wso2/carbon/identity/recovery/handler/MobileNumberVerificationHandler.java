@@ -219,7 +219,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
             // Set the otp triggered claim to be used in the authentication flow.
             IdentityUtil.threadLocalProperties.get().put(
-                    IdentityRecoveryConstants.OTP_VERIFICATION_TRIGGERED_CLAIM, otpTriggeredClaim);
+                    IdentityRecoveryConstants.CLAIM_FOR_PENDING_OTP_VERIFICATION, otpTriggeredClaim);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification to user: " +
                     user.toFullQualifiedUsername() + " for mobile verification on update.", e);
