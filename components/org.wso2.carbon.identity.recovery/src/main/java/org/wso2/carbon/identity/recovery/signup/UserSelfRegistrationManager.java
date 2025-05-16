@@ -829,8 +829,11 @@ public class UserSelfRegistrationManager {
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
             String pendingMobileClaimValue = recoveryData.getRemainingSetIds();
             if (StringUtils.isNotBlank(pendingMobileClaimValue)) {
-                if (RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                        recoveryData.getRecoveryScenario()) && supportMultipleEmailsAndMobileNumbers) {
+                if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                            recoveryData.getRecoveryScenario())
+                            || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                            .equals(recoveryData.getRecoveryScenario()))
+                        && supportMultipleEmailsAndMobileNumbers) {
                     try {
                         List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,
                                 user, IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM);
@@ -898,7 +901,15 @@ public class UserSelfRegistrationManager {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS, null);
         }
+
+        /* Mobile verification by privileged users is enabled validation is only enforced for only
+         MOBILE_VERIFICATION_ON_UPDATE and MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE scenarios. Not applied for
+         PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE or
+         PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE. */
         if (RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
+                (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(recoveryData.getRecoveryScenario()) ||
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                        recoveryData.getRecoveryScenario())) &&
                 !isMobileVerificationEnabledForPrivilegedUsers(user.getTenantDomain())) {
             throw Utils.handleClientException(
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_VERIFICATION_NOT_ENABLE_PRIVILEGED_USERS,
@@ -1025,8 +1036,9 @@ public class UserSelfRegistrationManager {
             Verifying whether user is trying to add a mobile number to http://wso2.org/claims/verifedMobileNumbers
             claim.
             */
-            if (RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
-                    recoveryData.getRecoveryScenario()) && supportMultipleEmailsAndMobileNumbers) {
+            if ((RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryData.getRecoveryScenario()
+                    ) || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                    recoveryData.getRecoveryScenario())) && supportMultipleEmailsAndMobileNumbers) {
                 try {
                     String multiAttributeSeparator = FrameworkUtils.getMultiAttributeSeparator();
                     List<String> existingVerifiedMobileNumbersList = Utils.getMultiValuedClaim(userStoreManager,

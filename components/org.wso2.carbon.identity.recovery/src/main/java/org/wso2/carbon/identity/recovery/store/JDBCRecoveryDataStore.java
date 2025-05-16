@@ -1026,7 +1026,10 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                         tenantDomain));
             }
         } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.equals(recoveryScenario) ||
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryScenario)) {
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(recoveryScenario)||
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.equals(recoveryScenario) ||
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.equals(
+                        recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.MOBILE_NUM_VERIFICATION_ON_UPDATE_EXPIRY_TIME, tenantDomain));
         } else if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario) ||

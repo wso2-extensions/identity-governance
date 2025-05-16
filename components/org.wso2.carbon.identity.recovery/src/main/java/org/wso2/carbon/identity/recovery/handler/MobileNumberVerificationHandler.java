@@ -23,6 +23,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
@@ -188,8 +189,11 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     private void initNotificationForMobileNumberVerificationOnUpdate(User user, String verificationPendingMobileNumber)
             throws IdentityEventException {
 
+        String otpTriggeredClaim;
+        RecoveryScenarios recoveryScenario;
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        String otpTriggeredClaim = null;
+        boolean isProgressiveProfileVerification = Boolean.parseBoolean(String.valueOf(
+                IdentityUtil.threadLocalProperties.get().remove("isProgressiveProfileVerification")));
         try {
             String secretKey = Utils.generateSecretKey(NotificationChannels.SMS_CHANNEL.getChannelType(),
                     String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), user.getTenantDomain(),
@@ -197,17 +201,23 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
 
             UserRecoveryData recoveryDataDO;
             if (Utils.getThreadLocalIsOnlyVerifiedMobileNumbersUpdated()) {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
-                        RecoverySteps.VERIFY_MOBILE_NUMBER);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
-                        RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                recoveryScenario = RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE;
+                if (isProgressiveProfileVerification) {
+                    recoveryScenario =
+                            RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE;
+                }
+                userRecoveryDataStore.invalidate(user, recoveryScenario, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
                 otpTriggeredClaim = IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM;
             } else {
-                userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
-                        RecoverySteps.VERIFY_MOBILE_NUMBER);
-                recoveryDataDO = new UserRecoveryData(user, secretKey,
-                        RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                recoveryScenario = RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE;
+                if (isProgressiveProfileVerification) {
+                    recoveryScenario =
+                            RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE;
+                }
+                userRecoveryDataStore.invalidate(user, recoveryScenario, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryDataDO = new UserRecoveryData(user, secretKey, recoveryScenario,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
                 otpTriggeredClaim = IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM;
             }
@@ -219,7 +229,7 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             triggerNotification(user, secretKey, Utils.getArbitraryProperties(), verificationPendingMobileNumber);
             // Set the otp triggered claim to be used in the authentication flow.
             IdentityUtil.threadLocalProperties.get().put(
-                    IdentityRecoveryConstants.OTP_VERIFICATION_TRIGGERED_CLAIM, otpTriggeredClaim);
+                    IdentityRecoveryConstants.CLAIM_FOR_PENDING_OTP_VERIFICATION, otpTriggeredClaim);
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending notification to user: " +
                     user.toFullQualifiedUsername() + " for mobile verification on update.", e);
@@ -626,6 +636,9 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
             try {
                 UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
                 userRecoveryDataStore.invalidate(user, RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                        RecoverySteps.VERIFY_MOBILE_NUMBER);
+                userRecoveryDataStore.invalidate(user,
+                        RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE,
                         RecoverySteps.VERIFY_MOBILE_NUMBER);
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while invalidating previous mobile verification data " +
