@@ -290,7 +290,7 @@ public class CaptchaUtil {
 
         HttpEntity entity;
 
-        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithSystemProperties().build()) {
+        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
             entity = httpclient.execute(httpPost, HttpEntityContainer::getEntity);
             if (entity == null) {
                 throw new CaptchaServerException("reCaptcha verification response is not received.");
