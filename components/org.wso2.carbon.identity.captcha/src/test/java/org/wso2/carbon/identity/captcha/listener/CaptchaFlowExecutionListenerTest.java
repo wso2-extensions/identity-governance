@@ -71,7 +71,7 @@ public class CaptchaFlowExecutionListenerTest {
             captchaUtilMockedStatic.when(CaptchaUtil::reCaptchaSiteKey).thenReturn("captchaKeyValue");
             captchaUtilMockedStatic.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString()))
                     .thenReturn(true);
-            captchaFlowExecutionListener.doPostInitiate(registrationStep, registrationContext);
+            captchaFlowExecutionListener.doPostExecute(registrationStep, registrationContext);
             Assert.assertTrue(registrationStep.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
             Assert.assertTrue(registrationContext.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertTrue(registrationContext.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
@@ -88,7 +88,7 @@ public class CaptchaFlowExecutionListenerTest {
         try (MockedStatic<CaptchaUtil> captchaUtilMockedStatic = Mockito.mockStatic(CaptchaUtil.class)) {
             captchaUtilMockedStatic.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString()))
                     .thenReturn(true);
-            captchaFlowExecutionListener.doPreContinue(registrationContext);
+            captchaFlowExecutionListener.doPreExecute(registrationContext);
         }
     }
 
@@ -102,7 +102,7 @@ public class CaptchaFlowExecutionListenerTest {
             captchaUtilMockedStatic.when(() -> CaptchaUtil.isValidCaptcha(anyString())).thenReturn(false);
             captchaUtilMockedStatic.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString()))
                     .thenReturn(true);
-            captchaFlowExecutionListener.doPreContinue(registrationContext);
+            captchaFlowExecutionListener.doPreExecute(registrationContext);
         }
     }
 
@@ -115,7 +115,7 @@ public class CaptchaFlowExecutionListenerTest {
             captchaUtilMockedStatic.when(CaptchaUtil::reCaptchaSiteKey).thenReturn("captchaKeyValue");
             captchaUtilMockedStatic.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString()))
                     .thenReturn(true);
-            captchaFlowExecutionListener.doPostContinue(registrationStep, registrationContext);
+            captchaFlowExecutionListener.doPostExecute(registrationStep, registrationContext);
             Assert.assertTrue(registrationStep.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
             Assert.assertTrue(registrationContext.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertTrue(registrationContext.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
@@ -131,7 +131,7 @@ public class CaptchaFlowExecutionListenerTest {
 
         try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
             captchaUtil.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString())).thenReturn(false);
-            captchaFlowExecutionListener.doPostInitiate(step, context);
+            captchaFlowExecutionListener.doPostExecute(step, context);
             Assert.assertFalse(step.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
             Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
@@ -152,7 +152,7 @@ public class CaptchaFlowExecutionListenerTest {
         try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
 
             captchaUtil.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString())).thenReturn(true);
-            captchaFlowExecutionListener.doPostInitiate(step, context);
+            captchaFlowExecutionListener.doPostExecute(step, context);
             Assert.assertNull(context.getProperty(CAPTCHA_ENABLED));
             Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
@@ -177,7 +177,7 @@ public class CaptchaFlowExecutionListenerTest {
         try (MockedStatic<CaptchaUtil> captchaUtil = Mockito.mockStatic(CaptchaUtil.class)) {
 
             captchaUtil.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString())).thenReturn(true);
-            captchaFlowExecutionListener.doPostInitiate(step, context);
+            captchaFlowExecutionListener.doPostExecute(step, context);
             Assert.assertFalse(step.getData().getComponents().get(0).getConfigs().containsKey(CAPTCHA_KEY));
             Assert.assertFalse(context.getCurrentStepInputs().get("action1").contains(CAPTCHA_RESPONSE));
             Assert.assertFalse(context.getCurrentRequiredInputs().get("action1").contains(CAPTCHA_RESPONSE));
@@ -193,7 +193,7 @@ public class CaptchaFlowExecutionListenerTest {
             captchaUtil.when(() -> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString()))
                     .thenReturn(false);
             context.setProperty(CAPTCHA_ENABLED, false);
-            captchaFlowExecutionListener.doPreContinue(context);
+            captchaFlowExecutionListener.doPreExecute(context);
             // No exception means success; make sure captcha remains disabled.
             Assert.assertEquals(context.getProperty(CAPTCHA_ENABLED), false);
         }
@@ -210,7 +210,7 @@ public class CaptchaFlowExecutionListenerTest {
             captchaUtil.when(() -> CaptchaUtil.isValidCaptcha(anyString()))
                     .thenThrow(new CaptchaException("Internal error"));
             captchaUtil.when(()-> CaptchaUtil.isReCaptchaEnabledForFlow(anyString(), anyString())).thenReturn(true);
-            captchaFlowExecutionListener.doPreContinue(context);
+            captchaFlowExecutionListener.doPreExecute(context);
         }
     }
 
