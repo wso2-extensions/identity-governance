@@ -22,11 +22,12 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.MDC;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -380,7 +381,7 @@ public class RecoveryUtil {
         } catch (IdentityGovernanceException e) {
             LOG.error(String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain)
                     , e);
-            throw RecoveryUtil.buildBadRequestException(
+            RecoveryUtil.handleBadRequest(
                     String.format("Error while retrieving resident Idp configurations for tenant %s. ", tenantDomain),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
@@ -409,7 +410,7 @@ public class RecoveryUtil {
             } catch (IOException e) {
                 LOG.error(String.format("Error while loading '%s' configuration file",
                         CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME), e);
-                throw RecoveryUtil.buildBadRequestException(String.format("Error while loading '%s' configuration file",
+                RecoveryUtil.handleBadRequest(String.format("Error while loading '%s' configuration file",
                         CaptchaConstants.CAPTCHA_CONFIG_FILE_NAME),
                         Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
             }
@@ -431,25 +432,25 @@ public class RecoveryUtil {
         String reCaptchaType = properties.getProperty(CaptchaConstants.RE_CAPTCHA_TYPE);
 
         if (reCaptchaEnabled && StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SITE_KEY))) {
-            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SITE_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL))) {
-            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_API_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (reCaptchaEnabled && StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY))) {
-            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_SECRET_KEY),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         if (StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL))) {
-            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants.RE_CAPTCHA_VERIFY_URL),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         // Check if project id is available for reCaptcha Enterprise.
         if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType) &&
                 StringUtils.isBlank(properties.getProperty(CaptchaConstants.RE_CAPTCHA_PROJECT_ID))) {
-            throw RecoveryUtil.buildBadRequestException(String.format("%s is not found ", CaptchaConstants
+            RecoveryUtil.handleBadRequest(String.format("%s is not found ", CaptchaConstants
                     .RE_CAPTCHA_PROJECT_ID), Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return properties;
@@ -461,19 +462,53 @@ public class RecoveryUtil {
      * @param reCaptchaResponse ReCaptcha response token
      * @param properties        ReCaptcha properties
      * @return httpResponse
+     *
+     * @deprecated Use {@link #makeCaptchaVerificationHttpRequestUsingHttpClient5} instead.
      */
-    public static ClassicHttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
-                                                                                      Properties properties) {
+    @Deprecated
+    public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
+                                                                  Properties properties) {
 
+        HttpResponse response = null;
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
-
+        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         HttpPost httppost = new HttpPost(reCaptchaVerifyUrl);
         List<BasicNameValuePair> params = Arrays.asList(new BasicNameValuePair("secret", reCaptchaSecretKey),
                 new BasicNameValuePair("response", reCaptchaResponse.getToken()));
         httppost.setEntity(new UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
 
-        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
+        try {
+            response = httpclient.execute(httppost);
+        } catch (IOException e) {
+            RecoveryUtil.handleBadRequest(String.format("Unable to get the verification response : %s", e.getMessage()),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
+        return response;
+    }
+
+    /**
+     * Make HTTP call for ReCaptcha Verification with the provided ReCaptcha response token
+     *
+     * @param reCaptchaResponse ReCaptcha response token
+     * @param properties        ReCaptcha properties
+     * @return httpResponse
+     */
+    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpRequestUsingHttpClient5
+    (ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
+
+        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
+        String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
+
+        org.apache.hc.client5.http.classic.methods.HttpPost httppost =
+            new org.apache.hc.client5.http.classic.methods.HttpPost(reCaptchaVerifyUrl);
+        List<org.apache.hc.core5.http.message.BasicNameValuePair> params = Arrays.asList(
+            new org.apache.hc.core5.http.message.BasicNameValuePair("secret", reCaptchaSecretKey),
+            new org.apache.hc.core5.http.message.BasicNameValuePair("response", reCaptchaResponse.getToken()));
+        httppost.setEntity(new org.apache.hc.client5.http.entity.UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient =
+                     HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
             return httpclient.execute(httppost, response -> response);
         } catch (IOException e) {
             throw RecoveryUtil.buildBadRequestException(String.format("Unable to get the verification response : %s", e.getMessage()),
