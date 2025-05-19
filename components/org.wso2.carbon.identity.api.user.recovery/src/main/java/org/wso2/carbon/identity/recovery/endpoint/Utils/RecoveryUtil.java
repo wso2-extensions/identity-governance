@@ -363,7 +363,7 @@ public class RecoveryUtil {
         if (StringUtils.isBlank(tenantDomain)) {
             tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         } else if (!RecoveryUtil.isValidTenantDomain(tenantDomain)) {
-            throw RecoveryUtil.buildBadRequestException(String.format("Invalid tenant domain : %s", tenantDomain),
+            RecoveryUtil.handleBadRequest(String.format("Invalid tenant domain : %s", tenantDomain),
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_TENANT.getCode());
         }
 
