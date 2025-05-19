@@ -72,7 +72,6 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
-import org.wso2.carbon.identity.user.registration.engine.UserRegistrationFlowService;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -484,22 +483,5 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(null);
-    }
-
-    @Reference(
-            name = "user.registration.service",
-            service = UserRegistrationFlowService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetUserRegistrationFlowService"
-    )
-    protected void setUserRegistrationFlowService(UserRegistrationFlowService userRegistrationFlowService) {
-
-        IdentityRecoveryServiceDataHolder.getInstance().setUserRegistrationFlowService(userRegistrationFlowService);
-    }
-
-    protected void unsetUserRegistrationFlowService(UserRegistrationFlowService userRegistrationFlowService) {
-
-        IdentityRecoveryServiceDataHolder.getInstance().setUserRegistrationFlowService(null);
     }
 }

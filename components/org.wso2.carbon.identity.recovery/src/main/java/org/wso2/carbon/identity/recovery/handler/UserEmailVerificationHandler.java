@@ -47,8 +47,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineException;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationStep;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -495,40 +493,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        RegistrationStep registrationStep;
-        try {
-            registrationStep = IdentityRecoveryServiceDataHolder.getInstance().
-                    getUserRegistrationFlowService().initiateDefaultRegistrationFlow(
-                    user.getTenantDomain(), "new-application", "https://localhost:3000/myRegistrationPortal");
-
-        } catch (RegistrationEngineException e) {
-            throw new RuntimeException(e);
-        }
-
-
-        Map<String, String> inputMap = new HashMap<>();
-        inputMap.put("http://wso2.org/claims/username", user.getUserName());
-        String familyName = Utils.getUserClaim(user,"http://wso2.org/claims/lastname" );
-        inputMap.put("http://wso2.org/claims/lastname", familyName);
-        String givenName = Utils.getUserClaim(user,"http://wso2.org/claims/givenname" );
-        inputMap.put("http://wso2.org/claims/givenname", givenName);
-        String email = Utils.getUserClaim(user,"http://wso2.org/claims/emailaddress" );
-        inputMap.put("http://wso2.org/claims/emailaddress", email);
-        //inputMap.put("tenantDomain", user.getTenantDomain());
-        //inputMap.put("userStoreDomain", user.getUserStoreDomain());
-
-//        RegistrationStep registrationStep1 = null;
-//        try {
-//            registrationStep1 = IdentityRecoveryServiceDataHolder.getInstance().
-//                    getUserRegistrationFlowService().continueFlow(registrationStep.getFlowId(), "button_tinx", inputMap);
-//        } catch (RegistrationEngineException e) {
-//            throw new RuntimeException(e);
-//        }
-
-        properties.put("flowId", registrationStep.getFlowId());
-        properties.put("actionId", "button_tinx");
-        properties.put("inputs", inputMap);
-        //properties.put("inputs", inputMap);
 
         if (StringUtils.isNotBlank(verificationPendingEmailAddress)) {
             properties.put(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailAddress);

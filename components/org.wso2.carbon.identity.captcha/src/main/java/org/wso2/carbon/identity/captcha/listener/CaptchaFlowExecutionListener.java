@@ -33,8 +33,6 @@ import org.wso2.carbon.identity.user.registration.mgt.model.ComponentDTO;
 
 import java.util.Map;
 
-import static org.wso2.carbon.identity.user.registration.engine.Constants.IS_INITIATE_REQUEST;
-
 /**
  * Listener to handle captcha validation.
  */
@@ -70,9 +68,8 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
         if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
             return true;
         }
-        if (!Boolean.parseBoolean((String) registrationContext.getProperty(IS_INITIATE_REQUEST))) {
-            validateCaptcha(registrationContext);
-        }
+
+        validateCaptcha(registrationContext);
         return true;
     }
 
