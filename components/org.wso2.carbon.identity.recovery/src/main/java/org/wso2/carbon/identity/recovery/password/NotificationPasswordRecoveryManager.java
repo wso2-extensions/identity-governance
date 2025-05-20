@@ -64,6 +64,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
 import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -1190,6 +1191,7 @@ public class NotificationPasswordRecoveryManager {
         properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
         properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
         properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        addUserStoreManagerToEventProperties(user, properties);
 
         if (userRecoveryData != null) {
             properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
@@ -1223,6 +1225,42 @@ public class NotificationPasswordRecoveryManager {
                     eventName, e);
         }
 
+    }
+
+    private static void addUserStoreManagerToEventProperties(User user, HashMap<String, Object> properties) {
+
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
+            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+
+            if (realmService == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("RealmService is not available. Skipping setting user store manager.");
+                }
+                return;
+            }
+
+            UserRealm userRealm = realmService.getTenantUserRealm(tenantId);
+            if (userRealm == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("UserRealm is null for tenant: " + tenantId);
+                }
+                return;
+            }
+
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager();
+            if (userStoreManager != null) {
+                properties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+            } else if (log.isDebugEnabled()) {
+                log.debug("UserStoreManager is null for tenant: " + tenantId);
+            }
+
+        } catch (UserStoreException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Error occurred while retrieving user store manager for tenant: " +
+                        user.getTenantDomain() + ". Error: " + e.getMessage(), e);
+            }
+        }
     }
 
     /**
