@@ -463,7 +463,12 @@ public class RecoveryUtil {
      * @param properties        ReCaptcha properties
      * @return httpResponse
      *
-     * @deprecated Use {@link #makeCaptchaVerificationHttpRequestUsingHttpClient5} instead.
+     * @deprecated
+     *
+     * This method is deprecated as part of an effort to unify all HTTP client implementations
+     * in the product.
+     *
+     * Use {@link #makeCaptchaVerificationHttpRequestUsingHttpClient5} instead.
      */
     @Deprecated
     public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
