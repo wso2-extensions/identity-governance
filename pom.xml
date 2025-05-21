@@ -207,6 +207,11 @@
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.utils.httpclient5</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.securevault</groupId>
                 <artifactId>org.wso2.securevault</artifactId>
                 <version>${org.wso2.securevault.version}</version>
@@ -679,7 +684,7 @@
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
         <httpcore.version>4.3.3.wso2v1</httpcore.version>
-        <httpcore.osgi.version.range>[4.3.3, 6.0.0)</httpcore.osgi.version.range>
+        <httpcore.osgi.version.range>[5.3.1, 6.0.0)</httpcore.osgi.version.range>
         <httpcore5.version>5.3.1.wso2v1</httpcore5.version>
         <httpclient5.version>5.4.1.wso2v1</httpclient5.version>
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
@@ -705,14 +710,14 @@
         <identity.data.publisher.authentication.version>5.3.27</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.10.43-SNAPSHOT</carbon.kernel.version>
-        <carbon.kernel.feature.version>4.10.43-SNAPSHOT</carbon.kernel.feature.version>
+        <carbon.kernel.version>4.10.53</carbon.kernel.version>
+        <carbon.kernel.feature.version>4.10.53</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>
         <carbon.kernel.registry.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.kernel.registry.imp.pkg.version.range>
 
         <!--Carbon Identity Framework Version-->
-        <carbon.identity.framework.version>7.8.24-SNAPSHOT</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.7.267</carbon.identity.framework.version>
         <carbon.identity.framework.imp.pkg.version.range>[7.3.6, 8.0.0)
         </carbon.identity.framework.imp.pkg.version.range>
 
