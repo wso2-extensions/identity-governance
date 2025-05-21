@@ -1723,12 +1723,16 @@ public class IdentityMgtEventListener extends AbstractIdentityUserOperationEvent
 
             if (StringUtils.isNotEmpty(errorCode)) {
                 //This error code 22001 means user password history is violated.
-                if (StringUtils.equals(errorCode, "22001") || StringUtils.equals(errorCode, "40001")
+                if (StringUtils.equals(errorCode, "22001")
                         || StringUtils.equals(errorCode, "40002")
                         || UserCoreConstants.ErrorCode.USER_IS_LOCKED.equals(errorCode)
                         || IdentityCoreConstants.USER_ACCOUNT_DISABLED_ERROR_CODE.equals(errorCode)
                         || IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE.equals(errorCode)) {
                     throw new UserStoreException(e.getMessage(), e);
+                }
+                // This error code 40001 password policy could not be loaded.
+                if (StringUtils.equals(errorCode, "40001")) {
+                    throw new UserStoreException(e.getMessage(), errorCode, e);
                 }
                 if (e instanceof IdentityEventClientException) {
                     throw new UserStoreClientException(e.getMessage(), errorCode, e);
