@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (https://www.wso2.org)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations und
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.wso2.carbon.identity.recovery.connector;
 
@@ -278,11 +280,11 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_ENABLE);
         String passwordReCaptchaMaxFailedAttempts = IdentityUtil.getProperty(IdentityRecoveryConstants.
                 ConnectorConfig.RECOVERY_QUESTION_PASSWORD_RECAPTCHA_MAX_FAILED_ATTEMPTS);
-        String usernameRecovery = IdentityUtil.getProperty(
+        String isUsernameRecoveryEnabled = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_ENABLE);
-        String usernameRecoveryEmail = IdentityUtil.getProperty(
+        String isUsernameRecoveryEmailEnabled = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_EMAIL_ENABLE);
-        String usernameRecoverySMS = IdentityUtil.getProperty(
+        String isUsernameRecoverySMSEnabled = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.USERNAME_RECOVERY_SMS_ENABLE);
         String notificationInternallyManged = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE);
@@ -303,7 +305,7 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
                 PASSWORD_RECOVERY_RECAPTCHA_ENABLE);
         String userNameRecoveryReCaptcha = IdentityUtil.getProperty(IdentityRecoveryConstants.ConnectorConfig.
                 USERNAME_RECOVERY_RECAPTCHA_ENABLE);
-        String recoveryCallbackRegexProperty = IdentityUtil.getProperty(
+        String recoveryCallbackRegexProperty = IdentityUtil.getPropertyWithoutStandardPort(
                 IdentityRecoveryConstants.ConnectorConfig.RECOVERY_CALLBACK_REGEX);
         String adminPasswordResetAutoLoginProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.ENABLE_AUTO_LGOIN_AFTER_PASSWORD_RESET);
@@ -361,16 +363,16 @@ public class RecoveryConfigImpl implements IdentityConnectorConfig {
         if (StringUtils.isNotEmpty(passwordReCaptchaMaxFailedAttempts)) {
             recoveryQuestionPasswordReCaptchaMaxFailedAttempts = passwordReCaptchaMaxFailedAttempts;
         }
-        if (StringUtils.isNotEmpty(usernameRecovery)) {
-            enableUsernameRecovery = usernameRecovery;
+        if (StringUtils.isNotEmpty(isUsernameRecoveryEnabled)) {
+            enableUsernameRecovery = isUsernameRecoveryEnabled;
             // Setting the username recovery value to keep backward compatibility.
-            enableUsernameRecoveryEmail = usernameRecovery;
+            enableUsernameRecoveryEmail = isUsernameRecoveryEnabled;
         }
-        if (StringUtils.isNotEmpty(usernameRecoveryEmail)){
-            enableUsernameRecoveryEmail = usernameRecoveryEmail;
+        if (StringUtils.isNotEmpty(isUsernameRecoveryEmailEnabled)){
+            enableUsernameRecoveryEmail = isUsernameRecoveryEmailEnabled;
         }
-        if (StringUtils.isNotEmpty(usernameRecoverySMS)) {
-            enableUsernameRecoverySMS = usernameRecoverySMS;
+        if (StringUtils.isNotEmpty(isUsernameRecoverySMSEnabled)) {
+            enableUsernameRecoverySMS = isUsernameRecoverySMSEnabled;
         }
         if (StringUtils.isNotEmpty(expiryTimeProperty)) {
             expiryTime = expiryTimeProperty;

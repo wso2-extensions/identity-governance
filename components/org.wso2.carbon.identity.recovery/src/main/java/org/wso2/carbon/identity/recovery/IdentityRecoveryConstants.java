@@ -40,13 +40,19 @@ public class IdentityRecoveryConstants {
     public static final String DEFAULT_REGEX = ".*";
     public static final String CHALLENGE_QUESTION_URI = "http://wso2.org/claims/challengeQuestionUris";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET = "passwordreset";
+    public static final String NOTIFICATION_TYPE_PASSWORD_RESET_EMAIL_OTP = "passwordresetotp";
     public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET = "resendPasswordReset";
+    public static final String NOTIFICATION_TYPE_RESEND_PASSWORD_RESET_EMAIL_OTP = "resendpasswordresetotp";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET = "adminforcedpasswordreset";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET = "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
-    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP = "adminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
+            "resendAdminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
+    public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
     public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
@@ -75,7 +81,9 @@ public class IdentityRecoveryConstants {
     public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
     public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CAMPAIGN = "campaign";
+    public static final String UTM_PARAMETERS_PREFIX = "utm_";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
     public static final String OTP_TOKEN_STRING = "otpTokenString";
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
@@ -112,6 +120,7 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String VERIFY_MOBILE_CLAIM = "http://wso2.org/claims/identity/verifyMobile";
+    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
@@ -723,7 +732,8 @@ public class IdentityRecoveryConstants {
                 "AskPassword.ExpiryTime";
 
         public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP = "Recovery.AdminPasswordReset.SMSOTP";
         public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK = "Recovery.AdminPasswordReset.RecoveryLink";
         public static final String ADMIN_PASSWORD_RESET_EXPIRY_TIME = "Recovery.AdminPasswordReset.ExpiryTime";
 

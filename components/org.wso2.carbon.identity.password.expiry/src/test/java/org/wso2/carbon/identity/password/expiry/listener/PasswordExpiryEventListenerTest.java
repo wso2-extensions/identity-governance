@@ -153,12 +153,33 @@ public class PasswordExpiryEventListenerTest {
         String[] claims;
         Map<String, String> claimMap = new HashMap<>();
         String profileName = "default";
-        claims = new String[]{"claim1", "claim2"};
+        claims = new String[]{"claim1", PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM};
 
         when(privilegedCarbonContext.getUsername()).thenReturn(null);
 
         passwordExpiryEventListener.doPostGetUserClaimValues(username, claims, profileName, claimMap, userStoreManager);
         Assert.assertFalse(claimMap.containsKey(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM));
+    }
+
+    @Test
+    public void testDoPostGetUserClaimValuesInAuthenticationFlowWhenOnlyPasswordExpiryRequested()
+            throws UserStoreException {
+
+        String username = "testUser";
+        String[] claims;
+        Map<String, String> claimMap = new HashMap<>();
+        String profileName = "default";
+        claims = new String[]{PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM};
+
+        when(privilegedCarbonContext.getUsername()).thenReturn(null);
+
+        when(user.getDomainQualifiedUsername()).thenReturn(username);
+
+        mockedPasswordPolicyUtils.when(() -> PasswordPolicyUtils.getUserPasswordExpiryTime(
+                eq(TENANT_DOMAIN), eq(username))).thenReturn(Optional.of(1000L));
+
+        passwordExpiryEventListener.doPostGetUserClaimValues(username, claims, profileName, claimMap, userStoreManager);
+        Assert.assertNotNull(claimMap.get(PasswordPolicyConstants.PASSWORD_EXPIRY_TIME_CLAIM));
     }
 
     @Test

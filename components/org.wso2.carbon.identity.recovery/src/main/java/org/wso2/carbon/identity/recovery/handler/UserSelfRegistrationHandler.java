@@ -51,7 +51,6 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -423,7 +422,7 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
      * @throws IdentityRecoveryException Error triggering notifications
      */
     private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
-            String eventName) throws IdentityRecoveryException {
+            String eventName) throws IdentityRecoveryException, IdentityEventException {
 
         if (log.isDebugEnabled()) {
             log.debug("Sending self user registration notification user: " + user.getUserName());
@@ -446,11 +445,21 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 properties.put(prop.getKey(), prop.getValue());
             }
         }
+        boolean isEnableSelfRegistrationOtpInEmail =
+                Boolean.parseBoolean(Utils.getConnectorConfig(
+                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                        user.getTenantDomain()));
+        String emailTemplateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK;
+
         if (StringUtils.isNotBlank(code)) {
-            properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            if (isEnableSelfRegistrationOtpInEmail) {
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
+                emailTemplateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+            } else {
+                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
+            }
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM);
+        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, emailTemplateName);
         Event identityMgtEvent = new Event(eventName, properties);
         try {
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);

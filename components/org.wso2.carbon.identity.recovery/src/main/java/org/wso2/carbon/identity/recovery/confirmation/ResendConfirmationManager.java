@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2017-2025, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -180,8 +180,11 @@ public class ResendConfirmationManager {
         } else {
             userRecoveryDataStore.invalidate(user);
             confirmationCode = getSecretKey(notificationChannel, recoveryScenario, user.getTenantDomain());
-            confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
-                    confirmationCode);
+            if (!Utils.skipConcatForOTPBasedEmailRecovery(tenantDomain)) {
+                confirmationCode = Utils.concatRecoveryFlowIdWithSecretKey(recoveryFlowId, notificationChannel,
+                        confirmationCode);
+            }
+
             try {
                 hashedConfirmationCode = Utils.hashCode(confirmationCode);
             } catch (NoSuchAlgorithmException e) {
@@ -267,9 +270,14 @@ public class ResendConfirmationManager {
             notificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
         properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
+        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
         if (StringUtils.isNotBlank(code)) {
             if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(notificationChannel)) {
                 properties.put(IdentityRecoveryConstants.OTP_TOKEN_STRING, code);
+            }
+            if (isSelfRegistrationSendOTPInEmailEnabled) {
+                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
             }
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
@@ -481,6 +489,8 @@ public class ResendConfirmationManager {
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
+                .ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -488,7 +498,11 @@ public class ResendConfirmationManager {
                 RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         String storedNotificationChannel = StringUtils.EMPTY;
-        if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
+        if (userRecoveryData == null &&
+                RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+                isUserInPendingAskPasswordState(user)) {
+                storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+        } else if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             // Validate the previous confirmation code with the data retrieved by the user recovery information.
             validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
             // Get the notification channel details stored in the remainingSetIds.
@@ -509,7 +523,7 @@ public class ResendConfirmationManager {
         if (emailVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
-        if (mobileVerificationOnUpdateScenario) {
+        if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
 
@@ -759,5 +773,21 @@ public class ResendConfirmationManager {
                     identityRecoveryClientException.getMessage());
         }
 
+    }
+
+    /**
+     * Determines if a user's account is in a state where they need to set a password
+     * through the ask password flow.
+     *
+     * @param user User object containing user information
+     * @return true if the user is in pending ask password state, false otherwise
+     */
+    private boolean isUserInPendingAskPasswordState(User user) {
+
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
     }
 }

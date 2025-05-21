@@ -31,7 +31,6 @@ import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
-import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.user.endpoint.Constants;
@@ -298,6 +297,7 @@ public class MeApiServiceImpl extends MeApiService {
                 RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
@@ -313,9 +313,11 @@ public class MeApiServiceImpl extends MeApiService {
                                                               ResendCodeRequestDTO resendCodeRequestDTO) {
 
         UserRecoveryData userRecoveryData = null;
-        // Currently this me/resend-code API supports resend code during mobile verification scenario only.
+        // Currently this me/resend-code API supports resend code during mobile verification and
+        // self-registration account confirmation scenarios only.
         if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) ||
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario)) {
             userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO, recoveryScenario);
         }
         if (userRecoveryData == null) {
@@ -344,6 +346,26 @@ public class MeApiServiceImpl extends MeApiService {
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE,
                     resendCodeRequestDTO);
+        }
+
+        if (RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
+
+            String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
+            try {
+                boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                        resendCodeRequestDTO.getUser().getTenantDomain()));
+                if (isSelfRegistrationSendOTPInEmailEnabled) {
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+                }
+            } catch (IdentityRecoveryException e) {
+                LOG.error("Error while getting self registration send OTP in email configuration", e);
+            }
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.SELF_SIGN_UP.toString(), RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                    notificationType, resendCodeRequestDTO);
         }
 
         return notificationResponseBean;

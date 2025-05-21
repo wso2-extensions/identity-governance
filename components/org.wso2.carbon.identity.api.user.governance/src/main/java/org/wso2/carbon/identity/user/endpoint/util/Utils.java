@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,16 +20,24 @@ package org.wso2.carbon.identity.user.endpoint.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.slf4j.MDC;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationFailureReason;
+import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.governance.IdentityGovernanceService;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
@@ -53,12 +61,19 @@ import org.wso2.carbon.identity.user.export.core.UserExportException;
 import org.wso2.carbon.identity.user.export.core.service.UserInformationService;
 import org.wso2.carbon.identity.user.rename.core.service.UsernameUpdateService;
 import org.wso2.carbon.user.api.Claim;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Utils {
+
+    private static final Log LOG = LogFactory.getLog(Utils.class);
 
     public static UserSelfRegistrationManager getUserSelfRegistrationManager() {
         return (UserSelfRegistrationManager) PrivilegedCarbonContext.getThreadLocalCarbonContext()
@@ -535,5 +550,89 @@ public class Utils {
             errorMsg = String.format("correlationID: %s | " + errorMsg, error.getRef());
         }
         log.error(errorMsg, cause);
+    }
+
+    /**
+     * Mask the given value if it is required.
+     *
+     * @param value Value to be masked.
+     * @return Masked/unmasked value.
+     */
+    public static String maskIfRequired(String value) {
+
+        return LoggerUtils.isLogMaskingEnable ? LoggerUtils.getMaskedContent(value) : value;
+    }
+
+    /**
+     * Retrieves the claim value for a user from the user store.
+     *
+     * @param username     The domain qualified username of the user.
+     * @param claimURI     The claim URI to retrieve.
+     * @param tenantDomain The tenant domain of the user.
+     * @return The claim value.
+     * @throws UserExportException If an error occurs while retrieving the user store manager.
+     * @throws UserStoreException  If an error occurs while retrieving the claim value.
+     */
+    public static String getUserClaim(String username, String claimURI, String tenantDomain)
+            throws UserExportException, UserStoreException {
+
+        int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        UserStoreManager userStoreManager = getUserStoreManager(tenantId);
+
+        // Retrieve claim value.
+        String[] claimURIs = new String[]{claimURI};
+        Map<String, String> claimValueMap =
+                userStoreManager.getUserClaimValues(username, claimURIs, null);
+        if (claimValueMap != null && claimValueMap.containsKey(claimURI)) {
+            return claimValueMap.get(claimURI);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * Retrieves the account state of a user.
+     *
+     * @param username     The domain qualified username of the user.
+     * @param tenantDomain The tenant domain of the user.
+     * @return The account state.
+     */
+    public static String getAccountState(String username, String tenantDomain) {
+
+        try {
+            return getUserClaim(username, IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, tenantDomain);
+        } catch (UserStoreException | UserExportException e) {
+            LOG.error(String.format("Error while retrieving claim '%s' for user: %s",
+                    IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI, maskIfRequired(username)), e);
+            return StringUtils.EMPTY;
+        }
+    }
+
+    /**
+     * Get the user store manager for the given tenant.
+     *
+     * @param tenantId The tenant ID.
+     * @return UserStoreManager instance.
+     * @throws UserStoreException  If an error occurs while getting the user store manager.
+     * @throws UserExportException If an error occurs while exporting the user.
+     */
+    private static UserStoreManager getUserStoreManager(int tenantId) throws UserExportException, UserStoreException {
+
+        RealmService realmService = getRealmService();
+        UserRealm tenantUserRealm = realmService.getTenantUserRealm(tenantId);
+        return (AbstractUserStoreManager) tenantUserRealm.getUserStoreManager();
+    }
+
+    public static String getSignUpConfigs(String key, String tenantDomain) throws IdentityRecoveryServerException {
+
+        try {
+            org.wso2.carbon.identity.application.common.model.Property[] connectorConfigs;
+            IdentityGovernanceService identityGovernanceService = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getIdentityGovernanceService();
+            connectorConfigs = identityGovernanceService.getConfiguration(new String[]{key,}, tenantDomain);
+            return connectorConfigs[0].getValue();
+        } catch (IdentityGovernanceException e) {
+            throw org.wso2.carbon.identity.recovery.util.Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ISSUE_IN_LOADING_SIGNUP_CONFIGS, null, e);
+        }
     }
 }

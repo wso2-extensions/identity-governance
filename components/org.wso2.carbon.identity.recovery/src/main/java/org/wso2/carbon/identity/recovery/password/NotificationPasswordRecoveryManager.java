@@ -62,10 +62,10 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.io.UnsupportedEncodingException;
@@ -211,8 +211,13 @@ public class NotificationPasswordRecoveryManager {
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         if (isNotificationInternallyManage) {
             // Manage notifications by the identity server.
-            triggerNotification(user, notificationChannel, IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET,
-                    secretKey, eventName, properties, recoveryDataDO);
+            String templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET;
+            if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(notificationChannel) &&
+                    Utils.isPasswordRecoveryEmailOtpEnabled(user.getTenantDomain())) {
+                templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_EMAIL_OTP;
+            }
+            triggerNotification(user, notificationChannel, templateName, secretKey, eventName, properties,
+                    recoveryDataDO);
         } else {
             // Set password recovery key since the notifications are managed by an external mechanism.
             notificationResponseBean.setKey(secretKey);
@@ -984,11 +989,12 @@ public class NotificationPasswordRecoveryManager {
                 userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             }
         }
-        // We don not need to change any states during user initiated password recovery.
+        // We don't need to change any states during user initiated password recovery.
         if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
                 || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
         }
@@ -1003,7 +1009,7 @@ public class NotificationPasswordRecoveryManager {
         // If the scenario is initiated by the admin, set the account locked claim to FALSE.
         if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
-                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
         }
@@ -1059,10 +1065,14 @@ public class NotificationPasswordRecoveryManager {
                         cause.getMessage(), e);
             }
 
-            if (cause instanceof UserStoreClientException && ((UserStoreClientException) cause).getErrorCode()
-                    .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
-                throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages
-                        .ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE, cause.getMessage(), cause);
+            if (cause instanceof UserActionExecutionClientException &&
+                    ((UserActionExecutionClientException) cause).getErrorCode()
+                            .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE.getCode(),
+                        ((UserActionExecutionClientException) cause).getError(),
+                        ((UserActionExecutionClientException) cause).getDescription(), cause);
             }
             cause = cause.getCause();
         }

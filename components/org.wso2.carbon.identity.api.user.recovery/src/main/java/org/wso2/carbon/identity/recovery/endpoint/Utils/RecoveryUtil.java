@@ -46,7 +46,6 @@ import org.wso2.carbon.identity.recovery.endpoint.Exceptions.BadRequestException
 import org.wso2.carbon.identity.recovery.endpoint.Exceptions.InternalServerErrorException;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ClaimDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ErrorDTO;
-import org.wso2.carbon.identity.recovery.endpoint.dto.LinkDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserClaimDTO;
@@ -71,12 +70,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 
 public class RecoveryUtil {
     private static final String USERNAME_CLAIM = "http://wso2.org/claims/username";
@@ -143,7 +140,6 @@ public class RecoveryUtil {
                 Constants.STATUS_INTERNAL_SERVER_ERROR_DESCRIPTION_DEFAULT);
         return new InternalServerErrorException(errorDTO);
     }
-
 
     /**
      * Logs the error, builds a BadRequestException with specified details and throws it

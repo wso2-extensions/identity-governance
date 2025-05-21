@@ -806,6 +806,13 @@ public class UserSelfRegistrationManager {
                             userClaims.put(IdentityRecoveryConstants.EMAIL_ADDRESSES_CLAIM, StringUtils.join(
                                     allEmails, multiAttributeSeparator)) ;
                         }
+
+                        // If the email being verified isn’t the primary email, do not set the “emailVerified” claim.
+                        String primaryEmail = Utils.getSingleValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.EMAIL_ADDRESS_CLAIM);
+                        if (!pendingEmailClaimValue.equals(primaryEmail)) {
+                            userClaims.remove(IdentityRecoveryConstants.EMAIL_VERIFIED_CLAIM);
+                        }
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
                         throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
@@ -843,6 +850,13 @@ public class UserSelfRegistrationManager {
                             allMobileNumbersList.add(pendingMobileClaimValue);
                             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                                     String.join(multiAttributeSeparator, allMobileNumbersList));
+                        }
+
+                        // If the mobile being verified isn’t the primary mobile, do not set the “phoneVerified” claim.
+                        String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                        if (!pendingMobileClaimValue.equals(primaryMobile)) {
+                            userClaims.remove(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM);
                         }
                     } catch (IdentityEventException e) {
                         log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
@@ -1034,6 +1048,13 @@ public class UserSelfRegistrationManager {
                         userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM,
                                 String.join(multiAttributeSeparator, allMobileNumbersList));
                     }
+
+                    // If the mobile being verified is the primary mobile, set the “phoneVerified” claim to true.
+                    String primaryMobile = Utils.getSingleValuedClaim(userStoreManager, user,
+                            IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                    if (pendingMobileNumberClaimValue.equals(primaryMobile)) {
+                        userClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, Boolean.TRUE.toString());
+                    }
                 } catch (IdentityEventException e) {
                     log.error("Error occurred while obtaining claim for the user : " + user.getUserName());
                     throw new IdentityRecoveryServerException("Error occurred while obtaining existing claim " +
@@ -1041,8 +1062,8 @@ public class UserSelfRegistrationManager {
                 }
             } else {
                 userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, pendingMobileNumberClaimValue);
+                userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             }
-            userClaims.put(NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             userClaims.put(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM, StringUtils.EMPTY);
             Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(IdentityRecoveryConstants
                     .SkipMobileNumberVerificationOnUpdateStates.SKIP_ON_CONFIRM.toString());
@@ -1131,6 +1152,15 @@ public class UserSelfRegistrationManager {
         // Need to unlock user account
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
         userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM, StringUtils.EMPTY);
+        try {
+            if (Utils.isAccountStateClaimExisting(user.getTenantDomain())) {
+                userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
+                        IdentityRecoveryConstants.ACCOUNT_STATE_UNLOCKED);
+            }
+        } catch (IdentityEventException e) {
+            log.error(String.format("Error while retrieving accountState claim from ClaimManager for the tenant : %s",
+                    user.getTenantDomain()), e);
+        }
 
         // Set the verified claims to TRUE.
         setVerificationClaims(user, verificationChannel, externallyVerifiedChannelClaim, recoveryScenario, userClaims);
@@ -1251,7 +1281,7 @@ public class UserSelfRegistrationManager {
             if (log.isDebugEnabled()) {
                 String message = String
                         .format("Self sign-up via SMS channel detected. Updating %s value for user : %s in tenant "
-                                        + "domain : %s ", NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(),
+                                        + "domain : %s ", NotificationChannels.SMS_CHANNEL.getVerifiedClaimUrl(),
                                 user.getUserName(), user.getTenantDomain());
                 log.debug(message);
             }
@@ -1313,11 +1343,18 @@ public class UserSelfRegistrationManager {
                     user.getUserName());
         }
 
+        boolean isSelfRegistrationSendOTPInEmailEnabled = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL, user.getTenantDomain()));
+        String templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM;
+        if (isSelfRegistrationSendOTPInEmailEnabled) {
+            templateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
+        }
+
         ResendConfirmationManager resendConfirmationManager = ResendConfirmationManager.getInstance();
         NotificationResponseBean notificationResponseBean =
                 resendConfirmationManager.resendConfirmationCode(user, RecoveryScenarios.SELF_SIGN_UP.toString()
                         , RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM, properties);
+                        templateName, properties);
         notificationResponseBean.setCode(
                 IdentityRecoveryConstants.SuccessEvents.SUCCESS_STATUS_CODE_RESEND_CONFIRMATION_CODE.getCode());
         notificationResponseBean.setMessage(

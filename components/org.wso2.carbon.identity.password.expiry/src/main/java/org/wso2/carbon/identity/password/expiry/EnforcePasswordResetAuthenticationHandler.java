@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -52,8 +52,6 @@ import javax.servlet.http.HttpServletResponse;
 public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthnHandler {
 
     private static final Log log = LogFactory.getLog(EnforcePasswordResetAuthenticationHandler.class);
-    private static final String ENCODED_PASSWORD_EXPIRED_MSG = URLEncoder.encode(
-            PasswordPolicyConstants.PASSWORD_EXPIRED_ERROR_MESSAGE, StandardCharsets.UTF_8);
 
     @Override
     @SuppressFBWarnings("CRLF_INJECTION_LOGS")
@@ -187,7 +185,8 @@ public class EnforcePasswordResetAuthenticationHandler extends AbstractPostAuthn
 
         String queryString = PasswordPolicyConstants.CONFIRMATION_QUERY_PARAM + confirmationCode +
                 PasswordPolicyConstants.PASSWORD_EXPIRED_QUERY_PARAMS
-                + PasswordPolicyConstants.PASSWORD_EXPIRED_MSG_QUERY_PARAM + ENCODED_PASSWORD_EXPIRED_MSG;
+                + PasswordPolicyConstants.PASSWORD_EXPIRED_MSG_QUERY_PARAM +
+                PasswordPolicyConstants.ENCODED_PASSWORD_EXPIRED_MSG;
         String passwordRestPage;
         try {
             passwordRestPage = PasswordPolicyUtils.getPasswordResetPageUrl(tenantDomain);

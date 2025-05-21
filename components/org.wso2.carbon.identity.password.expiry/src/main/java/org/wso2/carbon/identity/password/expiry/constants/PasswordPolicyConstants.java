@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -17,6 +17,9 @@
  */
 
 package org.wso2.carbon.identity.password.expiry.constants;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Password Change authenticator's constants
@@ -51,6 +54,8 @@ public class PasswordPolicyConstants {
             "Skip password expiry if no applicable rules are found for the user";
     public static final String CONNECTOR_CONFIG_SUB_CATEGORY = "DEFAULT";
     public static final String PASSWORD_EXPIRED_ERROR_MESSAGE = "Password has expired";
+    public static final String ENCODED_PASSWORD_EXPIRED_MSG = URLEncoder.encode(
+            PasswordPolicyConstants.PASSWORD_EXPIRED_ERROR_MESSAGE, StandardCharsets.UTF_8);
     public static final String CONNECTOR_CONFIG_NAME = "passwordExpiry";
     public static final String CONNECTOR_CONFIG_FRIENDLY_NAME = "Password Expiry";
     public static final String CONNECTOR_CONFIG_CATEGORY = "Password Policies";
