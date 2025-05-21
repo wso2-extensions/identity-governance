@@ -88,7 +88,7 @@ public class CaptchaApiServiceImpl extends CaptchaApiService {
         ReCaptchaVerificationResponseDTO reCaptchaVerificationResponseDTO = new ReCaptchaVerificationResponseDTO();
 
         try (ClassicHttpResponse response =
-                     RecoveryUtil.makeCaptchaVerificationHttpRequest(reCaptchaResponse, properties)) {
+                     RecoveryUtil.makeCaptchaVerificationHttpRequestUsingHttpClient5(reCaptchaResponse, properties)) {
             HttpEntity entity = response != null ? response.getEntity() : null;
             if (entity == null) {
                 RecoveryUtil.handleBadRequest("ReCaptcha verification response is not received.",
