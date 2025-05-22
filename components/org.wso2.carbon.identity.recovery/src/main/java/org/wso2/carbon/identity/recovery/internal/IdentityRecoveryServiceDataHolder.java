@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.recovery.internal;
 
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -60,6 +61,7 @@ public class IdentityRecoveryServiceDataHolder {
     private AuthAttributeHandlerManager authAttributeHandlerManager;
     private FederatedAssociationManager federatedAssociationManager;
     private IdentityDataStoreService identityDataStoreService;
+    private ApplicationManagementService applicationManagementService;
     private static Map<Integer, UserOperationEventListener> userOperationEventListeners = new TreeMap<>();
     public static IdentityRecoveryServiceDataHolder getInstance() {
 
@@ -331,5 +333,15 @@ public class IdentityRecoveryServiceDataHolder {
     public void setIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         this.identityDataStoreService = identityDataStoreService;
+    }
+
+    public ApplicationManagementService getApplicationManagementService() {
+
+        return applicationManagementService;
+    }
+
+    public void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
+
+        this.applicationManagementService = applicationManagementService;
     }
 }

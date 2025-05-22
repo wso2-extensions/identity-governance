@@ -31,14 +31,12 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
-import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerClientException;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -46,17 +44,21 @@ import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.getNotificationChannel;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.handledNotificationChannelManagerException;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.lockUserAccount;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.resolveEventName;
+import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerAccountCreationNotification;
 
 public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
@@ -136,30 +138,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
 
                 // If account lock on creation is enabled, lock the account by persisting the account lock claim.
                 if (isAccountLockOnCreation || isEnableConfirmationOnCreation) {
-                    HashMap<String, String> userClaims = new HashMap<>();
-                    if (isAccountLockOnCreation) {
-                        // Need to lock user account.
-                        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.TRUE.toString());
-                        userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
-                                IdentityMgtConstants.LockedReason.PENDING_SELF_REGISTRATION.toString());
-                    }
-                    if (Utils.isAccountStateClaimExisting(tenantDomain)) {
-                        userClaims.put(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                                IdentityRecoveryConstants.PENDING_SELF_REGISTRATION);
-                    }
-                    try {
-                        userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
-                        if (log.isDebugEnabled()) {
-                            if (isAccountLockOnCreation) {
-                                log.debug("Locked user account: " + user.getUserName());
-                            }
-                            if (isEnableConfirmationOnCreation) {
-                                log.debug("Send verification notification for user account: " + user.getUserName());
-                            }
-                        }
-                    } catch (UserStoreException e) {
-                        throw new IdentityEventException("Error while lock user account :" + user.getUserName(), e);
-                    }
+                    lockUserAccount(isAccountLockOnCreation, isEnableConfirmationOnCreation, tenantDomain,
+                                    userStoreManager, userName);
                 }
 
                 boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
@@ -169,7 +149,8 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                 // EnableConfirmationOnCreation are disabled then send account creation notification.
                 if (!isAccountLockOnCreation && !isEnableConfirmationOnCreation && isNotificationInternallyManage
                         && isSelfRegistrationConfirmationNotify) {
-                    triggerAccountCreationNotification(user);
+                    triggerAccountCreationNotification(user.getUserName(), user.getTenantDomain(),
+                                                       user.getUserStoreDomain());
                 }
                 // If notifications are externally managed, no send notifications.
                 if ((isAccountLockOnCreation || isEnableConfirmationOnCreation) && isNotificationInternallyManage) {
@@ -188,39 +169,13 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    triggerNotification(user, preferredChannel, secretKey, Utils.getArbitraryProperties(), eventName);
+                    SelfRegistrationUtils.triggerNotification(user, preferredChannel, secretKey,
+                                                              Utils.getArbitraryProperties(), eventName);
                 }
             } catch (IdentityRecoveryException e) {
                 throw new IdentityEventException("Error while sending self sign up notification ", e);
             }
         }
-    }
-
-    /**
-     * Resolve the event name according to the notification channel.
-     *
-     * @param preferredChannel User preferred notification channel
-     * @param userName         Username
-     * @param domainName       Domain name
-     * @param tenantDomain     Tenant domain name
-     * @return Resolved event name
-     */
-    private String resolveEventName(String preferredChannel, String userName, String domainName, String tenantDomain) {
-
-        String eventName;
-        if (NotificationChannels.EMAIL_CHANNEL.getChannelType().equals(preferredChannel)) {
-            eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-        } else {
-            eventName = IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_PREFIX + preferredChannel
-                    + IdentityRecoveryConstants.NOTIFICATION_EVENTNAME_SUFFIX;
-        }
-        if (log.isDebugEnabled()) {
-            String message = String
-                    .format("For user : %1$s in domain : %2$s, notifications were sent from the event : %3$s",
-                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain, eventName);
-            log.debug(message);
-        }
-        return eventName;
     }
 
     /**
@@ -262,43 +217,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
             log.debug(message);
         }
         return preferredChannel;
-    }
-
-    /**
-     * Handles NotificationChannelManagerException thrown in resolving the channel.
-     *
-     * @param e            NotificationChannelManagerException
-     * @param userName     Username
-     * @param domainName   Domain name
-     * @param tenantDomain Tenant domain name
-     * @throws IdentityEventException Error resolving the channel.
-     */
-    private void handledNotificationChannelManagerException(NotificationChannelManagerException e, String userName,
-            String domainName, String tenantDomain) throws IdentityEventException {
-
-        if (StringUtils.isNotEmpty(e.getErrorCode()) && StringUtils.isNotEmpty(e.getMessage())) {
-            if (IdentityMgtConstants.ErrorMessages.ERROR_CODE_NO_NOTIFICATION_CHANNELS.getCode()
-                    .equals(e.getErrorCode())) {
-                if (log.isDebugEnabled()) {
-                    String error = String.format("No communication channel for user : %1$s in domain: %2$s",
-                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain);
-                    log.debug(error, e);
-                }
-            } else {
-                if (log.isDebugEnabled()) {
-                    String error = String.format("Error getting claim values for user : %1$s in domain: %2$s",
-                            domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain);
-                    log.debug(error, e);
-                }
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                String error = String.format("Error getting claim values for user : %1$s in domain: %2$s",
-                        domainName + CarbonConstants.DOMAIN_SEPARATOR + userName, tenantDomain);
-                log.debug(error, e);
-            }
-        }
-        throw new IdentityEventException(e.getErrorCode(), e.getMessage());
     }
 
     /**
@@ -344,30 +262,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         return false;
     }
 
-    /**
-     * Get the NotificationChannels object which matches the given channel type.
-     *
-     * @param username            Username
-     * @param notificationChannel Notification channel
-     * @return NotificationChannels object
-     * @throws IdentityRecoveryClientException Unsupported channel type
-     */
-    private NotificationChannels getNotificationChannel(String username, String notificationChannel)
-            throws IdentityRecoveryClientException {
-
-        NotificationChannels channel;
-        try {
-            channel = NotificationChannels.getNotificationChannel(notificationChannel);
-        } catch (NotificationChannelManagerClientException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Unsupported channel type : " + notificationChannel);
-            }
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_PREFERRED_CHANNELS, username, e);
-        }
-        return channel;
-    }
-
     @Override
     public void init(InitConfig configuration) throws IdentityRuntimeException {
         super.init(configuration);
@@ -408,94 +302,6 @@ public class UserSelfRegistrationHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
-        }
-    }
-
-    /**
-     * Triggers notifications according to the given event name.
-     *
-     * @param user                User
-     * @param notificationChannel Notification channel
-     * @param code                Recovery code
-     * @param props               Event properties
-     * @param eventName           Name of the event
-     * @throws IdentityRecoveryException Error triggering notifications
-     */
-    private void triggerNotification(User user, String notificationChannel, String code, Property[] props,
-            String eventName) throws IdentityRecoveryException, IdentityEventException {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Sending self user registration notification user: " + user.getUserName());
-        }
-
-        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
-
-        HashMap<String, Object> properties = new HashMap<>();
-        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
-            properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);
-        }
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityEventConstants.EventProperty.NOTIFICATION_CHANNEL, notificationChannel);
-
-        if (props != null && props.length > 0) {
-            for (Property prop : props) {
-                properties.put(prop.getKey(), prop.getValue());
-            }
-        }
-        boolean isEnableSelfRegistrationOtpInEmail =
-                Boolean.parseBoolean(Utils.getConnectorConfig(
-                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
-                        user.getTenantDomain()));
-        String emailTemplateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK;
-
-        if (StringUtils.isNotBlank(code)) {
-            if (isEnableSelfRegistrationOtpInEmail) {
-                properties.put(IdentityRecoveryConstants.OTP_CODE, code);
-                emailTemplateName = IdentityRecoveryConstants.NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP;
-            } else {
-                properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
-            }
-        }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, emailTemplateName);
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
-        }
-    }
-
-    private void triggerAccountCreationNotification(User user) throws IdentityRecoveryServerException {
-        String eventName = IdentityEventConstants.Event.TRIGGER_NOTIFICATION;
-
-        String serviceProviderUUID = (String) IdentityUtil.threadLocalProperties.get()
-                .get(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID);
-
-        HashMap<String, Object> properties = new HashMap<>();
-        if (serviceProviderUUID != null && !serviceProviderUUID.isEmpty()) {
-
-            properties.put(IdentityRecoveryConstants.Consent.SERVICE_PROVIDER_UUID, serviceProviderUUID);
-        }
-        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
-        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
-        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE,
-                IdentityRecoveryConstants.NOTIFICATION_TYPE_SELF_SIGNUP_NOTIFY);
-
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yy hh:mm:ss");
-        String selfSignUpConfirmationTime = simpleDateFormat.format(new Date(System.currentTimeMillis()));
-        properties.put(IdentityEventConstants.EventProperty.SELF_SIGNUP_CONFIRM_TIME, selfSignUpConfirmationTime);
-
-        Event identityMgtEvent = new Event(eventName, properties);
-        try {
-            IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
-        } catch (IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION,
-                    user.getUserName(), e);
         }
     }
 }
