@@ -63,28 +63,18 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     }
 
     @Override
-    public boolean doPostInitiate(RegistrationStep step, RegistrationContext registrationContext)
-            throws RegistrationEngineException {
+    public boolean doPreExecute(RegistrationContext registrationContext) throws RegistrationEngineException {
 
         if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
             return true;
         }
-        addCaptchaKeys(step, registrationContext);
-        return true;
-    }
 
-    @Override
-    public boolean doPreContinue(RegistrationContext registrationContext) throws RegistrationEngineException {
-
-        if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
-            return true;
-        }
         validateCaptcha(registrationContext);
         return true;
     }
 
     @Override
-    public boolean doPostContinue(RegistrationStep step, RegistrationContext registrationContext)
+    public boolean doPostExecute(RegistrationStep step, RegistrationContext registrationContext)
             throws RegistrationEngineException {
 
         if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
