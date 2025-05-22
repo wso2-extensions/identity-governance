@@ -495,8 +495,8 @@ public class RecoveryUtil {
      * @param properties        ReCaptcha properties
      * @return httpResponse
      */
-    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpRequestUsingHttpClient5
-    (ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
+    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpRequestUsingHttpClient5(
+            ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
 
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
         String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);

@@ -17,11 +17,18 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.mockito.MockedStatic;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,6 +39,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE;
@@ -40,6 +51,8 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorM
  * Unit tests for RecoveryUtils.java
  */
 public class RecoveryUtilsTest {
+
+    private static final String RECAPTCHA_API_URL = "https://www.google.com/recaptcha/api/siteverify";
 
     @Test(description = "To test the getValidatedCaptchaConfigs method.")
     public void testGetValidatedCaptchaConfigs() throws IdentityRecoveryException {
@@ -96,5 +109,28 @@ public class RecoveryUtilsTest {
         assertEquals(exception.getMessage(), message);
         assertEquals(exception.getDescription(), null);
         assertEquals(cause, exception.getCause());
+    }
+
+    @Test
+    public void testMakeCaptchaVerificationHttpRequestUsingHttpClient5() throws IOException {
+
+        ReCaptchaResponseTokenDTO reCaptchaResponse = new ReCaptchaResponseTokenDTO();
+        Properties properties = new Properties();
+        properties.setProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL, RECAPTCHA_API_URL);
+        properties.setProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY, "testSecretKey");
+
+        HttpClientBuilder httpClientBuilder = mock(HttpClientBuilder.class);
+        CloseableHttpClient mockHttpClient = mock(CloseableHttpClient.class);
+        try (MockedStatic<HTTPClientUtils> mockedUtils = mockStatic(HTTPClientUtils.class)) {
+
+            mockedUtils.when(HTTPClientUtils::createClientWithCustomHostnameVerifier)
+                    .thenReturn(httpClientBuilder);
+            when(httpClientBuilder.build()).thenReturn(mockHttpClient);
+            when(mockHttpClient.execute(any(ClassicHttpRequest.class),
+                    (HttpClientResponseHandler<?>) any())).thenReturn(null);
+
+            // Call the method
+            RecoveryUtil.makeCaptchaVerificationHttpRequestUsingHttpClient5(reCaptchaResponse, properties);
+        }
     }
 }
