@@ -112,7 +112,7 @@ public class RecoveryUtilsTest {
     }
 
     @Test
-    public void testMakeCaptchaVerificationHttpRequestUsingHttpClient5() throws IOException {
+    public void testMakeCaptchaVerificationHttpClient5Request() throws IOException {
 
         ReCaptchaResponseTokenDTO reCaptchaResponse = new ReCaptchaResponseTokenDTO();
         Properties properties = new Properties();
@@ -130,7 +130,7 @@ public class RecoveryUtilsTest {
                     (HttpClientResponseHandler<?>) any())).thenReturn(null);
 
             // Call the method
-            RecoveryUtil.makeCaptchaVerificationHttpRequestUsingHttpClient5(reCaptchaResponse, properties);
+            RecoveryUtil.makeCaptchaVerificationHttpClient5Request(reCaptchaResponse, properties);
         }
     }
 }

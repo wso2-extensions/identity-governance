@@ -464,7 +464,7 @@ public class RecoveryUtil {
      * This method is deprecated as part of an effort to unify all HTTP client implementations
      * in the product.
      *
-     * Use {@link #makeCaptchaVerificationHttpRequestUsingHttpClient5} instead.
+     * Use {@link #makeCaptchaVerificationHttpClient5Request} instead.
      */
     @Deprecated
     public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
@@ -495,7 +495,7 @@ public class RecoveryUtil {
      * @param properties        ReCaptcha properties
      * @return httpResponse
      */
-    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpRequestUsingHttpClient5(
+    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpClient5Request(
             ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
 
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
