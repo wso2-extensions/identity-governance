@@ -146,7 +146,7 @@ public class CaptchaApiServiceImplTest{
         sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_TYPE, reCaptchaType);
 
         mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
-        mockedRecoveryUtil.when(() -> RecoveryUtil.makeCaptchaVerificationHttpRequestUsingHttpClient5(
+        mockedRecoveryUtil.when(() -> RecoveryUtil.makeCaptchaVerificationHttpClient5Request(
                 reCaptchaResponse, sampleProperties)).thenReturn(classicHttpResponse);
 
         when(classicHttpResponse.getEntity()).thenReturn(httpEntity);
