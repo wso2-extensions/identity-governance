@@ -17,8 +17,8 @@
 package org.wso2.carbon.identity.captcha.util;
 
 import com.google.gson.JsonObject;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.core5.http.HttpEntity;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpPost;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
@@ -31,7 +31,6 @@ import java.io.IOException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 
 import static org.testng.Assert.assertThrows;
 
@@ -103,7 +102,7 @@ public class CaptchaUtilTest {
 
     @Test (description = "This method is used to test the createReCaptchaEnterpriseVerificationHttpPost method")
     public void testCreateReCaptchaEnterpriseVerificationHttpPost() throws NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException, URISyntaxException {
+            InvocationTargetException, IllegalAccessException {
 
         CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_ENTERPRISE_API_URL);
         CaptchaDataHolder.getInstance().setReCaptchaAPIKey("dummyKey");
@@ -113,13 +112,13 @@ public class CaptchaUtilTest {
         Method method = getCreateReCaptchaEnterpriseVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
         String expectedURI = RECAPTCHA_ENTERPRISE_API_URL+ "/v1/projects/dummyProjectId/assessments?key=dummyKey";
-        Assert.assertEquals(httpPost.getUri().toString(), expectedURI);
+        Assert.assertEquals(httpPost.getURI().toString(), expectedURI);
 
     }
 
     @Test (description = "This method is used to test the createReCaptchaEnterpriseVerificationHttpPost method")
     public void testCreateReCaptchaVerificationHttpPost() throws NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException, URISyntaxException {
+            InvocationTargetException, IllegalAccessException {
 
         CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_API_URL);
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey("dummyKey");
@@ -128,7 +127,7 @@ public class CaptchaUtilTest {
 
         Method method = getCreateReCaptchaVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
-        Assert.assertEquals(httpPost.getUri().toString(), RECAPTCHA_API_URL);
+        Assert.assertEquals(httpPost.getURI().toString(), RECAPTCHA_API_URL);
     }
 
 
