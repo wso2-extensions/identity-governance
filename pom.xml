@@ -150,16 +150,6 @@
                 <version>${httpcore.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
-                <artifactId>httpclient5</artifactId>
-                <version>${httpclient5.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
-                <artifactId>httpcore5</artifactId>
-                <version>${httpcore5.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${findbugs.annotation.version}</version>
@@ -204,11 +194,6 @@
             <dependency>
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.utils</artifactId>
-                <version>${carbon.kernel.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon</groupId>
-                <artifactId>org.wso2.carbon.utils.httpclient5</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
             <dependency>
@@ -694,15 +679,13 @@
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
         <encoder.wso2.version>1.2.0.wso2v1</encoder.wso2.version>
         <httpcore.version>4.3.3.wso2v1</httpcore.version>
-        <httpcore.osgi.version.range>[5.3.1, 6.0.0)</httpcore.osgi.version.range>
-        <httpcore5.version>5.3.1.wso2v1</httpcore5.version>
-        <httpclient5.version>5.4.1.wso2v1</httpclient5.version>
+        <httpcore.osgi.version.range>[4.3.3, 5.0.0)</httpcore.osgi.version.range>
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
         <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
         <servlet-api.version>2.5</servlet-api.version>
         <taglibs-standard-impl.version>1.2.5</taglibs-standard-impl.version>
         <httpcomponents-httpclient.wso2.version>4.3.6.wso2v2</httpcomponents-httpclient.wso2.version>
-        <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2,6.0.0)
+        <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2,5.0.0)
         </httpcomponents-httpclient.imp.pkg.version.range>
         <com.google.code.gson.version>2.9.0</com.google.code.gson.version>
         <com.google.code.gson.osgi.version.range>[2.3.1,3.0.0)</com.google.code.gson.osgi.version.range>
@@ -720,7 +703,7 @@
         <identity.data.publisher.authentication.version>5.3.27</identity.data.publisher.authentication.version>
 
         <!--Carbon Kernel Version-->
-        <carbon.kernel.version>4.10.53</carbon.kernel.version>
+        <carbon.kernel.version>4.10.44</carbon.kernel.version>
         <carbon.kernel.feature.version>4.9.0</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
         <carbon.user.api.imp.pkg.version.range>[1.0.1, 2.0.0)</carbon.user.api.imp.pkg.version.range>

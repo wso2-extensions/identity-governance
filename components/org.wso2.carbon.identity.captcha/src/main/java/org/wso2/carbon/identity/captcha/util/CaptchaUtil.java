@@ -26,16 +26,17 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpEntityContainer;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.NameValuePair;
-import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.apache.hc.core5.http.message.BasicNameValuePair;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.net.URIBuilder;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
@@ -57,7 +58,6 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.securevault.SecretResolver;
@@ -274,6 +274,7 @@ public class CaptchaUtil {
 
     public static boolean isValidCaptcha(String reCaptchaResponse) throws CaptchaException {
 
+        CloseableHttpClient httpclient = HttpClientBuilder.create().useSystemProperties().build();
         String reCaptchaType = CaptchaDataHolder.getInstance().getReCaptchaType();
 
         HttpPost httpPost;
@@ -288,15 +289,16 @@ public class CaptchaUtil {
             httpPost = createReCaptchaVerificationHttpPost(reCaptchaResponse);
         }
 
-        HttpEntity entity;
-
-        try (CloseableHttpClient httpclient = HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
-            entity = httpclient.execute(httpPost, HttpEntityContainer::getEntity);
-            if (entity == null) {
-                throw new CaptchaServerException("reCaptcha verification response is not received.");
-            }
+        HttpResponse response;
+        try {
+            response = httpclient.execute(httpPost);
         } catch (IOException e) {
             throw new CaptchaServerException("Unable to get the verification response.", e);
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            throw new CaptchaServerException("reCaptcha verification response is not received.");
         }
 
         if (CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE.equals(reCaptchaType)) {
