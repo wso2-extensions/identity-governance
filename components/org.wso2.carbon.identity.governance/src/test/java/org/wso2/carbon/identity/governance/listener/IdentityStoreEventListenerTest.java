@@ -40,10 +40,13 @@ import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.user.core.model.ExpressionOperation;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -391,5 +394,47 @@ public class IdentityStoreEventListenerTest {
         }).when(userIdentityDataStore).remove(username, userStoreManager);
 
         Assert.assertTrue(identityStoreEventListener.doPostDeleteUser(username, userStoreManager));
+    }
+
+    @Test(description = "Verify doPreGetUserList supports NE operator on identity claims.")
+    public void testDoPreGetUserListWithNEClaim() throws Exception {
+
+        userStoreManager = mock(UserStoreManager.class);
+        realmConfiguration = mock(RealmConfiguration.class);
+        final String claimUri = "http://wso2.org/claims/identity/accountLocked";
+        final String claimValue = "true";
+        String domainName = "PRIMARY";
+
+        // Build an ExpressionCondition that uses the NE operation.
+        ExpressionCondition condition = new ExpressionCondition(
+                ExpressionOperation.NE.toString(), claimUri, claimValue);
+
+        Mockito.when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getUserStoreProperty(STORE_IDENTITY_CLAIMS))
+                .thenReturn(String.valueOf(false));
+        Mockito.when(UserCoreUtil.getDomainName(realmConfiguration)).thenReturn(domainName);
+
+        List<String> expectedUsernames = Arrays.asList(
+                domainName + "/user1",
+                domainName + "/user2");
+
+        Mockito.doReturn(expectedUsernames).when(identityDataStoreService)
+                .getUserNamesByClaimURINotEqualValue(
+                        Mockito.anyString(), Mockito.anyString(),
+                        Mockito.any(UserStoreManager.class));
+        Mockito.doReturn(false).when(identityDataStoreService).isUserStoreBasedIdentityDataStore();
+
+        List<String> filteredUserList = new ArrayList<>();
+        boolean result = identityStoreEventListener.doPreGetUserList(
+                condition, filteredUserList, userStoreManager, "SECONDARY");
+
+        // Assert that the method returns true and the filtered user list matches the expected usernames.
+        assertTrue(result, "doPreGetUserList should return true on success.");
+        assertEquals(filteredUserList, expectedUsernames,
+                "Filtered user list should match the data-store results for NE filtering.");
+
+        // Verify that the identity-data-store was actually queried with NE.
+        Mockito.verify(identityDataStoreService, Mockito.times(1))
+                .getUserNamesByClaimURINotEqualValue(claimUri, claimValue, userStoreManager);
     }
 }
