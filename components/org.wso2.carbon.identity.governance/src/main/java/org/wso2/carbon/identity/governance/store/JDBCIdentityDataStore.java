@@ -59,6 +59,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     private static final String ORACLE = "oracle";
     private static final String POSTGRE_SQL = "postgresql";
     private static final String MYSQL = "mysql";
+    private static final String USER_NAME = "USER_NAME";
 
     @Override
     public void store(UserIdentityClaim userIdentityDTO, UserStoreManager userStoreManager)
@@ -414,7 +415,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
-                    userNames.add(resultSet.getString("USER_NAME"));
+                    userNames.add(resultSet.getString(USER_NAME));
                 }
             }
             return userNames;
@@ -672,24 +673,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                                            String operation, String attributeValue) {
 
         if (ExpressionOperation.NE.toString().equals(operation)) {
-            /*
-             * When operation is NE (Not Equal), consider both users whose attribute value does not match the
-             * specified value and users who do not have the attribute configured.
-             */
-
-            // Build a subquery to identify users to exclude.
-            SqlBuilder usersToExcludeSqlBuilder = new SqlBuilder(new StringBuilder(header.getSql()));
-            addingWheres(header, usersToExcludeSqlBuilder);
-            usersToExcludeSqlBuilder.where("DATA_KEY = ?", attributeName);
-            usersToExcludeSqlBuilder.where("DATA_VALUE = ?", attributeValue);
-
-            // Retrieve the subquery SQL string and its ordered parameters.
-            String subQuerySqlString = usersToExcludeSqlBuilder.getQuery();
-            List<Object> subQueryParams = usersToExcludeSqlBuilder.getOrderedParameters();
-
-            // Append the NE condition query fragment to the main SqlBuilder.
-            String neConditionFragment = " AND USER_NAME NOT IN (" + subQuerySqlString + ") ";
-            sqlBuilder.appendParameterizedSqlFragment(neConditionFragment, subQueryParams);
+            buildNotEqualCondition(sqlBuilder, header, attributeName, attributeValue);
             return;
         }
 
@@ -707,6 +691,34 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         } else if (ExpressionOperation.LE.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE <= ?", attributeValue);
         }
+    }
+
+    /**
+     * Builds the NOT EQUAL condition for claim filtering.
+     * When operation is NE (Not Equal), consider both users whose attribute value does not match the
+     * specified value and users who do not have the attribute configured.
+     *
+     * @param sqlBuilder    The main SQL builder to append the condition to
+     * @param header        The header SQL builder containing base conditions
+     * @param attributeName The attribute name to filter by
+     * @param attributeValue The attribute value to exclude
+     */
+    private void buildNotEqualCondition(SqlBuilder sqlBuilder, SqlBuilder header, String attributeName,
+                                        String attributeValue) {
+
+        // Build a subquery to identify users to exclude.
+        SqlBuilder usersToExcludeSqlBuilder = new SqlBuilder(new StringBuilder(header.getSql()));
+        addingWheres(header, usersToExcludeSqlBuilder);
+        usersToExcludeSqlBuilder.where("DATA_KEY = ?", attributeName);
+        usersToExcludeSqlBuilder.where("DATA_VALUE = ?", attributeValue);
+
+        // Retrieve the subquery SQL string and its ordered parameters.
+        String subQuerySqlString = usersToExcludeSqlBuilder.getQuery();
+        List<Object> subQueryParams = usersToExcludeSqlBuilder.getOrderedParameters();
+
+        // Append the NE condition query fragment to the main SqlBuilder.
+        String neConditionFragment = " AND USER_NAME NOT IN (" + subQuerySqlString + ") ";
+        sqlBuilder.appendParameterizedSqlFragment(neConditionFragment, subQueryParams);
     }
 
     private void addingWheres(SqlBuilder baseSqlBuilder, SqlBuilder newSqlBuilder) {
