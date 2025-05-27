@@ -23,7 +23,9 @@ import org.mockito.Spy;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -32,10 +34,13 @@ import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +53,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Test class for IdentityMgtEventListener.
@@ -539,5 +545,59 @@ public class IdentityMgtEventListenerTest {
 
         doNothing().when(identityEventService).handleEvent(any(Event.class));
         identityEventService.handleEvent(identityMgtEvent);
+    }
+
+    @Test
+    void testHandleEventWithPasswordPolicyLoadError() throws Exception {
+
+        IdentityMgtEventListener listener = new IdentityMgtEventListener();
+
+        when(userStoreManager.getTenantId()).thenReturn(1);
+
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(1);
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain("testDomain");
+
+        IdentityMgtServiceDataHolder.getInstance().setRealmService(realmService);
+        when(realmService.getTenantManager()).thenReturn(tenantManager);
+        when(tenantManager.getDomain(1)).thenReturn("testDomain");
+
+        Method handleEventMethod = IdentityMgtEventListener.class.getDeclaredMethod(
+                "handleEvent", String.class, HashMap.class, UserStoreManager.class);
+        handleEventMethod.setAccessible(true);
+
+        doThrow(new IdentityEventException("40001", "Policy load failed"))
+                .when(identityEventService).handleEvent(any());
+        InvocationTargetException ite = expectThrows(
+            InvocationTargetException.class,
+            () -> handleEventMethod.invoke(listener, "USER_ON_ADD", new HashMap<>(), userStoreManager)
+        );
+        Throwable cause = ite.getTargetException();
+        assertTrue(cause instanceof UserStoreException);
+        UserStoreException userStoreException = (UserStoreException) cause;
+        assertEquals(userStoreException.getMessage(), "Policy load failed");
+
+        IdentityEventClientException clientEx =
+                new IdentityEventClientException("C123", "client‐failure");
+        doThrow(clientEx)
+                .when(identityEventService).handleEvent(any(Event.class));
+        ite = expectThrows(InvocationTargetException.class, () -> {
+            handleEventMethod.invoke(listener, "USER_ON_ADD", new HashMap<>(), userStoreManager);
+        });
+        cause = ite.getTargetException();
+        assertTrue(cause instanceof UserStoreClientException);
+        UserStoreClientException userStoreClientException = (UserStoreClientException) cause;
+        assertEquals(userStoreClientException.getMessage(), "client‐failure");
+        assertEquals(userStoreClientException.getErrorCode(), "C123");
+
+        doThrow(new IdentityEventException("40002", "policy‐violation"))
+                .when(identityEventService).handleEvent(any(Event.class));
+
+        ite = expectThrows(InvocationTargetException.class, () -> {
+            handleEventMethod.invoke(listener, "USER_ON_ADD", new HashMap<>(), userStoreManager);
+        });
+        cause = ite.getTargetException();
+        assertTrue(cause instanceof UserStoreException);
+        assertEquals(cause.getMessage(), "policy‐violation");
     }
 }

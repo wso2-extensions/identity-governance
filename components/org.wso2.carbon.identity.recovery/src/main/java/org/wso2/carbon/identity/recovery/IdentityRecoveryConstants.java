@@ -81,6 +81,7 @@ public class IdentityRecoveryConstants {
     public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
     public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CAMPAIGN = "campaign";
+    public static final String UTM_PARAMETERS_PREFIX = "utm_";
     public static final String CONFIRMATION_CODE = "confirmation-code";
     public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";

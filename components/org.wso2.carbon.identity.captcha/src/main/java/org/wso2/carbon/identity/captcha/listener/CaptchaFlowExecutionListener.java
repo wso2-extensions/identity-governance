@@ -42,6 +42,7 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     public static final String CAPTCHA_RESPONSE = "captchaResponse";
     public static final String CAPTCHA_KEY = "captchaKey";
     public static final String CAPTCHA_URL = "captchaURL";
+    public static final String RECAPTCHA_TYPE = "recaptchaType";
     private static final String CAPTCHA_GOVERNANCE_CONFIG_KEY = "sso.login.recaptcha.enable";
 
     @Override
@@ -63,28 +64,18 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     }
 
     @Override
-    public boolean doPostInitiate(RegistrationStep step, RegistrationContext registrationContext)
-            throws RegistrationEngineException {
+    public boolean doPreExecute(RegistrationContext registrationContext) throws RegistrationEngineException {
 
         if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
             return true;
         }
-        addCaptchaKeys(step, registrationContext);
-        return true;
-    }
 
-    @Override
-    public boolean doPreContinue(RegistrationContext registrationContext) throws RegistrationEngineException {
-
-        if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
-            return true;
-        }
         validateCaptcha(registrationContext);
         return true;
     }
 
     @Override
-    public boolean doPostContinue(RegistrationStep step, RegistrationContext registrationContext)
+    public boolean doPostExecute(RegistrationStep step, RegistrationContext registrationContext)
             throws RegistrationEngineException {
 
         if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
@@ -111,6 +102,7 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
                 this needs to be updated. */
                 componentDTO.addConfig(CAPTCHA_KEY, CaptchaUtil.reCaptchaSiteKey());
                 componentDTO.addConfig(CAPTCHA_URL, CaptchaUtil.reCaptchaAPIURL());
+                componentDTO.addConfig(RECAPTCHA_TYPE, CaptchaUtil.getReCaptchaType());
                 context.setProperty(CAPTCHA_ENABLED, true);
                 step.getData().addAdditionalData(CAPTCHA_ENABLED, String.valueOf(true));
                 context.getCurrentStepInputs().forEach(
