@@ -464,8 +464,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 try {
                     List<String> usernames;
                    if (ExpressionOperation.NE.toString().equals(operation)) {
-                       usernames = identityDataStoreService.getUserNamesByClaimURINotEqualValue(claimUri, claimValue,
-                               userManager);
+                       usernames = identityDataStoreService.getUserNamesByClaimURINotEqualValue(condition, claimUri,
+                               claimValue, userManager);
                    } else {
                         usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
                                 getClaimValueForOperation(operation, claimValue), userManager);

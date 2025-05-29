@@ -22,6 +22,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 
 import java.util.Collections;
@@ -97,14 +98,19 @@ public interface IdentityDataStoreService {
      * Get the list of usernames who either do not have a value configured for the given claim URI
      * or have a value that differs from the provided claim value.
      *
+     * @param condition        Condition.
      * @param claimURI         Claim URI.
      * @param claimValue       Claim value.
      * @param userStoreManager UserStoreManager instance.
      * @return List of usernames.
      * @throws IdentityException Identity exception.
      */
-    List<String> getUserNamesByClaimURINotEqualValue(String claimURI, String claimValue,
-                                                     UserStoreManager userStoreManager) throws IdentityException;
+    default List<String> getUserNamesByClaimURINotEqualValue(Condition condition, String claimURI, String claimValue,
+                                                             UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        return Collections.emptyList();
+    }
 
     /**
      * Get the list of usernames who have the claim value less than the provided claim value for a given claim URI.

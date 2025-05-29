@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 import org.wso2.carbon.user.core.model.ExpressionOperation;
 import org.wso2.carbon.user.core.model.SqlBuilder;
@@ -373,7 +374,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     }
 
     @Override
-    public List<String> getUserNamesByClaimURINotEqualValue(String claimUri, String claimValue,
+    public List<String> getUserNamesByClaimURINotEqualValue(Condition condition, String claimUri, String claimValue,
                                                             org.wso2.carbon.user.core.UserStoreManager userStoreManager)
             throws IdentityException {
 
@@ -801,11 +802,10 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
                                                       String domain) throws IdentityException {
 
         try {
-            // Construct domain-aware filter
-            String filter = StringUtils.equalsIgnoreCase(domain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)
-                    ? "/*" : domain + UserCoreConstants.DOMAIN_SEPARATOR + "*";
+            // Construct domain-aware filter.
+            String filter = domain + UserCoreConstants.DOMAIN_SEPARATOR + "*";
 
-            // Get users with domain filter - already returns domain-qualified usernames
+            // Get users with domain filter - already returns domain-qualified usernames.
             String[] users = userStoreManager.listUsers(filter, -1);
 
             return users != null ? Arrays.asList(users) : new ArrayList<>();

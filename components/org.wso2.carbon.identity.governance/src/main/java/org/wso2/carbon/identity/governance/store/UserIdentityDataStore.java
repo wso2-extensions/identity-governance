@@ -22,6 +22,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 
 import java.util.Collections;
@@ -126,7 +127,7 @@ public abstract class UserIdentityDataStore {
      * @return List of usernames.
      * @throws IdentityException Identity exception.
      */
-    public List<String> getUserNamesByClaimURINotEqualValue(String claimURI, String claimValue,
+    public List<String> getUserNamesByClaimURINotEqualValue(Condition condition, String claimURI, String claimValue,
                                                             org.wso2.carbon.user.core.UserStoreManager userStoreManager)
             throws IdentityException {
 

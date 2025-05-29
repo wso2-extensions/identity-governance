@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.governance.store.UserStoreBasedIdentityDataStore
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
 
 import java.util.Iterator;
@@ -159,11 +160,11 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
     }
 
     @Override
-    public List<String> getUserNamesByClaimURINotEqualValue(String claimURI, String claimValue,
+    public List<String> getUserNamesByClaimURINotEqualValue(Condition condition, String claimURI, String claimValue,
                                                             UserStoreManager userStoreManager)
             throws IdentityException {
 
-        return identityDataStore.getUserNamesByClaimURINotEqualValue(claimURI, claimValue, userStoreManager);
+        return identityDataStore.getUserNamesByClaimURINotEqualValue(condition, claimURI, claimValue, userStoreManager);
     }
 
     @Override
