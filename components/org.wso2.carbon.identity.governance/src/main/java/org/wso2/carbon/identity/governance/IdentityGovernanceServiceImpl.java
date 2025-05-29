@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.exceptions.general.IdentityGovernanceClientException;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
@@ -77,18 +79,21 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                     validatePasswordRecoveryWithCurrentAndPreviousConfigs(configurationDetails, identityMgtProperties);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             updateUsernameRecoveryPropertyValues(configurationDetails, identityMgtProperties);
-            for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
-                IdentityProviderProperty prop = new IdentityProviderProperty();
-                String key = identityMgtProperty.getName();
-                prop.setName(key);
-                if (configurationDetails.containsKey(key)) {
-                    prop.setValue(configurationDetails.get(key));
-                } else {
-                    prop.setValue(identityMgtProperty.getValue());
+            if (!OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
+                    IdentityProviderProperty prop = new IdentityProviderProperty();
+                    String key = identityMgtProperty.getName();
+                    prop.setName(key);
+                    if (configurationDetails.containsKey(key)) {
+                        prop.setValue(configurationDetails.get(key));
+                    } else {
+                        prop.setValue(identityMgtProperty.getValue());
+                    }
+                    newProperties.add(prop);
+                    configurationDetails.remove(key);
                 }
-                newProperties.add(prop);
-                configurationDetails.remove(key);
             }
+
             for (Map.Entry<String, String> entry : configurationDetails.entrySet()) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 prop.setName(entry.getKey());
@@ -99,11 +104,13 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             residentIdp.setIdpProperties(newProperties.toArray(new IdentityProviderProperty[newProperties.size()]));
             FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
             List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
-            for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
-                if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
-                        ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
-                        .getName())) {
-                    configsToSave.add(authenticatorConfig);
+            if (!OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
+                    if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
+                            ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
+                            .getName())) {
+                        configsToSave.add(authenticatorConfig);
+                    }
                 }
             }
             residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
@@ -114,6 +121,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityGovernanceException(String.format("Error while checking if tenant %s is an organization.",
+                    tenantDomain), e);
         }
     }
 
@@ -163,6 +173,25 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         }
         return requestedProperties.toArray(new Property[requestedProperties.size()]);
 
+    }
+
+    /**
+     * Delete the configurations of an organization from cache and database.
+     *
+     * @param tenantDomain  tenant domain of the organization.
+     * @param propertyNames property names to be deleted.
+     * @throws IdentityGovernanceException if an error occurs while deleting the configurations.
+     */
+    @Override
+    public void deleteConfiguration(String tenantDomain, List<String> propertyNames)
+            throws IdentityGovernanceException {
+
+        try {
+            IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
+            identityProviderManager.deleteResidentIdpProperties(tenantDomain, propertyNames);
+        } catch (IdentityProviderManagementException e) {
+            throw new IdentityGovernanceException(e.getMessage(), e);
+        }
     }
 
     public List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException {

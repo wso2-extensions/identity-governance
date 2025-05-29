@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (https://www.wso2.org)
+ * Copyright (c) 2024-2025, WSO2 LLC. (https://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -30,15 +30,20 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertThrows;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class IdentityGovernanceServiceImplTest {
@@ -67,6 +72,7 @@ public class IdentityGovernanceServiceImplTest {
     IdentityProvider identityProvider;
 
     MockedStatic<IdentityMgtServiceDataHolder> identityMgtServiceDataHolderMockedStatic;
+    MockedStatic<OrganizationManagementUtil> organizationManagementUtilMockedStatic;
 
     private IdentityGovernanceServiceImpl identityGovernanceService;
 
@@ -80,6 +86,10 @@ public class IdentityGovernanceServiceImplTest {
         when(identityMgtServiceDataHolder.getIdpManager()).thenReturn(idpManager);
         when(idpManager.getResidentIdP(TENANT_DOMAIN)).thenReturn(identityProvider);
 
+        organizationManagementUtilMockedStatic = mockStatic(OrganizationManagementUtil.class);
+        organizationManagementUtilMockedStatic.when(() -> OrganizationManagementUtil.isOrganization(TENANT_DOMAIN))
+                .thenReturn(false);
+
         FederatedAuthenticatorConfig[] authenticatorConfigs = new FederatedAuthenticatorConfig[0];
         when(identityProvider.getFederatedAuthenticatorConfigs()).thenReturn(authenticatorConfigs);
 
@@ -90,6 +100,7 @@ public class IdentityGovernanceServiceImplTest {
     public void tearDown() {
 
         identityMgtServiceDataHolderMockedStatic.close();
+        organizationManagementUtilMockedStatic.close();
     }
 
     @Test(dataProvider = "updateConfigurations")
@@ -112,6 +123,24 @@ public class IdentityGovernanceServiceImplTest {
             assertEquals(expected.get(capturedProperty.getName()), capturedProperty.getValue());
         }
 
+    }
+
+    @Test
+    public void testDeleteConfiguration() throws Exception {
+
+        List<String> propertyNames = Arrays.asList("prop1", "prop2");
+        identityGovernanceService.deleteConfiguration(TENANT_DOMAIN, propertyNames);
+        verify(idpManager).deleteResidentIdpProperties(TENANT_DOMAIN, propertyNames);
+    }
+
+    @Test
+    public void testDeleteConfigurationThrowsIdentityGovernanceException() throws Exception {
+
+        List<String> propertyNames = Arrays.asList("prop1", "prop2");
+        doThrow(new IdentityProviderManagementException("error"))
+                .when(idpManager).deleteResidentIdpProperties(TENANT_DOMAIN, propertyNames);
+        assertThrows(IdentityGovernanceException.class, () ->
+                identityGovernanceService.deleteConfiguration(TENANT_DOMAIN, propertyNames));
     }
 
     @DataProvider(name = "updateConfigurations")
