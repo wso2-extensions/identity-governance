@@ -40,9 +40,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -54,6 +58,7 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
     private static final String QUERY_FILTER_STRING_ANY = "*";
     private static final String SQL_FILTER_STRING_ANY = "%";
     private static final String QUERY_BINDING_SYMBOL = "?";
+    private static final String USER_NAME = "USER_NAME";
     private static final String DB2 = "db2";
     private static final String MSSQL = "mssql";
     private static final String ORACLE = "oracle";
@@ -341,52 +346,57 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         try {
             int tenantId = userStoreManager.getTenantId();
 
-            try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+            /*
+             * Separate claim filter conditions by operation:
+             *   - NOT_EQUAL (ne) requires a special strategy to include users not present in the identity store.
+             *   - Other operations (sw, ew, co, etc.) use the standard identity-store query.
+             */
+            List<ExpressionCondition> notEqualConditions = new ArrayList<>();
+            List<ExpressionCondition> otherConditions = new ArrayList<>();
+            separateConditionsByOperation(identityClaimFilterExpressionConditions, notEqualConditions, otherConditions);
 
-                // Based on the DB Type might need to extend support.
-                String dBType = DatabaseCreator.getDatabaseType(connection);
-
-                // To handle the offset being one leads to null response
-                if (offset <= 0) {
-                    offset = 0;
-                } else {
-                    offset = offset - 1;
-                }
-
-                SqlBuilder sqlBuilder = getQueryString(identityClaimFilterExpressionConditions, limit, offset, domain,
-                        tenantId, dBType);
-
-                String fullQuery = sqlBuilder.getQuery();
-                int startIndex = 0;
-                int endIndex = 0;
-                int occurrence = StringUtils.countMatches(fullQuery, QUERY_BINDING_SYMBOL);
-                endIndex = endIndex + occurrence;
-
-                try (PreparedStatement preparedStatement = connection.prepareStatement(fullQuery)) {
-
-                    populatePrepareStatement(sqlBuilder, preparedStatement, startIndex, endIndex);
-                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                        while (resultSet.next()) {
-                            identityClaimFilteredUserNames.add(resultSet.getString("USER_NAME"));
-                        }
-                        IdentityDatabaseUtil.commitTransaction(connection);
-                    } catch (SQLException e) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Error occurred while retrieving users from Identity Store for " + domain +
-                                    "with limit " + limit + "and offset " + offset, e);
-                        }
-                        IdentityDatabaseUtil.rollbackTransaction(connection);
-                    }
-                } catch (SQLException e) {
-                    throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
-                }
-                return identityClaimFilteredUserNames;
-            } catch (Exception e) {
-                throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+            List<String> filteredUserNames;
+            if (notEqualConditions.isEmpty()) {
+                // Perform users filtering based on the users only in Identity store.
+                filteredUserNames = getFilteredUsernamesWithoutNotEqualConditions(otherConditions, domain, tenantId,
+                        limit, offset, false);
+            } else {
+                // Perform users filtering based on the users in Identity Store and User Store.
+                filteredUserNames = getFilteredUsernamesWithNotEqualConditions(notEqualConditions, otherConditions,
+                        domain, tenantId, userStoreManager, limit, offset);
             }
+            identityClaimFilteredUserNames.addAll(filteredUserNames);
+            return identityClaimFilteredUserNames;
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
             throw new IdentityException("Error occurred while retrieving users.", e);
         }
+    }
+
+    @Override
+    public List<String> getUserNamesByClaimURINotEqualValue(String claimUri, String claimValue,
+                                                            org.wso2.carbon.user.core.UserStoreManager userStoreManager)
+            throws IdentityException {
+
+        String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+
+        // Get all users from the user store for the specified domain.
+        List<String> allUsers = getAllUsernamesFromUserStore(userStoreManager, userStoreDomain);
+
+        /*
+         * Get users from the identity store whose claimUri exactly matches claimValue.
+         * These are the users we want to exclude from the final result.
+         */
+        List<String> usersWithClaimValue = list(claimUri, claimValue, userStoreManager);
+
+        /*
+         * Exclude users with the specified claim value from the complete list.
+         * This stratergy of performing NE operation filtering is required to include users who are not present
+         * in the identity store.
+         */
+        Set<String> usersWithClaimValueSet = new HashSet<>(usersWithClaimValue);
+        return allUsers.stream()
+                .filter(user -> !usersWithClaimValueSet.contains(user))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -633,6 +643,52 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
         return sqlBuilder;
     }
 
+    /**
+     * Builds an SQL string that returns usernames when at least one of the given filter conditions is met.
+     *
+     * @param identityClaimFilterExpressionConditions List of conditions to apply (joined with OR).
+     * @param userStoreDomain                         User store domain to include or exclude.
+     * @param tenantID                                Tenant identifier to filter by.
+     * @return a SqlBuilder initialized with the complete SQL string and parameters.
+     */
+    private SqlBuilder getQueryStringWithOROperator(List<ExpressionCondition> identityClaimFilterExpressionConditions,
+                                                    String userStoreDomain, int tenantID) {
+
+        boolean hitClaimFilter = false;
+        String userNameWithDomain;
+        StringBuilder sqlStatement = new StringBuilder("SELECT DISTINCT USER_NAME FROM IDN_IDENTITY_USER_DATA ");
+        SqlBuilder sqlBuilder = new SqlBuilder(sqlStatement);
+        sqlBuilder.where("TENANT_ID = ? ", tenantID);
+
+        if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
+            userNameWithDomain = SQL_FILTER_STRING_ANY + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+            sqlBuilder.where(" USER_NAME NOT LIKE ? ", userNameWithDomain);
+        } else {
+            userNameWithDomain =
+                    userStoreDomain.toUpperCase() + UserCoreConstants.DOMAIN_SEPARATOR + SQL_FILTER_STRING_ANY;
+            sqlBuilder.where(" USER_NAME LIKE ? ", userNameWithDomain);
+        }
+
+        sqlBuilder.updateSql(" AND (");
+        for (ExpressionCondition expressionCondition : identityClaimFilterExpressionConditions) {
+            String claimValue = expressionCondition.getAttributeValue();
+            if (claimValue.contains(QUERY_FILTER_STRING_ANY)) {
+                // This is to support LDAP like queries. Value having only * is restricted except one *.
+                if (!claimValue.matches("(\\*)\\1+")) {
+                    // Convert all the * to % except \*.
+                    claimValue = claimValue.replaceAll("(?<!\\\\)\\*", SQL_FILTER_STRING_ANY);
+                }
+            }
+            buildClaimWhereConditionsWithOROperator(sqlBuilder, expressionCondition.getAttributeName(),
+                    expressionCondition.getOperation(), claimValue, hitClaimFilter);
+            hitClaimFilter = true;
+        }
+        sqlBuilder.updateSql(")");
+        sqlBuilder.updateSql(" ORDER BY USER_NAME ASC");
+
+        return sqlBuilder;
+    }
+
     private void buildClaimWhereConditions(SqlBuilder sqlBuilder, String attributeName, String operation,
                                            String attributeValue) {
 
@@ -649,6 +705,33 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             sqlBuilder.where("DATA_VALUE >= ?", attributeValue);
         } else if (ExpressionOperation.LE.toString().equals(operation)) {
             sqlBuilder.where("DATA_VALUE <= ?", attributeValue);
+        }
+    }
+
+    private void buildClaimWhereConditionsWithOROperator(SqlBuilder sqlBuilder, String attributeName, String operation,
+                                                         String attributeValue, boolean isFirstCondition) {
+
+        if (isFirstCondition) {
+            sqlBuilder.updateSql(" OR ");
+        }
+        if (ExpressionOperation.EQ.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE = ?",
+                    Arrays.asList(attributeName, attributeValue));
+        } else if (ExpressionOperation.EW.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE LIKE ?",
+                    Arrays.asList(attributeName, "%" + attributeValue));
+        } else if (ExpressionOperation.CO.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE LIKE ?",
+                    Arrays.asList(attributeName, "%" + attributeValue + "%"));
+        } else if (ExpressionOperation.SW.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE LIKE ?",
+                    Arrays.asList(attributeName, attributeValue + "%"));
+        } else if (ExpressionOperation.GE.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE >= ?",
+                    Arrays.asList(attributeName, attributeValue));
+        } else if (ExpressionOperation.LE.toString().equals(operation)) {
+            sqlBuilder.appendParameterizedSqlFragment("DATA_KEY = ? AND DATA_VALUE <= ?",
+                    Arrays.asList(attributeName, attributeValue));
         }
     }
 
@@ -682,6 +765,217 @@ public class JDBCIdentityDataStore extends InMemoryIdentityDataStore {
             buildClaimWhereConditions(sqlBuilder, expressionCondition.getAttributeName(),
                     expressionCondition.getOperation(), expressionCondition.getAttributeValue());
         }
+    }
+
+    /**
+     * Separates identity claim filter conditions into two lists:
+     * - notEqualConditions: Contains conditions with the NE (not equal) operation.
+     * - otherConditions: Contains all other conditions.
+     *
+     * @param identityClaimFilterExpressionConditions List of expression conditions to separate.
+     * @param notEqualConditions                      List to hold conditions with NE operation.
+     * @param otherConditions                         List to hold all other conditions.
+     */
+    private void separateConditionsByOperation(List<ExpressionCondition> identityClaimFilterExpressionConditions,
+                                               List<ExpressionCondition> notEqualConditions,
+                                               List<ExpressionCondition> otherConditions) {
+
+        for (ExpressionCondition condition : identityClaimFilterExpressionConditions) {
+            if (ExpressionOperation.NE.toString().equals(condition.getOperation())) {
+                notEqualConditions.add(condition);
+            } else {
+                otherConditions.add(condition);
+            }
+        }
+    }
+
+    /**
+     * Retrieves all usernames from the user store, considering the specified domain.
+     *
+     * @param userStoreManager UserStoreManager instance to interact with the user store.
+     * @param domain           The user store domain to filter users by.
+     * @return List of usernames from the user store for the specified domain.
+     * @throws IdentityException if an error occurs while retrieving users.
+     */
+    private List<String> getAllUsernamesFromUserStore(org.wso2.carbon.user.core.UserStoreManager userStoreManager,
+                                                      String domain) throws IdentityException {
+
+        try {
+            // Construct domain-aware filter
+            String filter = StringUtils.equalsIgnoreCase(domain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)
+                    ? "/*" : domain + UserCoreConstants.DOMAIN_SEPARATOR + "*";
+
+            // Get users with domain filter - already returns domain-qualified usernames
+            String[] users = userStoreManager.listUsers(filter, -1);
+
+            return users != null ? Arrays.asList(users) : new ArrayList<>();
+
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityException("Error occurred while retrieving users from User Store.", e);
+        }
+    }
+
+    /**
+     * Paginates the user list based on the specified limit and offset.
+     *
+     * @param userList List of usernames to paginate.
+     * @param limit    Maximum number of results to return.
+     * @param offset   Starting offset for pagination.
+     * @return Paginated list of usernames.
+     */
+    private List<String> paginateUserList(List<String> userList, int limit, int offset) {
+
+        if (userList == null || userList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (offset <= 0) {
+            offset = 0;
+        } else {
+            offset = offset - 1;
+        }
+
+        int paginationLimit;
+        if (offset <= 0) {
+            paginationLimit = limit;
+        } else {
+            paginationLimit = offset + limit;
+        }
+
+        if (offset > userList.size()) {
+            return new ArrayList<>();
+        }
+
+        if (userList.size() < paginationLimit) {
+            return new ArrayList<>(userList.subList(offset, userList.size()));
+        } else {
+            return new ArrayList<>(userList.subList(offset, paginationLimit));
+        }
+    }
+
+    /**
+     * Retrieves filtered usernames based on the provided conditions without not-equal operators.
+     *
+     * @param conditionsWithoutNotEqualOperator List of expression conditions (non not-equal).
+     * @param domain                            User store domain.
+     * @param tenantId                          Tenant ID.
+     * @param limit                             Maximum number of results to return.
+     * @param offset                            Starting offset for pagination.
+     * @param combineConditionsWithOR           Whether to combine conditions with OR logic (true) or AND logic (false).
+     * @return List of user names that match the conditions.
+     * @throws IdentityException if database operation fails.
+     */
+    private List<String> getFilteredUsernamesWithoutNotEqualConditions(
+            List<ExpressionCondition> conditionsWithoutNotEqualOperator, String domain, int tenantId, int limit,
+            int offset, boolean combineConditionsWithOR) throws IdentityException {
+
+        List<String> userNames = new ArrayList<>();
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection()) {
+            // Based on the DB Type might need to extend support.
+            String dBType = DatabaseCreator.getDatabaseType(connection);
+
+            if (offset <= 0) {
+                offset = 0;
+            } else {
+                offset = offset - 1;
+            }
+
+            SqlBuilder sqlBuilder;
+            if (combineConditionsWithOR) {
+                sqlBuilder = getQueryStringWithOROperator(conditionsWithoutNotEqualOperator, domain, tenantId);
+            } else {
+                sqlBuilder = getQueryString(conditionsWithoutNotEqualOperator, limit, offset, domain, tenantId, dBType);
+            }
+            String fullQuery = sqlBuilder.getQuery();
+            int occurrence = StringUtils.countMatches(fullQuery, QUERY_BINDING_SYMBOL);
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(fullQuery)) {
+
+                populatePrepareStatement(sqlBuilder, preparedStatement, 0, occurrence);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    while (resultSet.next()) {
+                        userNames.add(resultSet.getString(USER_NAME));
+                    }
+                    IdentityDatabaseUtil.commitTransaction(connection);
+                } catch (SQLException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Error occurred while retrieving users from Identity Store for " + domain +
+                                "with limit " + limit + "and offset " + offset, e);
+                    }
+                    IdentityDatabaseUtil.rollbackTransaction(connection);
+                }
+            } catch (SQLException e) {
+                throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+            }
+        } catch (Exception e) {
+            throw new IdentityException("Error occurred while retrieving users from Identity Store.", e);
+        }
+        return userNames;
+    }
+
+    /**
+     * Retrieves filtered usernames based on the provided not-equal conditions and other conditions (ew, sw, co, etc.).
+     *
+     * @param notEqualConditions List of expression conditions with NOT_EQUAL operation.
+     * @param otherConditions    List of expression conditions without NOT_EQUAL operation.
+     * @param domain             User store domain.
+     * @param tenantId           Tenant ID.
+     * @param userStoreManager   UserStoreManager instance to interact with the user store.
+     * @param limit              Maximum number of results to return.
+     * @param offset             Starting offset for pagination.
+     * @return List of usernames that match the conditions.
+     * @throws IdentityException if an error occurs while retrieving users.
+     */
+    private List<String> getFilteredUsernamesWithNotEqualConditions(List<ExpressionCondition> notEqualConditions,
+                                                                    List<ExpressionCondition> otherConditions,
+                                                                    String domain, int tenantId,
+                                                                    org.wso2.carbon.user.core.UserStoreManager
+                                                                            userStoreManager, int limit, int offset)
+            throws IdentityException {
+
+        /*
+         * Initialize the base set of user names.
+         * If there are any filters other than NE, fetch those users first;
+         * otherwise, load all users from the user store.
+         * This avoids pulling the entire user store when other filters apply.
+         */
+        List<String> filteredUserNames;
+        if (!otherConditions.isEmpty()) {
+            filteredUserNames = getFilteredUsernamesWithoutNotEqualConditions(
+                    otherConditions, domain, tenantId, Integer.MAX_VALUE, 0, false);
+        } else {
+            filteredUserNames = getAllUsernamesFromUserStore(userStoreManager, domain);
+        }
+
+        /*
+         * Handle NOT_EQUAL conditions by converting them to EQUAL for querying.
+         * First find users who DO match these conditions, then exclude them.
+         */
+        List<ExpressionCondition> equalConditions = new ArrayList<>();
+        for (ExpressionCondition neCondition : notEqualConditions) {
+            ExpressionCondition eqCondition = new ExpressionCondition(
+                    ExpressionOperation.EQ.toString(),
+                    neCondition.getAttributeName(),
+                    neCondition.getAttributeValue()
+            );
+            equalConditions.add(eqCondition);
+        }
+
+        /*
+         * Get users who atleast satisfy one of the converted EQUAL conditions (using OR logic).
+         * These are the users we need to EXCLUDE from our result set.
+         */
+        List<String> equalConditionsFilteredUserNames = getFilteredUsernamesWithoutNotEqualConditions(
+                equalConditions, domain, tenantId, Integer.MAX_VALUE, 0, true);
+
+        // From the initial filtered user names, exclude users who match the NOT_EQUAL conditions' values.
+        Set<String> equalConditionsSet = new HashSet<>(equalConditionsFilteredUserNames);
+        filteredUserNames = filteredUserNames.stream()
+                .filter(user -> !equalConditionsSet.contains(user))
+                .collect(Collectors.toList());
+
+        return paginateUserList(filteredUserNames, limit, offset);
     }
 
     /**
