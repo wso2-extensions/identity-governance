@@ -144,7 +144,7 @@ public class FailLoginAttemptValidationHandler extends AbstractEventHandler {
 
     private String getDomainQualifiedUsername(User user) {
 
-        String username = user.getUserName();
+        String username = user.toFullQualifiedUsername();
         if (!StringUtils.isBlank(user.getUserStoreDomain()) &&
                 !IdentityUtil.getPrimaryDomainName().equals(user.getUserStoreDomain())) {
             username = UserCoreUtil.addDomainToName(username, user.getUserStoreDomain());
