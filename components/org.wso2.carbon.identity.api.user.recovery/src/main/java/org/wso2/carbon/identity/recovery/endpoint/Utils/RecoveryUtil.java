@@ -18,10 +18,14 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.Utils;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hc.core5.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -64,6 +68,7 @@ import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -493,9 +498,9 @@ public class RecoveryUtil {
      *
      * @param reCaptchaResponse ReCaptcha response token
      * @param properties        ReCaptcha properties
-     * @return httpResponse
+     * @return verification response as a JsonObject
      */
-    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpClient5Request(
+    public static JsonObject makeCaptchaVerificationHttpClient5Request(
             ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
 
         String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
@@ -510,7 +515,20 @@ public class RecoveryUtil {
 
         try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient =
                      HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
-            return httpclient.execute(httppost, response -> response);
+            return httpclient.execute(httppost, response -> {
+                HttpEntity entity = response.getEntity();
+                if (entity == null) {
+                    throw RecoveryUtil.buildBadRequestException("ReCaptcha verification response is not received.",
+                            Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+                }
+                try (InputStream in = entity.getContent()) {
+                    JsonElement jsonElement = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+                    return jsonElement.getAsJsonObject();
+                } catch (IOException e) {
+                    throw RecoveryUtil.buildBadRequestException("Unable to read the verification response.",
+                            Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+                }
+            });
         } catch (IOException e) {
             throw RecoveryUtil.buildBadRequestException(String.format("Unable to get the verification response : %s", e.getMessage()),
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);

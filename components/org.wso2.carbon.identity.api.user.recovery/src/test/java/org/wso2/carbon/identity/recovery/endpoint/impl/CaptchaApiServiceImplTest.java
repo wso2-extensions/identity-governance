@@ -17,11 +17,9 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.HttpEntity;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -34,9 +32,7 @@ import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaPropertiesDTO;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -44,9 +40,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+
 import javax.ws.rs.core.Response;
 
-import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
@@ -60,10 +56,6 @@ public class CaptchaApiServiceImplTest{
 
     @InjectMocks
     CaptchaApiServiceImpl captchaApiService;
-    @Mock
-    HttpEntity httpEntity;
-    @Mock
-    ClassicHttpResponse classicHttpResponse;
 
     @BeforeMethod
     public void setUp() {
@@ -138,8 +130,6 @@ public class CaptchaApiServiceImplTest{
 
         ReCaptchaResponseTokenDTO reCaptchaResponse = new ReCaptchaResponseTokenDTO();
         String captchaType = "ReCaptcha";
-        InputStream jsonStream = new ByteArrayInputStream(responseString.getBytes());
-
 
         Properties sampleProperties = getSampleConfigFile();
         sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_ENABLED, "true");
@@ -147,11 +137,7 @@ public class CaptchaApiServiceImplTest{
 
         mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
         mockedRecoveryUtil.when(() -> RecoveryUtil.makeCaptchaVerificationHttpClient5Request(
-                reCaptchaResponse, sampleProperties)).thenReturn(classicHttpResponse);
-
-        when(classicHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(httpEntity.getContent()).thenReturn(jsonStream);
-        when(classicHttpResponse.getCode()).thenReturn(200);
+                reCaptchaResponse, sampleProperties)).thenReturn(JsonParser.parseString(responseString));
 
         Response response = captchaApiService.verifyCaptcha(reCaptchaResponse, captchaType, "carbon.super");
 
