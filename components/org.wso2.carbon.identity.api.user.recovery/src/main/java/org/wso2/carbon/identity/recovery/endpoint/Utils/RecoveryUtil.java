@@ -58,6 +58,7 @@ import org.wso2.carbon.identity.recovery.signup.UserSelfRegistrationManager;
 import org.wso2.carbon.identity.recovery.username.NotificationUsernameRecoveryManager;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.httpclient5.HTTPClientUtils;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.commons.MiscellaneousUtil;
@@ -457,7 +458,15 @@ public class RecoveryUtil {
      * @param reCaptchaResponse ReCaptcha response token
      * @param properties        ReCaptcha properties
      * @return httpResponse
+     *
+     * @deprecated
+     *
+     * This method is deprecated as part of an effort to unify all HTTP client implementations
+     * in the product.
+     *
+     * Use {@link #makeCaptchaVerificationHttpClient5Request} instead.
      */
+    @Deprecated
     public static HttpResponse makeCaptchaVerificationHttpRequest(ReCaptchaResponseTokenDTO reCaptchaResponse,
                                                                   Properties properties) {
 
@@ -477,6 +486,35 @@ public class RecoveryUtil {
                     Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
         }
         return response;
+    }
+
+    /**
+     * Make HTTP call for ReCaptcha Verification with the provided ReCaptcha response token
+     *
+     * @param reCaptchaResponse ReCaptcha response token
+     * @param properties        ReCaptcha properties
+     * @return httpResponse
+     */
+    public static org.apache.hc.core5.http.ClassicHttpResponse makeCaptchaVerificationHttpClient5Request(
+            ReCaptchaResponseTokenDTO reCaptchaResponse, Properties properties) {
+
+        String reCaptchaSecretKey = properties.getProperty(CaptchaConstants.RE_CAPTCHA_SECRET_KEY);
+        String reCaptchaVerifyUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_VERIFY_URL);
+
+        org.apache.hc.client5.http.classic.methods.HttpPost httppost =
+            new org.apache.hc.client5.http.classic.methods.HttpPost(reCaptchaVerifyUrl);
+        List<org.apache.hc.core5.http.message.BasicNameValuePair> params = Arrays.asList(
+            new org.apache.hc.core5.http.message.BasicNameValuePair("secret", reCaptchaSecretKey),
+            new org.apache.hc.core5.http.message.BasicNameValuePair("response", reCaptchaResponse.getToken()));
+        httppost.setEntity(new org.apache.hc.client5.http.entity.UrlEncodedFormEntity(params, StandardCharsets.UTF_8));
+
+        try (org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpclient =
+                     HTTPClientUtils.createClientWithCustomHostnameVerifier().build()) {
+            return httpclient.execute(httppost, response -> response);
+        } catch (IOException e) {
+            throw RecoveryUtil.buildBadRequestException(String.format("Unable to get the verification response : %s", e.getMessage()),
+                    Constants.STATUS_INTERNAL_SERVER_ERROR_MESSAGE_DEFAULT);
+        }
     }
 
     /**
