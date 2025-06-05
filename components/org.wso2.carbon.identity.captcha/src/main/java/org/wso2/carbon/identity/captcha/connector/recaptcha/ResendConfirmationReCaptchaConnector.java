@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2020-2025, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -99,11 +99,12 @@ public class ResendConfirmationReCaptchaConnector extends AbstractReCaptchaConne
     public boolean verifyCaptcha(ServletRequest servletRequest, ServletResponse servletResponse)
             throws CaptchaException {
 
-        String reCaptchaResponse = ((HttpServletRequest) servletRequest).getHeader("g-recaptcha-response");
-        if (StringUtils.isBlank(reCaptchaResponse)) {
+        String captchaResponse = ((HttpServletRequest) servletRequest).getHeader(
+                CaptchaDataHolder.getInstance().getCaptchaRuntimeService().getCaptchaResponseIdentifier());
+        if (StringUtils.isBlank(captchaResponse)) {
             throw new CaptchaClientException("reCaptcha response is not available in the request.");
         }
-        return CaptchaUtil.isValidCaptcha(reCaptchaResponse);
+        return CaptchaDataHolder.getInstance().getCaptchaRuntimeService().verifyCaptcha(captchaResponse);
     }
 
     @Override

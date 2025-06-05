@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -32,9 +32,13 @@ import org.wso2.carbon.identity.captcha.connector.recaptcha.SMSOTPCaptchaConnect
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.UsernameRecoveryReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.provider_mgt.service.CaptchaConfigService;
+import org.wso2.carbon.identity.captcha.provider_mgt.service.impl.CaptchaConfigServiceImpl;
+import org.wso2.carbon.identity.captcha.provider_mgt.service.impl.CaptchaRuntimeServiceImpl;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidationHandler;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -105,6 +109,13 @@ public class CaptchaComponent {
                     FailLoginAttemptValidationHandler(), null);
             context.getBundleContext().registerService(FlowExecutionListener.class, new CaptchaFlowExecutionListener(),
                     null);
+
+            CaptchaConfigService captchaConfigService = new CaptchaConfigServiceImpl();
+            captchaConfigService.storeCaptchaProviders();
+            captchaConfigService.loadCaptchaConfigs();
+            CaptchaDataHolder.getInstance().setCaptchaConfigService(captchaConfigService);
+            context.getBundleContext().registerService(CaptchaConfigService.class, captchaConfigService, null);
+            CaptchaDataHolder.getInstance().setCaptchaRuntimeService(new CaptchaRuntimeServiceImpl());
             if (log.isDebugEnabled()) {
                 log.debug("Captcha Component is activated");
             }
@@ -204,5 +215,28 @@ public class CaptchaComponent {
     protected void unsetAccountLockService(AccountLockService accountLockService) {
 
         CaptchaDataHolder.getInstance().setAccountLockService(null);
+    }
+
+    @Reference(
+            name = "resource.configuration.manager.service",
+            service = ConfigurationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetConfigurationManager"
+    )
+    protected void setConfigurationManager(ConfigurationManager configurationManager) {
+
+        CaptchaDataHolder.getInstance().setConfigurationManager(configurationManager);
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the ConfigurationManager.");
+        }
+    }
+
+    protected void unsetConfigurationManager(ConfigurationManager configurationManager) {
+
+        CaptchaDataHolder.getInstance().setConfigurationManager(null);
+        if (log.isDebugEnabled()) {
+            log.debug("Unsetting the ConfigurationManager.");
+        }
     }
 }

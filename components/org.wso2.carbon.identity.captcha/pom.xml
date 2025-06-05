@@ -106,6 +106,10 @@
             <artifactId>org.wso2.carbon.identity.user.registration.engine</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
             <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
         </dependency>
@@ -197,6 +201,8 @@
                             org.wso2.carbon.identity.core.util;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.model;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.configuration.mgt.core.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.recovery.*;
                             version="${identity.governance.imp.pkg.version.range}",
