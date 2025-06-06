@@ -588,6 +588,7 @@ public class CaptchaUtil {
                 throw new RuntimeException(getValidationErrorMessage(CaptchaConstants.RE_CAPTCHA_SECRET_KEY));
             }
             CaptchaDataHolder.getInstance().setReCaptchaSecretKey(reCaptchaSecretKey);
+            CaptchaDataHolder.getInstance().setReCaptchaType(CaptchaConstants.RE_CAPTCHA);
         }
 
         String reCaptchaAPIUrl = properties.getProperty(CaptchaConstants.RE_CAPTCHA_API_URL);

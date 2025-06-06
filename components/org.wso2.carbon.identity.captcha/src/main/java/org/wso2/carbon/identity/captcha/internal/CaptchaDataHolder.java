@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,6 +19,10 @@
 package org.wso2.carbon.identity.captcha.internal;
 
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
+import org.wso2.carbon.identity.captcha.provider.mgt.provider.AbstractCaptchaProvider;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.CaptchaConfigService;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.CaptchaRuntimeService;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -27,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Captcha Data Holder.
@@ -78,6 +83,16 @@ public class CaptchaDataHolder {
     private boolean forcefullyEnabledRecaptchaForAllTenants;
 
     private List<String> reCaptchaBypassedApiEndpoints = new ArrayList<>();
+
+    private ConfigurationManager configurationManager;
+
+    private HashMap<String, AbstractCaptchaProvider> captchaProviders = new HashMap<>();;
+
+    private CaptchaRuntimeService captchaRuntimeService;
+
+    private CaptchaConfigService captchaConfigService;
+
+    private HashMap<Integer, Properties> tenantCaptchaConfigs = new HashMap<>();
 
     private CaptchaDataHolder() {
 
@@ -279,5 +294,47 @@ public class CaptchaDataHolder {
     public void setReCaptchaBypassedApiEndpoints(List<String> reCaptchaBypassedApiEndpoints) {
 
         this.reCaptchaBypassedApiEndpoints = reCaptchaBypassedApiEndpoints;
+    }
+
+    public ConfigurationManager getConfigurationManager() {
+
+        return configurationManager;
+    }
+
+    public void setConfigurationManager(ConfigurationManager configurationManager) {
+
+        this.configurationManager = configurationManager;
+    }
+
+    public AbstractCaptchaProvider getCaptchaProviderForCaptchaType(String captchaType) {
+        return captchaProviders.get(captchaType);
+    }
+
+    public void setCaptchaProviderForCaptchaType(String captchaType, AbstractCaptchaProvider captchaProvider) {
+        this.captchaProviders.put(captchaType, captchaProvider);
+    }
+
+    public CaptchaRuntimeService getCaptchaRuntimeService() {
+        return captchaRuntimeService;
+    }
+
+    public void setCaptchaRuntimeService(CaptchaRuntimeService captchaRuntimeService) {
+        this.captchaRuntimeService = captchaRuntimeService;
+    }
+
+    public CaptchaConfigService getCaptchaConfigService() {
+        return captchaConfigService;
+    }
+
+    public void setCaptchaConfigService(CaptchaConfigService captchaConfigService) {
+        this.captchaConfigService = captchaConfigService;
+    }
+
+    public void addCaptchaConfigsForTenant(int tenantId, Properties config) {
+        tenantCaptchaConfigs.put(tenantId, config);
+    }
+
+    public Properties getCaptchaConfigsForTenant(int tenantId) {
+        return tenantCaptchaConfigs.get(tenantId);
     }
 }
