@@ -17,6 +17,7 @@
 
 package org.wso2.carbon.identity.recovery.endpoint.impl;
 
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.InjectMocks;
 import org.mockito.MockedStatic;
@@ -29,6 +30,8 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaPropertiesDTO;
+import org.wso2.carbon.identity.recovery.endpoint.dto.ReCaptchaResponseTokenDTO;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -37,8 +40,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+
 import javax.ws.rs.core.Response;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 
 /**
@@ -106,6 +112,37 @@ public class CaptchaApiServiceImplTest{
         } else {
             assertEquals(reCaptchaPropertiesDTO.getReCaptchaAPI(), reCaptchaAPI);
         }
+    }
+
+    @DataProvider(name = "captchaResponseDataProvider")
+    public static Object[][] captchaResponseDataProvider() {
+
+        String reCaptchaEnterprise = CaptchaConstants.RE_CAPTCHA_TYPE_ENTERPRISE;
+
+        return new Object[][]{
+                {"", "{\"success\":\"true\"}"},
+                {reCaptchaEnterprise, "{ \"tokenProperties\": { \"valid\": \"true\" } }"}
+        };
+    }
+
+    @Test(description = "Test verify successful captcha response", dataProvider = "captchaResponseDataProvider")
+    void testVerifyCaptchaSuccessful(String reCaptchaType, String responseString) throws Exception {
+
+        ReCaptchaResponseTokenDTO reCaptchaResponse = new ReCaptchaResponseTokenDTO();
+        String captchaType = "ReCaptcha";
+
+        Properties sampleProperties = getSampleConfigFile();
+        sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_ENABLED, "true");
+        sampleProperties.setProperty(CaptchaConstants.RE_CAPTCHA_TYPE, reCaptchaType);
+
+        mockedRecoveryUtil.when(RecoveryUtil::getValidatedCaptchaConfigs).thenReturn(sampleProperties);
+        mockedRecoveryUtil.when(() -> RecoveryUtil.makeCaptchaVerificationHttpClient5Request(
+                reCaptchaResponse, sampleProperties)).thenReturn(JsonParser.parseString(responseString));
+
+        Response response = captchaApiService.verifyCaptcha(reCaptchaResponse, captchaType, "carbon.super");
+
+        assertNotNull(response);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
     public Properties getSampleConfigFile() throws IOException {

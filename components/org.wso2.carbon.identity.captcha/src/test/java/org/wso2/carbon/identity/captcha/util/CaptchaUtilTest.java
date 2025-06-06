@@ -17,8 +17,7 @@
 package org.wso2.carbon.identity.captcha.util;
 
 import com.google.gson.JsonObject;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
@@ -26,11 +25,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 
 import static org.testng.Assert.assertThrows;
 
@@ -67,7 +66,7 @@ public class CaptchaUtilTest {
     private Method getVerifyReCaptchaEnterpriseResponseMethod() throws NoSuchMethodException {
 
         Method method = CaptchaUtil.class.getDeclaredMethod("verifyReCaptchaEnterpriseResponse",
-                HttpEntity.class);
+                JsonObject.class);
         method.setAccessible(true);
         return method;
     }
@@ -75,7 +74,7 @@ public class CaptchaUtilTest {
     private Method getVerifyReCaptchaResponseMethod() throws NoSuchMethodException {
 
         Method method = CaptchaUtil.class.getDeclaredMethod("verifyReCaptchaResponse",
-                HttpEntity.class);
+                JsonObject.class);
         method.setAccessible(true);
         return method;
     }
@@ -102,7 +101,7 @@ public class CaptchaUtilTest {
 
     @Test (description = "This method is used to test the createReCaptchaEnterpriseVerificationHttpPost method")
     public void testCreateReCaptchaEnterpriseVerificationHttpPost() throws NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
+            InvocationTargetException, IllegalAccessException, URISyntaxException {
 
         CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_ENTERPRISE_API_URL);
         CaptchaDataHolder.getInstance().setReCaptchaAPIKey("dummyKey");
@@ -112,13 +111,13 @@ public class CaptchaUtilTest {
         Method method = getCreateReCaptchaEnterpriseVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
         String expectedURI = RECAPTCHA_ENTERPRISE_API_URL+ "/v1/projects/dummyProjectId/assessments?key=dummyKey";
-        Assert.assertEquals(httpPost.getURI().toString(), expectedURI);
+        Assert.assertEquals(httpPost.getUri().toString(), expectedURI);
 
     }
 
     @Test (description = "This method is used to test the createReCaptchaEnterpriseVerificationHttpPost method")
     public void testCreateReCaptchaVerificationHttpPost() throws NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
+            InvocationTargetException, IllegalAccessException, URISyntaxException {
 
         CaptchaDataHolder.getInstance().setReCaptchaVerifyUrl(RECAPTCHA_API_URL);
         CaptchaDataHolder.getInstance().setReCaptchaSecretKey("dummyKey");
@@ -127,7 +126,7 @@ public class CaptchaUtilTest {
 
         Method method = getCreateReCaptchaVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
-        Assert.assertEquals(httpPost.getURI().toString(), RECAPTCHA_API_URL);
+        Assert.assertEquals(httpPost.getUri().toString(), RECAPTCHA_API_URL);
     }
 
 
@@ -140,11 +139,8 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(true, 0.7);
         Method method = getVerifyReCaptchaEnterpriseResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(
-                verificationResponse.toString().getBytes()));
         // Verify no exception is thrown for high score.
-        method.invoke(null, httpEntity);
+        method.invoke(null, verificationResponse);
     }
 
     @Test (description = "This method is used to test the verifyReCaptchaEnterpriseResponse method, " +
@@ -155,11 +151,8 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(true, 0.4);
         Method method = getVerifyReCaptchaEnterpriseResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
-                getBytes()));
         // Verify an exception is thrown for low score.
-        assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
 
     @Test (description = "This method is used to test the verifyReCaptchaEnterpriseResponse method, " +
@@ -170,11 +163,9 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(false, 0.7);
         Method method = getVerifyReCaptchaEnterpriseResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.
-                toString().getBytes()));
+        JsonObject jsonObject = Mockito.mock(JsonObject.class);
         // Verify an exception is thrown for invalid response.
-        assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, jsonObject));
     }
 
     @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
@@ -186,11 +177,8 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaJsonObject(true, 0.7);
         Method method = getVerifyReCaptchaResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
-                getBytes()));
         // Verify no exception is thrown for high score.
-        method.invoke(null, httpEntity);
+        method.invoke(null, verificationResponse);
     }
 
     @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
@@ -201,11 +189,8 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaJsonObject(true, 0.4);
         Method method = getVerifyReCaptchaResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
-                getBytes()));
         // Verify no exception is thrown for low score.
-        assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
 
     @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
@@ -216,10 +201,7 @@ public class CaptchaUtilTest {
 
         JsonObject verificationResponse = getReCaptchaJsonObject(false, 0.7);
         Method method = getVerifyReCaptchaResponseMethod();
-        HttpEntity httpEntity = Mockito.mock(HttpEntity.class);
-        Mockito.when(httpEntity.getContent()).thenReturn(new ByteArrayInputStream(verificationResponse.toString().
-                getBytes()));
         // Verify no exception is thrown for invalid response.
-        assertThrows(InvocationTargetException.class, () -> method.invoke(null, httpEntity));
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
 }
