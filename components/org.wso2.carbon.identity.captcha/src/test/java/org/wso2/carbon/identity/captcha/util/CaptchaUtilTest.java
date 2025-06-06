@@ -16,16 +16,22 @@
 
 package org.wso2.carbon.identity.captcha.util;
 
+import com.google.gson.JsonObject;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
 
+import java.io.IOException;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+
+import static org.testng.Assert.assertThrows;
 
 /**
  * Unit tests for CaptchaUtil.java
@@ -57,6 +63,42 @@ public class CaptchaUtilTest {
         return method;
     }
 
+    private Method getVerifyReCaptchaEnterpriseResponseMethod() throws NoSuchMethodException {
+
+        Method method = CaptchaUtil.class.getDeclaredMethod("verifyReCaptchaEnterpriseResponse",
+                JsonObject.class);
+        method.setAccessible(true);
+        return method;
+    }
+
+    private Method getVerifyReCaptchaResponseMethod() throws NoSuchMethodException {
+
+        Method method = CaptchaUtil.class.getDeclaredMethod("verifyReCaptchaResponse",
+                JsonObject.class);
+        method.setAccessible(true);
+        return method;
+    }
+
+    private JsonObject getReCaptchaEnterpriseJsonObject(boolean valid, double score) {
+
+        JsonObject verificationResponse = new JsonObject();
+        JsonObject tokenProperties = new JsonObject();
+        tokenProperties.addProperty(CaptchaConstants.CAPTCHA_VALID, valid);
+        verificationResponse.add(CaptchaConstants.CAPTCHA_TOKEN_PROPERTIES, tokenProperties);
+        JsonObject riskAnalysis = new JsonObject();
+        riskAnalysis.addProperty(CaptchaConstants.CAPTCHA_SCORE, score);
+        verificationResponse.add(CaptchaConstants.CAPTCHA_RISK_ANALYSIS, riskAnalysis);
+        return verificationResponse;
+    }
+
+    private JsonObject getReCaptchaJsonObject(boolean valid, double score) {
+
+        JsonObject verificationResponse = new JsonObject();
+        verificationResponse.addProperty(CaptchaConstants.CAPTCHA_SUCCESS, valid);
+        verificationResponse.addProperty(CaptchaConstants.CAPTCHA_SCORE, score);
+        return verificationResponse;
+    }
+
     @Test (description = "This method is used to test the createReCaptchaEnterpriseVerificationHttpPost method")
     public void testCreateReCaptchaEnterpriseVerificationHttpPost() throws NoSuchMethodException,
             InvocationTargetException, IllegalAccessException, URISyntaxException {
@@ -85,5 +127,81 @@ public class CaptchaUtilTest {
         Method method = getCreateReCaptchaVerificationHttpPostMethod();
         HttpPost httpPost = (HttpPost) method.invoke(null, "reCaptchaEnterpriseResponse");
         Assert.assertEquals(httpPost.getUri().toString(), RECAPTCHA_API_URL);
+    }
+
+
+    @Test (description = "This method is used to test the verifyReCaptchaEnterpriseResponse method, " +
+            "with high captcha score")
+    public void testVerifyReCaptchaEnterpriseResponseWithHighScore() throws IOException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(true, 0.7);
+        Method method = getVerifyReCaptchaEnterpriseResponseMethod();
+        // Verify no exception is thrown for high score.
+        method.invoke(null, verificationResponse);
+    }
+
+    @Test (description = "This method is used to test the verifyReCaptchaEnterpriseResponse method, " +
+            "with low captcha score")
+    public void testVerifyReCaptchaEnterpriseResponseWithLowScore() throws IOException, NoSuchMethodException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(true, 0.4);
+        Method method = getVerifyReCaptchaEnterpriseResponseMethod();
+        // Verify an exception is thrown for low score.
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
+    }
+
+    @Test (description = "This method is used to test the verifyReCaptchaEnterpriseResponse method, " +
+                "with invalid response")
+    public void testVerifyReCaptchaEnterpriseResponseWithInvalidResponse() throws IOException, NoSuchMethodException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaEnterpriseJsonObject(false, 0.7);
+        Method method = getVerifyReCaptchaEnterpriseResponseMethod();
+        JsonObject jsonObject = Mockito.mock(JsonObject.class);
+        // Verify an exception is thrown for invalid response.
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, jsonObject));
+    }
+
+    @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
+            "with high captcha score")
+    public void testVerifyReCaptchaResponseWithHighScore() throws IOException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaJsonObject(true, 0.7);
+        Method method = getVerifyReCaptchaResponseMethod();
+        // Verify no exception is thrown for high score.
+        method.invoke(null, verificationResponse);
+    }
+
+    @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
+            "with low captcha score")
+    public void testVerifyReCaptchaResponseWithLowScore() throws IOException, NoSuchMethodException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaJsonObject(true, 0.4);
+        Method method = getVerifyReCaptchaResponseMethod();
+        // Verify no exception is thrown for low score.
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
+    }
+
+    @Test (description = "This method is used to test the verifyReCaptchaResponse method, " +
+            "with invalid response")
+    public void testVerifyReCaptchaResponseWithInvalidResponse() throws IOException, NoSuchMethodException {
+
+        CaptchaDataHolder.getInstance().setReCaptchaScoreThreshold(CaptchaConstants.CAPTCHA_V3_DEFAULT_THRESHOLD);
+
+        JsonObject verificationResponse = getReCaptchaJsonObject(false, 0.7);
+        Method method = getVerifyReCaptchaResponseMethod();
+        // Verify no exception is thrown for invalid response.
+        assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
 }
