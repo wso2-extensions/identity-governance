@@ -16,11 +16,11 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.util;
+package org.wso2.carbon.identity.captcha.provider.mgt.util;
 
-import org.wso2.carbon.identity.captcha.provider_mgt.provider.AbstractCaptchaProvider;
-import org.wso2.carbon.identity.captcha.provider_mgt.provider.GoogleRecaptchaEnterpriseProvider;
-import org.wso2.carbon.identity.captcha.provider_mgt.provider.GoogleRecaptchaProvider;
+import org.wso2.carbon.identity.captcha.provider.mgt.provider.GoogleRecaptchaProvider;
+import org.wso2.carbon.identity.captcha.provider.mgt.provider.AbstractCaptchaProvider;
+import org.wso2.carbon.identity.captcha.provider.mgt.provider.GoogleRecaptchaEnterpriseProvider;
 
 import java.util.HashMap;
 import java.util.Map;

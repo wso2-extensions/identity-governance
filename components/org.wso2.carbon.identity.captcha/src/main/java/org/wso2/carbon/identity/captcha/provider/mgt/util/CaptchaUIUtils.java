@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.util;
+package org.wso2.carbon.identity.captcha.provider.mgt.util;
 
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-public class CaptchaFEUtils {
+public class CaptchaUIUtils {
 
     /**
      * Checks whether CAPTCHA is enabled.

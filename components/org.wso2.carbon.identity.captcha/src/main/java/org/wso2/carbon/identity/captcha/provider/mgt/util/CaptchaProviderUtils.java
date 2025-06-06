@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.util;
+package org.wso2.carbon.identity.captcha.provider.mgt.util;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;

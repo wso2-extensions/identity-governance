@@ -32,9 +32,9 @@ import org.wso2.carbon.identity.captcha.connector.recaptcha.SMSOTPCaptchaConnect
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.UsernameRecoveryReCaptchaConnector;
-import org.wso2.carbon.identity.captcha.provider_mgt.service.CaptchaConfigService;
-import org.wso2.carbon.identity.captcha.provider_mgt.service.impl.CaptchaConfigServiceImpl;
-import org.wso2.carbon.identity.captcha.provider_mgt.service.impl.CaptchaRuntimeServiceImpl;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.CaptchaConfigService;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.impl.CaptchaConfigServiceImpl;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.impl.CaptchaRuntimeServiceImpl;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidationHandler;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.provider;
+package org.wso2.carbon.identity.captcha.provider.mgt.provider;
 
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 

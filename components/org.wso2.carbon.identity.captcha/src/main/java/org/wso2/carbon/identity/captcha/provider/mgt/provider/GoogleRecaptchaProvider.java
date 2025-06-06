@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.provider;
+package org.wso2.carbon.identity.captcha.provider.mgt.provider;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,7 +29,7 @@ import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.provider_mgt.util.CaptchaProviderConstants;
+import org.wso2.carbon.identity.captcha.provider.mgt.util.CaptchaProviderConstants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.captcha.provider_mgt.util.CaptchaProviderUtils.isValidCaptcha;
+import static org.wso2.carbon.identity.captcha.provider.mgt.util.CaptchaProviderUtils.isValidCaptcha;
 
 public class GoogleRecaptchaProvider implements AbstractCaptchaProvider {
 

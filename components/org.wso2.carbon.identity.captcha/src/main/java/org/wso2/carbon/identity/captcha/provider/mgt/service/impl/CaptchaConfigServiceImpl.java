@@ -16,14 +16,14 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.captcha.provider_mgt.service.impl;
+package org.wso2.carbon.identity.captcha.provider.mgt.service.impl;
 
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.captcha.exception.CaptchaServerException;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
-import org.wso2.carbon.identity.captcha.provider_mgt.provider.AbstractCaptchaProvider;
-import org.wso2.carbon.identity.captcha.provider_mgt.service.CaptchaConfigService;
-import org.wso2.carbon.identity.captcha.provider_mgt.util.CaptchaProviderConstants;
+import org.wso2.carbon.identity.captcha.provider.mgt.provider.AbstractCaptchaProvider;
+import org.wso2.carbon.identity.captcha.provider.mgt.service.CaptchaConfigService;
+import org.wso2.carbon.identity.captcha.provider.mgt.util.CaptchaProviderConstants;
 import org.wso2.carbon.identity.captcha.util.CaptchaConstants;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Attribute;
