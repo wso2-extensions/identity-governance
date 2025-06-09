@@ -99,11 +99,11 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.user.registration.mgt</artifactId>
+            <artifactId>org.wso2.carbon.identity.flow.mgt</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.user.registration.engine</artifactId>
+            <artifactId>org.wso2.carbon.identity.flow.execution.engine</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
@@ -212,9 +212,9 @@
                             org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.user.registration.engine.*;
+                            org.wso2.carbon.identity.flow.execution.engine.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.user.registration.mgt.*;
+                            org.wso2.carbon.identity.flow.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                     </instructions>

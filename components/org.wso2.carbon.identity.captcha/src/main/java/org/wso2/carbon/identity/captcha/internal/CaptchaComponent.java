@@ -20,8 +20,13 @@ package org.wso2.carbon.identity.captcha.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticationDataPublisher;
-import org.wso2.carbon.identity.captcha.listener.CaptchaFlowExecutionListener;
 import org.wso2.carbon.identity.captcha.connector.CaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.EmailOTPCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.GenericAuthenticatorReCaptchaConnector;
@@ -32,21 +37,16 @@ import org.wso2.carbon.identity.captcha.connector.recaptcha.SMSOTPCaptchaConnect
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SSOLoginReCaptchaConfig;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.SelfSignUpReCaptchaConnector;
 import org.wso2.carbon.identity.captcha.connector.recaptcha.UsernameRecoveryReCaptchaConnector;
+import org.wso2.carbon.identity.captcha.listener.CaptchaFlowExecutionListener;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidationHandler;
 import org.wso2.carbon.identity.captcha.validator.FailLoginAttemptValidator;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.flow.execution.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockService;
-import org.wso2.carbon.identity.user.registration.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(
         name = "org.wso2.carbon.identity.captcha.internal.CaptchaComponent",

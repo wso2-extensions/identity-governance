@@ -21,15 +21,14 @@ package org.wso2.carbon.identity.captcha.listener;
 import org.wso2.carbon.identity.captcha.exception.CaptchaClientException;
 import org.wso2.carbon.identity.captcha.exception.CaptchaException;
 import org.wso2.carbon.identity.captcha.util.CaptchaUtil;
-import org.wso2.carbon.identity.user.registration.engine.Constants.ErrorMessages;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineClientException;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineException;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineServerException;
-import org.wso2.carbon.identity.user.registration.engine.listener.AbstractFlowExecutionListener;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationContext;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationStep;
-import org.wso2.carbon.identity.user.registration.mgt.Constants;
-import org.wso2.carbon.identity.user.registration.mgt.model.ComponentDTO;
+import org.wso2.carbon.identity.flow.execution.engine.Constants;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineClientException;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineServerException;
+import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
+import org.wso2.carbon.identity.flow.mgt.model.ComponentDTO;
 
 import java.util.Map;
 
@@ -64,24 +63,24 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
     }
 
     @Override
-    public boolean doPreExecute(RegistrationContext registrationContext) throws RegistrationEngineException {
+    public boolean doPreExecute(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
 
-        if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
+        if (isReCaptchaDisabled(flowExecutionContext.getTenantDomain())) {
             return true;
         }
 
-        validateCaptcha(registrationContext);
+        validateCaptcha(flowExecutionContext);
         return true;
     }
 
     @Override
-    public boolean doPostExecute(RegistrationStep step, RegistrationContext registrationContext)
-            throws RegistrationEngineException {
+    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
+            throws FlowEngineException {
 
-        if (isReCaptchaDisabled(registrationContext.getTenantDomain())) {
+        if (isReCaptchaDisabled(flowExecutionContext.getTenantDomain())) {
             return true;
         }
-        addCaptchaKeys(step, registrationContext);
+        addCaptchaKeys(step, flowExecutionContext);
         return true;
     }
 
@@ -90,14 +89,15 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
         return !CaptchaUtil.isReCaptchaEnabledForFlow(CAPTCHA_GOVERNANCE_CONFIG_KEY, tenantDomain);
     }
 
-    private void addCaptchaKeys(RegistrationStep step, RegistrationContext context) {
+    private void addCaptchaKeys(FlowExecutionStep step, FlowExecutionContext context) {
 
         if (step.getData().getComponents() == null) {
             return;
         }
 
         for (ComponentDTO componentDTO : step.getData().getComponents()) {
-            if (componentDTO.getType().equals(Constants.ComponentTypes.CAPTCHA)) {
+            if (componentDTO.getType()
+                    .equals(org.wso2.carbon.identity.flow.mgt.Constants.ComponentTypes.CAPTCHA)) {
                 /*  Currently, we are only supporting reCaptcha. When generic captcha support is added,
                 this needs to be updated. */
                 componentDTO.addConfig(CAPTCHA_KEY, CaptchaUtil.reCaptchaSiteKey());
@@ -116,47 +116,48 @@ public class CaptchaFlowExecutionListener extends AbstractFlowExecutionListener 
         }
     }
 
-    private void validateCaptcha(RegistrationContext registrationContext) throws RegistrationEngineException {
+    private void validateCaptcha(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
 
-        Map<String, Object> properties = registrationContext.getProperties();
-        Map<String, String> userInputData = registrationContext.getUserInputData();
+        Map<String, Object> properties = flowExecutionContext.getProperties();
+        Map<String, String> userInputData = flowExecutionContext.getUserInputData();
 
         // Check if captcha is enabled for the current step.
         if (!Boolean.TRUE.equals(properties.get(CAPTCHA_ENABLED))) {
             return;
         }
 
-        registrationContext.setProperty(CAPTCHA_ENABLED, false);
+        flowExecutionContext.setProperty(CAPTCHA_ENABLED, false);
         String captchaResponse = userInputData.get(CAPTCHA_RESPONSE);
-        String flowId = registrationContext.getContextIdentifier();
+        String flowId = flowExecutionContext.getContextIdentifier();
         if (captchaResponse == null || captchaResponse.isEmpty()) {
-            throw getRegistrationEngineClientException(flowId);
+            throw getFlowEngineClientException(flowId, flowExecutionContext.getFlowType());
         }
 
         try {
             if (!CaptchaUtil.isValidCaptcha(captchaResponse)) {
-                throw getRegistrationEngineClientException(flowId);
+                throw getFlowEngineClientException(flowId, flowExecutionContext.getFlowType());
             }
         } catch (CaptchaClientException e) {
-            throw getRegistrationEngineClientException(flowId);
+            throw getFlowEngineClientException(flowId, flowExecutionContext.getFlowType());
         } catch (CaptchaException e) {
-            throw getRegistrationEngineServerException(flowId);
+            throw getFlowEngineServerException(flowId, flowExecutionContext.getFlowType());
         }
     }
 
-    private static RegistrationEngineServerException getRegistrationEngineServerException(String flowId) {
+    private static FlowEngineServerException getFlowEngineServerException(String flowId, String flowType) {
 
-        return new RegistrationEngineServerException(
-                ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getCode(),
-                ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getMessage(),
-                String.format(ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getDescription(), flowId)
+        return new FlowEngineServerException(
+                Constants.ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getCode(),
+                Constants.ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getMessage(),
+                String.format(Constants.ErrorMessages.ERROR_CODE_CAPTCHA_VERIFICATION_FAILURE.getDescription(),
+                        flowType, flowId)
         );
     }
 
-    private static RegistrationEngineClientException getRegistrationEngineClientException(String flowId) {
+    private static FlowEngineClientException getFlowEngineClientException(String flowId, String flowType) {
 
-        return new RegistrationEngineClientException(ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getCode(),
-                ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getMessage(),
-                String.format(ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getDescription(), flowId));
+        return new FlowEngineClientException(Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getCode(),
+                Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getMessage(),
+                String.format(Constants.ErrorMessages.ERROR_CODE_INVALID_CAPTCHA.getDescription(), flowType, flowId));
     }
 }

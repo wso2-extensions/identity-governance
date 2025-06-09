@@ -37,6 +37,12 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.model.DataDTO;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -45,12 +51,6 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineException;
-import org.wso2.carbon.identity.user.registration.engine.model.RegisteringUser;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationContext;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationStep;
-import org.wso2.carbon.identity.user.registration.mgt.Constants;
-import org.wso2.carbon.identity.user.registration.mgt.model.DataDTO;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -75,9 +75,9 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertTrue;
 import static org.testng.AssertJUnit.assertEquals;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
-import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION;
 
 /**
  * Unit tests for {@link SelfRegistrationCompletionListener}.
@@ -93,8 +93,8 @@ public class SelfRegistrationCompletionListenerTest {
     private MockedStatic<LoggerUtils> loggerUtilsMockedStatic;
     private ByteArrayOutputStream logOutput;
     private ArgumentCaptor<DiagnosticLog.DiagnosticLogBuilder> builderCaptor;
-    private RegistrationContext context;
-    private RegistrationStep step;
+    private FlowExecutionContext context;
+    private FlowExecutionStep step;
     private static final String notificationChannel = "EMAIL";
 
     @Mock
@@ -216,9 +216,9 @@ public class SelfRegistrationCompletionListenerTest {
     }
 
     @Test
-    public void testDoPostExecuteNotComplete() throws RegistrationEngineException {
+    public void testDoPostExecuteNotComplete() throws FlowEngineException {
 
-        RegistrationStep step = new RegistrationStep.Builder()
+        FlowExecutionStep step = new FlowExecutionStep.Builder()
                 .stepType(Constants.StepTypes.VIEW)
                 .flowId("flowId")
                 .flowStatus("NOT_COMPLETE")
@@ -230,12 +230,12 @@ public class SelfRegistrationCompletionListenerTest {
     }
 
     @Test
-    public void testDoPostExecuteWithVerifiedChannel() throws RegistrationEngineException, IdentityEventException {
+    public void testDoPostExecuteWithVerifiedChannel() throws FlowEngineException, IdentityEventException {
 
         // Simulate a verified notification channel.
         Map<String, String> claims = new HashMap<>();
         claims.put("http://wso2.org/claims/identity/emailVerified", "true");  // Channel is verified
-        context.getRegisteringUser().addClaims(claims);
+        context.getFlowUser().addClaims(claims);
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
 
@@ -245,15 +245,15 @@ public class SelfRegistrationCompletionListenerTest {
         verify(identityEventService, times(0)).handleEvent(any(Event.class));
         // No diagnostic logs for notifications should be triggered
         loggerUtilsMockedStatic.verify(() ->
-                                               LoggerUtils.triggerDiagnosticLogEvent(
-                                                       any(DiagnosticLog.DiagnosticLogBuilder.class)),
-                                       times(0));
+                        LoggerUtils.triggerDiagnosticLogEvent(
+                                any(DiagnosticLog.DiagnosticLogBuilder.class)),
+                times(0));
         assertTrue(logOutput.toString().contains(
                 "Preferred Notification channel: " + notificationChannel + " is verified for the user"));
 
         // Reset the claims to simulate the unverified status.
         claims.put("http://wso2.org/claims/identity/emailVerified", "false");
-        context.getRegisteringUser().addClaims(claims);
+        context.getFlowUser().addClaims(claims);
     }
 
     @Test(dataProvider = "setApplicationInContext")
@@ -280,19 +280,19 @@ public class SelfRegistrationCompletionListenerTest {
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(eq(SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE), anyString()))
                 .thenReturn("true");
         utilsMockedStatic.when(() -> Utils.getSignUpConfigs(eq(SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
-                                                            anyString()))
+                        anyString()))
                 .thenReturn("true");
         utilsMockedStatic.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn("secret-key-123");
 
         selfRegistrationUtilsMockedStatic.when(() ->
-                                                       SelfRegistrationUtils.getUserStoreManager(anyString(),
-                                                                                                 anyString()))
+                        SelfRegistrationUtils.getUserStoreManager(anyString(),
+                                anyString()))
                 .thenReturn(userStoreManager);
 
         selfRegistrationUtilsMockedStatic.when(() ->
-                                                       SelfRegistrationUtils.resolveEventName(anyString(), anyString(),
-                                                                                              anyString(), anyString()))
+                        SelfRegistrationUtils.resolveEventName(anyString(), anyString(),
+                                anyString(), anyString()))
                 .thenReturn("TRIGGER_NOTIFICATION");
         doNothing().when(SelfRegistrationUtils.class);
         SelfRegistrationUtils.triggerNotification(any(User.class), anyString(), anyString(), any(), anyString());
@@ -300,7 +300,7 @@ public class SelfRegistrationCompletionListenerTest {
         when(applicationManagementService.getApplicationBasicInfoByName(eq("My Account"), anyString())).thenReturn(
                 myAccount);
         when(applicationManagementService.getApplicationBasicInfoByResourceId(eq("app-uuid-001"),
-                                                                              anyString())).thenReturn(
+                anyString())).thenReturn(
                 testApp);
 
         doNothing().when(jdbcRecoveryDataStore).invalidate(any(User.class));
@@ -310,22 +310,22 @@ public class SelfRegistrationCompletionListenerTest {
 
         assertTrue(result);
         selfRegistrationUtilsMockedStatic.verify(() ->
-                                                         SelfRegistrationUtils.lockUserAccount(eq(true), eq(true),
-                                                                                               eq("tenant.com"),
-                                                                                               any(UserStoreManager.class),
-                                                                                               eq("testUser")),
-                                                 times(1));
+                        SelfRegistrationUtils.lockUserAccount(eq(true), eq(true),
+                                eq("tenant.com"),
+                                any(UserStoreManager.class),
+                                eq("testUser")),
+                times(1));
 
         selfRegistrationUtilsMockedStatic.verify(() ->
-                                                         SelfRegistrationUtils.triggerNotification(any(User.class),
-                                                                                                   eq("EMAIL"),
-                                                                                                   eq("secret-key-123"),
-                                                                                                   any(),
-                                                                                                   eq("TRIGGER_NOTIFICATION")),
-                                                 times(1));
+                        SelfRegistrationUtils.triggerNotification(any(User.class),
+                                eq("EMAIL"),
+                                eq("secret-key-123"),
+                                any(),
+                                eq("TRIGGER_NOTIFICATION")),
+                times(1));
         loggerUtilsMockedStatic.verify(() ->
-                                               LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
-                                       times(1));
+                        LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
+                times(1));
 
         DiagnosticLog.DiagnosticLogBuilder capturedBuilder = builderCaptor.getValue();
         DiagnosticLog log = capturedBuilder.build();
@@ -346,28 +346,28 @@ public class SelfRegistrationCompletionListenerTest {
                 .thenReturn("false");
 
         selfRegistrationUtilsMockedStatic.when(() ->
-                                                       SelfRegistrationUtils.getUserStoreManager(anyString(),
-                                                                                                 anyString()))
+                        SelfRegistrationUtils.getUserStoreManager(anyString(),
+                                anyString()))
                 .thenReturn(userStoreManager);
 
         doNothing().when(SelfRegistrationUtils.class);
         SelfRegistrationUtils.lockUserAccount(anyBoolean(), anyBoolean(), anyString(), any(UserStoreManager.class),
-                                              anyString());
+                anyString());
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
 
         assertTrue(result);
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.lockUserAccount(eq(true), eq(true),
-                                                                                             eq("tenant.com"),
-                                                                                             any(UserStoreManager.class),
-                                                                                             eq("testUser")),
-                                                 times(1));
+                        eq("tenant.com"),
+                        any(UserStoreManager.class),
+                        eq("testUser")),
+                times(1));
 
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(any(User.class),
-                                                                                                 anyString(),
-                                                                                                 anyString(), any(),
-                                                                                                 anyString()),
-                                                 times(0));
+                        anyString(),
+                        anyString(), any(),
+                        anyString()),
+                times(0));
     }
 
     @Test
@@ -391,10 +391,10 @@ public class SelfRegistrationCompletionListenerTest {
         assertTrue(result);
         selfRegistrationUtilsMockedStatic.verify(
                 () -> SelfRegistrationUtils.triggerAccountCreationNotification(eq("testUser"), eq("tenant.com"),
-                                                                               anyString()),
+                        anyString()),
                 times(1));
         loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
-                                       times(1));
+                times(1));
 
         DiagnosticLog.DiagnosticLogBuilder capturedBuilder = builderCaptor.getValue();
         DiagnosticLog log = capturedBuilder.build();
@@ -420,8 +420,8 @@ public class SelfRegistrationCompletionListenerTest {
         assertTrue(result);
 
         loggerUtilsMockedStatic.verify(() ->
-                                               LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
-                                       times(1));
+                        LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()),
+                times(1));
 
         DiagnosticLog.DiagnosticLogBuilder capturedBuilder = builderCaptor.getValue();
         DiagnosticLog log = capturedBuilder.build();
@@ -448,12 +448,12 @@ public class SelfRegistrationCompletionListenerTest {
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.maskIfRequired(anyString()))
                 .thenReturn("masked_username");
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.resolveEventName(anyString(), anyString(),
-                                                                                            anyString(), anyString()))
+                        anyString(), anyString()))
                 .thenReturn("TRIGGER_NOTIFICATION");
         selfRegistrationUtilsMockedStatic.when(() -> SelfRegistrationUtils.triggerNotification(any(User.class),
-                                                                                               anyString(),
-                                                                                               anyString(), any(),
-                                                                                               anyString()))
+                        anyString(),
+                        anyString(), any(),
+                        anyString()))
                 .thenThrow(new IdentityEventException("Handled channel error."));
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
@@ -478,19 +478,19 @@ public class SelfRegistrationCompletionListenerTest {
         utilsMockedStatic.when(() -> Utils.getConnectorConfig(eq(SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE), anyString()))
                 .thenReturn("true");
         utilsMockedStatic.when(() -> Utils.getSignUpConfigs(eq(SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION),
-                                                            anyString()))
+                        anyString()))
                 .thenReturn("true");
         utilsMockedStatic.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn("secret-key-123");
 
         selfRegistrationUtilsMockedStatic.when(() ->
-                                                       SelfRegistrationUtils.getUserStoreManager(anyString(),
-                                                                                                 anyString()))
+                        SelfRegistrationUtils.getUserStoreManager(anyString(),
+                                anyString()))
                 .thenReturn(userStoreManager);
 
         selfRegistrationUtilsMockedStatic.when(() ->
-                                                       SelfRegistrationUtils.resolveEventName(anyString(), anyString(),
-                                                                                              anyString(), anyString()))
+                        SelfRegistrationUtils.resolveEventName(anyString(), anyString(),
+                                anyString(), anyString()))
                 .thenReturn("TRIGGER_NOTIFICATION");
         doNothing().when(SelfRegistrationUtils.class);
         SelfRegistrationUtils.triggerNotification(any(User.class), anyString(), anyString(), any(), anyString());
@@ -507,11 +507,11 @@ public class SelfRegistrationCompletionListenerTest {
         assertTrue(result);
 
         selfRegistrationUtilsMockedStatic.verify(() -> SelfRegistrationUtils.triggerNotification(any(User.class),
-                                                                                                 eq("EMAIL"),
-                                                                                                 eq("secret-key-123"),
-                                                                                                 any(),
-                                                                                                 eq("TRIGGER_NOTIFICATION")),
-                                                 times(0));
+                        eq("EMAIL"),
+                        eq("secret-key-123"),
+                        any(),
+                        eq("TRIGGER_NOTIFICATION")),
+                times(0));
         loggerUtilsMockedStatic.verify(() -> LoggerUtils.triggerDiagnosticLogEvent(builderCaptor.capture()), times(2));
 
         List<DiagnosticLog.DiagnosticLogBuilder> capturedBuilders = builderCaptor.getAllValues();
@@ -529,25 +529,25 @@ public class SelfRegistrationCompletionListenerTest {
     }
 
 
-    private RegistrationContext getRegistrationContext() {
+    private FlowExecutionContext getRegistrationContext() {
 
-        RegistrationContext context = new RegistrationContext();
+        FlowExecutionContext context = new FlowExecutionContext();
         context.setTenantDomain("tenant.com");
         context.setContextIdentifier("contextId");
 
-        RegisteringUser user = new RegisteringUser();
+        FlowUser user = new FlowUser();
         user.setUsername("testUser");
         Map<String, String> claims = new HashMap<>();
         claims.put("http://wso2.org/claims/emailaddress", "test@example.com");
         claims.put("http://wso2.org/claims/identity/emailVerified", "false");
         user.addClaims(claims);
-        context.setRegisteringUser(user);
+        context.setFlowUser(user);
         return context;
     }
 
-    private RegistrationStep getRegistrationStep() {
+    private FlowExecutionStep getRegistrationStep() {
 
-        return new RegistrationStep.Builder()
+        return new FlowExecutionStep.Builder()
                 .stepType(Constants.StepTypes.VIEW)
                 .flowId("flowId")
                 .flowStatus(Constants.COMPLETE)
