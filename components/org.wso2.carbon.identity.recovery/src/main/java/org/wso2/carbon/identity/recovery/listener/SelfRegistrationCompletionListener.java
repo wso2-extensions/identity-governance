@@ -28,6 +28,12 @@ import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
+import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
+import org.wso2.carbon.identity.flow.mgt.Constants;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannelManager;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
@@ -40,12 +46,6 @@ import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.identity.user.registration.engine.exception.RegistrationEngineException;
-import org.wso2.carbon.identity.user.registration.engine.listener.AbstractFlowExecutionListener;
-import org.wso2.carbon.identity.user.registration.engine.model.RegisteringUser;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationContext;
-import org.wso2.carbon.identity.user.registration.engine.model.RegistrationStep;
-import org.wso2.carbon.identity.user.registration.mgt.Constants;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -56,6 +56,7 @@ import java.util.Map;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SIGN_UP_NOTIFICATION_INTERNALLY_MANAGE;
@@ -69,7 +70,6 @@ import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.maskI
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.resolveEventName;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerAccountCreationNotification;
 import static org.wso2.carbon.identity.recovery.util.SelfRegistrationUtils.triggerNotification;
-import static org.wso2.carbon.identity.user.registration.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.user.core.UserCoreConstants.APPLICATION_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.INTERNAL_DOMAIN;
 import static org.wso2.carbon.user.core.UserCoreConstants.WORKFLOW_DOMAIN;
@@ -108,13 +108,13 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     }
 
     @Override
-    public boolean doPostExecute(RegistrationStep step, RegistrationContext registrationContext)
-            throws RegistrationEngineException {
+    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionEngine)
+            throws FlowEngineException {
 
         if (Constants.COMPLETE.equals(step.getFlowStatus())) {
 
-            RegisteringUser user = registrationContext.getRegisteringUser();
-            String tenantDomain = registrationContext.getTenantDomain();
+            FlowUser user = flowExecutionEngine.getFlowUser();
+            String tenantDomain = flowExecutionEngine.getTenantDomain();
             String userStoreDomain = resolveUserStoreDomain(user.getUsername());
             Map<String, Object> loggerInputs = new HashMap<>();
 
@@ -144,10 +144,10 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                     try {
                         UserStoreManager userStoreManager = getUserStoreManager(tenantDomain, userStoreDomain);
                         lockUserAccount(isAccountLockOnCreation, isEnableConfirmationOnCreation, tenantDomain,
-                                        userStoreManager, user.getUsername());
+                                userStoreManager, user.getUsername());
                     } catch (UserStoreException | IdentityEventException e) {
                         LOG.error("Error while locking the user account from the registration completion listener " +
-                                          "in the flow: " + registrationContext.getContextIdentifier(), e);
+                                "in the flow: " + flowExecutionEngine.getContextIdentifier(), e);
                     }
                 }
 
@@ -156,10 +156,10 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
 
                 boolean isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
                         (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                         tenantDomain));
+                                tenantDomain));
 
                 // Start building the input map for the diagnostic logs.
-                loggerInputs.put(FLOW_ID, registrationContext.getContextIdentifier());
+                loggerInputs.put(FLOW_ID, flowExecutionEngine.getContextIdentifier());
                 loggerInputs.put(USER_NAME, maskIfRequired(user.getUsername()));
                 loggerInputs.put(NOTIFICATION_CHANNEL, preferredChannel);
 
@@ -170,7 +170,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                         && isNotifyingClaimAvailable(channel.getClaimUri(), user.getClaims(), loggerInputs)) {
                     triggerAccountCreationNotification(user.getUsername(), tenantDomain, userStoreDomain);
                     logDiagnostic("Account creation notification sent successfully.", SUCCESS,
-                                  TRIGGER_NOTIFICATION, loggerInputs);
+                            TRIGGER_NOTIFICATION, loggerInputs);
                 }
 
                 // If notifications are externally managed, do not send notifications.
@@ -182,33 +182,33 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
 
                     // Create a secret key based on the preferred notification channel.
                     String secretKey = Utils.generateSecretKey(preferredChannel, SELF_SIGN_UP.name(),
-                                                               tenantDomain, "SelfRegistration");
+                            tenantDomain, "SelfRegistration");
 
                     String eventName = resolveEventName(preferredChannel, applicationUser.getUserName(),
-                                                        userStoreDomain, tenantDomain);
+                            userStoreDomain, tenantDomain);
 
                     UserRecoveryData recoveryDataDO = new UserRecoveryData(applicationUser, secretKey, SELF_SIGN_UP,
-                                                                           CONFIRM_SIGN_UP);
+                            CONFIRM_SIGN_UP);
 
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    Property[] properties = resolveNotificationProperties(step, registrationContext);
+                    Property[] properties = resolveNotificationProperties(step, flowExecutionEngine);
                     triggerNotification(applicationUser, preferredChannel, secretKey, properties, eventName);
                     logDiagnostic("Account verification notification sent successfully.", SUCCESS,
-                                  TRIGGER_NOTIFICATION, loggerInputs);
+                            TRIGGER_NOTIFICATION, loggerInputs);
                 }
             } catch (IdentityEventException | IdentityRecoveryException | IdentityApplicationManagementException e) {
                 LOG.error("Error while sending verification notification from the registration completion listener in" +
-                                  " the flow: " + registrationContext.getContextIdentifier(), e);
+                        " the flow: " + flowExecutionEngine.getContextIdentifier(), e);
                 logDiagnostic("Error while triggering verification notification.", FAILED,
-                              TRIGGER_NOTIFICATION, loggerInputs);
+                        TRIGGER_NOTIFICATION, loggerInputs);
             }
         }
         return true;
     }
 
-    private User getApplicationUser(RegisteringUser user, String tenantDomain, String userStoreDomain) {
+    private User getApplicationUser(FlowUser user, String tenantDomain, String userStoreDomain) {
 
         User appUser = new User();
         appUser.setUserName(user.getUsername());
@@ -224,7 +224,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
         String preferredChannel = null;
         try {
             preferredChannel = notificationChannelManager.resolveCommunicationChannel(userName, tenantDomain,
-                                                                                      domainName);
+                    domainName);
         } catch (NotificationChannelManagerException e) {
             handledNotificationChannelManagerException(e, userName, domainName, tenantDomain);
         }
@@ -243,7 +243,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
         boolean isAvailable = userClaims.containsKey(claimUri);
         if (!isAvailable) {
             logDiagnostic("Cannot trigger notification since user claim is not available.", FAILED,
-                          TRIGGER_NOTIFICATION, loggerInputs);
+                    TRIGGER_NOTIFICATION, loggerInputs);
         }
         return userClaims.containsKey(claimUri);
     }
@@ -265,7 +265,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                 IdentityUtil.getPrimaryDomainName().toUpperCase(ENGLISH);
     }
 
-    private Property[] resolveNotificationProperties(RegistrationStep step, RegistrationContext context)
+    private Property[] resolveNotificationProperties(FlowExecutionStep step, FlowExecutionContext context)
             throws IdentityApplicationManagementException {
 
         String tenantDomain = context.getTenantDomain();
@@ -295,7 +295,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
 
         properties[0] = new Property("spId", applicationId);
         properties[1] = new Property("sp", applicationName);
-        properties[2] = new Property("callback", step.getData().getUrl());
+        properties[2] = new Property("callback", step.getData().getRedirectURL());
         return properties;
     }
 
