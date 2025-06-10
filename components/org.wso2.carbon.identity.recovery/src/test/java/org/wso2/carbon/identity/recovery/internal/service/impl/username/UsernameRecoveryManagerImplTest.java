@@ -190,19 +190,33 @@ public class UsernameRecoveryManagerImplTest {
      *
      * @throws IdentityRecoveryException if an error occurs during invalidation.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testInvalidateRecoveryCode() throws IdentityRecoveryException {
+    @Test
+    public void testInvalidateRecoveryCode_whenValidRecoveryCodeProvided_shouldTriggerNotificationAndReturnUsernameRecoverDTO()
+            throws IdentityRecoveryException {
 
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
-        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance)
+                .thenReturn(mockUserRecoveryDataStore);
         mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
                 .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
+        when(mockUserRecoveryData.getRecoveryFlowId()).thenReturn(null);
+        when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("EMAIL");
+        User mockUser = new User();
+        mockUser.setUserName("testuser");
+        mockUser.setTenantDomain(TENANT_DOMAIN);
+        when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
-        usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
+        when(Utils.resolveEventName(anyString())).thenReturn("TRIGGER_EMAIL_NOTIFICATION_LOCAL");
+        mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)
+                .thenReturn(identityRecoveryServiceDataHolder);
+        when(identityRecoveryServiceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
+        UsernameRecoverDTO result = usernameRecoveryManager.notify(recoveryCode, "1", TENANT_DOMAIN, properties);
+        assertEquals(result.getNotificationChannel(), "EMAIL");
+        assertEquals(result.getCode(), "UNR-02001");
     }
 
     /**
@@ -210,19 +224,30 @@ public class UsernameRecoveryManagerImplTest {
      *
      * @throws IdentityRecoveryException if an error occurs during invalidation.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testInvalidateRecoveryCodeWithException() throws IdentityRecoveryException {
+    @Test(expectedExceptions = IdentityRecoveryClientException.class)
+    public void testNotify_withInvalidChannelId_shouldThrowIdentityRecoveryClientException()
+            throws IdentityRecoveryException {
 
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", FALSE);
-        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance)
+                .thenReturn(mockUserRecoveryDataStore);
         mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
                 .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
                 .thenReturn(mockUserRecoveryData);
         when(mockUserRecoveryData.getRecoveryFlowId()).thenReturn("FlowID");
+        when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("1,3");
+        User mockUser = new User();
+        mockUser.setUserName("testuser");
+        mockUser.setTenantDomain(TENANT_DOMAIN);
+        when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
+        when(Utils.handleClientException(
+                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID, null))
+                .thenReturn(new IdentityRecoveryClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CHANNEL_ID.getCode()));
         usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
     }
 
@@ -345,16 +370,26 @@ public class UsernameRecoveryManagerImplTest {
      *
      * @throws IdentityRecoveryException if an error occurs during retrieval.
      */
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testCallbackURLDecoding() throws IdentityRecoveryException {
+    @Test
+    public void testNotify_withEncodedCallbackURL_shouldDecodeAndTriggerNotification() throws IdentityRecoveryException {
 
         mockIdentityEventService();
-        String callbackURL = "http://localhost:8080";
+        String callbackURL = "https://example.com/callback?param=value";
         String recoveryCode = UUID.randomUUID().toString();
         Map<String, String> properties = new HashMap<>();
         properties.put("useLegacyAPI", TRUE);
+        properties.put("callback", callbackURL);
         properties.put(IdentityRecoveryConstants.CALLBACK, callbackURL);
-        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockUserRecoveryDataStore);
+        User mockUser = new User();
+        mockUser.setUserName("testuser");
+        mockUser.setTenantDomain(TENANT_DOMAIN);
+        when(mockUserRecoveryData.getUser()).thenReturn(mockUser);
+        mockedUtils.when(() -> Utils.validateCallbackURL(anyString(), anyString(), anyString()))
+                .thenReturn(true);
+        mockURLDecoder.when(() -> URLDecoder.decode(anyString(), anyString()))
+                .thenReturn(callbackURL);
+        mockedJDBCRecoveryDataStore.when(JDBCRecoveryDataStore::getInstance)
+                .thenReturn(mockUserRecoveryDataStore);
         mockedRecoveryManagerStatic.when(UserAccountRecoveryManager::getInstance)
                 .thenReturn(mockUserAccountRecoveryManager);
         when(mockUserAccountRecoveryManager.getUserRecoveryData(recoveryCode, RecoverySteps.SEND_RECOVERY_INFORMATION))
@@ -362,9 +397,9 @@ public class UsernameRecoveryManagerImplTest {
         when(mockUserRecoveryData.getRemainingSetIds()).thenReturn("SMS,SMS");
         when(Utils.getRecoveryConfigs(anyString(), anyString())).thenReturn(TRUE);
         when(Utils.resolveEventName(anyString())).thenReturn("TRIGGER_SMS_NOTIFICATION_LOCAL");
-        mockURLDecoder.when(() -> URLDecoder.decode(anyString(), anyString()))
-                .thenThrow(new UnsupportedEncodingException());
-        usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
+        UsernameRecoverDTO result = usernameRecoveryManager.notify(recoveryCode, "2", TENANT_DOMAIN, properties);
+        assertEquals(result.getNotificationChannel(), "SMS");
+        assertEquals(result.getCode(), "UNR-02001");
     }
 
     /**
