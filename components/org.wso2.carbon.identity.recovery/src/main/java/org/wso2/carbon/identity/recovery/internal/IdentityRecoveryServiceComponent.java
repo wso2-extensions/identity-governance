@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.identity.flow.execution.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
@@ -53,6 +54,8 @@ import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
+import org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutor;
+import org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutor;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
@@ -137,6 +140,10 @@ public class IdentityRecoveryServiceComponent {
 
             bundleContext.registerService(FlowExecutionListener.class, new SelfRegistrationCompletionListener(),
                                                        null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new ConfirmationCodeValidationExecutor(), null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new PasswordProvisioningExecutor(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
