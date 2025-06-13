@@ -39,10 +39,12 @@ import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -253,7 +255,42 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             config.setProperties(configProperties.toArray(new Property[0]));
             configs.add(i, config);
         }
-        return configs;
+
+        try {
+            if (OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                return getMaskedConnectorList(configs);
+            }
+
+            return configs;
+        } catch (OrganizationManagementException e) {
+            String errorMsg = String.format("Error while checking if tenant %s is an organization", tenantDomain);
+            throw new IdentityGovernanceException(errorMsg, e);
+        }
+    }
+
+    private List<ConnectorConfig> getMaskedConnectorList(List<ConnectorConfig> connectorList) {
+
+        for (ConnectorConfig config : connectorList) {
+            Optional<IdentityMgtConstants.INHERITED_MASKED_CONNECTORS> matchingMaskedConnector =
+                    IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.findByName(config.getName());
+            if (matchingMaskedConnector.isPresent()) {
+                List<String> maskableProperties = matchingMaskedConnector.get().getMaskableProperties();
+                Property[] maskedProperties = Arrays.stream(config.getProperties()).map(
+                        property -> {
+                            if (maskableProperties.contains(property.getName())) {
+                                Property maskedProperty = new Property();
+                                maskedProperty.setName(property.getName());
+                                maskedProperty.setValue(property.getValue().replaceAll(".", "*"));
+                                maskedProperty.setDisplayName(property.getDisplayName());
+                                maskedProperty.setDescription(property.getDescription());
+                                return maskedProperty;
+                            }
+                            return property;
+                        }).toArray(Property[]::new);
+                config.setProperties(maskedProperties);
+            }
+        }
+        return connectorList;
     }
 
     public Map<String, List<ConnectorConfig>> getCategorizedConnectorListWithConfigs(String tenantDomain)
