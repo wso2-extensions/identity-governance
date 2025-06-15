@@ -372,6 +372,10 @@ public class IdentityRecoveryConstants {
         ERROR_CODE_INVALID_REGISTRATION_OPTION("USR-10007", "Invalid registration option."),
         ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS("USR-10008", "Multiple registration options are not supported."),
         ERROR_CODE_INVALID_DOMAIN("USR-10009", "The email domain does not match the organization's email domain."),
+        ERROR_CODE_INCOMPATIBLE_VALUE_FOR_USER_ATTRIBUTE("USR-10010", "The given values for the user attributes " +
+                "doesn't match with allowed data types."),
+        ERROR_CODE_NOT_ALLOWED_VALUE_FOR_USER_ATTRIBUTE("USR-10011", "The given values for the user attributes " +
+                "doesn't allowed."),
 
         // USR - User Self Registration - server exceptions.
         ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES("USR-15001", "Unexpected error while validating user " +

@@ -92,6 +92,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.Permission;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.UserStoreClientException;
 import org.wso2.carbon.user.core.UserStoreConfigConstants;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -378,6 +379,13 @@ public class UserSelfRegistrationManager {
                     ERROR_CODE_DOMAIN_VIOLATED, user.getUserStoreDomain(), e);
         }
 
+        if (e instanceof UserStoreClientException) {
+            IdentityRecoveryConstants.ErrorMessages error = getErrorMessages((UserStoreClientException) e);
+            if (error != null) {
+                throw Utils.handleClientException(error, StringUtils.EMPTY, e);
+            }
+        }
+
         if (e instanceof org.wso2.carbon.user.core.UserStoreException) {
             String errorCode = ((org.wso2.carbon.user.core.UserStoreException) e).getErrorCode();
             if (ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION.getCode().equals(errorCode)) {
@@ -387,6 +395,18 @@ public class UserSelfRegistrationManager {
         }
         throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.
                 ERROR_CODE_ADD_SELF_USER, user.getUserName(), e);
+    }
+
+    private static IdentityRecoveryConstants.ErrorMessages getErrorMessages(UserStoreClientException e) {
+
+        String errorCode = e.getErrorCode();
+        IdentityRecoveryConstants.ErrorMessages error = null;
+        if (Constants.ErrorMessages.ERROR_INVALID_ATTRIBUTE_VALUE_TYPE.getCode().equals(errorCode)) {
+            error = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INCOMPATIBLE_VALUE_FOR_USER_ATTRIBUTE;
+        } else if (Constants.ErrorMessages.ERROR_NOT_ALLOWED_ATTRIBUTE_VALUE.getCode().equals(errorCode)) {
+            error = IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_VALUE_FOR_USER_ATTRIBUTE;
+        }
+        return error;
     }
 
     /**
