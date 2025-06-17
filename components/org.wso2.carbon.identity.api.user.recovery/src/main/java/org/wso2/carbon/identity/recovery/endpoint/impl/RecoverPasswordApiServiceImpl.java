@@ -14,6 +14,7 @@ import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
 import org.wso2.carbon.identity.recovery.endpoint.*;
 import org.wso2.carbon.identity.recovery.endpoint.Utils.RecoveryUtil;
 import org.wso2.carbon.identity.recovery.endpoint.dto.*;
+import org.wso2.carbon.identity.recovery.model.Property;
 
 
 import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestDTO;
@@ -22,7 +23,13 @@ import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHol
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.util.Utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOGIN_IDENTIFIER;
 
 public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
 
@@ -51,6 +58,8 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             // If multi attribute login is enabled, resolve the user before sending recovery notification sending.
             if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                     .isEnabled(user.getTenantDomain())) {
+                Property[] properties =
+                        buildRecoveryPropertiesForMultiAttributeLoginEnabled(recoveryInitiatingRequest, user);
                 ResolvedUserResult resolvedUserResult =
                         IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                                 .resolveUser(user.getUsername(), user.getTenantDomain());
@@ -66,7 +75,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
                     resolvedUser.setTenantDomain(resolvedUserResult.getUser().getTenantDomain());
                     notificationResponseBean =
                             notificationPasswordRecoveryManager.sendRecoveryNotification(resolvedUser, type, notify,
-                                    RecoveryUtil.getProperties(recoveryInitiatingRequest.getProperties()));
+                                    properties);
                 } else {
                     /* If the user couldn't resolve, Check for NOTIFY_USER_EXISTENCE property. If the property is not
                     enabled, notify with an empty NotificationResponseBean.*/
@@ -117,5 +126,26 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             return Response.accepted().build();
         }
         return Response.accepted(notificationResponseBean.getKey()).build();
+    }
+
+    /**
+     * Builds the recovery properties array for multi-attribute login-enabled flows.
+     *
+     * @param request Recovery initiating request.
+     * @param user    User initiating the recovery.
+     * @return        Property array with or without login identifier.
+     */
+    private Property[] buildRecoveryPropertiesForMultiAttributeLoginEnabled(RecoveryInitiatingRequestDTO request,
+                                                                            UserDTO user) {
+
+        List<Property> propertyList = new ArrayList<>(
+                Arrays.asList(RecoveryUtil.getProperties(request.getProperties())));
+
+        Property loginIdentifierProp = new Property();
+        loginIdentifierProp.setKey(LOGIN_IDENTIFIER);
+        loginIdentifierProp.setValue(user.getUsername());
+        propertyList.add(loginIdentifierProp);
+
+        return propertyList.toArray(new Property[0]);
     }
 }
