@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -47,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_INVALID_USERNAME;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USERNAME_NOT_PROVIDED;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
@@ -63,6 +63,8 @@ public class PasswordProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(PasswordProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String CONFIRMATION_CODE = "confirmationCode";
+    private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
+    private static final String ASK_PASSWORD = "ASK_PASSWORD";
 
     @Override
     public String getName() {
@@ -98,8 +100,23 @@ public class PasswordProvisioningExecutor implements Executor {
             }
         }
 
-        char[] password =
-                credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
+        char[] password = credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
+
+        try {
+            if (context.getFlowType().equals(PASSWORD_RECOVERY)) {
+                return recoveryLogic(context, password);
+            } else if (context.getFlowType().equals(ASK_PASSWORD)) {
+                return askPasswordLogic(context, password);
+            }
+
+            return new ExecutorResponse();
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+
+    private ExecutorResponse askPasswordLogic(FlowExecutionContext context, char[] password) {
+
         String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE);
         if (StringUtils.isBlank(confirmationCode)) {
             return errorResponse(new ExecutorResponse(), "Confirmation code is not provided.");
@@ -118,12 +135,24 @@ public class PasswordProvisioningExecutor implements Executor {
                     .getUserIDFromUserName(context.getFlowUser().getUsername());
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
-        } catch (IdentityEventException | IdentityRecoveryException | org.wso2.carbon.user.api.UserStoreException e) {
+        } catch (IdentityEventException | IdentityRecoveryException | UserStoreException | FlowEngineException e) {
             LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
-        } finally {
-            // Clear sensitive data.
-            Arrays.fill(password, '\0');
+        }
+    }
+
+    private ExecutorResponse recoveryLogic(FlowExecutionContext context, char[] password) {
+
+        try {
+            int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
+            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
+                    .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
+
+            userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
+            return new ExecutorResponse(STATUS_COMPLETE);
+        } catch (UserStoreException e) {
+            LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
+            return new ExecutorResponse(ERROR);
         }
     }
 
