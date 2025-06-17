@@ -56,6 +56,7 @@ public class PasswordProvisioningExecutorTest {
     private static final String USERNAME = "test@wso2.com";
     private static final String TENANT_DOMAIN = "carbon.super";
     private static final String USER_ID = "abc123";
+    private static final String ASK_PASSWORD = "ASK_PASSWORD";
     private static final Map<String, String> userInputData = new HashMap<>();
     private static final int TENANT_ID = 1234;
     private PasswordProvisioningExecutor executor;
@@ -84,6 +85,7 @@ public class PasswordProvisioningExecutorTest {
     public void testExecuteWithMissingConfirmationCode() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(ASK_PASSWORD);
         userInputData.put(PASSWORD_KEY, "Password123");
         when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getProperty(CONFIRMATION_CODE)).thenReturn(null);
@@ -113,6 +115,7 @@ public class PasswordProvisioningExecutorTest {
     public void testExecuteWithValidData() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(ASK_PASSWORD);
         FlowUser flowUser = new FlowUser();
         flowUser.setUsername(USERNAME);
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
@@ -147,6 +150,7 @@ public class PasswordProvisioningExecutorTest {
     public void testExecuteWithExceptionInPasswordUpdate() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(ASK_PASSWORD);
         FlowUser flowUser = new FlowUser();
         flowUser.setUsername(USERNAME);
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
