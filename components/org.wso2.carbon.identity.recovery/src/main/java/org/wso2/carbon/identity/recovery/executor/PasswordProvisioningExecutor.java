@@ -104,9 +104,9 @@ public class PasswordProvisioningExecutor implements Executor {
 
         try {
             if (context.getFlowType().equals(PASSWORD_RECOVERY)) {
-                return recoveryLogic(context, password);
+                return handlePasswordRecoveryFlow(context, password);
             } else if (context.getFlowType().equals(ASK_PASSWORD)) {
-                return askPasswordLogic(context, password);
+                return handleAskPasswordFlow(context, password);
             }
 
             return new ExecutorResponse();
@@ -115,7 +115,7 @@ public class PasswordProvisioningExecutor implements Executor {
         }
     }
 
-    private ExecutorResponse askPasswordLogic(FlowExecutionContext context, char[] password) {
+    private ExecutorResponse handleAskPasswordFlow(FlowExecutionContext context, char[] password) {
 
         String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE);
         if (StringUtils.isBlank(confirmationCode)) {
@@ -141,7 +141,7 @@ public class PasswordProvisioningExecutor implements Executor {
         }
     }
 
-    private ExecutorResponse recoveryLogic(FlowExecutionContext context, char[] password) {
+    private ExecutorResponse handlePasswordRecoveryFlow(FlowExecutionContext context, char[] password) {
 
         try {
             int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
