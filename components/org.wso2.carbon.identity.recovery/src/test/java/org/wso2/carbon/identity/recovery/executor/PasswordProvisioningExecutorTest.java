@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.executor;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
@@ -56,6 +57,8 @@ public class PasswordProvisioningExecutorTest {
     private static final String USERNAME = "test@wso2.com";
     private static final String TENANT_DOMAIN = "carbon.super";
     private static final String USER_ID = "abc123";
+    private static final String ASK_PASSWORD = "ASK_PASSWORD";
+    private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
     private static final Map<String, String> userInputData = new HashMap<>();
     private static final int TENANT_ID = 1234;
     private PasswordProvisioningExecutor executor;
@@ -80,10 +83,19 @@ public class PasswordProvisioningExecutorTest {
         mockedIdentityTenantUtil.close();
     }
 
+    @DataProvider(name = "flowTypes")
+    public Object[][] provideFlowTypes() {
+        return new Object[][] {
+                { ASK_PASSWORD },
+                { PASSWORD_RECOVERY }
+        };
+    }
+
     @Test
     public void testExecuteWithMissingConfirmationCode() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(ASK_PASSWORD);
         userInputData.put(PASSWORD_KEY, "Password123");
         when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getProperty(CONFIRMATION_CODE)).thenReturn(null);
@@ -109,10 +121,11 @@ public class PasswordProvisioningExecutorTest {
         assertTrue(response.getRequiredData().contains(PASSWORD_KEY));
     }
 
-    @Test
-    public void testExecuteWithValidData() throws Exception {
+    @Test(dataProvider = "flowTypes")
+    public void testExecuteWithValidData(String flowType) throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(flowType);
         FlowUser flowUser = new FlowUser();
         flowUser.setUsername(USERNAME);
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
@@ -139,14 +152,17 @@ public class PasswordProvisioningExecutorTest {
 
         ExecutorResponse response = executor.execute(context);
 
+        if (flowType.equals(ASK_PASSWORD)) {
+            assertEquals(flowUser.getUserId(), USER_ID);
+        }
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
-        assertEquals(flowUser.getUserId(), USER_ID);
     }
 
     @Test
     public void testExecuteWithExceptionInPasswordUpdate() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn(ASK_PASSWORD);
         FlowUser flowUser = new FlowUser();
         flowUser.setUsername(USERNAME);
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
