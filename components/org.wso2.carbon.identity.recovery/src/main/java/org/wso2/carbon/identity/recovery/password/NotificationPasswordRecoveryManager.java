@@ -78,6 +78,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOGIN_IDENTIFIER;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
 
 /**
@@ -179,8 +180,10 @@ public class NotificationPasswordRecoveryManager {
             checkAccountPendingStatus(user);
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
+                String loginIdentifier = getLoginIdentifierFromProperties(properties);
+                loginIdentifier = StringUtils.isNotBlank(loginIdentifier) ? loginIdentifier : user.getUserName();
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                        user.getUserName());
+                        loginIdentifier);
             }
             triggerAccountStatusNotification(user, notificationChannel,
                     IdentityRecoveryConstants.ACCOUNT_STATUS_LOCKED, eventName, properties);
@@ -225,6 +228,25 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(user, String.valueOf(notify), secretKey, null, properties,
                 IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION, recoveryDataDO);
         return notificationResponseBean;
+    }
+
+    /**
+     * Retrieves the login identifier from the provided list of properties.
+     *
+     * @param properties Array of properties sent in the recovery request.
+     * @return The value of the property with key 'loginIdentifier', or null if not found or if the array is empty.
+     */
+    private String getLoginIdentifierFromProperties(Property[] properties) {
+
+        if (ArrayUtils.isEmpty(properties)) {
+            return null;
+        }
+        for (Property property : properties) {
+            if (LOGIN_IDENTIFIER.equals(property.getKey())) {
+                return property.getValue();
+            }
+        }
+        return null;
     }
 
     /**

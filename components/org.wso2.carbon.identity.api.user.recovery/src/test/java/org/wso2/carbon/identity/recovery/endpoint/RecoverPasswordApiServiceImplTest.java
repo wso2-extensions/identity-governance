@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.recovery.endpoint.dto.RecoveryInitiatingRequestD
 import org.wso2.carbon.identity.recovery.endpoint.dto.UserDTO;
 import org.wso2.carbon.identity.recovery.endpoint.impl.RecoverPasswordApiServiceImpl;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.Property;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 
 import java.util.ArrayList;
@@ -105,6 +106,10 @@ public class RecoverPasswordApiServiceImplTest {
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
         mockedRecoveryUtil.when(RecoveryUtil::getNotificationBasedPwdRecoveryManager).thenReturn(
                 notificationPasswordRecoveryManager);
+        if(isMultiAttributeLoginEnabled) {
+            mockedRecoveryUtil.when(() -> RecoveryUtil.getProperties(Mockito.any()))
+                    .thenReturn(new Property[0]);
+        }
         Mockito.when(notificationPasswordRecoveryManager.sendRecoveryNotification(isNull(), anyString(), anyBoolean(),
                 isNull())).thenReturn(notificationResponseBean);
         mockedIdentityRecoveryServiceDataHolder.when(IdentityRecoveryServiceDataHolder::getInstance)

@@ -161,6 +161,7 @@ public class IdentityRecoveryConstants {
     public static final String EXECUTE_ACTION = "ui.execute";
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
+    public static final String LOGIN_IDENTIFIER = "loginIdentifier";
     public static final String IS_ACCESS_URL_AVAILABLE = "isAccessUrlAvailable";
     public static final String IS_LITE_SIGN_UP = "isLiteSignUp";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
