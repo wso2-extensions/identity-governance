@@ -59,7 +59,7 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
             if (IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                     .isEnabled(user.getTenantDomain())) {
                 Property[] properties =
-                        buildRecoveryPropertiesForMultiAttributeLoginEnabled(recoveryInitiatingRequest, user);
+                        buildRecoveryPropertiesForMultiAttributeLogin(recoveryInitiatingRequest, user);
                 ResolvedUserResult resolvedUserResult =
                         IdentityRecoveryServiceDataHolder.getInstance().getMultiAttributeLoginService()
                                 .resolveUser(user.getUsername(), user.getTenantDomain());
@@ -135,16 +135,12 @@ public class RecoverPasswordApiServiceImpl extends RecoverPasswordApiService {
      * @param user    User initiating the recovery.
      * @return        Property array with or without login identifier.
      */
-    private Property[] buildRecoveryPropertiesForMultiAttributeLoginEnabled(RecoveryInitiatingRequestDTO request,
+    private Property[] buildRecoveryPropertiesForMultiAttributeLogin(RecoveryInitiatingRequestDTO request,
                                                                             UserDTO user) {
 
         List<Property> propertyList = new ArrayList<>(
                 Arrays.asList(RecoveryUtil.getProperties(request.getProperties())));
-
-        Property loginIdentifierProp = new Property();
-        loginIdentifierProp.setKey(LOGIN_IDENTIFIER);
-        loginIdentifierProp.setValue(user.getUsername());
-        propertyList.add(loginIdentifierProp);
+        propertyList.add(new Property(LOGIN_IDENTIFIER, user.getUsername()));
 
         return propertyList.toArray(new Property[0]);
     }
