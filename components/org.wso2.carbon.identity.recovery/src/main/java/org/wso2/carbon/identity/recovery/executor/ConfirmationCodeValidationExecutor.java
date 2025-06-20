@@ -58,7 +58,7 @@ public class ConfirmationCodeValidationExecutor implements Executor {
     public ExecutorResponse execute(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
 
         ExecutorResponse response = new ExecutorResponse();
-        String confirmationCode = (String) flowExecutionContext.getProperty(CONFIRMATION_CODE);
+        String confirmationCode = flowExecutionContext.getUserInputData().get(CONFIRMATION_CODE);
         if (StringUtils.isBlank(confirmationCode)) {
             return clientInputRequiredResponse(response, CONFIRMATION_CODE);
         }
@@ -73,6 +73,7 @@ public class ConfirmationCodeValidationExecutor implements Executor {
             String userid = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(user.getUserName());
             flowExecutionContext.getFlowUser().setUserId(userid);
             flowExecutionContext.getFlowUser().setUsername(user.getUserName());
+            flowExecutionContext.setProperty(CONFIRMATION_CODE, confirmationCode);
             response.setResult(STATUS_COMPLETE);
             return response;
         } catch (IdentityRecoveryException | UserStoreException e) {

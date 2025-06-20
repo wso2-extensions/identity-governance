@@ -36,6 +36,9 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -77,7 +80,9 @@ public class ConfirmationCodeValidationExecutorTest {
     public void testExecuteWithMissingConfirmationCode() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        when(context.getProperty(CONFIRMATION_CODE)).thenReturn(null);
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(CONFIRMATION_CODE, null);
+        when(context.getUserInputData()).thenReturn(userInputData);
 
         ExecutorResponse response = executor.execute(context);
 
@@ -90,7 +95,9 @@ public class ConfirmationCodeValidationExecutorTest {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = new FlowUser();
-        when(context.getProperty(CONFIRMATION_CODE)).thenReturn("valid-code");
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(CONFIRMATION_CODE, "valid-code");
+        when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getFlowUser()).thenReturn(flowUser);
 
         User mockUser = new User();
@@ -125,7 +132,9 @@ public class ConfirmationCodeValidationExecutorTest {
     public void testExecuteWithInvalidConfirmationCode() throws Exception {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        when(context.getProperty(CONFIRMATION_CODE)).thenReturn("invalid-code");
+        Map<String, String> userInputData = new HashMap<>();
+        userInputData.put(CONFIRMATION_CODE, "invalid-code");
+        when(context.getUserInputData()).thenReturn(userInputData);
 
         NotificationPasswordRecoveryManager mockRecoveryManager = mock(NotificationPasswordRecoveryManager.class);
         when(mockRecoveryManager.getValidatedUser("invalid-code", null))
