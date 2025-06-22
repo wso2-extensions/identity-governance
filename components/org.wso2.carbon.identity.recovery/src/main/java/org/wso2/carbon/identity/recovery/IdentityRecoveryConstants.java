@@ -162,6 +162,7 @@ public class IdentityRecoveryConstants {
     public static final String EXECUTE_ACTION = "ui.execute";
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
+    public static final String LOGIN_IDENTIFIER = "loginIdentifier";
     public static final String IS_ACCESS_URL_AVAILABLE = "isAccessUrlAvailable";
     public static final String IS_LITE_SIGN_UP = "isLiteSignUp";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
@@ -641,6 +642,7 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SELF_REGISTRATION_SEND_OTP_IN_EMAIL = "SelfRegistration.OTP.SendOTPInEmail";
+        public static final String SELF_REGISTRATION_EMAIL_OTP_ENABLE = "SelfRegistration.EmailOTP.Enable";
         public static final String SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +
                 "UseUppercaseCharactersInOTP";
         public static final String SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +

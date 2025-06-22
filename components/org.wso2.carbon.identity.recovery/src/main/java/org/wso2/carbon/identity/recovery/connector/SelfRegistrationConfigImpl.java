@@ -90,6 +90,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Lock user account on creation");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
+        nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                "Enable email OTP");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Include uppercase characters in OTP");
         nameMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
@@ -138,6 +140,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 "Lock self registered user account until e-mail verification.");
         descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMapping.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                "Enable to send email OTP for self registration.");
         descriptionMapping.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Enable to include uppercase characters in SMS and e-mail OTPs.");
@@ -190,6 +194,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
         properties.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP);
@@ -219,6 +224,7 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         String enableSelfSignUp = "false";
         String enableAccountLockOnCreation = "true";
         String enableSendOTPInEmail = "false";
+        String enableSelfRegistrationEmailOTP = "false";
         String useUppercaseCharactersInOTP = StringUtils.EMPTY;
         String useLowercaseCharactersInOTP = StringUtils.EMPTY;
         String useNumbersInOTP = StringUtils.EMPTY;
@@ -243,6 +249,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         String sendOTPInEmailProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        String selfRegistrationEmailOTPProperty = IdentityUtil.getProperty(
+                IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE);
         String useUppercaseCharactersInOTPProperty = IdentityUtil.getProperty(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
         String useLowercaseCharactersInOTPProperty = IdentityUtil.getProperty(
@@ -286,6 +294,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         }
         if (StringUtils.isNotEmpty(sendOTPInEmailProperty)) {
             enableSendOTPInEmail = sendOTPInEmailProperty;
+        }
+        if (StringUtils.isNotEmpty(selfRegistrationEmailOTPProperty)) {
+            enableSelfRegistrationEmailOTP = selfRegistrationEmailOTPProperty;
         }
         if (StringUtils.isNotEmpty(useUppercaseCharactersInOTPProperty)) {
             useUppercaseCharactersInOTP = useUppercaseCharactersInOTPProperty;
@@ -345,6 +356,8 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
                 enableAccountLockOnCreation);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 enableSendOTPInEmail);
+        defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                enableSelfRegistrationEmailOTP);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 useUppercaseCharactersInOTP);
         defaultProperties.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
@@ -415,6 +428,9 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
+        meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
         meta.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
@@ -470,5 +486,4 @@ public class SelfRegistrationConfigImpl implements IdentityConnectorConfig {
 
         return meta;
     }
-
 }
