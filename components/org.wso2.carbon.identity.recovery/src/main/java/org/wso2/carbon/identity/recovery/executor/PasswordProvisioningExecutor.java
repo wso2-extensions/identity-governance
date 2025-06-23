@@ -81,13 +81,13 @@ public class PasswordProvisioningExecutor implements Executor {
     }
 
     @Override
-    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
+    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) {
 
         return null;
     }
 
     @Override
-    public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
+    public ExecutorResponse execute(FlowExecutionContext context) {
 
         Map<String, char[]> credentials;
         String passwordValue = context.getUserInputData() != null ? context.getUserInputData().get(PASSWORD_KEY) : null;

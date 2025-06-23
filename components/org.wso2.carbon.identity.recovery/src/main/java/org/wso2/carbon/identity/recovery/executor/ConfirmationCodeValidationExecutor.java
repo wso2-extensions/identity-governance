@@ -55,7 +55,7 @@ public class ConfirmationCodeValidationExecutor implements Executor {
     }
 
     @Override
-    public ExecutorResponse execute(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
+    public ExecutorResponse execute(FlowExecutionContext flowExecutionContext) {
 
         ExecutorResponse response = new ExecutorResponse();
         String confirmationCode = flowExecutionContext.getUserInputData().get(CONFIRMATION_CODE);
@@ -90,7 +90,7 @@ public class ConfirmationCodeValidationExecutor implements Executor {
     }
 
     @Override
-    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
+    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) {
 
         return null;
     }

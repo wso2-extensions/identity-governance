@@ -77,7 +77,7 @@ public class ConfirmationCodeValidationExecutorTest {
     }
 
     @Test
-    public void testExecuteWithMissingConfirmationCode() throws Exception {
+    public void testExecuteWithMissingConfirmationCode() {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         Map<String, String> userInputData = new HashMap<>();
