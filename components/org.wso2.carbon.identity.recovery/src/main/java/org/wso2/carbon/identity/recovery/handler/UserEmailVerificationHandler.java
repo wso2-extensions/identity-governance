@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -65,6 +66,7 @@ import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
         .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
 import static org.wso2.carbon.identity.recovery.util.Utils.maskIfRequired;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
@@ -506,14 +508,23 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-
-        if (recoveryDataDO != null) {
-            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
-                    recoveryDataDO.getRecoveryScenario().name());
-        }
-        Event identityMgtEvent = new Event(eventName, properties);
         try {
+            if (recoveryDataDO != null) {
+                String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
+                String isDynamicPortalEnabled = Utils.getConnectorConfig(IdentityRecoveryConstants.
+                        ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain());
+
+                properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
+
+                if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
+                        Boolean.parseBoolean(isDynamicPortalEnabled)) {
+                    type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
+                    properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.toString());
+                }
+            }
+
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+            Event identityMgtEvent = new Event(eventName, properties);
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
