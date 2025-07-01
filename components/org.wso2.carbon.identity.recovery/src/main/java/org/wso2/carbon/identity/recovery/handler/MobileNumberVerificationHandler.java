@@ -189,12 +189,13 @@ public class MobileNumberVerificationHandler extends AbstractEventHandler {
     private void initNotificationForMobileNumberVerificationOnUpdate(User user, String verificationPendingMobileNumber)
             throws IdentityEventException {
 
-        String otpTriggeredClaim;
-        RecoveryScenarios recoveryScenario;
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        boolean isProgressiveProfileVerification = Boolean.parseBoolean(String.valueOf(
-                IdentityUtil.threadLocalProperties.get().remove("isProgressiveProfileVerification")));
         try {
+            String otpTriggeredClaim;
+            RecoveryScenarios recoveryScenario;
+            boolean isProgressiveProfileVerification = Boolean.parseBoolean(String.valueOf(
+                    IdentityUtil.threadLocalProperties.get().remove(
+                            FrameworkConstants.IS_PROGRESSIVE_PROFILE_VERIFICATION)));
             String secretKey = Utils.generateSecretKey(NotificationChannels.SMS_CHANNEL.getChannelType(),
                     String.valueOf(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE), user.getTenantDomain(),
                     "UserClaimUpdate");
