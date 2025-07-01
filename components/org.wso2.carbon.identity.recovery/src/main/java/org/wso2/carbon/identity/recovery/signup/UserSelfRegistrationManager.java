@@ -44,6 +44,8 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -146,6 +148,8 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
+
+        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -1831,6 +1835,8 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerLiteUser(User user, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
+        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
 
@@ -2245,5 +2251,23 @@ public class UserSelfRegistrationManager {
                             "option is allowed.");
         }
         return registrationOption;
+    }
+
+    /**
+     * This is used to set the flow and initiator in the identity context
+     * for the user flows.
+     *
+     * @param flowName The name of the flow to set in the identity context.
+     */
+    private void updateIdentityContextFlow(Flow.Name flowName) {
+
+        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
+            // If the flow is already set, no need to update it again.
+            return;
+        }
+
+        IdentityContext.getThreadLocalIdentityContext()
+                .setFlow(new Flow.Builder().name(flowName).initiatingPersona(
+                        Flow.InitiatingPersona.USER).build());
     }
 }
