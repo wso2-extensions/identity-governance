@@ -568,29 +568,50 @@ public class ResendConfirmationManager {
             userRecoveryDataStore.store(recoveryDataDO);
         }
 
-        RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
-        try {
-            if (RecoveryScenarios.ASK_PASSWORD.equals(scenario) &&
-                    Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.
-                            ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain()))) {
-                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
-                propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.toString()));
-            }
-        } catch (IdentityEventException e) {
-            throw new IdentityRecoveryException("Error while getting the configuration : " +
-                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, e);
-        }
+        String selectedNotificationType = getSelectedNotificationTypeForAskPassword(user, recoveryScenario,
+                notificationType, propertyList);
 
         properties = propertyList.toArray(new Property[0]);
 
         if (notificationInternallyManage) {
             String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),
                     user.getTenantDomain());
-            triggerNotification(user, preferredChannel, notificationType, secretKey, eventName, properties);
+            triggerNotification(user, preferredChannel, selectedNotificationType, secretKey, eventName, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Get the notification type for ASK_PASSWORD recovery scenario.
+     *
+     * @param user             User
+     * @param recoveryScenario Recovery scenario
+     * @param notificationType Notification type
+     * @param propertyList     Event properties
+     * @return Selected notification type
+     * @throws IdentityRecoveryException if an error occurred while getting the configuration.
+     */
+    private static String getSelectedNotificationTypeForAskPassword(User user, String recoveryScenario,
+                                                                    String notificationType,
+                                                                    List<Property> propertyList)
+            throws IdentityRecoveryException {
+
+        RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
+        String selectedNotificationType = notificationType;
+        try {
+            if (RecoveryScenarios.ASK_PASSWORD.equals(scenario) &&
+                    Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.
+                            ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain()))) {
+                selectedNotificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
+                propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.toString()));
+            }
+        } catch (IdentityEventException e) {
+            throw new IdentityRecoveryException("Error while getting the configuration : " +
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, e);
+        }
+        return selectedNotificationType;
     }
 
     /**

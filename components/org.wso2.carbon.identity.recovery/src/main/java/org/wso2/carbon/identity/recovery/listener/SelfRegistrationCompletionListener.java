@@ -112,7 +112,8 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext FlowExecutionContext)
             throws FlowEngineException {
 
-        if (Flow.Name.USER_REGISTRATION.toString().equalsIgnoreCase(FlowExecutionContext.getFlowType()) &&
+        if ((Flow.Name.USER_REGISTRATION.toString().equalsIgnoreCase(FlowExecutionContext.getFlowType()) ||
+                "REGISTRATION".equalsIgnoreCase(FlowExecutionContext.getFlowType())) &&
                 Constants.COMPLETE.equals(step.getFlowStatus())) {
 
             FlowUser user = FlowExecutionContext.getFlowUser();
