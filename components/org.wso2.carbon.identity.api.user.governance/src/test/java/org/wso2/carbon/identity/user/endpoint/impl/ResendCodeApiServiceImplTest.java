@@ -242,7 +242,7 @@ public class ResendCodeApiServiceImplTest {
                 any(),
                 eq(RecoveryScenarios.SELF_SIGN_UP.toString()),
                 eq(RecoverySteps.CONFIRM_SIGN_UP.toString()),
-                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM),
+                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM),
                 any());
     }
 
