@@ -147,20 +147,19 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                         resendCodeRequestDTO);
             }
             // If the recovery scenario is EMAIL_VERIFICATION and the user's account state is pending email
-            // verification, check whether the user recovery data is available for SELF_SIGN_UP recovery scenario.
-            // If available, resend the confirmation for SELF_SIGN_UP.
+            // verification, re-initiate "Email Verification" flow even though recovery data is absent.
             else if (RecoveryScenarios.EMAIL_VERIFICATION.toString().equals(recoveryScenario)
                     && isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser())) {
-                userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO,
-                        RecoveryScenarios.SELF_SIGN_UP.toString());
-                if (userRecoveryData != null) {
-                    resendConfirmationManager = Utils.getResendConfirmationManager();
-                    notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
-                            RecoveryScenarios.SELF_SIGN_UP.toString(),
-                            RecoverySteps.CONFIRM_SIGN_UP.toString(),
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM,
-                            resendCodeRequestDTO);
-                }
+                resendConfirmationManager = Utils.getResendConfirmationManager();
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                        RecoveryScenarios.EMAIL_VERIFICATION.toString(),
+                        RecoverySteps.VERIFY_EMAIL.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM,
+                        resendCodeRequestDTO);
+
+                // Initial email verification flow can be triggered with SELF_SIGN_UP scenario.
+                // Hence, remove user recovery data if it exists for SELF_SIGN_UP scenario.
+                Utils.invalidateUserRecoveryData(resendCodeRequestDTO, RecoveryScenarios.SELF_SIGN_UP);
             }
 
             return notificationResponseBean;
@@ -237,6 +236,12 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                     RecoveryScenarios.LITE_SIGN_UP.toString(), RecoverySteps.CONFIRM_LITE_SIGN_UP.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.EMAIL_VERIFICATION.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.EMAIL_VERIFICATION.toString(), RecoverySteps.VERIFY_EMAIL.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM, resendCodeRequestDTO);
         } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {

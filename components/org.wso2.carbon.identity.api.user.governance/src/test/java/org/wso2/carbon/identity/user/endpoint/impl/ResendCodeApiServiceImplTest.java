@@ -220,14 +220,11 @@ public class ResendCodeApiServiceImplTest {
 
         mockedUtils.when(() -> Utils.getUserRecoveryData(any(), eq(RecoveryScenarios.EMAIL_VERIFICATION.name())))
                 .thenReturn(null);
-        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), eq(RecoveryScenarios.SELF_SIGN_UP.name())))
-                .thenReturn(userRecoveryData);
         mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
                 .thenReturn(IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION);
         mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
 
-        when(resendConfirmationManager.resendConfirmationCode(
-                any(), anyString(), anyString(), anyString(), any()))
+        when(resendConfirmationManager.resendConfirmationCode(any(), anyString(), anyString(), anyString(), any()))
                 .thenReturn(new NotificationResponseBean(createUser()));
 
         // Call the method to test
@@ -240,8 +237,8 @@ public class ResendCodeApiServiceImplTest {
         // Verify the ResendConfirmationManager was called with correct parameters
         verify(resendConfirmationManager).resendConfirmationCode(
                 any(),
-                eq(RecoveryScenarios.SELF_SIGN_UP.toString()),
-                eq(RecoverySteps.CONFIRM_SIGN_UP.toString()),
+                eq(RecoveryScenarios.EMAIL_VERIFICATION.toString()),
+                eq(RecoverySteps.VERIFY_EMAIL.toString()),
                 eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM),
                 any());
     }
