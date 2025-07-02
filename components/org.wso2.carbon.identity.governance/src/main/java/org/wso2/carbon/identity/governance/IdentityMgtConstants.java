@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package org.wso2.carbon.identity.governance;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Identity management related constants
  */
@@ -26,6 +30,45 @@ public class IdentityMgtConstants {
     public static final int MINIMUM_SMS_OTP_LENGTH = 4;
     private IdentityMgtConstants() {
 
+    }
+
+    /**
+     * Enum for inherited masked connectors.
+     * <p>
+     * This enum is used to define the connectors that have properties which need to be masked
+     * when they are inherited from a parent organization.
+     */
+    public enum INHERITED_MASKED_CONNECTORS {
+
+        ELK_ANALYTICS("elastic-analytics-engine", List.of(
+                "adaptive_authentication.elastic.basicAuth.username",
+                "__secret__adaptive_authentication.elastic.basicAuth.password"));
+
+        private final String connectorName;
+        private final List<String> maskableProperties;
+
+        INHERITED_MASKED_CONNECTORS(String connectorName, List<String> maskableProperties) {
+
+            this.connectorName = connectorName;
+            this.maskableProperties = maskableProperties;
+        }
+
+        public String getConnectorName() {
+
+            return connectorName;
+        }
+
+        public List<String> getMaskableProperties() {
+
+            return maskableProperties;
+        }
+
+        public static Optional<INHERITED_MASKED_CONNECTORS> findByName(String name) {
+
+            return Arrays.stream(values())
+                    .filter(connector -> connector.getConnectorName().equalsIgnoreCase(name))
+                    .findFirst();
+        }
     }
 
     /**
