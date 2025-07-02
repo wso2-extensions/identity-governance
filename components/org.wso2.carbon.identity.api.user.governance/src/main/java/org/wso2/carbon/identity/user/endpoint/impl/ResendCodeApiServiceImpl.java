@@ -153,7 +153,7 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 resendConfirmationManager = Utils.getResendConfirmationManager();
                 notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
                         RecoveryScenarios.EMAIL_VERIFICATION.toString(),
-                        RecoverySteps.VERIFY_EMAIL.toString(),
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM,
                         resendCodeRequestDTO);
 
@@ -238,9 +238,10 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM, resendCodeRequestDTO);
         } else if (RecoveryScenarios.EMAIL_VERIFICATION.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.EMAIL_VERIFICATION.equals(userRecoveryData.getRecoveryScenario()) &&
-                RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(userRecoveryData.getRecoveryStep())) {
             notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
-                    RecoveryScenarios.EMAIL_VERIFICATION.toString(), RecoverySteps.VERIFY_EMAIL.toString(),
+                    RecoveryScenarios.EMAIL_VERIFICATION.toString(),
+                    RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM, resendCodeRequestDTO);
         } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&

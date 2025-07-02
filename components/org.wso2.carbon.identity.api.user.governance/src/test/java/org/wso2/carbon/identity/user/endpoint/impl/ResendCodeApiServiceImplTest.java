@@ -238,7 +238,7 @@ public class ResendCodeApiServiceImplTest {
         verify(resendConfirmationManager).resendConfirmationCode(
                 any(),
                 eq(RecoveryScenarios.EMAIL_VERIFICATION.toString()),
-                eq(RecoverySteps.VERIFY_EMAIL.toString()),
+                eq(RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString()),
                 eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM),
                 any());
     }
