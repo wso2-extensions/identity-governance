@@ -146,6 +146,23 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                         IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD,
                         resendCodeRequestDTO);
             }
+            // If the recovery scenario is EMAIL_VERIFICATION and the user's account state is pending email
+            // verification, check whether the user recovery data is available for SELF_SIGN_UP recovery scenario.
+            // If available, resend the confirmation for SELF_SIGN_UP.
+            else if (RecoveryScenarios.EMAIL_VERIFICATION.toString().equals(recoveryScenario)
+                    && isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser())) {
+                userRecoveryData = Utils.getUserRecoveryData(resendCodeRequestDTO,
+                        RecoveryScenarios.SELF_SIGN_UP.toString());
+                if (userRecoveryData != null) {
+                    resendConfirmationManager = Utils.getResendConfirmationManager();
+                    notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                            RecoveryScenarios.SELF_SIGN_UP.toString(),
+                            RecoverySteps.CONFIRM_SIGN_UP.toString(),
+                            IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM,
+                            resendCodeRequestDTO);
+                }
+            }
+
             return notificationResponseBean;
         }
 
@@ -324,5 +341,21 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
             return false;
         }
         return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
+    }
+
+    /**
+     * Determines if a user's account is in a state where they need to verify their email.
+     *
+     * @param user User object containing user information.
+     * @return true if the user is in pending email verification state, false otherwise.
+     */
+    private boolean isUserInPendingEmailVerificationState(UserDTO user) {
+
+        String domainQualifiedUsername = UserCoreUtil.addDomainToName(user.getUsername(), user.getRealm());
+        String accountState = Utils.getAccountState(domainQualifiedUsername, user.getTenantDomain());
+        if (StringUtils.isBlank(accountState)) {
+            return false;
+        }
+        return IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
     }
 }
