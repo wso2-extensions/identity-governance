@@ -47,6 +47,7 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -499,9 +500,8 @@ public class ResendConfirmationManager {
 
         String storedNotificationChannel = StringUtils.EMPTY;
         if (userRecoveryData == null &&
-                RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
-                isUserInPendingAskPasswordState(user)) {
-                storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+                (isAskPasswordFlow(recoveryScenario, user) || isEmailVerificationFlow(recoveryScenario, user))) {
+            storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         } else if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             // Validate the previous confirmation code with the data retrieved by the user recovery information.
             validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
@@ -775,19 +775,27 @@ public class ResendConfirmationManager {
 
     }
 
-    /**
-     * Determines if a user's account is in a state where they need to set a password
-     * through the ask password flow.
-     *
-     * @param user User object containing user information
-     * @return true if the user is in pending ask password state, false otherwise
-     */
-    private boolean isUserInPendingAskPasswordState(User user) {
+    private boolean isAskPasswordFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
 
+        boolean isPendingAskPasswordState = false;
         String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
-        if (StringUtils.isBlank(accountState)) {
-            return false;
+        if (StringUtils.isNotBlank(accountState)) {
+            isPendingAskPasswordState = IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
         }
-        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
+
+        return RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+                isPendingAskPasswordState;
+    }
+
+    private boolean isEmailVerificationFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
+
+        boolean isPendingEmailVerificationState = false;
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            isPendingEmailVerificationState = IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
+        }
+
+        return RecoveryScenarios.EMAIL_VERIFICATION.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+                isPendingEmailVerificationState;
     }
 }

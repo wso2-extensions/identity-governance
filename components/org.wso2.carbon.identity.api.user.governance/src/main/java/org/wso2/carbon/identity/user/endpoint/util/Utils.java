@@ -503,6 +503,28 @@ public class Utils {
     }
 
     /**
+     * Invalidate the user recovery data.
+     *
+     * @param resendCodeRequestDTO ResendCodeRequestDTO.
+     * @param recoveryScenario     Recovery Scenario.
+     */
+    public static void invalidateUserRecoveryData(ResendCodeRequestDTO resendCodeRequestDTO,
+                                                  RecoveryScenarios recoveryScenario) {
+
+        try {
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            UserRecoveryData userRecoveryData = userRecoveryDataStore
+                    .loadWithoutCodeExpiryValidation(getUser(resendCodeRequestDTO.getUser()), recoveryScenario);
+
+            if (userRecoveryData != null) {
+                userRecoveryDataStore.invalidate(userRecoveryData.getSecret());
+            }
+        } catch (IdentityRecoveryException e) {
+            handleInternalServerError(Constants.SERVER_ERROR, e.getErrorCode(), LOG, e);
+        }
+    }
+
+    /**
      * Create a map of properties.
      *
      * @param propertyDTOS Property DTOs in the API request {@link PropertyDTO}

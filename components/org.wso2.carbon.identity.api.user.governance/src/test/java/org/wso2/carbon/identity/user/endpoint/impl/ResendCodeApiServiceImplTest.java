@@ -212,6 +212,37 @@ public class ResendCodeApiServiceImplTest {
                 any());
     }
 
+    @Test (description = "Test resendCodePost when recovery scenario is email verification, user is in pending email " +
+            "verification and recovery data exists for SELF_SIGN_UP recovery scenario.")
+    public void testResendCodePostForEmailVerification() throws Exception {
+
+        ResendCodeRequestDTO requestDTO = createResendCodeRequestDTO(RecoveryScenarios.EMAIL_VERIFICATION.name());
+
+        mockedUtils.when(() -> Utils.getUserRecoveryData(any(), eq(RecoveryScenarios.EMAIL_VERIFICATION.name())))
+                .thenReturn(null);
+        mockedUtils.when(() -> Utils.getAccountState(anyString(), anyString()))
+                .thenReturn(IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION);
+        mockedUtils.when(Utils::getResendConfirmationManager).thenReturn(resendConfirmationManager);
+
+        when(resendConfirmationManager.resendConfirmationCode(any(), anyString(), anyString(), anyString(), any()))
+                .thenReturn(new NotificationResponseBean(createUser()));
+
+        // Call the method to test
+        Response response = resendCodeApiService.resendCodePost(requestDTO);
+
+        // Verify the response
+        assertNotNull(response);
+        assertEquals(response.getStatus(), 201);
+
+        // Verify the ResendConfirmationManager was called with correct parameters
+        verify(resendConfirmationManager).resendConfirmationCode(
+                any(),
+                eq(RecoveryScenarios.EMAIL_VERIFICATION.toString()),
+                eq(RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString()),
+                eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM),
+                any());
+    }
+
     private ResendCodeRequestDTO resendCodeRequestDTO() {
 
         ResendCodeRequestDTO resendCodeRequestDTO = new ResendCodeRequestDTO();

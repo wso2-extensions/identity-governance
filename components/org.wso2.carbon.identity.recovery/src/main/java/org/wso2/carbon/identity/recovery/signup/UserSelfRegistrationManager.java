@@ -879,7 +879,8 @@ public class UserSelfRegistrationManager {
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
-        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) ||
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
             String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
@@ -896,7 +897,8 @@ public class UserSelfRegistrationManager {
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
-                !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+                !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
             auditRecoveryConfirm(recoveryData,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
             throw Utils.handleClientException(
