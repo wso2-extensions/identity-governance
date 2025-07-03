@@ -245,7 +245,7 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
      * @return
      * @throws UserStoreException
      */
-    private String preparePassword(String password, String saltValue) throws
+    protected String preparePassword(String password, String saltValue) throws
             IdentityPasswordHistoryException {
         try {
             String digestInput = password;
