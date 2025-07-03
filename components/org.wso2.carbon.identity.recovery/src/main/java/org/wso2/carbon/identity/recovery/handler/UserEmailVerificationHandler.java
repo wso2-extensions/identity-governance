@@ -509,27 +509,34 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
         try {
+            String selectedNotificationType = type;
             if (recoveryDataDO != null) {
                 String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
-                String isDynamicPortalEnabled = Utils.getConnectorConfig(IdentityRecoveryConstants.
-                        ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain());
-
                 properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
 
-                if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
-                        Boolean.parseBoolean(isDynamicPortalEnabled)) {
-                    type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
-                    properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.toString());
-                }
+                selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
             }
-
-            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, selectedNotificationType);
             Event identityMgtEvent = new Event(eventName, properties);
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
+    }
+
+    private static String getNotificationTypeForAskPassword(User user, String type, String recoveryScenario,
+                                                            HashMap<String, Object> properties)
+            throws IdentityEventException {
+
+        String isDynamicPortalEnabled = Utils.getConnectorConfig(IdentityRecoveryConstants.
+                ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain());
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
+                Boolean.parseBoolean(isDynamicPortalEnabled)) {
+            type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
+            properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name());
+        }
+        return type;
     }
 
     protected User getUser(Map eventProperties, UserStoreManager userStoreManager) {

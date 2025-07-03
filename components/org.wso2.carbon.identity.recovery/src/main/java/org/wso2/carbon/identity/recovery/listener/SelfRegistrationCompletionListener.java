@@ -109,15 +109,15 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     }
 
     @Override
-    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext FlowExecutionContext)
+    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
             throws FlowEngineException {
 
-        if ((Flow.Name.USER_REGISTRATION.toString().equalsIgnoreCase(FlowExecutionContext.getFlowType()) ||
-                "REGISTRATION".equalsIgnoreCase(FlowExecutionContext.getFlowType())) &&
+        if ((Flow.Name.USER_REGISTRATION.name().equalsIgnoreCase(flowExecutionContext.getFlowType()) ||
+                "REGISTRATION".equalsIgnoreCase(flowExecutionContext.getFlowType())) &&
                 Constants.COMPLETE.equals(step.getFlowStatus())) {
 
-            FlowUser user = FlowExecutionContext.getFlowUser();
-            String tenantDomain = FlowExecutionContext.getTenantDomain();
+            FlowUser user = flowExecutionContext.getFlowUser();
+            String tenantDomain = flowExecutionContext.getTenantDomain();
             String userStoreDomain = resolveUserStoreDomain(user.getUsername());
             Map<String, Object> loggerInputs = new HashMap<>();
 
@@ -150,7 +150,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                                 userStoreManager, user.getUsername());
                     } catch (UserStoreException | IdentityEventException e) {
                         LOG.error("Error while locking the user account from the registration completion listener " +
-                                "in the flow: " + FlowExecutionContext.getContextIdentifier(), e);
+                                "in the flow: " + flowExecutionContext.getContextIdentifier(), e);
                     }
                 }
 
@@ -162,7 +162,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                                 tenantDomain));
 
                 // Start building the input map for the diagnostic logs.
-                loggerInputs.put(FLOW_ID, FlowExecutionContext.getContextIdentifier());
+                loggerInputs.put(FLOW_ID, flowExecutionContext.getContextIdentifier());
                 loggerInputs.put(USER_NAME, maskIfRequired(user.getUsername()));
                 loggerInputs.put(NOTIFICATION_CHANNEL, preferredChannel);
 
@@ -196,14 +196,14 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    Property[] properties = resolveNotificationProperties(step, FlowExecutionContext);
+                    Property[] properties = resolveNotificationProperties(step, flowExecutionContext);
                     triggerNotification(applicationUser, preferredChannel, secretKey, properties, eventName);
                     logDiagnostic("Account verification notification sent successfully.", SUCCESS,
                             TRIGGER_NOTIFICATION, loggerInputs);
                 }
             } catch (IdentityEventException | IdentityRecoveryException | IdentityApplicationManagementException e) {
                 LOG.error("Error while sending verification notification from the registration completion listener in" +
-                        " the flow: " + FlowExecutionContext.getContextIdentifier(), e);
+                        " the flow: " + flowExecutionContext.getContextIdentifier(), e);
                 logDiagnostic("Error while triggering verification notification.", FAILED,
                         TRIGGER_NOTIFICATION, loggerInputs);
             }
