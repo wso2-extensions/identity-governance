@@ -25,6 +25,7 @@ import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -47,13 +48,18 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
+import static org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig;
 
 /**
  * Generic Manager class which can be used to resend confirmation code for any recovery scenario and self registration
@@ -499,6 +505,9 @@ public class ResendConfirmationManager {
                 RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         String storedNotificationChannel = StringUtils.EMPTY;
+
+        List<Property> propertyList = new ArrayList<>(Arrays.asList(properties));
+
         if (userRecoveryData == null &&
                 (isAskPasswordFlow(recoveryScenario, user) || isEmailVerificationFlow(recoveryScenario, user))) {
             storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
@@ -547,29 +556,62 @@ public class ResendConfirmationManager {
 
             if (emailVerificationOnUpdateScenario && RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
                 String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
-                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                        verificationPendingEmailClaimValue)};
+                propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailClaimValue));
                 recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
             } else if (mobileVerificationOnUpdateScenario &&
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
                 String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
-                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                        verificationPendingMobileNumber)};
+                propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingMobileNumber));
                 recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
             }
-
             userRecoveryDataStore.store(recoveryDataDO);
         }
+
+        String selectedNotificationType = getNotificationTypeForResendAskPassword(user, recoveryScenario,
+                notificationType, propertyList);
+
+        properties = propertyList.toArray(new Property[0]);
 
         if (notificationInternallyManage) {
             String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),
                     user.getTenantDomain());
-            triggerNotification(user, preferredChannel, notificationType, secretKey, eventName, properties);
+            triggerNotification(user, preferredChannel, selectedNotificationType, secretKey, eventName, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
         return notificationResponseBean;
     }
+
+    /**
+     * Get the notification type for RESEND_ASK_PASSWORD recovery scenario.
+     *
+     * @param user             User
+     * @param recoveryScenario Recovery scenario
+     * @param notificationType Notification type
+     * @param propertyList     Event properties
+     * @return Selected notification type
+     * @throws IdentityRecoveryException If an error occurred while getting the configuration.
+     */
+    private static String getNotificationTypeForResendAskPassword(User user, String recoveryScenario,
+                                                                  String notificationType,
+                                                                  List<Property> propertyList)
+            throws IdentityRecoveryException {
+
+        RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
+        try {
+            if (RecoveryScenarios.ASK_PASSWORD.equals(scenario) &&
+                    Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.
+                            ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain()))) {
+                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
+                propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name()));
+            }
+        } catch (IdentityEventException e) {
+            throw new IdentityRecoveryException("Error while getting the configuration : " +
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, e);
+        }
+        return notificationType;
+    }
+
 
     /**
      * Resolve the event name according to the notification channel.

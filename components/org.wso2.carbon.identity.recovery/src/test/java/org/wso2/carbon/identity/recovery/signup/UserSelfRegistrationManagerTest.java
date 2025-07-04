@@ -366,7 +366,7 @@ public class UserSelfRegistrationManagerTest {
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(anyString())).thenReturn(-1234);
 
         NotificationResponseBean responseBean =
-                userSelfRegistrationManager.resendConfirmationCode(user, null);
+                userSelfRegistrationManager.resendConfirmationCode(user, new Property[0]);
         assertEquals(responseBean.getNotificationChannel(), expectedChannel, errorMsg);
     }
 

@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.application.common.model.ApplicationBasicInfo;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.central.log.mgt.utils.LoggerUtils;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
@@ -108,13 +109,15 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     }
 
     @Override
-    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionEngine)
+    public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
             throws FlowEngineException {
 
-        if (Constants.COMPLETE.equals(step.getFlowStatus())) {
+        if ((Flow.Name.USER_REGISTRATION.name().equalsIgnoreCase(flowExecutionContext.getFlowType()) ||
+                "REGISTRATION".equalsIgnoreCase(flowExecutionContext.getFlowType())) &&
+                Constants.COMPLETE.equals(step.getFlowStatus())) {
 
-            FlowUser user = flowExecutionEngine.getFlowUser();
-            String tenantDomain = flowExecutionEngine.getTenantDomain();
+            FlowUser user = flowExecutionContext.getFlowUser();
+            String tenantDomain = flowExecutionContext.getTenantDomain();
             String userStoreDomain = resolveUserStoreDomain(user.getUsername());
             Map<String, Object> loggerInputs = new HashMap<>();
 
@@ -147,7 +150,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                                 userStoreManager, user.getUsername());
                     } catch (UserStoreException | IdentityEventException e) {
                         LOG.error("Error while locking the user account from the registration completion listener " +
-                                "in the flow: " + flowExecutionEngine.getContextIdentifier(), e);
+                                "in the flow: " + flowExecutionContext.getContextIdentifier(), e);
                     }
                 }
 
@@ -159,7 +162,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                                 tenantDomain));
 
                 // Start building the input map for the diagnostic logs.
-                loggerInputs.put(FLOW_ID, flowExecutionEngine.getContextIdentifier());
+                loggerInputs.put(FLOW_ID, flowExecutionContext.getContextIdentifier());
                 loggerInputs.put(USER_NAME, maskIfRequired(user.getUsername()));
                 loggerInputs.put(NOTIFICATION_CHANNEL, preferredChannel);
 
@@ -193,14 +196,14 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
                     // Notified channel is stored in remaining setIds for recovery purposes.
                     recoveryDataDO.setRemainingSetIds(preferredChannel);
                     userRecoveryDataStore.store(recoveryDataDO);
-                    Property[] properties = resolveNotificationProperties(step, flowExecutionEngine);
+                    Property[] properties = resolveNotificationProperties(step, flowExecutionContext);
                     triggerNotification(applicationUser, preferredChannel, secretKey, properties, eventName);
                     logDiagnostic("Account verification notification sent successfully.", SUCCESS,
                             TRIGGER_NOTIFICATION, loggerInputs);
                 }
             } catch (IdentityEventException | IdentityRecoveryException | IdentityApplicationManagementException e) {
                 LOG.error("Error while sending verification notification from the registration completion listener in" +
-                        " the flow: " + flowExecutionEngine.getContextIdentifier(), e);
+                        " the flow: " + flowExecutionContext.getContextIdentifier(), e);
                 logDiagnostic("Error while triggering verification notification.", FAILED,
                         TRIGGER_NOTIFICATION, loggerInputs);
             }
