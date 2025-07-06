@@ -149,19 +149,20 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
 
-        // If account is active immediately upon creation, treat as direct registration.
-        if (user != null && !Boolean.parseBoolean(
+        String tenantDomain = user.getTenantDomain();
+        boolean isAccountLockedOnCreation = Boolean.parseBoolean(
                 Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                        user.getTenantDomain()))) {
-            updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
-        } else {
+                        tenantDomain));
+        // If account is active immediately upon creation, treat as direct registration.
+        if (isAccountLockedOnCreation) {
             updateIdentityContextFlow(Flow.Name.SELF_REGISTRATION_WITH_VERIFICATION);
+        } else {
+            updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
         }
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
-        String tenantDomain = user.getTenantDomain();
 
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
