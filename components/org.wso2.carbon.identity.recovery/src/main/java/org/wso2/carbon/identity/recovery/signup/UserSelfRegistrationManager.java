@@ -149,7 +149,14 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
 
-        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+        // If account is active immediately upon creation, treat as direct registration.
+        if (user != null && !Boolean.parseBoolean(
+                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                        user.getTenantDomain()))) {
+            updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+        } else {
+            updateIdentityContextFlow(Flow.Name.SELF_REGISTRATION_WITH_VERIFICATION);
+        }
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -673,6 +680,7 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryException {
 
         User user = null;
+        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
