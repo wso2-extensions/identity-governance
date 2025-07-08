@@ -126,6 +126,12 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
                         "User : " + Utils.maskIfRequired(userName) + "'s email is not confirmed yet.");
+            } else if (!isSelfSignupEnabled && operationStatus && !isUserEmailVerificationScenario(user)) {
+                IdentityErrorMsgContext customErrorMessageContext =
+                        new IdentityErrorMsgContext(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE);
+                IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
+                        "User : " + Utils.maskIfRequired(userName) + "'s email is not verified yet.");
             } else if (isInvalidCredentialsScenario(operationStatus, user)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
@@ -201,6 +207,19 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             throw new IdentityEventException("Error occurred while checking whether this user is confirmed or not, " + e.getMessage(), e);
         }
         return userConfirmed ;
+    }
+
+    private boolean isUserEmailVerificationScenario(User user) throws IdentityEventException {
+
+        boolean isUserEmailVerificationScenario = false;
+        try {
+            isUserEmailVerificationScenario =
+                    UserSelfRegistrationManager.getInstance().isUserEmailVerificationScenario(user);
+        } catch (IdentityRecoveryException e) {
+            throw new IdentityEventException(
+                    "Error occurred while checking whether this user's email is verified or not, " + e.getMessage(), e);
+        }
+        return isUserEmailVerificationScenario;
     }
 
     private boolean isUserExistsInDomain(UserStoreManager userStoreManager, String userName)
