@@ -18,8 +18,10 @@
 
 package org.wso2.carbon.identity.recovery.handler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
@@ -126,7 +128,7 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
                 throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
                         "User : " + Utils.maskIfRequired(userName) + "'s email is not confirmed yet.");
-            } else if (!isSelfSignupEnabled && operationStatus && !isUserEmailVerificationScenario(user)) {
+            } else if (!isSelfSignupEnabled && operationStatus && isUserEmailVerificationScenario(user)) {
                 IdentityErrorMsgContext customErrorMessageContext =
                         new IdentityErrorMsgContext(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
@@ -213,8 +215,22 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
 
         boolean isUserEmailVerificationScenario = false;
         try {
-            isUserEmailVerificationScenario =
-                    UserSelfRegistrationManager.getInstance().isUserEmailVerificationScenario(user);
+            if (StringUtils.isBlank(user.getTenantDomain())) {
+                user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                log.info("isUserEmailVerificationScenario :Tenant domain is not in the request. " +
+                        "set to default for user : " + user.getUserName());
+            }
+            if (StringUtils.isBlank(user.getUserStoreDomain())) {
+                user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+                log.info("isUserEmailVerificationScenario :User store domain is not in the request. " +
+                        " set to default for user : " + user.getUserName());
+            }
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            UserRecoveryData load = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
+
+            if (load != null && RecoveryScenarios.EMAIL_VERIFICATION.equals(load.getRecoveryScenario())) {
+                isUserEmailVerificationScenario = true;
+            }
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException(
                     "Error occurred while checking whether this user's email is verified or not, " + e.getMessage(), e);

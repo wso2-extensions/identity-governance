@@ -585,38 +585,6 @@ public class UserSelfRegistrationManager {
     }
 
     /**
-     * Check whether the recovery scenario is email verification or not.
-     *
-     * @param user User object
-     * @return true if the recovery scenario is not email verification, false otherwise.
-     * @throws IdentityRecoveryException Identity Recovery Exception
-     */
-    public boolean isUserEmailVerificationScenario(User user) throws IdentityRecoveryException {
-
-        boolean isUserEmailVerificationScenario = false;
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info(
-                    "isUserEmailVerificationScenario :Tenant domain is not in the request. " +
-                            "set to default for user : " + user.getUserName());
-        }
-        if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("isUserEmailVerificationScenario :User store domain is not in the request. " +
-                    " set to default for user : " +
-                    user.getUserName());
-        }
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData load =
-                userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
-
-        if (load != null && !RecoveryScenarios.EMAIL_VERIFICATION.equals(load.getRecoveryScenario())) {
-            isUserEmailVerificationScenario = true;
-        }
-        return isUserEmailVerificationScenario;
-    }
-
-    /**
      * This method is deprecated.
      *
      * @since 1.1.37
