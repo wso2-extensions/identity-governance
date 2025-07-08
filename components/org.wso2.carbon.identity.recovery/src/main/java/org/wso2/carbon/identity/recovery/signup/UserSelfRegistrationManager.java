@@ -196,6 +196,7 @@ public class UserSelfRegistrationManager {
                     .getUserName());
         }
         NotificationResponseBean notificationResponseBean;
+        Map<String, String> claimsMap;
         try {
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
@@ -211,7 +212,7 @@ public class UserSelfRegistrationManager {
             carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             carbonContext.setTenantDomain(user.getTenantDomain());
 
-            Map<String, String> claimsMap = new HashMap<>();
+            claimsMap = new HashMap<>();
             for (Claim claim : claims) {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
@@ -282,7 +283,7 @@ public class UserSelfRegistrationManager {
                         tenantDomain));
         // If account is active immediately upon creation, treat as a successful self registration.
         if (!isAccountLockedOnCreation) {
-            publishEvent(user, claims, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+            publishEvent(user, claimsMap, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
         }
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
@@ -2098,6 +2099,35 @@ public class UserSelfRegistrationManager {
             }
         }
         handleEvent(eventName,properties,user);
+    }
+
+    /**
+     * Method to publish pre and post self sign up register event.
+     *
+     * @param user           self sign up user
+     * @param claims         claims of the user
+     * @param metaProperties other properties of the request
+     * @param eventName      event name (PRE_SELF_SIGNUP_REGISTER,POST_SELF_SIGNUP_REGISTER)
+     * @throws IdentityRecoveryException
+     */
+    private void publishEvent(User user, Map<String, String> claims, Property[] metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+        handleEvent(eventName, properties, user);
     }
 
     /**
