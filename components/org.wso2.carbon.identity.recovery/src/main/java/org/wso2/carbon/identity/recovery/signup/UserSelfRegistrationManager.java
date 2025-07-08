@@ -280,7 +280,7 @@ public class UserSelfRegistrationManager {
         boolean isAccountLockedOnCreation = Boolean.parseBoolean(
                 Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
                         tenantDomain));
-        // If account is active immediately upon creation, treat as direct registration.
+        // If account is active immediately upon creation, treat as a successful self registration.
         if (!isAccountLockedOnCreation) {
             publishEvent(user, claims, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
         }
