@@ -150,6 +150,7 @@ public class UserSelfRegistrationManager {
             throws IdentityRecoveryException {
 
         String tenantDomain = user.getTenantDomain();
+        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -283,7 +284,6 @@ public class UserSelfRegistrationManager {
         if (!isAccountLockedOnCreation) {
             publishEvent(user, claims, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
         }
-        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         return notificationResponseBean;
