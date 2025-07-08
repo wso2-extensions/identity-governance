@@ -57,6 +57,7 @@ import java.util.Map;
 
 import static java.util.Locale.ENGLISH;
 import static org.wso2.carbon.identity.application.mgt.ApplicationConstants.MY_ACCOUNT_APPLICATION_NAME;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.REGISTRATION_FLOW_TYPE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.SELF_REGISTRATION_DEFAULT_USERSTORE_CONFIG;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SEND_CONFIRMATION_NOTIFICATION;
@@ -112,8 +113,7 @@ public class SelfRegistrationCompletionListener extends AbstractFlowExecutionLis
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext flowExecutionContext)
             throws FlowEngineException {
 
-        if ((Flow.Name.USER_REGISTRATION.name().equalsIgnoreCase(flowExecutionContext.getFlowType()) ||
-                "REGISTRATION".equalsIgnoreCase(flowExecutionContext.getFlowType())) &&
+        if (REGISTRATION_FLOW_TYPE.equalsIgnoreCase(flowExecutionContext.getFlowType()) &&
                 Constants.COMPLETE.equals(step.getFlowStatus())) {
 
             FlowUser user = flowExecutionContext.getFlowUser();
