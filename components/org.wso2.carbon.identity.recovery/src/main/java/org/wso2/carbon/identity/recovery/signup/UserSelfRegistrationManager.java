@@ -150,15 +150,7 @@ public class UserSelfRegistrationManager {
             throws IdentityRecoveryException {
 
         String tenantDomain = user.getTenantDomain();
-        boolean isAccountLockedOnCreation = Boolean.parseBoolean(
-                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                        tenantDomain));
-        // If account is active immediately upon creation, treat as direct registration.
-        if (isAccountLockedOnCreation) {
-            updateIdentityContextFlow(Flow.Name.SELF_REGISTRATION_WITH_VERIFICATION);
-        } else {
-            updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
-        }
+        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -284,6 +276,15 @@ public class UserSelfRegistrationManager {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
+
+        boolean isAccountLockedOnCreation = Boolean.parseBoolean(
+                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                        tenantDomain));
+        // If account is active immediately upon creation, treat as a successful self registration.
+        if (!isAccountLockedOnCreation) {
+            publishEvent(user, claims, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+        }
+
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         return notificationResponseBean;
     }
