@@ -42,7 +42,6 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.util.Map;
 
@@ -115,11 +114,18 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             boolean operationStatus =
                     (Boolean) event.getEventProperties().get(IdentityEventConstants.EventProperty.OPERATION_STATUS);
             if (operationStatus && !isUserAccountConfirmed(user)) {
-                IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
-                        IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
+                if (isSelfSignupEnabled) {
+                    IdentityErrorMsgContext customErrorMessageContext = new IdentityErrorMsgContext(
+                            IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE);
+                    IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
+                    throw new IdentityEventException(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE,
+                            "User : " + Utils.maskIfRequired(userName) + " not confirmed yet.");
+                }
+                IdentityErrorMsgContext customErrorMessageContext =
+                        new IdentityErrorMsgContext(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE);
                 IdentityUtil.setIdentityErrorMsg(customErrorMessageContext);
-                throw new IdentityEventException(IdentityCoreConstants.USER_ACCOUNT_NOT_CONFIRMED_ERROR_CODE,
-                        "User : " + Utils.maskIfRequired(userName) + " not confirmed yet.");
+                throw new IdentityEventException(IdentityCoreConstants.USER_EMAIL_NOT_VERIFIED_ERROR_CODE,
+                        "User : " + Utils.maskIfRequired(userName) + "'s email is not confirmed yet.");
             } else if (isInvalidCredentialsScenario(operationStatus, user)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Account unconfirmed user: %s in userstore: %s in tenant: %s is trying " +
