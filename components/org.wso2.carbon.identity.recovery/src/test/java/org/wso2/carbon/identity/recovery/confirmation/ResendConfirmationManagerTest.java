@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -138,6 +139,23 @@ public class ResendConfirmationManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
 
         when(threadLocalCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN);
+        mockDynamicPortalEnabled(identityGovernanceService);
+    }
+
+    private void mockDynamicPortalEnabled(IdentityGovernanceService identityGovernanceService)
+            throws IdentityGovernanceException {
+
+        org.wso2.carbon.identity.application.common.model.Property property = new org.wso2.carbon.identity.application.common.model.Property();
+        property.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
+        property.setValue("true");
+
+        IdentityRecoveryServiceDataHolder.getInstance()
+                .setIdentityGovernanceService(identityGovernanceService);
+
+        when(identityGovernanceService.getConfiguration(
+                new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL},
+                "carbon.super"))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{property});
     }
 
     @AfterMethod
