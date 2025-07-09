@@ -522,7 +522,7 @@ public class NotificationPasswordRecoveryManager {
      * @param channel Notification channel
      * @return Server supported notification channel
      */
-    private String getServerSupportedNotificationChannel(String channel) {
+    public String getServerSupportedNotificationChannel(String channel) {
 
         if (StringUtils.isEmpty(channel)) {
             if (log.isDebugEnabled()) {
@@ -718,9 +718,6 @@ public class NotificationPasswordRecoveryManager {
         String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
                 userRecoveryData.getUser().getUserStoreDomain());
 
-        // Update the password.
-        updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
-                notificationsInternallyManaged);
         if (recoveryFlowId != null) {
             userRecoveryDataStore.invalidateWithRecoveryFlowId(recoveryFlowId);
         } else {
@@ -987,7 +984,7 @@ public class NotificationPasswordRecoveryManager {
      * @return Claims that are related to account state
      * @throws IdentityEventException Error while checking for account state claim
      */
-    private HashMap<String, String> getAccountStateClaims(UserRecoveryData userRecoveryData,
+    public HashMap<String, String> getAccountStateClaims(UserRecoveryData userRecoveryData,
                                                           boolean isNotificationInternallyManaged)
             throws IdentityEventException {
 
@@ -1112,7 +1109,7 @@ public class NotificationPasswordRecoveryManager {
      * @param metaProperties      Meta properties to be send with the notification.
      * @throws IdentityRecoveryException Error while triggering notification.
      */
-    private void triggerNotification(User user, String notificationChannel, String templateName, String code,
+    public void triggerNotification(User user, String notificationChannel, String templateName, String code,
                                      String eventName, Property[] metaProperties, UserRecoveryData userRecoveryData)
             throws IdentityRecoveryException {
 
@@ -1203,7 +1200,7 @@ public class NotificationPasswordRecoveryManager {
         }
     }
 
-    private void publishEvent(User user, String notify, String code, String password, Property[] metaProperties,
+    public void publishEvent(User user, String notify, String code, String password, Property[] metaProperties,
                               String eventName, UserRecoveryData userRecoveryData) throws
             IdentityRecoveryException {
 
@@ -1336,7 +1333,7 @@ public class NotificationPasswordRecoveryManager {
         Utils.createAuditMessage(AuditConstants.ACTION_ACCOUNT_STATUS_NOTIFY, user.getUserName(), dataObject, result);
     }
 
-    private void auditPasswordReset(User user, String action, String errorMsg, String result, String recoveryScenario,
+    public void auditPasswordReset(User user, String action, String errorMsg, String result, String recoveryScenario,
                                     String recoveryStep) {
 
         JSONObject dataObject = new JSONObject();
@@ -1399,7 +1396,7 @@ public class NotificationPasswordRecoveryManager {
         return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario());
     }
 
-    private boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
+    public boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
 
         String path = IdentityRecoveryConstants.EMAIL_TEMPLATE_PATH + PATH_SEPARATOR +
                 IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS.toLowerCase();
@@ -1425,7 +1422,7 @@ public class NotificationPasswordRecoveryManager {
      *
      * @param userRecoveryData User and recovery scenario information.
      */
-    private void updateIdentityContext(UserRecoveryData userRecoveryData) {
+    public void updateIdentityContext(UserRecoveryData userRecoveryData) {
 
         RecoveryScenarios recoveryScenario = (RecoveryScenarios) userRecoveryData.getRecoveryScenario();
         Flow flow;

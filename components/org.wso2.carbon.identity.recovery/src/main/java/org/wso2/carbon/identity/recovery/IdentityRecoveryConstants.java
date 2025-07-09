@@ -86,6 +86,11 @@ public class IdentityRecoveryConstants {
     public static final String CAMPAIGN = "campaign";
     public static final String UTM_PARAMETERS_PREFIX = "utm_";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String CONFIRMATION_CODE_INPUT = "confirmationCode";
+    public static final String NOTIFICATION_CHANNEL = "notification-channel";
+    public static final String RECOVERY_SCENARIO = "recovery-scenario";
+    public static final String USER = "user";;
+
     public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
     public static final String OTP_TOKEN_STRING = "otpTokenString";

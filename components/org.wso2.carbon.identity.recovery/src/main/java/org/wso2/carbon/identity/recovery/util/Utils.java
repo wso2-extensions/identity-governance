@@ -61,6 +61,8 @@ import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientExcepti
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
@@ -2005,5 +2007,21 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    public static UserRecoveryData loadUserRecoveryData(String code) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData;
+        try {
+            String hashedCode = Utils.hashCode(code);
+            userRecoveryData = userRecoveryDataStore.load(hashedCode);
+        } catch (NoSuchAlgorithmException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        } catch (IdentityRecoveryException e) {
+            userRecoveryData = userRecoveryDataStore.load(code);
+        }
+        return userRecoveryData;
     }
 }

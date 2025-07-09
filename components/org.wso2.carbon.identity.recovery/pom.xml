@@ -21,7 +21,7 @@
         <version>1.11.99-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-
+<version>1.11.88</version>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>org.wso2.carbon.identity.recovery</artifactId>
     <packaging>bundle</packaging>

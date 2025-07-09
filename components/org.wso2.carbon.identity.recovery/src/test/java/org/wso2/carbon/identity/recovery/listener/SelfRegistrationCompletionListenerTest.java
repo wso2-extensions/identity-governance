@@ -238,6 +238,7 @@ public class SelfRegistrationCompletionListenerTest {
         Map<String, String> claims = new HashMap<>();
         claims.put("http://wso2.org/claims/identity/emailVerified", "true");  // Channel is verified
         context.getFlowUser().addClaims(claims);
+        context.setFlowType(REGISTRATION_FLOW_TYPE);
 
         boolean result = selfRegistrationCompletionListener.doPostExecute(step, context);
 
