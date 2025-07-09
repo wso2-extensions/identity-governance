@@ -145,18 +145,17 @@ public class ResendConfirmationManagerTest {
     private void mockDynamicPortalEnabled(IdentityGovernanceService identityGovernanceService)
             throws IdentityGovernanceException {
 
-        org.wso2.carbon.identity.application.common.model.Property[] properties =
-                new org.wso2.carbon.identity.application.common.model.Property[4];
-        org.wso2.carbon.identity.application.common.model.Property property =
-                new org.wso2.carbon.identity.application.common.model.Property();
+        org.wso2.carbon.identity.application.common.model.Property property = new org.wso2.carbon.identity.application.common.model.Property();
         property.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
         property.setValue("true");
-        properties[0] = property;
 
         IdentityRecoveryServiceDataHolder.getInstance()
                 .setIdentityGovernanceService(identityGovernanceService);
-        when(identityGovernanceService.getConfiguration(new String[]{IdentityRecoveryConstants.ConnectorConfig.
-                ENABLE_DYNAMIC_REGISTRATION_PORTAL}, "carbon.super")).thenReturn(properties);
+
+        when(identityGovernanceService.getConfiguration(
+                new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL},
+                "carbon.super"))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{property});
     }
 
     @AfterMethod
