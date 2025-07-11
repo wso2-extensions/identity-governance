@@ -200,7 +200,7 @@ public class PasswordProvisioningExecutor implements Executor {
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
             LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
-            return new ExecutorResponse(ERROR);
+            return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }
 

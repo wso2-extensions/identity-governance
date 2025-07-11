@@ -74,6 +74,7 @@ public class PasswordProvisioningExecutorTest {
 
     @BeforeMethod
     public void setUp() {
+
         executor = new PasswordProvisioningExecutor();
         mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
         mockedDataHolderStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
@@ -81,12 +82,14 @@ public class PasswordProvisioningExecutorTest {
 
     @AfterMethod
     public void tearDown() {
+
         mockedIdentityTenantUtil.close();
         mockedDataHolderStatic.close();
     }
 
     @Test
     public void testExecuteWithMissingPasswordAndCredentials() {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         when(context.getUserInputData()).thenReturn(Collections.emptyMap());
 
@@ -162,6 +165,7 @@ public class PasswordProvisioningExecutorTest {
 
     @Test
     public void testExecuteWithExceptionInUpdate() throws Exception {
+
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = new FlowUser();
         flowUser.setUsername(USERNAME);
@@ -192,14 +196,15 @@ public class PasswordProvisioningExecutorTest {
 
         ExecutorResponse response = executor.execute(context);
 
-        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR.toLowerCase());
+        assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_ERROR);
     }
 
     @DataProvider(name = "flowTypes")
     public Object[][] provideFlowTypes() {
+
         return new Object[][]{
                 {ASK_PASSWORD},
-                // { PASSWORD_RECOVERY }
+                { PASSWORD_RECOVERY }
         };
     }
 }

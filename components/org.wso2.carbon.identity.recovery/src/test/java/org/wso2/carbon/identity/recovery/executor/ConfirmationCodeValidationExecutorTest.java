@@ -60,6 +60,7 @@ public class ConfirmationCodeValidationExecutorTest {
     private static final String CONFIRMATION_CODE = "confirmationCode";
     private static final String USERNAME = "john";
     private static final String TENANT_DOMAIN = "carbon.super";
+    private static final String DOMAIN_NAME = "SECONDARY";
     private static final String USER_ID = "abc123";
     private static final int TENANT_ID = 1234;
     private ConfirmationCodeValidationExecutor executor;
@@ -116,7 +117,7 @@ public class ConfirmationCodeValidationExecutorTest {
         User mockUser = new User();
         mockUser.setUserName(USERNAME);
         mockUser.setTenantDomain(TENANT_DOMAIN);
-        mockUser.setUserStoreDomain("PRIMARY");
+        mockUser.setUserStoreDomain(DOMAIN_NAME);
 
         UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
         when(mockRecoveryData.getUser()).thenReturn(mockUser);
@@ -155,7 +156,8 @@ public class ConfirmationCodeValidationExecutorTest {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
-        assertEquals(flowUser.getUsername(), "john");
+        String fullyQualifiedUsername = DOMAIN_NAME + "/" + USERNAME;
+        assertEquals(flowUser.getUsername(), fullyQualifiedUsername);
         assertEquals(flowUser.getUserId(), USER_ID);
     }
 
@@ -164,7 +166,7 @@ public class ConfirmationCodeValidationExecutorTest {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(CONFIRMATION_CODE, "valid-code");
+        userInputData.put(CONFIRMATION_CODE, "invalid-code");
         when(context.getUserInputData()).thenReturn(userInputData);
 
         // Mock User and UserRecoveryData

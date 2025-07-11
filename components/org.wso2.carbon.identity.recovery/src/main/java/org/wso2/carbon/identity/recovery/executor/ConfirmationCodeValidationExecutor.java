@@ -86,7 +86,9 @@ public class ConfirmationCodeValidationExecutor implements Executor {
             flowExecutionContext.setProperty(CONFIRMATION_CODE_INPUT, confirmationCode);
             flowExecutionContext.setProperty(USER, userRecoveryData.getUser());
             flowExecutionContext.setProperty(NOTIFICATION_CHANNEL, userRecoveryData.getRemainingSetIds());
-            flowExecutionContext.setProperty(RECOVERY_SCENARIO, userRecoveryData.getRemainingSetIds());
+            if (userRecoveryData.getRecoveryScenario() != null) {
+                flowExecutionContext.setProperty(RECOVERY_SCENARIO, userRecoveryData.getRecoveryScenario().name());
+            }
 
             response.setResult(STATUS_COMPLETE);
         } catch (IdentityRecoveryException | UserStoreException e) {
@@ -97,6 +99,12 @@ public class ConfirmationCodeValidationExecutor implements Executor {
         return response;
     }
 
+    /**
+     * Sets up the flow user with the necessary claims and user ID.
+     * @param flowExecutionContext Flow execution context containing the flow user.
+     * @param user                  User object containing user details.
+     * @throws UserStoreException if there is an error while retrieving user claims or user ID.
+     */
     private void setupFlowUser(FlowExecutionContext flowExecutionContext, User user) throws UserStoreException {
 
         int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
@@ -136,6 +144,12 @@ public class ConfirmationCodeValidationExecutor implements Executor {
         }
     }
 
+    /**
+     * Validates the confirmation code and retrieves the associated user recovery data.
+     * @param code  Confirmation code to validate.
+     * @return  UserRecoveryData associated with the confirmation code.
+     * @throws IdentityRecoveryException if there is an error during validation or retrieval.
+     */
     private UserRecoveryData validateConfirmationCode(String code) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();

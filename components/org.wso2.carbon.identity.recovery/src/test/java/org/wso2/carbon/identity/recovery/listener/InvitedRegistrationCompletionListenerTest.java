@@ -53,6 +53,7 @@ public class InvitedRegistrationCompletionListenerTest {
     private MockedStatic<Utils> mockedUtilsStatic;
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryStatic;
     private MockedStatic<NotificationPasswordRecoveryManager> mockedRecoveryManagerStatic;
+    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
 
     private InvitedRegistrationCompletionListener listener;
 
@@ -63,6 +64,7 @@ public class InvitedRegistrationCompletionListenerTest {
         mockedUtilsStatic = mockStatic(Utils.class);
         mockedJDBCRecoveryStatic = mockStatic(JDBCRecoveryDataStore.class);
         mockedRecoveryManagerStatic = mockStatic(NotificationPasswordRecoveryManager.class);
+        mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
 
         listener = new InvitedRegistrationCompletionListener();
     }
@@ -74,6 +76,7 @@ public class InvitedRegistrationCompletionListenerTest {
         mockedUtilsStatic.close();
         mockedJDBCRecoveryStatic.close();
         mockedRecoveryManagerStatic.close();
+        mockedIdentityTenantUtil.close();
     }
 
     @Test
@@ -130,9 +133,7 @@ public class InvitedRegistrationCompletionListenerTest {
         when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
 
-        // Mock tenant id
-        mockStatic(IdentityTenantUtil.class).when(() -> IdentityTenantUtil.getTenantId(any())).thenReturn(1);
-
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(any())).thenReturn(1);
         boolean result = listener.doPostExecute(step, context);
 
         assertTrue(result);

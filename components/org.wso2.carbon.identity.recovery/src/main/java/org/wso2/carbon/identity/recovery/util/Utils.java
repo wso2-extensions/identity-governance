@@ -2009,6 +2009,12 @@ public class Utils {
         return null;
     }
 
+    /**
+     * Load user recovery data from the database using the provided code.
+     * @param code The recovery code to be used for loading the user recovery data.
+     * @return  UserRecoveryData object containing the recovery data for the user.
+     * @throws IdentityRecoveryException if an error occurs while loading the user recovery data.
+     */
     public static UserRecoveryData loadUserRecoveryData(String code) throws IdentityRecoveryException {
 
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();

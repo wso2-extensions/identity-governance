@@ -55,6 +55,11 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIR
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.identity.recovery.util.Utils.loadUserRecoveryData;
 
+/**
+ * Listener to handle post-execution steps for invited user registration completion.
+ * This listener updates the account state claims, invalidates recovery data,
+ * sends notifications, and publishes events upon successful completion of the flow.
+ */
 public class InvitedRegistrationCompletionListener extends AbstractFlowExecutionListener {
 
     private static final Log log = LogFactory.getLog(InvitedRegistrationCompletionListener.class);
@@ -87,7 +92,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             invalidateRecoveryData(confirmationCode);
             handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
                     tenantDomain, manager);
-            publishEvent(user, confirmationCode, IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, recoveryScenario);
+            publishEvent(user, confirmationCode, recoveryScenario);
         } catch (Exception e) {
             throw new FlowEngineException(ERROR_CODE_LISTENER_FAILURE.getCode(),
                     ERROR_CODE_LISTENER_FAILURE.getMessage(), ERROR_CODE_LISTENER_FAILURE.getDescription(), e);
@@ -101,6 +106,14 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         return (value != null) ? value.toString() : null;
     }
 
+    /**
+     * Updates the account state claims for the user.
+     * @param tenantDomain          Tenant domain of the user.
+     * @param notificationChannel   Notification channel used for the user.
+     * @param internallyManaged     Indicates if the notification is internally managed.
+     * @param user                  User object containing user details.
+     * @throws UserStoreException   if an error occurs while updating user claims.
+     */
     private void updateAccountStateClaims(String tenantDomain, String notificationChannel,
                                           boolean internallyManaged, User user)
             throws UserStoreException {
@@ -114,6 +127,14 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         }
     }
 
+    /**
+     * Retrieves the account state claims based on the tenant domain and notification channel.
+     *
+     * @param tenantDomain          Tenant domain of the user.
+     * @param notificationChannel   Notification channel used for the user.
+     * @param internallyManaged     Indicates if the notification is internally managed.
+     * @return                     A map containing account state claims.
+     */
     private HashMap<String, String> getAccountStateClaims(String tenantDomain, String notificationChannel,
                                                           boolean internallyManaged) {
 
@@ -141,6 +162,11 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         return claims;
     }
 
+    /**
+     * Invalidates the recovery data associated with the provided confirmation code.
+     * @param confirmationCode  Confirmation code to identify the recovery data.
+     * @throws IdentityRecoveryException    if an error occurs while loading or invalidating recovery data.
+     */
     private void invalidateRecoveryData(String confirmationCode) throws IdentityRecoveryException {
 
         try {
@@ -209,7 +235,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         return null;
     }
 
-    public void publishEvent(User user, String code, String eventName, String recoveryScenario)
+    private void publishEvent(User user, String code, String recoveryScenario)
             throws IdentityEventException {
 
         HashMap<String, Object> props = new HashMap<>();
@@ -220,12 +246,13 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         props.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
         props.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
 
-        Event event = new Event(eventName, props);
+        Event event = new Event(IdentityEventConstants.Event.POST_ADD_NEW_PASSWORD, props);
         IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(event);
     }
 
     @Override
     public boolean isEnabled() {
+
         return true;
     }
 }
