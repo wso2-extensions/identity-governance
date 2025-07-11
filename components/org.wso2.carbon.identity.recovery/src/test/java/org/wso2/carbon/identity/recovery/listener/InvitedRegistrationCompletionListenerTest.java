@@ -18,56 +18,162 @@
 
 package org.wso2.carbon.identity.recovery.listener;
 
-import org.mockito.Mockito;
+import org.mockito.MockedStatic;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
+import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class InvitedRegistrationCompletionListenerTest {
 
-//    private InvitedRegistrationCompletionListener listener;
-//    private FlowExecutionContext context;
-//    private FlowExecutionStep step;
-//
-//    @BeforeMethod
-//    public void setUp() {
-//        listener = new InvitedRegistrationCompletionListener();
-//        context = Mockito.mock(FlowExecutionContext.class);
-//        step = Mockito.mock(FlowExecutionStep.class);
-//    }
-//
-//    @Test
-//    public void testDoPreExecute() throws Exception {
-//        // Simulate necessary properties for pre execution.
-//        Mockito.when(context.getProperty("confirmationCode")).thenReturn("sampleCode");
-//        // Stub additional properties as needed in your actual logic.
-//        assertTrue(listener.doPreExecute(context));
-//    }
-//
-//    @Test
-//    public void testDoPostExecuteWhenFlowComplete() throws Exception {
-//        // Set up context for a complete flow execution.
-//        Mockito.when(step.getFlowStatus()).thenReturn("COMPLETE");
-//        Mockito.when(context.getFlowType()).thenReturn(IdentityRecoveryConstants.ASK_PASSWORD_FLOW_TYPE);
-//        Mockito.when(context.getProperty("confirmationCode")).thenReturn("sampleCode");
-//
-//        // Provide a dummy UserRecoveryData object.
-//        UserRecoveryData recoveryData = new UserRecoveryData();
-//        Mockito.when(context.getProperty(IdentityRecoveryConstants.USER_RECOVERY_DATA))
-//                .thenReturn(recoveryData);
-//
-//        // Expect that the listener executes the post logic without exception.
-//        assertTrue(listener.doPostExecute(step, context));
-//    }
-//
-//    @Test
-//    public void testDoPostExecuteWhenFlowNotComplete() throws Exception {
-//        // When flow status is not complete, listener should simply return true.
-//        Mockito.when(step.getFlowStatus()).thenReturn("INCOMPLETE");
-//        assertTrue(listener.doPostExecute(step, context));
-//    }
+    private MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolderStatic;
+    private MockedStatic<Utils> mockedUtilsStatic;
+    private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryStatic;
+    private MockedStatic<NotificationPasswordRecoveryManager> mockedRecoveryManagerStatic;
+
+    private InvitedRegistrationCompletionListener listener;
+
+    @BeforeMethod
+    public void setUp() {
+
+        mockedDataHolderStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
+        mockedUtilsStatic = mockStatic(Utils.class);
+        mockedJDBCRecoveryStatic = mockStatic(JDBCRecoveryDataStore.class);
+        mockedRecoveryManagerStatic = mockStatic(NotificationPasswordRecoveryManager.class);
+
+        listener = new InvitedRegistrationCompletionListener();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedDataHolderStatic.close();
+        mockedUtilsStatic.close();
+        mockedJDBCRecoveryStatic.close();
+        mockedRecoveryManagerStatic.close();
+    }
+
+    @Test
+    public void testDoPostExecuteSuccess() throws Exception {
+
+        // Setup context
+        FlowExecutionStep step = mock(FlowExecutionStep.class);
+        when(step.getFlowStatus()).thenReturn("COMPLETE");
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+
+        User user = new User();
+        user.setUserName("john");
+        user.setTenantDomain("carbon.super");
+        user.setUserStoreDomain("PRIMARY");
+
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("code123");
+        when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(user);
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("scenario");
+
+        // Mock NotificationPasswordRecoveryManager
+        NotificationPasswordRecoveryManager recoveryManager = mock(NotificationPasswordRecoveryManager.class);
+        when(recoveryManager.getServerSupportedNotificationChannel(any())).thenReturn("EMAIL");
+        when(recoveryManager.isAskPasswordEmailTemplateTypeExists(any())).thenReturn(true);
+        mockedRecoveryManagerStatic.when(NotificationPasswordRecoveryManager::getInstance).thenReturn(recoveryManager);
+
+        // Mock Utils
+        mockedUtilsStatic.when(() -> Utils.getRecoveryConfigs(any(), any())).thenReturn("true");
+        mockedUtilsStatic.when(() -> Utils.handleServerException((IdentityRecoveryConstants.ErrorMessages) any(),
+                any(), any())).thenCallRealMethod();
+
+        // Mock JDBCRecoveryDataStore and UserRecoveryData
+        JDBCRecoveryDataStore jdbcStore = mock(JDBCRecoveryDataStore.class);
+        UserRecoveryData recoveryData = mock(UserRecoveryData.class);
+        when(recoveryData.getRecoveryFlowId()).thenReturn(null);
+        when(recoveryData.getUser()).thenReturn(user);
+        mockedJDBCRecoveryStatic.when(JDBCRecoveryDataStore::getInstance).thenReturn(jdbcStore);
+
+        // Mock loadUserRecoveryData
+        mockedUtilsStatic.when(() -> Utils.loadUserRecoveryData(any())).thenReturn(recoveryData);
+
+        // Mock IdentityRecoveryServiceDataHolder and IdentityEventService
+        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
+        IdentityEventService eventService = mock(IdentityEventService.class);
+        when(dataHolder.getIdentityEventService()).thenReturn(eventService);
+        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+
+        // Mock UserStoreManager
+        RealmService realmService = mock(RealmService.class);
+        UserRealm userRealm = mock(UserRealm.class);
+        UserStoreManager userStoreManager = mock(UserStoreManager.class);
+        when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+
+        // Mock tenant id
+        mockStatic(IdentityTenantUtil.class).when(() -> IdentityTenantUtil.getTenantId(any())).thenReturn(1);
+
+        boolean result = listener.doPostExecute(step, context);
+
+        assertTrue(result);
+        verify(userStoreManager).setUserClaimValues(any(), any(), any());
+        verify(eventService, atLeastOnce()).handleEvent(any());
+        verify(jdbcStore).invalidate(user);
+    }
+
+    @Test
+    public void testDoPostExecuteWhenUserNull() throws Exception {
+
+        FlowExecutionStep step = mock(FlowExecutionStep.class);
+        when(step.getFlowStatus()).thenReturn("COMPLETE");
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+        when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(null);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("code123");
+
+        boolean result = listener.doPostExecute(step, context);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDoPostExecuteWhenConfirmationCodeNull() throws Exception {
+
+        FlowExecutionStep step = mock(FlowExecutionStep.class);
+        when(step.getFlowStatus()).thenReturn("COMPLETE");
+        FlowExecutionContext context = mock(FlowExecutionContext.class);
+        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+        User user = new User();
+        user.setUserName("john");
+        when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(user);
+        when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn(null);
+
+        boolean result = listener.doPostExecute(step, context);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testIsEnabled() {
+
+        assertTrue(listener.isEnabled());
+    }
 }

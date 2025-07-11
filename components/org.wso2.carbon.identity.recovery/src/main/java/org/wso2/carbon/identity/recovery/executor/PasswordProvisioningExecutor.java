@@ -166,6 +166,11 @@ public class PasswordProvisioningExecutor implements Executor {
                 .name(Flow.Name.INVITED_USER_REGISTRATION)
                 .initiatingPersona(Flow.InitiatingPersona.ADMIN)
                 .build();
+
+        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
+            // If the flow is already set, no need to update it again.
+            return;
+        }
         IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
     }
 

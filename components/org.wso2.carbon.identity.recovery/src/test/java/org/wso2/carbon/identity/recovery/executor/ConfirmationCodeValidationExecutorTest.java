@@ -22,23 +22,30 @@ import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
-import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
+import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -47,6 +54,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
+@WithCarbonHome
 public class ConfirmationCodeValidationExecutorTest {
 
     private static final String CONFIRMATION_CODE = "confirmationCode";
@@ -55,25 +63,28 @@ public class ConfirmationCodeValidationExecutorTest {
     private static final String USER_ID = "abc123";
     private static final int TENANT_ID = 1234;
     private ConfirmationCodeValidationExecutor executor;
-    private MockedStatic<NotificationPasswordRecoveryManager> mockedRecoveryManagerStatic;
+    private MockedStatic<JDBCRecoveryDataStore> mockedJdbcStore;
+    private MockedStatic<PrivilegedCarbonContext> mockedCarbonContext;
+    private MockedStatic<IdentityTenantUtil> mockedTenantUtil;
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolderStatic;
-    private MockedStatic<IdentityTenantUtil> mockedIdentityTenantUtil;
 
     @BeforeMethod
     public void setUp() {
 
         executor = new ConfirmationCodeValidationExecutor();
-        mockedRecoveryManagerStatic = mockStatic(NotificationPasswordRecoveryManager.class);
+        mockedJdbcStore = mockStatic(JDBCRecoveryDataStore.class);
+        mockedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
+        mockedTenantUtil = mockStatic(IdentityTenantUtil.class);
         mockedDataHolderStatic = mockStatic(IdentityRecoveryServiceDataHolder.class);
-        mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
     }
 
     @AfterMethod
     public void tearDown() {
 
-        mockedRecoveryManagerStatic.close();
+        mockedJdbcStore.close();
+        mockedCarbonContext.close();
+        mockedTenantUtil.close();
         mockedDataHolderStatic.close();
-        mockedIdentityTenantUtil.close();
     }
 
     @Test
@@ -81,7 +92,6 @@ public class ConfirmationCodeValidationExecutorTest {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(CONFIRMATION_CODE, null);
         when(context.getUserInputData()).thenReturn(userInputData);
 
         ExecutorResponse response = executor.execute(context);
@@ -95,36 +105,57 @@ public class ConfirmationCodeValidationExecutorTest {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         FlowUser flowUser = new FlowUser();
+        flowUser.addClaims(new HashMap<>());
         Map<String, String> userInputData = new HashMap<>();
         userInputData.put(CONFIRMATION_CODE, "valid-code");
+
         when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getFlowUser()).thenReturn(flowUser);
 
+        // Mock User and UserRecoveryData
         User mockUser = new User();
         mockUser.setUserName(USERNAME);
         mockUser.setTenantDomain(TENANT_DOMAIN);
+        mockUser.setUserStoreDomain("PRIMARY");
 
-        NotificationPasswordRecoveryManager mockRecoveryManager = mock(NotificationPasswordRecoveryManager.class);
-        when(mockRecoveryManager.getValidatedUser("valid-code", null)).thenReturn(mockUser);
-        mockedRecoveryManagerStatic.when(NotificationPasswordRecoveryManager::getInstance).thenReturn(mockRecoveryManager);
+        UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
+        when(mockRecoveryData.getUser()).thenReturn(mockUser);
 
-        // Mock user store resolution
-        IdentityRecoveryServiceDataHolder mockDataHolder = mock(IdentityRecoveryServiceDataHolder.class);
-        RealmService mockRealmService = mock(RealmService.class);
-        UserRealm mockUserRealm = mock(UserRealm.class);
-        UserStoreManager mockStoreManager = mock(AbstractUserStoreManager.class);
+        // Mock UserRecoveryDataStore
+        UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
+        mockedJdbcStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
+        when(mockStore.load(anyString())).thenReturn(mockRecoveryData);
 
-        when(mockDataHolder.getRealmService()).thenReturn(mockRealmService);
-        when(mockRealmService.getTenantUserRealm(anyInt())).thenReturn(mockUserRealm);
-        when(mockUserRealm.getUserStoreManager()).thenReturn(mockStoreManager);
-        when(((AbstractUserStoreManager) mockStoreManager).getUserIDFromUserName(USERNAME)).thenReturn(USER_ID);
-        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(mockDataHolder);
-        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+        // Mock PrivilegedCarbonContext
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(carbonContext);
+        when(carbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+
+        // Mock IdentityTenantUtil
+        mockedTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
+
+        // Mock DataHolder & UserStoreManager
+        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
+        RealmService realmService = mock(RealmService.class);
+        UserRealm userRealm = mock(UserRealm.class);
+        UserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
+
+        when(dataHolder.getRealmService()).thenReturn(realmService);
+        when(realmService.getTenantUserRealm(anyInt())).thenReturn(userRealm);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(anyString())).thenReturn(USER_ID);
+        when(userStoreManager.getUserClaimValues(anyString(), any(String[].class), any())).thenReturn(Collections.emptyMap());
+
+        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+        // Mock ClaimMetadataManagementService
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(dataHolder.getClaimMetadataManagementService()).thenReturn(claimMetadataManagementService);
+
 
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
-        assertEquals(flowUser.getUsername(), USERNAME);
+        assertEquals(flowUser.getUsername(), "john");
         assertEquals(flowUser.getUserId(), USER_ID);
     }
 
@@ -133,13 +164,34 @@ public class ConfirmationCodeValidationExecutorTest {
 
         FlowExecutionContext context = mock(FlowExecutionContext.class);
         Map<String, String> userInputData = new HashMap<>();
-        userInputData.put(CONFIRMATION_CODE, "invalid-code");
+        userInputData.put(CONFIRMATION_CODE, "valid-code");
         when(context.getUserInputData()).thenReturn(userInputData);
 
-        NotificationPasswordRecoveryManager mockRecoveryManager = mock(NotificationPasswordRecoveryManager.class);
-        when(mockRecoveryManager.getValidatedUser("invalid-code", null))
-                .thenThrow(new IdentityRecoveryException("Invalid code"));
-        mockedRecoveryManagerStatic.when(NotificationPasswordRecoveryManager::getInstance).thenReturn(mockRecoveryManager);
+        // Mock User and UserRecoveryData
+        User mockUser = new User();
+        mockUser.setUserName(USERNAME);
+        mockUser.setTenantDomain("wrong-domain");
+        mockUser.setUserStoreDomain("PRIMARY");
+
+        UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
+        when(mockRecoveryData.getUser()).thenReturn(mockUser);
+
+        UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
+        mockedJdbcStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
+        when(mockStore.load(anyString())).thenReturn(mockRecoveryData);
+
+        // PrivilegedCarbonContext
+        PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
+        mockedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(carbonContext);
+        when(carbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
+
+        IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
+        mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
+
+        // Mock ClaimMetadataManagementService
+        ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
+        when(dataHolder.getClaimMetadataManagementService()).thenReturn(claimMetadataManagementService);
+
 
         ExecutorResponse response = executor.execute(context);
 
