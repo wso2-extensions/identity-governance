@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
@@ -49,7 +50,6 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ASK_PASSWORD_FLOW_TYPE;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
@@ -68,7 +68,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
     public boolean doPostExecute(FlowExecutionStep step, FlowExecutionContext context) throws FlowEngineException {
 
         if (!Constants.COMPLETE.equals(step.getFlowStatus()) ||
-                !ASK_PASSWORD_FLOW_TYPE.equalsIgnoreCase(context.getFlowType())) {
+                !Flow.Name.INVITED_USER_REGISTRATION.name().equalsIgnoreCase(context.getFlowType())) {
             return true;
         }
         String confirmationCode = getStringProperty(context, CONFIRMATION_CODE_INPUT);

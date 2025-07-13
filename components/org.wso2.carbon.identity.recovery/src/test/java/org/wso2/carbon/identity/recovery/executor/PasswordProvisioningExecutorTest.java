@@ -25,6 +25,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
@@ -64,7 +65,6 @@ public class PasswordProvisioningExecutorTest {
     private static final String USERNAME = "test@wso2.com";
     private static final String TENANT_DOMAIN = "carbon.super";
     private static final String USER_ID = "abc123";
-    private static final String ASK_PASSWORD = "ASK_PASSWORD";
     private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
     private static final int TENANT_ID = 1234;
 
@@ -121,7 +121,7 @@ public class PasswordProvisioningExecutorTest {
         when(context.getTenantDomain()).thenReturn(TENANT_DOMAIN);
         when(context.getFlowUser()).thenReturn(flowUser);
 
-        if (ASK_PASSWORD.equals(flowType)) {
+        if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
             when(context.getProperty(CONFIRMATION_CODE_INPUT)).thenReturn("valid-code");
 
             User user = new User();
@@ -155,7 +155,7 @@ public class PasswordProvisioningExecutorTest {
         ExecutorResponse response = executor.execute(context);
 
         assertEquals(response.getResult(), Constants.ExecutorStatus.STATUS_COMPLETE);
-        if (ASK_PASSWORD.equals(flowType)) {
+        if (Flow.Name.INVITED_USER_REGISTRATION.name().equals(flowType)) {
             assertEquals(flowUser.getUserId(), USER_ID);
             assertTrue(flowUser.getClaims().containsKey("http://wso2.org/claims/givenname"));
             assertEquals(flowUser.getClaims().get("http://wso2.org/claims/givenname"), "John");
@@ -203,7 +203,7 @@ public class PasswordProvisioningExecutorTest {
     public Object[][] provideFlowTypes() {
 
         return new Object[][]{
-                {ASK_PASSWORD},
+                {Flow.Name.INVITED_USER_REGISTRATION.name()},
                 { PASSWORD_RECOVERY }
         };
     }

@@ -65,7 +65,6 @@ public class PasswordProvisioningExecutor implements Executor {
     private static final Log LOG = LogFactory.getLog(PasswordProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
     private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
-    private static final String ASK_PASSWORD = "ASK_PASSWORD";
 
     @Override
     public String getName() {
@@ -106,7 +105,7 @@ public class PasswordProvisioningExecutor implements Executor {
         try {
             if (context.getFlowType().equals(PASSWORD_RECOVERY)) {
                 return handlePasswordRecoveryFlow(context, password);
-            } else if (context.getFlowType().equals(ASK_PASSWORD)) {
+            } else if (Flow.Name.INVITED_USER_REGISTRATION.name().equalsIgnoreCase(context.getFlowType())) {
                 return handleAskPasswordFlow(context, password);
             }
             return new ExecutorResponse();
