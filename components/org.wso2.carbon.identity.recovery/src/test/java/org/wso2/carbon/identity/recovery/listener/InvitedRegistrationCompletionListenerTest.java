@@ -23,6 +23,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
@@ -89,7 +90,7 @@ public class InvitedRegistrationCompletionListenerTest {
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         when(step.getFlowStatus()).thenReturn("COMPLETE");
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+        when(context.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
 
         User user = new User();
         user.setUserName("john");
@@ -151,7 +152,7 @@ public class InvitedRegistrationCompletionListenerTest {
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         when(step.getFlowStatus()).thenReturn("COMPLETE");
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+        when(context.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
         when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(null);
         when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("code123");
 
@@ -165,7 +166,7 @@ public class InvitedRegistrationCompletionListenerTest {
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         when(step.getFlowStatus()).thenReturn("COMPLETE");
         FlowExecutionContext context = mock(FlowExecutionContext.class);
-        when(context.getFlowType()).thenReturn("ASK_PASSWORD");
+        when(context.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
         User user = new User();
         user.setUserName("john");
         when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(user);
