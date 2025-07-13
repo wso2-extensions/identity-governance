@@ -164,7 +164,7 @@ public class ConfirmationCodeValidationExecutor implements Executor {
             userRecoveryData = userRecoveryDataStore.load(code);
         }
 
-        // Validate tenant domain
+        // Validate tenant domain.
         String contextTenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userTenantDomain = userRecoveryData.getUser().getTenantDomain();
 

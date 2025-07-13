@@ -58,6 +58,9 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIR
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.RECOVERY_SCENARIO;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 
+/**
+ * Unit tests for {@link PasswordProvisioningExecutor}.
+ */
 @WithCarbonHome
 public class PasswordProvisioningExecutorTest {
 

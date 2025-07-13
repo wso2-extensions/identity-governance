@@ -47,6 +47,9 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+/**
+ * Unit tests for {@link InvitedRegistrationCompletionListener}.
+ */
 public class InvitedRegistrationCompletionListenerTest {
 
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedDataHolderStatic;
@@ -82,7 +85,7 @@ public class InvitedRegistrationCompletionListenerTest {
     @Test
     public void testDoPostExecuteSuccess() throws Exception {
 
-        // Setup context
+        // Setup context.
         FlowExecutionStep step = mock(FlowExecutionStep.class);
         when(step.getFlowStatus()).thenReturn("COMPLETE");
         FlowExecutionContext context = mock(FlowExecutionContext.class);

@@ -54,6 +54,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
+/**
+ * Unit tests for {@link ConfirmationCodeValidationExecutor}.
+ */
 @WithCarbonHome
 public class ConfirmationCodeValidationExecutorTest {
 
@@ -113,7 +116,7 @@ public class ConfirmationCodeValidationExecutorTest {
         when(context.getUserInputData()).thenReturn(userInputData);
         when(context.getFlowUser()).thenReturn(flowUser);
 
-        // Mock User and UserRecoveryData
+        // Mock User and UserRecoveryData.
         User mockUser = new User();
         mockUser.setUserName(USERNAME);
         mockUser.setTenantDomain(TENANT_DOMAIN);
@@ -122,20 +125,20 @@ public class ConfirmationCodeValidationExecutorTest {
         UserRecoveryData mockRecoveryData = mock(UserRecoveryData.class);
         when(mockRecoveryData.getUser()).thenReturn(mockUser);
 
-        // Mock UserRecoveryDataStore
+        // Mock UserRecoveryDataStore.
         UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
         mockedJdbcStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
         when(mockStore.load(anyString())).thenReturn(mockRecoveryData);
 
-        // Mock PrivilegedCarbonContext
+        // Mock PrivilegedCarbonContext.
         PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
         mockedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(carbonContext);
         when(carbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
 
-        // Mock IdentityTenantUtil
+        // Mock IdentityTenantUtil.
         mockedTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
 
-        // Mock DataHolder & UserStoreManager
+        // Mock DataHolder & UserStoreManager.
         IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
         RealmService realmService = mock(RealmService.class);
         UserRealm userRealm = mock(UserRealm.class);
@@ -148,7 +151,7 @@ public class ConfirmationCodeValidationExecutorTest {
         when(userStoreManager.getUserClaimValues(anyString(), any(String[].class), any())).thenReturn(Collections.emptyMap());
 
         mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
-        // Mock ClaimMetadataManagementService
+        // Mock ClaimMetadataManagementService.
         ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
         when(dataHolder.getClaimMetadataManagementService()).thenReturn(claimMetadataManagementService);
 
@@ -169,7 +172,7 @@ public class ConfirmationCodeValidationExecutorTest {
         userInputData.put(CONFIRMATION_CODE, "invalid-code");
         when(context.getUserInputData()).thenReturn(userInputData);
 
-        // Mock User and UserRecoveryData
+        // Mock User and UserRecoveryData.
         User mockUser = new User();
         mockUser.setUserName(USERNAME);
         mockUser.setTenantDomain("wrong-domain");
@@ -182,7 +185,6 @@ public class ConfirmationCodeValidationExecutorTest {
         mockedJdbcStore.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
         when(mockStore.load(anyString())).thenReturn(mockRecoveryData);
 
-        // PrivilegedCarbonContext
         PrivilegedCarbonContext carbonContext = mock(PrivilegedCarbonContext.class);
         mockedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(carbonContext);
         when(carbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
@@ -190,7 +192,7 @@ public class ConfirmationCodeValidationExecutorTest {
         IdentityRecoveryServiceDataHolder dataHolder = mock(IdentityRecoveryServiceDataHolder.class);
         mockedDataHolderStatic.when(IdentityRecoveryServiceDataHolder::getInstance).thenReturn(dataHolder);
 
-        // Mock ClaimMetadataManagementService
+        // Mock ClaimMetadataManagementService.
         ClaimMetadataManagementService claimMetadataManagementService = mock(ClaimMetadataManagementService.class);
         when(dataHolder.getClaimMetadataManagementService()).thenReturn(claimMetadataManagementService);
 

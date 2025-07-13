@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_LISTENER_FAILURE;
+import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleServerException;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.identity.recovery.util.Utils.loadUserRecoveryData;
@@ -93,9 +95,10 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             handleNotifications(user, recoveryScenario, notificationChannel, confirmationCode, internallyManaged,
                     tenantDomain, manager);
             publishEvent(user, confirmationCode, recoveryScenario);
-        } catch (Exception e) {
-            throw new FlowEngineException(ERROR_CODE_LISTENER_FAILURE.getCode(),
-                    ERROR_CODE_LISTENER_FAILURE.getMessage(), ERROR_CODE_LISTENER_FAILURE.getDescription(), e);
+        } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
+            log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
+            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getName(), context.getFlowType(),
+                    context.getContextIdentifier());
         }
         return true;
     }
