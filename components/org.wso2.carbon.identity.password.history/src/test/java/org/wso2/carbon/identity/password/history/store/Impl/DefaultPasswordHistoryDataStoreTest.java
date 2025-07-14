@@ -20,18 +20,25 @@ package org.wso2.carbon.identity.password.history.store.Impl;
 
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.user.core.exceptions.PasswordHashingException;
 import org.wso2.carbon.user.core.hash.PasswordHashProcessor;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Default PasswordHistory Data Store rest cases.
@@ -47,9 +54,20 @@ public class DefaultPasswordHistoryDataStoreTest {
     private final int maxHistoryCount = 5;
 
     @Test
+    public void testValidateWhenCredentialIsNull() throws Exception {
+
+        DefaultPasswordHistoryDataStore dataStore = new DefaultPasswordHistoryDataStore();
+        User mockUser = mock(User.class);
+
+        boolean result = dataStore.validate(mockUser, null);
+
+        assertTrue(result, "Expected validate() to return true when credential is null.");
+    }
+
+    @Test
     public void testPreparePassword() throws Exception {
 
-        PasswordHashProcessor mockProcessor = Mockito.mock(PasswordHashProcessor.class);
+        PasswordHashProcessor mockProcessor = mock(PasswordHashProcessor.class);
         when(mockProcessor.hashPassword(password, salt)).thenReturn(expectedHash);
 
         DefaultPasswordHistoryDataStore dataStore =
@@ -81,7 +99,7 @@ public class DefaultPasswordHistoryDataStoreTest {
     @Test(expectedExceptions = IdentityPasswordHistoryException.class)
     public void testPreparePasswordHashFails() throws Exception {
 
-        PasswordHashProcessor mockProcessor = Mockito.mock(PasswordHashProcessor.class);
+        PasswordHashProcessor mockProcessor = mock(PasswordHashProcessor.class);
         when(mockProcessor.hashPassword(anyString(), anyString()))
                 .thenThrow(new PasswordHashingException("Hash failed."));
 
@@ -110,7 +128,7 @@ public class DefaultPasswordHistoryDataStoreTest {
         DefaultPasswordHistoryDataStore dataStore =
                 new DefaultPasswordHistoryDataStore(digestFunction, maxHistoryCount);
 
-        PasswordHashProcessor mockProcessor = Mockito.mock(PasswordHashProcessor.class);
+        PasswordHashProcessor mockProcessor = mock(PasswordHashProcessor.class);
         Field field = DefaultPasswordHistoryDataStore.class.getDeclaredField(constPasswordHashProcessor);
         field.setAccessible(true);
         field.set(dataStore, mockProcessor);
