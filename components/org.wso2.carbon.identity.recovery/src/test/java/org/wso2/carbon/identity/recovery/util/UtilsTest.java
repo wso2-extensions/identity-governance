@@ -54,6 +54,8 @@ import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientException;
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.RealmConfiguration;
@@ -140,6 +142,7 @@ public class UtilsTest {
     private static MockedStatic<FrameworkUtils> mockedStaticFrameworkUtils;
     private static MockedStatic<MultitenantUtils> mockedStaticMultiTenantUtils;
     private static MockedStatic<UserCoreUtil> mockedStaticUserCoreUtil;
+    private static MockedStatic<JDBCRecoveryDataStore> mockedStaticJDBC;
 
     private static final String TENANT_DOMAIN = "test.com";
     private static final int TENANT_ID = 123;
@@ -162,6 +165,7 @@ public class UtilsTest {
         mockedStaticFrameworkUtils = mockStatic(FrameworkUtils.class);
         mockedStaticMultiTenantUtils = mockStatic(MultitenantUtils.class);
         mockedStaticUserCoreUtil = mockStatic(UserCoreUtil.class);
+        mockedStaticJDBC = mockStatic(JDBCRecoveryDataStore.class);
     }
 
     @AfterClass
@@ -174,6 +178,7 @@ public class UtilsTest {
         mockedStaticFrameworkUtils.close();
         mockedStaticMultiTenantUtils.close();
         mockedStaticUserCoreUtil.close();
+        mockedStaticJDBC.close();
     }
 
     @BeforeMethod
@@ -1508,6 +1513,24 @@ public class UtilsTest {
                 .thenThrow(new org.wso2.carbon.user.core.UserStoreException("DB down"));
 
         Utils.getUserClaim(userStoreManager, user, claimUri);
+    }
+
+    @Test
+    public void testLoadUserRecoveryDataSuccess() throws Exception {
+
+        String code = "testCode";
+        String hashedCode = Utils.hashCode(code);
+        UserRecoveryData expectedData = mock(UserRecoveryData.class);
+        UserRecoveryDataStore mockStore = mock(UserRecoveryDataStore.class);
+        mockedStaticJDBC.when(JDBCRecoveryDataStore::getInstance).thenReturn(mockStore);
+
+        // Define correct behavior explicitly.
+        when(mockStore.load(hashedCode)).thenReturn(expectedData);
+
+        UserRecoveryData result = Utils.loadUserRecoveryData(code);
+
+        assertEquals(result, expectedData);
+        verify(mockStore).load(hashedCode);
     }
 
     private static List<LocalClaim> returnMultiEmailAndMobileRelatedLocalClaims(Map<String, String> claimProperties) {

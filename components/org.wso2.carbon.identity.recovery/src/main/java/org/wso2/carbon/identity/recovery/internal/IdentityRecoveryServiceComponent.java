@@ -67,6 +67,7 @@ import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
+import org.wso2.carbon.identity.recovery.listener.InvitedRegistrationCompletionListener;
 import org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListener;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -140,6 +141,8 @@ public class IdentityRecoveryServiceComponent {
 
             bundleContext.registerService(FlowExecutionListener.class, new SelfRegistrationCompletionListener(),
                                                        null);
+            bundleContext.registerService(FlowExecutionListener.class, new InvitedRegistrationCompletionListener(),
+                    null);
             bundleContext.registerService(Executor.class.getName(),
                     new ConfirmationCodeValidationExecutor(), null);
             bundleContext.registerService(Executor.class.getName(),
