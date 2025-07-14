@@ -1,17 +1,19 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.password.history.store.Impl;
@@ -25,11 +27,9 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.password.history.constants.PasswordHistoryConstants;
 import org.wso2.carbon.identity.password.history.exeption.IdentityPasswordHistoryException;
 import org.wso2.carbon.identity.password.history.store.PasswordHistoryDataStore;
-import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.exceptions.PasswordHashingException;
+import org.wso2.carbon.user.core.hash.PasswordHashProcessor;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -38,8 +38,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import static org.wso2.carbon.user.core.UserCoreConstants.RealmConfig.PASSWORD_HASH_DIGEST_FUNCTION;
 
 /**
  * This interface provides to plug module for preferred persistence store.
@@ -47,12 +51,14 @@ import java.util.Locale;
 public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore {
     private static final String RANDOM_ALG_DRBG = "DRBG";
     private static final Log log = LogFactory.getLog(DefaultPasswordHistoryDataStore.class);
+    private PasswordHashProcessor passwordHashProcessor;
     private String digestFunction;
     private int maxHistoryCount;
 
     public DefaultPasswordHistoryDataStore(String digestFunction, int maxHistoryCount) {
         this.digestFunction = digestFunction;
         this.maxHistoryCount = maxHistoryCount;
+        this.passwordHashProcessor = getPasswordHashProcessor();
     }
 
     public DefaultPasswordHistoryDataStore() {
@@ -240,36 +246,48 @@ public class DefaultPasswordHistoryDataStore implements PasswordHistoryDataStore
     }
 
     /**
-     * @param password
-     * @param saltValue
-     * @return
-     * @throws UserStoreException
+     * Prepare the password including the salt, and hashes if hash algorithm is provided.
+     *
+     * @param password  Original password value which needs to be hashed.
+     * @param saltValue Salt value.
+     * @return Hashed password or plain text password as a String.
+     * @throws IdentityPasswordHistoryException The exception thrown at hashing the passwords.
      */
     protected String preparePassword(String password, String saltValue) throws
             IdentityPasswordHistoryException {
-        try {
-            String digestInput = password;
-            if (saltValue != null) {
-                digestInput = password + saltValue;
-            }
 
-            if (digestFunction != null) {
-
-                if (digestFunction.equals(UserCoreConstants.RealmConfig.PASSWORD_HASH_METHOD_PLAIN_TEXT)) {
-                    return password;
-                }
-
-                MessageDigest dgst = MessageDigest.getInstance(digestFunction);
-                byte[] byteValue = dgst.digest(digestInput.getBytes(StandardCharsets.UTF_8));
-                password = Base64.encode(byteValue);
-            }
-            return password;
-        } catch (NoSuchAlgorithmException e) {
-            String msg = "Error occurred while preparing password.";
-            if (log.isDebugEnabled()) {
-                log.debug(msg, e);
-            }
-            throw new IdentityPasswordHistoryException(msg, e);
+        if (passwordHashProcessor == null) {
+            throw new IdentityPasswordHistoryException("PasswordHashProcessor is not initialized.");
         }
+
+        try {
+            return passwordHashProcessor.hashPassword(password, saltValue);
+        } catch (PasswordHashingException e) {
+            throw new IdentityPasswordHistoryException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Lazily initializes and returns the {@link PasswordHashProcessor} instance.
+     *
+     * @return The initialized {@link PasswordHashProcessor} instance.
+     * @throws IdentityPasswordHistoryException If an error occurs during initialization.
+     */
+    private PasswordHashProcessor getPasswordHashProcessor() {
+
+        if (passwordHashProcessor == null) {
+            try {
+                Map<String, String> hashConfigProperties = new HashMap<>();
+                hashConfigProperties.put(PASSWORD_HASH_DIGEST_FUNCTION, digestFunction);
+                return new PasswordHashProcessor(hashConfigProperties);
+            } catch (PasswordHashingException e) {
+                String msg = "PasswordHashProcessor initialization failed. Password history hashing may be impacted.";
+                if (log.isDebugEnabled()) {
+                    log.debug(msg, e);
+                }
+                this.passwordHashProcessor = null;
+            }
+        }
+        return passwordHashProcessor;
     }
 }
