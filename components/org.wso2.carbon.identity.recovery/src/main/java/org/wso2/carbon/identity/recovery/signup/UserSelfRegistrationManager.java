@@ -699,8 +699,12 @@ public class UserSelfRegistrationManager {
         if (isSelfRegistrationConfirmationNotify) {
             triggerNotification(user);
         }
-        publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
-                IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+
+        if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
+            publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
+                    IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+        }
 
         return user;
     }
