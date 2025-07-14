@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.recovery.listener;
 import org.mockito.MockedStatic;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.context.model.Flow;
@@ -83,8 +84,18 @@ public class InvitedRegistrationCompletionListenerTest {
         mockedIdentityTenantUtil.close();
     }
 
-    @Test
-    public void testDoPostExecuteSuccess() throws Exception {
+    @DataProvider
+    public String[][] getNotificationChannel() {
+
+        return new String[][]{
+                {"EMAIL"},
+                {"SMS"},
+                {""}
+        };
+    }
+
+    @Test(dataProvider = "getNotificationChannel")
+    public void testDoPostExecuteSuccess(String channel) throws Exception {
 
         // Setup context.
         FlowExecutionStep step = mock(FlowExecutionStep.class);
@@ -99,7 +110,7 @@ public class InvitedRegistrationCompletionListenerTest {
 
         when(context.getProperty(IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT)).thenReturn("code123");
         when(context.getProperty(IdentityRecoveryConstants.USER)).thenReturn(user);
-        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn("EMAIL");
+        when(context.getProperty(IdentityRecoveryConstants.NOTIFICATION_CHANNEL)).thenReturn(channel);
         when(context.getProperty(IdentityRecoveryConstants.RECOVERY_SCENARIO)).thenReturn("scenario");
 
         // Mock NotificationPasswordRecoveryManager
