@@ -142,8 +142,8 @@ public class IdentityGovernanceServiceImplTest {
     public void testDeleteConfiguration() throws Exception {
 
         List<String> propertyNames = Arrays.asList("prop1", "prop2");
-        identityGovernanceService.deleteConfiguration(TENANT_DOMAIN, propertyNames);
-        verify(idpManager).deleteResidentIdpProperties(TENANT_DOMAIN, propertyNames);
+        identityGovernanceService.deleteConfiguration(propertyNames, TENANT_DOMAIN);
+        verify(idpManager).deleteResidentIdpProperties(propertyNames, TENANT_DOMAIN);
     }
 
     @Test
@@ -151,9 +151,9 @@ public class IdentityGovernanceServiceImplTest {
 
         List<String> propertyNames = Arrays.asList("prop1", "prop2");
         doThrow(new IdentityProviderManagementException("error"))
-                .when(idpManager).deleteResidentIdpProperties(TENANT_DOMAIN, propertyNames);
+                .when(idpManager).deleteResidentIdpProperties(propertyNames, TENANT_DOMAIN);
         assertThrows(IdentityGovernanceException.class, () ->
-                identityGovernanceService.deleteConfiguration(TENANT_DOMAIN, propertyNames));
+                identityGovernanceService.deleteConfiguration(propertyNames, TENANT_DOMAIN));
     }
 
     @Test

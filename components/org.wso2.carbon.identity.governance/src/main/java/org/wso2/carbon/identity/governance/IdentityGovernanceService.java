@@ -101,11 +101,12 @@ public interface IdentityGovernanceService {
 
     /**
      * Delete the configurations of an organization from cache and database.
-     * @param tenantDomain tenant domain of the connector configurations
-     * @param propertyNames list of property names to be deleted
-     * @throws IdentityGovernanceException
+     *
+     * @param propertyNames list of property names to be deleted.
+     * @param tenantDomain tenant domain of the connector configurations.
+     * @throws IdentityGovernanceException When an error occurs while deleting the configurations.
      */
-    default void deleteConfiguration(String tenantDomain, List<String> propertyNames)
+    default void deleteConfiguration(List<String> propertyNames, String tenantDomain)
             throws IdentityGovernanceException {
 
     }
