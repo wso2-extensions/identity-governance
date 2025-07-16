@@ -185,12 +185,12 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
      * @throws IdentityGovernanceException if an error occurs while deleting the configurations.
      */
     @Override
-    public void deleteConfiguration(String tenantDomain, List<String> propertyNames)
+    public void deleteConfiguration(List<String> propertyNames, String tenantDomain)
             throws IdentityGovernanceException {
 
         try {
             IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
-            identityProviderManager.deleteResidentIdpProperties(tenantDomain, propertyNames);
+            identityProviderManager.deleteResidentIdpProperties(propertyNames, tenantDomain);
         } catch (IdentityProviderManagementException e) {
             throw new IdentityGovernanceException(e.getMessage(), e);
         }
@@ -280,7 +280,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                             if (maskableProperties.contains(property.getName())) {
                                 Property maskedProperty = new Property();
                                 maskedProperty.setName(property.getName());
-                                maskedProperty.setValue(property.getValue().replaceAll(".", "*"));
+                                maskedProperty.setValue(property.getValue() != null ?
+                                        "*".repeat(property.getValue().length()) : null);
                                 maskedProperty.setDisplayName(property.getDisplayName());
                                 maskedProperty.setDescription(property.getDescription());
                                 return maskedProperty;
