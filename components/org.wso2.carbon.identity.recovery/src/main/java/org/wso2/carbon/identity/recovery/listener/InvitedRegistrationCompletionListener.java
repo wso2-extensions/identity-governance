@@ -180,7 +180,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while invalidating user recovery data for confirmation code: " + confirmationCode, e);
+            log.error("Error while invalidating user recovery data for confirmation code: " +
+                    confirmationCode, e);
         }
     }
 

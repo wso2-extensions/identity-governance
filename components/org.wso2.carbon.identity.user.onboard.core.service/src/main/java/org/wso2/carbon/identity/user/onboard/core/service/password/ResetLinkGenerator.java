@@ -49,9 +49,6 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
-
-
 /**
  * Generates the password reset link for the user.
  */
@@ -101,9 +98,10 @@ public class ResetLinkGenerator {
         String serverHost = ConfigurationFacade.getInstance().getAccountRecoveryEndpointPath();
 
         Boolean isDynamicAskPwdEnabled;
+        String flowType = Constants.FlowTypes.INVITED_USER_REGISTRATION.
+                getType();
         try {
-            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION.
-                            getType(), user.getTenantDomain()).getIsEnabled();
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(flowType, user.getTenantDomain()).getIsEnabled();
         } catch (FlowMgtServerException e) {
             throw new IdentityRecoveryServerException("Error while retrieving the flow configuration for " +
                     "INVITED_USER_REGISTRATION flow.", e);
@@ -116,19 +114,16 @@ public class ResetLinkGenerator {
         String configuredPortalURL = null;
         try {
             BrandingPreferenceManager brandingPreferenceManager = new BrandingPreferenceManagerImpl();
-            configuredPortalURL = BrandingPreferenceMgtUtils.buildConfiguredPortalURL(
-                    ORGANIZATION_TYPE,
-                    configuration.getTenantDomain(),
-                    configuration.getTenantDomain(),
-                    brandingPreferenceManager,
-                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()
+            configuredPortalURL = BrandingPreferenceMgtUtils.buildConfiguredPortalURL(null,
+                    configuration.getTenantDomain(), brandingPreferenceManager, flowType
             );
         } catch (BrandingPreferenceMgtException | URLBuilderException e) {
-            LOG.error("Error retrieving configured portal URL for tenant: " + configuration.getTenantDomain(), e);
+            throw new IdentityRecoveryServerException("Error while retrieving the portal URL for the tenant: "
+                    + configuration.getTenantDomain() + ", flowtype: " + flowType, e);
         }
 
         return String.format("%s?confirmation=%s&flowType=%s", configuredPortalURL, secretKey,
-                Constants.FlowTypes.INVITED_USER_REGISTRATION.getType());
+                flowType);
     }
 
     /**
