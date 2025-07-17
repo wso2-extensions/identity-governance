@@ -168,9 +168,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
     /**
      * Invalidates the recovery data associated with the provided confirmation code.
      * @param confirmationCode  Confirmation code to identify the recovery data.
-     * @throws IdentityRecoveryException    if an error occurs while loading or invalidating recovery data.
      */
-    private void invalidateRecoveryData(String confirmationCode) throws IdentityRecoveryException {
+    private void invalidateRecoveryData(String confirmationCode) {
 
         try {
             UserRecoveryData data = loadUserRecoveryData(confirmationCode);
@@ -181,7 +180,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while loading user recovery data for confirmation code: " + confirmationCode, e);
+            log.error("Error while invalidating user recovery data for confirmation code: " + confirmationCode, e);
         }
     }
 

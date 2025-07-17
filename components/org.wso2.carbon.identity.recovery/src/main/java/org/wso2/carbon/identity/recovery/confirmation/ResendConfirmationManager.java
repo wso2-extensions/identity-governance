@@ -30,6 +30,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -567,8 +569,10 @@ public class ResendConfirmationManager {
             userRecoveryDataStore.store(recoveryDataDO);
         }
 
-        String selectedNotificationType = getNotificationTypeForResendAskPassword(user, recoveryScenario,
-                notificationType, propertyList);
+        String selectedNotificationType = notificationType;
+        if (RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) {
+            selectedNotificationType = getNotificationTypeForResendAskPassword(user, notificationType, propertyList);
+        }
 
         properties = propertyList.toArray(new Property[0]);
 
@@ -586,32 +590,29 @@ public class ResendConfirmationManager {
      * Get the notification type for RESEND_ASK_PASSWORD recovery scenario.
      *
      * @param user             User
-     * @param recoveryScenario Recovery scenario
      * @param notificationType Notification type
      * @param propertyList     Event properties
      * @return Selected notification type
      * @throws IdentityRecoveryException If an error occurred while getting the configuration.
      */
-    private static String getNotificationTypeForResendAskPassword(User user, String recoveryScenario,
-                                                                  String notificationType,
+    private static String getNotificationTypeForResendAskPassword(User user, String notificationType,
                                                                   List<Property> propertyList)
             throws IdentityRecoveryException {
 
-        RecoveryScenarios scenario = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
+        Boolean isDynamicAskPwdEnabled;
         try {
-            if (RecoveryScenarios.ASK_PASSWORD.equals(scenario) &&
-                    Boolean.parseBoolean(getConnectorConfig(IdentityRecoveryConstants.
-                            ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain()))) {
-                notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
-                propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name()));
-            }
-        } catch (IdentityEventException e) {
-            throw new IdentityRecoveryException("Error while getting the configuration : " +
-                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, e);
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Flow.Name.INVITED_USER_REGISTRATION.name(),
+                    user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityRecoveryException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+        if (isDynamicAskPwdEnabled) {
+            notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
+            propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name()));
         }
         return notificationType;
     }
-
 
     /**
      * Resolve the event name according to the notification channel.

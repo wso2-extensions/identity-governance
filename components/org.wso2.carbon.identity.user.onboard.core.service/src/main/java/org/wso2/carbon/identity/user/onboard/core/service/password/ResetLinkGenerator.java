@@ -23,11 +23,20 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
+import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -39,6 +48,9 @@ import org.wso2.carbon.identity.user.onboard.core.service.model.Configuration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
+
 
 /**
  * Generates the password reset link for the user.
@@ -88,7 +100,35 @@ public class ResetLinkGenerator {
 
         String serverHost = ConfigurationFacade.getInstance().getAccountRecoveryEndpointPath();
 
-        return String.format("%s/confirmrecovery.do?confirmation=%s", serverHost, secretKey);
+        Boolean isDynamicAskPwdEnabled;
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Constants.FlowTypes.INVITED_USER_REGISTRATION.
+                            getType(), user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityRecoveryServerException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+
+        if (!isDynamicAskPwdEnabled) {
+            return String.format("%s/confirmrecovery.do?confirmation=%s", serverHost, secretKey);
+        }
+
+        String configuredPortalURL = null;
+        try {
+            BrandingPreferenceManager brandingPreferenceManager = new BrandingPreferenceManagerImpl();
+            configuredPortalURL = BrandingPreferenceMgtUtils.buildConfiguredPortalURL(
+                    ORGANIZATION_TYPE,
+                    configuration.getTenantDomain(),
+                    configuration.getTenantDomain(),
+                    brandingPreferenceManager,
+                    Constants.FlowTypes.INVITED_USER_REGISTRATION.getType()
+            );
+        } catch (BrandingPreferenceMgtException | URLBuilderException e) {
+            LOG.error("Error retrieving configured portal URL for tenant: " + configuration.getTenantDomain(), e);
+        }
+
+        return String.format("%s?confirmation=%s&flowType=%s", configuredPortalURL, secretKey,
+                Constants.FlowTypes.INVITED_USER_REGISTRATION.getType());
     }
 
     /**
