@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,4 +98,16 @@ public interface IdentityGovernanceService {
      */
     ConnectorConfig getConnectorWithConfigs(String tenantDomain,
                                             String connectorName) throws IdentityGovernanceException;
+
+    /**
+     * Delete the configurations of an organization from cache and database.
+     *
+     * @param propertyNames list of property names to be deleted.
+     * @param tenantDomain tenant domain of the connector configurations.
+     * @throws IdentityGovernanceException When an error occurs while deleting the configurations.
+     */
+    default void deleteConfiguration(List<String> propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
+
+    }
 }

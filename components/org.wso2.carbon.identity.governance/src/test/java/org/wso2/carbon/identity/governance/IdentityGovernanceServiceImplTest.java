@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (https://www.wso2.org)
+ * Copyright (c) 2024-2025, WSO2 LLC. (https://www.wso2.org)
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -30,15 +30,29 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
+import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
+import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
+import org.wso2.carbon.identity.application.common.model.Property;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertThrows;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class IdentityGovernanceServiceImplTest {
@@ -67,6 +81,8 @@ public class IdentityGovernanceServiceImplTest {
     IdentityProvider identityProvider;
 
     MockedStatic<IdentityMgtServiceDataHolder> identityMgtServiceDataHolderMockedStatic;
+    MockedStatic<OrganizationManagementUtil> organizationManagementUtilMockedStatic;
+    MockedStatic<IdentityMgtConstants.INHERITED_MASKED_CONNECTORS> inheritedMaskedConnectorsMockedStatic;
 
     private IdentityGovernanceServiceImpl identityGovernanceService;
 
@@ -80,6 +96,12 @@ public class IdentityGovernanceServiceImplTest {
         when(identityMgtServiceDataHolder.getIdpManager()).thenReturn(idpManager);
         when(idpManager.getResidentIdP(TENANT_DOMAIN)).thenReturn(identityProvider);
 
+        organizationManagementUtilMockedStatic = mockStatic(OrganizationManagementUtil.class);
+        organizationManagementUtilMockedStatic.when(() -> OrganizationManagementUtil.isOrganization(TENANT_DOMAIN))
+                .thenReturn(false);
+
+        inheritedMaskedConnectorsMockedStatic = mockStatic(IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.class);
+
         FederatedAuthenticatorConfig[] authenticatorConfigs = new FederatedAuthenticatorConfig[0];
         when(identityProvider.getFederatedAuthenticatorConfigs()).thenReturn(authenticatorConfigs);
 
@@ -90,6 +112,8 @@ public class IdentityGovernanceServiceImplTest {
     public void tearDown() {
 
         identityMgtServiceDataHolderMockedStatic.close();
+        organizationManagementUtilMockedStatic.close();
+        inheritedMaskedConnectorsMockedStatic.close();
     }
 
     @Test(dataProvider = "updateConfigurations")
@@ -112,6 +136,100 @@ public class IdentityGovernanceServiceImplTest {
             assertEquals(expected.get(capturedProperty.getName()), capturedProperty.getValue());
         }
 
+    }
+
+    @Test
+    public void testDeleteConfiguration() throws Exception {
+
+        List<String> propertyNames = Arrays.asList("prop1", "prop2");
+        identityGovernanceService.deleteConfiguration(propertyNames, TENANT_DOMAIN);
+        verify(idpManager).deleteResidentIdpProperties(propertyNames, TENANT_DOMAIN);
+    }
+
+    @Test
+    public void testDeleteConfigurationThrowsIdentityGovernanceException() throws Exception {
+
+        List<String> propertyNames = Arrays.asList("prop1", "prop2");
+        doThrow(new IdentityProviderManagementException("error"))
+                .when(idpManager).deleteResidentIdpProperties(propertyNames, TENANT_DOMAIN);
+        assertThrows(IdentityGovernanceException.class, () ->
+                identityGovernanceService.deleteConfiguration(propertyNames, TENANT_DOMAIN));
+    }
+
+    @Test
+    public void testGetConnectorListWithConfigsForMaskedProperties() throws Exception {
+
+        organizationManagementUtilMockedStatic.when(() -> OrganizationManagementUtil.isOrganization(TENANT_DOMAIN))
+                .thenReturn(true);
+
+        IdentityConnectorConfig mockConnector = mock(IdentityConnectorConfig.class);
+        when(mockConnector.getName()).thenReturn("TestMaskedConnector");
+        when(mockConnector.getFriendlyName()).thenReturn("Test Masked Connector");
+        when(mockConnector.getCategory()).thenReturn("Security");
+        when(mockConnector.getSubCategory()).thenReturn("Masking");
+        when(mockConnector.getOrder()).thenReturn(1);
+        when(mockConnector.getPropertyNames()).thenReturn(new String[]{"maskableProp1", "unmaskedProp2"});
+
+        Map<String, String> friendlyNames = new HashMap<>();
+        friendlyNames.put("maskableProp1", "Maskable Property 1");
+        friendlyNames.put("unmaskedProp2", "Unmasked Property 2");
+        when(mockConnector.getPropertyNameMapping()).thenReturn(friendlyNames);
+
+        Map<String, String> descriptions = new HashMap<>();
+        descriptions.put("maskableProp1", "This is a sensitive property.");
+        descriptions.put("unmaskedProp2", "This is a normal property.");
+        when(mockConnector.getPropertyDescriptionMapping()).thenReturn(descriptions);
+
+        when(mockConnector.getMetaData()).thenReturn(Collections.emptyMap());
+        when(mockConnector.getConfidentialPropertyValues(TENANT_DOMAIN)).thenReturn(Collections.emptyList());
+
+        List<IdentityConnectorConfig> connectorConfigList = Collections.singletonList(mockConnector);
+        when(identityMgtServiceDataHolder.getIdentityGovernanceConnectorList()).thenReturn(connectorConfigList);
+
+        IdentityProviderProperty idpProp1 = new IdentityProviderProperty();
+        idpProp1.setName("maskableProp1");
+        idpProp1.setValue("sensitiveData");
+
+        IdentityProviderProperty idpProp2 = new IdentityProviderProperty();
+        idpProp2.setName("unmaskedProp2");
+        idpProp2.setValue("normalData");
+
+        when(identityProvider.getIdpProperties()).thenReturn(new IdentityProviderProperty[]{idpProp1, idpProp2});
+
+        IdentityMgtConstants.INHERITED_MASKED_CONNECTORS mockEnumInstance =
+                mock(IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.class);
+        when(mockEnumInstance.getMaskableProperties()).thenReturn(Collections.singletonList("maskableProp1"));
+
+        inheritedMaskedConnectorsMockedStatic.when(() -> IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.findByName(anyString()))
+                .thenReturn(Optional.empty());
+        inheritedMaskedConnectorsMockedStatic.when(() -> IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.findByName("TestMaskedConnector"))
+                .thenReturn(Optional.of(mockEnumInstance));
+
+        List<ConnectorConfig> result = identityGovernanceService.getConnectorListWithConfigs(TENANT_DOMAIN);
+
+        assertNotNull(result, "Result list should not be null");
+        assertEquals("Result list should contain one connector", 1, result.size());
+
+        ConnectorConfig resultConnector = result.get(0);
+        assertEquals("Connector name mismatch", "TestMaskedConnector", resultConnector.getName());
+
+        Property[] resultProps = resultConnector.getProperties();
+        assertEquals("Connector should have two properties", 2, resultProps.length);
+
+        boolean maskablePropFound = false;
+        boolean unmaskedPropFound = false;
+
+        for (Property p : resultProps) {
+            if ("maskableProp1".equals(p.getName())) {
+                assertEquals("Maskable property value mismatch", "*************", p.getValue());
+                maskablePropFound = true;
+            } else if ("unmaskedProp2".equals(p.getName())) {
+                assertEquals("Unmasked property value mismatch", "normalData", p.getValue());
+                unmaskedPropFound = true;
+            }
+        }
+        assertTrue(maskablePropFound, "Maskable property was not found in the result.");
+        assertTrue(unmaskedPropFound, "Unmasked property was not found in the result.");
     }
 
     @DataProvider(name = "updateConfigurations")
