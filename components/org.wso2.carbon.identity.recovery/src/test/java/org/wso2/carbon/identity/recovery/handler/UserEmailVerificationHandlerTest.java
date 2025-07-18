@@ -30,13 +30,16 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.event.IdentityEventConstants;
-import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
@@ -52,11 +55,10 @@ import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org. wso2.carbon. identity. application. common. model.User;
 import org.wso2.carbon.user.core.config.RealmConfiguration;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,13 +70,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.isNull;
 
 public class UserEmailVerificationHandlerTest {
 
@@ -104,6 +106,7 @@ public class UserEmailVerificationHandlerTest {
     private MockedStatic<IdentityRecoveryServiceDataHolder> mockedIdentityRecoveryServiceDataHolder;
     private MockedStatic<FrameworkUtils> mockedFrameworkUtils;
     private MockedStatic<IdentityUtil> mockedIdentityUtils;
+    private MockedStatic<FlowMgtConfigUtils> mockedFlowMgtUtils;
 
     private static final String TEST_TENANT_DOMAIN = "test.com";
     private static final String TEST_USER_STORE_DOMAIN = "TESTING";
@@ -120,6 +123,7 @@ public class UserEmailVerificationHandlerTest {
         mockedIdentityRecoveryServiceDataHolder.close();
         mockedFrameworkUtils.close();
         mockedIdentityUtils.close();
+        mockedFlowMgtUtils.close();
     }
 
     @BeforeMethod
@@ -131,6 +135,9 @@ public class UserEmailVerificationHandlerTest {
         mockedIdentityRecoveryServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
         mockedFrameworkUtils = mockStatic(FrameworkUtils.class);
         mockedIdentityUtils = mockStatic(IdentityUtil.class);
+        mockedFlowMgtUtils = mockStatic(FlowMgtConfigUtils.class);
+        FlowConfigDTO mockFlowConfig = mock(FlowConfigDTO.class);
+        when(mockFlowConfig.getIsEnabled()).thenReturn(true);
 
         userEmailVerificationHandler = new UserEmailVerificationHandler();
 
@@ -140,6 +147,9 @@ public class UserEmailVerificationHandlerTest {
         mockedFrameworkUtils.when(FrameworkUtils::getMultiAttributeSeparator).thenReturn(",");
         mockedIdentityUtils.when(() -> IdentityUtil.addDomainToName(eq(TEST_USERNAME), anyString()))
                 .thenReturn(String.format("%s/%s", TEST_USERNAME, TEST_USER_STORE_DOMAIN));
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
+                .thenReturn(mockFlowConfig);
+
 
         when(serviceDataHolder.getIdentityEventService()).thenReturn(identityEventService);
         when(userStoreManager.getRealmConfiguration()).thenReturn(realmConfiguration);

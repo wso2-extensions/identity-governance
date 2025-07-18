@@ -35,6 +35,8 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -514,7 +516,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
                 properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
 
-                selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
+                if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {
+                    selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
+                }
             }
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, selectedNotificationType);
             Event identityMgtEvent = new Event(eventName, properties);
@@ -529,10 +533,15 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                                                             HashMap<String, Object> properties)
             throws IdentityEventException {
 
-        String isDynamicPortalEnabled = Utils.getConnectorConfig(IdentityRecoveryConstants.
-                ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain());
-        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
-                Boolean.parseBoolean(isDynamicPortalEnabled)) {
+        Boolean isDynamicAskPwdEnabled;
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Flow.Name.INVITED_USER_REGISTRATION.name(),
+                    user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+        if (isDynamicAskPwdEnabled) {
             type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
             properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name());
         }
