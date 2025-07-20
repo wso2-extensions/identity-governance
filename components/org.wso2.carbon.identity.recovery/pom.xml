@@ -149,6 +149,10 @@
             <artifactId>jacoco-maven-plugin</artifactId>
             <version>${jacoco.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
+            <artifactId>org.wso2.carbon.identity.branding.preference.management.core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
