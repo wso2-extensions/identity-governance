@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2024-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -26,6 +26,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -303,36 +304,37 @@ public class MobileNumberVerificationHandlerTest {
                 NEW_MOBILE_NUMBER);
 
         /*
-         Case 2: New mobile number is same as existing primary mobile number.
+         Case 2: New mobile number is same as existing verified primary mobile number.
          */
         mockExistingPrimaryMobileNumber(NEW_MOBILE_NUMBER);
         Event event2 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
                 null, null, NEW_MOBILE_NUMBER);
+        mockPrimaryMobileVerificationStatus(true);
 
         mobileNumberVerificationHandler.handleEvent(event2);
-
         Map<String, String> userClaims2 = getUserClaimsFromEvent(event2);
         Assert.assertEquals(userClaims2.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
                 StringUtils.EMPTY);
 
         /*
-         Case 3: Enable userVerify and send verifyMobileClaim as false.
+         Case 3: New mobile number is same as existing unverified primary mobile number.
+         */
+        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, null,
+                null, null, NEW_MOBILE_NUMBER);
+        mockPrimaryMobileVerificationStatus(false);
+
+        mobileNumberVerificationHandler.handleEvent(event3);
+        Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
+        Assert.assertEquals(userClaims3.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                NEW_MOBILE_NUMBER);
+
+        /*
+         Case 4: Enable userVerify and send verifyMobileClaim as false.
          */
         mockExistingPrimaryMobileNumber(EXISTING_NUMBER_1);
         mockedUtils.when(Utils::isUseVerifyClaimEnabled).thenReturn(true);
-        Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, NEW_MOBILE_NUMBER);
-
-        mobileNumberVerificationHandler.handleEvent(event3);
-        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
-                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
-                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
-
-        /*
-         Case 4: Mobile number claim is null.
-         */
         Event event4 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
-                null, null, null);
+                null, null, NEW_MOBILE_NUMBER);
 
         mobileNumberVerificationHandler.handleEvent(event4);
         mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
@@ -340,7 +342,18 @@ public class MobileNumberVerificationHandlerTest {
                         .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
 
         /*
-         Case 5: Throw error when retrieving existing mobile number.
+         Case 5: Mobile number claim is null.
+         */
+        Event event5 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, IdentityRecoveryConstants.FALSE,
+                null, null, null);
+
+        mobileNumberVerificationHandler.handleEvent(event5);
+        mockedUtils.verify(() -> Utils.setThreadLocalToSkipSendingSmsOtpVerificationOnUpdate(
+                IdentityRecoveryConstants.SkipMobileNumberVerificationOnUpdateStates
+                        .SKIP_ON_INAPPLICABLE_CLAIMS.toString()), atLeastOnce());
+
+        /*
+         Case 6: Throw error when retrieving existing mobile number.
          */
         when(userStoreManager.getUserClaimValue(anyString(),
                 eq(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM), isNull()))
@@ -435,7 +448,7 @@ public class MobileNumberVerificationHandlerTest {
             Assert.assertTrue(e instanceof IdentityEventClientException);
         }
 
-        // Case 3: Added new number is existing primary mobile number.
+        // Case 3: Added new number is existing verified primary mobile number.
         String newVerifiedMobileNumbers3 = EXISTING_NUMBER_1 + "," + NEW_MOBILE_NUMBER;
         Event event3 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS,
                 IdentityRecoveryConstants.FALSE,
@@ -444,14 +457,36 @@ public class MobileNumberVerificationHandlerTest {
         mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
         mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
         mockExistingPrimaryMobileNumber(NEW_MOBILE_NUMBER);
+        mockPrimaryMobileVerificationStatus(true);
 
         mobileNumberVerificationHandler.handleEvent(event3);
-
         Map<String, String> userClaims3 = getUserClaimsFromEvent(event3);
         Assert.assertTrue(
-                StringUtils.contains(userClaims3.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM), NEW_MOBILE_NUMBER));
+                StringUtils.contains(userClaims3.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM),
+                        NEW_MOBILE_NUMBER));
         Assert.assertTrue(StringUtils.contains(userClaims3.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
                 NEW_MOBILE_NUMBER));
+
+        // Case 4: Added new number is existing unverified primary mobile number.
+        Event event4 = createEvent(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS,
+                IdentityRecoveryConstants.FALSE,
+                newVerifiedMobileNumbers3, null, null);
+        mockExistingVerifiedNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        mockExistingNumbersList(new ArrayList<>(Arrays.asList(EXISTING_NUMBER_1)));
+        mockExistingPrimaryMobileNumber(NEW_MOBILE_NUMBER);
+        mockPrimaryMobileVerificationStatus(false);
+
+        mobileNumberVerificationHandler.handleEvent(event4);
+        Map<String, String> userClaims4 = getUserClaimsFromEvent(event4);
+        Assert.assertTrue(
+                StringUtils.contains(userClaims4.get(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM),
+                        NEW_MOBILE_NUMBER));
+        Assert.assertFalse(
+                StringUtils.contains(userClaims4.get(IdentityRecoveryConstants.VERIFIED_MOBILE_NUMBERS_CLAIM),
+                        NEW_MOBILE_NUMBER));
+        Assert.assertTrue(
+                StringUtils.contains(userClaims4.get(IdentityRecoveryConstants.MOBILE_NUMBER_PENDING_VALUE_CLAIM),
+                        NEW_MOBILE_NUMBER));
     }
 
     @Test(description = "POST_SET_USER_CLAIMS: Verification enabled, Multi-attribute enabled")
@@ -542,6 +577,76 @@ public class MobileNumberVerificationHandlerTest {
         Assert.assertEquals(RecoverySteps.VERIFY_MOBILE_NUMBER, capturedRecoveryData2.getRecoveryStep());
     }
 
+    @DataProvider(name = "claimDeletionData")
+    public Object[][] getClaimDeletionData() {
+
+        return new Object[][]{
+                // claimURI, shouldCallSetUserClaimValues
+                {IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, true},
+                {"some.other.claim", false}
+        };
+    }
+
+    @Test(description = "Test handling of claim deletion events - verifies that 'phoneVerified' claim is cleared when " +
+            "mobile claim is deleted, and no action for other claims.", dataProvider = "claimDeletionData")
+    public void testHandleEventPreDeleteUserClaim(String claimURI, boolean shouldCallSetUserClaimValues)
+            throws IdentityEventException, org.wso2.carbon.user.core.UserStoreException {
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+        eventProperties.put(IdentityEventConstants.EventProperty.CLAIM_URI, claimURI);
+        Event event = new Event(IdentityEventConstants.Event.PRE_DELETE_USER_CLAIM, eventProperties);
+
+        mobileNumberVerificationHandler.handleEvent(event);
+
+        if (shouldCallSetUserClaimValues) {
+            // Verify that setUserClaimValues was called with empty string for phoneVerified claim.
+            Map<String, String> expectedClaims = new HashMap<>();
+            expectedClaims.put(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM, StringUtils.EMPTY);
+            verify(userStoreManager).setUserClaimValues(eq(TEST_USERNAME), eq(expectedClaims), isNull());
+        } else {
+            // Verify that setUserClaimValues was not called for other claims.
+            verify(userStoreManager, never()).setUserClaimValues(anyString(), any(), any());
+        }
+    }
+
+    @DataProvider(name = "multiAttributeEnabledData")
+    public Object[][] multiAttributeEnabledData() {
+
+        return new Object[][]{
+                {false},
+                {true}
+        };
+    }
+
+    @Test(description = "Test handling of primary mobile deletion — primary mobile set to EMPTY should clear" +
+            "phoneVerified claim.", dataProvider = "multiAttributeEnabledData")
+    public void testHandleEventPreSetUserClaimsPrimaryMobileDeletionClearsVerification(boolean multiAttributeEnabled)
+            throws IdentityEventException {
+
+        mockUtilMethods(true, multiAttributeEnabled, false);
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
+        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
+
+        Map<String, String> claims = new HashMap<>();
+        claims.put(IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, StringUtils.EMPTY);
+        eventProperties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        Event event = new Event(IdentityEventConstants.Event.PRE_SET_USER_CLAIMS, eventProperties);
+
+        mobileNumberVerificationHandler.handleEvent(event);
+        Map<String, String> userClaims = getUserClaimsFromEvent(event);
+        Assert.assertTrue(userClaims.containsKey(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM),
+                "'phoneVerified' claim not found in user claims map.");
+        Assert.assertEquals(userClaims.get(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM), StringUtils.EMPTY,
+                "'phoneVerified' claim should be cleared (empty string) when primary mobile is set to empty string.");
+    }
+
     private void mockExistingPrimaryMobileNumber(String mobileNumber) throws UserStoreException {
 
         when(userStoreManager.getUserClaimValue(anyString(),
@@ -553,6 +658,12 @@ public class MobileNumberVerificationHandlerTest {
         mockedUtils.when(() -> Utils.getMultiValuedClaim(any(), any(),
                         eq(IdentityRecoveryConstants.MOBILE_NUMBERS_CLAIM)))
                 .thenReturn(existingAllMobileNumbers);
+    }
+
+    private void mockPrimaryMobileVerificationStatus(boolean isVerified) {
+
+        mockedUtils.when(() -> Utils.getUserClaim(any(), any(), eq(IdentityRecoveryConstants.MOBILE_VERIFIED_CLAIM)))
+                .thenReturn(String.valueOf(isVerified));
     }
 
     private void mockExistingVerifiedNumbersList(List<String> exisitingVerifiedNumbersList) {

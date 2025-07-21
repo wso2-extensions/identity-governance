@@ -29,7 +29,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.consent.mgt.core.ConsentManager;
-import org.wso2.carbon.identity.application.authentication.framework.handler.request.PostAuthenticationHandler;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerManager;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
 import org.wso2.carbon.identity.core.persistence.registry.RegistryResourceMgtService;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
+import org.wso2.carbon.identity.flow.execution.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
@@ -45,25 +47,28 @@ import org.wso2.carbon.identity.handler.event.account.lock.service.AccountLockSe
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementService;
 import org.wso2.carbon.identity.input.validation.mgt.services.InputValidationManagementServiceImpl;
 import org.wso2.carbon.identity.multi.attribute.login.mgt.MultiAttributeLoginService;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManager;
 import org.wso2.carbon.identity.recovery.connector.AdminForcedPasswordResetConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.LiteRegistrationConfigImpl;
-import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.RecoveryConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.SelfRegistrationConfigImpl;
+import org.wso2.carbon.identity.recovery.connector.UserClaimUpdateConfigImpl;
 import org.wso2.carbon.identity.recovery.connector.UserEmailVerificationConfigImpl;
+import org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutor;
+import org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutor;
 import org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandler;
 import org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandler;
 import org.wso2.carbon.identity.recovery.handler.CodeInvalidationHandler;
 import org.wso2.carbon.identity.recovery.handler.IdentityUserMetadataMgtHandler;
+import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.TenantRegistrationVerificationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandler;
-import org.wso2.carbon.identity.recovery.handler.LiteUserRegistrationHandler;
 import org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandler;
 import org.wso2.carbon.identity.recovery.internal.service.impl.password.PasswordRecoveryManagerImpl;
 import org.wso2.carbon.identity.recovery.internal.service.impl.username.UsernameRecoveryManagerImpl;
+import org.wso2.carbon.identity.recovery.listener.InvitedRegistrationCompletionListener;
+import org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListener;
 import org.wso2.carbon.identity.recovery.listener.TenantManagementListener;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.identity.recovery.services.password.PasswordRecoveryManager;
@@ -74,7 +79,6 @@ import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityManager;
 import org.wso2.carbon.identity.user.profile.mgt.association.federation.FederatedAssociationManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 @Component(
         name = "org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceComponent",
@@ -134,6 +138,15 @@ public class IdentityRecoveryServiceComponent {
                     passwordRecoveryManager, null);
             bundleContext.registerService(InputValidationManagementService.class.getName(),
                     new InputValidationManagementServiceImpl(), null);
+
+            bundleContext.registerService(FlowExecutionListener.class, new SelfRegistrationCompletionListener(),
+                                                       null);
+            bundleContext.registerService(FlowExecutionListener.class, new InvitedRegistrationCompletionListener(),
+                    null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new ConfirmationCodeValidationExecutor(), null);
+            bundleContext.registerService(Executor.class.getName(),
+                    new PasswordProvisioningExecutor(), null);
         } catch (Exception e) {
             log.error("Error while activating identity governance component.", e);
         }
@@ -483,5 +496,22 @@ public class IdentityRecoveryServiceComponent {
     protected void unsetIdentityDataStoreService(IdentityDataStoreService identityDataStoreService) {
 
         IdentityRecoveryServiceDataHolder.getInstance().setIdentityDataStoreService(null);
+    }
+
+    @Reference(
+            name = "ApplicationManagementService",
+            service = ApplicationManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetApplicationManagementService")
+    protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance()
+                .setApplicationManagementService(applicationManagementService);
+    }
+
+    protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
+
+        IdentityRecoveryServiceDataHolder.getInstance().setApplicationManagementService(null);
     }
 }

@@ -175,6 +175,12 @@ public class LiteApiServiceImpl extends LiteApiService {
                     campaignDTO.setValue(value);
                     propertiesList.add(campaignDTO);
                 }
+                if (StringUtils.startsWith(key, IdentityRecoveryConstants.UTM_PARAMETERS_PREFIX)) {
+                    PropertyDTO templateDTO = new PropertyDTO();
+                    templateDTO.setKey(key);
+                    templateDTO.setValue(value);
+                    propertiesList.add(templateDTO);
+                }
             }
         }
         return Utils.getProperties(propertiesList);

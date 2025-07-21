@@ -25,10 +25,13 @@ import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.exceptions.notiification.NotificationChannelManagerException;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -51,8 +54,14 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
+
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
+import static org.wso2.carbon.identity.recovery.util.Utils.getConnectorConfig;
 
 /**
  * Generic Manager class which can be used to resend confirmation code for any recovery scenario and self registration
@@ -489,6 +498,8 @@ public class ResendConfirmationManager {
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+        boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
+                .ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -496,10 +507,12 @@ public class ResendConfirmationManager {
                 RecoveryScenarios.getRecoveryScenario(recoveryScenario));
 
         String storedNotificationChannel = StringUtils.EMPTY;
+
+        List<Property> propertyList = new ArrayList<>(Arrays.asList(properties));
+
         if (userRecoveryData == null &&
-                RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
-                isUserInPendingAskPasswordState(user)) {
-                storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
+                (isAskPasswordFlow(recoveryScenario, user) || isEmailVerificationFlow(recoveryScenario, user))) {
+            storedNotificationChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         } else if (!RecoveryScenarios.LITE_SIGN_UP.toString().equals(recoveryScenario)) {
             // Validate the previous confirmation code with the data retrieved by the user recovery information.
             validateWithOldConfirmationCode(code, recoveryScenario, recoveryStep, userRecoveryData);
@@ -521,7 +534,7 @@ public class ResendConfirmationManager {
         if (emailVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
-        if (mobileVerificationOnUpdateScenario) {
+        if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
 
@@ -545,28 +558,60 @@ public class ResendConfirmationManager {
 
             if (emailVerificationOnUpdateScenario && RecoverySteps.VERIFY_EMAIL.toString().equals(recoveryStep)) {
                 String verificationPendingEmailClaimValue = userRecoveryData.getRemainingSetIds();
-                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                        verificationPendingEmailClaimValue)};
+                propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingEmailClaimValue));
                 recoveryDataDO.setRemainingSetIds(verificationPendingEmailClaimValue);
             } else if (mobileVerificationOnUpdateScenario &&
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString().equals(recoveryStep)) {
                 String verificationPendingMobileNumber = userRecoveryData.getRemainingSetIds();
-                properties = new Property[]{new Property(IdentityRecoveryConstants.SEND_TO,
-                        verificationPendingMobileNumber)};
+                propertyList.add(new Property(IdentityRecoveryConstants.SEND_TO, verificationPendingMobileNumber));
                 recoveryDataDO.setRemainingSetIds(verificationPendingMobileNumber);
             }
-
             userRecoveryDataStore.store(recoveryDataDO);
         }
+
+        String selectedNotificationType = notificationType;
+        if (RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) {
+            selectedNotificationType = getNotificationTypeForResendAskPassword(user, notificationType, propertyList);
+        }
+
+        properties = propertyList.toArray(new Property[0]);
 
         if (notificationInternallyManage) {
             String eventName = resolveEventName(preferredChannel, user.getUserName(), user.getUserStoreDomain(),
                     user.getTenantDomain());
-            triggerNotification(user, preferredChannel, notificationType, secretKey, eventName, properties);
+            triggerNotification(user, preferredChannel, selectedNotificationType, secretKey, eventName, properties);
         } else {
             notificationResponseBean.setKey(secretKey);
         }
         return notificationResponseBean;
+    }
+
+    /**
+     * Get the notification type for RESEND_ASK_PASSWORD recovery scenario.
+     *
+     * @param user             User
+     * @param notificationType Notification type
+     * @param propertyList     Event properties
+     * @return Selected notification type
+     * @throws IdentityRecoveryException If an error occurred while getting the configuration.
+     */
+    private static String getNotificationTypeForResendAskPassword(User user, String notificationType,
+                                                                  List<Property> propertyList)
+            throws IdentityRecoveryException {
+
+        Boolean isDynamicAskPwdEnabled;
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Flow.Name.INVITED_USER_REGISTRATION.name(),
+                    user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityRecoveryException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+        if (isDynamicAskPwdEnabled) {
+            notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD;
+            propertyList.add(new Property(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name()));
+        }
+        return notificationType;
     }
 
     /**
@@ -773,19 +818,27 @@ public class ResendConfirmationManager {
 
     }
 
-    /**
-     * Determines if a user's account is in a state where they need to set a password
-     * through the ask password flow.
-     *
-     * @param user User object containing user information
-     * @return true if the user is in pending ask password state, false otherwise
-     */
-    private boolean isUserInPendingAskPasswordState(User user) {
+    private boolean isAskPasswordFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
 
+        boolean isPendingAskPasswordState = false;
         String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
-        if (StringUtils.isBlank(accountState)) {
-            return false;
+        if (StringUtils.isNotBlank(accountState)) {
+            isPendingAskPasswordState = IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
         }
-        return IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
+
+        return RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+                isPendingAskPasswordState;
+    }
+
+    private boolean isEmailVerificationFlow(String recoveryScenario, User user) throws IdentityRecoveryClientException {
+
+        boolean isPendingEmailVerificationState = false;
+        String accountState = Utils.getAccountStateForUserNameWithoutUserDomain(user);
+        if (StringUtils.isNotBlank(accountState)) {
+            isPendingEmailVerificationState = IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
+        }
+
+        return RecoveryScenarios.EMAIL_VERIFICATION.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+                isPendingEmailVerificationState;
     }
 }

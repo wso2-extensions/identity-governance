@@ -31,11 +31,17 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Attribute;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -53,13 +59,17 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -70,6 +80,11 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.FLOW_TYPE;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.IS_AUTO_LOGIN_ENABLED;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.IS_ENABLED;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.RESOURCE_NAME_PREFIX;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.RESOURCE_TYPE;
 
 @WithCarbonHome
 public class ResendConfirmationManagerTest {
@@ -105,6 +120,8 @@ public class ResendConfirmationManagerTest {
     private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
     private MockedStatic<UserAccountRecoveryManager> mockedUserAccountRecoveryManager;
+    private MockedStatic<FlowMgtConfigUtils> mockedFlowMgtUtils;
+    private ConfigurationManager configurationManager;
 
     private static final String TEST_USERNAME = "test-user";
     private static final String TEST_TENANT_DOMAIN = "test.com";
@@ -115,7 +132,7 @@ public class ResendConfirmationManagerTest {
 
         MockitoAnnotations.openMocks(this);
         resendConfirmationManager = ResendConfirmationManager.getInstance();
-
+        configurationManager = mock(ConfigurationManager.class);
         mockedServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
         mockedIdentityUtil = mockStatic(IdentityUtil.class);
         mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
@@ -123,6 +140,10 @@ public class ResendConfirmationManagerTest {
         mockedPrivilegedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
         mockedJDBCRecoveryDataStore =  mockStatic(JDBCRecoveryDataStore.class);
         mockedUserAccountRecoveryManager = mockStatic(UserAccountRecoveryManager.class);
+        mockedFlowMgtUtils = mockStatic(FlowMgtConfigUtils.class);
+
+        FlowConfigDTO mockFlowConfig = mock(FlowConfigDTO.class);
+        when(mockFlowConfig.getIsEnabled()).thenReturn(false);
 
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
         mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
@@ -138,6 +159,8 @@ public class ResendConfirmationManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
 
         when(threadLocalCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN);
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
+                .thenReturn(mockFlowConfig);
     }
 
     @AfterMethod
@@ -150,6 +173,7 @@ public class ResendConfirmationManagerTest {
         mockedPrivilegedCarbonContext.close();
         mockedJDBCRecoveryDataStore.close();
         mockedUserAccountRecoveryManager.close();
+        mockedFlowMgtUtils.close();
     }
 
     @Test

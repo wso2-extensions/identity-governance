@@ -78,6 +78,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.application.authentication.framework.util.FrameworkConstants.AUDIT_FAILED;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.LOGIN_IDENTIFIER;
 import static org.wso2.carbon.registry.core.RegistryConstants.PATH_SEPARATOR;
 
 /**
@@ -179,8 +180,10 @@ public class NotificationPasswordRecoveryManager {
             checkAccountPendingStatus(user);
             // If the NotifyUserAccountStatus is disabled, notify with an empty NotificationResponseBean.
             if (getNotifyUserAccountStatus()) {
+                String loginIdentifier = getLoginIdentifierFromProperties(properties);
+                loginIdentifier = StringUtils.isNotBlank(loginIdentifier) ? loginIdentifier : user.getUserName();
                 throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_LOCKED_ACCOUNT,
-                        user.getUserName());
+                        loginIdentifier);
             }
             triggerAccountStatusNotification(user, notificationChannel,
                     IdentityRecoveryConstants.ACCOUNT_STATUS_LOCKED, eventName, properties);
@@ -225,6 +228,25 @@ public class NotificationPasswordRecoveryManager {
         publishEvent(user, String.valueOf(notify), secretKey, null, properties,
                 IdentityEventConstants.Event.POST_SEND_RECOVERY_NOTIFICATION, recoveryDataDO);
         return notificationResponseBean;
+    }
+
+    /**
+     * Retrieves the login identifier from the provided list of properties.
+     *
+     * @param properties Array of properties sent in the recovery request.
+     * @return The value of the property with key 'loginIdentifier', or null if not found or if the array is empty.
+     */
+    private String getLoginIdentifierFromProperties(Property[] properties) {
+
+        if (ArrayUtils.isEmpty(properties)) {
+            return null;
+        }
+        for (Property property : properties) {
+            if (LOGIN_IDENTIFIER.equals(property.getKey())) {
+                return property.getValue();
+            }
+        }
+        return null;
     }
 
     /**
@@ -500,7 +522,7 @@ public class NotificationPasswordRecoveryManager {
      * @param channel Notification channel
      * @return Server supported notification channel
      */
-    private String getServerSupportedNotificationChannel(String channel) {
+    public String getServerSupportedNotificationChannel(String channel) {
 
         if (StringUtils.isEmpty(channel)) {
             if (log.isDebugEnabled()) {
@@ -989,11 +1011,12 @@ public class NotificationPasswordRecoveryManager {
                 userClaims.put(NotificationChannels.EMAIL_CHANNEL.getVerifiedClaimUrl(), Boolean.TRUE.toString());
             }
         }
-        // We don not need to change any states during user initiated password recovery.
+        // We don't need to change any states during user initiated password recovery.
         if (RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.equals(recoveryScenario)
                 || RecoveryScenarios.QUESTION_BASED_PWD_RECOVERY.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)
                 || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
             IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
         }
@@ -1007,7 +1030,8 @@ public class NotificationPasswordRecoveryManager {
 
         // If the scenario is initiated by the admin, set the account locked claim to FALSE.
         if (RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
-                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)) {
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)) {
             userClaims.put(IdentityRecoveryConstants.ACCOUNT_LOCKED_CLAIM, Boolean.FALSE.toString());
             userClaims.remove(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM);
         }
@@ -1375,7 +1399,7 @@ public class NotificationPasswordRecoveryManager {
         return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario());
     }
 
-    private boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
+    public boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
 
         String path = IdentityRecoveryConstants.EMAIL_TEMPLATE_PATH + PATH_SEPARATOR +
                 IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS.toLowerCase();

@@ -25,6 +25,7 @@
         <classes>
             <class name="org.wso2.carbon.identity.password.history.handler.PasswordHistoryValidationHandlerTest"/>
             <class name="org.wso2.carbon.identity.password.history.Util.UtilsTest"/>
+            <class name="org.wso2.carbon.identity.password.history.store.Impl.DefaultPasswordHistoryDataStoreTest"/>
         </classes>
     </test>
 </suite>

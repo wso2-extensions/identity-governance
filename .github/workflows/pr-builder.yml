@@ -43,7 +43,7 @@ jobs:
         run: mvn clean install -U -B
 
       - name: Generate coverage report
-        run: mvn test jacoco:report
+        run: mvn jacoco:report
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4

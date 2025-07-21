@@ -119,6 +119,8 @@ public class SelfRegistrationConfigImplTest {
                 "Lock user account on creation");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                "Enable email OTP");
         nameMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Include uppercase characters in OTP");
@@ -173,6 +175,8 @@ public class SelfRegistrationConfigImplTest {
                 "Lock self registered user account until e-mail verification.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                "Enable to send email OTP for self registration.");
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Enable to include uppercase characters in SMS and e-mail OTPs.");
@@ -229,6 +233,7 @@ public class SelfRegistrationConfigImplTest {
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE);
         propertiesExpected.add(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
         propertiesExpected.add(
@@ -267,6 +272,7 @@ public class SelfRegistrationConfigImplTest {
         String testEnableSelfSignUp = "false";
         String testEnableAccountLockOnCreation = "true";
         String testEnableSendOTPInEmail = "false";
+        String testEnableEmailOTP = "false";
         String testUseUppercaseCharactersInOTP = StringUtils.EMPTY;
         String testUseLowercaseCharactersInOTP = StringUtils.EMPTY;
         String testUseNumbersInOTP = StringUtils.EMPTY;
@@ -294,6 +300,9 @@ public class SelfRegistrationConfigImplTest {
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL))
                 .thenReturn(testEnableSendOTPInEmail);
+        mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
+                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE))
+                .thenReturn(testEnableEmailOTP);
         mockedIdentityUtil.when(() -> IdentityUtil.getProperty(
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP))
                 .thenReturn(testUseUppercaseCharactersInOTP);
@@ -352,6 +361,8 @@ public class SelfRegistrationConfigImplTest {
                 testEnableAccountLockOnCreation);
         propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
                 testEnableSendOTPInEmail);
+        propertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
+                testEnableEmailOTP);
         propertiesExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 testUseUppercaseCharactersInOTP);
@@ -428,6 +439,9 @@ public class SelfRegistrationConfigImplTest {
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL,
+                getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
+
+        metaDataExpected.put(IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE,
                 getPropertyObject(IdentityMgtConstants.DataTypes.BOOLEAN.getValue()));
 
         metaDataExpected.put(

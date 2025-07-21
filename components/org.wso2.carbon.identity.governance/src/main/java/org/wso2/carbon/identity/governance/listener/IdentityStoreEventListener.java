@@ -459,11 +459,17 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             String claimUri = expressionCondition.getAttributeName();
             if (claimUri.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI)) {
                 String claimValue = expressionCondition.getAttributeValue();
+                String operation = expressionCondition.getOperation();
 
                 try {
-                    List<String> usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
-                            getClaimValueForOperation(expressionCondition.getOperation(), claimValue), userManager);
-
+                    List<String> usernames;
+                   if (ExpressionOperation.NE.toString().equals(operation)) {
+                       usernames = identityDataStoreService.getUserNamesByClaimURINotEqualValue(condition, claimUri,
+                               claimValue, userManager);
+                   } else {
+                        usernames = identityDataStoreService.listUsersByClaimURIAndValue(claimUri,
+                                getClaimValueForOperation(operation, claimValue), userManager);
+                   }
                     updateUserList(usernames, filteredUserNameList, domain, isFirstClaimFilter);
 
                     if (log.isDebugEnabled()) {

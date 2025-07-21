@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.governance</groupId>
         <artifactId>identity-governance</artifactId>
-        <version>1.11.63</version>
+        <version>1.11.103-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -46,12 +46,16 @@
             <artifactId>taglibs-standard-impl</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents.wso2</groupId>
-            <artifactId>httpcore</artifactId>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpcore5</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -96,6 +100,14 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.event</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.flow.mgt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.flow.execution.engine</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
@@ -166,10 +178,10 @@
                             org.apache.commons.lang; version="${commons-lang.wso2.osgi.version.range}",
                             org.apache.commons.collections; version="${commons-collections.wso2.osgi.version.range}",
                             org.apache.commons.logging.*; version="${commons-logging.osgi.version.range}",
-                            org.apache.http.*,
-                            org.apache.http.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
-                            org.apache.http.impl.client.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
-                            org.apache.http.message.*;version="${httpcore.osgi.version.range}",
+                            org.apache.hc.*,
+                            org.apache.hc.client5.http.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.hc.client5.http.impl.*;version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.hc.core5.http.message.*;version="${httpcore.osgi.version.range}",
 
                             javax.servlet.*; version="${imp.pkg.version.javax.servlet}",
 
@@ -184,6 +196,7 @@
                             org.wso2.carbon.user.api.*; version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.utils.multitenancy.*;
                             version="${carbon.kernel.package.import.version.range}",
+                            org.wso2.carbon.utils.httpclient5; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.application.common.model;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.util;
@@ -203,6 +216,10 @@
                             org.wso2.securevault.*; version="${org.wso2.securevault.import.version.range}",
                             org.wso2.carbon.context; version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.mgt.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.flow.execution.engine.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.flow.mgt.*;
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                     </instructions>

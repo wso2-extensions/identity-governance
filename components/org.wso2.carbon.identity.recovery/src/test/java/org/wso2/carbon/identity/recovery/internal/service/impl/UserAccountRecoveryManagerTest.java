@@ -259,13 +259,12 @@ public class UserAccountRecoveryManagerTest {
     }
 
     /**
-     * Tests that a NullPointerException is thrown during user recovery when a UserStoreException
-     * occurs.
+     * Tests that an IdentityRecoveryException is thrown when no matching users are found for a given set of claims.
      *
-     * @throws Exception if mocking or method invocation fails.
+     * @throws Exception if there is an issue with mocking or method invocation.
      */
-    @Test
-    public void testThrowNullPointerForUserRecovery() throws Exception {
+    @Test(expectedExceptions = IdentityRecoveryException.class)
+    public void testThrowUserStoreExceptionForUserRecovery() throws Exception {
 
         mockUserstoreManager();
         mockBuildUser();
@@ -273,7 +272,7 @@ public class UserAccountRecoveryManagerTest {
                 .thenReturn(multiAttributeLoginService);
         when(multiAttributeLoginService.isEnabled(anyString())).thenReturn(false);
         when(abstractUserStoreManager.getUserListWithID(any(Condition.class), anyString(), anyString(),
-                anyInt(), anyInt(), isNull(), isNull())).thenReturn(getOneFilteredUser());
+                anyInt(), anyInt(), isNull(), isNull())).thenThrow(new UserStoreException("Mocked exception"));
         when(claimManager.getAttributeName(anyString(), anyString()))
                 .thenReturn("http://wso2.org/claims/mockedClaim");
         mockedIdentityUtil.when(IdentityUtil::getPrimaryDomainName).thenReturn("PRIMARY");
@@ -281,20 +280,7 @@ public class UserAccountRecoveryManagerTest {
         properties.put(IdentityEventConstants.EventProperty.USER, "user");
         when(IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService())
                 .thenReturn(identityEventService);
-
-        Throwable cause = new Throwable("error");
-        doThrow(new UserStoreException(cause))
-                .when(realmService).getTenantUserRealm(anyInt());
-
-        when(Utils.handleServerException
-                (IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_USERSTORE_MANAGER, null, cause))
-                .thenReturn(new IdentityRecoveryServerException(null, null, null));
-
-        assertThrows(NullPointerException.class, () -> {
-            userAccountRecoveryManager.retrieveUserRecoveryInformation(userClaims, StringUtils.EMPTY,
-                    RecoveryScenarios.USERNAME_RECOVERY, properties);
-        });
-        openMocks(this);
+        userAccountRecoveryManager.getUserListByClaims(userClaims, TENANT_DOMAIN);
     }
 
     /**

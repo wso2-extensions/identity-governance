@@ -48,6 +48,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP = "adminforcedpasswordresetwithotp";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
+    public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP = "adminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
+            "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
@@ -65,6 +68,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE = "resendVerifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
+    public static final String NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD = "OrchestratedAskPassword";
+    public static final String NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD = "OrchestratedResendAskPassword";
+    public static final String FLOW_TYPE = "flowType";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String ACCOUNT_ACTIVATION_SUCCESS = "accountActivationSuccess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
@@ -78,7 +84,13 @@ public class IdentityRecoveryConstants {
     public static final String RESEND_EMAIL_TEMPLATE_NAME = "resendTemplateName";
     public static final String INITIATED_PLATFORM = "initiated-platform";
     public static final String CAMPAIGN = "campaign";
+    public static final String UTM_PARAMETERS_PREFIX = "utm_";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String CONFIRMATION_CODE_INPUT = "confirmationCode";
+    public static final String NOTIFICATION_CHANNEL = "notification-channel";
+    public static final String RECOVERY_SCENARIO = "recovery-scenario";
+    public static final String USER = "user";;
+
     public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
     public static final String OTP_TOKEN_STRING = "otpTokenString";
@@ -116,6 +128,7 @@ public class IdentityRecoveryConstants {
     public static final String VERIFY_EMAIL_CLIAM = "http://wso2.org/claims/identity/verifyEmail";
     public static final String EMAIL_VERIFIED_CLAIM = "http://wso2.org/claims/identity/emailVerified";
     public static final String VERIFY_MOBILE_CLAIM = "http://wso2.org/claims/identity/verifyMobile";
+    public static final String MOBILE_VERIFIED_CLAIM = "http://wso2.org/claims/identity/phoneVerified";
     public static final String EMAIL_ADDRESS_PENDING_VALUE_CLAIM =
             "http://wso2.org/claims/identity/emailaddress.pendingValue";
     public static final String MOBILE_NUMBER_PENDING_VALUE_CLAIM =
@@ -156,6 +169,7 @@ public class IdentityRecoveryConstants {
     public static final String EXECUTE_ACTION = "ui.execute";
     public static final String UTF_8 = "UTF-8";
     public static final String CALLBACK = "callback";
+    public static final String LOGIN_IDENTIFIER = "loginIdentifier";
     public static final String IS_ACCESS_URL_AVAILABLE = "isAccessUrlAvailable";
     public static final String IS_LITE_SIGN_UP = "isLiteSignUp";
     public static final String DEFAULT_CALLBACK_REGEX = ".*";
@@ -635,6 +649,7 @@ public class IdentityRecoveryConstants {
         public static final String ENABLE_SELF_SIGNUP = "SelfRegistration.Enable";
         public static final String ACCOUNT_LOCK_ON_CREATION = "SelfRegistration.LockOnCreation";
         public static final String SELF_REGISTRATION_SEND_OTP_IN_EMAIL = "SelfRegistration.OTP.SendOTPInEmail";
+        public static final String SELF_REGISTRATION_EMAIL_OTP_ENABLE = "SelfRegistration.EmailOTP.Enable";
         public static final String SELF_REGISTRATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +
                 "UseUppercaseCharactersInOTP";
         public static final String SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "SelfRegistration.OTP." +
@@ -727,7 +742,8 @@ public class IdentityRecoveryConstants {
                 "AskPassword.ExpiryTime";
 
         public static final String ENABLE_ADMIN_PASSWORD_RESET_OFFLINE = "Recovery.AdminPasswordReset.Offline";
-        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_EMAIL_OTP = "Recovery.AdminPasswordReset.OTP";
+        public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_SMS_OTP = "Recovery.AdminPasswordReset.SMSOTP";
         public static final String ENABLE_ADMIN_PASSWORD_RESET_WITH_RECOVERY_LINK = "Recovery.AdminPasswordReset.RecoveryLink";
         public static final String ADMIN_PASSWORD_RESET_EXPIRY_TIME = "Recovery.AdminPasswordReset.ExpiryTime";
 

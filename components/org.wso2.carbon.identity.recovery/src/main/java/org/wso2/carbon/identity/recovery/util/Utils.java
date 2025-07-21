@@ -61,6 +61,8 @@ import org.wso2.carbon.identity.recovery.exception.SelfRegistrationClientExcepti
 import org.wso2.carbon.identity.recovery.exception.SelfRegistrationException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
+import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
+import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.user.functionality.mgt.UserFunctionalityMgtConstants;
 import org.wso2.carbon.user.api.Claim;
 import org.wso2.carbon.user.api.ClaimManager;
@@ -1950,5 +1952,82 @@ public class Utils {
             throw new IdentityEventException("Error retrieving claim " + claimURI +
                     " for user: " + user.toFullQualifiedUsername(), e);
         }
+    }
+
+    /**
+     * Retrieves the existing claim value for a given claim URI.
+     *
+     * @param userStoreManager User store manager.
+     * @param user             User object.
+     * @param claimURI         Claim URI to retrieve.
+     * @return List of existing claim values.
+     * @throws IdentityEventException If an error occurs while retrieving the claim value.
+     */
+    public static String getSingleValuedClaim(UserStoreManager userStoreManager, User user, String claimURI)
+            throws IdentityEventException {
+
+        try {
+            return userStoreManager.getUserClaimValue(user.getUserName(), claimURI, null);
+        } catch (UserStoreException e) {
+            throw new IdentityEventException("Error retrieving claim " + claimURI +
+                    " for user: " + maskIfRequired(user.toFullQualifiedUsername()), e);
+        }
+    }
+
+    /**
+     * Retrieve user claim of the user from the user store manager.
+     * Note : This method can be used to retrieve identity claim values of the user.
+     *
+     * @param userStoreManager The user store manager instance.
+     * @param user             The user object containing user details.
+     * @param claimURI         The URI of the claim to be retrieved.
+     * @return The claim value for the given claim URI. Returns null if no claim value is found.
+     * @throws IdentityEventException If an error occurs while retrieving the user claim value.
+     */
+    public static String getUserClaim(org.wso2.carbon.user.core.UserStoreManager userStoreManager, User user,
+                                      String claimURI) throws IdentityEventException {
+
+        Map<String, String> userClaimsMap;
+
+        try {
+            userClaimsMap = userStoreManager.getUserClaimValues(user.getUserName(), new String[]{claimURI}, null);
+        } catch (org.wso2.carbon.user.core.UserStoreException e) {
+            throw new IdentityEventException(String.format("Error while getting user claim: '%s' for user: %s",
+                    claimURI, maskIfRequired(user.getUserName())), e);
+        }
+
+        if (MapUtils.isEmpty(userClaimsMap)) {
+            return null;
+        }
+
+        for (Map.Entry<String, String> entry : userClaimsMap.entrySet()) {
+            String userClaimURI = entry.getKey();
+            if (userClaimURI.equals(claimURI)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Load user recovery data from the database using the provided code.
+     * @param code The recovery code to be used for loading the user recovery data.
+     * @return  UserRecoveryData object containing the recovery data for the user.
+     * @throws IdentityRecoveryException if an error occurs while loading the user recovery data.
+     */
+    public static UserRecoveryData loadUserRecoveryData(String code) throws IdentityRecoveryException {
+
+        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+        UserRecoveryData userRecoveryData;
+        try {
+            String hashedCode = Utils.hashCode(code);
+            userRecoveryData = userRecoveryDataStore.load(hashedCode);
+        } catch (NoSuchAlgorithmException e) {
+            throw Utils.handleServerException(
+                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_NO_HASHING_ALGO_FOR_CODE, null);
+        } catch (IdentityRecoveryException e) {
+            userRecoveryData = userRecoveryDataStore.load(code);
+        }
+        return userRecoveryData;
     }
 }
