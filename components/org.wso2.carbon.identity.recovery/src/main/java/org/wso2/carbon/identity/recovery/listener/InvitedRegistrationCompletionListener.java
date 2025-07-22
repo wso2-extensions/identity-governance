@@ -126,7 +126,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
                     .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
+            String domainQualifiedName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         }
     }
 
@@ -180,8 +181,12 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while invalidating user recovery data for confirmation code: " +
-                    confirmationCode, e);
+            String errorMsg = String.format("Error while invalidating user recovery data for confirmation code: %s",
+                    confirmationCode);
+            if (log.isDebugEnabled()) {
+                log.debug(errorMsg, e);
+            }
+            log.warn(errorMsg);
         }
     }
 
