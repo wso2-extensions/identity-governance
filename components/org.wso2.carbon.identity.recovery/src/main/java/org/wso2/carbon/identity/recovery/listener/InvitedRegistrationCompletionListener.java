@@ -38,7 +38,6 @@ import org.wso2.carbon.identity.governance.service.notification.NotificationChan
 import org.wso2.carbon.identity.handler.event.account.lock.constants.AccountConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
@@ -180,8 +179,10 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while invalidating user recovery data for confirmation code: " +
-                    confirmationCode, e);
+            if(log.isDebugEnabled()) {
+                log.debug("Error while invalidating user recovery data for confirmation code: " +
+                        confirmationCode, e);
+            }
         }
     }
 

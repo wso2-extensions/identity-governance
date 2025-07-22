@@ -209,6 +209,8 @@
                             version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.multi.attribute.login.service;
                             version="${identity.governance.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.flow.execution.engine.*;
+                            version="${carbon.identity.framework.imp.pkg.version.range}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
