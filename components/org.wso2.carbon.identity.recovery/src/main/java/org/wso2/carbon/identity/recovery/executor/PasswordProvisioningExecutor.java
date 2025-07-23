@@ -39,7 +39,9 @@ import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE;
@@ -190,10 +193,14 @@ public class PasswordProvisioningExecutor implements Executor {
     private ExecutorResponse handlePasswordRecoveryFlow(FlowExecutionContext context, char[] password) {
 
         try {
-            int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
-            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-
+            UserRealm userRealm = getUserRealm(context.getTenantDomain());
+            if (userRealm == null) {
+                ExecutorResponse executorResponse = new ExecutorResponse(STATUS_ERROR);
+                executorResponse.setErrorMessage("User realm is not available for tenant");
+                return executorResponse;
+            }
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager()
+                    .getSecondaryUserStoreManager(context.getFlowUser().getUserStoreDomain());
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
@@ -257,5 +264,19 @@ public class PasswordProvisioningExecutor implements Executor {
         response.setErrorMessage(message);
         response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
         return response;
+    }
+
+    /**
+     * Retrieves the user realm for the given tenant domain.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return UserRealm instance for the tenant.
+     * @throws UserStoreException If an error occurs while retrieving the user realm.
+     */
+    private UserRealm getUserRealm(String tenantDomain) throws UserStoreException {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+        return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 }
