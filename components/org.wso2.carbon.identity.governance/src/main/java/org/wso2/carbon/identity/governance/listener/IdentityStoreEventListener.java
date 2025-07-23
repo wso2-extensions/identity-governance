@@ -22,8 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityException;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.AbstractIdentityUserOperationEventListener;
 import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
@@ -59,6 +63,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
     private static final String ENABLE_HYBRID_DATA_STORE_PROPERTY_NAME = "EnableHybridDataStore";
     private UserIdentityDataStore identityDataStore;
     private IdentityDataStoreService identityDataStoreService;
+    private ClaimMetadataManagementService claimMetadataManagementService;
     private boolean isHybridDataStoreEnable = false;
     private static final String INVALID_OPERATION = "InvalidOperation";
     private static final String USER_IDENTITY_CLAIMS = "UserIdentityClaims";
@@ -74,6 +79,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         if (hybridDataStoreEnableObject != null) {
             isHybridDataStoreEnable = Boolean.parseBoolean(hybridDataStoreEnableObject.toString());
         }
+        claimMetadataManagementService = IdentityMgtServiceDataHolder.getInstance()
+                .getClaimMetadataManagementService();
     }
 
     @Override
@@ -283,13 +290,55 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     userName);
         }
 
-        // No need to separately handle if identity `data store is user store based
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
-            return true;
-        }
-
         if (claimMap == null) {
             claimMap = new HashMap<>();
+        }
+
+        // Extract claims that have a configured store location.
+        Iterator<Map.Entry<String, String>> claimMapIterator = claimMap.entrySet().iterator();
+        String storeLocation ;
+        // This map will hold the claims that have a configured store location.
+        Map<String, List<String>> storeLocationConfiguredClaims = new HashMap<>();
+
+        if(log.isDebugEnabled()){
+            log.debug("Extracting store location configured claims for user : " +
+                    userName + " in doPostGetUserClaimValues method.");
+        }
+
+        //Retrieve tenant domain from user.
+        int tenantId = IdentityTenantUtil.getTenantIdOfUser(userName);
+        String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
+
+        // Iterate through the claimMap to find claims with a configured store location.
+        while (claimMapIterator.hasNext()) {
+            Map.Entry<String, String> claim = claimMapIterator.next();
+            String key = claim.getKey();
+            String value = claim.getValue();
+            if (StringUtils.isEmpty(key)) {
+                continue;
+            }
+            try {
+                storeLocation = claimMetadataManagementService.getLocalClaim(key, tenantDomain).get().getClaimProperty(ClaimConstants.SKIP_USER_STORE);
+            } catch (ClaimMetadataException e) {
+                log.error("Error while retrieving claim metadata for claim: " + key, e);
+                storeLocation = null;
+            }
+            if (!StringUtils.isEmpty(storeLocation)){
+                // If the claim has a configured storing location, we remove the claim from the claimMap
+                // and add it to the storeLocConfiguredClaims map with store location as the second value.
+                storeLocationConfiguredClaims.put(key, Arrays.asList(value, storeLocation));
+                claimMapIterator.remove();
+            }
+        }
+
+        // When user store–based identity data storage is enabled at the server level,
+        // attributes (claims) can be handled in one of two ways:
+        // 1. All claims are stored in the user store.
+        // 2. Specific claims can be configured with a storage location and stored in the identity data store.
+        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
+            if (storeLocationConfiguredClaims.isEmpty()){
+                return true;
+            }
         }
 
         if (!isHybridDataStoreEnable) {
@@ -317,16 +366,33 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         // there is/are identity claim/s . load the dto
 
         UserIdentityClaim identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
-        // if no user identity data found, just continue
-        if (identityDTO == null) {
-            return true;
+
+        // Check if identityDTO is null
+        if (identityDTO != null) {
+            // data found, add the values for security questions and identity claims
+            String value;
+            for (String claim : claims) {
+                if (identityDTO.getUserIdentityDataMap().containsKey(claim)
+                        && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claim))) {
+                    claimMap.put(claim, value);
+                }
+            }
         }
-        // data found, add the values for security questions and identity claims
-        String value;
-        for (String claim : claims) {
-            if (identityDTO.getUserIdentityDataMap().containsKey(claim)
-                    && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claim))) {
-                claimMap.put(claim, value);
+
+        if (!storeLocationConfiguredClaims.isEmpty()) {
+            // Replace user store based claim values for the claims configured in the user store.
+            // This is to ensure that the user store based claims are not overridden by the identity data store values.
+            if (log.isDebugEnabled()) {
+                log.debug("Replacing user store based claim values for the claims stored in the user store for " +
+                        "user: " + userName);
+            }
+            for (Map.Entry<String, List<String>> entry : storeLocationConfiguredClaims.entrySet()) {
+                String claimURI = entry.getKey();
+                List<String> values = entry.getValue();
+                if (!Boolean.parseBoolean(values.get(1))){
+                    // If the claim is configured to be stored in user store, we replace the value in the claimMap
+                    claimMap.put(claimURI, values.get(0));
+                }
             }
         }
         return true;
@@ -716,10 +782,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
         UserStoreManager userStoreManager = getUserStoreManager();
 
-        // No need to separately handle if identity data store is user store based.
-        if (isUserStoreBasedIdentityDataStore()) {
-            return true;
-        }
 
         // Check if there are identity claims.
         boolean containsIdentityClaims = false;
@@ -738,6 +800,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
 
             String username = userClaimSearchEntry.getUserName();
+            Map<String, String> claimMap = userClaimSearchEntry.getClaims();
 
             if (username == null) {
                 if (log.isDebugEnabled()) {
@@ -747,20 +810,65 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 continue;
             }
 
-            // No need to separately handle if identity data store is user store based for the users' userstore domain.
-            if (isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
-                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
-                continue;
+            if (claimMap == null) {
+                claimMap =  new HashMap<String, String>();
+                userClaimSearchEntry.setClaims(claimMap);
             }
+
+            // Extract claims that have a configured store location.
+            Iterator<Map.Entry<String, String>> claimMapIterator = claimMap.entrySet().iterator();
+            String storeLocation ;
+            // This map will hold the claims that have a configured store location.
+            Map<String, List<String>> storeLocationConfiguredClaims = new HashMap<>();
+
+            if(log.isDebugEnabled()){
+                log.debug("Extracting store location configured claims for user : " +
+                        username + " in doPostGetUserClaimValues method.");
+            }
+
+            //Retrieve tenant domain from user.
+            int tenantId = IdentityTenantUtil.getTenantIdOfUser(username);
+            String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
+
+            // Iterate through the claimMap to find claims with a configured store location.
+            while (claimMapIterator.hasNext()) {
+                Map.Entry<String, String> claim = claimMapIterator.next();
+                String key = claim.getKey();
+                String value = claim.getValue();
+                if (StringUtils.isEmpty(key)) {
+                    continue;
+                }
+                try {
+                    storeLocation = claimMetadataManagementService.getLocalClaim(key, tenantDomain).get().getClaimProperty(ClaimConstants.SKIP_USER_STORE);
+                } catch (ClaimMetadataException e) {
+                    throw new UserStoreException("Error while retrieving claim metadata for claim: " + key, e);
+                }
+                if (!StringUtils.isEmpty(storeLocation)){
+                    // If the claim has a configured storing location, we remove the claim from the claimMap
+                    // and add it to the storeLocConfiguredClaims map with store location as the second value.
+                    storeLocationConfiguredClaims.put(key, Arrays.asList(value, storeLocation));
+                    claimMapIterator.remove();
+                }
+            }
+
+            // When user store–based identity data storage is enabled at the server level,
+            // attributes (claims) can be handled in one of two ways:
+            // 1. All claims are stored in the user store.
+            // 2. Specific claims can be configured with a storage location and stored in the identity data store.
+            if (isUserStoreBasedIdentityDataStore() ||
+                    isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
+                            .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
+                if (storeLocationConfiguredClaims.isEmpty()){
+                    continue;
+                }
+            }
+
 
             if (log.isDebugEnabled()) {
                 log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
                         "user: " + username);
             }
 
-            if (userClaimSearchEntry.getClaims() == null) {
-                userClaimSearchEntry.setClaims(new HashMap<String, String>());
-            }
 
             if (!isHybridDataStoreEnable) {
                 /*
@@ -768,7 +876,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 store. Hence, we need to remove the identity claim values from the claimMap to avoid use of values from
                 user store for identity claims.
                  */
-                userClaimSearchEntry.getClaims().entrySet().removeIf(
+                claimMap.entrySet().removeIf(
                         entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
             }
 
@@ -778,16 +886,32 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
 
             // If no user identity data found, just continue.
-            if (identityDTO == null) {
-                continue;
-            }
-
-            // Data found, add the values for security questions and identity claims.
-            for (String claim : claims) {
-                if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
-                    userClaimSearchEntry.getClaims().put(claim, identityDTO.getUserIdentityDataMap().get(claim));
+            if (identityDTO != null) {
+                // Data found, add the values for security questions and identity claims.
+                for (String claim : claims) {
+                    if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
+                        claimMap.put(claim, identityDTO.getUserIdentityDataMap().get(claim));
+                    }
                 }
             }
+
+            if (!storeLocationConfiguredClaims.isEmpty()) {
+                // Replace user store based claim values for the claims configured in the user store.
+                // This is to ensure that the user store based claims are not overridden by the identity data store values.
+                if (log.isDebugEnabled()) {
+                    log.debug("Replacing user store based claim values for the claims stored in the user store for " +
+                            "user: " + username);
+                }
+                for (Map.Entry<String, List<String>> entry : storeLocationConfiguredClaims.entrySet()) {
+                    String claimURI = entry.getKey();
+                    List<String> values = entry.getValue();
+                    if (!Boolean.parseBoolean(values.get(1))){
+                        // If the claim is configured to be stored in user store, we replace the value in the claimMap
+                        claimMap.put(claimURI, values.get(0));
+                    }
+                }
+            }
+            userClaimSearchEntry.setClaims(claimMap);
         }
         return true;
     }

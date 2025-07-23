@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 import org.wso2.carbon.identity.core.ConnectorConfig;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
@@ -168,5 +169,25 @@ public class IdentityMgtServiceComponent {
 
         log.debug("UnSetting the Realm Service");
         IdentityMgtServiceDataHolder.getInstance().setRealmService(null);
+    }
+
+    @Reference(
+            name = "ClaimMetadataManagementService",
+            service = org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetClaimMetadataManagementService")
+    protected void setClaimMetadataManagementService( ClaimMetadataManagementService claimMetadataManagementService) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Setting the Claim Metadata Management Service");
+        }
+        IdentityMgtServiceDataHolder.getInstance().setClaimMetadataManagementService(claimMetadataManagementService);
+    }
+
+    protected void unsetClaimMetadataManagementService(ClaimMetadataManagementService claimMetadataManagementService) {
+
+        log.debug("UnSetting the Claim Metadata Management Service");
+        IdentityMgtServiceDataHolder.getInstance().setClaimMetadataManagementService(null);
     }
 }
