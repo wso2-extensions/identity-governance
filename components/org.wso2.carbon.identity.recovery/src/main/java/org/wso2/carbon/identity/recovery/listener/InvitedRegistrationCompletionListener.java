@@ -97,8 +97,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             publishEvent(user, confirmationCode, recoveryScenario);
         } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
-            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getName(), context.getFlowType(),
-                    context.getContextIdentifier());
+            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
+                    context.getFlowType(), context.getContextIdentifier());
         }
         return true;
     }
