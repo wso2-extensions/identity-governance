@@ -40,10 +40,8 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
 import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
-import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
-import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -64,10 +62,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.isNull;
@@ -626,34 +622,6 @@ public class UserEmailVerificationHandlerTest {
     }
 
     @Test
-    public void testHandleEventPreAddUserAskPasswordClaim() throws IdentityEventException {
-
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
-        mockedIdentityUtils.when(() -> IdentityUtil.getProperty(eq(IdentityRecoveryConstants
-                .ConnectorConfig.ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS)))
-                .thenReturn(Boolean.TRUE.toString());
-        char[] password = "test1".toCharArray();
-        mockedUtils.when(() -> Utils.generateRandomPassword(anyInt()))
-                .thenReturn(password);
-
-        StringBuffer credentials = new StringBuffer("test1");
-        Map<String, Object> additionalProperties = new HashMap<>();
-        additionalProperties.put(IdentityEventConstants.EventProperty.CREDENTIAL, credentials);
-
-        Map<String, String> additionalClaims = new HashMap<>();
-        additionalClaims.put(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM, Boolean.TRUE.toString());
-
-        Event event = createEvent(IdentityEventConstants.Event.PRE_ADD_USER, IdentityRecoveryConstants.FALSE,
-                null, null, NEW_EMAIL, additionalProperties, additionalClaims);
-
-
-        userEmailVerificationHandler.handleEvent(event);
-        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
-                eq(IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD),
-                any()));
-    }
-
-    @Test
     public void testHandleEventPostAddUserVerifyEmailClaim() throws IdentityEventException {
 
         mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
@@ -676,86 +644,6 @@ public class UserEmailVerificationHandlerTest {
         verify(identityEventService).handleEvent(any());
         mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
                 eq(IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM),
-                any()));
-    }
-
-    @Test
-    public void testHandleEventPostAddUserAskPasswordClaimNotificationInternallyManaged()
-            throws IdentityEventException, IdentityRecoveryException {
-
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                true);
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,true);
-
-        mockedUtils.when(() -> Utils.isAccountStateClaimExisting(anyString())).thenReturn(true);
-
-        Claim temporaryEmailClaim = new Claim();
-        temporaryEmailClaim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
-        temporaryEmailClaim.setValue(Boolean.TRUE.toString());
-        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(temporaryEmailClaim);
-
-        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
-                null, null, null);
-
-        userEmailVerificationHandler.handleEvent(event);
-        verify(userRecoveryDataStore).store(any());
-        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
-                eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
-                any()));
-
-        // Case 2: Utils.generateSecretKey() throws an exception.
-        mockedUtils.when(() -> Utils.generateSecretKey(
-                NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
-                TEST_TENANT_DOMAIN, "EmailVerification"))
-                .thenThrow(new IdentityRecoveryServerException("test_error"));
-        try {
-            userEmailVerificationHandler.handleEvent(event);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IdentityEventException);
-        }
-
-        // Reset.
-        mockedUtils.when(() -> Utils.generateSecretKey(
-                        NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
-                        TEST_TENANT_DOMAIN, "EmailVerification"))
-                .thenReturn("test_key");
-
-        // Case 3: Claims are null.
-        Map<String, Object> eventProperties = new HashMap<>();
-        eventProperties.put(IdentityEventConstants.EventProperty.USER_NAME, TEST_USERNAME);
-        eventProperties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, TEST_TENANT_DOMAIN);
-        eventProperties.put(IdentityEventConstants.EventProperty.USER_STORE_MANAGER, userStoreManager);
-
-        Event event3 = new Event(IdentityEventConstants.Event.POST_ADD_USER, eventProperties);
-        userEmailVerificationHandler.handleEvent(event3);
-        verify(userRecoveryDataStore, atLeastOnce()).store(any());
-    }
-
-    @Test
-    public void testHandleEventPostAddUserAskPasswordClaimNotificationExternallyManaged()
-            throws IdentityEventException, IdentityRecoveryException {
-
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION, true);
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig.EMAIL_ACCOUNT_LOCK_ON_CREATION,
-                true);
-        mockGetConnectorConfig(IdentityRecoveryConstants.ConnectorConfig
-                .EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,false);
-
-        Claim temporaryEmailClaim = new Claim();
-        temporaryEmailClaim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
-        temporaryEmailClaim.setValue(Boolean.TRUE.toString());
-        mockedUtils.when(Utils::getEmailVerifyTemporaryClaim).thenReturn(temporaryEmailClaim);
-
-        Event event = createEvent(IdentityEventConstants.Event.POST_ADD_USER, IdentityRecoveryConstants.FALSE,
-                null, null, null);
-
-        userEmailVerificationHandler.handleEvent(event);
-
-        verify(userRecoveryDataStore).store(any());
-        mockedUtils.verify(() -> Utils.publishRecoveryEvent(any(),
-                eq(IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD),
                 any()));
     }
 
