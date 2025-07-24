@@ -306,8 +306,15 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         //Retrieve tenant domain from user.
-        int tenantId = IdentityTenantUtil.getTenantIdOfUser(userName);
+        int tenantId;
+        try{
+            tenantId = storeManager.getTenantId();
+        }catch (UserStoreException e) {
+            log.error("Error while retrieving tenant ID for user: " + userName, e);
+            return false;
+        }
         String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
+
 
         // Iterate through the claimMap to find claims with a configured store location.
         while (claimMapIterator.hasNext()) {
@@ -827,7 +834,13 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             }
 
             //Retrieve tenant domain from user.
-            int tenantId = IdentityTenantUtil.getTenantIdOfUser(username);
+            int tenantId;
+            try{
+                tenantId = userStoreManager.getTenantId();
+            }catch (UserStoreException e) {
+                log.error("Error while retrieving tenant ID for user: " + username, e);
+                return false;
+            }
             String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
 
             // Iterate through the claimMap to find claims with a configured store location.

@@ -93,7 +93,13 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
         Map<String, List<String>> storeLocationConfiguredClaims = new HashMap<>();
 
         //Retrieve tenant domain from user.
-         int tenantId = IdentityTenantUtil.getTenantIdOfUser(userName);
+        //Retrieve tenant domain from user.
+        int tenantId;
+        try{
+            tenantId = userStoreManager.getTenantId();
+        }catch (UserStoreException e) {
+            throw new UserStoreException ("Error while retrieving tenant ID for user: " + userName, e);
+        }
         String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
 
         // Iterate through the claimMap to find claims with a configured store location.
