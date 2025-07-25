@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
+import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationPendingApprovalDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternalResponseDTO;
@@ -184,6 +185,11 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
+        String userId = ((ResolvedUser) notificationResponseBean.getUser()).getUserId();
+        if (userId == null) {
+            return Response.status(Response.Status.ACCEPTED).entity(buildSelfRegistrationPendingApprovalDTO()).build();
+        }
+
         // Check whether detailed api responses are enabled.
         if (isDetailedResponseBodyEnabled()) {
             String notificationChannel = notificationResponseBean.getNotificationChannel();
@@ -234,6 +240,15 @@ public class MeApiServiceImpl extends MeApiService {
         }
         
         return successDTO;
+    }
+
+    private SelfRegistrationPendingApprovalDTO buildSelfRegistrationPendingApprovalDTO() {
+
+        SelfRegistrationPendingApprovalDTO selfRegistrationPendingApprovalDTO =
+                new SelfRegistrationPendingApprovalDTO();
+        selfRegistrationPendingApprovalDTO.setStatus("PENDING_APPROVAL");
+        selfRegistrationPendingApprovalDTO.setReason("Self registration request is pending approval.");
+        return selfRegistrationPendingApprovalDTO;
     }
 
     /**

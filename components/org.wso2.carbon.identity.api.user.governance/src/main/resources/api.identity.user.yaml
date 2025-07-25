@@ -85,6 +85,10 @@ paths:
           description: Successfully created
           schema:
             $ref: '#/definitions/SuccessfulUserCreation'
+        202:
+            description: Pending approval
+            schema:
+                $ref: '#/definitions/SelfRegistrationPendingApproval'
         400:
           description: Bad Request
           schema:
@@ -503,6 +507,21 @@ definitions:
         type: string
         example: "USER-ID"
         description: User Id.
+
+  #-----------------------------------------------------
+  # The SelfRegistrationPendingApproval  Object
+  #-----------------------------------------------------
+  SelfRegistrationPendingApproval:
+    type: object
+    properties:
+      status:
+        type: string
+        example: "PENDING_APPROVAL"
+        description: Status of the pending approval.
+      reason:
+        type: string
+        example: "Self registration request is pending approval."
+        description: Reason for pending approval.
 
   #-----------------------------------------------------
   # The SelfRegistrationUser  Object
