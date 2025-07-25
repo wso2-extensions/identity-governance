@@ -41,7 +41,6 @@ import org.wso2.carbon.identity.user.endpoint.dto.MeCodeValidationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.MeResendCodeRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.PropertyDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.ResendCodeRequestDTO;
-import org.wso2.carbon.identity.user.endpoint.dto.SelfRegistrationPendingApprovalDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SelfUserRegistrationRequestDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationDTO;
 import org.wso2.carbon.identity.user.endpoint.dto.SuccessfulUserCreationExternalResponseDTO;
@@ -186,9 +185,10 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
+        Response.Status status = Response.Status.CREATED;
         if (notificationResponseBean != null &&
                 ((ResolvedUser) notificationResponseBean.getUser()).getUserId() == null) {
-            return Response.status(Response.Status.ACCEPTED).entity(buildSelfRegistrationPendingApprovalDTO()).build();
+            status = Response.Status.ACCEPTED;
         }
 
         // Check whether detailed api responses are enabled.
@@ -198,22 +198,21 @@ public class MeApiServiceImpl extends MeApiService {
                 // Handle response when the notifications are externally managed.
                 SuccessfulUserCreationExternalResponseDTO successfulUserCreationDTO =
                         buildSuccessResponseForExternalChannel(notificationResponseBean);
-                return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
+                return Response.status(status).entity(successfulUserCreationDTO).build();
             }
             SuccessfulUserCreationDTO successfulUserCreationDTO =
                     buildSuccessResponseForInternalChannels(notificationResponseBean);
-            return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
+            return Response.status(status).entity(successfulUserCreationDTO).build();
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
                 /*If the notifications are required in the form of legacy response, and notifications are externally
                  managed, the recoveryId should be in the response as text*/
                 if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                    return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
-                            .build();
+                    return Response.status(status).entity(notificationResponseBean.getRecoveryId()).build();
                 }
             }
-            return Response.status(Response.Status.CREATED).build();
+            return Response.status(status).build();
         }
     }
 
@@ -241,15 +240,6 @@ public class MeApiServiceImpl extends MeApiService {
         }
         
         return successDTO;
-    }
-
-    private SelfRegistrationPendingApprovalDTO buildSelfRegistrationPendingApprovalDTO() {
-
-        SelfRegistrationPendingApprovalDTO selfRegistrationPendingApprovalDTO =
-                new SelfRegistrationPendingApprovalDTO();
-        selfRegistrationPendingApprovalDTO.setStatus("PENDING_APPROVAL");
-        selfRegistrationPendingApprovalDTO.setReason("Self registration request is pending approval.");
-        return selfRegistrationPendingApprovalDTO;
     }
 
     /**
