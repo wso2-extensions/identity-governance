@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 LLC. licenses this file to you under the Apache License,
- * Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License.
- * You may obtain a copy of the License at
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package org.wso2.carbon.identity.user.endpoint.impl;
@@ -185,12 +184,6 @@ public class MeApiServiceImpl extends MeApiService {
      */
     private Response buildSuccessfulAPIResponse(NotificationResponseBean notificationResponseBean) {
 
-        Response.Status status = Response.Status.CREATED;
-        if (notificationResponseBean != null &&
-                ((ResolvedUser) notificationResponseBean.getUser()).getUserId() == null) {
-            status = Response.Status.ACCEPTED;
-        }
-
         // Check whether detailed api responses are enabled.
         if (isDetailedResponseBodyEnabled()) {
             String notificationChannel = notificationResponseBean.getNotificationChannel();
@@ -198,21 +191,22 @@ public class MeApiServiceImpl extends MeApiService {
                 // Handle response when the notifications are externally managed.
                 SuccessfulUserCreationExternalResponseDTO successfulUserCreationDTO =
                         buildSuccessResponseForExternalChannel(notificationResponseBean);
-                return Response.status(status).entity(successfulUserCreationDTO).build();
+                return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
             }
             SuccessfulUserCreationDTO successfulUserCreationDTO =
                     buildSuccessResponseForInternalChannels(notificationResponseBean);
-            return Response.status(status).entity(successfulUserCreationDTO).build();
+            return Response.status(Response.Status.CREATED).entity(successfulUserCreationDTO).build();
         } else {
             if (notificationResponseBean != null) {
                 String notificationChannel = notificationResponseBean.getNotificationChannel();
                 /*If the notifications are required in the form of legacy response, and notifications are externally
                  managed, the recoveryId should be in the response as text*/
                 if (NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                    return Response.status(status).entity(notificationResponseBean.getRecoveryId()).build();
+                    return Response.status(Response.Status.CREATED).entity(notificationResponseBean.getRecoveryId())
+                            .build();
                 }
             }
-            return Response.status(status).build();
+            return Response.status(Response.Status.CREATED).build();
         }
     }
 
