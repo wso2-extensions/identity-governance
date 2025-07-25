@@ -247,7 +247,9 @@ public class UserSelfRegistrationManager {
                 org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
                         .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
                                 password, userRoles, claimsMap, null);
-                resolvedUser.setUserId(registeredUser.getUserID());
+                if (registeredUser != null) {
+                    resolvedUser.setUserId(registeredUser.getUserID());
+                }
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {
