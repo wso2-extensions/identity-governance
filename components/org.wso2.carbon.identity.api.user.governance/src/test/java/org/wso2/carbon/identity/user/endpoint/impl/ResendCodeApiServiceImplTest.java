@@ -175,7 +175,7 @@ public class ResendCodeApiServiceImplTest {
         verify(resendConfirmationManager).resendConfirmationCode(
                 any(),
                 eq(RecoveryScenarios.ASK_PASSWORD.toString()),
-                eq(RecoverySteps.SET_PASSWORD.toString()),
+                eq(RecoverySteps.UPDATE_PASSWORD.toString()),
                 eq(IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD),
                 any());
     }

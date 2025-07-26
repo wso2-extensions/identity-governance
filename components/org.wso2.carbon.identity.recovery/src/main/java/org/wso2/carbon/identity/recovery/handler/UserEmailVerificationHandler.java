@@ -228,8 +228,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                     RecoveryScenarios recoveryScenarios = RecoveryScenarios.SELF_SIGN_UP;
                     RecoverySteps recoveryStep = RecoverySteps.CONFIRM_SIGN_UP;
                     try {
-                        if (Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,
-                                user.getTenantDomain()))) {
+                        boolean sendEmailOTP = Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,
+                                user.getTenantDomain()));
+                        if (sendEmailOTP) {
                             notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP;
                             recoveryScenarios = RecoveryScenarios.EMAIL_VERIFICATION_OTP;
                             recoveryStep = RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION;
