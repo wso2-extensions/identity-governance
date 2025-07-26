@@ -114,14 +114,17 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
 
                 String channel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
                 RecoveryScenarios recoveryScenario = RecoveryScenarios.ASK_PASSWORD;
+                RecoverySteps recoveryStep = RecoverySteps.UPDATE_PASSWORD;
                 String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD;
 
                 if (askPasswordEmailOTP) {
                     recoveryScenario = RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP;
+                    recoveryStep = RecoverySteps.SET_PASSWORD;
                     notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP;
                 } else if (askPasswordSmsOTP) {
                     channel = NotificationChannels.SMS_CHANNEL.getChannelType();
                     recoveryScenario = RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP;
+                    recoveryStep = RecoverySteps.SET_PASSWORD;
                     notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP;
                 }
 
@@ -138,7 +141,7 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                 if (isNotificationInternallyManage) {
                     if (askPasswordSmsOTP) {
                         try {
-                            storeRecoveryData(user, recoveryScenario, RecoverySteps.SET_PASSWORD, confirmationCode);
+                            storeRecoveryData(user, recoveryScenario, recoveryStep, confirmationCode);
                             String mobileNumber = userStoreManager.getUserClaimValue(user.getUserName(),
                                     IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM, null);
                             triggerSmsNotification(user, notificationType, confirmationCode, mobileNumber);
@@ -149,12 +152,10 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                                     user.getLoggableMaskedUserId(), e);
                         }
                     } else {
-                        initNotification(user, recoveryScenario, RecoverySteps.SET_PASSWORD, notificationType,
-                                confirmationCode);
+                        initNotification(user, recoveryScenario, recoveryStep, notificationType, confirmationCode);
                     }
                 } else {
-                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.SET_PASSWORD,
-                            confirmationCode);
+                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, recoveryStep, confirmationCode);
                     setAskPasswordConfirmationCodeToThreadLocal(confirmationCode);
                 }
 
@@ -165,8 +166,8 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                             IdentityMgtConstants.LockedReason.PENDING_ASK_PASSWORD.toString(),
                             userStoreManager, user);
                 }
-                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
-                        confirmationCode);
+                Utils.publishRecoveryEvent(eventProperties,
+                        IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD, confirmationCode);
             }
             Utils.clearAskPasswordTemporaryClaim();
         } else if (IdentityEventConstants.Event.PRE_AUTHENTICATION.equals(eventName)) {
