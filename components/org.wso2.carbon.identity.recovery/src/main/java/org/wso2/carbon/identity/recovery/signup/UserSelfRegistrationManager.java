@@ -149,7 +149,7 @@ public class UserSelfRegistrationManager {
             throws IdentityRecoveryException {
 
         String tenantDomain = user.getTenantDomain();
-        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+        updateIdentityContextFlow(Flow.Name.REGISTER);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -684,7 +684,7 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryException {
 
         User user = null;
-        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+        updateIdentityContextFlow(Flow.Name.REGISTER);
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -1853,7 +1853,7 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerLiteUser(User user, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
-        updateIdentityContextFlow(Flow.Name.USER_REGISTRATION);
+        updateIdentityContextFlow(Flow.Name.REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
