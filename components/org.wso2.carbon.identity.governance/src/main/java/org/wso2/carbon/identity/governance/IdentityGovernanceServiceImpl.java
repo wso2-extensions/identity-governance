@@ -81,6 +81,8 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                     identityMgtProperties);
             IdPManagementUtil.validateAdminPasswordResetWithCurrentAndPreviousConfigs(configurationDetails,
                     identityMgtProperties);
+            IdPManagementUtil.validateAskPasswordBasedPasswordSetWithCurrentAndPreviousConfigs(configurationDetails,
+                    identityMgtProperties);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             updateUsernameRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             if (!OrganizationManagementUtil.isOrganization(tenantDomain)) {
