@@ -19,14 +19,10 @@
 package org.wso2.carbon.identity.governance.service;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.wso2.carbon.identity.base.IdentityException;
-import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
-import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
-import org.wso2.carbon.identity.claim.metadata.mgt.util.ClaimConstants;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
@@ -36,8 +32,11 @@ import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.model.Condition;
 import org.wso2.carbon.user.core.model.ExpressionCondition;
+import org.wso2.carbon.identity.governance.IdentityMgtUtil;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of the IdentityDataStoreService.
@@ -45,7 +44,6 @@ import java.util.*;
 public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
     private UserIdentityDataStore identityDataStore;
-    private ClaimMetadataManagementService claimMetadataManagementService;
 
     private static final String PRE_SET_USER_CLAIM_VALUES = "PreSetUserClaimValues";
     private static final String PRE_USER_ADD_CLAIM_VALUES = "PreAddUserClaimValues";
@@ -68,8 +66,6 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             Class clazz = Class.forName(storeClassName.trim());
             identityDataStore = (UserIdentityDataStore) clazz.newInstance();
         }
-        claimMetadataManagementService = IdentityMgtServiceDataHolder.getInstance()
-                .getClaimMetadataManagementService();
     }
 
     @Override
@@ -86,52 +82,12 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
-        // Extract claims that have a configured store location.
-        Iterator<Map.Entry<String, String>> claimIterator = claims.entrySet().iterator();
-        String storeLocation ;
-        // This map will hold the claims that have a configured store location.
-        Map<String, List<String>> storeLocationConfiguredClaims = new HashMap<>();
+        // Extract claims that have configured custom persistence from those that do not.
+        Pair<Map<String, String>, Map<String, String>> customPersistenceEnabledClaims = IdentityMgtUtil
+                .getCustomPersistenceEnabledClaims(claims, userStoreManager);
 
-        //Retrieve tenant domain from user.
-        //Retrieve tenant domain from user.
-        int tenantId;
-        try{
-            tenantId = userStoreManager.getTenantId();
-        }catch (UserStoreException e) {
-            throw new UserStoreException ("Error while retrieving tenant ID for user: " + userName, e);
-        }
-        String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
-
-        // Iterate through the claimMap to find claims with a configured store location.
-        while (claimIterator.hasNext()) {
-            Map.Entry<String, String> claim = claimIterator.next();
-            String key = claim.getKey();
-            String value = claim.getValue();
-            if (StringUtils.isEmpty(key)) {
-                continue;
-            }
-            try {
-                storeLocation = claimMetadataManagementService.getLocalClaim(key, tenantDomain).get().getClaimProperty(ClaimConstants.SKIP_USER_STORE);
-            } catch (ClaimMetadataException e) {
-                throw new UserStoreException("Error while retrieving claim metadata for claim: " + key, e);
-            }
-            if (!StringUtils.isEmpty(storeLocation)){
-                // If the claim has a configured storing location, we remove the claim from the claimMap
-                // and add it to the storeLocationConfiguredClaims map with store location as the second value.
-                storeLocationConfiguredClaims.put(key, Arrays.asList(value, storeLocation));
-                claimIterator.remove();
-            }
-        }
-
-        // When user store–based identity data storage is enabled at the server level,
-        // attributes (claims) can be handled in one of two ways:
-        // 1. All claims are stored in the user store.
-        // 2. Specific claims can be configured with a storage location and stored in the identity data store.
-        if (isUserStoreBasedIdentityDataStore() || isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)) {
-            if (storeLocationConfiguredClaims.isEmpty()){
-                return true;
-            }
-        }
+        Map<String, String> userStorePersistentClaims = customPersistenceEnabledClaims.getLeft();
+        Map<String, String> identityStorePersistentClaims = customPersistenceEnabledClaims.getRight();
 
         // Top level try and finally blocks are used to unset thread local variables.
         try {
@@ -148,36 +104,36 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                     userIdentityClaim = new UserIdentityClaim(userName);
                 }
 
-                // Process claims that do not have a configured store location.
-                Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
+                // Process claims that do not have a configured user store persistence.
+                if (!isUserStoreBasedIdentityDataStore() && !isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)){
+                    /* Only if the user store based identity data store is not enabled,
+                    we process the identity claims that have not configured user store persistence property.
+                     */
+                    Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
 
-                while (claimsIterator.hasNext()) {
-                    Map.Entry<String, String> claim = claimsIterator.next();
-                    String key = claim.getKey();
-                    String value = claim.getValue();
-                    if (StringUtils.isEmpty(key)) {
-                        continue;
-                    }
-                    if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
-                        userIdentityClaim.setUserIdentityDataClaim(key, value);
-                        claimsIterator.remove();
+                    while (claimsIterator.hasNext()) {
+                        Map.Entry<String, String> claim = claimsIterator.next();
+                        String key = claim.getKey();
+                        String value = claim.getValue();
+                        if (StringUtils.isEmpty(key)) {
+                            continue;
+                        }
+                        if (key.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
+                            userIdentityClaim.setUserIdentityDataClaim(key, value);
+                            claimsIterator.remove();
+                        }
                     }
                 }
 
-                // Process claims that have a configured store location.
-                if (!storeLocationConfiguredClaims.isEmpty()) {
-                    for (Map.Entry<String, List<String>> entry : storeLocationConfiguredClaims.entrySet()) {
-                        String key = entry.getKey();
-                        List<String> valueAndStoreLocation = entry.getValue();
-                        String value = valueAndStoreLocation.get(0);
-                        storeLocation = valueAndStoreLocation.get(1);
-                        if (Boolean.parseBoolean(storeLocation)) {
-                            userIdentityClaim.setUserIdentityDataClaim(key, value);
-                        }else{
-                            // If the store location is not IDENTITY_DB, we assume it is a user store claim.
-                            // Add the claim back to claims to be stored in the user store.
-                            claims.put(key, value);
-                        }
+                // Process claims that have configured custom persistence.
+                if (!userStorePersistentClaims.isEmpty()) {
+                    // Add the claims that have configured user store persistence.
+                    claims.putAll(userStorePersistentClaims);
+                }
+                if (!identityStorePersistentClaims.isEmpty()) {
+                    // Add the claims that have configured identity store persistence to the userIdentityClaim.
+                    for (Map.Entry<String, String> entry : identityStorePersistentClaims.entrySet()) {
+                        userIdentityClaim.setUserIdentityDataClaim(entry.getKey(), entry.getValue());
                     }
                 }
 
