@@ -106,7 +106,8 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
 
                 // Process claims that do not have a configured user store persistence.
                 if (!isUserStoreBasedIdentityDataStore() && !isStoreIdentityClaimsInUserStoreEnabled(userStoreManager)){
-                    /* Only if the user store based identity data store is not enabled,
+                    /*
+                    Only if the user store based identity data store is not enabled,
                     we process the identity claims that have not configured user store persistence property.
                      */
                     Iterator<Map.Entry<String, String>> claimsIterator = claims.entrySet().iterator();
