@@ -19,10 +19,10 @@
 package org.wso2.carbon.identity.governance.service;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.core.model.IdentityErrorMsgContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.governance.model.CustomPersistenceEnabledClaims;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.store.JDBCIdentityDataStore;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
@@ -82,12 +82,18 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
             }
         }
 
-        // Extract claims that have configured custom persistence from those that do not.
-        Pair<Map<String, String>, Map<String, String>> customPersistenceEnabledClaims = IdentityMgtUtil
-                .getCustomPersistenceEnabledClaims(claims, userStoreManager);
+        // ClaimURI list to be filtered.
+        String[] claimURIs = claims.keySet().toArray(new String[0]);
 
-        Map<String, String> userStorePersistentClaims = customPersistenceEnabledClaims.getLeft();
-        Map<String, String> identityStorePersistentClaims = customPersistenceEnabledClaims.getRight();
+        // Extract claims that have configured custom persistence from those that do not.
+        CustomPersistenceEnabledClaims customPersistenceEnabledClaims =
+                IdentityMgtUtil.getCustomPersistenceEnabledClaims(claimURIs, userStoreManager);
+
+
+        Map<String, String> userStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(claims,
+                customPersistenceEnabledClaims.getUserStorePersistentClaims());
+        Map<String, String> identityStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(claims,
+                customPersistenceEnabledClaims.getIdentityStorePersistentClaims());
 
         // Top level try and finally blocks are used to unset thread local variables.
         try {
@@ -127,13 +133,13 @@ public class IdentityDataStoreServiceImpl implements IdentityDataStoreService {
                 }
 
                 // Process claims that have configured custom persistence.
-                if (!userStorePersistentClaims.isEmpty()) {
+                if (!userStorePersistentClaimMap.isEmpty()) {
                     // Add the claims that have configured user store persistence.
-                    claims.putAll(userStorePersistentClaims);
+                    claims.putAll(userStorePersistentClaimMap);
                 }
-                if (!identityStorePersistentClaims.isEmpty()) {
+                if (!identityStorePersistentClaimMap.isEmpty()) {
                     // Add the claims that have configured identity store persistence to the userIdentityClaim.
-                    for (Map.Entry<String, String> entry : identityStorePersistentClaims.entrySet()) {
+                    for (Map.Entry<String, String> entry : identityStorePersistentClaimMap.entrySet()) {
                         userIdentityClaim.setUserIdentityDataClaim(entry.getKey(), entry.getValue());
                     }
                 }

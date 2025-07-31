@@ -28,6 +28,7 @@ import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.governance.model.CustomPersistenceEnabledClaims;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
@@ -290,11 +291,13 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // Extract claims that have configured custom persistence from those that do not.
-        Pair<Map<String, String>, Map<String, String>> customPersistenceEnabledClaims = IdentityMgtUtil
-                .getCustomPersistenceEnabledClaims(claimMap, claims, storeManager);
+        CustomPersistenceEnabledClaims customPersistenceEnabledClaims =
+                IdentityMgtUtil.getCustomPersistenceEnabledClaims(claims, storeManager);
 
-        Map<String, String> userStorePersistentClaims = customPersistenceEnabledClaims.getLeft();
-        Map<String, String> identityStorePersistentClaims = customPersistenceEnabledClaims.getRight();
+        Map<String, String> userStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
+                claimMap, customPersistenceEnabledClaims.getUserStorePersistentClaims());
+        Map<String, String> identityStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
+                claimMap, customPersistenceEnabledClaims.getIdentityStorePersistentClaims());
 
         // Process claims that do not have a custom persistence configured.
         UserIdentityClaim identityDTO = null;
@@ -342,12 +345,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         // Process claims that have configured custom persistence.
-        if (!userStorePersistentClaims.isEmpty()) {
+        if (!userStorePersistentClaimMap.isEmpty()) {
             // Add the claims that have configured user store persistence back to claimMap.
-            claimMap.putAll(userStorePersistentClaims);
+            claimMap.putAll(userStorePersistentClaimMap);
         }
 
-        if (!identityStorePersistentClaims.isEmpty()) {
+        if (!identityStorePersistentClaimMap.isEmpty()) {
             // Retrieve identity claims from the identity data store if not already retrieved.
             if (identityDTO == null && (identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager)) == null){
 
@@ -359,7 +362,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             // Data found, add the values for the identity DB persisted claims.
             String claimRUI;
             String value;
-            for (Map.Entry<String, String> entry : identityStorePersistentClaims.entrySet()) {
+            for (Map.Entry<String, String> entry : identityStorePersistentClaimMap.entrySet()) {
                 claimRUI = entry.getKey();
                 if (identityDTO.getUserIdentityDataMap().containsKey(claimRUI)
                         && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claimRUI))) {
@@ -758,10 +761,10 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         boolean isUserStoreBasedIdentityDataStore = isUserStoreBasedIdentityDataStore();
 
         // Extract claim URIs that have configured custom persistence from those that do not.
-        Pair<List<String>, List<String>> customPersistenceEnabledClaims = IdentityMgtUtil
+        CustomPersistenceEnabledClaims customPersistenceEnabledClaims = IdentityMgtUtil
                 .getCustomPersistenceEnabledClaims(claims, userStoreManager);
-        List<String> userStorePersistentClaims = customPersistenceEnabledClaims.getLeft();
-        List<String> identityStorePersistentClaims = customPersistenceEnabledClaims.getRight();
+        List<String> userStorePersistentClaims = customPersistenceEnabledClaims.getUserStorePersistentClaims();
+        List<String> identityStorePersistentClaims = customPersistenceEnabledClaims.getIdentityStorePersistentClaims();
 
         // Check if there are identity claims.
         boolean containsIdentityClaims = false;
@@ -774,6 +777,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         // If there are identity claims, we need to load the identity claim values from the identity data store.
         UserIdentityClaim identityDTO = null;
+        Map<String, String> userStorePersistentClaimMap;
+        Map<String, String> identityStorePersistentClaimMap;
         for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
 
             String username = userClaimSearchEntry.getUserName();
@@ -793,22 +798,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
             }
 
             // Extract user store persistent claims from claimMap relevant to claims in userStorePersistentClaims.
-            Map<String, String> userStorePersistentClaimMap = new HashMap<>();
-            for (String claim : userStorePersistentClaims) {
-                if (claimMap.containsKey(claim)) {
-                    userStorePersistentClaimMap.put(claim, claimMap.get(claim));
-                    claimMap.remove(claim);
-                }
-            }
+            userStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
+                    claimMap, userStorePersistentClaims);
 
             // Extract identity store persistent claims from claimMap relevant to claims in identityStorePersistentClaims.
-            Map<String, String> identityStorePersistentClaimMap = new HashMap<>();
-            for (String claim : identityStorePersistentClaims) {
-                if (claimMap.containsKey(claim)) {
-                    identityStorePersistentClaimMap.put(claim, claimMap.get(claim));
-                    claimMap.remove(claim);
-                }
-            }
+            identityStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
+                    claimMap, identityStorePersistentClaims);
 
 
             if (!isUserStoreBasedIdentityDataStore && !isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
@@ -818,10 +813,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 * This is applicable only for the claims that do not have a custom persistence configured.
                 */
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
+                log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
                             "user: " + username);
-                }
 
                 if (userClaimSearchEntry.getClaims() == null) {
                     userClaimSearchEntry.setClaims(new HashMap<String, String>());
@@ -864,8 +857,6 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 if (identityDTO == null &&
                         (identityDTO = identityDataStoreService.getIdentityClaimData(username, userStoreManager
                                 .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) == null) {
-                    // Log an error if identity data is not found for the user.
-                    log.error("Identity data not found for user: " + username + ". Unable to retrieve identity claims.");
                     return true;
                 }
                 // Data found, add the values for the identity DB persisted claims.
