@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.authentication.framework.util.Framew
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityRuntimeException;
 import org.wso2.carbon.identity.core.bean.context.MessageContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -34,6 +35,8 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -65,6 +68,7 @@ import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
         .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
 import static org.wso2.carbon.identity.recovery.util.Utils.maskIfRequired;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
@@ -506,19 +510,42 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         if (StringUtils.isNotBlank(code)) {
             properties.put(IdentityRecoveryConstants.CONFIRMATION_CODE, code);
         }
-        properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, type);
-
-        if (recoveryDataDO != null) {
-            properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO,
-                    recoveryDataDO.getRecoveryScenario().name());
-        }
-        Event identityMgtEvent = new Event(eventName, properties);
         try {
+            String selectedNotificationType = type;
+            if (recoveryDataDO != null) {
+                String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
+                properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
+
+                if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {
+                    selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
+                }
+            }
+            properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, selectedNotificationType);
+            Event identityMgtEvent = new Event(eventName, properties);
             IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
         } catch (IdentityEventException e) {
             throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_TRIGGER_NOTIFICATION, user
                     .getUserName(), e);
         }
+    }
+
+    private static String getNotificationTypeForAskPassword(User user, String type, String recoveryScenario,
+                                                            HashMap<String, Object> properties)
+            throws IdentityEventException {
+
+        Boolean isDynamicAskPwdEnabled;
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Flow.Name.INVITED_USER_REGISTRATION.name(),
+                    user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+        if (isDynamicAskPwdEnabled) {
+            type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
+            properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name());
+        }
+        return type;
     }
 
     protected User getUser(Map eventProperties, UserStoreManager userStoreManager) {

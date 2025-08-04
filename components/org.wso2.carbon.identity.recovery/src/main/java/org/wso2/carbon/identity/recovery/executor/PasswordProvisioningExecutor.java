@@ -22,38 +22,42 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.Constants;
-import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.graph.Executor;
 import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
-import org.wso2.carbon.identity.recovery.password.NotificationPasswordRecoveryManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.mgt.common.DefaultPasswordGenerator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ERROR;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_INVALID_USERNAME;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.ErrorMessages.ERROR_CODE_USERNAME_NOT_PROVIDED;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_COMPLETE;
+import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_ERROR;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.ExecutorStatus.STATUS_USER_INPUT_REQUIRED;
 import static org.wso2.carbon.identity.flow.execution.engine.Constants.PASSWORD_KEY;
-import static org.wso2.carbon.identity.flow.execution.engine.Constants.USERNAME_CLAIM_URI;
-import static org.wso2.carbon.identity.flow.execution.engine.util.FlowExecutionEngineUtils.handleClientException;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.CONFIRMATION_CODE_INPUT;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 
 /**
  * Executor to provision the password.
@@ -62,9 +66,7 @@ public class PasswordProvisioningExecutor implements Executor {
 
     private static final Log LOG = LogFactory.getLog(PasswordProvisioningExecutor.class);
     private static final String WSO2_CLAIM_DIALECT = "http://wso2.org/claims/";
-    private static final String CONFIRMATION_CODE = "confirmationCode";
     private static final String PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
-    private static final String ASK_PASSWORD = "ASK_PASSWORD";
 
     @Override
     public String getName() {
@@ -81,18 +83,19 @@ public class PasswordProvisioningExecutor implements Executor {
     }
 
     @Override
-    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) throws FlowEngineException {
+    public ExecutorResponse rollback(FlowExecutionContext flowExecutionContext) {
 
         return null;
     }
 
     @Override
-    public ExecutorResponse execute(FlowExecutionContext context) throws FlowEngineException {
+    public ExecutorResponse execute(FlowExecutionContext context) {
 
         Map<String, char[]> credentials;
         String passwordValue = context.getUserInputData() != null ? context.getUserInputData().get(PASSWORD_KEY) : null;
         if (StringUtils.isNotBlank(passwordValue)) {
             credentials = Collections.singletonMap(PASSWORD_KEY, passwordValue.toCharArray());
+            context.getFlowUser().setUserCredentials(credentials);
         } else {
             credentials = context.getFlowUser().getUserCredentials();
             if (MapUtils.isEmpty(credentials)) {
@@ -101,14 +104,12 @@ public class PasswordProvisioningExecutor implements Executor {
         }
 
         char[] password = credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
-
         try {
             if (context.getFlowType().equals(PASSWORD_RECOVERY)) {
                 return handlePasswordRecoveryFlow(context, password);
-            } else if (context.getFlowType().equals(ASK_PASSWORD)) {
+            } else if (Flow.Name.INVITED_USER_REGISTRATION.name().equalsIgnoreCase(context.getFlowType())) {
                 return handleAskPasswordFlow(context, password);
             }
-
             return new ExecutorResponse();
         } finally {
             Arrays.fill(password, '\0');
@@ -117,42 +118,94 @@ public class PasswordProvisioningExecutor implements Executor {
 
     private ExecutorResponse handleAskPasswordFlow(FlowExecutionContext context, char[] password) {
 
-        String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE);
-        if (StringUtils.isBlank(confirmationCode)) {
-            return errorResponse(new ExecutorResponse(), "Confirmation code is not provided.");
+        String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE_INPUT);
+        User user = (User) context.getProperty(USER);
+        if (StringUtils.isBlank(confirmationCode) || user == null) {
+            return errorResponse(new ExecutorResponse(), "Required properties are missing in the context.");
         }
+
+        String recoveryScenario = getStringProperty(context, IdentityRecoveryConstants.RECOVERY_SCENARIO);
 
         try {
             int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
+
+            handlePrePasswordUpdate(user, recoveryScenario, confirmationCode);
+
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
                     .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-
+            // If there are any claims to be updated, update them before updating the password.
             updateUserClaims(userStoreManager, context);
-            NotificationPasswordRecoveryManager.getInstance()
-                    .updatePassword(confirmationCode, String.valueOf(password), null);
+            userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
 
             String userId = ((AbstractUserStoreManager) userStoreManager)
                     .getUserIDFromUserName(context.getFlowUser().getUsername());
             context.getFlowUser().setUserId(userId);
             return new ExecutorResponse(STATUS_COMPLETE);
-        } catch (IdentityEventException | IdentityRecoveryException | UserStoreException | FlowEngineException e) {
+        } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
             LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }
 
+    private String getStringProperty(FlowExecutionContext context, String key) {
+
+        Object value = context.getProperty(key);
+        return (value != null) ? value.toString() : null;
+    }
+
+    private void handlePrePasswordUpdate(User user, String recoveryScenario, String confirmationCode)
+            throws IdentityRecoveryException, IdentityEventException {
+
+        updateIdentityContext();
+        publishEvent(user, confirmationCode, IdentityEventConstants.Event.
+                PRE_ADD_NEW_PASSWORD, recoveryScenario);
+    }
+
+    private void updateIdentityContext() {
+
+        Flow flow = new Flow.Builder()
+                .name(Flow.Name.INVITED_USER_REGISTRATION)
+                .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                .build();
+
+        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
+            // If the flow is already set, no need to update it again.
+            return;
+        }
+        IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+    }
+
+    public void publishEvent(User user, String code, String eventName, String recoveryScenario) throws
+            IdentityEventException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER, user);
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
+        properties.put(CONFIRMATION_CODE, code);
+
+        Event identityMgtEvent = new Event(eventName, properties);
+        IdentityRecoveryServiceDataHolder.getInstance().getIdentityEventService().handleEvent(identityMgtEvent);
+    }
+
     private ExecutorResponse handlePasswordRecoveryFlow(FlowExecutionContext context, char[] password) {
 
         try {
-            int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
-            UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
-                    .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-
+            UserRealm userRealm = getUserRealm(context.getTenantDomain());
+            if (userRealm == null) {
+                ExecutorResponse executorResponse = new ExecutorResponse(STATUS_ERROR);
+                executorResponse.setErrorMessage("User realm is not available for tenant");
+                return executorResponse;
+            }
+            UserStoreManager userStoreManager = userRealm.getUserStoreManager()
+                    .getSecondaryUserStoreManager(context.getFlowUser().getUserStoreDomain());
             userStoreManager.updateCredentialByAdmin(context.getFlowUser().getUsername(), password);
             return new ExecutorResponse(STATUS_COMPLETE);
         } catch (UserStoreException e) {
             LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
-            return new ExecutorResponse(ERROR);
+            return errorResponse(new ExecutorResponse(), e.getMessage());
         }
     }
 
@@ -173,11 +226,10 @@ public class PasswordProvisioningExecutor implements Executor {
      *
      * @param userStoreManager UserStoreManager instance to update user claims.
      * @param context          FlowExecutionContext containing user information and claims.
-     * @throws FlowEngineException if an error occurs during flow execution.
-     * @throws UserStoreException  if an error occurs while accessing the user store.
+     * @throws UserStoreException if an error occurs while accessing the user store.
      */
     private void updateUserClaims(UserStoreManager userStoreManager, FlowExecutionContext context)
-            throws FlowEngineException, UserStoreException {
+            throws UserStoreException {
 
         FlowUser user = enrichUserProfile(context);
         userStoreManager.setUserClaimValues(user.getUsername(), user.getClaims(), null);
@@ -188,9 +240,8 @@ public class PasswordProvisioningExecutor implements Executor {
      *
      * @param context FlowExecutionContext containing user information and claims.
      * @return Enriched FlowUser with claims and username.
-     * @throws FlowEngineException if an error occurs during flow execution.
      */
-    private FlowUser enrichUserProfile(FlowExecutionContext context) throws FlowEngineException {
+    private FlowUser enrichUserProfile(FlowExecutionContext context) {
 
         FlowUser user = context.getFlowUser();
         context.getUserInputData().forEach((key, value) -> {
@@ -198,29 +249,7 @@ public class PasswordProvisioningExecutor implements Executor {
                 user.addClaim(key, value);
             }
         });
-        user.setUsername(resolveUsername(user, context.getContextIdentifier()));
         return user;
-    }
-
-    /**
-     * Resolves the username from the FlowUser object.
-     *
-     * @param user   FlowUser object containing user information.
-     * @param flowId Flow ID for error handling.
-     * @return Resolved username.
-     * @throws FlowEngineException if the username is not provided or invalid.
-     */
-    private String resolveUsername(FlowUser user, String flowId) throws FlowEngineException {
-
-        String username = Optional.ofNullable(user.getUsername())
-                .orElseGet(() -> Optional.ofNullable(user.getClaims().get(USERNAME_CLAIM_URI)).orElse(""));
-        if (StringUtils.isBlank(username)) {
-            throw handleClientException(ERROR_CODE_USERNAME_NOT_PROVIDED, flowId);
-        }
-        if (IdentityUtil.isEmailUsernameEnabled() && !username.contains("@")) {
-            throw handleClientException(ERROR_CODE_INVALID_USERNAME, username);
-        }
-        return username;
     }
 
     /**
@@ -235,5 +264,19 @@ public class PasswordProvisioningExecutor implements Executor {
         response.setErrorMessage(message);
         response.setResult(Constants.ExecutorStatus.STATUS_ERROR);
         return response;
+    }
+
+    /**
+     * Retrieves the user realm for the given tenant domain.
+     *
+     * @param tenantDomain Tenant domain.
+     * @return UserRealm instance for the tenant.
+     * @throws UserStoreException If an error occurs while retrieving the user realm.
+     */
+    private UserRealm getUserRealm(String tenantDomain) throws UserStoreException {
+
+        RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+        int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+        return (UserRealm) realmService.getTenantUserRealm(tenantId);
     }
 }

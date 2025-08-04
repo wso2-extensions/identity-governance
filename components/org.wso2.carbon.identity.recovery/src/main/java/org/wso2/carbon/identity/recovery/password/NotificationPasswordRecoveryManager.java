@@ -522,7 +522,7 @@ public class NotificationPasswordRecoveryManager {
      * @param channel Notification channel
      * @return Server supported notification channel
      */
-    private String getServerSupportedNotificationChannel(String channel) {
+    public String getServerSupportedNotificationChannel(String channel) {
 
         if (StringUtils.isEmpty(channel)) {
             if (log.isDebugEnabled()) {
@@ -1399,7 +1399,7 @@ public class NotificationPasswordRecoveryManager {
         return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario());
     }
 
-    private boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
+    public boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
 
         String path = IdentityRecoveryConstants.EMAIL_TEMPLATE_PATH + PATH_SEPARATOR +
                 IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS.toLowerCase();
@@ -1447,7 +1447,7 @@ public class NotificationPasswordRecoveryManager {
             case ASK_PASSWORD:
             case ADMIN_INVITE_SET_PASSWORD_OFFLINE:
                 flow = new Flow.Builder()
-                        .name(Flow.Name.USER_REGISTRATION_INVITE_WITH_PASSWORD)
+                        .name(Flow.Name.INVITE)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
                         .build();
                 IdentityContext.getThreadLocalIdentityContext().setFlow(flow);

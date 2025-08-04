@@ -44,6 +44,8 @@ import org.wso2.carbon.identity.auth.attribute.handler.model.ValidationResult;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.consent.mgt.exceptions.ConsentUtilityServiceException;
 import org.wso2.carbon.identity.consent.mgt.services.ConsentUtilityService;
+import org.wso2.carbon.identity.core.context.IdentityContext;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventClientException;
@@ -103,7 +105,6 @@ import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -147,10 +148,12 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
 
+        String tenantDomain = user.getTenantDomain();
+        updateIdentityContextFlow(Flow.Name.REGISTER);
+
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
-        String tenantDomain = user.getTenantDomain();
 
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -192,6 +195,7 @@ public class UserSelfRegistrationManager {
                     .getUserName());
         }
         NotificationResponseBean notificationResponseBean;
+        Map<String, String> claimsMap;
         try {
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
@@ -207,7 +211,7 @@ public class UserSelfRegistrationManager {
             carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
             carbonContext.setTenantDomain(user.getTenantDomain());
 
-            Map<String, String> claimsMap = new HashMap<>();
+            claimsMap = new HashMap<>();
             for (Claim claim : claims) {
                 claimsMap.put(claim.getClaimUri(), claim.getValue());
             }
@@ -243,7 +247,9 @@ public class UserSelfRegistrationManager {
                 org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
                         .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
                                 password, userRoles, claimsMap, null);
-                resolvedUser.setUserId(registeredUser.getUserID());
+                if (registeredUser != null) {
+                    resolvedUser.setUserId(registeredUser.getUserID());
+                }
             } catch (UserStoreException e) {
                 Throwable cause = e;
                 while (cause != null) {
@@ -272,6 +278,15 @@ public class UserSelfRegistrationManager {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
         }
+
+        boolean isAccountLockedOnCreation = Boolean.parseBoolean(
+                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                        tenantDomain));
+        // If account is active immediately upon creation, treat as a successful self registration.
+        if (!isAccountLockedOnCreation) {
+            publishEvent(user, claimsMap, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+        }
+
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         return notificationResponseBean;
     }
@@ -669,6 +684,7 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryException {
 
         User user = null;
+        updateIdentityContextFlow(Flow.Name.REGISTER);
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -685,8 +701,12 @@ public class UserSelfRegistrationManager {
         if (isSelfRegistrationConfirmationNotify) {
             triggerNotification(user);
         }
-        publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
-                IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+
+        if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
+            publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
+                    IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+        }
 
         return user;
     }
@@ -878,7 +898,8 @@ public class UserSelfRegistrationManager {
         // Update the user claims.
         updateUserClaims(userStoreManager, user, userClaims);
 
-        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep())) {
+        if (RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) ||
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
             String verifiedChannelURI = extractVerifiedChannelURI(userClaims, verifiedChannelClaim);
             eventProperties.put(IdentityEventConstants.EventProperty.VERIFIED_CHANNEL, verifiedChannelURI);
             triggerEvent(eventProperties, IdentityEventConstants.Event.POST_USER_ACCOUNT_CONFIRMATION);
@@ -895,7 +916,8 @@ public class UserSelfRegistrationManager {
         if (!RecoverySteps.CONFIRM_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.VERIFY_EMAIL.equals(recoveryData.getRecoveryStep()) &&
                 !RecoverySteps.CONFIRM_LITE_SIGN_UP.equals(recoveryData.getRecoveryStep()) &&
-                !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep())) {
+                !RecoverySteps.VERIFY_MOBILE_NUMBER.equals(recoveryData.getRecoveryStep()) &&
+                !RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(recoveryData.getRecoveryStep())) {
             auditRecoveryConfirm(recoveryData,
                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE.getMessage(), AUDIT_FAILED);
             throw Utils.handleClientException(
@@ -1843,6 +1865,8 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerLiteUser(User user, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
+        updateIdentityContextFlow(Flow.Name.REGISTER);
+
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
 
@@ -2095,6 +2119,35 @@ public class UserSelfRegistrationManager {
     }
 
     /**
+     * Method to publish pre and post self sign up register event.
+     *
+     * @param user           self sign up user
+     * @param claims         claims of the user
+     * @param metaProperties other properties of the request
+     * @param eventName      event name (PRE_SELF_SIGNUP_REGISTER,POST_SELF_SIGNUP_REGISTER)
+     * @throws IdentityRecoveryException
+     */
+    private void publishEvent(User user, Map<String, String> claims, Property[] metaProperties,
+                              String eventName) throws
+            IdentityRecoveryException {
+
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(IdentityEventConstants.EventProperty.USER_NAME, user.getUserName());
+        properties.put(IdentityEventConstants.EventProperty.TENANT_DOMAIN, user.getTenantDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_STORE_DOMAIN, user.getUserStoreDomain());
+        properties.put(IdentityEventConstants.EventProperty.USER_CLAIMS, claims);
+
+        if (metaProperties != null) {
+            for (Property metaProperty : metaProperties) {
+                if (StringUtils.isNotBlank(metaProperty.getValue()) && StringUtils.isNotBlank(metaProperty.getKey())) {
+                    properties.put(metaProperty.getKey(), metaProperty.getValue());
+                }
+            }
+        }
+        handleEvent(eventName, properties, user);
+    }
+
+    /**
      * Method to publish post self sign up confirm event.
      *
      * @param user                 self sign up user
@@ -2257,5 +2310,23 @@ public class UserSelfRegistrationManager {
                             "option is allowed.");
         }
         return registrationOption;
+    }
+
+    /**
+     * This is used to set the flow and initiator in the identity context
+     * for the user flows.
+     *
+     * @param flowName The name of the flow to set in the identity context.
+     */
+    private void updateIdentityContextFlow(Flow.Name flowName) {
+
+        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
+            // If the flow is already set, no need to update it again.
+            return;
+        }
+
+        IdentityContext.getThreadLocalIdentityContext()
+                .setFlow(new Flow.Builder().name(flowName).initiatingPersona(
+                        Flow.InitiatingPersona.USER).build());
     }
 }

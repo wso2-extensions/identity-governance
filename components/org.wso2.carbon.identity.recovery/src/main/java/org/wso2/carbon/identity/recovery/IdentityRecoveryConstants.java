@@ -68,6 +68,9 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_VERIFY_EMAIL_ON_UPDATE = "resendVerifyEmailOnUpdate";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD = "askPassword";
     public static final String NOTIFICATION_TYPE_RESEND_ASK_PASSWORD = "resendAskPassword";
+    public static final String NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD = "OrchestratedAskPassword";
+    public static final String NOTIFICATION_TYPE_ORCHESTRATED_RESEND_ASK_PASSWORD = "OrchestratedResendAskPassword";
+    public static final String FLOW_TYPE = "flowType";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS = "passwordresetsucess";
     public static final String ACCOUNT_ACTIVATION_SUCCESS = "accountActivationSuccess";
     public static final String NOTIFICATION_TYPE_PASSWORD_RESET_INITIATE = "initiaterecovery";
@@ -83,6 +86,11 @@ public class IdentityRecoveryConstants {
     public static final String CAMPAIGN = "campaign";
     public static final String UTM_PARAMETERS_PREFIX = "utm_";
     public static final String CONFIRMATION_CODE = "confirmation-code";
+    public static final String CONFIRMATION_CODE_INPUT = "confirmationCode";
+    public static final String NOTIFICATION_CHANNEL = "notification-channel";
+    public static final String RECOVERY_SCENARIO = "recovery-scenario";
+    public static final String USER = "user";;
+
     public static final String OTP_CODE = "OTPCode";
     public static final String OTP_TOKEN = "otpToken";
     public static final String OTP_TOKEN_STRING = "otpTokenString";
