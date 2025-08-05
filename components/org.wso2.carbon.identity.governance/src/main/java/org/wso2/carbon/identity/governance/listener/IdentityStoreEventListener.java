@@ -1,24 +1,25 @@
 /*
- * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.wso2.carbon.identity.governance.listener;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -28,7 +29,6 @@ import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.governance.IdentityMgtUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
-import org.wso2.carbon.identity.governance.model.CustomPersistenceEnabledClaims;
 import org.wso2.carbon.identity.governance.model.UserIdentityClaim;
 import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.identity.governance.store.UserIdentityDataStore;
@@ -44,12 +44,7 @@ import org.wso2.carbon.user.core.model.UserClaimSearchEntry;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class IdentityStoreEventListener extends AbstractIdentityUserOperationEventListener {
 
@@ -143,7 +138,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
 
         UserIdentityClaim userIdentityClaim = new UserIdentityClaim(userName, userDataMap);
         userIdentityClaim.setTenantId(userStoreManager.getTenantId());
-        // Add the identity claims to to thread local, these claims will be stored to the identityDataStore to the
+        // Add the identity claims to thread local, these claims will be stored to the identityDataStore to the
         // in the PostAddUser method
         IdentityUtil.threadLocalProperties.get().put(USER_IDENTITY_CLAIMS, userIdentityClaim);
         return true;
@@ -286,88 +281,46 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     userName);
         }
 
+        // Extract the claims to be retrieved from identity DB.
+        String[] identityStorePersistentClaims = IdentityMgtUtil.filterIdentityDataStoreManagedClaims(claims,
+                storeManager);
+
+        // If there are no claims to be retrieved from identity DB, return true.
+        if (identityStorePersistentClaims.length == 0){
+            return true;
+        }
+
+        // If there are claims to be retrieved from identity DB,
         if (claimMap == null) {
             claimMap = new HashMap<>();
         }
 
-        // Extract claims that have configured custom persistence from those that do not.
-        CustomPersistenceEnabledClaims customPersistenceEnabledClaims =
-                IdentityMgtUtil.getCustomPersistenceEnabledClaims(claims, storeManager);
-
-        Map<String, String> userStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
-                claimMap, customPersistenceEnabledClaims.getUserStorePersistentClaims());
-        Map<String, String> identityStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
-                claimMap, customPersistenceEnabledClaims.getIdentityStorePersistentClaims());
-
-        // Process claims that do not have a custom persistence configured.
-        UserIdentityClaim identityDTO = null;
-        if (!isUserStoreBasedIdentityDataStore() && !isStoreIdentityClaimsInUserStoreEnabled(storeManager)) {
-            /*
-            Process with respect to identity DB only if user store based is not configured.
-            This is applicable only for the claims that do not have a custom persistence configured.
-             */
-            if (!isHybridDataStoreEnable) {
+        if (!isHybridDataStoreEnable) {
             /*
             If hybrid data store is disabled, we need to use the identity claim value only from the identity data store.
             Hence, we need to remove the identity claim values from the claimMap to avoid use of values from user store
             for identity claims.
+            But for any identity claim that have configured to be persisted in user store in claim level, we need to
+            keep the claimMap element retrieved from user store as it is.
              */
-                claimMap.entrySet().removeIf(
-                        entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
-            }
+            Set<String> identityStorePersistentClaimsSet = new HashSet<>(Arrays.asList(identityStorePersistentClaims));
 
-            // check if there are identity claims
-            boolean containsIdentityClaims = false;
-            for (String claim : claims) {
-                if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
-                    containsIdentityClaims = true;
-                    break;
-                }
-            }
-            // if there are no identity claims, let it go
-            if (containsIdentityClaims) {
-                // there is/are identity claim/s . load the dto
-                identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
-
-                // Check if identityDTO is null
-                if (identityDTO != null) {
-                    // data found, add the values for security questions and identity claims
-                    String value;
-                    for (String claim : claims) {
-                        if (identityDTO.getUserIdentityDataMap().containsKey(claim)
-                                && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claim))) {
-                            claimMap.put(claim, value);
-                        }
-                    }
-                }
-            }
-
+            // Check if the claim is an identity claim and in the set of claims to be retrieved from identity DB.
+            claimMap.entrySet().removeIf(entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.
+                            IDENTITY_CLAIM_URI_PREFIX) && identityStorePersistentClaimsSet.contains(entry.getKey()));
         }
 
-        // Process claims that have configured custom persistence.
-        if (!userStorePersistentClaimMap.isEmpty()) {
-            // Add the claims that have configured user store persistence back to claimMap.
-            claimMap.putAll(userStorePersistentClaimMap);
+        UserIdentityClaim identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
+        // if no user identity data found, just continue
+        if (identityDTO == null) {
+            return true;
         }
-
-        if (!identityStorePersistentClaimMap.isEmpty()) {
-            // Retrieve identity claims from the identity data store if not already retrieved.
-            if (identityDTO == null && (identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager)) == null){
-
-                // Log an error if identity data is not found for the user.
-                log.error("Identity data not found for user: " + userName + ". Unable to retrieve identity claims.");
-                return true;
-            }
-
-            // Data found, add the values for the identity DB persisted claims.
-            String claimRUI;
-            String value;
-            for (Map.Entry<String, String> entry : identityStorePersistentClaimMap.entrySet()) {
-                claimRUI = entry.getKey();
-                if (identityDTO.getUserIdentityDataMap().containsKey(claimRUI)
-                        && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claimRUI))) {
-                    claimMap.put(claimRUI, value);
-                }
+        // data found, add the values for security questions and identity claims
+        String value;
+        for (String claimURI : identityStorePersistentClaims) {
+            if (identityDTO.getUserIdentityDataMap().containsKey(claimURI)
+                    && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claimURI))) {
+                claimMap.put(claimURI, value);
             }
         }
         return true;
@@ -427,7 +380,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                     claimValue, userStoreManager);
 
             // If this is the primary domain, all the users will be retrieved since the primary domain is not appended
-            // to the user name in the IDN table. So we have to filter users belongs to primary in Java level.
+            // to the username in the IDN table. So we have to filter users belongs to primary in Java level.
             String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
             if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
                 for (String userId : userIds) {
@@ -546,7 +499,7 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                                 MutableBoolean isFirstClaimFilter) {
 
          /* If this is the primary domain, all the users will be retrieved since the primary domain is
-         not appended to the user name in the IDN table. So we have to filter users belongs to primary
+         not appended to the username in the IDN table. So we have to filter users belongs to primary
          in Java level. */
         if (StringUtils.equalsIgnoreCase(userStoreDomain, UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME)) {
             List<String> usersInPrimaryDomain = new ArrayList<>();
@@ -757,28 +710,8 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         // Pulling the UserStoreManager using the realm service as it is not passed to the listener.
         UserStoreManager userStoreManager = getUserStoreManager();
 
-        // Get the server level configuration for claim persistence.
-        boolean isUserStoreBasedIdentityDataStore = isUserStoreBasedIdentityDataStore();
-
-        // Extract claim URIs that have configured custom persistence from those that do not.
-        CustomPersistenceEnabledClaims customPersistenceEnabledClaims = IdentityMgtUtil
-                .getCustomPersistenceEnabledClaims(claims, userStoreManager);
-        List<String> userStorePersistentClaims = customPersistenceEnabledClaims.getUserStorePersistentClaims();
-        List<String> identityStorePersistentClaims = customPersistenceEnabledClaims.getIdentityStorePersistentClaims();
-
-        // Check if there are identity claims.
-        boolean containsIdentityClaims = false;
-        for (String claim : claims) {
-            if (claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)) {
-                containsIdentityClaims = true;
-                break;
-            }
-        }
-
-        // If there are identity claims, we need to load the identity claim values from the identity data store.
-        UserIdentityClaim identityDTO = null;
-        Map<String, String> userStorePersistentClaimMap;
-        Map<String, String> identityStorePersistentClaimMap;
+        String[] identityStorePersistentClaims;
+        UserStoreManager storeManager;
         for (UserClaimSearchEntry userClaimSearchEntry : userClaimSearchEntries) {
 
             String username = userClaimSearchEntry.getUserName();
@@ -791,87 +724,58 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
                 continue;
             }
 
-            Map<String, String> claimMap = userClaimSearchEntry.getClaims();
-            if (claimMap == null) {
-                claimMap = new HashMap<>();
-                userClaimSearchEntry.setClaims(claimMap);
+            // Get the storeManager for the user store domain of the user.
+            storeManager = userStoreManager.getSecondaryUserStoreManager(UserCoreUtil.
+                    extractDomainFromName(username));
+
+            // Extract the claims to be retrieved from identity DB.
+            identityStorePersistentClaims = IdentityMgtUtil.filterIdentityDataStoreManagedClaims(claims,
+                    storeManager);
+
+            // If there are no claims to be retrieved from identity DB, continue to next user.
+            if (identityStorePersistentClaims.length == 0) {
+                continue;
             }
 
-            // Extract user store persistent claims from claimMap relevant to claims in userStorePersistentClaims.
-            userStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
-                    claimMap, userStorePersistentClaims);
-
-            // Extract identity store persistent claims from claimMap relevant to claims in identityStorePersistentClaims.
-            identityStorePersistentClaimMap = IdentityMgtUtil.extractRequiredClaimsFromClaimMap(
-                    claimMap, identityStorePersistentClaims);
-
-
-            if (!isUserStoreBasedIdentityDataStore && !isStoreIdentityClaimsInUserStoreEnabled(userStoreManager
-                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) {
-                /*
-                * Process with respect to identity DB only if user store based is not configured.
-                * This is applicable only for the claims that do not have a custom persistence configured.
-                */
-
+            if (log.isDebugEnabled()) {
                 log.debug("Method doPostGetUsersClaimValues getting executed in the IdentityStoreEventListener for " +
-                            "user: " + username);
-
-                if (userClaimSearchEntry.getClaims() == null) {
-                    userClaimSearchEntry.setClaims(new HashMap<String, String>());
-                }
-
-                if (!isHybridDataStoreEnable) {
-                    /*
-                    If hybrid data store is disabled, we need to use the identity claim value only from the identity data
-                    store. Hence, we need to remove the identity claim values from the claimMap to avoid use of values from
-                    user store for identity claims.
-                     */
-                    claimMap.entrySet().removeIf(
-                            entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX));
-                }
-
-                if (containsIdentityClaims) {
-                    // There is/are identity claim/s load the dto.
-                    identityDTO = identityDataStoreService
-                            .getIdentityClaimData(userClaimSearchEntry.getUserName(), userStoreManager
-                                    .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
-
-                    // If no user identity data found, just continue.
-                    if (identityDTO != null) {
-                        // Data found, add the values for security questions and identity claims.
-                        for (String claim : claims) {
-                            if (identityDTO.getUserIdentityDataMap().containsKey(claim)) {
-                                userClaimSearchEntry.getClaims().put(claim, identityDTO.getUserIdentityDataMap().get(claim));
-                            }
-                        }
-                    }
-                }
+                        "user: " + username);
             }
 
-            // Add user store persistent claims back to the claimMap.
-            if (!userStorePersistentClaimMap.isEmpty()) {
-                claimMap.putAll(userStorePersistentClaimMap);
+            if (userClaimSearchEntry.getClaims() == null) {
+                userClaimSearchEntry.setClaims(new HashMap<String, String>());
             }
-            if (!identityStorePersistentClaimMap.isEmpty()) {
-                // Retrieve identity claims from the identity data store if not already retrieved.
-                if (identityDTO == null &&
-                        (identityDTO = identityDataStoreService.getIdentityClaimData(username, userStoreManager
-                                .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)))) == null) {
-                    return true;
-                }
-                // Data found, add the values for the identity DB persisted claims.
-                String claimRUI;
-                String value;
-                for (Map.Entry<String, String> entry : identityStorePersistentClaimMap.entrySet()) {
-                    claimRUI = entry.getKey();
-                    if (identityDTO.getUserIdentityDataMap().containsKey(claimRUI)
-                            && StringUtils.isNotBlank(value = identityDTO.getUserIdentityDataMap().get(claimRUI))) {
-                        claimMap.put(claimRUI, value);
-                    }
+
+            if (!isHybridDataStoreEnable) {
+                /*
+                If hybrid data store is disabled, we need to use the identity claim value only from the identity data
+                store. Hence, we need to remove the identity claim values from the claimMap to avoid use of values from
+                user store for identity claims.
+                 */
+                Set<String> identityStorePersistentClaimsSet = new HashSet<>(Arrays.asList(identityStorePersistentClaims));
+
+                // Check if the claim is an identity claim and in the set of claims to be retrieved from identity DB.
+                userClaimSearchEntry.getClaims().entrySet().removeIf(
+                        entry -> entry.getKey().contains(UserCoreConstants.ClaimTypeURIs.
+                                IDENTITY_CLAIM_URI_PREFIX) && identityStorePersistentClaimsSet.contains(entry.getKey()));
+            }
+
+            // There is/are identity claim/s load the dto.
+            UserIdentityClaim identityDTO = identityDataStoreService
+                    .getIdentityClaimData(userClaimSearchEntry.getUserName(), userStoreManager
+                            .getSecondaryUserStoreManager(UserCoreUtil.extractDomainFromName(username)));
+
+            // If no user identity data found, just continue.
+            if (identityDTO == null) {
+                continue;
+            }
+
+            // data found, add the values for security questions and identity claims
+            for (String claimURI : identityStorePersistentClaims) {
+                if (identityDTO.getUserIdentityDataMap().containsKey(claimURI)) {
+                    userClaimSearchEntry.getClaims().put(claimURI, identityDTO.getUserIdentityDataMap().get(claimURI));
                 }
             }
-            // Set modified claimMap back to the userClaimSearchEntry.
-            userClaimSearchEntry.setClaims(claimMap);
         }
         return true;
     }

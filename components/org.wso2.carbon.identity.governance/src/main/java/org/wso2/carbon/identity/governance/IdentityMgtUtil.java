@@ -18,13 +18,13 @@
 
 package org.wso2.carbon.identity.governance;
 
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementService;
 
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 import org.wso2.carbon.identity.claim.metadata.mgt.model.LocalClaim;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
-import org.wso2.carbon.identity.governance.model.CustomPersistenceEnabledClaims;
+import org.wso2.carbon.identity.governance.service.IdentityDataStoreService;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -43,32 +43,34 @@ public class IdentityMgtUtil {
 
     private static final ClaimMetadataManagementService claimMetadataManagementService = IdentityMgtServiceDataHolder
             .getInstance().getClaimMetadataManagementService();
+    private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
 
     /**
      * Extract the user store persistency configured claims.
      *
      * @param claims           Array of claims to be filtered.
-     * @param userStoreManager UserStoreManager instance.
+     * @param userStoreManager userStoreManager instance.
      * @return Pair of Lists containing user store persisted and identity db persisted claims respectively.
      */
-    public static CustomPersistenceEnabledClaims getCustomPersistenceEnabledClaims(
-            String[] claims, UserStoreManager userStoreManager) throws UserStoreException {
 
-        List<String> userStorePersistentClaims = new ArrayList<>();
-        List<String> identityStorePersistentClaims = new ArrayList<>();
+    public static String[] filterIdentityDataStoreManagedClaims(String[] claims, UserStoreManager userStoreManager )
+            throws UserStoreException {
 
-        // User store domain.
-        String userStoreDomain = userStoreManager.getRealmConfiguration().getUserStoreProperty(UserCoreConstants
-                .RealmConfig.PROPERTY_DOMAIN_NAME);
+        List<String> identityDataStoreManagedClaims = new ArrayList<>();
 
-        // Retrieve tenant domain.
-        String tenantDomain = getTenantDomain(userStoreManager);
+        // Retrieve tenant domain and user store domain.
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userStoreDomain = userStoreManager.getRealmConfiguration().getUserStoreProperty(
+                UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
+
+        // Get IdentityDatStoreService.
+        IdentityDataStoreService identityDataStoreService =
+                IdentityMgtServiceDataHolder.getInstance().getIdentityDataStoreService();
 
         // Iterate through the claims to find claims with a custom configured store location.
         Optional<LocalClaim> localClaim;
         String excludedUserStores;
         for (String claim: claims) {
-
             localClaim = getLocalClaimInTenant(claim, tenantDomain);
             // Check if the claim has configured custom persistence.
             if (localClaim.isPresent() && Boolean.parseBoolean(localClaim.get()
@@ -76,16 +78,21 @@ public class IdentityMgtUtil {
 
                 excludedUserStores = localClaim.get().getClaimProperty("ExcludedUserStores");
 
-                if(Arrays.asList(excludedUserStores.split(",")).contains(userStoreDomain)){
+                if (Arrays.asList(excludedUserStores.split(",")).contains(userStoreDomain)){
                     // If custom persistence is enabled and the user store is excluded, add to identity store claims.
-                    identityStorePersistentClaims.add(claim);
-                } else {
-                    // If custom persistence is enabled and the user store is not excluded, add to user store claims.
-                    userStorePersistentClaims.add(claim);
+                    identityDataStoreManagedClaims.add(claim);
+                } else if (!identityDataStoreService.isUserStoreBasedIdentityDataStore() &&
+                        !isStoreIdentityClaimsInUserStoreEnabled(userStoreManager) &&
+                        claim.contains(UserCoreConstants.ClaimTypeURIs.IDENTITY_CLAIM_URI_PREFIX)){
+                    /*
+                    If neither server level identity data store is enabled nor the user store level is configured,
+                    and the claim is an IDENTITY_CLAIM, add to identity data store managed claims.
+                     */
+                    identityDataStoreManagedClaims.add(claim);
                 }
             }
         }
-        return new CustomPersistenceEnabledClaims(userStorePersistentClaims, identityStorePersistentClaims);
+        return identityDataStoreManagedClaims.toArray(new String[0]);
     }
 
     /**
@@ -106,21 +113,6 @@ public class IdentityMgtUtil {
     }
 
     /**
-     * Method to get the tenant domain.
-     */
-    private static String getTenantDomain(UserStoreManager userStoreManager) throws UserStoreException {
-
-        int tenantId;
-        try {
-            tenantId = userStoreManager.getTenantId();
-        } catch (UserStoreException e) {
-            throw new UserStoreException("Error while retrieving tenant ID for user store.", e);
-        }
-        return IdentityTenantUtil.getTenantDomain(tenantId);
-
-    }
-
-    /**
      * Extract local claims from the claim map that is presented in the requiredClaims list.
      */
     public static Map<String, String> extractRequiredClaimsFromClaimMap(Map<String, String> claimMap, List<String> requiredClaims) {
@@ -137,5 +129,18 @@ public class IdentityMgtUtil {
             }
         }
         return localClaims;
+    }
+
+    /**
+     * Check weather the given user store has enabled the property "StoreIdentityClaims" to store identity claims
+     * in the user store.
+     *
+     * @param userStoreManager User Store manager.
+     * @return Weather identity claims are stored in user store or not.
+     */
+    private static boolean isStoreIdentityClaimsInUserStoreEnabled(UserStoreManager userStoreManager) {
+
+        return Boolean.parseBoolean(userStoreManager.getRealmConfiguration().
+                getUserStoreProperty(STORE_IDENTITY_CLAIMS));
     }
 }
