@@ -151,7 +151,7 @@ public class UserSelfRegistrationManager {
             throws IdentityRecoveryException {
 
         String tenantDomain = user.getTenantDomain();
-        updateIdentityContextFlow(Flow.Name.REGISTER);
+        enterFlow(Flow.Name.REGISTER);
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
 
@@ -297,6 +297,7 @@ public class UserSelfRegistrationManager {
         }
 
         publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
+        IdentityContext.getThreadLocalIdentityContext().exitFlow();
         return notificationResponseBean;
     }
 
@@ -693,7 +694,7 @@ public class UserSelfRegistrationManager {
             IdentityRecoveryException {
 
         User user = null;
-        updateIdentityContextFlow(Flow.Name.REGISTER);
+        enterFlow(Flow.Name.REGISTER);
         publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
                 IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -717,6 +718,7 @@ public class UserSelfRegistrationManager {
                     IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
         }
 
+        IdentityContext.getThreadLocalIdentityContext().exitFlow();
         return user;
     }
 
@@ -1862,7 +1864,7 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerLiteUser(User user, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
-        updateIdentityContextFlow(Flow.Name.REGISTER);
+        enterFlow(Flow.Name.REGISTER);
 
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
@@ -1970,6 +1972,7 @@ public class UserSelfRegistrationManager {
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
         return notificationResponseBean;
     }
@@ -2315,15 +2318,10 @@ public class UserSelfRegistrationManager {
      *
      * @param flowName The name of the flow to set in the identity context.
      */
-    private void updateIdentityContextFlow(Flow.Name flowName) {
-
-        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
-            // If the flow is already set, no need to update it again.
-            return;
-        }
+    private void enterFlow(Flow.Name flowName) {
 
         IdentityContext.getThreadLocalIdentityContext()
-                .setFlow(new Flow.Builder().name(flowName).initiatingPersona(
+                .enterFlow(new Flow.Builder().name(flowName).initiatingPersona(
                         Flow.InitiatingPersona.USER).build());
     }
 }

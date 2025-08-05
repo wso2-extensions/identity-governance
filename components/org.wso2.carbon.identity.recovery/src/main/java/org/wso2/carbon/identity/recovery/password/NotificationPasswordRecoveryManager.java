@@ -691,7 +691,7 @@ public class NotificationPasswordRecoveryManager {
         } catch (IdentityRecoveryException e) {
             userRecoveryData = userRecoveryDataStore.load(code);
         }
-        updateIdentityContext(userRecoveryData);
+        enterFlow(userRecoveryData);
         validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
         publishEvent(userRecoveryData.getUser(), null, code, password, properties,
                 IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
@@ -764,6 +764,7 @@ public class NotificationPasswordRecoveryManager {
         auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
                 FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
 
+        IdentityContext.getThreadLocalIdentityContext().exitFlow();
         return userRecoveryData.getUser();
     }
 
@@ -785,7 +786,7 @@ public class NotificationPasswordRecoveryManager {
         try {
             userRecoveryData = userRecoveryDataStore.loadFromRecoveryFlowId(confirmationCode,
                     RecoverySteps.UPDATE_PASSWORD);
-            updateIdentityContext(userRecoveryData);
+            enterFlow(userRecoveryData);
             validateCallback(properties, userRecoveryData.getUser().getTenantDomain());
             publishEvent(userRecoveryData.getUser(), null, null, password, properties,
                     IdentityEventConstants.Event.PRE_ADD_NEW_PASSWORD, userRecoveryData);
@@ -881,6 +882,7 @@ public class NotificationPasswordRecoveryManager {
         auditPasswordReset(userRecoveryData.getUser(), AuditConstants.ACTION_PASSWORD_RESET, null,
                 FrameworkConstants.AUDIT_SUCCESS, recoveryScenario, recoveryStep);
 
+        IdentityContext.getThreadLocalIdentityContext().exitFlow();
         return userRecoveryData.getUser();
     }
 
@@ -1425,7 +1427,7 @@ public class NotificationPasswordRecoveryManager {
      *
      * @param userRecoveryData User and recovery scenario information.
      */
-    private void updateIdentityContext(UserRecoveryData userRecoveryData) {
+    private void enterFlow(UserRecoveryData userRecoveryData) {
 
         RecoveryScenarios recoveryScenario = (RecoveryScenarios) userRecoveryData.getRecoveryScenario();
         Flow flow;
@@ -1435,14 +1437,14 @@ public class NotificationPasswordRecoveryManager {
                         .name(Flow.Name.PASSWORD_RESET)
                         .initiatingPersona(Flow.InitiatingPersona.USER)
                         .build();
-                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             case ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK:
                 flow = new Flow.Builder()
                         .name(Flow.Name.PASSWORD_RESET)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
                         .build();
-                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             case ASK_PASSWORD:
             case ADMIN_INVITE_SET_PASSWORD_OFFLINE:
@@ -1450,7 +1452,7 @@ public class NotificationPasswordRecoveryManager {
                         .name(Flow.Name.INVITE)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
                         .build();
-                IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+                IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             default:
                 break;
