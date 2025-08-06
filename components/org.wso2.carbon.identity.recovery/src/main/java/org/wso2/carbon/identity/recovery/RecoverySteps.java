@@ -24,6 +24,7 @@ import org.wso2.carbon.identity.recovery.util.Utils;
 public enum RecoverySteps {
     NOTIFY,
     UPDATE_PASSWORD,
+    SET_PASSWORD,
     VALIDATE_CHALLENGE_QUESTION,
     VALIDATE_ALL_CHALLENGE_QUESTION,
     CONFIRM_SIGN_UP,
@@ -44,7 +45,7 @@ public enum RecoverySteps {
     public static RecoverySteps getRecoveryStep(String stepName) throws IdentityRecoveryClientException {
 
         RecoverySteps[] recoverySteps = {
-                NOTIFY, UPDATE_PASSWORD, VALIDATE_CHALLENGE_QUESTION, VALIDATE_ALL_CHALLENGE_QUESTION, CONFIRM_SIGN_UP,
+                NOTIFY, UPDATE_PASSWORD, SET_PASSWORD, VALIDATE_CHALLENGE_QUESTION, VALIDATE_ALL_CHALLENGE_QUESTION, CONFIRM_SIGN_UP,
                 CONFIRM_LITE_SIGN_UP, SEND_RECOVERY_INFORMATION, RESEND_CONFIRMATION_CODE, VERIFY_EMAIL,
                 VERIFY_MOBILE_NUMBER, CONFIRM_PENDING_EMAIL_VERIFICATION
         };

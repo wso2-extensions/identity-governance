@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.multi.attribute.login.mgt.ResolvedUserResult;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.bean.NotificationResponseBean;
@@ -42,18 +43,24 @@ import org.wso2.carbon.identity.user.endpoint.util.Utils;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response;
 
-import static org.wso2.carbon.identity.user.endpoint.util.Utils.getUserClaim;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP;
+import static org.wso2.carbon.identity.recovery.util.Utils.getRecoveryConfigs;
 
 /**
  * This class contains the implementation of Resend Code API Service.
  */
 public class ResendCodeApiServiceImpl extends ResendCodeApiService {
+
+    private static final List<String> askPasswordRecoveryScenarios =
+            Arrays.asList(RecoveryScenarios.ASK_PASSWORD.toString(), RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP
+                            .toString(), RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString());
     private static final Log LOG = LogFactory.getLog(ResendCodeApiServiceImpl.class);
     private static final String RECOVERY_SCENARIO_KEY = "RecoveryScenario";
 
@@ -115,6 +122,8 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         }
 
         if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString().equals(recoveryScenario) ||
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.NOTIFICATION_BASED_PW_RECOVERY.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.SELF_SIGN_UP.toString().equals(recoveryScenario) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.toString().equals(recoveryScenario) ||
@@ -137,13 +146,22 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
         if (userRecoveryData == null) {
             // If the recovery scenario is ASK_PASSWORD and the user's account state is pending ask password,
             // reinitiate "Ask password" flow even though recovery data is absent.
-            if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)
+            if (askPasswordRecoveryScenarios.contains(recoveryScenario)
                     && isUserInPendingAskPasswordState(resendCodeRequestDTO.getUser())) {
+                String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD;
+                RecoverySteps recoveryStep = RecoverySteps.UPDATE_PASSWORD;
+                if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString().equals(recoveryScenario)) {
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_EMAIL_OTP;
+                    recoveryStep = RecoverySteps.SET_PASSWORD;
+                } else if (RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString().equals(recoveryScenario)) {
+                    notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_SMS_OTP;
+                    recoveryStep = RecoverySteps.SET_PASSWORD;
+                }
                 resendConfirmationManager = Utils.getResendConfirmationManager();
                 notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
-                        RecoveryScenarios.ASK_PASSWORD.toString(),
-                        RecoverySteps.UPDATE_PASSWORD.toString(),
-                        IdentityRecoveryConstants.NOTIFICATION_TYPE_RESEND_ASK_PASSWORD,
+                        recoveryScenario,
+                        recoveryStep.toString(),
+                        notificationType,
                         resendCodeRequestDTO);
             }
             // If the recovery scenario is EMAIL_VERIFICATION and the user's account state is pending email
@@ -160,6 +178,14 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 // Initial email verification flow can be triggered with SELF_SIGN_UP scenario.
                 // Hence, remove user recovery data if it exists for SELF_SIGN_UP scenario.
                 Utils.invalidateUserRecoveryData(resendCodeRequestDTO, RecoveryScenarios.SELF_SIGN_UP);
+            } else if (RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString().equals(recoveryScenario)
+                    && isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser())) {
+                resendConfirmationManager = Utils.getResendConfirmationManager();
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                        RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString(),
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP,
+                        resendCodeRequestDTO);
             }
 
             return notificationResponseBean;
@@ -243,6 +269,13 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     RecoveryScenarios.EMAIL_VERIFICATION.toString(),
                     RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.EMAIL_VERIFICATION_OTP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString(),
+                    RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP, resendCodeRequestDTO);
         } else if (RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.VERIFY_EMAIL.equals(userRecoveryData.getRecoveryStep())) {
@@ -272,6 +305,22 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString(),
+                    RecoverySteps.SET_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_EMAIL_OTP,
+                    resendCodeRequestDTO);
+        } else if (RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString().equals(recoveryScenario) &&
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(userRecoveryData.getRecoveryScenario())
+                && RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString(),
+                    RecoverySteps.SET_PASSWORD.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_SMS_OTP,
+                    resendCodeRequestDTO);
         }
 
         return notificationResponseBean;

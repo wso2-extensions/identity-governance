@@ -51,10 +51,16 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP = "adminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
             "resendAdminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP = "askPasswordSMSOTP";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP = "askPasswordEmailOTP";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_SMS_OTP = "askPasswordResendSMSOTP";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_EMAIL_OTP = "askPasswordResendEmailOTP";
+    public static final String NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP_SET_SUCCESS = "askPasswordSetSuccess";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
     public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM = "emailconfirm";
+    public static final String NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP = "emailConfirmWithOTP";
     public static final String NOTIFICATION_TYPE_LITE_USER_EMAIL_CONFIRM = "liteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_RESEND_LITE_USER_EMAIL_CONFIRM = "resendLiteUserEmailConfirmation";
     public static final String NOTIFICATION_TYPE_TENANT_REGISTRATION_CONFIRMATION = "tenantRegistrationConfirmation";
@@ -697,7 +703,15 @@ public class IdentityRecoveryConstants {
         public static final String LITE_REGISTRATION_RESEND_VERIFICATION_ON_USER_EXISTENCE =
                 "LiteRegistration.ResendVerificationOnUserExistence";
         public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
+
+        // Configuration to send OTP as an email link format.
         public static final String EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL = "EmailVerification.OTP.SendOTPInEmail";
+
+        // Configuration to send OTP for email verification.
+        public static final String EMAIL_VERIFICATION_SEND_OTP = "EmailVerification.OTP";
+
+        public static final String ASK_PASSWORD_SEND_EMAIL_OTP = "EmailVerification.AskPassword.EmailOTP";
+        public static final String ASK_PASSWORD_SEND_SMS_OTP = "EmailVerification.AskPassword.SMSOTP";
         public static final String EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP = "EmailVerification.OTP." +
                 "UseUppercaseCharactersInOTP";
         public static final String EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP = "EmailVerification.OTP." +

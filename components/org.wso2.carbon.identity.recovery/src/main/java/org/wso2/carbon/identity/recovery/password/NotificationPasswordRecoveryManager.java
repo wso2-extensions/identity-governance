@@ -702,7 +702,8 @@ public class NotificationPasswordRecoveryManager {
                     .getRecoveryFlowId();
 
             // Validate recovery step.
-            if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+            if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep()) &&
+                    !RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
                 throw Utils.handleClientException(
                         IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
             }
@@ -730,19 +731,33 @@ public class NotificationPasswordRecoveryManager {
             }
             if (notificationsInternallyManaged &&
                     !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                String emailTemplate = null;
-                if (isAskPasswordFlow(userRecoveryData) &&
-                        isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
-                    if (isNotificationSendOnAccountActivation) {
-                        emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                String template = null;
+            if (isAskPasswordFlow(userRecoveryData)) {
+                if (isNotificationSendOnAccountActivation) {
+                    if (RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(userRecoveryData.getRecoveryScenario())) {
+                        template = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP_SET_SUCCESS;
+                        notificationChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
+                        String sendTo = Utils.getUserClaim(userRecoveryData.getUser(),
+                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                        if (StringUtils.isEmpty(sendTo)) {
+                            /* If the mobile number is not found for the user, notify with an empty
+                            NotificationResponseBean.*/
+                            throw Utils.handleClientException(
+                                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND,
+                                    userRecoveryData.getUser().getUserName());
+                        }
+                        properties = addMobileNumberToProperties(properties, sendTo);
+                    } else {
+                        template = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
                     }
-                } else if (isNotificationSendWhenSuccess) {
-                    emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
+                }
+            } else if (isNotificationSendWhenSuccess) {
+                    template = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
                 }
                 try {
                     String eventName = Utils.resolveEventName(notificationChannel);
-                    if (StringUtils.isNotBlank(emailTemplate)) {
-                        triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
+                    if (StringUtils.isNotBlank(template)) {
+                        triggerNotification(userRecoveryData.getUser(), notificationChannel, template,
                                 StringUtils.EMPTY, eventName, properties, userRecoveryData);
                     }
                 } catch (IdentityRecoveryException e) {
@@ -855,19 +870,33 @@ public class NotificationPasswordRecoveryManager {
             }
             if (notificationsInternallyManaged &&
                     !NotificationChannels.EXTERNAL_CHANNEL.getChannelType().equals(notificationChannel)) {
-                String emailTemplate = null;
-                if (isAskPasswordFlow(userRecoveryData) &&
-                        isAskPasswordEmailTemplateTypeExists(userRecoveryData.getUser().getTenantDomain())) {
-                    if (isNotificationSendOnAccountActivation) {
-                        emailTemplate = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
+                String template = null;
+            if (isAskPasswordFlow(userRecoveryData)) {
+                if (isNotificationSendOnAccountActivation) {
+                    if (RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(userRecoveryData.getRecoveryScenario())) {
+                        template = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP_SET_SUCCESS;
+                        notificationChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
+                        String sendTo = Utils.getUserClaim(userRecoveryData.getUser(),
+                                IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM);
+                        if (StringUtils.isEmpty(sendTo)) {
+                            /* If the mobile number is not found for the user, notify with an empty
+                            NotificationResponseBean.*/
+                            throw Utils.handleClientException(
+                                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MOBILE_NOT_FOUND,
+                                    userRecoveryData.getUser().getUserName());
+                        }
+                        properties = addMobileNumberToProperties(properties, sendTo);
+                    } else {
+                        template = IdentityRecoveryConstants.ACCOUNT_ACTIVATION_SUCCESS;
                     }
-                } else if (isNotificationSendWhenSuccess) {
-                    emailTemplate = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
+                }
+            } else if (isNotificationSendWhenSuccess) {
+                    template = IdentityRecoveryConstants.NOTIFICATION_TYPE_PASSWORD_RESET_SUCCESS;
                 }
                 try {
                     String eventName = Utils.resolveEventName(notificationChannel);
-                    if (StringUtils.isNotBlank(emailTemplate)) {
-                        triggerNotification(userRecoveryData.getUser(), notificationChannel, emailTemplate,
+                    if (StringUtils.isNotBlank(template)) {
+                        triggerNotification(userRecoveryData.getUser(), notificationChannel, template,
                                 StringUtils.EMPTY, eventName, properties, userRecoveryData);
                     }
                 } catch (IdentityRecoveryException e) {
@@ -1410,7 +1439,9 @@ public class NotificationPasswordRecoveryManager {
 
     private boolean isAskPasswordFlow(UserRecoveryData userRecoveryData) {
 
-        return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario());
+        return RecoveryScenarios.ASK_PASSWORD.equals(userRecoveryData.getRecoveryScenario())
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(userRecoveryData.getRecoveryScenario())
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(userRecoveryData.getRecoveryScenario());
     }
 
     public boolean isAskPasswordEmailTemplateTypeExists(String tenantDomain) {
