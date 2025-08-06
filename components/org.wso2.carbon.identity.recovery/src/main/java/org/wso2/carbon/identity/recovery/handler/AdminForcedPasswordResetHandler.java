@@ -270,7 +270,7 @@ public class AdminForcedPasswordResetHandler extends UserEmailVerificationHandle
         }
     }
 
-    private void triggerSmsNotification(User user, String notificationType, String OTP, String mobileNumber)
+    protected void triggerSmsNotification(User user, String notificationType, String OTP, String mobileNumber)
             throws IdentityRecoveryServerException {
 
         if (log.isDebugEnabled()) {

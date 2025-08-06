@@ -31,6 +31,7 @@
             <class name="org.wso2.carbon.identity.recovery.util.UtilsTest"/>
             <class name="org.wso2.carbon.identity.recovery.handler.AdminForcedPasswordResetHandlerTest"/>
             <class name="org.wso2.carbon.identity.recovery.handler.UserEmailVerificationHandlerTest" />
+            <class name="org.wso2.carbon.identity.recovery.handler.AskPasswordBasedPasswordSetupHandlerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.UserSelfRegistrationHandlerTest"/>
             <class name="org.wso2.carbon.identity.recovery.confirmation.ResendConfirmationManagerTest" />
             <class name="org.wso2.carbon.identity.recovery.handler.MobileNumberVerificationHandlerTest" />

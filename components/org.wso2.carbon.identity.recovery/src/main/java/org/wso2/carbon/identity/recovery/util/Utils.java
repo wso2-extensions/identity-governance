@@ -118,8 +118,11 @@ public class Utils {
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
             ThreadLocal<>();
 
-    //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
+    //This is used to pass the verifyEmail claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    //This is used to pass the askPassword claim from preAddUser to postAddUser
+    private static ThreadLocal<Claim> askPasswordTemporaryClaim = new ThreadLocal<>();
 
     /**
      * This thread local variable is used to prevent sending of a verification email when SetUserClaimsListener is
@@ -213,6 +216,34 @@ public class Utils {
     public static void clearEmailVerifyTemporaryClaim() {
 
         emailVerifyTemporaryClaim.remove();
+    }
+
+    /**
+     * Retrieves the temporary claim associated with the "Ask Password" functionality.
+     *
+     * @return The temporary {@link Claim} object if set, or {@code null} if not set.
+     */
+    public static Claim getAskPasswordTemporaryClaim() {
+
+        if (askPasswordTemporaryClaim.get() == null) {
+            return null;
+        }
+        return askPasswordTemporaryClaim.get();
+    }
+
+    /**
+     * Sets a temporary claim for the ask password recovery process.
+     *
+     * @param claim The claim to be temporarily stored for the ask password recovery process.
+     */
+    public static void setAskPasswordTemporaryClaim(Claim claim) {
+
+        askPasswordTemporaryClaim.set(claim);
+    }
+
+    public static void clearAskPasswordTemporaryClaim() {
+
+        askPasswordTemporaryClaim.remove();
     }
 
     /**
@@ -1364,6 +1395,8 @@ public class Utils {
         }
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name().equals(recoveryScenario) ||
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.name().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_VERIFICATION_OTP.name().equals(recoveryScenario) ||
                 sendOTPInEmail) {
             try {
                 OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
