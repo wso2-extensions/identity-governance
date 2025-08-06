@@ -704,7 +704,9 @@ public class IdentityRecoveryConstants {
                 "LiteRegistration.ResendVerificationOnUserExistence";
         public static final String ENABLE_EMAIL_VERIFICATION = "EmailVerification.Enable";
 
+        // Configuration to send OTP as an email link format.
         public static final String EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL = "EmailVerification.OTP.SendOTPInEmail";
+        // Configuration to send OTP for email verification.
         public static final String EMAIL_VERIFICATION_SEND_OTP = "EmailVerification.OTP";
         public static final String ASK_PASSWORD_SEND_EMAIL_OTP = "EmailVerification.AskPassword.EmailOTP";
         public static final String ASK_PASSWORD_SEND_SMS_OTP = "EmailVerification.AskPassword.SMSOTP";

@@ -178,6 +178,14 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                 // Initial email verification flow can be triggered with SELF_SIGN_UP scenario.
                 // Hence, remove user recovery data if it exists for SELF_SIGN_UP scenario.
                 Utils.invalidateUserRecoveryData(resendCodeRequestDTO, RecoveryScenarios.SELF_SIGN_UP);
+            } else if (RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString().equals(recoveryScenario)
+                    && isUserInPendingEmailVerificationState(resendCodeRequestDTO.getUser())) {
+                resendConfirmationManager = Utils.getResendConfirmationManager();
+                notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                        RecoveryScenarios.EMAIL_VERIFICATION_OTP.toString(),
+                        RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION.toString(),
+                        IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP,
+                        resendCodeRequestDTO);
             }
 
             return notificationResponseBean;

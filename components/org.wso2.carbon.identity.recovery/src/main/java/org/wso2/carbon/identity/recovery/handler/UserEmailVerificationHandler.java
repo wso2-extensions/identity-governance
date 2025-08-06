@@ -225,21 +225,22 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                                 IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
                     }
                     String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM;
-                    RecoveryScenarios recoveryScenarios = RecoveryScenarios.SELF_SIGN_UP;
+                    RecoveryScenarios recoveryScenario = RecoveryScenarios.SELF_SIGN_UP;
                     RecoverySteps recoveryStep = RecoverySteps.CONFIRM_SIGN_UP;
                     try {
-                        boolean sendEmailOTP = Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,
-                                user.getTenantDomain()));
-                        if (sendEmailOTP) {
+                        boolean isSendEmailOTPEnabled =
+                                Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,
+                                        user.getTenantDomain()));
+                        if (isSendEmailOTPEnabled) {
                             notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP;
-                            recoveryScenarios = RecoveryScenarios.EMAIL_VERIFICATION_OTP;
+                            recoveryScenario = RecoveryScenarios.EMAIL_VERIFICATION_OTP;
                             recoveryStep = RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION;
                         }
                     } catch (IdentityRecoveryServerException e) {
                         throw new IdentityEventException("Error while checking send OTP in email for email " +
                                 "verification.", e);
                     }
-                    initNotification(user, recoveryScenarios, recoveryStep, notificationType);
+                    initNotification(user, recoveryScenario, recoveryStep, notificationType);
                 }
 
                 // Need to lock user account.

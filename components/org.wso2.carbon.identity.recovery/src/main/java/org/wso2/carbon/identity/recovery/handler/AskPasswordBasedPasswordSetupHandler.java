@@ -107,9 +107,9 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                         (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                                 tenantDomain));
 
-                boolean askPasswordEmailOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                boolean isAskPasswordEmailOTPEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                         IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP, tenantDomain));
-                boolean askPasswordSmsOTP = Boolean.parseBoolean(Utils.getConnectorConfig(
+                boolean isAskPasswordSMSOTPEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                         IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SMS_OTP, tenantDomain));
 
                 String channel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
@@ -117,11 +117,11 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                 RecoverySteps recoveryStep = RecoverySteps.UPDATE_PASSWORD;
                 String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD;
 
-                if (askPasswordEmailOTP) {
+                if (isAskPasswordEmailOTPEnabled) {
                     recoveryScenario = RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP;
                     recoveryStep = RecoverySteps.SET_PASSWORD;
                     notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP;
-                } else if (askPasswordSmsOTP) {
+                } else if (isAskPasswordSMSOTPEnabled) {
                     channel = NotificationChannels.SMS_CHANNEL.getChannelType();
                     recoveryScenario = RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP;
                     recoveryStep = RecoverySteps.SET_PASSWORD;
@@ -139,7 +139,7 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                             IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
                 }
                 if (isNotificationInternallyManage) {
-                    if (askPasswordSmsOTP) {
+                    if (isAskPasswordSMSOTPEnabled) {
                         try {
                             storeRecoveryData(user, recoveryScenario, recoveryStep, confirmationCode);
                             String mobileNumber = userStoreManager.getUserClaimValue(user.getUserName(),
@@ -224,8 +224,9 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
 
         Object initialValue = IdentityUtil.threadLocalProperties.get()
                 .get(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY);
-        if (initialValue != null && initialValue.toString()
-                .equals(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE)) {
+        if (initialValue != null &&
+                IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE
+                        .equals(initialValue.toString())) {
             IdentityUtil.threadLocalProperties.get()
                     .put(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY,
                             confirmationCode);
