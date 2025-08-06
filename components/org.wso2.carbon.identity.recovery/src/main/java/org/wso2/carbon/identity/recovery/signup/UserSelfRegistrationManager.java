@@ -150,153 +150,167 @@ public class UserSelfRegistrationManager {
     public NotificationResponseBean registerUser(User user, String password, Claim[] claims, Property[] properties)
             throws IdentityRecoveryException {
 
-        String tenantDomain = user.getTenantDomain();
-        updateIdentityContextFlow(Flow.Name.REGISTER);
-
-        publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
-
-        String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
-
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-
-        // Callback URL validation
-        String callbackURL = null;
-        try {
-            if (!Utils.isAccessUrlAvailable(properties)) {
-                callbackURL = Utils.getCallbackURLFromRegistration(properties);
-                if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
-                        IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
-                    throw Utils.handleServerException(
-                            IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
-                }
-            }
-        } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException e) {
-            throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
-                    callbackURL);
-        }
-
-        if (StringUtils.isBlank(user.getTenantDomain())) {
-            user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            log.info("registerUser :Tenant domain is not in the request. set to default for user : " +
-                    user.getUserName());
-        }
-
-        if (StringUtils.isBlank(user.getUserStoreDomain())) {
-            user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
-            log.info("registerUser :User store domain is not in the request. set to default for user : " + user.getUserName());
-        }
-
-        ResolvedUser resolvedUser = new ResolvedUser(user);
-        boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
-
-        if (!enable) {
-            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
-                    .getUserName());
-        }
         NotificationResponseBean notificationResponseBean;
-        Map<String, String> claimsMap;
         try {
-            RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
-            UserStoreManager userStoreManager;
-            try {
-                userStoreManager = realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain())).getUserStoreManager();
-            } catch (UserStoreException e) {
-                throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED, user
-                        .getUserName(), e);
+            enterFlow(Flow.Name.REGISTER);
+            String tenantDomain = user.getTenantDomain();
+
+            publishEvent(user, claims, properties, IdentityEventConstants.Event.PRE_SELF_SIGNUP_REGISTER);
+
+            String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
+
+            if (StringUtils.isEmpty(tenantDomain)) {
+                tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
             }
 
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext carbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
-            carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
-            carbonContext.setTenantDomain(user.getTenantDomain());
-
-            claimsMap = new HashMap<>();
-            for (Claim claim : claims) {
-                claimsMap.put(claim.getClaimUri(), claim.getValue());
-            }
-
-            //Set arbitrary properties to use in UserSelfRegistrationHandler
-            Utils.setArbitraryProperties(properties);
-            validateAndFilterFromReceipt(consent, claimsMap);
-
-            // User preferred notification channel.
-            String preferredChannel;
+            // Callback URL validation
+            String callbackURL = null;
             try {
-
-                //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
-                if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
-                    Permission permission = new Permission("/permission/admin/login", IdentityRecoveryConstants.EXECUTE_ACTION);
-                    userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null, new Permission[]{permission});
-                }
-                String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
-                try {
-                    NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
-                    preferredChannel = notificationChannelManager
-                            .resolveCommunicationChannel(user.getUserName(), user.getTenantDomain(),
-                                    user.getUserStoreDomain(), claimsMap);
-                } catch (NotificationChannelManagerException e) {
-                    throw mapNotificationChannelManagerException(e, user);
-                }
-                // If the preferred channel value is not in the claims map, add the value to  claims map if the
-                // resolved channel is not empty.
-                if (StringUtils.isEmpty(claimsMap.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM)) && StringUtils
-                        .isNotEmpty(preferredChannel)) {
-                    claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
-                }
-                org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
-                        .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
-                                password, userRoles, claimsMap, null);
-                if (registeredUser != null) {
-                    resolvedUser.setUserId(registeredUser.getUserID());
-                }
-            } catch (UserStoreException e) {
-                Throwable cause = e;
-                while (cause != null) {
-                    if (cause instanceof PolicyViolationException) {
-                        if (((PolicyViolationException) cause).getErrorCode() != null &&
-                                ERROR_CODE_DUPLICATE_CLAIM_VALUE.equals(
-                                        ((PolicyViolationException) cause).getErrorCode())) {
-                            throw IdentityException.error(IdentityRecoveryClientException.class,
-                                    ERROR_CODE_DUPLICATE_CLAIM_VALUE, cause.getMessage(), e);
-                        }
-                        throw IdentityException.error(IdentityRecoveryClientException.class,
-                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
-                                cause.getMessage(), e);
-                    } else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
-                        String errorCode = ((org.wso2.carbon.user.core.UserStoreException) cause).getErrorCode();
-                        if (ERROR_CODE_USER_WF_ALREADY_EXISTS.getCode().equals(errorCode) ||
-                                ERROR_CODE_USER_WF_USER_ALREADY_EXISTS.getCode().equals(errorCode)) {
-                            throw IdentityException.error(IdentityRecoveryClientException.class,
-                                    errorCode, cause.getMessage(), e);
-                        }
+                if (!Utils.isAccessUrlAvailable(properties)) {
+                    callbackURL = Utils.getCallbackURLFromRegistration(properties);
+                    if (StringUtils.isNotBlank(callbackURL) && !Utils.validateCallbackURL(callbackURL, tenantDomain,
+                            IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_CALLBACK_REGEX)) {
+                        throw Utils.handleServerException(
+                                IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID, callbackURL);
                     }
-                    cause = cause.getCause();
                 }
-                Utils.checkPasswordPatternViolation(e, user);
-
-                return handleClientException(user, e);
+            } catch (MalformedURLException | UnsupportedEncodingException | IdentityEventException e) {
+                throw Utils.handleServerException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_CALLBACK_URL_NOT_VALID,
+                        callbackURL);
             }
-            addUserConsent(consent, tenantDomain);
 
-            // Build the notification response.
-            notificationResponseBean = buildNotificationResponseBean(resolvedUser, preferredChannel, claimsMap);
+            if (StringUtils.isBlank(user.getTenantDomain())) {
+                user.setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                log.info("registerUser :Tenant domain is not in the request. set to default for user : " +
+                        user.getUserName());
+            }
+
+            if (StringUtils.isBlank(user.getUserStoreDomain())) {
+                user.setUserStoreDomain(IdentityUtil.getPrimaryDomainName());
+                log.info("registerUser :User store domain is not in the request. set to default for user : " +
+                        user.getUserName());
+            }
+
+            ResolvedUser resolvedUser = new ResolvedUser(user);
+            boolean enable = Boolean.parseBoolean(Utils.getSignUpConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP, user.getTenantDomain()));
+
+            if (!enable) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_DISABLE_SELF_SIGN_UP, user
+                                .getUserName());
+            }
+
+            Map<String, String> claimsMap;
+            try {
+                RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
+                UserStoreManager userStoreManager;
+                try {
+                    userStoreManager =
+                            realmService.getTenantUserRealm(IdentityTenantUtil.getTenantId(user.getTenantDomain()))
+                                    .getUserStoreManager();
+                } catch (UserStoreException e) {
+                    throw Utils.handleServerException(IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED,
+                            user
+                                    .getUserName(), e);
+                }
+
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext carbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
+                carbonContext.setTenantId(IdentityTenantUtil.getTenantId(user.getTenantDomain()));
+                carbonContext.setTenantDomain(user.getTenantDomain());
+
+                claimsMap = new HashMap<>();
+                for (Claim claim : claims) {
+                    claimsMap.put(claim.getClaimUri(), claim.getValue());
+                }
+
+                //Set arbitrary properties to use in UserSelfRegistrationHandler
+                Utils.setArbitraryProperties(properties);
+                validateAndFilterFromReceipt(consent, claimsMap);
+
+                // User preferred notification channel.
+                String preferredChannel;
+                try {
+
+                    //TODO It is required to add this role before tenant creation. And also, this role should not not be able remove.
+                    if (!userStoreManager.isExistingRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE)) {
+                        Permission permission =
+                                new Permission("/permission/admin/login", IdentityRecoveryConstants.EXECUTE_ACTION);
+                        userStoreManager.addRole(IdentityRecoveryConstants.SELF_SIGNUP_ROLE, null,
+                                new Permission[]{permission});
+                    }
+                    String[] userRoles = new String[]{IdentityRecoveryConstants.SELF_SIGNUP_ROLE};
+                    try {
+                        NotificationChannelManager notificationChannelManager = Utils.getNotificationChannelManager();
+                        preferredChannel = notificationChannelManager
+                                .resolveCommunicationChannel(user.getUserName(), user.getTenantDomain(),
+                                        user.getUserStoreDomain(), claimsMap);
+                    } catch (NotificationChannelManagerException e) {
+                        throw mapNotificationChannelManagerException(e, user);
+                    }
+                    // If the preferred channel value is not in the claims map, add the value to  claims map if the
+                    // resolved channel is not empty.
+                    if (StringUtils.isEmpty(claimsMap.get(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM)) &&
+                            StringUtils
+                                    .isNotEmpty(preferredChannel)) {
+                        claimsMap.put(IdentityRecoveryConstants.PREFERRED_CHANNEL_CLAIM, preferredChannel);
+                    }
+                    org.wso2.carbon.user.core.common.User registeredUser = ((AbstractUserStoreManager) userStoreManager)
+                            .addUserWithID(IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain()),
+                                    password, userRoles, claimsMap, null);
+                    if (registeredUser != null) {
+                        resolvedUser.setUserId(registeredUser.getUserID());
+                    }
+                } catch (UserStoreException e) {
+                    Throwable cause = e;
+                    while (cause != null) {
+                        if (cause instanceof PolicyViolationException) {
+                            if (((PolicyViolationException) cause).getErrorCode() != null &&
+                                    ERROR_CODE_DUPLICATE_CLAIM_VALUE.equals(
+                                            ((PolicyViolationException) cause).getErrorCode())) {
+                                throw IdentityException.error(IdentityRecoveryClientException.class,
+                                        ERROR_CODE_DUPLICATE_CLAIM_VALUE, cause.getMessage(), e);
+                            }
+                            throw IdentityException.error(IdentityRecoveryClientException.class,
+                                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
+                                    cause.getMessage(), e);
+                        } else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
+                            String errorCode = ((org.wso2.carbon.user.core.UserStoreException) cause).getErrorCode();
+                            if (ERROR_CODE_USER_WF_ALREADY_EXISTS.getCode().equals(errorCode) ||
+                                    ERROR_CODE_USER_WF_USER_ALREADY_EXISTS.getCode().equals(errorCode)) {
+                                throw IdentityException.error(IdentityRecoveryClientException.class,
+                                        errorCode, cause.getMessage(), e);
+                            }
+                        }
+                        cause = cause.getCause();
+                    }
+                    Utils.checkPasswordPatternViolation(e, user);
+
+                    return handleClientException(user, e);
+                }
+                addUserConsent(consent, tenantDomain);
+
+                // Build the notification response.
+                notificationResponseBean = buildNotificationResponseBean(resolvedUser, preferredChannel, claimsMap);
+            } finally {
+                Utils.clearArbitraryProperties();
+                PrivilegedCarbonContext.endTenantFlow();
+            }
+
+            boolean isAccountLockedOnCreation = Boolean.parseBoolean(
+                    Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
+                            tenantDomain));
+            // If account is active immediately upon creation, treat as a successful self registration.
+            if (!isAccountLockedOnCreation) {
+                publishEvent(user, claimsMap, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
+            }
+
+            publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         } finally {
-            Utils.clearArbitraryProperties();
-            PrivilegedCarbonContext.endTenantFlow();
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
-
-        boolean isAccountLockedOnCreation = Boolean.parseBoolean(
-                Utils.getSignUpConfigs(IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION,
-                        tenantDomain));
-        // If account is active immediately upon creation, treat as a successful self registration.
-        if (!isAccountLockedOnCreation) {
-            publishEvent(user, claimsMap, properties, IdentityEventConstants.Event.USER_REGISTRATION_SUCCESS);
-        }
-
-        publishEvent(user, claims, properties, IdentityEventConstants.Event.POST_SELF_SIGNUP_REGISTER);
         return notificationResponseBean;
     }
 
@@ -692,31 +706,34 @@ public class UserSelfRegistrationManager {
                                                String verifiedChannelClaim, Map<String, String> properties) throws
             IdentityRecoveryException {
 
-        User user = null;
-        updateIdentityContextFlow(Flow.Name.REGISTER);
-        publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
-                IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
-        UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
-        UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
-                verifiedChannelClaim, properties, false);
-        user = userRecoveryData.getUser();
-        // Invalidate code.
-        userRecoveryDataStore.invalidate(code);
+        User user;
+        try {
+            enterFlow(Flow.Name.REGISTER);
+            publishEvent(code, verifiedChannelType, verifiedChannelClaim, properties,
+                    IdentityEventConstants.Event.PRE_SELF_SIGNUP_CONFIRM);
+            UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
+            UserRecoveryData userRecoveryData = validateSelfRegistrationCode(code, verifiedChannelType,
+                    verifiedChannelClaim, properties, false);
+            user = userRecoveryData.getUser();
+            // Invalidate code.
+            userRecoveryDataStore.invalidate(code);
 
-        boolean isSelfRegistrationConfirmationNotify = false;
-        isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
-                (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
-                        user.getTenantDomain()));
-        if (isSelfRegistrationConfirmationNotify) {
-            triggerNotification(user);
+            boolean isSelfRegistrationConfirmationNotify = false;
+            isSelfRegistrationConfirmationNotify = Boolean.parseBoolean(Utils.getSignUpConfigs
+                    (IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_NOTIFY_ACCOUNT_CONFIRMATION,
+                            user.getTenantDomain()));
+            if (isSelfRegistrationConfirmationNotify) {
+                triggerNotification(user);
+            }
+
+            if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
+                    RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
+                publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
+                        IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
+            }
+        } finally {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
-
-        if (RecoveryScenarios.SELF_SIGN_UP.equals(userRecoveryData.getRecoveryScenario()) &&
-                RecoverySteps.CONFIRM_SIGN_UP.equals(userRecoveryData.getRecoveryStep())) {
-            publishEvent(user, code, verifiedChannelType, verifiedChannelClaim, properties,
-                    IdentityEventConstants.Event.POST_SELF_SIGNUP_CONFIRM);
-        }
-
         return user;
     }
 
@@ -1862,8 +1879,6 @@ public class UserSelfRegistrationManager {
 
     public NotificationResponseBean registerLiteUser(User user, Claim[] claims, Property[] properties) throws IdentityRecoveryException {
 
-        updateIdentityContextFlow(Flow.Name.REGISTER);
-
         String consent = getPropertyValue(properties, IdentityRecoveryConstants.Consent.CONSENT);
         String tenantDomain = user.getTenantDomain();
 
@@ -1905,6 +1920,8 @@ public class UserSelfRegistrationManager {
         }
         NotificationResponseBean notificationResponseBean;
         try {
+            enterFlow(Flow.Name.REGISTER);
+
             RealmService realmService = IdentityRecoveryServiceDataHolder.getInstance().getRealmService();
             UserStoreManager userStoreManager;
             try {
@@ -1970,6 +1987,7 @@ public class UserSelfRegistrationManager {
         } finally {
             Utils.clearArbitraryProperties();
             PrivilegedCarbonContext.endTenantFlow();
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
         return notificationResponseBean;
     }
@@ -2315,15 +2333,10 @@ public class UserSelfRegistrationManager {
      *
      * @param flowName The name of the flow to set in the identity context.
      */
-    private void updateIdentityContextFlow(Flow.Name flowName) {
-
-        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
-            // If the flow is already set, no need to update it again.
-            return;
-        }
+    private void enterFlow(Flow.Name flowName) {
 
         IdentityContext.getThreadLocalIdentityContext()
-                .setFlow(new Flow.Builder().name(flowName).initiatingPersona(
+                .enterFlow(new Flow.Builder().name(flowName).initiatingPersona(
                         Flow.InitiatingPersona.USER).build());
     }
 }

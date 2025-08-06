@@ -127,6 +127,7 @@ public class PasswordProvisioningExecutor implements Executor {
         String recoveryScenario = getStringProperty(context, IdentityRecoveryConstants.RECOVERY_SCENARIO);
 
         try {
+            enterFlow();
             int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
 
             handlePrePasswordUpdate(user, recoveryScenario, confirmationCode);
@@ -144,6 +145,8 @@ public class PasswordProvisioningExecutor implements Executor {
         } catch (UserStoreException | IdentityEventException | IdentityRecoveryException e) {
             LOG.error("Error while updating password for user: " + context.getFlowUser().getUsername(), e);
             return errorResponse(new ExecutorResponse(), e.getMessage());
+        } finally {
+            IdentityContext.getThreadLocalIdentityContext().exitFlow();
         }
     }
 
@@ -156,23 +159,18 @@ public class PasswordProvisioningExecutor implements Executor {
     private void handlePrePasswordUpdate(User user, String recoveryScenario, String confirmationCode)
             throws IdentityRecoveryException, IdentityEventException {
 
-        updateIdentityContext();
         publishEvent(user, confirmationCode, IdentityEventConstants.Event.
                 PRE_ADD_NEW_PASSWORD, recoveryScenario);
     }
 
-    private void updateIdentityContext() {
+    private void enterFlow() {
 
         Flow flow = new Flow.Builder()
                 .name(Flow.Name.INVITED_USER_REGISTRATION)
                 .initiatingPersona(Flow.InitiatingPersona.ADMIN)
                 .build();
 
-        if (IdentityContext.getThreadLocalIdentityContext().getFlow() != null) {
-            // If the flow is already set, no need to update it again.
-            return;
-        }
-        IdentityContext.getThreadLocalIdentityContext().setFlow(flow);
+        IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
     }
 
     public void publishEvent(User user, String code, String eventName, String recoveryScenario) throws
