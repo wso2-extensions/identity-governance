@@ -110,7 +110,7 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                 boolean isAskPasswordEmailOTPEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
                         IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP, tenantDomain));
                 boolean isAskPasswordSMSOTPEnabled = Boolean.parseBoolean(Utils.getConnectorConfig(
-                        IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SMS_OTP, tenantDomain));
+                        IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP, tenantDomain));
 
                 String channel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
                 RecoveryScenarios recoveryScenario = RecoveryScenarios.ASK_PASSWORD;
