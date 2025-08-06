@@ -701,25 +701,25 @@ public class NotificationPasswordRecoveryManager {
             String recoveryFlowId = userRecoveryDataStore.loadWithoutCodeExpiryValidation(userRecoveryData.getUser())
                     .getRecoveryFlowId();
 
-        // Validate recovery step.
-        if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep()) &&
-                !RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
-            throw Utils.handleClientException(
-                    IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
-        }
-        // Get the notification channel.
-        String notificationChannel = getServerSupportedNotificationChannel(userRecoveryData.getRemainingSetIds());
-        boolean notificationsInternallyManaged = Boolean.parseBoolean(
-                Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
-                        userRecoveryData.getUser().getTenantDomain()));
-        boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
-                userRecoveryData.getUser().getTenantDomain()));
-        boolean isNotificationSendOnAccountActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
-                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
-                userRecoveryData.getUser().getTenantDomain()));
-        String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
-                userRecoveryData.getUser().getUserStoreDomain());
+            // Validate recovery step.
+            if (!RecoverySteps.UPDATE_PASSWORD.equals(userRecoveryData.getRecoveryStep()) &&
+                    !RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
+                throw Utils.handleClientException(
+                        IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_CODE, code);
+            }
+            // Get the notification channel.
+            String notificationChannel = getServerSupportedNotificationChannel(userRecoveryData.getRemainingSetIds());
+            boolean notificationsInternallyManaged = Boolean.parseBoolean(
+                    Utils.getRecoveryConfigs(IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE,
+                            userRecoveryData.getUser().getTenantDomain()));
+            boolean isNotificationSendWhenSuccess = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_SEND_RECOVERY_NOTIFICATION_SUCCESS,
+                    userRecoveryData.getUser().getTenantDomain()));
+            boolean isNotificationSendOnAccountActivation = Boolean.parseBoolean(Utils.getRecoveryConfigs(
+                    IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_ACCOUNT_ACTIVATION,
+                    userRecoveryData.getUser().getTenantDomain()));
+            String domainQualifiedName = IdentityUtil.addDomainToName(userRecoveryData.getUser().getUserName(),
+                    userRecoveryData.getUser().getUserStoreDomain());
 
             // Update the password.
             updateNewPassword(userRecoveryData.getUser(), password, domainQualifiedName, userRecoveryData,
