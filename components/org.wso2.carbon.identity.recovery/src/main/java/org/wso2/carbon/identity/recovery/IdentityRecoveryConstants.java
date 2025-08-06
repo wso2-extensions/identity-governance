@@ -49,13 +49,13 @@ public class IdentityRecoveryConstants {
     public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_WITH_OTP =
             "resendAdminForcedPasswordResetWithOTP";
     public static final String NOTIFICATION_TYPE_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP = "adminForcedPasswordReset";
+    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
+            "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP = "askPasswordSMSOTP";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP = "askPasswordEmailOTP";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_SMS_OTP = "askPasswordResendSMSOTP";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD_RESEND_EMAIL_OTP = "askPasswordResendEmailOTP";
     public static final String NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP_SET_SUCCESS = "askPasswordSetSuccess";
-    public static final String NOTIFICATION_TYPE_RESEND_ADMIN_FORCED_PASSWORD_RESET_SMS_OTP =
-            "resendAdminForcedPasswordReset";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_LINK = "accountconfirmation";
     public static final String NOTIFICATION_TYPE_ACCOUNT_CONFIRM_EMAIL_OTP = "EmailOTPVerification";
     public static final String NOTIFICATION_TYPE_RESEND_ACCOUNT_CONFIRM = "resendaccountconfirmation";
