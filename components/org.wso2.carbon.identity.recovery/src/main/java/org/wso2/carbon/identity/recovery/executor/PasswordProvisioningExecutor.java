@@ -127,6 +127,7 @@ public class PasswordProvisioningExecutor implements Executor {
         String recoveryScenario = getStringProperty(context, IdentityRecoveryConstants.RECOVERY_SCENARIO);
 
         try {
+            enterFlow();
             int tenantId = IdentityTenantUtil.getTenantId(context.getTenantDomain());
 
             handlePrePasswordUpdate(user, recoveryScenario, confirmationCode);
@@ -158,7 +159,6 @@ public class PasswordProvisioningExecutor implements Executor {
     private void handlePrePasswordUpdate(User user, String recoveryScenario, String confirmationCode)
             throws IdentityRecoveryException, IdentityEventException {
 
-        enterFlow();
         publishEvent(user, confirmationCode, IdentityEventConstants.Event.
                 PRE_ADD_NEW_PASSWORD, recoveryScenario);
     }
