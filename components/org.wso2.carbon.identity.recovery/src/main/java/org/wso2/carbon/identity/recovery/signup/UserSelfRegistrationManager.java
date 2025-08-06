@@ -122,6 +122,8 @@ import static org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes
 import static org.wso2.carbon.identity.organization.management.service.constant.OrganizationManagementConstants.ErrorMessages.ERROR_CODE_EMAIL_DOMAIN_NOT_MAPPED_TO_ORGANIZATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_MULTIPLE_REGISTRATION_OPTIONS;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.SIGNUP_PROPERTY_REGISTRATION_OPTION;
+import static org.wso2.carbon.identity.workflow.mgt.util.WorkflowErrorConstants.ErrorMessages.ERROR_CODE_USER_WF_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.workflow.mgt.util.WorkflowErrorConstants.ErrorMessages.ERROR_CODE_USER_WF_USER_ALREADY_EXISTS;
 
 /**
  * Manager class which can be used to recover passwords using a notification.
@@ -263,6 +265,13 @@ public class UserSelfRegistrationManager {
                         throw IdentityException.error(IdentityRecoveryClientException.class,
                                 IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                                 cause.getMessage(), e);
+                    } else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
+                        String errorCode = ((org.wso2.carbon.user.core.UserStoreException) cause).getErrorCode();
+                        if (ERROR_CODE_USER_WF_ALREADY_EXISTS.getCode().equals(errorCode) ||
+                                ERROR_CODE_USER_WF_USER_ALREADY_EXISTS.getCode().equals(errorCode)) {
+                            throw IdentityException.error(IdentityRecoveryClientException.class,
+                                    errorCode, cause.getMessage(), e);
+                        }
                     }
                     cause = cause.getCause();
                 }
