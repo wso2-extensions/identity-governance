@@ -103,6 +103,7 @@ public class IdentityRecoveryConstants {
     public static final String VERIFICATION_PENDING_EMAIL = "verification-pending-email";
     public static final String NEW_EMAIL_ADDRESS = "new-email-address";
     public static final String NOTIFY = "notify";
+    public static final String CLAIM_FOR_PENDING_OTP_VERIFICATION = "claimForPendingOtpVerification";
     public static final String WSO2CARBON_CLAIM_DIALECT = "http://wso2.org/claims";
     public static final String ACCOUNT_LOCKED_CLAIM = "http://wso2.org/claims/identity/accountLocked";
     public static final String ACCOUNT_LOCKED_REASON_CLAIM = "http://wso2.org/claims/identity/lockedReason";

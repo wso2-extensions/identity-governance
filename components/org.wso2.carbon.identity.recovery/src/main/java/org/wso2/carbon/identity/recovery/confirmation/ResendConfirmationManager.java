@@ -494,7 +494,11 @@ public class ResendConfirmationManager {
         boolean notificationInternallyManage = isNotificationInternallyManage(user, recoveryScenario);
         boolean mobileVerificationOnUpdateScenario = RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
-                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString()
+                    .equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
+                    .equals(recoveryScenario);
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
@@ -723,7 +727,11 @@ public class ResendConfirmationManager {
             // We manage the notifications internally for EMAIL_VERIFICATION_ON_UPDATE.
             return true;
         } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)
-                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString()
+                    .equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
+                    .equals(recoveryScenario)) {
             // We manage the notifications internally for MOBILE_VERIFICATION_ON_UPDATE.
             return true;
         } else {
@@ -802,6 +810,8 @@ public class ResendConfirmationManager {
                 case EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                 case MOBILE_VERIFICATION_ON_UPDATE:
                 case MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
+                case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
+                case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "UserClaimUpdate");
                 case ASK_PASSWORD:

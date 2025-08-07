@@ -305,6 +305,24 @@ public class ResendCodeApiServiceImpl extends ResendCodeApiService {
                     RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString()
+                        .equals(recoveryScenario) &&
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE
+                        .equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
+        } else if (RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
+                        .equals(recoveryScenario) &&
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE
+                        .equals(userRecoveryData.getRecoveryScenario()) &&
+                RecoverySteps.VERIFY_MOBILE_NUMBER.equals(userRecoveryData.getRecoveryStep())) {
+            notificationResponseBean = setNotificationResponseBean(resendConfirmationManager,
+                    RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
+                    RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                    IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, resendCodeRequestDTO);
         } else if (RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString().equals(recoveryScenario) &&
                 RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(userRecoveryData.getRecoveryScenario()) &&
                 RecoverySteps.SET_PASSWORD.equals(userRecoveryData.getRecoveryStep())) {
