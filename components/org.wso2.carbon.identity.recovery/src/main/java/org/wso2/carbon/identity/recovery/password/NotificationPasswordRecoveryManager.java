@@ -1476,16 +1476,18 @@ public class NotificationPasswordRecoveryManager {
         Flow flow;
         switch (recoveryScenario) {
             case NOTIFICATION_BASED_PW_RECOVERY:
-                flow = new Flow.Builder()
-                        .name(Flow.Name.PASSWORD_RESET)
+                flow = new Flow.CredentialFlowBuilder()
+                        .name(Flow.Name.CREDENTIAL_RESET)
                         .initiatingPersona(Flow.InitiatingPersona.USER)
+                        .credentialType(Flow.CredentialType.PASSWORD)
                         .build();
                 IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             case ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK:
-                flow = new Flow.Builder()
-                        .name(Flow.Name.PASSWORD_RESET)
+                flow = new Flow.CredentialFlowBuilder()
+                        .name(Flow.Name.CREDENTIAL_RESET)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                        .credentialType(Flow.CredentialType.PASSWORD)
                         .build();
                 IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
