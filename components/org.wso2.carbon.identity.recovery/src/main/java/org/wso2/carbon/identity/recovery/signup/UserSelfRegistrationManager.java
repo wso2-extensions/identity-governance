@@ -2348,7 +2348,9 @@ public class UserSelfRegistrationManager {
     private void enterFlow(Flow.Name flowName) {
 
         IdentityContext.getThreadLocalIdentityContext()
-                .enterFlow(new Flow.Builder().name(flowName).initiatingPersona(
-                        Flow.InitiatingPersona.USER).build());
+                .enterFlow(new Flow.Builder()
+                        .name(flowName)
+                        .initiatingPersona(Flow.InitiatingPersona.USER)
+                        .build());
     }
 }

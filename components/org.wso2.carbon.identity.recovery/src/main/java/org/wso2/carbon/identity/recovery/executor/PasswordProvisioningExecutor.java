@@ -165,9 +165,18 @@ public class PasswordProvisioningExecutor implements Executor {
 
     private void enterFlow() {
 
+        Flow.InitiatingPersona initiatingPersona;
+        Flow existingFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
+
+        if (existingFlow != null) {
+            initiatingPersona = existingFlow.getInitiatingPersona();
+        } else {
+            initiatingPersona = Flow.InitiatingPersona.ADMIN;
+        }
+
         Flow flow = new Flow.Builder()
                 .name(Flow.Name.INVITED_USER_REGISTRATION)
-                .initiatingPersona(Flow.InitiatingPersona.ADMIN)
+                .initiatingPersona(initiatingPersona)
                 .build();
 
         IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
