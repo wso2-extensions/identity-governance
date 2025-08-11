@@ -2347,20 +2347,10 @@ public class UserSelfRegistrationManager {
      */
     private void enterFlow(Flow.Name flowName) {
 
-        Flow.InitiatingPersona initiatingPersona;
-
-        Flow currentFlow = IdentityContext.getThreadLocalIdentityContext().getCurrentFlow();
-
-        if (currentFlow != null) {
-            initiatingPersona = currentFlow.getInitiatingPersona();
-        } else {
-            initiatingPersona = Flow.InitiatingPersona.USER;
-        }
-
         IdentityContext.getThreadLocalIdentityContext()
                 .enterFlow(new Flow.Builder()
                         .name(flowName)
-                        .initiatingPersona(initiatingPersona)
+                        .initiatingPersona(Flow.InitiatingPersona.USER)
                         .build());
     }
 }
