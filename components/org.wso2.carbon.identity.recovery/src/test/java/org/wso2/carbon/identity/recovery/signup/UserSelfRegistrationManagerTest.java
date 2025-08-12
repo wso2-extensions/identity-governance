@@ -137,6 +137,7 @@ import static org.wso2.carbon.identity.mgt.constants.SelfRegistrationStatusCodes
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ACCOUNT_LOCK_ON_CREATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.ENABLE_SELF_SIGNUP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.NOTIFICATION_INTERNALLY_MANAGE;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_SEND_OTP_IN_EMAIL;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_USE_NUMBERS_IN_OTP;
@@ -422,6 +423,11 @@ public class UserSelfRegistrationManagerTest {
         sendOtpInEmailConfig.setName(SELF_REGISTRATION_SEND_OTP_IN_EMAIL);
         sendOtpInEmailConfig.setValue("false");
 
+        org.wso2.carbon.identity.application.common.model.Property selfRegistrationEmailOTPConfig =
+                new org.wso2.carbon.identity.application.common.model.Property();
+        selfRegistrationEmailOTPConfig.setName(SELF_REGISTRATION_EMAIL_OTP_ENABLE);
+        selfRegistrationEmailOTPConfig.setValue(Boolean.FALSE.toString());
+
         org.wso2.carbon.identity.application.common.model.Property useLowerCaseConfig =
                 new org.wso2.carbon.identity.application.common.model.Property();
         useLowerCaseConfig.setName(SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
@@ -471,6 +477,10 @@ public class UserSelfRegistrationManagerTest {
         when(identityGovernanceService
                 .getConfiguration(new String[]{SELF_REGISTRATION_SEND_OTP_IN_EMAIL}, TEST_TENANT_DOMAIN_NAME))
                 .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{sendOtpInEmailConfig});
+        when(identityGovernanceService
+                .getConfiguration(new String[]{SELF_REGISTRATION_EMAIL_OTP_ENABLE}, TEST_TENANT_DOMAIN_NAME))
+                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{
+                        selfRegistrationEmailOTPConfig});
         when(identityGovernanceService
                 .getConfiguration(new String[]{SELF_REGISTRATION_USE_LOWERCASE_CHARACTERS_IN_OTP},
                         TEST_TENANT_DOMAIN_NAME))
