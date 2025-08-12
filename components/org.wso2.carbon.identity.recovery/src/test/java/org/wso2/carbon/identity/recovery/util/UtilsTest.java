@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -42,6 +43,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.handler.event.account.lock.exception.AccountLockServiceException;
@@ -84,6 +86,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -1531,6 +1534,64 @@ public class UtilsTest {
 
         assertEquals(result, expectedData);
         verify(mockStore).load(hashedCode);
+    }
+
+    @Test
+    public void testResolveUserFromContext_withUserInstance() {
+        FlowExecutionContext context = Mockito.mock(FlowExecutionContext.class);
+        User user = new User();
+        user.setUserName("testuser");
+        user.setTenantDomain("carbon.super");
+        Mockito.when(context.getProperty("user")).thenReturn(user);
+        User result = Utils.resolveUserFromContext(context);
+        assertNotNull(result);
+        assertEquals("testuser", result.getUserName());
+        assertEquals("carbon.super", result.getTenantDomain());
+    }
+
+    @Test
+    public void testResolveUserFromContext_withJsonString() throws Exception {
+        FlowExecutionContext context = Mockito.mock(FlowExecutionContext.class);
+        User user = new User();
+        user.setUserName("jsonuser");
+        user.setTenantDomain("example.com");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(user);
+        Mockito.when(context.getProperty("user")).thenReturn(json);
+        User result = Utils.resolveUserFromContext(context);
+        assertNotNull(result);
+        assertEquals("jsonuser", result.getUserName());
+        assertEquals("example.com", result.getTenantDomain());
+    }
+
+    @Test
+    public void testResolveUserFromContext_withLinkedHashMap() {
+        FlowExecutionContext context = Mockito.mock(FlowExecutionContext.class);
+        context.setProperty("USER", "user");
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+        map.put("userName", "mapuser");
+        map.put("tenantDomain", "tenant.org");
+        Mockito.when(context.getProperty("user")).thenReturn(map);
+        User result = Utils.resolveUserFromContext(context);
+        assertNotNull(result);
+        assertEquals("mapuser", result.getUserName());
+        assertEquals("tenant.org", result.getTenantDomain());
+    }
+
+    @Test
+    public void testResolveUserFromContext_withInvalidString() {
+        FlowExecutionContext context = Mockito.mock(FlowExecutionContext.class);
+        Mockito.when(context.getProperty("USER")).thenReturn("not a json");
+        User result = Utils.resolveUserFromContext(context);
+        assertNull(result);
+    }
+
+    @Test
+    public void testResolveUserFromContext_withNull() {
+        FlowExecutionContext context = Mockito.mock(FlowExecutionContext.class);
+        Mockito.when(context.getProperty("USER")).thenReturn(null);
+        User result = Utils.resolveUserFromContext(context);
+        assertNull(result);
     }
 
     private static List<LocalClaim> returnMultiEmailAndMobileRelatedLocalClaims(Map<String, String> claimProperties) {
