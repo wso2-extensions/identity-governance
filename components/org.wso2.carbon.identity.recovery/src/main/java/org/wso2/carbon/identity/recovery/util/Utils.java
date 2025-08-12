@@ -104,6 +104,7 @@ import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.auth.attribute.handler.AuthAttributeHandlerConstants.ErrorMessages.ERROR_CODE_AUTH_ATTRIBUTE_HANDLER_NOT_FOUND;
 import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainName;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_EMAIL_OTP_ENABLE;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
@@ -1380,11 +1381,14 @@ public class Utils {
         boolean useLowercase = true;
         boolean useNumeric = true;
         boolean sendOTPInEmail = false;
+        boolean isSelfRegistrationOTPEnabled = false;
         int otpLength = IdentityRecoveryConstants.OTP_CODE_DEFAULT_LENGTH;
         // Set connector specific OTP configuration values, for connectors that have separate OTP configurations.
         if (StringUtils.isNotBlank(connectorName)) {
             sendOTPInEmail = Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.SendOTPInEmail", tenantDomain));
+            isSelfRegistrationOTPEnabled = "SelfRegistration".equals(connectorName) &&
+                    Boolean.parseBoolean(getRecoveryConfigs(SELF_REGISTRATION_EMAIL_OTP_ENABLE, tenantDomain));
             useUppercase = Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.UseUppercaseCharactersInOTP", tenantDomain));
             useLowercase = Boolean.parseBoolean(getRecoveryConfigs(
@@ -1402,7 +1406,7 @@ public class Utils {
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name().equals(recoveryScenario) ||
                 RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.name().equals(recoveryScenario) ||
                 RecoveryScenarios.EMAIL_VERIFICATION_OTP.name().equals(recoveryScenario) ||
-                sendOTPInEmail) {
+                sendOTPInEmail || isSelfRegistrationOTPEnabled) {
             try {
                 OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
                 return otpGenerator.generateOTP(useNumeric, useUppercase, useLowercase, otpLength,
