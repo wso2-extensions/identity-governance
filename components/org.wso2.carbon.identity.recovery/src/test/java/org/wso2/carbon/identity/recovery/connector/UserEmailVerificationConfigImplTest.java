@@ -94,6 +94,12 @@ public class UserEmailVerificationConfigImplTest {
                 "Enable user email verification");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
                 "Send OTP in e-mail");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP,
+                "Send OTP in e-mail");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP,
+                "Send email OTP to setup the password");
+        nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP,
+                "Send SMS OTP to setup the password");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Include uppercase characters in OTP");
         nameMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,
@@ -128,6 +134,12 @@ public class UserEmailVerificationConfigImplTest {
                 "A verification notification will be triggered during user creation.");
         descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
                 "Enable to send OTP in verification e-mail instead of confirmation code.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP,
+                "Enable to send OTP to verify email.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP,
+                "Enable to send email OTP to setup the password.");
+        descriptionMappingExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP,
+                "Enable to send SMS OTP to setup the password.");
         descriptionMappingExpected.put(
                 IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 "Enable to include uppercase characters in SMS and e-mail OTPs.");
@@ -168,6 +180,9 @@ public class UserEmailVerificationConfigImplTest {
         List<String> propertiesExpected = new ArrayList<>();
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ENABLE_EMAIL_VERIFICATION);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP);
+        propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP);
         propertiesExpected.add(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_NUMBERS_IN_OTP);
@@ -191,6 +206,10 @@ public class UserEmailVerificationConfigImplTest {
 
         String testEnableEmailVerification = "false";
         String testEnableSendOTPInEmail = "false";
+        String testEnableSendEmailOTP = "false";
+        String testEnableAskPasswordEmailOTP = "false";
+        String testEnableAskPasswordSMSOTP = "false";
+
         String testUseUppercaseCharactersInOTP = "true";
         String testUseLowercaseCharactersInOTP = "true";
         String testUseNumbersInOTP = "true";
@@ -207,6 +226,12 @@ public class UserEmailVerificationConfigImplTest {
                 testEnableEmailVerification);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP_IN_EMAIL,
                 testEnableSendOTPInEmail);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP,
+                testEnableSendEmailOTP);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_EMAIL_OTP,
+                testEnableAskPasswordEmailOTP);
+        defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_SEND_SMS_OTP,
+                testEnableAskPasswordSMSOTP);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_UPPERCASE_CHARACTERS_IN_OTP,
                 testUseUppercaseCharactersInOTP);
         defaultPropertiesExpected.put(IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_USE_LOWERCASE_CHARACTERS_IN_OTP,

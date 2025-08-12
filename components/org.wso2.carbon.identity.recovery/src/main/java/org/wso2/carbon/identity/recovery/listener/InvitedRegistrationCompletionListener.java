@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.recovery.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -31,6 +34,7 @@ import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.flow.execution.engine.exception.FlowEngineException;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
+import org.wso2.carbon.identity.flow.execution.engine.model.ExecutorResponse;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionStep;
 import org.wso2.carbon.identity.flow.mgt.Constants;
@@ -76,7 +80,7 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
         String confirmationCode = getStringProperty(context, CONFIRMATION_CODE_INPUT);
         String notificationChannel = getStringProperty(context, IdentityRecoveryConstants.NOTIFICATION_CHANNEL);
         String recoveryScenario = getStringProperty(context, IdentityRecoveryConstants.RECOVERY_SCENARIO);
-        User user = (User) context.getProperty(USER);
+        User user = Utils.resolveUserFromContext(context);
 
         if (user == null || confirmationCode == null) {
             return false;
@@ -97,8 +101,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             publishEvent(user, confirmationCode, recoveryScenario);
         } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
-            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getName(), context.getFlowType(),
-                    context.getContextIdentifier());
+            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
+                    context.getFlowType(), context.getContextIdentifier());
         }
         return true;
     }
@@ -126,7 +130,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
                     .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
+            String domainQualifiedName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         }
     }
 
@@ -180,8 +185,12 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while invalidating user recovery data for confirmation code: " +
-                    confirmationCode, e);
+            String errorMsg = String.format("Error while invalidating user recovery data for confirmation code: %s",
+                    confirmationCode);
+            if (log.isDebugEnabled()) {
+                log.debug(errorMsg, e);
+            }
+            log.warn(errorMsg);
         }
     }
 

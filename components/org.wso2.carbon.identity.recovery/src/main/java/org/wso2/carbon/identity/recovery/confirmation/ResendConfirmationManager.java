@@ -499,12 +499,18 @@ public class ResendConfirmationManager {
         boolean notificationInternallyManage = isNotificationInternallyManage(user, recoveryScenario);
         boolean mobileVerificationOnUpdateScenario = RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
-                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString()
+                    .equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
+                    .equals(recoveryScenario);
         boolean emailVerificationOnUpdateScenario = RecoveryScenarios.EMAIL_VERIFICATION_ON_UPDATE.toString()
                 .equals(recoveryScenario)
                 || RecoveryScenarios.EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario);
         boolean isAdminForcePasswordResetSMSOTPScenario = RecoveryScenarios
                 .ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.toString().equals(recoveryScenario);
+        boolean isAskPasswordSMSOTPScenario = RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString()
+                .equals(recoveryScenario);
 
         NotificationResponseBean notificationResponseBean = new NotificationResponseBean(user);
         UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
@@ -539,7 +545,8 @@ public class ResendConfirmationManager {
         if (emailVerificationOnUpdateScenario) {
             preferredChannel = NotificationChannels.EMAIL_CHANNEL.getChannelType();
         }
-        if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario) {
+        if (mobileVerificationOnUpdateScenario || isAdminForcePasswordResetSMSOTPScenario
+                || isAskPasswordSMSOTPScenario) {
             preferredChannel = NotificationChannels.SMS_CHANNEL.getChannelType();
         }
 
@@ -725,7 +732,11 @@ public class ResendConfirmationManager {
             // We manage the notifications internally for EMAIL_VERIFICATION_ON_UPDATE.
             return true;
         } else if (RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString().equals(recoveryScenario)
-                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)) {
+                || RecoveryScenarios.MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString().equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE.toString()
+                    .equals(recoveryScenario)
+                || RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString()
+                    .equals(recoveryScenario)) {
             // We manage the notifications internally for MOBILE_VERIFICATION_ON_UPDATE.
             return true;
         } else {
@@ -804,9 +815,14 @@ public class ResendConfirmationManager {
                 case EMAIL_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
                 case MOBILE_VERIFICATION_ON_UPDATE:
                 case MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
+                case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE:
+                case PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "UserClaimUpdate");
                 case ASK_PASSWORD:
+                case ASK_PASSWORD_VIA_EMAIL_OTP:
+                case ASK_PASSWORD_VIA_SMS_OTP:
+                case EMAIL_VERIFICATION_OTP:
                     return Utils.generateSecretKey(preferredChannel, recoveryScenario, tenantDomain,
                             "EmailVerification");
                 case LITE_SIGN_UP:
@@ -831,7 +847,10 @@ public class ResendConfirmationManager {
             isPendingAskPasswordState = IdentityRecoveryConstants.PENDING_ASK_PASSWORD.equals(accountState);
         }
 
-        return RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
+        RecoveryScenarios recoveryScenarioType = RecoveryScenarios.getRecoveryScenario(recoveryScenario);
+        return (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenarioType)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenarioType)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenarioType)) &&
                 isPendingAskPasswordState;
     }
 
@@ -843,7 +862,8 @@ public class ResendConfirmationManager {
             isPendingEmailVerificationState = IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION.equals(accountState);
         }
 
-        return RecoveryScenarios.EMAIL_VERIFICATION.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario)) &&
-                isPendingEmailVerificationState;
+        return (RecoveryScenarios.EMAIL_VERIFICATION.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))
+                || RecoveryScenarios.EMAIL_VERIFICATION_OTP
+                .equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) && isPendingEmailVerificationState;
     }
 }

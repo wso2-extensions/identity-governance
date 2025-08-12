@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.axiom.om.util.Base64;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -44,6 +47,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
@@ -104,6 +108,7 @@ import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.Connec
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
@@ -119,8 +124,11 @@ public class Utils {
     private static ThreadLocal<org.wso2.carbon.identity.recovery.model.Property[]> arbitraryProperties = new
             ThreadLocal<>();
 
-    //This is used to pass the verifyEmail or askPassword claim from preAddUser to postAddUser
+    //This is used to pass the verifyEmail claim from preAddUser to postAddUser
     private static ThreadLocal<Claim> emailVerifyTemporaryClaim = new ThreadLocal<>();
+
+    //This is used to pass the askPassword claim from preAddUser to postAddUser
+    private static ThreadLocal<Claim> askPasswordTemporaryClaim = new ThreadLocal<>();
 
     /**
      * This thread local variable is used to prevent sending of a verification email when SetUserClaimsListener is
@@ -214,6 +222,34 @@ public class Utils {
     public static void clearEmailVerifyTemporaryClaim() {
 
         emailVerifyTemporaryClaim.remove();
+    }
+
+    /**
+     * Retrieves the temporary claim associated with the "Ask Password" functionality.
+     *
+     * @return The temporary {@link Claim} object if set, or {@code null} if not set.
+     */
+    public static Claim getAskPasswordTemporaryClaim() {
+
+        if (askPasswordTemporaryClaim.get() == null) {
+            return null;
+        }
+        return askPasswordTemporaryClaim.get();
+    }
+
+    /**
+     * Sets a temporary claim for the ask password recovery process.
+     *
+     * @param claim The claim to be temporarily stored for the ask password recovery process.
+     */
+    public static void setAskPasswordTemporaryClaim(Claim claim) {
+
+        askPasswordTemporaryClaim.set(claim);
+    }
+
+    public static void clearAskPasswordTemporaryClaim() {
+
+        askPasswordTemporaryClaim.remove();
     }
 
     /**
@@ -1368,6 +1404,8 @@ public class Utils {
         }
         if (NotificationChannels.SMS_CHANNEL.getChannelType().equals(channel) ||
                 RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.name().equals(recoveryScenario) ||
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.name().equals(recoveryScenario) ||
+                RecoveryScenarios.EMAIL_VERIFICATION_OTP.name().equals(recoveryScenario) ||
                 sendOTPInEmail || isSelfRegistrationOTPEnabled) {
             try {
                 OTPGenerator otpGenerator = IdentityRecoveryServiceDataHolder.getInstance().getOtpGenerator();
@@ -2033,5 +2071,32 @@ public class Utils {
             userRecoveryData = userRecoveryDataStore.load(code);
         }
         return userRecoveryData;
+    }
+
+    /**
+     * This method attempts to retrieve the user object from the context
+     * and deserialize it if necessary.
+     * @param context The FlowExecutionContext from which to resolve the user.
+     * @return The User object if found and successfully deserialized, null otherwise.
+     */
+    public static User resolveUserFromContext(FlowExecutionContext context) {
+
+        Object raw = context.getProperty(USER);
+
+        if (raw instanceof User) {
+            return (User) raw;
+        }
+
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            if (raw instanceof String) {
+                return mapper.readValue((String) raw, User.class);
+            }
+            return mapper.convertValue(raw, User.class);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to resolve User from context.", e);
+            return null;
+        }
     }
 }

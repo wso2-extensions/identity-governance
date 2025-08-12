@@ -27,6 +27,7 @@ import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
@@ -243,6 +244,70 @@ public class ResendConfirmationManagerTest {
                 capturedRecoveryData2.getRecoveryScenario());
         Assert.assertEquals(verificationPendingMobile,
                 capturedRecoveryData2.getRemainingSetIds());
+
+        // Reset data.
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        UserRecoveryData userRecoveryData3 = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData3.setRemainingSetIds(verificationPendingMobile);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE)).thenReturn(userRecoveryData3);
+
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData3,
+                NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(false);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+
+        NotificationResponseBean responseBean3 = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+        assertNotNull(responseBean3);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor3 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor3.capture());
+        UserRecoveryData capturedRecoveryData3 = recoveryDataCaptor3.getValue();
+        Assert.assertEquals(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData3.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingMobile,
+                capturedRecoveryData3.getRemainingSetIds());
+
+        ArgumentCaptor<Event> eventCaptor3 = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor3.capture());
+        Event capturedEvent3 = eventCaptor3.getValue();
+        Map<String, Object> eventProperties3 = capturedEvent3.getEventProperties();
+        Assert.assertEquals(verificationPendingMobile, eventProperties3.get(IdentityRecoveryConstants.SEND_TO));
+        Assert.assertEquals(newCode, eventProperties3.get(IdentityRecoveryConstants.CONFIRMATION_CODE));
+
+        // Reset data.
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        UserRecoveryData userRecoveryData4 = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData4.setRemainingSetIds(verificationPendingMobile);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE))
+                .thenReturn(userRecoveryData4);
+
+        NotificationResponseBean responseBean4 = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+        assertNotNull(responseBean4);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor4 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor4.capture());
+        UserRecoveryData capturedRecoveryData4 = recoveryDataCaptor4.getValue();
+        Assert.assertEquals(RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData4.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingMobile,
+                capturedRecoveryData4.getRemainingSetIds());
     }
 
     @Test
@@ -316,8 +381,17 @@ public class ResendConfirmationManagerTest {
                 capturedRecoveryData2.getRemainingSetIds());
     }
 
-    @Test
-    public void testResendConfirmationCodeErrorScenarios() throws Exception {
+    @DataProvider(name = "recoveryScenariosDataProvider")
+    public Object[][] getForcedPasswordResetDataProvider() {
+
+        return new Object[][] {
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE},
+                {RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE}
+        };
+    }
+
+    @Test(dataProvider = "recoveryScenariosDataProvider")
+    public void testResendConfirmationCodeErrorScenarios(RecoveryScenarios recoveryScenario) throws Exception {
 
         String verificationPendingMobile = "0777897621";
         String oldCode = "dummy-code";
@@ -326,10 +400,10 @@ public class ResendConfirmationManagerTest {
         Property[] properties = new Property[]{new Property("testKey", "testValue")};
 
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, oldCode,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryScenario, RecoverySteps.VERIFY_MOBILE_NUMBER);
         userRecoveryData.setRemainingSetIds(verificationPendingMobile);
         when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE)).thenReturn(userRecoveryData);
+                recoveryScenario)).thenReturn(userRecoveryData);
 
         mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData,
                 NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(false);
@@ -340,7 +414,7 @@ public class ResendConfirmationManagerTest {
         // Case 1: Null user.
         try {
             resendConfirmationManager.resendConfirmationCode(null,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
             fail();
@@ -362,7 +436,7 @@ public class ResendConfirmationManagerTest {
         // Case 3: Empty Recovery step.
         try {
             resendConfirmationManager.resendConfirmationCode(user,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     "",
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
             fail();
@@ -373,7 +447,7 @@ public class ResendConfirmationManagerTest {
         // Case 4: Empty Notification type.
         try {
             resendConfirmationManager.resendConfirmationCode(user,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     "", properties);
             fail();
