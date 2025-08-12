@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.recovery.executor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -37,6 +40,7 @@ import org.wso2.carbon.identity.flow.execution.engine.model.FlowUser;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
+import org.wso2.carbon.identity.recovery.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserRealm;
@@ -131,7 +135,7 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
     private ExecutorResponse handleAskPasswordFlow(FlowExecutionContext context, char[] password) {
 
         String confirmationCode = (String) context.getProperty(CONFIRMATION_CODE_INPUT);
-        User user = (User) context.getProperty(USER);
+        User user = Utils.resolveUserFromContext(context);
         if (StringUtils.isBlank(confirmationCode) || user == null) {
             return errorResponse(new ExecutorResponse(), "Required properties are missing in the context.");
         }

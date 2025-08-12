@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.recovery.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.axiom.om.util.Base64;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -44,6 +47,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 import org.wso2.carbon.identity.governance.IdentityGovernanceException;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.exceptions.otp.OTPGeneratorException;
@@ -103,6 +107,7 @@ import static org.wso2.carbon.identity.core.util.IdentityUtil.getPrimaryDomainNa
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_REGISTRATION_OPTION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_INVALID_USER_ATTRIBUTES_FOR_REGISTRATION;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_UNEXPECTED_ERROR_VALIDATING_ATTRIBUTES;
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.USER;
 import static org.wso2.carbon.user.core.UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME;
 import static org.wso2.carbon.utils.CarbonUtils.isLegacyAuditLogsDisabled;
 
@@ -2062,5 +2067,32 @@ public class Utils {
             userRecoveryData = userRecoveryDataStore.load(code);
         }
         return userRecoveryData;
+    }
+
+    /**
+     * This method attempts to retrieve the user object from the context
+     * and deserialize it if necessary.
+     * @param context The FlowExecutionContext from which to resolve the user.
+     * @return The User object if found and successfully deserialized, null otherwise.
+     */
+    public static User resolveUserFromContext(FlowExecutionContext context) {
+
+        Object raw = context.getProperty(USER);
+
+        if (raw instanceof User) {
+            return (User) raw;
+        }
+
+        ObjectMapper mapper = new ObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            if (raw instanceof String) {
+                return mapper.readValue((String) raw, User.class);
+            }
+            return mapper.convertValue(raw, User.class);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to resolve User from context.", e);
+            return null;
+        }
     }
 }
