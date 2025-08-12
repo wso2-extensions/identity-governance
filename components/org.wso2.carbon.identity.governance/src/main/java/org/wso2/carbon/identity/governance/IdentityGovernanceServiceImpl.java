@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2016-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -31,16 +31,20 @@ import org.wso2.carbon.identity.governance.bean.ConnectorConfig;
 import org.wso2.carbon.identity.governance.common.IdentityConnectorConfig;
 import org.wso2.carbon.identity.governance.exceptions.general.IdentityGovernanceClientException;
 import org.wso2.carbon.identity.governance.internal.IdentityMgtServiceDataHolder;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdpManager;
 import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -77,20 +81,25 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
                     identityMgtProperties);
             IdPManagementUtil.validateAdminPasswordResetWithCurrentAndPreviousConfigs(configurationDetails,
                     identityMgtProperties);
+            IdPManagementUtil.validateAskPasswordBasedPasswordSetWithCurrentAndPreviousConfigs(configurationDetails,
+                    identityMgtProperties);
             updatePasswordRecoveryPropertyValues(configurationDetails, identityMgtProperties);
             updateUsernameRecoveryPropertyValues(configurationDetails, identityMgtProperties);
-            for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
-                IdentityProviderProperty prop = new IdentityProviderProperty();
-                String key = identityMgtProperty.getName();
-                prop.setName(key);
-                if (configurationDetails.containsKey(key)) {
-                    prop.setValue(configurationDetails.get(key));
-                } else {
-                    prop.setValue(identityMgtProperty.getValue());
+            if (!OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                for (IdentityProviderProperty identityMgtProperty : identityMgtProperties) {
+                    IdentityProviderProperty prop = new IdentityProviderProperty();
+                    String key = identityMgtProperty.getName();
+                    prop.setName(key);
+                    if (configurationDetails.containsKey(key)) {
+                        prop.setValue(configurationDetails.get(key));
+                    } else {
+                        prop.setValue(identityMgtProperty.getValue());
+                    }
+                    newProperties.add(prop);
+                    configurationDetails.remove(key);
                 }
-                newProperties.add(prop);
-                configurationDetails.remove(key);
             }
+
             for (Map.Entry<String, String> entry : configurationDetails.entrySet()) {
                 IdentityProviderProperty prop = new IdentityProviderProperty();
                 prop.setName(entry.getKey());
@@ -101,11 +110,13 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             residentIdp.setIdpProperties(newProperties.toArray(new IdentityProviderProperty[newProperties.size()]));
             FederatedAuthenticatorConfig[] authenticatorConfigs = residentIdp.getFederatedAuthenticatorConfigs();
             List<FederatedAuthenticatorConfig> configsToSave = new ArrayList<>();
-            for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
-                if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
-                        ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
-                        .getName())) {
-                    configsToSave.add(authenticatorConfig);
+            if (!OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                for (FederatedAuthenticatorConfig authenticatorConfig : authenticatorConfigs) {
+                    if (IdentityApplicationConstants.Authenticator.PassiveSTS.NAME.equals(authenticatorConfig.getName
+                            ()) || IdentityApplicationConstants.Authenticator.SAML2SSO.NAME.equals(authenticatorConfig
+                            .getName())) {
+                        configsToSave.add(authenticatorConfig);
+                    }
                 }
             }
             residentIdp.setFederatedAuthenticatorConfigs(configsToSave.toArray(new
@@ -116,6 +127,9 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             throw new IdentityGovernanceClientException(e.getMessage(), e);
         } catch (IdentityProviderManagementException e) {
             log.error("Error while updating identityManagement Properties of Resident Idp.", e);
+        } catch (OrganizationManagementException e) {
+            throw new IdentityGovernanceException(String.format("Error while checking if tenant %s is an organization.",
+                    tenantDomain), e);
         }
     }
 
@@ -165,6 +179,25 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
         }
         return requestedProperties.toArray(new Property[requestedProperties.size()]);
 
+    }
+
+    /**
+     * Delete the configurations of an organization from cache and database.
+     *
+     * @param propertyNames property names to be deleted.
+     * @param tenantDomain  tenant domain of the organization.
+     * @throws IdentityGovernanceException if an error occurs while deleting the configurations.
+     */
+    @Override
+    public void deleteConfiguration(List<String> propertyNames, String tenantDomain)
+            throws IdentityGovernanceException {
+
+        try {
+            IdpManager identityProviderManager = IdentityMgtServiceDataHolder.getInstance().getIdpManager();
+            identityProviderManager.deleteResidentIdpProperties(propertyNames, tenantDomain);
+        } catch (IdentityProviderManagementException e) {
+            throw new IdentityGovernanceException(e.getMessage(), e);
+        }
     }
 
     public List<IdentityConnectorConfig> getConnectorList() throws IdentityGovernanceException {
@@ -226,7 +259,43 @@ public class IdentityGovernanceServiceImpl implements IdentityGovernanceService 
             config.setProperties(configProperties.toArray(new Property[0]));
             configs.add(i, config);
         }
-        return configs;
+
+        try {
+            if (OrganizationManagementUtil.isOrganization(tenantDomain)) {
+                return getMaskedConnectorList(configs);
+            }
+
+            return configs;
+        } catch (OrganizationManagementException e) {
+            String errorMsg = String.format("Error while checking if tenant %s is an organization", tenantDomain);
+            throw new IdentityGovernanceException(errorMsg, e);
+        }
+    }
+
+    private List<ConnectorConfig> getMaskedConnectorList(List<ConnectorConfig> connectorList) {
+
+        for (ConnectorConfig config : connectorList) {
+            Optional<IdentityMgtConstants.INHERITED_MASKED_CONNECTORS> matchingMaskedConnector =
+                    IdentityMgtConstants.INHERITED_MASKED_CONNECTORS.findByName(config.getName());
+            if (matchingMaskedConnector.isPresent()) {
+                List<String> maskableProperties = matchingMaskedConnector.get().getMaskableProperties();
+                Property[] maskedProperties = Arrays.stream(config.getProperties()).map(
+                        property -> {
+                            if (maskableProperties.contains(property.getName())) {
+                                Property maskedProperty = new Property();
+                                maskedProperty.setName(property.getName());
+                                maskedProperty.setValue(property.getValue() != null ?
+                                        "*".repeat(property.getValue().length()) : null);
+                                maskedProperty.setDisplayName(property.getDisplayName());
+                                maskedProperty.setDescription(property.getDescription());
+                                return maskedProperty;
+                            }
+                            return property;
+                        }).toArray(Property[]::new);
+                config.setProperties(maskedProperties);
+            }
+        }
+        return connectorList;
     }
 
     public Map<String, List<ConnectorConfig>> getCategorizedConnectorListWithConfigs(String tenantDomain)

@@ -97,8 +97,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             publishEvent(user, confirmationCode, recoveryScenario);
         } catch (UserStoreException | IdentityRecoveryException | IdentityEventException e) {
             log.error(ERROR_CODE_LISTENER_FAILURE.getMessage(), e);
-            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getName(), context.getFlowType(),
-                    context.getContextIdentifier());
+            throw handleServerException(ERROR_CODE_LISTENER_FAILURE, this.getClass().getSimpleName(),
+                    context.getFlowType(), context.getContextIdentifier());
         }
         return true;
     }
@@ -126,7 +126,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
             int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
             UserStoreManager userStoreManager = IdentityRecoveryServiceDataHolder.getInstance()
                     .getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-            userStoreManager.setUserClaimValues(user.getUserName(), userClaims, null);
+            String domainQualifiedName = IdentityUtil.addDomainToName(user.getUserName(), user.getUserStoreDomain());
+            userStoreManager.setUserClaimValues(domainQualifiedName, userClaims, null);
         }
     }
 
@@ -168,9 +169,8 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
     /**
      * Invalidates the recovery data associated with the provided confirmation code.
      * @param confirmationCode  Confirmation code to identify the recovery data.
-     * @throws IdentityRecoveryException    if an error occurs while loading or invalidating recovery data.
      */
-    private void invalidateRecoveryData(String confirmationCode) throws IdentityRecoveryException {
+    private void invalidateRecoveryData(String confirmationCode) {
 
         try {
             UserRecoveryData data = loadUserRecoveryData(confirmationCode);
@@ -181,7 +181,12 @@ public class InvitedRegistrationCompletionListener extends AbstractFlowExecution
                 store.invalidate(data.getUser());
             }
         } catch (IdentityRecoveryException e) {
-            log.error("Error while loading user recovery data for confirmation code: " + confirmationCode, e);
+            String errorMsg = String.format("Error while invalidating user recovery data for confirmation code: %s",
+                    confirmationCode);
+            if (log.isDebugEnabled()) {
+                log.debug(errorMsg, e);
+            }
+            log.warn(errorMsg);
         }
     }
 

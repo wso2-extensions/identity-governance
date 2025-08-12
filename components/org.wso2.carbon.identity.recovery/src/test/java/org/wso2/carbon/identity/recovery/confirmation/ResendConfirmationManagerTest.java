@@ -27,16 +27,22 @@ import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Attribute;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
-import org.wso2.carbon.identity.governance.IdentityGovernanceException;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.model.FlowConfigDTO;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityGovernanceService;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryClientException;
@@ -54,13 +60,17 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryFlowData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -71,6 +81,11 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.FLOW_TYPE;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.IS_AUTO_LOGIN_ENABLED;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.IS_ENABLED;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.RESOURCE_NAME_PREFIX;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowConfigConstants.RESOURCE_TYPE;
 
 @WithCarbonHome
 public class ResendConfirmationManagerTest {
@@ -106,6 +121,8 @@ public class ResendConfirmationManagerTest {
     private MockedStatic<PrivilegedCarbonContext> mockedPrivilegedCarbonContext;
     private MockedStatic<JDBCRecoveryDataStore> mockedJDBCRecoveryDataStore;
     private MockedStatic<UserAccountRecoveryManager> mockedUserAccountRecoveryManager;
+    private MockedStatic<FlowMgtConfigUtils> mockedFlowMgtUtils;
+    private ConfigurationManager configurationManager;
 
     private static final String TEST_USERNAME = "test-user";
     private static final String TEST_TENANT_DOMAIN = "test.com";
@@ -116,7 +133,7 @@ public class ResendConfirmationManagerTest {
 
         MockitoAnnotations.openMocks(this);
         resendConfirmationManager = ResendConfirmationManager.getInstance();
-
+        configurationManager = mock(ConfigurationManager.class);
         mockedServiceDataHolder = mockStatic(IdentityRecoveryServiceDataHolder.class);
         mockedIdentityUtil = mockStatic(IdentityUtil.class);
         mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
@@ -124,6 +141,10 @@ public class ResendConfirmationManagerTest {
         mockedPrivilegedCarbonContext = mockStatic(PrivilegedCarbonContext.class);
         mockedJDBCRecoveryDataStore =  mockStatic(JDBCRecoveryDataStore.class);
         mockedUserAccountRecoveryManager = mockStatic(UserAccountRecoveryManager.class);
+        mockedFlowMgtUtils = mockStatic(FlowMgtConfigUtils.class);
+
+        FlowConfigDTO mockFlowConfig = mock(FlowConfigDTO.class);
+        when(mockFlowConfig.getIsEnabled()).thenReturn(false);
 
         when(IdentityRecoveryServiceDataHolder.getInstance()).thenReturn(identityRecoveryServiceDataHolder);
         mockedPrivilegedCarbonContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext)
@@ -139,23 +160,8 @@ public class ResendConfirmationManagerTest {
         when(identityRecoveryServiceDataHolder.getRealmService()).thenReturn(realmService);
 
         when(threadLocalCarbonContext.getTenantDomain()).thenReturn(TEST_TENANT_DOMAIN);
-        mockDynamicPortalEnabled(identityGovernanceService);
-    }
-
-    private void mockDynamicPortalEnabled(IdentityGovernanceService identityGovernanceService)
-            throws IdentityGovernanceException {
-
-        org.wso2.carbon.identity.application.common.model.Property property = new org.wso2.carbon.identity.application.common.model.Property();
-        property.setName(IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL);
-        property.setValue("true");
-
-        IdentityRecoveryServiceDataHolder.getInstance()
-                .setIdentityGovernanceService(identityGovernanceService);
-
-        when(identityGovernanceService.getConfiguration(
-                new String[]{IdentityRecoveryConstants.ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL},
-                "carbon.super"))
-                .thenReturn(new org.wso2.carbon.identity.application.common.model.Property[]{property});
+        mockedFlowMgtUtils.when(() -> FlowMgtConfigUtils.getFlowConfig(anyString(), anyString()))
+                .thenReturn(mockFlowConfig);
     }
 
     @AfterMethod
@@ -168,6 +174,7 @@ public class ResendConfirmationManagerTest {
         mockedPrivilegedCarbonContext.close();
         mockedJDBCRecoveryDataStore.close();
         mockedUserAccountRecoveryManager.close();
+        mockedFlowMgtUtils.close();
     }
 
     @Test
@@ -237,6 +244,70 @@ public class ResendConfirmationManagerTest {
                 capturedRecoveryData2.getRecoveryScenario());
         Assert.assertEquals(verificationPendingMobile,
                 capturedRecoveryData2.getRemainingSetIds());
+
+        // Reset data.
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        UserRecoveryData userRecoveryData3 = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData3.setRemainingSetIds(verificationPendingMobile);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE)).thenReturn(userRecoveryData3);
+
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData3,
+                NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(false);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+
+        NotificationResponseBean responseBean3 = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+        assertNotNull(responseBean3);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor3 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor3.capture());
+        UserRecoveryData capturedRecoveryData3 = recoveryDataCaptor3.getValue();
+        Assert.assertEquals(RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE,
+                capturedRecoveryData3.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingMobile,
+                capturedRecoveryData3.getRemainingSetIds());
+
+        ArgumentCaptor<Event> eventCaptor3 = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor3.capture());
+        Event capturedEvent3 = eventCaptor3.getValue();
+        Map<String, Object> eventProperties3 = capturedEvent3.getEventProperties();
+        Assert.assertEquals(verificationPendingMobile, eventProperties3.get(IdentityRecoveryConstants.SEND_TO));
+        Assert.assertEquals(newCode, eventProperties3.get(IdentityRecoveryConstants.CONFIRMATION_CODE));
+
+        // Reset data.
+        reset(userRecoveryDataStore);
+        reset(identityEventService);
+
+        UserRecoveryData userRecoveryData4 = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                RecoverySteps.VERIFY_MOBILE_NUMBER);
+        userRecoveryData4.setRemainingSetIds(verificationPendingMobile);
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE))
+                .thenReturn(userRecoveryData4);
+
+        NotificationResponseBean responseBean4 = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE.toString(),
+                RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
+        assertNotNull(responseBean4);
+
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor4 = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor4.capture());
+        UserRecoveryData capturedRecoveryData4 = recoveryDataCaptor4.getValue();
+        Assert.assertEquals(RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_VERIFIED_LIST_UPDATE,
+                capturedRecoveryData4.getRecoveryScenario());
+        Assert.assertEquals(verificationPendingMobile,
+                capturedRecoveryData4.getRemainingSetIds());
     }
 
     @Test
@@ -310,8 +381,17 @@ public class ResendConfirmationManagerTest {
                 capturedRecoveryData2.getRemainingSetIds());
     }
 
-    @Test
-    public void testResendConfirmationCodeErrorScenarios() throws Exception {
+    @DataProvider(name = "recoveryScenariosDataProvider")
+    public Object[][] getForcedPasswordResetDataProvider() {
+
+        return new Object[][] {
+                {RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE},
+                {RecoveryScenarios.PROGRESSIVE_PROFILE_MOBILE_VERIFICATION_ON_UPDATE}
+        };
+    }
+
+    @Test(dataProvider = "recoveryScenariosDataProvider")
+    public void testResendConfirmationCodeErrorScenarios(RecoveryScenarios recoveryScenario) throws Exception {
 
         String verificationPendingMobile = "0777897621";
         String oldCode = "dummy-code";
@@ -320,10 +400,10 @@ public class ResendConfirmationManagerTest {
         Property[] properties = new Property[]{new Property("testKey", "testValue")};
 
         UserRecoveryData userRecoveryData = new UserRecoveryData(user, oldCode,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE, RecoverySteps.VERIFY_MOBILE_NUMBER);
+                recoveryScenario, RecoverySteps.VERIFY_MOBILE_NUMBER);
         userRecoveryData.setRemainingSetIds(verificationPendingMobile);
         when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
-                RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE)).thenReturn(userRecoveryData);
+                recoveryScenario)).thenReturn(userRecoveryData);
 
         mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData,
                 NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(false);
@@ -334,7 +414,7 @@ public class ResendConfirmationManagerTest {
         // Case 1: Null user.
         try {
             resendConfirmationManager.resendConfirmationCode(null,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
             fail();
@@ -356,7 +436,7 @@ public class ResendConfirmationManagerTest {
         // Case 3: Empty Recovery step.
         try {
             resendConfirmationManager.resendConfirmationCode(user,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     "",
                     IdentityRecoveryConstants.NOTIFICATION_TYPE_VERIFY_MOBILE_ON_UPDATE, properties);
             fail();
@@ -367,7 +447,7 @@ public class ResendConfirmationManagerTest {
         // Case 4: Empty Notification type.
         try {
             resendConfirmationManager.resendConfirmationCode(user,
-                    RecoveryScenarios.MOBILE_VERIFICATION_ON_UPDATE.toString(),
+                    recoveryScenario.toString(),
                     RecoverySteps.VERIFY_MOBILE_NUMBER.toString(),
                     "", properties);
             fail();

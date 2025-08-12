@@ -23,11 +23,20 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.config.ConfigurationFacade;
 import org.wso2.carbon.identity.application.common.model.User;
+import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
+import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.flow.mgt.Constants;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryException;
+import org.wso2.carbon.identity.recovery.IdentityRecoveryServerException;
 import org.wso2.carbon.identity.recovery.RecoveryScenarios;
 import org.wso2.carbon.identity.recovery.RecoverySteps;
 import org.wso2.carbon.identity.recovery.internal.IdentityRecoveryServiceDataHolder;
@@ -88,7 +97,33 @@ public class ResetLinkGenerator {
 
         String serverHost = ConfigurationFacade.getInstance().getAccountRecoveryEndpointPath();
 
-        return String.format("%s/confirmrecovery.do?confirmation=%s", serverHost, secretKey);
+        Boolean isDynamicAskPwdEnabled;
+        String flowType = Constants.FlowTypes.INVITED_USER_REGISTRATION.
+                getType();
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(flowType, user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityRecoveryServerException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+
+        if (!isDynamicAskPwdEnabled) {
+            return String.format("%s/confirmrecovery.do?confirmation=%s", serverHost, secretKey);
+        }
+
+        String configuredPortalURL = null;
+        try {
+            BrandingPreferenceManager brandingPreferenceManager = new BrandingPreferenceManagerImpl();
+            configuredPortalURL = BrandingPreferenceMgtUtils.buildConfiguredPortalURL(null,
+                    configuration.getTenantDomain(), brandingPreferenceManager, flowType
+            );
+        } catch (BrandingPreferenceMgtException | URLBuilderException e) {
+            throw new IdentityRecoveryServerException("Error while retrieving the portal URL for the tenant: "
+                    + configuration.getTenantDomain() + ", flowtype: " + flowType, e);
+        }
+
+        return String.format("%s?confirmation=%s&flowType=%s", configuredPortalURL, secretKey,
+                flowType);
     }
 
     /**

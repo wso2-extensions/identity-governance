@@ -35,6 +35,8 @@ import org.wso2.carbon.identity.event.IdentityEventConstants;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.handler.AbstractEventHandler;
+import org.wso2.carbon.identity.flow.mgt.exception.FlowMgtServerException;
+import org.wso2.carbon.identity.flow.mgt.utils.FlowMgtConfigUtils;
 import org.wso2.carbon.identity.governance.IdentityMgtConstants;
 import org.wso2.carbon.identity.governance.service.notification.NotificationChannels;
 import org.wso2.carbon.identity.recovery.IdentityRecoveryConstants;
@@ -64,9 +66,11 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_SEND_OTP;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.ErrorMessages
         .ERROR_CODE_VERIFICATION_EMAIL_NOT_FOUND;
 import static org.wso2.carbon.identity.recovery.IdentityRecoveryConstants.FLOW_TYPE;
+import static org.wso2.carbon.identity.recovery.util.Utils.getRecoveryConfigs;
 import static org.wso2.carbon.identity.recovery.util.Utils.maskIfRequired;
 
 public class UserEmailVerificationHandler extends AbstractEventHandler {
@@ -74,8 +78,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
     private static final Log log = LogFactory.getLog(UserEmailVerificationHandler.class);
 
     private static final Random RANDOM = new SecureRandom();
-
-    private static final Boolean isRandomValueForCredentialsDisabled = isRandomValueForCredentialsDisabled();
 
     public String getName() {
 
@@ -195,19 +197,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 claims.remove(IdentityRecoveryConstants.VERIFY_EMAIL_CLIAM);
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_VERIFY_EMAIL_CLAIM,
                         null);
-            } else if (claims.containsKey(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM) &&
-                    Boolean.parseBoolean(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM))) {
-                Claim claim = new Claim();
-                claim.setClaimUri(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
-                claim.setValue(claims.get(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM));
-                Utils.setEmailVerifyTemporaryClaim(claim);
-                claims.remove(IdentityRecoveryConstants.ASK_PASSWORD_CLAIM);
-                Object credentials = eventProperties.get(IdentityEventConstants.EventProperty.CREDENTIAL);
-                if (!isRandomValueForCredentialsDisabled) {
-                    setRandomValueForCredentials(credentials);
-                }
-                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.PRE_ADD_USER_WITH_ASK_PASSWORD,
-                        null);
             } else {
                 return;
                 // Not required to handle in this handler.
@@ -235,8 +224,23 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                         setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
                                 IdentityRecoveryConstants.PENDING_EMAIL_VERIFICATION, userStoreManager, user);
                     }
-                    initNotification(user, RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP,
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM);
+                    String notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM;
+                    RecoveryScenarios recoveryScenario = RecoveryScenarios.SELF_SIGN_UP;
+                    RecoverySteps recoveryStep = RecoverySteps.CONFIRM_SIGN_UP;
+                    try {
+                        boolean isSendEmailOTPEnabled =
+                                Boolean.parseBoolean(getRecoveryConfigs(EMAIL_VERIFICATION_SEND_OTP,
+                                        user.getTenantDomain()));
+                        if (isSendEmailOTPEnabled) {
+                            notificationType = IdentityRecoveryConstants.NOTIFICATION_TYPE_EMAIL_CONFIRM_OTP;
+                            recoveryScenario = RecoveryScenarios.EMAIL_VERIFICATION_OTP;
+                            recoveryStep = RecoverySteps.CONFIRM_PENDING_EMAIL_VERIFICATION;
+                        }
+                    } catch (IdentityRecoveryServerException e) {
+                        throw new IdentityEventException("Error while checking send OTP in email for email " +
+                                "verification.", e);
+                    }
+                    initNotification(user, recoveryScenario, recoveryStep, notificationType);
                 }
 
                 // Need to lock user account.
@@ -247,37 +251,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                             userStoreManager, user);
                 }
                 Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_VERIFY_EMAIL_CLAIM,
-                        confirmationCode);
-            } else if (IdentityRecoveryConstants.ASK_PASSWORD_CLAIM.equals(claim.getClaimUri())) {
-                String confirmationCode;
-                try {
-                    confirmationCode = Utils.generateSecretKey(
-                            NotificationChannels.EMAIL_CHANNEL.getChannelType(), RecoveryScenarios.ASK_PASSWORD.name(),
-                            user.getTenantDomain(), "EmailVerification");
-                } catch (IdentityRecoveryServerException e) {
-                    throw new IdentityEventException("Error while fetching the OTP pattern ", e);
-                }
-                if (isAccountClaimExist) {
-                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_STATE_CLAIM_URI,
-                            IdentityRecoveryConstants.PENDING_ASK_PASSWORD, userStoreManager, user);
-                }
-                if (isNotificationInternallyManage) {
-                    initNotification(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
-                            IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD, confirmationCode);
-                } else {
-                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD,
-                            confirmationCode);
-                    setAskPasswordConfirmationCodeToThreadLocal(confirmationCode);
-                }
-
-                // Need to lock user account.
-                if (isAccountLockOnCreation) {
-                    lockAccount(user, userStoreManager);
-                    setUserClaim(IdentityRecoveryConstants.ACCOUNT_LOCKED_REASON_CLAIM,
-                            IdentityMgtConstants.LockedReason.PENDING_ASK_PASSWORD.toString(),
-                            userStoreManager, user);
-                }
-                Utils.publishRecoveryEvent(eventProperties, IdentityEventConstants.Event.POST_ADD_USER_WITH_ASK_PASSWORD,
                         confirmationCode);
             }
             Utils.clearEmailVerifyTemporaryClaim();
@@ -350,23 +323,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (IdentityRecoveryException e) {
             throw new IdentityEventException("Error while sending  notification ", e);
         }
-    }
-
-    /**
-     * This method sets a random value for the credentials, if the ask password flow is enabled.
-     *
-     * @param credentials Credentials object
-     */
-    private void setRandomValueForCredentials(Object credentials) {
-
-        char[] temporaryPassword = Utils.generateRandomPassword(12);
-        ((StringBuffer) credentials).replace(0, temporaryPassword.length, new String(temporaryPassword));
-    }
-
-    private static boolean isRandomValueForCredentialsDisabled() {
-
-        return Boolean.parseBoolean(IdentityUtil.getProperty(
-                IdentityRecoveryConstants.ConnectorConfig.ASK_PASSWORD_DISABLE_RANDOM_VALUE_FOR_CREDENTIALS));
     }
 
     private void initNotificationForEmailVerificationOnUpdate(String verificationPendingEmailAddress, User user)
@@ -514,7 +470,9 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                 String recoveryScenario = recoveryDataDO.getRecoveryScenario().name();
                 properties.put(IdentityEventConstants.EventProperty.RECOVERY_SCENARIO, recoveryScenario);
 
-                selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
+                if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {
+                    selectedNotificationType = getNotificationTypeForAskPassword(user, type, recoveryScenario, properties);
+                }
             }
             properties.put(IdentityRecoveryConstants.TEMPLATE_TYPE, selectedNotificationType);
             Event identityMgtEvent = new Event(eventName, properties);
@@ -529,10 +487,15 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
                                                             HashMap<String, Object> properties)
             throws IdentityEventException {
 
-        String isDynamicPortalEnabled = Utils.getConnectorConfig(IdentityRecoveryConstants.
-                ConnectorConfig.ENABLE_DYNAMIC_REGISTRATION_PORTAL, user.getTenantDomain());
-        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario) &&
-                Boolean.parseBoolean(isDynamicPortalEnabled)) {
+        Boolean isDynamicAskPwdEnabled;
+        try {
+            isDynamicAskPwdEnabled = FlowMgtConfigUtils.getFlowConfig(Flow.Name.INVITED_USER_REGISTRATION.name(),
+                    user.getTenantDomain()).getIsEnabled();
+        } catch (FlowMgtServerException e) {
+            throw new IdentityEventException("Error while retrieving the flow configuration for " +
+                    "INVITED_USER_REGISTRATION flow.", e);
+        }
+        if (isDynamicAskPwdEnabled) {
             type = IdentityRecoveryConstants.NOTIFICATION_TYPE_ORCHESTRATED_ASK_PASSWORD;
             properties.put(FLOW_TYPE, Flow.Name.INVITED_USER_REGISTRATION.name());
         }
@@ -975,23 +938,6 @@ public class UserEmailVerificationHandler extends AbstractEventHandler {
         } catch (IdentityEventException e) {
             throw new IdentityEventException("Error while sending notification for user: " +
                     user.toFullQualifiedUsername(), e);
-        }
-    }
-
-    /**
-     * To set the confirmation code to ask password thread local.
-     *
-     * @param confirmationCode Ask password confirmation code.
-     */
-    private void setAskPasswordConfirmationCodeToThreadLocal(String confirmationCode) {
-
-        Object initialValue = IdentityUtil.threadLocalProperties.get()
-                .get(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY);
-        if (initialValue != null && initialValue.toString()
-                .equals(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_INITIAL_VALUE)) {
-            IdentityUtil.threadLocalProperties.get()
-                    .put(IdentityRecoveryConstants.AP_CONFIRMATION_CODE_THREAD_LOCAL_PROPERTY,
-                            confirmationCode);
         }
     }
 
