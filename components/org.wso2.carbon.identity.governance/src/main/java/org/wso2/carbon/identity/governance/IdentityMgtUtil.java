@@ -44,6 +44,8 @@ public class IdentityMgtUtil {
     private static final ClaimMetadataManagementService claimMetadataManagementService = IdentityMgtServiceDataHolder
             .getInstance().getClaimMetadataManagementService();
     private static final String STORE_IDENTITY_CLAIMS = "StoreIdentityClaims";
+    private static final String ENABLE_USER_STORE_PERSISTENCE = "enableUserStorePersistence";
+    private static final String EXCLUDED_USER_STORES = "excludedUserStores";
 
     /**
      * Extract the user store persistency configured claims.
@@ -74,9 +76,9 @@ public class IdentityMgtUtil {
             localClaim = getLocalClaimInTenant(claim, tenantDomain);
             // Check if the claim has configured custom persistence.
             if (localClaim.isPresent() && Boolean.parseBoolean(localClaim.get()
-                    .getClaimProperty("IsCustomPersistenceEnabled"))){
+                    .getClaimProperty(ENABLE_USER_STORE_PERSISTENCE))) {
 
-                excludedUserStores = localClaim.get().getClaimProperty("ExcludedUserStores");
+                excludedUserStores = localClaim.get().getClaimProperty(EXCLUDED_USER_STORES);
 
                 if (Arrays.asList(excludedUserStores.split(",")).contains(userStoreDomain)){
                     // If custom persistence is enabled and the user store is excluded, add to identity store claims.

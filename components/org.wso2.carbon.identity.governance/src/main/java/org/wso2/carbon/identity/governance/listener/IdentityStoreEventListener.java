@@ -311,10 +311,12 @@ public class IdentityStoreEventListener extends AbstractIdentityUserOperationEve
         }
 
         UserIdentityClaim identityDTO = identityDataStoreService.getIdentityClaimData(userName, storeManager);
+
         // if no user identity data found, just continue
         if (identityDTO == null) {
             return true;
         }
+
         // data found, add the values for security questions and identity claims
         String value;
         for (String claimURI : identityStorePersistentClaims) {
