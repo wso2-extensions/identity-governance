@@ -1348,7 +1348,8 @@ public class Utils {
         // Set connector specific OTP configuration values, for connectors that have separate OTP configurations.
         if (StringUtils.isNotBlank(connectorName)) {
             sendOTPInEmail = Boolean.parseBoolean(getRecoveryConfigs(
-                    connectorName + ".OTP.SendOTPInEmail", tenantDomain));
+                    connectorName + ".OTP.SendOTPInEmail", tenantDomain)) ||
+                    Boolean.parseBoolean(getRecoveryConfigs(connectorName + ".EmailOTP.Enable", tenantDomain));
             useUppercase = Boolean.parseBoolean(getRecoveryConfigs(
                     connectorName + ".OTP.UseUppercaseCharactersInOTP", tenantDomain));
             useLowercase = Boolean.parseBoolean(getRecoveryConfigs(
