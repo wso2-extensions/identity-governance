@@ -85,6 +85,8 @@ import org.wso2.carbon.identity.recovery.model.UserRecoveryData;
 import org.wso2.carbon.identity.recovery.store.JDBCRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.store.UserRecoveryDataStore;
 import org.wso2.carbon.identity.recovery.util.Utils;
+import org.wso2.carbon.identity.user.action.api.constant.UserActionError;
+import org.wso2.carbon.identity.user.action.api.exception.UserActionExecutionClientException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.Claim;
@@ -276,6 +278,12 @@ public class UserSelfRegistrationManager {
                             throw IdentityException.error(IdentityRecoveryClientException.class,
                                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                                     cause.getMessage(), e);
+                        } else if (cause instanceof UserActionExecutionClientException &&
+                                ((UserActionExecutionClientException) cause).getErrorCode()
+                                        .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
+                            throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
+                                            ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE,
+                                    ((UserActionExecutionClientException) cause).getDescription(), cause);
                         } else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
                             String errorCode = ((org.wso2.carbon.user.core.UserStoreException) cause).getErrorCode();
                             if (ERROR_CODE_USER_WF_ALREADY_EXISTS.getCode().equals(errorCode) ||
