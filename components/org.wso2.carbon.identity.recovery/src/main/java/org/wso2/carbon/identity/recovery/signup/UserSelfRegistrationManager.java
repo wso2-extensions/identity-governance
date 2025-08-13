@@ -278,13 +278,13 @@ public class UserSelfRegistrationManager {
                             throw IdentityException.error(IdentityRecoveryClientException.class,
                                     IdentityRecoveryConstants.ErrorMessages.ERROR_CODE_POLICY_VIOLATION.getCode(),
                                     cause.getMessage(), e);
-                        }else if (cause instanceof UserActionExecutionClientException &&
+                        } else if (cause instanceof UserActionExecutionClientException &&
                                 ((UserActionExecutionClientException) cause).getErrorCode()
                                         .equals(UserActionError.PRE_UPDATE_PASSWORD_ACTION_EXECUTION_FAILED)) {
                             throw Utils.handleClientException(IdentityRecoveryConstants.ErrorMessages.
                                             ERROR_CODE_PRE_UPDATE_PASSWORD_ACTION_FAILURE,
                                     ((UserActionExecutionClientException) cause).getDescription(), cause);
-                        }else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
+                        } else if (cause instanceof org.wso2.carbon.user.core.UserStoreException) {
                             String errorCode = ((org.wso2.carbon.user.core.UserStoreException) cause).getErrorCode();
                             if (ERROR_CODE_USER_WF_ALREADY_EXISTS.getCode().equals(errorCode) ||
                                     ERROR_CODE_USER_WF_USER_ALREADY_EXISTS.getCode().equals(errorCode)) {
