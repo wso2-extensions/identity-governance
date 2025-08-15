@@ -116,6 +116,9 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
             }
         }
 
+        if (REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
+            return new ExecutorResponse(STATUS_COMPLETE);
+        }
 
         char[] password = credentials.getOrDefault(PASSWORD_KEY, new DefaultPasswordGenerator().generatePassword());
         try {
@@ -123,8 +126,6 @@ public class PasswordProvisioningExecutor extends AuthenticationExecutor {
                 return handlePasswordRecoveryFlow(context, password);
             } else if (INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
                 return handleAskPasswordFlow(context, password);
-            } else if (REGISTRATION.getType().equalsIgnoreCase(context.getFlowType())) {
-                return new ExecutorResponse(STATUS_COMPLETE);
             }
             return new ExecutorResponse();
         } finally {
