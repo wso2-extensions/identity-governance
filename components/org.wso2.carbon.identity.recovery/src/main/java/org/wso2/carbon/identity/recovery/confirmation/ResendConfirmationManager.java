@@ -583,6 +583,7 @@ public class ResendConfirmationManager {
 
         String selectedNotificationType = notificationType;
         if (RecoveryScenarios.ASK_PASSWORD.equals(RecoveryScenarios.getRecoveryScenario(recoveryScenario))) {
+            // TODO
             selectedNotificationType = getNotificationTypeForResendAskPassword(user, notificationType, propertyList);
         }
 
