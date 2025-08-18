@@ -1060,7 +1060,9 @@ public class NotificationPasswordRecoveryManager {
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_OTP.equals(recoveryScenario)
                 || RecoveryScenarios.ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP.equals(recoveryScenario)
-                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+                || RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)) {
             IdentityUtil.threadLocalProperties.get().put(AccountConstants.ADMIN_INITIATED, false);
         }
 
@@ -1484,6 +1486,8 @@ public class NotificationPasswordRecoveryManager {
                 IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             case ADMIN_FORCED_PASSWORD_RESET_VIA_EMAIL_LINK:
+            case ADMIN_FORCED_PASSWORD_RESET_VIA_OTP:
+            case ADMIN_FORCED_PASSWORD_RESET_VIA_SMS_OTP:
                 flow = new Flow.CredentialFlowBuilder()
                         .name(Flow.Name.CREDENTIAL_RESET)
                         .initiatingPersona(Flow.InitiatingPersona.ADMIN)
@@ -1492,6 +1496,8 @@ public class NotificationPasswordRecoveryManager {
                 IdentityContext.getThreadLocalIdentityContext().enterFlow(flow);
                 break;
             case ASK_PASSWORD:
+            case ASK_PASSWORD_VIA_EMAIL_OTP:
+            case ASK_PASSWORD_VIA_SMS_OTP:
             case ADMIN_INVITE_SET_PASSWORD_OFFLINE:
                 flow = new Flow.Builder()
                         .name(Flow.Name.INVITE)
