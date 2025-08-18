@@ -41,6 +41,7 @@
             <class name="org.wso2.carbon.identity.recovery.listener.SelfRegistrationCompletionListenerTest"/>
             <class name="org.wso2.carbon.identity.recovery.executor.ConfirmationCodeValidationExecutorTest"/>
             <class name="org.wso2.carbon.identity.recovery.executor.PasswordProvisioningExecutorTest"/>
+            <class name="org.wso2.carbon.identity.recovery.handler.AccountConfirmationValidationHandlerTest"/>
         </classes>
     </test>
 </suite>

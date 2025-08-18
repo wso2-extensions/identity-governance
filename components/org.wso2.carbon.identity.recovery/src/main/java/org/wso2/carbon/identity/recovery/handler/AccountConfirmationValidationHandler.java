@@ -228,7 +228,8 @@ public class AccountConfirmationValidationHandler extends AbstractEventHandler {
             UserRecoveryDataStore userRecoveryDataStore = JDBCRecoveryDataStore.getInstance();
             UserRecoveryData load = userRecoveryDataStore.loadWithoutCodeExpiryValidation(user);
 
-            if (load != null && RecoveryScenarios.EMAIL_VERIFICATION.equals(load.getRecoveryScenario())) {
+            if (load != null && (RecoveryScenarios.EMAIL_VERIFICATION.equals(load.getRecoveryScenario())
+                    || RecoveryScenarios.EMAIL_VERIFICATION_OTP.equals(load.getRecoveryScenario()))) {
                 isUserEmailVerificationScenario = true;
             }
         } catch (IdentityRecoveryException e) {
