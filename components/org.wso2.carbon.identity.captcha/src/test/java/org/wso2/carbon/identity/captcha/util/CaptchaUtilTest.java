@@ -52,6 +52,7 @@ public class CaptchaUtilTest {
     }
 
     private MockedStatic<IdentityUtil> stubLocalOtpCaptchaProp(String value) {
+
         MockedStatic<IdentityUtil> ms = Mockito.mockStatic(IdentityUtil.class);
         ms.when(() -> IdentityUtil.getProperty(Mockito.anyString())).thenReturn(value);
         return ms;
