@@ -22,7 +22,6 @@ import javax.servlet.ServletRequest;
 
 /**
  * Local Email OTP Captcha Connector.
- * This connector is used to handle email OTP verification in the local authentication flow.
  */
 public class LocalEmailOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
 
