@@ -41,17 +41,32 @@ public class LocalEmailOTPCaptchaConnector extends AbstractOTPCaptchaConnector {
     }
 
     @Override
-    protected String getAuthenticatorName() { return AUTHENTICATOR_NAME; }
+    protected String getAuthenticatorName() {
+
+        return AUTHENTICATOR_NAME;
+    }
 
     @Override
-    protected String getRedirectContextPropertyKey() { return REDIRECT_CONTEXT_PROPERTY_KEY; }
+    protected String getRedirectContextPropertyKey() {
+
+        return REDIRECT_CONTEXT_PROPERTY_KEY;
+    }
 
     @Override
-    protected String getResendParamName() { return RESEND_PARAM_NAME; }
+    protected String getResendParamName() {
+
+        return RESEND_PARAM_NAME;
+    }
 
     @Override
-    protected String getFailedAttemptsClaimUri() { return FAILED_ATTEMPTS_CLAIM_URI; }
+    protected String getFailedAttemptsClaimUri() {
+
+        return FAILED_ATTEMPTS_CLAIM_URI;
+    }
 
     @Override
-    protected String getOnFailRedirectUrl() { return ON_FAIL_REDIRECT_URL; }
+    protected String getOnFailRedirectUrl() {
+
+        return ON_FAIL_REDIRECT_URL;
+    }
 }

@@ -532,13 +532,10 @@ public class CaptchaUtil {
      */
     public static boolean isCaptchaValidationEnabledForLocalOTPAuthenticators() {
 
-        String newAuthenticatorCaptchaConfig =
+        String localAuthenticatorCaptchaConfig =
                 IdentityUtil.getProperty(ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS);
 
-        if (StringUtils.isBlank(newAuthenticatorCaptchaConfig)) {
-            return false;
-        }
-        return Boolean.parseBoolean(newAuthenticatorCaptchaConfig);
+        return Boolean.parseBoolean(localAuthenticatorCaptchaConfig);
     }
     /**
      * Resolve the user store manager for the user.
