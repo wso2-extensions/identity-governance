@@ -181,6 +181,8 @@ public class JDBCRecoveryDataStoreTest {
                 { RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.VERIFY_EMAIL },
                 { RecoveryScenarios.SELF_SIGN_UP, RecoverySteps.CONFIRM_SIGN_UP },
                 { RecoveryScenarios.ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP, RecoverySteps.SET_PASSWORD },
+                { RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP, RecoverySteps.SET_PASSWORD },
                 { RecoveryScenarios.TENANT_ADMIN_ASK_PASSWORD, RecoverySteps.UPDATE_PASSWORD },
                 { RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.CONFIRM_LITE_SIGN_UP },
                 { RecoveryScenarios.LITE_SIGN_UP, RecoverySteps.VALIDATE_CHALLENGE_QUESTION },

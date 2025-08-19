@@ -959,7 +959,9 @@ public class JDBCRecoveryDataStore implements UserRecoveryDataStore {
                         IdentityRecoveryConstants.ConnectorConfig.SELF_REGISTRATION_VERIFICATION_CODE_EXPIRY_TIME,
                         tenantDomain));
             }
-        } else if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)) {
+        } else if (RecoveryScenarios.ASK_PASSWORD.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.equals(recoveryScenario)) {
             notificationExpiryTimeInMinutes = Integer.parseInt(Utils.getRecoveryConfigs(IdentityRecoveryConstants
                     .ConnectorConfig.ASK_PASSWORD_EXPIRY_TIME, tenantDomain));
         } else if (RecoveryScenarios.USERNAME_RECOVERY.equals(recoveryScenario)) {

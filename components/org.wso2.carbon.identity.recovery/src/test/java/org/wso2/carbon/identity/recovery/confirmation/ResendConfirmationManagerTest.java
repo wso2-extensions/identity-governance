@@ -697,6 +697,234 @@ public class ResendConfirmationManagerTest {
         }
     }
 
+    @Test (description = "Test resend confirmation code for ASK_PASSWORD_VIA_EMAIL_OTP scenario when recovery data " +
+            "exists and email verification notification is internally managed.")
+    public void testResendConfirmationCodeAskPasswordViaEmailOTP() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String oldCode = "dummy-code";
+        String newCode = "new-code";
+
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP, RecoverySteps.SET_PASSWORD);
+        userRecoveryData.setRemainingSetIds(NotificationChannels.EMAIL_CHANNEL.getChannelType());
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP)).thenReturn(userRecoveryData);
+
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData,
+                NotificationChannels.EMAIL_CHANNEL.getChannelType())).thenReturn(false);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString(),
+                RecoverySteps.SET_PASSWORD.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.SET_PASSWORD);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify notification was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP);
+    }
+
+    @Test (description = "Test resend confirmation code for ASK_PASSWORD_VIA_SMS_OTP scenario when recovery data " +
+            "exists and SMS notification is internally managed.")
+    public void testResendConfirmationCodeAskPasswordViaSMSOTP() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String oldCode = "dummy-code";
+        String newCode = "new-code";
+        String mobileNumber = "+94771234567";
+
+        UserRecoveryData userRecoveryData = new UserRecoveryData(user, oldCode,
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP, RecoverySteps.SET_PASSWORD);
+        userRecoveryData.setRemainingSetIds(NotificationChannels.SMS_CHANNEL.getChannelType());
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP)).thenReturn(userRecoveryData);
+
+        mockedUtils.when(() -> Utils.reIssueExistingConfirmationCode(userRecoveryData,
+                NotificationChannels.SMS_CHANNEL.getChannelType())).thenReturn(false);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+        // Mock mobile number retrieval for SMS notification
+        mockedUtils.when(() -> Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))
+                .thenReturn(mobileNumber);
+        mockedUtils.when(() -> Utils.resolveEventName(NotificationChannels.SMS_CHANNEL.getChannelType()))
+                .thenReturn("SMS_OTP");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString(),
+                RecoverySteps.SET_PASSWORD.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.SMS_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.SET_PASSWORD);
+        assertEquals(NotificationChannels.SMS_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify SMS notification event was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.SEND_TO), mobileNumber);
+    }
+
+    @Test (description = "Test resend confirmation code for ASK_PASSWORD_VIA_EMAIL_OTP scenario when recovery data " +
+            "is missing and the user is in pending ask password state.")
+    public void testResendConfirmationCodeAskPasswordViaEmailOTPWhenNoRecoveryData() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String newCode = "new-code";
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString(),
+                RecoverySteps.SET_PASSWORD.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.SET_PASSWORD);
+        assertEquals(NotificationChannels.EMAIL_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify notification was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_EMAIL_OTP);
+    }
+
+    @Test (description = "Test resend confirmation code for ASK_PASSWORD_VIA_SMS_OTP scenario when recovery data " +
+            "is missing and the user is in pending ask password state.")
+    public void testResendConfirmationCodeAskPasswordViaSMSOTPWhenNoRecoveryData() throws Exception {
+
+        User user = getUser();
+        Property[] properties = new Property[]{new Property("testKey", "testValue")};
+        String newCode = "new-code";
+        String mobileNumber = "+94771234567";
+
+        when(userRecoveryDataStore.loadWithoutCodeExpiryValidation(user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP)).thenReturn(null);
+
+        mockedUtils.when(() -> Utils.getAccountStateForUserNameWithoutUserDomain(user))
+                .thenReturn(IdentityRecoveryConstants.PENDING_ASK_PASSWORD);
+        mockedUtils.when(() -> Utils.generateSecretKey(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(newCode);
+        mockedUtils.when(() -> Utils.getSignUpConfigs(
+                IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
+                TEST_TENANT_DOMAIN)).thenReturn("true");
+        // Mock mobile number retrieval for SMS notification
+        mockedUtils.when(() -> Utils.getUserClaim(user, IdentityRecoveryConstants.MOBILE_NUMBER_CLAIM))
+                .thenReturn(mobileNumber);
+        mockedUtils.when(() -> Utils.resolveEventName(NotificationChannels.SMS_CHANNEL.getChannelType()))
+                .thenReturn("SMS_OTP");
+
+        // Call the method to test.
+        NotificationResponseBean responseBean = resendConfirmationManager.resendConfirmationCode(
+                user,
+                RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString(),
+                RecoverySteps.SET_PASSWORD.toString(),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP,
+                properties);
+
+        // Verify the response.
+        assertNotNull(responseBean);
+        assertEquals(NotificationChannels.SMS_CHANNEL.getChannelType(), responseBean.getNotificationChannel());
+
+        // Verify UserRecoveryData was stored properly.
+        ArgumentCaptor<UserRecoveryData> recoveryDataCaptor = ArgumentCaptor.forClass(UserRecoveryData.class);
+        verify(userRecoveryDataStore).store(recoveryDataCaptor.capture());
+        UserRecoveryData capturedRecoveryData = recoveryDataCaptor.getValue();
+        
+        assertEquals(capturedRecoveryData.getRecoveryScenario(), RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP);
+        assertEquals(capturedRecoveryData.getRecoveryStep(), RecoverySteps.SET_PASSWORD);
+        assertEquals(NotificationChannels.SMS_CHANNEL.getChannelType(), capturedRecoveryData.getRemainingSetIds());
+        assertEquals(capturedRecoveryData.getSecret(), newCode);
+
+        // Verify SMS notification event was triggered.
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(identityEventService).handleEvent(eventCaptor.capture());
+        Event capturedEvent = eventCaptor.getValue();
+        Map<String, Object> eventProperties = capturedEvent.getEventProperties();
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.CONFIRMATION_CODE), newCode);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.TEMPLATE_TYPE),
+                IdentityRecoveryConstants.NOTIFICATION_TYPE_ASK_PASSWORD_SMS_OTP);
+        assertEquals(eventProperties.get(IdentityRecoveryConstants.SEND_TO), mobileNumber);
+    }
+
     private static User getUser() {
 
         User user = new User();
