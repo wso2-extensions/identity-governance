@@ -74,6 +74,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
 
     @Override
     public int getPriority() {
+
         return 30;
     }
 
@@ -142,7 +143,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
         String username = resolveUserName(context, servletRequest);
         String tenantDomain = resolveTenantDomain(context);
         if (StringUtils.isBlank(username) || StringUtils.isBlank(tenantDomain)) {
-            throw new CaptchaException("Username or tenant domain is not available in the authentication context.");
+            throw new CaptchaException("Username or tenant domain cannot be resolved.");
         }
 
         Property[] connectorConfigs = null;
@@ -236,14 +237,9 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
             return false;
         }
 
-        AuthenticationContext ctx = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
-        if (ctx == null || ctx.getLastAuthenticatedUser() == null ||
-                StringUtils.isBlank(ctx.getLastAuthenticatedUser().getUserName())) {
-            return false;
-        }
-
         AuthenticationContext context = FrameworkUtils.getAuthenticationContextFromCache(sessionDataKey);
-        if (context == null) {
+        if (context == null || context.getLastAuthenticatedUser() == null ||
+                StringUtils.isBlank(context.getLastAuthenticatedUser().getUserName())) {
             return false;
         }
 

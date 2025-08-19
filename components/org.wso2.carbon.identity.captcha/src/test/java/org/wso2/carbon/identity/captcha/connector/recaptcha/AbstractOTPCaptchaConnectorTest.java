@@ -107,31 +107,37 @@ public class AbstractOTPCaptchaConnectorTest {
 
         @Override
         protected boolean isOTPParamPresent(ServletRequest servletRequest) {
+
             return servletRequest.getParameter(OTP_PARAM_NAME) != null;
         }
 
         @Override
         protected String getAuthenticatorName() {
+
             return AUTHENTICATOR_NAME;
         }
 
         @Override
         protected String getRedirectContextPropertyKey() {
+
             return REDIRECT_KEY;
         }
 
         @Override
         protected String getResendParamName() {
+
             return RESEND_PARAM;
         }
 
         @Override
         protected String getFailedAttemptsClaimUri() {
+
             return FAIL_CLAIM;
         }
 
         @Override
         protected String getOnFailRedirectUrl() {
+
             return FAIL_URL;
         }
     }
