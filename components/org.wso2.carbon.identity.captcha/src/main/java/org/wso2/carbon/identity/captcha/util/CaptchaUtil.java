@@ -82,6 +82,7 @@ import javax.servlet.ServletRequest;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.BASIC_AUTH_MECHANISM;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ENABLE_GENERIC_CAPTCHA_VALIDATION;
+import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ON_FAILED_LOGIN_REDIRECT_URL;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.ReCaptchaConnectorPropertySuffixes;
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
@@ -523,6 +524,22 @@ public class CaptchaUtil {
         return currentAttempts >= maxAttempts;
     }
 
+    /**
+     * Checks if the configuration in identity.xml enables captcha validation for new authenticators.
+     * By default, this feature is enabled.
+     *
+     * @return Returns false by default. If the configuration is present, its value is returned.
+     */
+    public static boolean isCaptchaValidationEnabledForLocalOTPAuthenticators(){
+
+        String newAuthenticatorCaptchaConfig =
+                IdentityUtil.getProperty(ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS);
+
+        if (StringUtils.isBlank(newAuthenticatorCaptchaConfig)) {
+            return false;
+        }
+        return Boolean.parseBoolean(newAuthenticatorCaptchaConfig);
+    }
     /**
      * Resolve the user store manager for the user.
      *

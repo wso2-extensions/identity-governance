@@ -18,12 +18,14 @@ package org.wso2.carbon.identity.captcha.util;
 
 import com.google.gson.JsonObject;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.captcha.internal.CaptchaDataHolder;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.io.IOException;
 
@@ -31,7 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 
-import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.*;
 
 /**
  * Unit tests for CaptchaUtil.java
@@ -45,6 +47,12 @@ public class CaptchaUtilTest {
     public void setUp() {
 
         MockitoAnnotations.openMocks(this);
+    }
+
+    private MockedStatic<IdentityUtil> stubLocalOtpCaptchaProp(String value) {
+        MockedStatic<IdentityUtil> ms = Mockito.mockStatic(IdentityUtil.class);
+        ms.when(() -> IdentityUtil.getProperty(Mockito.anyString())).thenReturn(value);
+        return ms;
     }
 
     private Method getCreateReCaptchaEnterpriseVerificationHttpPostMethod() throws NoSuchMethodException {
@@ -204,4 +212,54 @@ public class CaptchaUtilTest {
         // Verify no exception is thrown for invalid response.
         assertThrows(InvocationTargetException.class, () -> method.invoke(null, verificationResponse));
     }
+
+    @Test
+    public void testLocalOtpCaptchaProp_Null_ReturnsFalse() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp(null)) {
+            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_Empty_ReturnsFalse() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("")) {
+            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_Whitespace_ReturnsFalse() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("   \t")) {
+            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_True_ReturnsTrue() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("true")) {
+            assertTrue(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_True_MixedCase_ReturnsTrue() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("TrUe")) {
+            assertTrue(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_False_ReturnsFalse() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("false")) {
+            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
+    @Test
+    public void testLocalOtpCaptchaProp_Garbage_ReturnsFalse() {
+        try (MockedStatic<IdentityUtil> ms = stubLocalOtpCaptchaProp("not-a-boolean")) {
+            assertFalse(CaptchaUtil.isCaptchaValidationEnabledForLocalOTPAuthenticators());
+        }
+    }
+
 }
