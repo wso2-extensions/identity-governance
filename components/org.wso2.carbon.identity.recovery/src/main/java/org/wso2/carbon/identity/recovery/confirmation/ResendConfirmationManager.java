@@ -715,7 +715,9 @@ public class ResendConfirmationManager {
     private boolean isNotificationInternallyManage(User user, String recoveryScenario)
             throws IdentityRecoveryServerException {
 
-        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)) {
+        if (RecoveryScenarios.ASK_PASSWORD.toString().equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_EMAIL_OTP.toString().equals(recoveryScenario)
+                || RecoveryScenarios.ASK_PASSWORD_VIA_SMS_OTP.toString().equals(recoveryScenario)) {
             return Boolean.parseBoolean(Utils.getSignUpConfigs
                     (IdentityRecoveryConstants.ConnectorConfig.EMAIL_VERIFICATION_NOTIFICATION_INTERNALLY_MANAGE,
                             user.getTenantDomain()));

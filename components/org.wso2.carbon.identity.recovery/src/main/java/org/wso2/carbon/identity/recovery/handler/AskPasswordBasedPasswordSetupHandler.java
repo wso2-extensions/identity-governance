@@ -155,7 +155,7 @@ public class AskPasswordBasedPasswordSetupHandler extends AdminForcedPasswordRes
                         initNotification(user, recoveryScenario, recoveryStep, notificationType, confirmationCode);
                     }
                 } else {
-                    setRecoveryData(user, RecoveryScenarios.ASK_PASSWORD, recoveryStep, confirmationCode);
+                    setRecoveryData(user, recoveryScenario, recoveryStep, confirmationCode);
                     setAskPasswordConfirmationCodeToThreadLocal(confirmationCode);
                 }
 
