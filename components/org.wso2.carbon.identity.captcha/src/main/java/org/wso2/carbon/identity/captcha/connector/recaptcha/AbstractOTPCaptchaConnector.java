@@ -301,9 +301,10 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
     }
 
     /**
-     * Get the username from the authentication context.
+     * Resolve the username from the authentication context or servlet request.
      *
-     * @param context AuthenticationContext
+     * @param context         AuthenticationContext
+     * @param servletRequest  ServletRequest
      * @return Username if available, null otherwise.
      */
     private String resolveUserName(AuthenticationContext context, ServletRequest servletRequest) {
@@ -319,7 +320,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
     }
 
     /**
-     * Get the tenant domain from the authentication context.
+     * Resolve the tenant domain from the authentication context.
      *
      * @param context AuthenticationContext
      * @return Tenant domain if available, null otherwise.
