@@ -40,7 +40,13 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static org.wso2.carbon.identity.captcha.util.CaptchaConstants.SSO_LOGIN_RECAPTCHA_CONNECTOR_NAME;
 
@@ -305,6 +311,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
         if (context != null && context.getLastAuthenticatedUser() != null) {
             return context.getLastAuthenticatedUser().getUserName();
         }
+
         if (servletRequest != null && servletRequest.getParameter(USER_NAME) != null) {
             return servletRequest.getParameter(USER_NAME);
         }
