@@ -530,7 +530,7 @@ public class CaptchaUtil {
      *
      * @return Returns false by default. If the configuration is present, its value is returned.
      */
-    public static boolean isCaptchaValidationEnabledForLocalOTPAuthenticators(){
+    public static boolean isCaptchaValidationEnabledForLocalOTPAuthenticators() {
 
         String newAuthenticatorCaptchaConfig =
                 IdentityUtil.getProperty(ENABLE_CAPTCHA_VALIDATION_FOR_LOCAL_OTP_AUTHENTICATORS);
