@@ -526,7 +526,6 @@ public class CaptchaUtil {
 
     /**
      * Checks if the configuration in identity.xml enables captcha validation for local OTP authenticators.
-     * By default, this feature is enabled.
      *
      * @return Returns false by default. If the configuration is present, its value is returned.
      */
