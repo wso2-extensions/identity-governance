@@ -98,6 +98,10 @@ public class CaptchaComponent {
             captchaConnector = new SMSOTPCaptchaConnector();
             captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
             CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
+            // Initialize and register LocalEmailOTPCaptchaConnector.
+            captchaConnector = new org.wso2.carbon.identity.captcha.connector.recaptcha.LocalEmailOTPCaptchaConnector();
+            captchaConnector.init(CaptchaDataHolder.getInstance().getIdentityGovernanceService());
+            CaptchaDataHolder.getInstance().addCaptchaConnector(captchaConnector);
             AuthenticationDataPublisher failedLoginAttemptValidator = new FailLoginAttemptValidator();
             context.getBundleContext().registerService(AuthenticationDataPublisher.class,
                     failedLoginAttemptValidator, null);
