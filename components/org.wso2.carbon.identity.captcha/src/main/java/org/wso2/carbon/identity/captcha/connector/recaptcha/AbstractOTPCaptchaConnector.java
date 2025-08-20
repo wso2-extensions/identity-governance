@@ -180,7 +180,7 @@ public abstract class AbstractOTPCaptchaConnector extends AbstractReCaptchaConne
             preValidationResponse.setCaptchaAttributes(params);
         }
 
-        // Post validate all requests
+        // Post validate all requests.
         preValidationResponse.setMaxFailedLimitReached(true);
         preValidationResponse.setPostValidationRequired(true);
         return preValidationResponse;
